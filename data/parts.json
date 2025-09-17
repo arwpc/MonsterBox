@@ -44,11 +44,12 @@
       "controllerType": "pca9685",
       "channel": 0,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "invertDirection": true
     },
     "created": "2025-09-14T22:48:54.499Z",
     "enabled": true,
-    "updated": "2025-09-14T23:07:31.859Z"
+    "updated": "2025-09-17T00:41:09.524Z"
   },
   {
     "id": "5",
@@ -85,12 +86,31 @@
   },
   {
     "id": "7",
-    "name": "Orlok's Gaze",
+    "name": "Eye of Orlok",
     "type": "webcam",
     "pin": null,
     "description": "video capture devices",
-    "config": {},
-    "created": "2025-09-14T23:14:12.881Z",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-17T00:12:54.524Z",
+    "enabled": true,
+    "updated": "2025-09-17T00:15:40.639Z"
+  },
+  {
+    "id": "8",
+    "name": "Orlok Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "plughw:CARD=Device,DEV=0",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-17T03:38:40.191Z",
     "enabled": true
   }
 ]

@@ -39,6 +39,7 @@ process.on('unhandledRejection', function (reason, p) {
 
 const app = express();
 
+let shuttingDown = false;
 // Configuration
 const config = await loadConfig();
 const PORT = config.port || 3000;
@@ -132,15 +133,22 @@ async function loadConfig() {
 // Health check for mjpg-streamer service
 async function checkMjpgStreamerHealth() {
     try {
-        // Try GET request to root path - mjpg-streamer responds to this
+        // Create AbortController for better timeout management
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => {
+            abortController.abort();
+        }, 2000); // Reduced timeout to 2 seconds for startup check
+
         const response = await fetch('http://localhost:8090/', {
             method: 'GET',
-            signal: AbortSignal.timeout(3000)
+            signal: abortController.signal
         });
+
+        clearTimeout(timeoutId);
         // mjpg-streamer is running if we get any response (even 400/500)
         return response.status !== 0;
     } catch (error) {
-        // Connection refused means service is not running
+        // Connection refused means service is not running - don't log timeout errors
         return false;
     }
 }
@@ -163,5 +171,35 @@ app.listen(PORT, '0.0.0.0', async () => {
         console.log(`   To enable webcam streaming, run: sudo systemctl start mjpg-streamer`);
     }
 });
+
+// Graceful shutdown handling
+async function gracefulShutdown(signal) {
+    if (shuttingDown) {
+        return;
+    }
+    shuttingDown = true;
+    console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
+
+    const hardExitTimer = setTimeout(function () {
+        console.warn('Force exiting after timeout...');
+        process.exit(1);
+    }, 4000);
+
+    try {
+        // Import and call motion tracking cleanup
+        const { cleanup: motionTrackingCleanup } = await import('./controllers/motionTrackingController.js');
+        await motionTrackingCleanup();
+    } catch (error) {
+        console.warn('Motion tracking cleanup error:', (error && error.message) || error);
+    }
+
+    clearTimeout(hardExitTimer);
+    console.log('✅ Shutdown complete');
+    process.exit(0);
+}
+
+// Handle termination signals (guard prevents re-entry)
+process.on('SIGTERM', function () { gracefulShutdown('SIGTERM'); });
+process.on('SIGINT', function () { gracefulShutdown('SIGINT'); });
 
 export default app;

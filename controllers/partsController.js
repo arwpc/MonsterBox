@@ -317,7 +317,7 @@ export const testPart = async (req, res) => {
             motion_sensor: 'read',
             webcam: 'capture',
             microphone: 'getLevel',
-            speaker: 'stop',
+            speaker: 'play',
             head_tracking: 'getPosition'
         };
 
@@ -339,7 +339,8 @@ export const testPart = async (req, res) => {
                 case 'microphone':
                     return {};
                 case 'speaker':
-                    return { filename: 'sample.wav', volume: 50 };
+                    // Use a bundled sample sound (MP3) so tests/hardware can exercise playback without extra setup
+                    return { filename: 'public/sounds/monster-howl-85304.mp3', volume: 50 };
                 case 'head_tracking':
                     return {};
                 case 'light':

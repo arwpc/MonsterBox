@@ -440,12 +440,17 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address, servoType = 'continuous', duration = 1000 }) {
+        async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address, servoType = 'continuous', duration = 1000, invertDirection = false }) {
             try {
+                // Normalize direction based on optional invert flag
+                const effectiveDirection = invertDirection
+                    ? (direction === 'cw' ? 'ccw' : (direction === 'ccw' ? 'cw' : direction))
+                    : direction;
+
                 if (controllerType === 'pca9685') {
                     // All servo types can use rotate_continuous_pca for continuous rotation
                     // The function handles the appropriate pulse width ranges internally
-                    const args = ['rotate_continuous_pca', String(channel), String(direction), String(speed), String(duration)];
+                    const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speed), String(duration)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
                     const success = typeof result === 'string' && result.includes('success');
@@ -453,16 +458,16 @@ const HARDWARE_CONTROLLERS = {
                         success,
                         partType: 'servo',
                         channel,
-                        direction,
+                        direction: effectiveDirection,
                         speed,
                         duration,
                         servoType,
                         controllerType: 'pca9685',
                         rawOutput: result,
-                        message: success ? `PCA9685 ch${channel} ${servoType} servo ${direction} at ${speed}%` : `Servo command failed: ${result}`
+                        message: success ? `PCA9685 ch${channel} ${servoType} servo ${effectiveDirection} at ${speed}%` : `Servo command failed: ${result}`
                     };
                 } else {
-                    const result = await servoService.rotateContinuous({ channel: pin, direction, speed });
+                    const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed });
 
                     const success = typeof result === 'string' && result.includes('success');
 
@@ -470,7 +475,7 @@ const HARDWARE_CONTROLLERS = {
                         success: success,
                         partType: 'servo',
                         pin: pin,
-                        direction: direction,
+                        direction: effectiveDirection,
                         speed: speed,
                         controllerType: 'gpio',
                         rawOutput: result,
@@ -725,62 +730,83 @@ const HARDWARE_CONTROLLERS = {
         }
     },
 
-    // 🔊 Speaker - audio output devices
+    // 🔊 Speaker - audio output devices (per-speaker routing)
     speaker: {
-        async play({ deviceId = 0, filename, volume = 50 }) {
+        async play({ audioDeviceId, deviceId = 0, filename, volume = 50, bass, treble }) {
             try {
                 const args = ['play', String(filename)];
                 if (typeof volume === 'number') args.push(String(volume));
+                // prefer string device id from config
+                const dev = audioDeviceId || deviceId;
+                if (dev !== undefined && dev !== null && String(dev) !== '') {
+                    args.push('--device');
+                    args.push(String(dev));
+                }
+                // pass-through EQ placeholders (wrapper may ignore if unsupported)
+                if (typeof bass === 'number') { args.push('--bass'); args.push(String(bass)); }
+                if (typeof treble === 'number') { args.push('--treble'); args.push(String(treble)); }
                 const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
                 return {
                     success,
                     partType: 'speaker',
-                    deviceId,
+                    deviceId: dev,
                     filename,
                     volume,
                     pid: parsed && parsed.pid,
-                    message: (parsed && parsed.message) || `Speaker ${deviceId} play`
+                    message: (parsed && parsed.message) || `Speaker ${dev} play`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId, filename, error: String(err.message || err) };
+                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, filename, error: String(err.message || err) };
             }
         },
 
-        async setVolume({ deviceId = 0, volume }) {
+        async setVolume({ audioDeviceId, deviceId = 0, volume }) {
             if (volume < 0 || volume > 100) {
                 throw new Error(`Invalid volume: ${volume}%. Must be 0-100%`);
             }
             try {
-                const out = await runWrapper('speaker_cli.py', ['set_volume', String(volume)]);
+                const args = ['set_volume', String(volume)];
+                const dev = audioDeviceId || deviceId;
+                if (dev !== undefined && dev !== null && String(dev) !== '') {
+                    args.push('--device');
+                    args.push(String(dev));
+                }
+                const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
                 return {
                     success,
                     partType: 'speaker',
-                    deviceId,
+                    deviceId: dev,
                     volume,
-                    message: (parsed && parsed.message) || `Speaker ${deviceId} volume set to ${volume}%`
+                    message: (parsed && parsed.message) || `Speaker ${dev} volume set to ${volume}%`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId, error: String(err.message || err) };
+                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, error: String(err.message || err) };
             }
         },
 
-        async stop({ deviceId = 0 }) {
+        async stop({ audioDeviceId, deviceId = 0 }) {
             try {
-                const out = await runWrapper('speaker_cli.py', ['stop']);
+                const args = ['stop'];
+                const dev = audioDeviceId || deviceId;
+                if (dev !== undefined && dev !== null && String(dev) !== '') {
+                    args.push('--device');
+                    args.push(String(dev));
+                }
+                const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
                 return {
                     success,
                     partType: 'speaker',
-                    deviceId,
-                    message: (parsed && parsed.message) || `Speaker ${deviceId} stopped`
+                    deviceId: dev,
+                    message: (parsed && parsed.message) || `Speaker ${dev} stopped`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId, error: String(err.message || err) };
+                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, error: String(err.message || err) };
             }
         }
     },

@@ -1,4 +1,106 @@
 {
+  "4": {
+    "part_id": 4,
+    "part_name": "Head on a Swivel",
+    "servo_type": "continuous",
+    "channel": 0,
+    "calibrated_date": "2025-09-17T22:59:48.638Z",
+    "stop_pulse_us": 1500,
+    "cw_pulse_us": 1200,
+    "ccw_pulse_us": 1800,
+    "positions": {
+      "right_90": {
+        "description": "90° - Facing right",
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T01:21:22.066Z"
+      },
+      "right_45": {
+        "description": "right_45 position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T01:21:33.027Z"
+      },
+      "forward": {
+        "description": "0° - Facing directly forward",
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T22:59:48.638Z",
+        "motion": {
+          "direction": "ccw",
+          "speed": 50,
+          "duration": 500
+        }
+      }
+    },
+    "timing_data": {},
+    "functionality_status": "working"
+  },
+  "5": {
+    "part_id": 5,
+    "part_name": "Elbow of Orlok",
+    "servo_type": "standard",
+    "channel": 4,
+    "calibrated_date": "2025-09-17T02:21:09.311Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "min": {
+        "description": "min preset",
+        "angle": 0,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:20:42.592Z"
+      },
+      "max": {
+        "description": "max preset",
+        "angle": 180,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:20:56.355Z"
+      },
+      "center": {
+        "description": "center preset",
+        "angle": 90,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:21:09.311Z"
+      }
+    },
+    "functionality_status": "working"
+  },
+  "6": {
+    "part_id": 6,
+    "part_name": "Forearm of Orlok",
+    "servo_type": "standard",
+    "channel": 5,
+    "calibrated_date": "2025-09-17T02:24:54.419Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "shake_hands": {
+        "description": "shake_hands position",
+        "angle": 114,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:23:46.022Z"
+      },
+      "open_hand": {
+        "description": "open_hand position",
+        "angle": 54,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:24:33.109Z"
+      },
+      "hands_down": {
+        "description": "hands_down position",
+        "angle": 180,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:24:54.419Z"
+      }
+    },
+    "functionality_status": "working"
+  },
   "29": {
     "part_id": 29,
     "part_name": "Orlok Head Servo",
@@ -10,19 +112,19 @@
     "ccw_pulse_us": 1800,
     "positions": {
       "forward": {
-        "description": "0\u00b0 - Facing directly forward",
+        "description": "0° - Facing directly forward",
         "calibrated": true
       },
       "right_90": {
-        "description": "90\u00b0 - Facing right",
+        "description": "90° - Facing right",
         "calibrated": true
       },
       "left_90": {
-        "description": "-90\u00b0 - Facing left",
+        "description": "-90° - Facing left",
         "calibrated": true
       },
       "backward": {
-        "description": "180\u00b0 - Facing backward",
+        "description": "180° - Facing backward",
         "calibrated": true
       },
       "neutral": {
@@ -64,7 +166,6 @@
     },
     "timing_data": {}
   },
-  "version": "2.0_backward_compatible",
   "33": {
     "part_id": 33,
     "part_name": "Skull Talking Jaw",
@@ -94,5 +195,6 @@
     },
     "functionality_status": "working",
     "calibrated_date": "2025-09-07T16:52:06"
-  }
+  },
+  "version": "2.0_backward_compatible"
 }

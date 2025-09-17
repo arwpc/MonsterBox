@@ -35,6 +35,9 @@ router.get('/api/devices', webcamController.listDevices);
 router.get('/api/devices/probe', webcamController.probeDevices);
 router.get('/api/devices/inuse', webcamController.devicesInUse);
 
+// Apply selected webcam device to mjpg-streamer service
+router.post('/api/parts/:id/apply-device', express.json(), webcamController.applyDeviceToService);
+
 // Live MJPEG stream
 router.get('/api/parts/:id/stream', webcamController.streamMJPEG);
 

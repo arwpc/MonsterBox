@@ -168,6 +168,137 @@
                                 </div>
                             </div>
 
+                            <!-- Webcam device assignment (shown for Webcam type) -->
+                            <div class="row" id="webcamGroup" style="display:none;">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="webcamDeviceSelect" class="form-label">Webcam Device</label>
+                                        <select class="form-select" id="webcamDeviceSelect">
+                                            <option value="">Select a detected webcam...</option>
+                                        </select>
+                                        <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-secondary w-100" id="scanWebcamsBtn"
+                                        onclick="scanWebcamsInto('webcamDeviceSelect','webcamScanResults')">Scan
+                                        Devices</button>
+                                </div>
+                                <div class="col-12">
+                                    <div id="webcamScanResults" class="small text-muted"></div>
+                                </div>
+                            </div>
+
+                            <!-- Speaker config (shown for Speaker type) -->
+                            <!-- Microphone config (shown for Microphone type) -->
+                            <div class="row" id="microphoneGroup" style="display:none;">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="audioInputSelect" class="form-label">Audio Input</label>
+                                        <select class="form-select" id="audioInputSelect">
+                                            <option value="">Select an audio input...</option>
+                                        </select>
+                                        <div class="form-text">Select an ALSA input device for this Microphone.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-secondary w-100"
+                                        id="scanAudioInputsBtn"
+                                        onclick="(function(){var sel=document.getElementById('audioInputSelect');var out=document.getElementById('audioInputScanResults'); if(out) out.textContent='Scanning inputs...'; fetch('/setup/audio/api/inputs').then(function(r){return r.json();}).then(function(j){ if(!sel) return; sel.innerHTML='<option value=\"
+                                        \">Select an audio input...</option>'; var list=(j&&j.inputs)||[];
+                                        list.forEach(function(it){ var opt=document.createElement('option');
+                                        opt.value=it.id||''; opt.textContent=it.description||it.name||it.id;
+                                        sel.appendChild(opt); }); if(out) out.textContent = !list.length ? 'No inputs
+                                        found' : list.map(function(it){return '\ud83c\udfa4
+                                        '+(it.description||(it.name+' ('+it.id+')'));}).join('\\n');
+                                        }).catch(function(){ if(out) out.textContent='Error scanning inputs'; });
+                                        })()">Scan
+                                        Inputs</button>
+                                    <script>
+                                        (function () {
+                                            // Define scanner early so other handlers can call it
+                                            if (typeof window.scanAudioInputsInto !== 'function') {
+                                                window.scanAudioInputsInto = function (selectId, resultsId) {
+                                                    var sel = document.getElementById(selectId);
+                                                    var out = document.getElementById(resultsId);
+                                                    if (out) out.textContent = 'Scanning inputs...';
+                                                    fetch('/setup/audio/api/inputs')
+                                                        .then(function (r) { return r.json(); })
+                                                        .then(function (j) {
+                                                            if (!sel) return;
+                                                            sel.innerHTML = '<option value="">Select an audio input...</option>';
+                                                            var list = (j && j.inputs) || [];
+                                                            list.forEach(function (it) {
+                                                                var opt = document.createElement('option');
+                                                                opt.value = it.id || '';
+                                                                opt.textContent = it.description || it.name || it.id;
+                                                                sel.appendChild(opt);
+                                                            });
+                                                            if (out) out.textContent = !list.length ? 'No inputs found' : list.map(function (it) { return '🎤 ' + (it.description || (it.name + ' (' + it.id + ')')); }).join('\n');
+                                                        })
+                                                        .catch(function () { if (out) out.textContent = 'Error scanning inputs'; });
+                                                };
+                                            }
+                                            var btn = document.getElementById('scanAudioInputsBtn');
+                                            if (btn) {
+                                                try { btn.removeAttribute('onclick'); } catch (e) { }
+                                                btn.onclick = function () { scanAudioInputsInto('audioInputSelect', 'audioInputScanResults'); };
+                                            }
+                                        })();
+                                    </script>
+                                </div>
+                                <div class="col-12">
+                                    <div id="audioInputScanResults" class="small text-muted"></div>
+                                </div>
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-sm btn-info"
+                                        onclick="(function(){var sel=document.getElementById('audioInputSelect'); if(!sel||!sel.value){alert('Select an input first');return;} var out=document.getElementById('audioInputScanResults'); if(out) out.textContent='Measuring level...'; fetch('/setup/audio/api/input-level?device='+encodeURIComponent(sel.value)).then(function(r){return r.json();}).then(function(j){ if(out) out.textContent = j && j.success ? ('Level: '+ (j.level!=null?j.level.toFixed?j.level.toFixed(4):j.level:j.level)) : ('Error: '+ (j && j.error)); }).catch(function(){ if(out) out.textContent='Error measuring level'; }); })()">Quick
+                                        Level Test</button>
+                                </div>
+                            </div>
+
+                            <div class="row" id="speakerGroup" style="display:none;">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="audioDeviceSelect" class="form-label">Audio Output</label>
+                                        <select class="form-select" id="audioDeviceSelect">
+                                            <option value="">Select an audio output...</option>
+                                        </select>
+                                        <div class="form-text">Route this Speaker to a specific ALSA output.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="button" class="btn btn-outline-secondary w-100" id="scanAudioBtn"
+                                        onclick="scanAudioOutputsInto('audioDeviceSelect','audioScanResults')">Scan
+                                        Outputs</button>
+                                </div>
+                                <div class="col-12">
+                                    <div id="audioScanResults" class="small text-muted"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="speakerVolume" class="form-label">Volume (0-100)</label>
+                                        <input type="number" class="form-control" id="speakerVolume" min="0" max="100"
+                                            value="50">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="speakerBass" class="form-label">Bass (dB)</label>
+                                        <input type="number" class="form-control" id="speakerBass" min="-10" max="10"
+                                            value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="speakerTreble" class="form-label">Treble (dB)</label>
+                                        <input type="number" class="form-control" id="speakerTreble" min="-10" max="10"
+                                            value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+
                             <!-- GPIO Pin (shown for parts that require pins) -->
                             <div class="row" id="pinGroup" style="display: none;">
                                 <div class="col-md-6">
@@ -319,9 +450,76 @@
                                     <label for="editPartName" class="form-label">Part Name</label>
                                     <input type="text" class="form-control" id="editPartName" required>
                                 </div>
+                                <!-- Edit Microphone config -->
+                                <div class="row" id="editMicrophoneGroup" style="display:none;">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="editAudioInputSelect" class="form-label">Audio Input</label>
+                                            <select class="form-select" id="editAudioInputSelect">
+                                                <option value="">Select an audio input...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="button" class="btn btn-outline-secondary w-100"
+                                            id="editScanAudioInputsBtn"
+                                            onclick="scanAudioInputsInto('editAudioInputSelect','editAudioInputScanResults')">Scan
+                                            Inputs</button>
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="editAudioInputScanResults" class="small text-muted"></div>
+                                    </div>
+                                </div>
+
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
+
+                                    <!-- Edit Speaker config -->
+                                    <div class="row" id="editSpeakerGroup" style="display:none;">
+                                        <div class="col-md-8">
+                                            <div class="mb-3">
+                                                <label for="editAudioDeviceSelect" class="form-label">Audio
+                                                    Output</label>
+                                                <select class="form-select" id="editAudioDeviceSelect">
+                                                    <option value="">Select an audio output...</option>
+                                                </select>
+                                                <div class="form-text">Route this Speaker to a specific ALSA output.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <button type="button" class="btn btn-outline-secondary w-100"
+                                                id="editScanAudioBtn"
+                                                onclick="scanAudioOutputsInto('editAudioDeviceSelect','editAudioScanResults')">Scan
+                                                Outputs</button>
+                                        </div>
+                                        <div class="col-12">
+                                            <div id="editAudioScanResults" class="small text-muted"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editSpeakerVolume" class="form-label">Volume (0-100)</label>
+                                                <input type="number" class="form-control" id="editSpeakerVolume" min="0"
+                                                    max="100" value="50">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editSpeakerBass" class="form-label">Bass (dB)</label>
+                                                <input type="number" class="form-control" id="editSpeakerBass" min="-10"
+                                                    max="10" value="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editSpeakerTreble" class="form-label">Treble (dB)</label>
+                                                <input type="number" class="form-control" id="editSpeakerTreble"
+                                                    min="-10" max="10" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <label for="editPartType" class="form-label">Part Type</label>
                                     <select class="form-select" id="editPartType" disabled>
                                         <option value="">Select…</option>
@@ -345,6 +543,27 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Edit Webcam device assignment -->
+                        <div class="row" id="editWebcamGroup" style="display:none;">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="editWebcamDeviceSelect" class="form-label">Webcam Device</label>
+                                    <select class="form-select" id="editWebcamDeviceSelect">
+                                        <option value="">Select a detected webcam...</option>
+                                    </select>
+                                    <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-secondary w-100" id="editScanWebcamsBtn"
+                                    onclick="scanWebcamsInto('editWebcamDeviceSelect','editWebcamScanResults')">Scan
+                                    Devices</button>
+                            </div>
+                            <div class="col-12">
+                                <div id="editWebcamScanResults" class="small text-muted"></div>
+                            </div>
+                        </div>
+
 
                         <!-- Edit Servo-specific options -->
                         <div id="editServoGroup" style="display: none;">
@@ -368,6 +587,18 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Invert Direction toggle for servos -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="editInvertDirection">
+                                        <label class="form-check-label" for="editInvertDirection">
+                                            Invert Direction (swap CW/CCW)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
 
                             <!-- Edit Model Selection -->
                             <div id="editModelGroup" style="display: none;">
@@ -476,6 +707,11 @@
                             <button type="button" class="btn btn-outline-success"
                                 onclick="testMoveAngleFromEdit(180)">180°</button>
                         </div>
+                        <button type="button" class="btn btn-outline-info" id="applyMjpgBtn" style="display:none;"
+                            onclick="applyWebcamToMjpg()">
+                            <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
+                        </button>
+
                         <button type="button" class="btn btn-primary" onclick="saveEditedPart()">Save
                             Changes</button>
                     </div>
@@ -633,6 +869,14 @@
                             '<button class="btn btn-outline-warning" onclick="window.location.href=\'/setup/calibration/linear_actuator/' + part.id + '\'" title="Calibrate">' +
                             '<i class="bi bi-sliders"></i>' +
                             '</button>' : '') +
+                        (part.type === 'servo' && part.config && part.config.servoType === 'continuous' ?
+                            '<button class="btn btn-outline-warning" onclick="window.location.href=\'/setup/calibration/continuous_servo/' + part.id + '\'" title="Calibrate">' +
+                            '<i class="bi bi-sliders"></i>' +
+                            '</button>' : '') +
+                        (part.type === 'servo' && (!part.config || part.config.servoType === 'standard' || typeof part.config.servoType === 'undefined') ?
+                            '<button class="btn btn-outline-warning" onclick="window.location.href=\'/setup/calibration/standard_servo/' + part.id + '\'" title="Calibrate">' +
+                            '<i class="bi bi-sliders"></i>' +
+                            '</button>' : '') +
                         '<button class="btn btn-outline-success" onclick="toggleTestDrawer(\'' + part.id + '\')" title="Test" data-testid="open-test-btn" data-part-id="' + part.id + '">' +
                         '<i class="bi bi-play"></i>' +
                         '</button>' +
@@ -734,6 +978,19 @@
                 var actuatorPinGroup = document.getElementById('actuatorPinGroup');
                 var actuatorLimitsGroup = document.getElementById('actuatorLimitsGroup');
 
+                // Microphone assignment group
+                var micGrp = document.getElementById('microphoneGroup');
+                if (micGrp) {
+                    if (partType === 'microphone') {
+                        micGrp.style.display = 'block';
+                        if (typeof window.scanAudioInputsInto === 'function') {
+                            scanAudioInputsInto('audioInputSelect', 'audioInputScanResults');
+                        }
+                    } else {
+                        micGrp.style.display = 'none';
+                    }
+                }
+
                 // Show/hide pin field based on part type
                 if (partTypes[partType] && partTypes[partType].requiresPin && partType !== 'linear_actuator') {
                     pinGroup.style.display = 'block';
@@ -761,6 +1018,31 @@
                     actuatorPinGroup.style.display = 'none';
                     actuatorLimitsGroup.style.display = 'none';
                 }
+                // Webcam device assignment group
+                var wcGrp = document.getElementById('webcamGroup');
+                if (wcGrp) {
+                    if (partType === 'webcam') {
+                        wcGrp.style.display = 'block';
+                        // Auto-scan to populate list on type selection
+                        scanWebcamsInto('webcamDeviceSelect', 'webcamScanResults');
+                    } else {
+                        wcGrp.style.display = 'none';
+                    }
+                }
+
+                // Speaker assignment group
+                var spGrp = document.getElementById('speakerGroup');
+                if (spGrp) {
+                    if (partType === 'speaker') {
+                        spGrp.style.display = 'block';
+                        // Populate outputs on show
+                        scanAudioOutputsInto('audioDeviceSelect', 'audioScanResults');
+                    } else {
+                        spGrp.style.display = 'none';
+                    }
+                }
+
+
                 // Model selector for supported types
                 var modelGroup = document.getElementById('modelGroup');
                 var supported = ['servo', 'led', 'linear_actuator', 'webcam'];
@@ -869,6 +1151,7 @@
                 html += '<div class="row g-1">';
 
                 // Render channels 0-15 in a 4x4 grid layout like the physical board
+
                 for (var i = 0; i < 16; i++) {
                     if (i % 4 === 0) {
                         html += '<div class="col-3">';
@@ -913,6 +1196,7 @@
             function createPart() {
                 var form = document.getElementById('createPartForm');
                 var formData = new FormData(form);
+
                 var type = formData.get('type');
                 var payload = {
                     name: formData.get('name'),
@@ -959,6 +1243,46 @@
                         if (freq) cfg.pca9685Frequency = parseInt(freq, 10);
                     }
                 }
+                // Webcam-specific config
+                if (type === 'webcam') {
+                    var devSel = document.getElementById('webcamDeviceSelect');
+                    var dv = devSel ? devSel.value : '';
+                    if (!cfg) cfg = {};
+                    if (dv) {
+                        cfg.devicePath = dv;
+                        var idn = parseVideoIdFromPath(dv);
+                        if (idn != null) cfg.deviceId = idn;
+                    }
+                }
+
+                // Microphone-specific config
+                if (type === 'microphone') {
+                    var inSel = document.getElementById('audioInputSelect');
+                    var inId = inSel ? inSel.value : '';
+                    if (!inId) { showAlert('warning', 'Please scan and select an Audio Input for this Microphone'); return; }
+                    if (!cfg) cfg = {};
+                    cfg.deviceId = inId;
+                }
+
+                // Speaker-specific config
+                if (type === 'speaker') {
+                    var devSel2 = document.getElementById('audioDeviceSelect');
+                    var devId2 = devSel2 ? devSel2.value : '';
+                    if (!devId2) {
+                        showAlert('warning', 'Please scan and select an Audio Output for this Speaker');
+                        return;
+                    }
+                    if (!cfg) cfg = {};
+                    cfg.audioDeviceId = devId2;
+                    var vol2 = document.getElementById('speakerVolume').value;
+                    var bass2 = document.getElementById('speakerBass').value;
+                    var treble2 = document.getElementById('speakerTreble').value;
+                    if (vol2 !== '') cfg.volume = Math.max(0, Math.min(100, parseInt(vol2, 10)));
+                    if (bass2 !== '') cfg.bass = Math.max(-10, Math.min(10, parseInt(bass2, 10)));
+                    if (treble2 !== '') cfg.treble = Math.max(-10, Math.min(10, parseInt(treble2, 10)));
+                }
+
+
 
                 if (Object.keys(cfg).length) payload.config = cfg;
 
@@ -977,12 +1301,93 @@
                         } else {
                             showAlert('danger', 'Failed to create part: ' + data.error);
                         }
+
                     })
                     .catch(function (error) {
                         console.error('Error creating part:', error);
                         showAlert('danger', 'Error creating part');
                     });
             }
+            // Webcam helpers
+            function parseVideoIdFromPath(p) {
+                var m = String(p || '').match(/\/dev\/video(\d+)/);
+                return m ? parseInt(m[1], 10) : null;
+            }
+            function scanWebcamsInto(selectId, resultsId) {
+                var sel = document.getElementById(selectId);
+                var out = document.getElementById(resultsId);
+                if (out) out.textContent = 'Scanning...';
+                fetch('/setup/webcam/api/devices/probe')
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (!sel) return;
+                        sel.innerHTML = '<option value="">Select a detected webcam...</option>';
+                        var list = (j && j.results) || [];
+                        list.forEach(function (it) {
+                            var opt = document.createElement('option');
+                            opt.value = it.path || '';
+                            opt.textContent = (it.name || it.path || '') + (it.info ? (' - ' + it.info) : '');
+                            sel.appendChild(opt);
+                        });
+                        if (out) {
+                            if (!list.length) out.textContent = 'No devices found';
+                            else out.textContent = list.map(function (it) { return (it.ok ? '✅ ' : '❌ ') + (it.name || it.path) + ' [' + it.path + ']'; }).join('\n');
+                        }
+                    })
+                    .catch(function () { if (out) out.textContent = 'Error scanning devices'; });
+            }
+            function scanAudioOutputsInto(selectId, resultsId) {
+                var sel = document.getElementById(selectId);
+                var out = document.getElementById(resultsId);
+                if (out) out.textContent = 'Scanning outputs...';
+                fetch('/setup/audio/api/outputs')
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (!sel) return;
+                        sel.innerHTML = '<option value="">Select an audio output...</option>';
+                        var list = (j && j.outputs) || [];
+                        list.forEach(function (it) {
+                            var opt = document.createElement('option');
+                            opt.value = it.id || '';
+                            opt.textContent = it.description || it.name || it.id;
+                            sel.appendChild(opt);
+                        });
+                        if (out) {
+                            if (!list.length) out.textContent = 'No outputs found';
+                            else out.textContent = list.map(function (it) { return '🎧 ' + (it.description || (it.name + ' (' + it.id + ')')); }).join('\n');
+                        }
+                    })
+                    .catch(function () { if (out) out.textContent = 'Error scanning outputs'; });
+            }
+            function applyWebcamToMjpg() {
+                try {
+                    var id = document.getElementById('editPartId').value;
+                    var sel = document.getElementById('editWebcamDeviceSelect');
+                    if (!id) { showAlert('danger', 'No part selected'); return; }
+                    if (!sel || !sel.value) { showAlert('danger', 'Select a Webcam Device first, then Save'); return; }
+                    fetch('/setup/webcam/api/parts/' + id + '/apply-device', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d && d.success) {
+                                showAlert('success', 'Applied to mjpg-streamer: ' + (d.devicePath || ''));
+                            } else {
+                                var msg = (d && (d.error || d.message)) || 'Failed to apply to mjpg-streamer';
+
+                                if (d && d.needsSudo) msg += ' (needs sudo)';
+                                showAlert('danger', msg);
+                            }
+                        })
+                        .catch(function (e) { showAlert('danger', 'Error: ' + e.message); });
+                } catch (e) {
+                    showAlert('danger', 'Error: ' + e.message);
+                }
+            }
+
+
 
             function testPart(partId) {
                 var part = parts.find(function (p) { return p.id === partId; });
@@ -1134,8 +1539,12 @@
                         html += '</div>';
                         break;
                     case 'speaker':
-                        html += '<div class="btn-group btn-group-sm" data-testid="speaker-controls">';
-                        html += '<button class="btn btn-secondary" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button>';
+                        html += '<div class="row g-2 align-items-center" data-testid="speaker-controls">';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'play\',{ filename: \'public/sounds/monster-howl-85304.mp3\', volume: parseInt(document.getElementById(\'spk-vol-' + part.id + '\').value,10)||50 },\'' + resultId + '\')">Play Sample</button></div>';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-outline-secondary" onclick="sendPartAction(\'' + part.id + '\',\'stop\',{},\'' + resultId + '\')">Stop</button></div>';
+                        html += '  <div class="col-auto">Vol:</div>';
+                        html += '  <div class="col-auto"><input id="spk-vol-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="' + ((part.config && part.config.volume) ? part.config.volume : 50) + '" min="0" max="100"/></div>';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-success" onclick="sendPartAction(\'' + part.id + '\',\'setVolume\',{ volume: parseInt(document.getElementById(\'spk-vol-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Set Volume</button></div>';
                         html += '</div>';
                         break;
                     case 'webcam':
@@ -1231,6 +1640,10 @@
                 } else if (partTypes[part.type] && partTypes[part.type].requiresPin) {
                     // Show regular pin field for other parts
                     pinGroup.style.display = '';
+                    // Toggle Apply-to-mjpg button visibility for webcam
+                    var applyBtn = document.getElementById('applyMjpgBtn');
+                    if (applyBtn) { applyBtn.style.display = (part.type === 'webcam') ? '' : 'none'; }
+
                     editActuatorPinGroup.style.display = 'none';
                     editActuatorLimitsGroup.style.display = 'none';
                     document.getElementById('editGpioPin').value = part.pin != null ? part.pin : '';
@@ -1241,6 +1654,49 @@
                     editActuatorLimitsGroup.style.display = 'none';
                     document.getElementById('editGpioPin').value = '';
                 }
+                // Webcam edit group handling
+                (function () {
+                    var grp = document.getElementById('editWebcamGroup');
+                    if (!grp) return;
+                    if (part.type === 'webcam') {
+                        grp.style.display = '';
+                        scanWebcamsInto('editWebcamDeviceSelect', 'editWebcamScanResults');
+                        // Select current if present
+                        setTimeout(function () {
+                            var sel = document.getElementById('editWebcamDeviceSelect');
+                            var cfg = part.config || {};
+                            if (sel && cfg.devicePath) sel.value = cfg.devicePath;
+                        }, 250);
+                        // Show Apply-to-mjpg button for webcam type
+                        var _applyBtn = document.getElementById('applyMjpgBtn');
+                        if (_applyBtn) _applyBtn.style.display = '';
+                        // Microphone edit group handling
+                        (function () {
+                            var grp = document.getElementById('editMicrophoneGroup');
+                            if (!grp) return;
+                            if (part.type === 'microphone') {
+                                grp.style.display = '';
+                                scanAudioInputsInto('editAudioInputSelect', 'editAudioInputScanResults');
+                                var cfg = part.config || {};
+                                setTimeout(function () {
+                                    try {
+                                        var sel = document.getElementById('editAudioInputSelect');
+                                        if (sel && cfg.deviceId) sel.value = cfg.deviceId;
+                                    } catch (e) { /* ignore */ }
+                                }, 250);
+                            } else { grp.style.display = 'none'; }
+                        })()
+
+
+                    } else {
+                        // Hide Apply-to-mjpg button when not webcam
+                        var __applyBtn = document.getElementById('applyMjpgBtn');
+                        if (__applyBtn) __applyBtn.style.display = 'none';
+
+                        grp.style.display = 'none';
+                    }
+                })();
+
 
                 // Servo-specific edit fields
                 (function () {
@@ -1259,9 +1715,17 @@
                                 editServoTypeSel.appendChild(opt);
                             });
                             editServoTypeSel.dataset.filled = '1';
+
                         }
                         var cfg = part.config || {};
                         document.getElementById('editServoType').value = cfg.servoType || 'standard';
+
+                        // Set invert direction toggle
+                        (function () {
+                            var invEl = document.getElementById('editInvertDirection');
+                            if (invEl) { invEl.checked = !!(cfg && cfg.invertDirection); }
+                        })();
+
                         document.getElementById('editControllerType').value = cfg.controllerType || 'gpio';
                         if ((cfg.controllerType || 'gpio') === 'pca9685') {
                             editPcaGrp.style.display = '';
@@ -1303,6 +1767,31 @@
                                     var curModelId = (part.config && part.config.modelId) ? String(part.config.modelId) : '';
                                     if (curModelId) sel.value = curModelId;
                                 }
+
+                                // Speaker edit group handling
+                                (function () {
+                                    var grp = document.getElementById('editSpeakerGroup');
+                                    if (!grp) return;
+                                    if (part.type === 'speaker') {
+                                        grp.style.display = '';
+                                        scanAudioOutputsInto('editAudioDeviceSelect', 'editAudioScanResults');
+                                        var cfg = part.config || {};
+                                        setTimeout(function () {
+                                            try {
+                                                var sel = document.getElementById('editAudioDeviceSelect');
+                                                if (sel && cfg.audioDeviceId) sel.value = cfg.audioDeviceId;
+                                            } catch (e) { /* ignore */ }
+                                        }, 250);
+                                        try {
+                                            var v = document.getElementById('editSpeakerVolume'); if (v) v.value = (cfg.volume != null ? cfg.volume : 50);
+                                            var b = document.getElementById('editSpeakerBass'); if (b) b.value = (cfg.bass != null ? cfg.bass : 0);
+                                            var t = document.getElementById('editSpeakerTreble'); if (t) t.value = (cfg.treble != null ? cfg.treble : 0);
+                                        } catch (e) { /* ignore */ }
+                                    } else {
+                                        grp.style.display = 'none';
+                                    }
+                                })();
+
                             })
                             .catch(function () { /* ignore */ });
 
@@ -1359,6 +1848,15 @@
 
                     }
                 } catch (e) {
+                    // Microphone-specific edit selection merges into config
+                    if (type === 'microphone') {
+                        try {
+                            var mSel = document.getElementById('editAudioInputSelect');
+                            var mid = mSel ? mSel.value : '';
+                            if (mid) config.deviceId = mid;
+                        } catch (e) { /* ignore */ }
+                    }
+
                     console.error('testMoveFromEdit error:', e);
                     showAlert('danger', 'Error issuing test move: ' + e.message);
                 }
@@ -1425,6 +1923,7 @@
                         showAlert('danger', 'Pin is required for ' + type);
                         return;
                     }
+
                 }
 
                 var config;
@@ -1443,16 +1942,59 @@
                         var ct = document.getElementById('editControllerType').value || 'gpio';
                         config.servoType = st;  // Always use the form value
                         config.controllerType = ct;
+
+                        // Persist invert direction from UI toggle
+                        (function () {
+                            var invEl = document.getElementById('editInvertDirection');
+                            if (invEl) { config.invertDirection = !!invEl.checked; }
+                        })();
+
                         if (ct === 'pca9685') {
                             var addrStr = document.getElementById('editPca9685Address').value || '0x40';
                             var chVal = document.getElementById('editPca9685Channel').value;
                             var freqVal = document.getElementById('editPca9685Frequency').value;
                             config.address = (/^0x/i.test(addrStr)) ? parseInt(addrStr, 16) : (parseInt(addrStr, 10) || 0x40);
                             config.channel = chVal ? parseInt(chVal, 10) : (typeof config.channel === 'number' ? config.channel : 0);
+
                             if (freqVal) config.pca9685Frequency = parseInt(freqVal, 10);
                         }
                     } catch (e) { /* ignore */ }
                 }
+
+                // Webcam-specific edit selection merges into config
+                if (type === 'webcam') {
+                    try {
+                        var devSel = document.getElementById('editWebcamDeviceSelect');
+                        var dv = devSel ? devSel.value : '';
+                        if (dv) {
+                            config.devicePath = dv;
+                            var idn = parseVideoIdFromPath(dv);
+                            if (idn != null) config.deviceId = idn;
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+
+                // Microphone-specific edit selection merges into config
+                if (type === 'microphone') {
+                    try {
+                        var mSel = document.getElementById('editAudioInputSelect');
+                        var mid = mSel ? mSel.value : '';
+                        if (mid) config.deviceId = mid;
+                    } catch (e) { /* ignore */ }
+                }
+
+                // Speaker-specific edit selection merges into config
+                if (type === 'speaker') {
+                    try {
+                        var sSel = document.getElementById('editAudioDeviceSelect');
+                        var sid = sSel ? sSel.value : '';
+                        if (sid) config.audioDeviceId = sid;
+                        var v = document.getElementById('editSpeakerVolume'); if (v && v.value !== '') config.volume = Math.max(0, Math.min(100, parseInt(v.value, 10)));
+                        var b = document.getElementById('editSpeakerBass'); if (b && b.value !== '') config.bass = Math.max(-10, Math.min(10, parseInt(b.value, 10)));
+                        var t = document.getElementById('editSpeakerTreble'); if (t && t.value !== '') config.treble = Math.max(-10, Math.min(10, parseInt(t.value, 10)));
+                    } catch (e) { /* ignore */ }
+                }
+
 
                 var payload = { name: name, description: description, config: config };
 
@@ -1575,6 +2117,31 @@
                             else if (v === 'true' || v === 'false') v = (v === 'true');
                             obj[k] = v;
                         }
+                        // Ensure global microphone scanner is available
+                        window.scanAudioInputsInto = function (selectId, resultsId) {
+                            var sel = document.getElementById(selectId);
+                            var out = document.getElementById(resultsId);
+                            if (out) out.textContent = 'Scanning inputs...';
+                            fetch('/setup/audio/api/inputs')
+                                .then(function (r) { return r.json(); })
+                                .then(function (j) {
+                                    if (!sel) return;
+                                    sel.innerHTML = '<option value="">Select an audio input...</option>';
+                                    var list = (j && j.inputs) || [];
+                                    list.forEach(function (it) {
+                                        var opt = document.createElement('option');
+                                        opt.value = it.id || '';
+                                        opt.textContent = it.description || it.name || it.id;
+                                        sel.appendChild(opt);
+                                    });
+                                    if (out) out.textContent = !list.length ? 'No inputs found' : list.map(function (it) {
+                                        return '🎤 ' + (it.description || (it.name + ' (' + it.id + ')'));
+                                    }).join('\n');
+                                })
+                                .catch(function () {
+                                    if (out) out.textContent = 'Error scanning inputs';
+                                });
+                        };
                     });
                 }
                 fetch('/setup/webcam/api/parts/' + partId + '/controls/set', {
@@ -1614,15 +2181,12 @@
                 html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
                 html += '<div class="row g-1">';
                 for (var i = 0; i < 16; i++) {
-                    if (i % 4 === 0) html += '<div class="col-3">';
-                    html += '<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 edit-pca9685-channel" ' +
-                        'onclick="selectEditPCA9685Channel(' + i + ')" id="edit-channel-' + i + '">Ch ' + i + '</button>';
-                    if ((i + 1) % 4 === 0) html += '</div>';
-                }
-                html += '</div></div>';
-                container.innerHTML = html;
+                    if (i % 4 === 0) html += '<div class="col-3">'; html
+                        += '<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 edit-pca9685-channel" '
+                        + 'onclick="selectEditPCA9685Channel(' + i + ')" id="edit-channel-' + i + '">Ch ' + i + '</button>'
+                        ; if ((i + 1) % 4 === 0) html += '</div>';
+                } html += '</div></div>'; container.innerHTML = html;
             }
-
             function selectEditPCA9685Channel(ch) {
                 var btns = document.querySelectorAll('.edit-pca9685-channel');
                 if (btns && btns.forEach) {
@@ -1639,7 +2203,6 @@
                 var hidden = document.getElementById('editPca9685Channel');
                 if (hidden) hidden.value = ch;
             }
-
         </script>
     </main>
 

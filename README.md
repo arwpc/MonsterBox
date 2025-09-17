@@ -109,6 +109,41 @@ Linear actuators require specific configuration for safe operation:
 
 
 
+## 🎚️ Standard Servo Calibration (NEW)
+
+Complete calibration and control for standard positional servos is implemented.
+
+- Access: Setup → Parts → Calibrate (sliders icon) on a standard servo
+  - Route: `GET /setup/calibration/standard_servo/:id`
+- Pulse Calibration: Save Min / Center / Max (stores µs pulse widths)
+  - Also auto-creates named positions: `min` → 0°, `center` → 90°, `max` → 180°
+- Move to Angle: slider + number input, quick buttons (Min/Center/Max) and ± nudges
+- Saved Positions: full CRUD and click-to-move
+  - Create via modal, edit/rename/delete inline, click badge to move immediately
+  - Suggested presets show as quick-add buttons
+  - Persisted per part in `data/servo_calibrations.json`
+- Copy Calibration: copy pulses + saved positions from another standard servo
+  - UI dropdown of same-type servos; server copies and the page refreshes
+- Notes: ES5 client scripts; Bootstrap modals triggered by data attributes; no sockets
+
+API endpoints
+- `POST /setup/calibration/api/standard_servo/:id/move` { angle }
+- `POST /setup/calibration/api/standard_servo/:id/save-pulse` { pulseType(min|center|max), pulseUs }
+- `POST /setup/calibration/api/standard_servo/:id/save-position` { positionName, description?, angle }
+- `GET  /setup/calibration/api/standard_servo/:id/status`
+- `GET  /setup/calibration/api/standard_servo/:id/positions`
+- `DELETE /setup/calibration/api/standard_servo/:id/positions/:name`
+- `POST /setup/calibration/api/standard_servo/:id/positions/:name/update` { description?, angle? }
+- `POST /setup/calibration/api/standard_servo/:id/positions/:oldName/rename` { newName }
+- `POST /setup/calibration/api/standard_servo/:id/reset`
+- `POST /setup/calibration/api/standard_servo/:id/copy-from` { fromPartId }
+
+
+
+## 🔊 Speaker (Design requirement)
+
+- Must support multiple concurrent audio streams routed to the same selected audio output device (shared). All playback for a given Speaker is sent through its configured output.
+
 ## 🧭 Servo (GoBilda 2000 Dual‑Mode) Quick Setup & Testing
 
 This app includes a unified GoBilda model that supports both continuous and positional (multi‑turn) modes.
@@ -162,6 +197,49 @@ The GoBilda dual‑mode servo internally closes the loop in positional mode (500
 - Characters: http://localhost:3000/setup/characters
 - Calibration: http://localhost:3000/setup/calibration
 - Audio: http://localhost:3000/setup/audio
+
+## 🔊 Speakers (Per‑part routing, volume, EQ) — NEW
+
+- Add/Edit a Speaker in Setup → Parts, choose an ALSA Output from the dropdown (scanned via `aplay -L`/`-l`).
+- Persisted per speaker: `config.audioDeviceId`, `config.volume` (0–100), `config.bass`, `config.treble`.
+- All playback for that Speaker is routed to its configured output:
+  - MP3/OGG: `mpg123 -a <device>` with soft volume via `-f <0..32768>` (mapped from 0–100%).
+  - WAV: `aplay -D <device>`.
+- Hardware volume is also applied via ALSA `amixer` on the detected card for the device (tries common controls: Master, PCM, Speaker, Headphone).
+- Multiple concurrent streams to the same output are supported via ALSA mixing (dmix). The app does not serialize streams.
+
+Quick Test
+- Use the part drawer ▶ button → Play Sample, Set Volume, Stop.
+- Default sample: `public/sounds/monster-howl-85304.mp3`.
+
+Troubleshooting
+- If volume appears unchanged, verify `amixer -c <card#> scontrols` shows a writable control. The app tries several controls and falls back to soft volume for MP3.
+- Confirm device works with `aplay -D plughw:1,0 some.wav` or `mpg123 -a plughw:1,0 some.mp3`.
+
+## 🎤 Microphones (Inputs scan + level probe) — NEW
+
+- Add/Edit a Microphone in Setup → Parts, pick an ALSA Input from the dropdown (scanned via `arecord -L`/`-l`).
+- Persisted per mic: `config.deviceId`.
+- Quick Level Test: From the Create/Edit modal, click Quick Level Test to sample RMS for ~0.5s using the selected input.
+- Part drawer test for Microphone includes a Get Level action.
+
+Notes
+- Inputs support concurrent capture using `dsnoop` logical devices where available.
+- The USB camera mic and the USB audio dongle mic should enumerate and can be used simultaneously.
+
+## 🎧 End‑to‑end Audio Smoke Test (Speaker → Microphone)
+
+1) Create a Speaker and select your output (e.g., the USB Audio Dongle).
+2) Create a Microphone and select an input (e.g., USB Camera mic or the dongle mic).
+3) On the Speaker card, open ▶ Test and Play Sample (or a test tone file if you have one).
+4) On the Microphone card, open ▶ Test and click Get Level while the sound plays.
+   - You should see the RMS level spike relative to ambient.
+5) Adjust the Speaker volume in the Edit modal or part drawer and repeat to confirm levels change.
+
+Environment
+- Orlok’s USB Audio Dongle is currently selected for Speaker output. USB Camera provides a working microphone input.
+- mjpg-streamer remains the only webcam streaming path (port 8090) — no WebRTC/WebSocket usage.
+
 - Webcam: http://localhost:3000/setup/webcam
 - Super Powers: http://localhost:3000/setup/super-powers
 - System: http://localhost:3000/setup/system
@@ -215,6 +293,56 @@ bash scripts/test-mjpg-integration.sh
 - **mjpg-streamer web interface**: http://localhost:8090/
 - **Direct stream**: http://localhost:8090/?action=stream
 - **MonsterBox integration**: http://localhost:3000/setup/webcam
+
+
+### 🔧 Dynamic Webcam Device Assignment (Device → mjpg-streamer)
+
+MonsterBox uses mjpg-streamer (port 8090) for MJPEG-only streaming. You can dynamically assign which /dev/videoX the service uses from the Parts UI.
+
+Steps
+1) Assign device to a Webcam part
+   - Setup → Parts → Create/Edit → type=webcam
+   - Click Scan Devices, select a /dev/videoX, then Save (persists as config.devicePath and config.deviceId)
+2) Apply device to mjpg-streamer
+   - Edit the same Webcam part → click “Apply to mjpg-streamer”
+   - The app writes a systemd drop-in at /etc/systemd/system/mjpg-streamer.service.d/override.conf:
+     - Overrides ExecStart to pass input_uvc.so -d /dev/videoX and defaults -r 640x480 -f 15 -q 85
+     - Runs: systemctl daemon-reload && systemctl restart mjpg-streamer
+   - Response includes success/failure and recent journal lines for quick diagnosis
+
+Permissions
+- Writing systemd drop-ins and restarting services requires root.
+- Options:
+  - Run the server with privileges appropriate to manage the service, OR
+  - Configure sudoers for the service commands and a simple wrapper that writes the override file.
+
+Example sudoers (adjust user/group/paths as needed)
+```
+# Allow these commands without password for user 'remote'
+remote ALL=(root) NOPASSWD: /bin/systemctl daemon-reload, /bin/systemctl restart mjpg-streamer, /bin/systemctl is-active mjpg-streamer, /bin/journalctl -u mjpg-streamer -n * --no-pager
+```
+
+Troubleshooting
+- Check service health/logs:
+  - systemctl status mjpg-streamer --no-pager
+  - journalctl -u mjpg-streamer -n 100 --no-pager
+- Inspect cameras:
+  - ls -la /dev/video*
+  - v4l2-ctl --list-devices
+  - GET http://localhost:3000/setup/webcam/api/devices/probe
+- Verify stream URL:
+  - curl -I http://localhost:8090/?action=stream
+
+Notes
+- The legacy “Scan Devices” action on Setup → Webcam is deprecated for assignment; configuration now lives in Setup → Parts.
+- Consider udev rules to persist friendly names per USB ID when multiple cameras are present.
+- Defaults are 640x480 @ 15 fps (MJPG). You can extend models/part config to expose resolution/fps/quality per camera.
+
+TODOs (short list)
+- Wrap systemd writes with an internal sudo-able helper script for finer-grained permissions
+- Expose per-camera resolution/fps/quality in the part editor and apply them when clicking Apply
+- Document optional udev rules examples for stable camera naming by hardware ID
+
 
 ## 🎯 Motion Tracking & Head Tracking
 

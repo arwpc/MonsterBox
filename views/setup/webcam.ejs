@@ -61,7 +61,6 @@
             </div>
             <div class="d-grid gap-2">
               <button id="startStream" class="btn btn-primary">Start Stream</button>
-              <button id="scanDevices" class="btn btn-outline-secondary" type="button">Scan Devices</button>
             </div>
             <div id="deviceResults" class="small text-muted mt-2"></div>
           </div>
@@ -177,21 +176,33 @@
       var headTrackingBtn = document.getElementById('enableHeadTracking');
 
       function loadWebcams() {
+        console.log('🔄 Loading webcam parts...');
         fetch('/setup/parts/api/parts')
           .then(function (r) { return r.json(); })
           .then(function (j) {
+            console.log('📦 Parts data received:', j);
             var sel = document.getElementById('webcamPart');
             sel.innerHTML = '';
             var webcams = (j.parts || []).filter(function (p) { return p.type === 'webcam'; });
+            console.log('📹 Found webcam parts:', webcams);
             if (webcams.length === 0) {
               var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No webcam parts found'; sel.appendChild(opt);
+              console.log('❌ No webcam parts found');
             } else {
-              webcams.forEach(function (p) { var opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name || ('Webcam #' + p.id); sel.appendChild(opt); });
+              webcams.forEach(function (p) {
+                var opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name || ('Webcam #' + p.id);
+                sel.appendChild(opt);
+                console.log('✅ Added webcam option:', p.name, 'ID:', p.id);
+              });
             }
 
             // Also load servo parts for head tracking
             loadServoPartsForHeadTracking(j.parts || []);
-          }).catch(function () { /* ignore */ });
+          }).catch(function (err) {
+            console.error('❌ Error loading webcam parts:', err);
+          });
       }
 
       function loadServoPartsForHeadTracking(allParts) {
@@ -213,33 +224,29 @@
         });
       }
       function start() {
+        console.log('🎬 Start Stream button clicked');
         var id = document.getElementById('webcamPart').value;
-        if (!id) { return; }
+        console.log('📹 Selected webcam ID:', id);
+        if (!id) {
+          console.log('❌ No webcam selected');
+          alert('Please select a webcam part first');
+          return;
+        }
         var img = document.getElementById('webcamStream');
         var no = document.getElementById('noStream');
         var auto = document.getElementById('autoDetect').checked;
         var qs = (auto ? '?auto=1&_ts=' : '?_ts=') + Date.now();
-        img.src = '/setup/webcam/api/parts/' + id + '/stream' + qs;
+        var streamUrl = '/setup/webcam/api/parts/' + id + '/stream' + qs;
+        console.log('🔗 Stream URL:', streamUrl);
+        img.src = streamUrl;
         img.style.display = 'block';
         no.style.display = 'none';
 
         // Setup motion overlay canvas
         setupMotionOverlay();
-      }
-      function scan() {
-        var box = document.getElementById('deviceResults');
-        box.textContent = 'Scanning...';
-        fetch('/setup/webcam/api/devices/probe')
-          .then(function (r) { return r.json(); })
-          .then(function (j) {
-            if (!j || !j.results) { box.textContent = 'No devices found'; return; }
-            var lines = j.results.map(function (it) { return (it.ok ? '✅ ' : '❌ ') + (it.name || it.path) + ' [' + it.path + ']' + (it.info ? ' - ' + it.info : ''); });
-            box.textContent = lines.join('\n');
-          })
-          .catch(function () { box.textContent = 'Error scanning devices'; });
+        console.log('✅ Stream started');
       }
       document.getElementById('startStream').addEventListener('click', start);
-      document.getElementById('scanDevices').addEventListener('click', scan);
 
       // Motion Tracking functionality
       function initMotionTracking() {
@@ -326,11 +333,18 @@
       }
 
       function stopMotionTracking() {
+        var webcamId = document.getElementById('webcamPart').value;
+        if (!webcamId) {
+          document.getElementById('trackingStatusText').textContent = 'No webcam selected';
+          return;
+        }
+
         document.getElementById('trackingStatusText').textContent = 'Stopping motion tracking...';
 
         fetch('/setup/webcam/api/motion-tracking/stop', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webcamId: webcamId })
         })
           .then(function (r) { return r.json(); })
           .then(function (result) {

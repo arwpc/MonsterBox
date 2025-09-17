@@ -1,7 +1,8 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// child_process no longer needed - using mjpg-streamer service only
+import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 
@@ -88,34 +89,73 @@ export const devicesInUse = async (req, res) => {
   }
 };
 
-function probeDeviceFFmpeg(devPath, timeoutMs) {
+function probeDeviceSimple(devPath, timeoutMs) {
   return new Promise(function (resolve) {
+    // Check if device file exists and is accessible
+    try {
+      const stats = fsSync.statSync(devPath);
+      if (!stats.isCharacterDevice()) {
+        return resolve({ path: devPath, ok: false, info: 'Not a character device' });
+      }
+    } catch (e) {
+      return resolve({ path: devPath, ok: false, info: 'Device not found' });
+    }
+
+    // Use v4l2-ctl to check if device is a valid video device
     let done = false;
     let proc;
-    function finish(ok, info) { if (done) return; done = true; try { proc && proc.kill('SIGTERM'); } catch (_) { } resolve({ path: devPath, ok: !!ok, info: info || null }); }
-    const args = ['-hide_banner', '-loglevel', 'error', '-f', 'video4linux2', '-i', devPath, '-frames:v', '1', '-f', 'mjpeg', '-'];
-    try {
-      proc = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    } catch (e) {
-      return finish(false, 'ffmpeg not found');
+    function finish(ok, info) {
+      if (done) return;
+      done = true;
+      try { proc && proc.kill('SIGTERM'); } catch (_) { }
+      resolve({ path: devPath, ok: !!ok, info: info || null });
     }
-    const to = setTimeout(function () { finish(false, 'timeout'); }, Math.max(500, timeoutMs || 1500));
-    proc.stdout.once('data', function () { clearTimeout(to); finish(true, 'ok'); });
-    proc.stderr.on('data', function (d) {
-      const msg = String(d || '');
-      if (/No such file or directory/i.test(msg) || /Device or resource busy/i.test(msg)) {
-        clearTimeout(to); finish(false, msg.trim());
+
+    try {
+      proc = spawn('v4l2-ctl', ['--device', devPath, '--list-formats-ext'], {
+        stdio: ['ignore', 'pipe', 'pipe']
+      });
+    } catch (e) {
+      // Fallback: just check if device exists and is readable
+      try {
+        fsSync.accessSync(devPath, fsSync.constants.R_OK);
+        return resolve({ path: devPath, ok: true, info: 'Device accessible' });
+      } catch (accessErr) {
+        return resolve({ path: devPath, ok: false, info: 'Device not accessible' });
+      }
+    }
+
+    const timeout = setTimeout(function () { finish(false, 'timeout'); }, Math.max(500, timeoutMs || 1500));
+
+    let hasOutput = false;
+    proc.stdout.on('data', function () { hasOutput = true; });
+
+    proc.on('close', function (code) {
+      clearTimeout(timeout);
+      if (hasOutput && code === 0) {
+        finish(true, 'Valid video device');
+      } else {
+        finish(false, `v4l2-ctl failed (code: ${code})`);
       }
     });
-    proc.on('error', function (e) { clearTimeout(to); finish(false, e && e.message); });
-    proc.on('close', function () { /* if not already finished, leave timeout to fire */ });
+
+    proc.on('error', function (e) {
+      clearTimeout(timeout);
+      // Fallback: just check if device exists
+      try {
+        fsSync.accessSync(devPath, fsSync.constants.R_OK);
+        finish(true, 'Device accessible (fallback)');
+      } catch (accessErr) {
+        finish(false, e && e.message);
+      }
+    });
   });
 }
 
 async function chooseFirstWorkingDevice(timeoutMs) {
   const list = await listVideoDevices();
   for (let i = 0; i < list.length; i++) {
-    const res = await probeDeviceFFmpeg(list[i], timeoutMs);
+    const res = await probeDeviceSimple(list[i], timeoutMs);
     if (res.ok) return res.path;
   }
   return null;
@@ -142,7 +182,7 @@ export const probeDevices = async (req, res) => {
     const results = [];
     for (let i = 0; i < devices.length; i++) {
       const name = await getVideoDeviceName(devices[i]);
-      const probe = await probeDeviceFFmpeg(devices[i], timeoutMs);
+      const probe = await probeDeviceSimple(devices[i], timeoutMs);
       const inUse = (typeof _activeVideoUse !== 'undefined' && _activeVideoUse && _activeVideoUse.has(devices[i])) ? _activeVideoUse.get(devices[i]) : null;
       const extra = inUse ? { inUseBy: inUse.kind, pid: inUse.pid, startedAt: inUse.startedAt } : {};
       results.push(Object.assign({ path: devices[i], name: name, ok: probe.ok, info: probe.info }, extra));
@@ -204,14 +244,24 @@ export const setControls = async (req, res) => {
 // Health check for mjpg-streamer service
 async function checkMjpgStreamerHealth() {
   try {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+    }, 3000); // Reduced timeout to 3 seconds
+
     const response = await fetch(MJPG_STREAMER_URL, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000)
+      signal: abortController.signal
     });
+
+    clearTimeout(timeoutId);
     // mjpg-streamer is running if we get any response (even 400/500)
     return response.status !== 0;
   } catch (error) {
-    console.warn('mjpg-streamer health check failed:', error.message);
+    // Only log non-timeout/abort errors to reduce noise
+    if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
+      console.warn('mjpg-streamer health check failed:', error.message);
+    }
     return false;
   }
 }
@@ -253,9 +303,18 @@ export const streamMJPEG = async (req, res) => {
 
     // Proxy the stream from mjpg-streamer
     try {
+      // Create an AbortController for better timeout management
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        abortController.abort();
+      }, 30000); // 30 second timeout
+
       const streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
-        signal: AbortSignal.timeout(30000) // 30 second timeout
+        signal: abortController.signal
       });
+
+      // Clear timeout if fetch succeeds
+      clearTimeout(timeoutId);
 
       if (!streamResponse.ok) {
         throw new Error(`mjpg-streamer returned ${streamResponse.status}: ${streamResponse.statusText}`);
@@ -282,6 +341,10 @@ export const streamMJPEG = async (req, res) => {
       const cleanup = () => {
         if (closed) return;
         closed = true;
+        try {
+          abortController.abort();
+          clearTimeout(timeoutId);
+        } catch (_) { }
         try { _activeVideoUse.delete(devicePath); } catch (_) { }
         try { res.end(); } catch (_) { }
       };
@@ -289,13 +352,14 @@ export const streamMJPEG = async (req, res) => {
       req.on('close', cleanup);
       req.on('aborted', cleanup);
 
-      // Pipe the stream response to client
+      // Pipe the stream response to client with better error handling
       streamResponse.body.pipeTo(new WritableStream({
         write(chunk) {
           if (!closed && !res.destroyed) {
             try {
               res.write(chunk);
             } catch (e) {
+              // Silently handle write errors (client disconnected)
               cleanup();
             }
           }
@@ -307,7 +371,10 @@ export const streamMJPEG = async (req, res) => {
           cleanup();
         }
       })).catch((error) => {
-        console.error('Stream piping error:', error);
+        // Only log non-timeout errors to reduce noise
+        if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
+          console.error('Stream piping error:', error);
+        }
         cleanup();
       });
 
@@ -340,6 +407,89 @@ export const streamMJPEG = async (req, res) => {
 const _activeVideoUse = new Map(); // key: devicePath, val: { kind: 'mjpeg', pid, startedAt }
 
 
+// Apply selected webcam device to mjpg-streamer via systemd drop-in override
+export const applyDeviceToService = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dryRun = (req.query && (req.query.dryRun === '1' || req.query.dryRun === 'true')) || (req.body && (req.body.dryRun === true)) || (process.env.MONSTERBOX_DRY_RUN === 'true');
 
-export default { listControls, setControls, streamMJPEG, listDevices, probeDevices, devicesInUse };
+    const parts = await loadParts();
+    const part = parts.find(p => String(p.id) === String(id));
+    if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
+    if (part.type !== 'webcam') return res.status(400).json({ success: false, error: 'Part is not a webcam' });
+
+    // Determine devicePath
+    let devicePath = (part.config && part.config.devicePath) ? String(part.config.devicePath) : null;
+    if (!devicePath) {
+      const deviceId = (part.config && (part.config.deviceId || part.config.cameraId)) != null ? (part.config.deviceId || part.config.cameraId) : 0;
+      const n = parseInt(deviceId, 10);
+      if (!isNaN(n)) devicePath = '/dev/video' + String(n);
+    }
+    if (!devicePath) devicePath = '/dev/video0';
+
+    // Flags (defaults, can later be model/part configurable)
+    const resolution = (part.config && part.config.resolution) || '640x480';
+    const fps = (part.config && part.config.fps) || 15;
+    const quality = (part.config && part.config.quality) || 85;
+
+    const overrideDir = '/etc/systemd/system/mjpg-streamer.service.d';
+    const overridePath = path.join(overrideDir, 'override.conf');
+    const mjpgBin = '/usr/local/bin/mjpg_streamer';
+    const wwwPath = '/usr/local/share/mjpg-streamer/www';
+
+    const overrideContent = [
+      '[Service]',
+      'ExecStart=',
+      'ExecStart=' + mjpgBin + ' -i "input_uvc.so -d ' + devicePath + ' -r ' + resolution + ' -f ' + fps + ' -q ' + quality + '" -o "output_http.so -p 8090 -w ' + wwwPath + '"',
+      ''
+    ].join('\n');
+
+    const steps = [];
+    if (!dryRun) {
+      await fs.mkdir(overrideDir, { recursive: true }).catch(() => { /* ignore */ });
+      await fs.writeFile(overridePath, overrideContent);
+      steps.push('Wrote drop-in override: ' + overridePath);
+    } else {
+      steps.push('Dry-run: would write override at ' + overridePath);
+    }
+
+    // Helper to run a command and capture output
+    function runCmd(cmd, args) {
+      return new Promise((resolve, reject) => {
+        const proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+        let out = '', err = '';
+        proc.stdout.on('data', (d) => { out += d.toString(); });
+        proc.stderr.on('data', (d) => { err += d.toString(); });
+        proc.on('error', (e) => reject(e));
+        proc.on('close', (code) => resolve({ cmd: cmd + ' ' + (args || []).join(' '), code, stdout: out, stderr: err }));
+      });
+    }
+
+    let results = [];
+    let logs = '';
+    if (!dryRun) {
+      // Reload and restart service
+      const r1 = await runCmd('systemctl', ['daemon-reload']);
+      const r2 = await runCmd('systemctl', ['restart', 'mjpg-streamer']);
+      const r3 = await runCmd('systemctl', ['is-active', 'mjpg-streamer']);
+      results.push(r1, r2, r3);
+      try {
+        const jl = await runCmd('journalctl', ['-u', 'mjpg-streamer', '-n', '50', '--no-pager']);
+        logs = jl.stdout || jl.stderr || '';
+      } catch (_) { /* ignore */ }
+      const active = (r3.stdout || '').trim() === 'active';
+      return res.json({ success: active, devicePath, flags: { resolution, fps, quality }, overridePath, dryRun: false, steps, results, logs, needsSudo: false });
+    }
+
+    // Dry-run response
+    return res.json({ success: true, devicePath, flags: { resolution, fps, quality }, overridePath, dryRun: true, steps, preview: overrideContent });
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    const needsSudo = /EACCES|permission|denied|root|systemctl|journalctl/i.test(msg);
+    return res.status(500).json({ success: false, error: msg, needsSudo, guidance: 'Writing systemd drop-ins and restarting services usually requires root. See README for sudoers wrapper instructions.' });
+  }
+};
+
+
+export default { listControls, setControls, streamMJPEG, listDevices, probeDevices, devicesInUse, applyDeviceToService };
 

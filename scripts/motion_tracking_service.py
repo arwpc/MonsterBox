@@ -101,7 +101,8 @@ class MotionTracker:
                     pass
                 self.stream_conn = None
             req = urllib.request.Request(self.stream_url, headers={'User-Agent': 'MonsterBox/4.0'})
-            old_timeout = socket.getdefaulttimeout(); socket.setdefaulttimeout(10)
+            # Reduced timeout to 3 seconds to prevent long hangs
+            old_timeout = socket.getdefaulttimeout(); socket.setdefaulttimeout(3)
             try:
                 self.stream_conn = urllib.request.urlopen(req)
             finally:
@@ -110,17 +111,27 @@ class MotionTracker:
             self.last_stream_connect = time.time()
             return True
         except Exception as e:
-            logger.warning(f"Stream connect failed: {e}")
+            # Only log connection errors occasionally to reduce noise
+            if time.time() - getattr(self, '_last_error_log', 0) > 30:
+                logger.warning(f"Stream connect failed: {e}")
+                self._last_error_log = time.time()
             self.stream_conn = None
             return False
 
     def _read_mjpeg_frame(self) -> Optional[np.ndarray]:
         if not self.stream_conn:
-            if time.time() - self.last_stream_connect > 1.0:
-                self._connect_stream()
+            # Exponential backoff for reconnection attempts
+            backoff_time = getattr(self, '_reconnect_backoff', 1.0)
+            if time.time() - self.last_stream_connect > backoff_time:
+                if self._connect_stream():
+                    self._reconnect_backoff = 1.0  # Reset backoff on success
+                else:
+                    # Increase backoff time, max 30 seconds
+                    self._reconnect_backoff = min(backoff_time * 2, 30.0)
             return None
         try:
-            chunk = self.stream_conn.read(4096)
+            # Read larger chunks for better performance and lower latency
+            chunk = self.stream_conn.read(32768)  # Increased from 4096 to 32KB
             if not chunk:
                 try:
                     self.stream_conn.close()
@@ -129,20 +140,35 @@ class MotionTracker:
                 self.stream_conn = None
                 return None
             self.frame_buffer += chunk
-            soi = self.frame_buffer.find(b'\xff\xd8')
-            if soi == -1:
-                if len(self.frame_buffer) > 1024*1024:
-                    self.frame_buffer = self.frame_buffer[-4096:]
-                return None
-            eoi = self.frame_buffer.find(b'\xff\xd9', soi+2)
-            if eoi == -1:
-                return None
-            jpeg = self.frame_buffer[soi:eoi+2]
-            self.frame_buffer = self.frame_buffer[eoi+2:]
-            arr = np.frombuffer(jpeg, dtype=np.uint8)
-            return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+            # Find the most recent complete frame to reduce latency
+            last_frame = None
+            while True:
+                soi = self.frame_buffer.find(b'\xff\xd8')
+                if soi == -1:
+                    break
+                eoi = self.frame_buffer.find(b'\xff\xd9', soi+2)
+                if eoi == -1:
+                    break
+
+                # Extract frame
+                jpeg = self.frame_buffer[soi:eoi+2]
+                self.frame_buffer = self.frame_buffer[eoi+2:]
+                last_frame = jpeg
+
+            # Aggressively trim buffer to prevent buildup
+            if len(self.frame_buffer) > 512*1024:  # Reduced from 1MB to 512KB
+                self.frame_buffer = self.frame_buffer[-32768:]  # Keep only last 32KB
+
+            if last_frame:
+                arr = np.frombuffer(last_frame, dtype=np.uint8)
+                return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            return None
         except Exception as e:
-            logger.warning(f"Stream read error: {e}")
+            # Only log read errors occasionally to reduce noise
+            if time.time() - getattr(self, '_last_read_error_log', 0) > 30:
+                logger.warning(f"Stream read error: {e}")
+                self._last_read_error_log = time.time()
             try:
                 if self.stream_conn:
                     self.stream_conn.close()

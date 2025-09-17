@@ -272,14 +272,21 @@ async function stopMotionTrackingInternal(webcamId) {
   const tracker = activeTrackers.get(webcamId);
   if (tracker) {
     try {
-      if (!tracker.killed) {
+      if (!tracker.killed && tracker.exitCode == null) {
         tracker.kill('SIGTERM');
 
-        // Wait for process to exit
-        await new Promise((resolve) => {
-          tracker.on('exit', resolve);
-          setTimeout(resolve, 2000); // Timeout after 2s
+        // Wait briefly for clean exit
+        const exited = await new Promise(function (resolve) {
+          var resolved = false;
+          function done(ok) { if (!resolved) { resolved = true; resolve(ok); } }
+          tracker.once('exit', function () { done(true); });
+          setTimeout(function () { done(false); }, 2000);
         });
+
+        // Escalate if still alive
+        if (!exited && tracker.exitCode == null) {
+          try { tracker.kill('SIGKILL'); } catch (e) { /* ignore */ }
+        }
       }
     } catch (killError) {
       console.warn('Error killing tracker process:', killError.message);
@@ -607,6 +614,5 @@ export const cleanup = async () => {
   console.log('Motion tracking cleanup complete');
 };
 
-// Handle process termination
-process.on('SIGTERM', cleanup);
-process.on('SIGINT', cleanup);
+// Note: Signal handlers removed to prevent conflicts with main server cleanup
+// The main server should call cleanup() during its shutdown process
