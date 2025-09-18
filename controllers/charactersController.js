@@ -92,5 +92,55 @@ export async function setSelected(req, res) {
   }
 }
 
-export default { getAll, getOne, create, update, remove, getCurrent, setSelected };
+export async function getAssignments(req, res) {
+  try {
+    const characters = await loadCharacters();
+    const assignments = {};
+
+    characters.forEach(character => {
+      if (character.elevenLabsAgentId) {
+        assignments[character.id] = { agentId: character.elevenLabsAgentId };
+      }
+    });
+
+    res.json(assignments);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function updateAssignment(req, res) {
+  const characterId = parseId(req.body && req.body.characterId);
+  const agentId = req.body && req.body.agentId ? String(req.body.agentId) : null;
+
+  if (characterId === null) {
+    return res.status(400).json({ success: false, error: 'Invalid character ID' });
+  }
+
+  try {
+    const character = await getCharacterById(characterId);
+    if (!character) {
+      return res.status(404).json({ success: false, error: 'Character not found' });
+    }
+
+    // Update the character's agent assignment
+    const updatedData = { ...character };
+    if (agentId) {
+      updatedData.elevenLabsAgentId = agentId;
+    } else {
+      delete updatedData.elevenLabsAgentId;
+    }
+
+    await updateCharacter(characterId, updatedData);
+
+    res.json({
+      success: true,
+      message: agentId ? 'Agent assigned successfully' : 'Agent assignment removed'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export default { getAll, getOne, create, update, remove, getCurrent, setSelected, getAssignments, updateAssignment };
 

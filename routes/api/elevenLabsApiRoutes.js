@@ -1,0 +1,285 @@
+/**
+ * MonsterBox 4.0 - ElevenLabs API Routes
+ * RESTful API endpoints for ElevenLabs integration
+ */
+
+import express from 'express';
+import multer from 'multer';
+import elevenLabsConfigService from '../../services/elevenLabsConfigService.js';
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        // Accept audio files
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio files are allowed'), false);
+        }
+    }
+});
+
+// Middleware to check if ElevenLabs is configured
+const requireElevenLabsConfig = (req, res, next) => {
+    if (!elevenLabsConfigService.isElevenLabsConfigured()) {
+        return res.status(400).json({
+            success: false,
+            error: 'ElevenLabs API not configured. Please set ELEVENLABS_API_KEY in .env file.'
+        });
+    }
+    next();
+};
+
+// Configuration status
+router.get('/status', (req, res) => {
+    try {
+        const isConfigured = elevenLabsConfigService.isElevenLabsConfigured();
+        const maskedApiKey = elevenLabsConfigService.getMaskedApiKey();
+        const audioConfig = elevenLabsConfigService.getAudioConfig();
+
+        res.json({
+            success: true,
+            configured: isConfigured,
+            apiKey: maskedApiKey,
+            audioConfig
+        });
+    } catch (error) {
+        console.error('Error getting ElevenLabs status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get configuration status'
+        });
+    }
+});
+
+// Test API connection
+router.post('/test-connection', requireElevenLabsConfig, async (req, res) => {
+    try {
+        // Import services dynamically to avoid circular dependencies
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+
+        // Test by fetching voices (lightweight operation)
+        const result = await elevenLabsTTSService.getVoices();
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'ElevenLabs API connection successful',
+                voiceCount: result.voices.length
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                error: result.error
+            });
+        }
+    } catch (error) {
+        console.error('API connection test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: 'API connection test failed'
+        });
+    }
+});
+
+// STT Routes
+router.get('/stt/capabilities', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsSTTService } = await import('../../services/elevenLabsSTTService.js');
+        const capabilities = await elevenLabsSTTService.getSTTCapabilities();
+        res.json(capabilities);
+    } catch (error) {
+        console.error('Error getting STT capabilities:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get STT capabilities'
+        });
+    }
+});
+
+router.post('/stt/transcribe', requireElevenLabsConfig, upload.single('audio'), async (req, res) => {
+    try {
+        const { default: elevenLabsSTTService } = await import('../../services/elevenLabsSTTService.js');
+
+        // Handle file upload
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No audio file provided'
+            });
+        }
+
+        const audioBuffer = req.file.buffer;
+        const options = req.body || {};
+
+        const result = await elevenLabsSTTService.transcribeAudio(audioBuffer, options);
+        res.json(result);
+    } catch (error) {
+        console.error('STT transcription error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Transcription failed'
+        });
+    }
+});
+
+// Agent Routes
+router.get('/agents', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.getAgents();
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting agents:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get agents'
+        });
+    }
+});
+
+router.get('/agents/:id', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.getAgent(req.params.id);
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting agent:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get agent'
+        });
+    }
+});
+
+router.post('/agents', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.createAgent(req.body);
+        res.json(result);
+    } catch (error) {
+        console.error('Error creating agent:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create agent'
+        });
+    }
+});
+
+router.patch('/agents/:id', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.updateAgent(req.params.id, req.body);
+        res.json(result);
+    } catch (error) {
+        console.error('Error updating agent:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update agent'
+        });
+    }
+});
+
+router.delete('/agents/:id', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.deleteAgent(req.params.id);
+        res.json(result);
+    } catch (error) {
+        console.error('Error deleting agent:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete agent'
+        });
+    }
+});
+
+router.get('/models', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const result = await elevenLabsAgentService.getAvailableModels();
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting models:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get models'
+        });
+    }
+});
+
+// TTS Routes
+router.get('/voices', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const result = await elevenLabsTTSService.getVoices();
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting voices:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get voices'
+        });
+    }
+});
+
+router.get('/voices/:id', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const result = await elevenLabsTTSService.getVoice(req.params.id);
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting voice:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get voice'
+        });
+    }
+});
+
+router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const { text, voice_id, options } = req.body;
+
+        const result = await elevenLabsTTSService.generateSpeech(text, voice_id, options);
+
+        if (result.success) {
+            res.set({
+                'Content-Type': result.contentType,
+                'Content-Length': result.audioBuffer.length
+            });
+            res.send(result.audioBuffer);
+        } else {
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        console.error('TTS generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'TTS generation failed'
+        });
+    }
+});
+
+router.get('/tts/models', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const result = await elevenLabsTTSService.getTTSModels();
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting TTS models:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get TTS models'
+        });
+    }
+});
+
+export default router;

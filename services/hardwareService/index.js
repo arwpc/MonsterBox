@@ -1,12 +1,14 @@
 /**
  * Hardware Service Index for MonsterBox 4.0
- * Unified interface for all 11 Part types with direct local function calls
+ * Unified interface for all 11 Part types with PipeWire integration
  */
 
 import servoService from './servo.js';
 import pca9685Service from './pca9685.js';
 import actuatorService from './actuator.js';
 import { runWrapper } from './exec.js';
+import pipewireService from '../pipewireService.js';
+import streamRoutingService from '../streamRoutingService.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -710,44 +712,95 @@ const HARDWARE_CONTROLLERS = {
             };
         },
 
-        async getLevel({ deviceId = 0 }) {
+        async getLevel({ deviceId = 'default', sampleRate = 16000, channels = 1, duration = 0.15 }) {
+            console.log(`🎤 Getting level for PipeWire source: ${deviceId}`);
+
+            async function probe(dev) {
+                const out = await runWrapper('microphone_cli.py',
+                    ['get_level', String(dev), String(sampleRate), String(channels), String(duration)],
+                    { enableLogging: false, timeoutMs: 5000 });
+                return parsePythonJSON(out);
+            }
+
             try {
-                const out = await runWrapper('microphone_cli.py', ['get_level', String(deviceId), '44100', '1', '1']);
-                const parsed = parsePythonJSON(out);
+                let used = deviceId || 'default';
+                let parsed = await probe(used);
+                let fallbackUsed = false;
+
+                if (!parsed || parsed.status !== 'success') {
+                    // Try PipeWire/Pulse fallbacks
+                    const fallbacks = ['default', 'pulse'].filter(d => String(d) !== String(used));
+                    for (let i = 0; i < fallbacks.length; i++) {
+                        try {
+                            const p = await probe(fallbacks[i]);
+                            if (p && p.status === 'success') {
+                                parsed = p;
+                                used = fallbacks[i];
+                                fallbackUsed = true;
+                                break;
+                            }
+                        } catch (_) { /* ignore */ }
+                    }
+                }
+
                 const success = parsed ? parsed.status === 'success' : false;
                 const level = parsed && (parsed.level || parsed.audio_level);
+
                 return {
                     success,
                     partType: 'microphone',
-                    deviceId,
-                    level,
+                    deviceId: used,
+                    level: level || 0,
                     timestamp: new Date().toISOString(),
-                    message: (parsed && parsed.message) || `Microphone ${deviceId} level read`
+                    message: (parsed && parsed.message) || `PipeWire microphone ${used} level: ${level || 0}`,
+                    fallbackUsed,
+                    sampleRate,
+                    channels,
+                    duration
                 };
             } catch (err) {
-                return { success: false, partType: 'microphone', deviceId, error: String(err.message || err) };
+                console.error(`🎤 Microphone level error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'microphone',
+                    deviceId,
+                    error: String(err.message || err),
+                    level: 0
+                };
             }
         }
     },
 
-    // 🔊 Speaker - audio output devices (per-speaker routing)
+    // 🔊 Speaker - PipeWire audio output devices with stream routing
     speaker: {
-        async play({ audioDeviceId, deviceId = 0, filename, volume = 50, bass, treble }) {
+        async play({ audioDeviceId, deviceId = 'default', filename, volume = 50, bass, treble, partId = null }) {
             try {
+                console.log(`🔊 Playing ${filename} on PipeWire sink: ${audioDeviceId || deviceId}`);
+
                 const args = ['play', String(filename)];
                 if (typeof volume === 'number') args.push(String(volume));
-                // prefer string device id from config
-                const dev = audioDeviceId || deviceId;
+
+                // Use PipeWire sink ID
+                const dev = audioDeviceId || deviceId || 'default';
                 if (dev !== undefined && dev !== null && String(dev) !== '') {
                     args.push('--device');
                     args.push(String(dev));
                 }
-                // pass-through EQ placeholders (wrapper may ignore if unsupported)
+
+                // Pass-through EQ placeholders
                 if (typeof bass === 'number') { args.push('--bass'); args.push(String(bass)); }
                 if (typeof treble === 'number') { args.push('--treble'); args.push(String(treble)); }
+
                 const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
+
+                let streamId = null;
+                if (success && parsed.pid) {
+                    // Register the stream for routing management
+                    streamId = streamRoutingService.registerStream(parsed.pid, filename, dev, partId);
+                }
+
                 return {
                     success,
                     partType: 'speaker',
@@ -755,58 +808,160 @@ const HARDWARE_CONTROLLERS = {
                     filename,
                     volume,
                     pid: parsed && parsed.pid,
-                    message: (parsed && parsed.message) || `Speaker ${dev} play`
+                    streamId: streamId,
+                    player: parsed && parsed.player,
+                    message: (parsed && parsed.message) || `PipeWire speaker ${dev} playing ${filename}`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, filename, error: String(err.message || err) };
+                console.error(`🔊 Speaker play error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    deviceId: audioDeviceId || deviceId,
+                    filename,
+                    error: String(err.message || err)
+                };
             }
         },
 
-        async setVolume({ audioDeviceId, deviceId = 0, volume }) {
+        async setVolume({ audioDeviceId, deviceId = 'default', volume }) {
             if (volume < 0 || volume > 100) {
                 throw new Error(`Invalid volume: ${volume}%. Must be 0-100%`);
             }
             try {
+                console.log(`🔊 Setting volume ${volume}% for PipeWire sink: ${audioDeviceId || deviceId}`);
+
                 const args = ['set_volume', String(volume)];
-                const dev = audioDeviceId || deviceId;
+                const dev = audioDeviceId || deviceId || 'default';
                 if (dev !== undefined && dev !== null && String(dev) !== '') {
                     args.push('--device');
                     args.push(String(dev));
                 }
+
                 const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
+
                 return {
                     success,
                     partType: 'speaker',
                     deviceId: dev,
                     volume,
-                    message: (parsed && parsed.message) || `Speaker ${dev} volume set to ${volume}%`
+                    message: (parsed && parsed.message) || `PipeWire speaker ${dev} volume set to ${volume}%`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, error: String(err.message || err) };
+                console.error(`🔊 Speaker volume error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    deviceId: audioDeviceId || deviceId,
+                    error: String(err.message || err)
+                };
             }
         },
 
-        async stop({ audioDeviceId, deviceId = 0 }) {
+        async stop({ audioDeviceId, deviceId = 'default', partId = null }) {
             try {
+                console.log(`🔊 Stopping PipeWire speaker: ${audioDeviceId || deviceId}`);
+
+                // Stop streams via routing service if partId provided
+                if (partId) {
+                    const results = await streamRoutingService.stopStreamsForPart(partId);
+                    console.log(`🔊 Stopped ${results.length} streams for part ${partId}`);
+                }
+
                 const args = ['stop'];
-                const dev = audioDeviceId || deviceId;
+                const dev = audioDeviceId || deviceId || 'default';
                 if (dev !== undefined && dev !== null && String(dev) !== '') {
                     args.push('--device');
                     args.push(String(dev));
                 }
+
                 const out = await runWrapper('speaker_cli.py', args);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : false;
+
                 return {
                     success,
                     partType: 'speaker',
                     deviceId: dev,
-                    message: (parsed && parsed.message) || `Speaker ${dev} stopped`
+                    message: (parsed && parsed.message) || `PipeWire speaker ${dev} stopped`
                 };
             } catch (err) {
-                return { success: false, partType: 'speaker', deviceId: audioDeviceId || deviceId, error: String(err.message || err) };
+                console.error(`🔊 Speaker stop error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    deviceId: audioDeviceId || deviceId,
+                    error: String(err.message || err)
+                };
+            }
+        },
+
+        // New PipeWire stream routing functions
+        async moveStream({ streamId, sinkId }) {
+            try {
+                console.log(`🔄 Moving stream ${streamId} to sink ${sinkId}`);
+                const result = await streamRoutingService.moveStreamToSink(streamId, sinkId);
+                return {
+                    success: true,
+                    partType: 'speaker',
+                    streamId,
+                    sinkId,
+                    message: `Stream ${streamId} moved to ${sinkId}`
+                };
+            } catch (err) {
+                console.error(`🔄 Stream move error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    streamId,
+                    sinkId,
+                    error: String(err.message || err)
+                };
+            }
+        },
+
+        async listStreams({ partId = null }) {
+            try {
+                const streams = partId
+                    ? streamRoutingService.getStreamsForPart(partId)
+                    : streamRoutingService.getActiveStreams();
+
+                return {
+                    success: true,
+                    partType: 'speaker',
+                    streams: streams,
+                    count: streams.length,
+                    message: `Found ${streams.length} active streams`
+                };
+            } catch (err) {
+                console.error(`🔊 List streams error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    error: String(err.message || err),
+                    streams: []
+                };
+            }
+        },
+
+        async getStreamStats() {
+            try {
+                const stats = streamRoutingService.getStreamStats();
+                return {
+                    success: true,
+                    partType: 'speaker',
+                    stats: stats,
+                    message: `Stream statistics retrieved`
+                };
+            } catch (err) {
+                console.error(`🔊 Stream stats error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'speaker',
+                    error: String(err.message || err)
+                };
             }
         }
     },
@@ -850,6 +1005,111 @@ const HARDWARE_CONTROLLERS = {
                 cameraId: cameraId,
                 message: `Head tracking stopped on camera ${cameraId}`
             };
+        }
+    },
+
+    // 🎵 PipeWire Audio System Integration
+    pipewire: {
+        async listSinks() {
+            try {
+                const sinks = await pipewireService.listSinks();
+                return {
+                    success: true,
+                    partType: 'pipewire',
+                    sinks: sinks,
+                    count: sinks.length,
+                    message: `Found ${sinks.length} PipeWire sinks`
+                };
+            } catch (err) {
+                console.error(`🎵 PipeWire list sinks error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'pipewire',
+                    error: String(err.message || err),
+                    sinks: []
+                };
+            }
+        },
+
+        async listSources() {
+            try {
+                const sources = await pipewireService.listSources();
+                return {
+                    success: true,
+                    partType: 'pipewire',
+                    sources: sources,
+                    count: sources.length,
+                    message: `Found ${sources.length} PipeWire sources`
+                };
+            } catch (err) {
+                console.error(`🎵 PipeWire list sources error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'pipewire',
+                    error: String(err.message || err),
+                    sources: []
+                };
+            }
+        },
+
+        async checkAvailability() {
+            try {
+                const tools = await pipewireService.checkPipeWireAvailability();
+                return {
+                    success: true,
+                    partType: 'pipewire',
+                    tools: tools,
+                    message: 'PipeWire availability checked'
+                };
+            } catch (err) {
+                console.error(`🎵 PipeWire availability check error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'pipewire',
+                    error: String(err.message || err),
+                    tools: {}
+                };
+            }
+        },
+
+        async setDefaultSink({ sinkId }) {
+            try {
+                const result = await pipewireService.setDefaultSink(sinkId);
+                return {
+                    success: result.success,
+                    partType: 'pipewire',
+                    sinkId: sinkId,
+                    message: result.success ? `Default sink set to ${sinkId}` : result.error
+                };
+            } catch (err) {
+                console.error(`🎵 Set default sink error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'pipewire',
+                    sinkId: sinkId,
+                    error: String(err.message || err)
+                };
+            }
+        },
+
+        async setDefaultSource({ sourceId }) {
+            try {
+                const result = await pipewireService.setDefaultSource(sourceId);
+                return {
+                    success: result.success,
+                    partType: 'pipewire',
+                    sourceId: sourceId,
+                    message: result.success ? `Default source set to ${sourceId}` : result.error
+                };
+            } catch (err) {
+                console.error(`🎵 Set default source error:`, err.message);
+                return {
+                    success: false,
+                    partType: 'pipewire',
+                    sourceId: sourceId,
+                    error: String(err.message || err)
+                };
+            }
         }
     }
 };
@@ -969,9 +1229,14 @@ export function getSupportedPartTypes() {
     return Object.keys(HARDWARE_CONTROLLERS);
 }
 
+// Initialize PipeWire stream routing service
+streamRoutingService.startPeriodicCleanup(30000); // Clean up dead streams every 30 seconds
+
 export default {
     controlPart,
     getAvailableActions,
     getSupportedPartTypes,
-    HARDWARE_CONTROLLERS
+    HARDWARE_CONTROLLERS,
+    pipewireService,
+    streamRoutingService
 };

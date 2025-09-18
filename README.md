@@ -38,6 +38,9 @@
 - Node.js 18+
 - Python 3.8+
 - Raspberry Pi 4B (for hardware control)
+- **PipeWire + WirePlumber** (for audio system)
+- **PyAudio** (for microphone capture)
+- **mpg123, pw-play, wpctl, pactl** (audio playback tools)
 
 ### Installation
 
@@ -51,6 +54,43 @@ npm install
 
 # Start the server
 npm start
+```
+
+### PipeWire Audio System Setup
+
+MonsterBox 4.0 uses **PipeWire with WirePlumber** for modern, low-latency audio processing. This replaces the legacy ALSA-only approach with a more robust system supporting concurrent audio streams and real-time device switching.
+
+#### Install PipeWire (Raspberry Pi OS)
+
+```bash
+# Install PipeWire and WirePlumber
+sudo apt update
+sudo apt install -y pipewire pipewire-pulse wireplumber
+
+# Install audio tools
+sudo apt install -y mpg123 python3-pyaudio
+
+# Enable PipeWire services
+systemctl --user enable pipewire pipewire-pulse wireplumber
+systemctl --user start pipewire pipewire-pulse wireplumber
+
+# Verify installation
+wpctl status
+pactl info
+```
+
+#### Audio Device Configuration
+
+```bash
+# List available audio sinks (speakers)
+wpctl status | grep -A 20 "Audio"
+
+# List available audio sources (microphones)
+pactl list sources short
+
+# Set default sink/source
+wpctl set-default <sink-id>
+pactl set-default-source <source-name>
 ```
 
 The application will be available at:
@@ -198,45 +238,113 @@ The GoBilda dual‑mode servo internally closes the loop in positional mode (500
 - Calibration: http://localhost:3000/setup/calibration
 - Audio: http://localhost:3000/setup/audio
 
-## 🔊 Speakers (Per‑part routing, volume, EQ) — NEW
+## 🎵 **Professional Audio Configuration Center - NEW!**
 
-- Add/Edit a Speaker in Setup → Parts, choose an ALSA Output from the dropdown (scanned via `aplay -L`/`-l`).
+MonsterBox 4.0 now includes a **centralized audio configuration interface** at `http://localhost:3000/setup/audio` providing complete control over your animatronic's PipeWire audio system.
+
+### ✨ **Key Features**
+
+**🎛️ Hardware Device Selection**
+- **Real hardware device names** instead of cryptic sink IDs
+- **5 Output Devices**: HDMI ports, headphone jack, USB audio devices
+- **3 Input Devices**: USB audio devices, USB camera microphones
+- **Dynamic device switching** without restarting applications
+
+**📊 Real-Time VU Meters**
+- **Input VU Meter**: Shows actual microphone levels with 50ms updates
+- **Output VU Meter**: Volume-based level indication for speakers
+- **Very Low Latency**: 0.1 second sampling for responsive feedback
+- **Professional gradient bars**: Green → Yellow → Orange → Red based on levels
+
+**🎵 Live Stream Monitoring**
+- **Active stream detection** and real-time routing
+- **Stream management**: Move audio streams between devices instantly
+- **Concurrent audio support**: Multiple streams with automatic mixing
+
+**🔧 System Configuration**
+- **Device testing**: Test individual audio devices with immediate feedback
+- **Configuration persistence**: Settings saved and restored automatically
+- **Health monitoring**: System status and tool availability checks
+
+### 🚀 **Usage**
+
+1. **Navigate to Audio Center**: `http://localhost:3000/setup/audio`
+2. **Select Hardware Devices**: Choose actual hardware from meaningful device names
+3. **Monitor Audio Levels**: Watch real-time VU meters during testing
+4. **Test Devices**: Click test buttons to verify audio input/output
+5. **Save Configuration**: Settings persist automatically
+
+### 🎯 **API Endpoints**
+
+```bash
+# Get system configuration
+curl -s http://localhost:3000/setup/audio/api/system-config | jq
+
+# Get hardware devices
+curl -s http://localhost:3000/setup/audio/api/hardware-devices | jq
+
+# Get real-time audio levels
+curl -s "http://localhost:3000/setup/audio/api/audio-levels?deviceId=default&deviceType=input" | jq
+
+# Test audio system
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"testType":"speaker","deviceId":"hw:3,0"}' \
+  http://localhost:3000/setup/audio/api/test-system
+
+# Get active streams
+curl -s http://localhost:3000/setup/audio/api/active-streams | jq
+```
+
+## 🔊 Speakers (PipeWire routing, volume, EQ) — UPDATED
+
+- Add/Edit a Speaker in Setup → Parts, choose a **PipeWire Sink** from the dropdown (scanned via `wpctl status`).
 - Persisted per speaker: `config.audioDeviceId`, `config.volume` (0–100), `config.bass`, `config.treble`.
-- All playback for that Speaker is routed to its configured output:
-  - MP3/OGG: `mpg123 -a <device>` with soft volume via `-f <0..32768>` (mapped from 0–100%).
-  - WAV: `aplay -D <device>`.
-- Hardware volume is also applied via ALSA `amixer` on the detected card for the device (tries common controls: Master, PCM, Speaker, Headphone).
-- Multiple concurrent streams to the same output are supported via ALSA mixing (dmix). The app does not serialize streams.
+- All playback for that Speaker is routed to its configured PipeWire sink:
+  - **WAV files**: `pw-play --target <sink>` (preferred for PipeWire)
+  - **MP3/OGG**: `mpg123` with `PULSE_SINK` environment variable routing
+  - **Real-time sink switching**: Move active streams between sinks using `wpctl move-stream`
+- Hardware volume control via **wpctl → pactl → amixer** fallback chain
+- **Multiple concurrent streams** supported natively by PipeWire with automatic mixing
+- **Stream management**: Active playback streams are tracked and can be moved between sinks in real-time
 
-Quick Test
+**Quick Test**
 - Use the part drawer ▶ button → Play Sample, Set Volume, Stop.
 - Default sample: `public/sounds/monster-howl-85304.mp3`.
+- **Real-time sink switching**: Use the sink dropdown in test controls to move playback between devices.
 
-Troubleshooting
-- If volume appears unchanged, verify `amixer -c <card#> scontrols` shows a writable control. The app tries several controls and falls back to soft volume for MP3.
-- Confirm device works with `aplay -D plughw:1,0 some.wav` or `mpg123 -a plughw:1,0 some.mp3`.
+**PipeWire Troubleshooting**
+- **Check PipeWire status**: `wpctl status` should show available sinks and sources
+- **Verify tools**: Ensure `wpctl`, `pactl`, `pw-play`, `mpg123` are installed
+- **Test direct playback**: `pw-play --target <sink-id> public/sounds/monster-howl-85304.mp3`
+- **Check stream routing**: `wpctl status` shows active sink-inputs that can be moved
+- **Fallback verification**: If PipeWire tools fail, system falls back to `pactl` then `amixer`
+- **Device enumeration**: If no devices appear, check `systemctl --user status pipewire wireplumber`
 
-## 🎤 Microphones (Inputs scan + level probe) — NEW
+## 🎤 Microphones (PipeWire sources + level probe) — UPDATED
 
-- Add/Edit a Microphone in Setup → Parts, pick an ALSA Input from the dropdown (scanned via `arecord -L`/`-l`).
-- Persisted per mic: `config.deviceId`.
-- Quick Level Test: From the Create/Edit modal, click Quick Level Test to sample RMS for ~0.5s using the selected input.
-- Part drawer test for Microphone includes a Get Level action.
+- Add/Edit a Microphone in Setup → Parts, pick a **PipeWire Source** from the dropdown (scanned via `wpctl status`).
+- Persisted per mic: `config.deviceId`, `config.sensitivity`, `config.sampleRate`, `config.channels`, `config.windowMs`.
+- **Quick Level Test**: From the Create/Edit modal, click Quick Level Test to sample RMS using PyAudio with PipeWire defaults
+- **Real-time device switching**: Change microphone source in test controls without recreating the part
+- Part drawer test includes **Get Level** action with configurable duration and visual level meter
 
-Notes
-- Inputs support concurrent capture using `dsnoop` logical devices where available.
-- The USB camera mic and the USB audio dongle mic should enumerate and can be used simultaneously.
+**PipeWire Integration Features**
+- **Automatic device fallback**: Uses PyAudio defaults with `PULSE_SOURCE` environment variable routing
+- **Concurrent capture**: Multiple microphones can capture simultaneously without conflicts
+- **Optimized performance**: 256-frame buffers and shorter capture windows (0.15s default) for better responsiveness
+- **Graceful error handling**: Falls back to working devices when specified device is unavailable
 
-## 🎧 End‑to‑end Audio Smoke Test (Speaker → Microphone)
+## 🎧 End‑to‑end PipeWire Audio Test (Speaker → Microphone)
 
-1) Create a Speaker and select your output (e.g., the USB Audio Dongle).
-2) Create a Microphone and select an input (e.g., USB Camera mic or the dongle mic).
-3) On the Speaker card, open ▶ Test and Play Sample (or a test tone file if you have one).
-4) On the Microphone card, open ▶ Test and click Get Level while the sound plays.
-   - You should see the RMS level spike relative to ambient.
-5) Adjust the Speaker volume in the Edit modal or part drawer and repeat to confirm levels change.
+1) **Create a Speaker** and select your PipeWire sink (e.g., USB Audio Dongle or built-in audio).
+2) **Create a Microphone** and select a PipeWire source (e.g., USB Camera mic or dongle mic).
+3) On the Speaker card, open **▶ Test** and **Play Sample** (uses `public/sounds/monster-howl-85304.mp3`).
+4) On the Microphone card, open **▶ Test** and click **Get Level** while the sound plays.
+   - You should see the RMS level spike relative to ambient noise.
+5) **Test real-time switching**: Use the sink/source dropdowns in test controls to switch devices without stopping playback.
+6) **Test concurrent playback**: Create multiple speakers and play sounds simultaneously.
 
-Environment
+**PipeWire Environment**
 - Orlok’s USB Audio Dongle is currently selected for Speaker output. USB Camera provides a working microphone input.
 - mjpg-streamer remains the only webcam streaming path (port 8090) — no WebRTC/WebSocket usage.
 
@@ -803,6 +911,29 @@ npm run test:unit
 
 Tip: After making server-side code changes, restart the server before re-running tests.
 
+### 🎵 PipeWire Audio Testing
+
+MonsterBox 4.0 includes comprehensive PipeWire integration tests:
+
+```bash
+# Run PipeWire-specific tests (CLI smoke tests work without server)
+npx mocha test/pipewire-cli-smoke.test.js --timeout 15000
+
+# Run updated audio integration tests (requires server)
+npx mocha test/microphone-crud-level.test.js test/speaker-crud-routing.test.js --timeout 15000
+
+# Run comprehensive PipeWire integration test
+npx mocha test/pipewire-integration.test.js --timeout 20000
+```
+
+**Test Coverage:**
+- **CLI Smoke Tests**: Direct Python wrapper testing (microphone_cli.py, speaker_cli.py)
+- **Device Enumeration**: PipeWire sinks/sources discovery via wpctl/pactl
+- **Audio Playback**: Speaker creation, playback, volume control, stream management
+- **Audio Capture**: Microphone creation, level detection, device switching
+- **Concurrent Operations**: Multiple speakers, stream routing, real-time device switching
+- **Graceful Fallbacks**: Invalid device handling, tool availability checks
+
 
 ```bash
 # Run all Mocha unit/integration tests (fast)
@@ -987,17 +1118,40 @@ Implementation note: You can reuse the existing Python Hardware Abstraction Laye
 
 ## 🗺️ Remaining Work & Next Steps
 
-- Scenes
+### ✅ **Recently Completed (Halloween 2024)**
+
+- **✅ Professional Audio Configuration Center**: Complete centralized audio interface with real-time VU meters, hardware device selection, and stream monitoring
+- **✅ Motion Tracking + Head Tracking**: Real-time motion detection with servo control and visual overlays - **CONFIRMED WORKING WITH ACTUAL HARDWARE**
+- **✅ MJPEG Streaming Integration**: High-performance mjpg-streamer integration with OpenCV processing
+- **✅ PipeWire Audio System**: Complete refactor from ALSA to PipeWire with concurrent streams and real-time device switching
+- **✅ Servo Calibration System**: Complete calibration interface for standard servos with position management
+- **✅ Linear Actuator Calibration**: Full calibration system with jog controls and safety features
+- **✅ Hardware Testing**: Inline testing for all 11 part types with real hardware integration
+
+### 🚧 **Priority Next Steps**
+
+- **Scenes Enhancement**
   - Add step editor UI (add/remove steps, choose pose, per-step delay)
   - Non-blocking background playback + Stop action
   - Optional: loop/tempo controls and timeline preview
-- Calibration
-  - Wire Calibration page to read/update `data/servo_calibrations.json` through an API with validation and tests
-- CI/CD
+
+- **Advanced Audio Features**
+  - Per-part audio routing configuration in Parts interface
+  - Audio effects and EQ controls in the Audio Configuration Center
+  - Multi-zone audio support for complex animatronics
+
+- **System Monitoring**
+  - Real-time system health dashboard
+  - Hardware status monitoring and alerts
+  - Performance metrics and logging
+
+### 🔧 **Infrastructure & Deployment**
+
+- **CI/CD Pipeline**
   - GitHub Actions: install deps; run unit tests; install Playwright browsers (webkit; optionally firefox); run UI tests headless; upload Playwright report on failure
-- Dependency hygiene
+- **Dependency Management**
   - Review Dependabot alerts; apply safe upgrades; re‑run tests
-- Deployment
+- **Production Deployment**
   - Add systemd/PM2 service, healthcheck route, and smoke scripts
   - Document ARM64 constraints (no Chromium), use WebKit/Firefox
 

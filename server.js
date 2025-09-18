@@ -25,6 +25,8 @@ import liveDashboardRoutes from './routes/live/dashboard.js';
 import scenesRoutes from './routes/scenes/index.js';
 import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
+import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
+import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,6 +77,8 @@ app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
 app.use('/poses', posesRoutes);
+app.use('/ai-settings', aiSettingsRoutes);
+app.use('/api/elevenlabs', elevenLabsApiRoutes);
 
 // Main dashboard route
 app.get('/', (req, res) => {

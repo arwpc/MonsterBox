@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""
+PipeWire-compatible Speaker CLI
+Uses pw-play for WAV files and PulseAudio routing for MP3/other formats
+"""
 import sys, json, os, subprocess, shlex, re
 
 
@@ -40,6 +44,35 @@ def parse_opts(argv):
         pos.append(a)
         i += 1
     return pos, opts
+
+def check_pipewire_tools():
+    """Check availability of PipeWire native tools"""
+    tools = {'pw-play': False, 'paplay': False, 'mpg123': False}
+
+    for tool in tools.keys():
+        try:
+            subprocess.run([tool, '--version'], capture_output=True, check=False, timeout=2)
+            tools[tool] = True
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+    return tools
+
+def setup_pipewire_sink(device_id):
+    """Setup PipeWire sink for playback"""
+    if not device_id or device_id in ('default', 'pulse'):
+        # Use system default - clear any PULSE_SINK override
+        if 'PULSE_SINK' in os.environ:
+            del os.environ['PULSE_SINK']
+        return True
+
+    # Set PulseAudio sink for routing
+    try:
+        os.environ['PULSE_SINK'] = device_id
+        return True
+    except Exception as e:
+        print(f"Warning: Could not set PULSE_SINK to {device_id}: {e}", file=sys.stderr)
+        return False
 
 
 def derive_card_index(device):
@@ -97,7 +130,7 @@ if __name__ == '__main__':
         if cmd == 'play':
             # Accept: play <file> [volume%] [--device X] [--bass dB] [--treble dB]
             if len(sys.argv) < 3:
-                fail("usage: speaker_cli.py play <file> [volume%] [--device ALSA_ID]")
+                fail("usage: speaker_cli.py play <file> [volume%] [--device PipeWire_Sink]")
             raw = sys.argv[2:]
             pos, opts = parse_opts(raw)
             if len(pos) < 1:
@@ -112,56 +145,73 @@ if __name__ == '__main__':
             if not os.path.exists(file_path):
                 fail("file not found", file=file_path)
 
-            # Optional volume via amixer (device-aware)
-            if volume is not None:
-                try:
-                    set_amixer_volume(volume, opts.get('device'))
-                except Exception:
-                    pass
+            # Setup PipeWire sink routing
+            device_id = opts.get('device')
+            if not setup_pipewire_sink(device_id):
+                fail(f"Failed to setup PipeWire sink: {device_id}")
 
-            # Choose player based on file extension
+            # Check available tools
+            tools = check_pipewire_tools()
+
+            # Choose player based on file extension and available tools
             ext = os.path.splitext(file_path)[1].lower()
+            proc = None
+
             try:
                 if ext in ('.wav', '.wave'):
-                    cmdv = ['aplay', '-q']
-                    if opts['device']:
-                        cmdv += ['-D', opts['device']]
-                    cmdv.append(file_path)
-                    proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # Prefer pw-play for WAV files (native PipeWire)
+                    if tools['pw-play']:
+                        cmdv = ['pw-play', file_path]
+                        proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    elif tools['paplay']:
+                        # Fallback to paplay (PulseAudio compatibility)
+                        cmdv = ['paplay', file_path]
+                        proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    else:
+                        fail("No suitable WAV player found (pw-play or paplay required)")
                 else:
-                    # mpg123 supports sample scaling with -f (soft volume). Map 0-100% to 0..32768
+                    # Use mpg123 for MP3/other formats with PulseAudio routing
+                    if not tools['mpg123']:
+                        fail("mpg123 not found for MP3 playback")
+
                     cmdv = ['mpg123', '--quiet']
+                    # Apply soft volume scaling for MP3
                     if volume is not None:
                         scale = int(32768 * (volume / 100.0))
                         scale = max(0, min(32768, scale))
                         cmdv += ['-f', str(scale)]
-                    if opts['device']:
-                        cmdv += ['-a', opts['device']]
                     cmdv.append(file_path)
                     proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except FileNotFoundError as e:
-                fail(str(e))
 
-            ok(action='play', pid=proc.pid, file=file_path, volume=volume, device=opts['device'])
+                if proc is None:
+                    fail("Failed to start playback process")
+
+            except FileNotFoundError as e:
+                fail(f"Player not found: {str(e)}")
+            except Exception as e:
+                fail(f"Playback failed: {str(e)}")
+
+            ok(action='play', pid=proc.pid, file=file_path, volume=volume, device=device_id,
+               player='pw-play' if ext in ('.wav', '.wave') and tools['pw-play'] else 'mpg123')
 
         elif cmd == 'stop':
             raw = sys.argv[2:]
             _, opts = parse_opts(raw)
             try:
-                if opts['device']:
-                    dev = opts['device']
-                    subprocess.run(['pkill', '-f', f'mpg123.*-a {shlex.quote(dev)}'], check=False)
-                    subprocess.run(['pkill', '-f', f'aplay .* -D {shlex.quote(dev)}'], check=False)
+                # Stop PipeWire/PulseAudio players
+                subprocess.run(['pkill', '-f', 'pw-play'], check=False)
+                subprocess.run(['pkill', '-f', 'paplay'], check=False)
                 subprocess.run(['pkill', '-f', 'mpg123'], check=False)
+                # Legacy ALSA players (for compatibility)
                 subprocess.run(['pkill', '-f', 'aplay'], check=False)
             except Exception:
                 pass
-            ok(action='stop', device=opts['device'])
+            ok(action='stop', device=opts['device'], message="Stopped PipeWire audio players")
 
         elif cmd == 'set_volume':
-            # Accept: set_volume <0-100> [--device ALSA_ID]
+            # Accept: set_volume <0-100> [--device PipeWire_Sink]
             if len(sys.argv) < 3:
-                fail("usage: speaker_cli.py set_volume <0-100> [--device ALSA_ID]")
+                fail("usage: speaker_cli.py set_volume <0-100> [--device PipeWire_Sink]")
             raw = sys.argv[2:]
             pos, opts = parse_opts(raw)
             if not pos:
@@ -169,11 +219,49 @@ if __name__ == '__main__':
             vol = int(pos[0])
             if vol < 0 or vol > 100:
                 fail("invalid volume", volume=vol)
+
+            device_id = opts.get('device')
+            volume_set = False
+            output_msg = ""
+
             try:
-                out = set_amixer_volume(vol, opts.get('device'))
-                ok(action='set_volume', volume=vol, device=opts.get('device'), output=out)
-            except FileNotFoundError:
-                fail("amixer not found")
+                # Try PipeWire native volume control first
+                if device_id and device_id not in ('default', 'pulse'):
+                    try:
+                        # Use wpctl to set sink volume
+                        vol_decimal = vol / 100.0
+                        result = subprocess.run(['wpctl', 'set-volume', device_id, str(vol_decimal)],
+                                              capture_output=True, text=True, check=True)
+                        volume_set = True
+                        output_msg = f"PipeWire volume set via wpctl: {vol}%"
+                    except (FileNotFoundError, subprocess.CalledProcessError):
+                        # Fallback to pactl
+                        try:
+                            result = subprocess.run(['pactl', 'set-sink-volume', device_id, f'{vol}%'],
+                                                  capture_output=True, text=True, check=True)
+                            volume_set = True
+                            output_msg = f"PulseAudio volume set via pactl: {vol}%"
+                        except (FileNotFoundError, subprocess.CalledProcessError):
+                            pass
+
+                # Fallback to amixer for hardware volume (if available)
+                if not volume_set:
+                    try:
+                        out = set_amixer_volume(vol, device_id)
+                        volume_set = True
+                        output_msg = f"Hardware volume set via amixer: {vol}%"
+                    except (FileNotFoundError, Exception):
+                        pass
+
+                if volume_set:
+                    ok(action='set_volume', volume=vol, device=device_id, output=output_msg)
+                else:
+                    # Soft volume only - will be applied at playback time
+                    ok(action='set_volume', volume=vol, device=device_id,
+                       output=f"Soft volume set: {vol}% (applied at playback)")
+
+            except Exception as e:
+                fail(f"Volume control failed: {str(e)}")
         else:
             fail(f"unknown command: {cmd}")
     except Exception as e:

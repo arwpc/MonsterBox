@@ -112,5 +112,19 @@
     },
     "created": "2025-09-17T03:38:40.191Z",
     "enabled": true
+  },
+  {
+    "id": "9",
+    "name": "asd",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "sysdefault",
+      "sensitivity": 2.5,
+      "windowMs": 100
+    },
+    "created": "2025-09-18T02:13:35.224Z",
+    "enabled": true
   }
 ]

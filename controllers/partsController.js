@@ -75,11 +75,18 @@ const generatePartId = (parts) => {
 };
 
 /**
- * Get all parts
+ * Get all parts (with optional type filtering)
  */
 export const getAllParts = async (req, res) => {
     try {
-        const parts = await loadParts();
+        let parts = await loadParts();
+
+        // Filter by type if specified in query parameters
+        const { type } = req.query;
+        if (type) {
+            parts = parts.filter(part => part.type === type);
+        }
+
         res.json({
             success: true,
             parts: parts,

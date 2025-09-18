@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text Settings - MonsterBox 4.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/monsterbox4.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navigation (consistent with MonsterBox 4.0 design) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="bi bi-robot"></i> MonsterBox 4.0</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-house"></i> Dashboard</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Setup
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts</a></li>
+                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration</a></li>
+                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a></li>
+                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
+                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super Powers</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI Settings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live Mode</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
+                </ul>
+                <%- include('../partials/characterMenu') %>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="bi bi-mic"></i> Speech-to-Text Settings</h1>
+                    <div>
+                        <a href="/ai-settings" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-arrow-left"></i> Back to AI Settings
+                        </a>
+                        <button class="btn btn-primary" id="testSTT">
+                            <i class="bi bi-play-circle"></i> Test STT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- STT Configuration -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear"></i> STT Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="sttConfigForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="sttModel" class="form-label">STT Model</label>
+                                        <select class="form-select" id="sttModel" name="model">
+                                            <option value="">Loading models...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="sttLanguage" class="form-label">Language</label>
+                                        <select class="form-select" id="sttLanguage" name="language">
+                                            <option value="en">English</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                            <option value="it">Italian</option>
+                                            <option value="pt">Portuguese</option>
+                                            <option value="auto">Auto-detect</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="audioFormat" class="form-label">Audio Format</label>
+                                        <select class="form-select" id="audioFormat" name="format">
+                                            <option value="wav">WAV</option>
+                                            <option value="mp3">MP3</option>
+                                            <option value="m4a">M4A</option>
+                                            <option value="flac">FLAC</option>
+                                            <option value="ogg">OGG</option>
+                                            <option value="webm">WebM</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="sampleRate" class="form-label">Sample Rate</label>
+                                        <select class="form-select" id="sampleRate" name="sampleRate">
+                                            <option value="8000">8 kHz</option>
+                                            <option value="16000" selected>16 kHz</option>
+                                            <option value="22050">22.05 kHz</option>
+                                            <option value="44100">44.1 kHz</option>
+                                            <option value="48000">48 kHz</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> Save Configuration
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- STT Testing -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-mic-fill"></i> Test STT
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="audioFile" class="form-label">Upload Audio File</label>
+                                    <input type="file" class="form-control" id="audioFile" accept="audio/*">
+                                    <div class="form-text">Supported: WAV, MP3, M4A, FLAC, OGG, WebM (Max: 25MB)</div>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="transcribeFile">
+                                    <i class="bi bi-upload"></i> Transcribe File
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Live Microphone Test</label>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-success" id="startRecording">
+                                            <i class="bi bi-record-circle"></i> Start Recording
+                                        </button>
+                                        <button type="button" class="btn btn-danger" id="stopRecording" disabled>
+                                            <i class="bi bi-stop-circle"></i> Stop Recording
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transcription Results -->
+                        <div id="transcriptionResults" class="mt-4" style="display: none;">
+                            <h6>Transcription Results:</h6>
+                            <div class="card bg-dark border-secondary">
+                                <div class="card-body">
+                                    <div id="transcriptionText" class="mb-2"></div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <small class="text-muted">
+                                                <strong>Confidence:</strong> <span id="transcriptionConfidence">-</span>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted">
+                                                <strong>Language:</strong> <span id="transcriptionLanguage">-</span>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted">
+                                                <strong>Duration:</strong> <span id="transcriptionDuration">-</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STT Models & Microphone Integration -->
+            <div class="col-lg-4">
+                <!-- Available Models -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-cpu"></i> Available Models
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="sttModels">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading STT models...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Microphone Integration -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-link-45deg"></i> Microphone Integration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="microphonePart" class="form-label">Select Microphone Part</label>
+                            <select class="form-select" id="microphonePart">
+                                <option value="">Loading microphone parts...</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-info" id="testMicrophoneIntegration">
+                                <i class="bi bi-arrow-repeat"></i> Test Microphone → STT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/ai-settings-stt.js"></script>
+</body>
+
+</html>

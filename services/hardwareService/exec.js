@@ -60,14 +60,31 @@ export function runPy(args, options = {}) {
 
             if (code === 0) {
                 // Success - log stdout as success, stderr as info (not error)
-                if (config.enableLogging && stdout.trim()) {
-                    console.log(`✅ Hardware Output: ${stdout.trim()}`);
+                const out = stdout.trim();
+                const err = stderr.trim();
+                if (config.enableLogging && out) {
+                    console.log(`✅ Hardware Output: ${out}`);
                 }
-                if (config.enableLogging && stderr.trim()) {
-                    // Log stderr as info for successful processes (e.g., "GPIO initialized successfully")
-                    console.log(`ℹ️ Hardware Info: ${stderr.trim()}`);
+                if (config.enableLogging && err) {
+                    // Filter noisy ALSA/JACK lines from info logs
+                    const dropPatterns = [
+                        /^ALSA lib/i,
+                        /Cannot connect to server socket/i,
+                        /Cannot connect to server request channel/i,
+                        /jack server is not running/i,
+                        /JackShmReadWritePtr/i,
+                        /Unknown PCM/i,
+                        /pcm_oss/i,
+                        /pcm_a52/i,
+                        /Invalid card/i,
+                        /unable to open slave/i
+                    ];
+                    const filtered = err.split(/\r?\n/).filter(l => !dropPatterns.some(r => r.test(l))).join('\n').trim();
+                    if (filtered) {
+                        console.log(`ℹ️ Hardware Info: ${filtered}`);
+                    }
                 }
-                resolve(stdout.trim());
+                resolve(out);
             } else {
                 const errorMsg = stderr.trim() || `Process exited with code ${code}`;
                 if (config.enableLogging) {

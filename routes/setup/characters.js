@@ -35,5 +35,9 @@ router.delete('/api/characters/:id', charactersController.remove);
 router.get('/api/current', charactersController.getCurrent);
 router.post('/api/select', charactersController.setSelected);
 
+// Character-Agent Assignments API
+router.get('/api/character-assignments', charactersController.getAssignments);
+router.post('/api/character-assignments', charactersController.updateAssignment);
+
 export default router;
 

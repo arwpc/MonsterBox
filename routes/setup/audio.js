@@ -1,10 +1,11 @@
 /**
  * Setup Audio Routes
- * Routes for audio configuration interface
+ * Routes for audio configuration interface - PipeWire/WirePlumber Integration
  */
 
 import express from 'express';
 import { runWrapper } from '../../services/hardwareService/exec.js';
+import pipewireService from '../../services/pipewireService.js';
 
 const router = express.Router();
 
@@ -13,170 +14,418 @@ router.get('/', async (req, res) => {
     try {
         res.render('setup/audio', {
             title: 'Setup Audio - MonsterBox 4.0',
-            page: 'setup-audio'
+            page: 'setup-audio',
+            config: { theme: 'dark' },
+            currentCharacter: null
         });
     } catch (error) {
         console.error('Error rendering audio setup page:', error);
         res.status(500).render('error', {
             title: 'Error',
+            page: 'error',
+            config: { theme: 'dark' },
+            currentCharacter: null,
             error: 'Failed to load audio setup page',
             message: error.message
         });
     }
 });
 
-// Enumerate ALSA outputs (fast, read-only)
+// Enumerate PipeWire sinks (audio outputs)
 router.get('/api/outputs', async (req, res) => {
     try {
-        const { exec } = await import('child_process');
-        const { promisify } = await import('util');
-        const pexec = promisify(exec);
+        console.log('🔊 Enumerating PipeWire audio outputs...');
+        const sinks = await pipewireService.listSinks();
 
-        function parseAplayLList(text) {
-            // Parse `aplay -l` into [{ id, name, description }]
-            const lines = String(text || '').split(/\r?\n/);
-            const items = [];
-            let currentCard = null;
-            lines.forEach((ln) => {
-                let m;
-                m = ln.match(/^card\s+(\d+)\s*:\s*([^\s,]+)\s*\[(.+?)\]/i);
-                if (m) {
-                    currentCard = { num: m[1], short: m[2], name: m[3] };
-                    return;
-                }
-                m = ln.match(/^\s*Subdevice\s+/i);
-                if (m) return;
-                m = ln.match(/^\s*Device\s+(\d+)\s*:\s*(.+)$/i);
-                if (m && currentCard) {
-                    const devNum = m[1];
-                    const desc = m[2].trim();
-                    const id = `hw:${currentCard.num},${devNum}`;
-                    const label = `${currentCard.name} (plughw:${currentCard.num},${devNum})`;
-                    items.push({ id, name: currentCard.name, description: label });
-                }
-            });
-            return items;
-        }
+        // Transform to match expected format
+        const outputs = sinks.map(sink => ({
+            id: sink.id,
+            name: sink.name,
+            description: sink.description
+        }));
 
-        function parseAplayLLogical(text) {
-            // Parse `aplay -L` logical devices; prefer sysdefault, plughw, hw entries
-            const lines = String(text || '').split(/\r?\n/);
-            const items = [];
-            let i = 0;
-            while (i < lines.length) {
-                const id = lines[i].trim();
-                if (!id || id.startsWith('###')) { i++; continue; }
-                const desc = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
-                const isCandidate = /^(sysdefault|plughw|hw|default|dmix|surround)/i.test(id);
-                if (isCandidate) {
-                    // Friendly label example: "Headphones (plughw:1,0)"
-                    const label = `${desc || id} (${id})`;
-                    items.push({ id, name: desc || id, description: label });
-                }
-                i += 2;
-            }
-            return items;
-        }
-
-        // Try aplay -L first
-        let logical = [];
-        try {
-            const { stdout } = await pexec('aplay -L');
-            logical = parseAplayLLogical(stdout);
-        } catch (_) { /* ignore */ }
-
-        // Fallback to aplay -l
-        let physical = [];
-        try {
-            const { stdout } = await pexec('aplay -l');
-            physical = parseAplayLList(stdout);
-        } catch (_) { /* ignore */ }
-
-        // De-dup by id, prefer logical
-        const map = {};
-        logical.concat(physical).forEach((it) => { if (it && it.id && !map[it.id]) map[it.id] = it; });
-        const outputs = Object.keys(map).map((k) => map[k]);
+        console.log(`🔊 Found ${outputs.length} audio outputs`);
         res.json({ success: true, outputs });
     } catch (error) {
-        console.error('Error enumerating audio outputs:', error.message || error);
-        res.json({ success: true, outputs: [] });
+        console.error('Error enumerating PipeWire outputs:', error.message || error);
+        // Fallback to basic defaults
+        res.json({
+            success: true,
+            outputs: [
+                { id: 'default', name: 'Default Output', description: 'Default Output [Recommended]' },
+                { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output' }
+            ]
+        });
     }
 });
 
-// Enumerate ALSA inputs (microphones)
+// Enumerate PipeWire sources (audio inputs/microphones)
 router.get('/api/inputs', async (req, res) => {
     try {
-        const { exec } = await import('child_process');
-        const { promisify } = await import('util');
-        const pexec = promisify(exec);
+        console.log('🎤 Enumerating PipeWire audio inputs...');
+        const sources = await pipewireService.listSources();
 
-        function parseArecordLList(text) {
-            // Parse `arecord -l` into [{ id, name, description }]
-            const lines = String(text || '').split(/\r?\n/);
-            const items = [];
-            let currentCard = null;
-            lines.forEach((ln) => {
-                let m;
-                m = ln.match(/^card\s+(\d+)\s*:\s*([^\s,]+)\s*\[(.+?)\]/i);
-                if (m) { currentCard = { num: m[1], short: m[2], name: m[3] }; return; }
-                m = ln.match(/^\s*Subdevice\s+/i); if (m) return;
-                m = ln.match(/^\s*Device\s+(\d+)\s*:\s*(.+)$/i);
-                if (m && currentCard) {
-                    const devNum = m[1];
-                    const desc = m[2].trim();
-                    const id = `hw:${currentCard.num},${devNum}`;
-                    const label = `${currentCard.name} (plughw:${currentCard.num},${devNum})`;
-                    items.push({ id, name: currentCard.name, description: label });
-                }
-            });
-            return items;
-        }
+        // Transform to match expected format
+        const inputs = sources.map(source => ({
+            id: source.id,
+            name: source.name,
+            description: source.description
+        }));
 
-        function parseArecordLLogical(text) {
-            // Parse `arecord -L` logical devices; prefer sysdefault, plughw, hw entries
-            const lines = String(text || '').split(/\r?\n/);
-            const items = [];
-            let i = 0;
-            while (i < lines.length) {
-                const id = lines[i].trim();
-                if (!id || id.startsWith('###')) { i++; continue; }
-                const desc = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
-                const isCandidate = /^(sysdefault|plughw|hw|default|dsnoop)/i.test(id);
-                if (isCandidate) {
-                    const label = `${desc || id} (${id})`;
-                    items.push({ id, name: desc || id, description: label });
-                }
-                i += 2;
-            }
-            return items;
-        }
-
-        let logical = [];
-        try { const { stdout } = await pexec('arecord -L'); logical = parseArecordLLogical(stdout); } catch (_) { }
-        let physical = [];
-        try { const { stdout } = await pexec('arecord -l'); physical = parseArecordLList(stdout); } catch (_) { }
-        const map = {};
-        logical.concat(physical).forEach((it) => { if (it && it.id && !map[it.id]) map[it.id] = it; });
-        const inputs = Object.keys(map).map((k) => map[k]);
+        console.log(`🎤 Found ${inputs.length} audio inputs`);
         res.json({ success: true, inputs });
     } catch (error) {
-        console.error('Error enumerating audio inputs:', error.message || error);
-        res.json({ success: true, inputs: [] });
+        console.error('Error enumerating PipeWire inputs:', error.message || error);
+        // Fallback to basic defaults
+        res.json({
+            success: true,
+            inputs: [
+                { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
+                { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
+            ]
+        });
     }
 });
 
-// Quick input level test without saving a Part
+// Quick input level test without saving a Part (PipeWire compatible)
 router.get('/api/input-level', async (req, res) => {
     try {
-        const device = String(req.query.device || 'default');
-        const out = await runWrapper('microphone_cli.py', ['get_level', device, '16000', '1', '0.5']);
-        let parsed = null; try { parsed = JSON.parse(out); } catch (_) { }
-        if (!parsed || parsed.status !== 'success') return res.json({ success: false, error: parsed && parsed.message });
-        res.json({ success: true, device, level: parsed.level, message: parsed.message });
+        let device = String(req.query.device || 'default');
+        const sr = String(req.query.sr || req.query.sampleRate || '16000');
+        const ch = String(req.query.ch || req.query.channels || '1');
+        const duration = String(req.query.duration || '0.2');
+
+        console.log(`🎤 Testing input level for device: ${device}`);
+
+        async function probe(dev) {
+            const out = await runWrapper('microphone_cli.py', ['get_level', dev, sr, ch, duration], { enableLogging: false, timeoutMs: 4000 });
+            let parsed = null; try { parsed = JSON.parse(out); } catch (_) { }
+            return parsed;
+        }
+
+        let parsed = await probe(device);
+        let used = device; let fallbackUsed = false;
+
+        if (!parsed || parsed.status !== 'success') {
+            const fallbacks = ['default', 'pulse'].filter(d => d !== device);
+            for (let i = 0; i < fallbacks.length; i++) {
+                const p = await probe(fallbacks[i]).catch(() => null);
+                if (p && p.status === 'success') { parsed = p; used = fallbacks[i]; fallbackUsed = true; break; }
+            }
+        }
+
+        if (!parsed || parsed.status !== 'success') {
+            return res.json({ success: false, error: parsed && parsed.message || 'Microphone level test failed' });
+        }
+
+        res.json({ success: true, device: used, level: parsed.level, message: parsed.message, fallbackUsed });
     } catch (error) {
         res.json({ success: false, error: String(error.message || error) });
     }
 });
 
+// List active sink inputs (playing streams)
+router.get('/api/sink-inputs', async (req, res) => {
+    try {
+        const sinkInputs = await pipewireService.listSinkInputs();
+        res.json({ success: true, sinkInputs });
+    } catch (error) {
+        console.error('Error listing sink inputs:', error.message);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// Move a sink input to a different sink
+router.post('/api/move-stream', async (req, res) => {
+    try {
+        const { streamId, sinkId } = req.body;
+        if (!streamId || !sinkId) {
+            return res.status(400).json({ success: false, error: 'streamId and sinkId are required' });
+        }
+
+        console.log(`🔄 Moving stream ${streamId} to sink ${sinkId}`);
+        const result = await pipewireService.moveSinkInput(streamId, sinkId);
+
+        if (result.success) {
+            res.json({ success: true, message: `Stream moved to ${sinkId}`, method: result.method });
+        } else {
+            res.status(500).json({ success: false, error: result.error });
+        }
+    } catch (error) {
+        console.error('Error moving stream:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Set default sink
+router.post('/api/set-default-sink', async (req, res) => {
+    try {
+        const { sinkId } = req.body;
+        if (!sinkId) {
+            return res.status(400).json({ success: false, error: 'sinkId is required' });
+        }
+
+        console.log(`🔊 Setting default sink to: ${sinkId}`);
+        const result = await pipewireService.setDefaultSink(sinkId);
+
+        if (result.success) {
+            res.json({ success: true, message: `Default sink set to ${sinkId}` });
+        } else {
+            res.status(500).json({ success: false, error: result.error });
+        }
+    } catch (error) {
+        console.error('Error setting default sink:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Set default source
+router.post('/api/set-default-source', async (req, res) => {
+    try {
+        const { sourceId } = req.body;
+        if (!sourceId) {
+            return res.status(400).json({ success: false, error: 'sourceId is required' });
+        }
+
+        console.log(`🎤 Setting default source to: ${sourceId}`);
+        const result = await pipewireService.setDefaultSource(sourceId);
+
+        if (result.success) {
+            res.json({ success: true, message: `Default source set to ${sourceId}` });
+        } else {
+            res.status(500).json({ success: false, error: result.error });
+        }
+    } catch (error) {
+        console.error('Error setting default source:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get current system audio configuration
+router.get('/api/system-config', async (req, res) => {
+    try {
+        console.log('🔧 Getting system audio configuration...');
+
+        const [sinks, sources, defaultSink, defaultSource] = await Promise.all([
+            pipewireService.listSinks(),
+            pipewireService.listSources(),
+            pipewireService.getDefaultSink(),
+            pipewireService.getDefaultSource()
+        ]);
+
+        const config = {
+            defaultSink: defaultSink || 'auto',
+            defaultSource: defaultSource || 'auto',
+            availableSinks: sinks,
+            availableSources: sources,
+            pipewireStatus: await pipewireService.checkTools()
+        };
+
+        console.log(`🔧 System config: ${config.availableSinks.length} sinks, ${config.availableSources.length} sources`);
+        res.json({ success: true, config });
+    } catch (error) {
+        console.error('Error getting system config:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Save system audio configuration
+router.post('/api/system-config', async (req, res) => {
+    try {
+        const { defaultSink, defaultSource } = req.body;
+        console.log(`🔧 Saving system config: sink=${defaultSink}, source=${defaultSource}`);
+
+        const results = [];
+
+        if (defaultSink && defaultSink !== 'auto') {
+            const sinkResult = await pipewireService.setDefaultSink(defaultSink);
+            results.push({ type: 'sink', success: sinkResult.success, error: sinkResult.error });
+        }
+
+        if (defaultSource && defaultSource !== 'auto') {
+            const sourceResult = await pipewireService.setDefaultSource(defaultSource);
+            results.push({ type: 'source', success: sourceResult.success, error: sourceResult.error });
+        }
+
+        const allSuccessful = results.every(r => r.success);
+
+        if (allSuccessful) {
+            res.json({
+                success: true,
+                message: 'System audio configuration saved successfully',
+                results
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Some configuration changes failed',
+                results
+            });
+        }
+    } catch (error) {
+        console.error('Error saving system config:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Test audio system
+router.post('/api/test-system', async (req, res) => {
+    try {
+        const { testType, deviceId } = req.body;
+        console.log(`🧪 Testing audio system: ${testType} on ${deviceId}`);
+
+        let result;
+
+        if (testType === 'speaker') {
+            // Test speaker playback
+            console.log(`🔊 Playing test sound on device: ${deviceId}`);
+            result = await runWrapper('speaker_cli.py', [
+                'play',
+                'public/sounds/monster-howl-85304.mp3',
+                '25',  // volume as positional argument
+                '--device', deviceId || 'default'
+            ]);
+        } else if (testType === 'microphone') {
+            // Test microphone level
+            result = await runWrapper('microphone_cli.py', [
+                'get_level',
+                deviceId || 'default',
+                '16000',
+                '1',
+                '1.0'
+            ]);
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid test type' });
+        }
+
+        res.json({
+            success: true,
+            testType,
+            deviceId: deviceId || 'default',
+            result: result.stdout || result.stderr || 'Test completed'
+        });
+    } catch (error) {
+        console.error('Error testing audio system:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get hardware devices (actual devices, not just sinks/sources)
+router.get('/api/hardware-devices', async (req, res) => {
+    try {
+        console.log('🔧 Getting hardware devices...');
+        const devices = await pipewireService.listHardwareDevices();
+
+        console.log(`🔧 Found ${devices.outputs.length} output devices, ${devices.inputs.length} input devices`);
+        res.json({ success: true, devices });
+    } catch (error) {
+        console.error('Error getting hardware devices:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get active audio streams
+router.get('/api/active-streams', async (req, res) => {
+    try {
+        console.log('🎵 Getting active streams...');
+        const streams = await pipewireService.listActiveStreams();
+
+        console.log(`🎵 Found ${streams.length} active streams`);
+        res.json({ success: true, streams });
+    } catch (error) {
+        console.error('Error getting active streams:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Move stream to different sink
+router.post('/api/move-stream', async (req, res) => {
+    try {
+        const { streamId, sinkId } = req.body;
+        if (!streamId || !sinkId) {
+            return res.status(400).json({ success: false, error: 'streamId and sinkId are required' });
+        }
+
+        console.log(`🎵 Moving stream ${streamId} to sink ${sinkId}`);
+        const result = await pipewireService.moveSinkInput(streamId, sinkId);
+
+        if (result.success) {
+            res.json({ success: true, message: `Stream moved to ${sinkId}` });
+        } else {
+            res.status(500).json({ success: false, error: result.error });
+        }
+    } catch (error) {
+        console.error('Error moving stream:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Real-time audio level monitoring
+router.get('/api/audio-levels', async (req, res) => {
+    try {
+        const { deviceId, deviceType } = req.query;
+
+        if (deviceType === 'input') {
+            // Get microphone level with shorter duration for real-time response
+            console.log(`🎤 Getting level for input device: ${deviceId}`);
+            const result = await runWrapper('microphone_cli.py', [
+                'get_level',
+                deviceId || 'default',
+                '16000',  // Use same sample rate as working in logs
+                '1',
+                '0.1'     // Use same duration as working in logs
+            ], { timeoutMs: 2000 });
+
+            if (result) {
+                try {
+                    const data = JSON.parse(result);
+                    const level = data.level || 0;
+                    console.log(`🎤 Input level: ${level} for device: ${deviceId}`);
+                    res.json({
+                        success: true,
+                        level: level,
+                        deviceId: deviceId || 'default',
+                        type: 'input'
+                    });
+                } catch (parseError) {
+                    console.warn('Failed to parse microphone level:', parseError);
+                    res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'input' });
+                }
+            } else {
+                console.warn('No output from microphone_cli.py');
+                res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'input' });
+            }
+        } else {
+            // For output, try to get sink volume level as a proxy for activity
+            try {
+                const sinks = await pipewireService.listSinks();
+                const targetSink = sinks.find(sink =>
+                    sink.name === deviceId ||
+                    sink.description.includes(deviceId) ||
+                    (deviceId === 'default' && sink.default)
+                );
+
+                if (targetSink && targetSink.volume) {
+                    // Use volume as a proxy for output level (0-1 range)
+                    const volumeLevel = parseFloat(targetSink.volume) || 0;
+                    res.json({
+                        success: true,
+                        level: volumeLevel * 0.1, // Scale down for VU meter display
+                        deviceId: deviceId || 'default',
+                        type: 'output'
+                    });
+                } else {
+                    res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'output' });
+                }
+            } catch (error) {
+                console.warn('Failed to get output level:', error.message);
+                res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'output' });
+            }
+        }
+    } catch (error) {
+        console.error('Error getting audio levels:', error.message);
+        res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: deviceType || 'unknown' });
+    }
+});
 
 export default router;

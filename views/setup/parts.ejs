@@ -198,7 +198,7 @@
                                         <select class="form-select" id="audioInputSelect">
                                             <option value="">Select an audio input...</option>
                                         </select>
-                                        <div class="form-text">Select an ALSA input device for this Microphone.</div>
+                                        <div class="form-text">Select a PipeWire input source for this Microphone.</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
@@ -221,22 +221,22 @@
                                                 window.scanAudioInputsInto = function (selectId, resultsId) {
                                                     var sel = document.getElementById(selectId);
                                                     var out = document.getElementById(resultsId);
-                                                    if (out) out.textContent = 'Scanning inputs...';
-                                                    fetch('/setup/audio/api/inputs')
+                                                    if (out) out.textContent = 'Scanning PipeWire sources...';
+                                                    fetch('/setup/audio/api/sources')
                                                         .then(function (r) { return r.json(); })
                                                         .then(function (j) {
                                                             if (!sel) return;
-                                                            sel.innerHTML = '<option value="">Select an audio input...</option>';
-                                                            var list = (j && j.inputs) || [];
+                                                            sel.innerHTML = '<option value="default">Default PipeWire Source</option>';
+                                                            var list = (j && j.sources) || [];
                                                             list.forEach(function (it) {
                                                                 var opt = document.createElement('option');
                                                                 opt.value = it.id || '';
                                                                 opt.textContent = it.description || it.name || it.id;
                                                                 sel.appendChild(opt);
                                                             });
-                                                            if (out) out.textContent = !list.length ? 'No inputs found' : list.map(function (it) { return '🎤 ' + (it.description || (it.name + ' (' + it.id + ')')); }).join('\n');
+                                                            if (out) out.textContent = list.length ? ('Found ' + list.length + ' PipeWire sources') : 'No PipeWire sources found';
                                                         })
-                                                        .catch(function () { if (out) out.textContent = 'Error scanning inputs'; });
+                                                        .catch(function () { if (out) out.textContent = 'Error scanning PipeWire sources'; });
                                                 };
                                             }
                                             var btn = document.getElementById('scanAudioInputsBtn');
@@ -251,6 +251,73 @@
                                     <div id="audioInputScanResults" class="small text-muted"></div>
                                 </div>
                                 <div class="col-12">
+                                    <div class="progress" style="height: 10px;">
+                                        <div id="audioLevelBar" class="progress-bar" role="progressbar" style="width:0%"
+                                            aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div id="audioLevelLabel" class="small text-muted mt-1">Level: 0%</div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-8">
+                                            <label for="audioSensitivity" class="form-label">Sensitivity</label>
+                                            <input type="range" class="form-range" id="audioSensitivity" min="0.5"
+                                                max="4" step="0.1" value="1">
+                                            <div class="small text-muted">Adjusts meter responsiveness (display only)
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="micWindowMs" class="form-label">Window (ms)</label>
+                                            <input type="number" id="micWindowMs" class="form-control" value="100"
+                                                min="50" max="500" step="10">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                    (function () {
+                                        if (typeof window.stopAudioLevelMeter !== 'function') {
+                                            window.stopAudioLevelMeter = function () { if (window._audioMeterTimer) { clearInterval(window._audioMeterTimer); window._audioMeterTimer = 0; } };
+                                        }
+                                        if (typeof window.startAudioLevelMeter !== 'function') {
+                                            window.startAudioLevelMeter = function (device) {
+                                                window.stopAudioLevelMeter();
+                                                if (!device) return;
+                                                var bar = document.getElementById('audioLevelBar');
+                                                var lbl = document.getElementById('audioLevelLabel');
+                                                window._audioMeterTimer = setInterval(function () {
+                                                    var sensEl = document.getElementById('audioSensitivity');
+                                                    var winEl = document.getElementById('micWindowMs');
+                                                    var sens = sensEl ? parseFloat(sensEl.value || '1') : 1;
+                                                    if (!isFinite(sens) || sens <= 0) sens = 1;
+                                                    var durMs = winEl ? parseInt(winEl.value || '100', 10) : 100;
+                                                    if (!isFinite(durMs) || durMs < 50) durMs = 100;
+                                                    var qs = '?device=' + encodeURIComponent(device) + '&sr=16000&channels=1&duration=' + (durMs / 1000);
+                                                    fetch('/setup/audio/api/input-level' + qs)
+                                                        .then(function (r) { return r.json(); })
+                                                        .then(function (j) {
+                                                            if (!j || !j.success) return;
+                                                            var level = (+j.level || 0) * sens;
+                                                            var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                                                            if (bar) { bar.style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct); }
+                                                            if (lbl) {
+                                                                var extra = '';
+                                                                if (j && j.fallbackUsed) { extra = '  using ' + (j.device || 'sysdefault') + ' (fallback)'; }
+                                                                lbl.textContent = 'Level: ' + pct + '%' + extra;
+                                                            }
+                                                        })
+                                                        .catch(function () { });
+                                                }, 400);
+                                            };
+                                        }
+                                        var sel = document.getElementById('audioInputSelect');
+                                        if (sel) {
+                                            sel.addEventListener('change', function () {
+                                                var v = sel && sel.value; if (v) startAudioLevelMeter(v); else stopAudioLevelMeter();
+                                            });
+                                        }
+                                    })();
+                                </script>
+
+                                <div class="col-12">
                                     <button type="button" class="btn btn-sm btn-info"
                                         onclick="(function(){var sel=document.getElementById('audioInputSelect'); if(!sel||!sel.value){alert('Select an input first');return;} var out=document.getElementById('audioInputScanResults'); if(out) out.textContent='Measuring level...'; fetch('/setup/audio/api/input-level?device='+encodeURIComponent(sel.value)).then(function(r){return r.json();}).then(function(j){ if(out) out.textContent = j && j.success ? ('Level: '+ (j.level!=null?j.level.toFixed?j.level.toFixed(4):j.level:j.level)) : ('Error: '+ (j && j.error)); }).catch(function(){ if(out) out.textContent='Error measuring level'; }); })()">Quick
                                         Level Test</button>
@@ -264,7 +331,7 @@
                                         <select class="form-select" id="audioDeviceSelect">
                                             <option value="">Select an audio output...</option>
                                         </select>
-                                        <div class="form-text">Route this Speaker to a specific ALSA output.</div>
+                                        <div class="form-text">Route this Speaker to a specific PipeWire sink.</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
@@ -445,6 +512,21 @@
                     <div class="modal-body">
                         <input type="hidden" id="editPartId" />
                         <div class="row">
+                            <div class="col-12 mt-2">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <label for="editAudioSensitivity" class="form-label">Sensitivity</label>
+                                        <input type="range" class="form-range" id="editAudioSensitivity" min="0.5"
+                                            max="4" step="0.1" value="1">
+                                        <div class="small text-muted">Adjusts meter responsiveness (display only)</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="editMicWindowMs" class="form-label">Window (ms)</label>
+                                        <input type="number" id="editMicWindowMs" class="form-control" value="100"
+                                            min="50" max="500" step="10">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editPartName" class="form-label">Part Name</label>
@@ -484,7 +566,7 @@
                                                 <select class="form-select" id="editAudioDeviceSelect">
                                                     <option value="">Select an audio output...</option>
                                                 </select>
-                                                <div class="form-text">Route this Speaker to a specific ALSA output.
+                                                <div class="form-text">Route this Speaker to a specific PipeWire sink.
                                                 </div>
                                             </div>
                                         </div>
@@ -986,8 +1068,13 @@
                         if (typeof window.scanAudioInputsInto === 'function') {
                             scanAudioInputsInto('audioInputSelect', 'audioInputScanResults');
                         }
+                        var selMic = document.getElementById('audioInputSelect');
+                        if (selMic && selMic.value && typeof window.startAudioLevelMeter === 'function') {
+                            startAudioLevelMeter(selMic.value);
+                        }
                     } else {
                         micGrp.style.display = 'none';
+                        if (typeof window.stopAudioLevelMeter === 'function') { stopAudioLevelMeter(); }
                     }
                 }
 
@@ -1262,6 +1349,14 @@
                     if (!inId) { showAlert('warning', 'Please scan and select an Audio Input for this Microphone'); return; }
                     if (!cfg) cfg = {};
                     cfg.deviceId = inId;
+                    var sensEl = document.getElementById('audioSensitivity');
+                    var winEl = document.getElementById('micWindowMs');
+                    var sens = sensEl ? parseFloat(sensEl.value || '1') : 1;
+                    if (!isFinite(sens) || sens <= 0) sens = 1;
+                    var winMs = winEl ? parseInt(winEl.value || '100', 10) : 100;
+                    if (!isFinite(winMs) || winMs < 50) winMs = 100;
+                    cfg.sensitivity = sens;
+                    cfg.windowMs = winMs;
                 }
 
                 // Speaker-specific config
@@ -1339,13 +1434,13 @@
             function scanAudioOutputsInto(selectId, resultsId) {
                 var sel = document.getElementById(selectId);
                 var out = document.getElementById(resultsId);
-                if (out) out.textContent = 'Scanning outputs...';
-                fetch('/setup/audio/api/outputs')
+                if (out) out.textContent = 'Scanning PipeWire sinks...';
+                fetch('/setup/audio/api/sinks')
                     .then(function (r) { return r.json(); })
                     .then(function (j) {
                         if (!sel) return;
-                        sel.innerHTML = '<option value="">Select an audio output...</option>';
-                        var list = (j && j.outputs) || [];
+                        sel.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+                        var list = (j && j.sinks) || [];
                         list.forEach(function (it) {
                             var opt = document.createElement('option');
                             opt.value = it.id || '';
@@ -1353,11 +1448,11 @@
                             sel.appendChild(opt);
                         });
                         if (out) {
-                            if (!list.length) out.textContent = 'No outputs found';
-                            else out.textContent = list.map(function (it) { return '🎧 ' + (it.description || (it.name + ' (' + it.id + ')')); }).join('\n');
+                            if (!list.length) out.textContent = 'No PipeWire sinks found';
+                            else out.textContent = list.map(function (it) { return '🔊 ' + (it.description || (it.name + ' (' + it.id + ')')); }).join('\n');
                         }
                     })
-                    .catch(function () { if (out) out.textContent = 'Error scanning outputs'; });
+                    .catch(function () { if (out) out.textContent = 'Error scanning PipeWire sinks'; });
             }
             function applyWebcamToMjpg() {
                 try {
@@ -1460,7 +1555,80 @@
                     renderTestControls(part);
                 } else {
                     drawer.style.display = 'none';
+                    try { if (typeof stopMicMeter === 'function') stopMicMeter(partId); } catch (e) { /* ignore */ }
                 }
+                // Microphone test-drawer level meter helpers
+                (function () {
+                    if (!window._micMeterTimers) window._micMeterTimers = {};
+                    window.stopMicMeter = function (partId) {
+                        try {
+                            if (!window._micMeterTimers) window._micMeterTimers = {};
+                            if (!window._micMeterActive) window._micMeterActive = {};
+                            if (window._micMeterTimers[partId]) { clearTimeout(window._micMeterTimers[partId]); delete window._micMeterTimers[partId]; }
+                            window._micMeterActive[partId] = false;
+                        } catch (e) { }
+                    };
+                    function _getMicElems(partId) {
+                        return {
+                            bar: document.getElementById('mic-meter-bar-' + partId),
+                            lbl: document.getElementById('mic-meter-label-' + partId)
+                        };
+                    }
+                    window.startMicMeter = function (partId, deviceId) {
+                        window.stopMicMeter(partId);
+                        var sens = 1, winMs = 100;
+                        var devEl;
+                        if (!deviceId) {
+                            try {
+                                devEl = document.getElementById('mic-device-' + partId);
+                                if (devEl) {
+                                    deviceId = devEl.getAttribute('data-dev') || devEl.textContent || '';
+                                    var sA = parseFloat(devEl.getAttribute('data-sens') || '1');
+                                    if (isFinite(sA) && sA > 0) sens = sA;
+                                    var wA = parseInt(devEl.getAttribute('data-winms') || '100', 10);
+                                    if (isFinite(wA) && wA >= 50) winMs = wA;
+                                }
+                            } catch (e) { deviceId = ''; }
+                        }
+                        if (!deviceId) return;
+                        if (!window._micMeterTimers) window._micMeterTimers = {};
+                        if (!window._micMeterActive) window._micMeterActive = {};
+                        var duration = Math.max(0.05, (winMs || 100) / 1000);
+                        window._micMeterActive[partId] = true;
+                        (function step() {
+                            if (!window._micMeterActive[partId]) return;
+                            var url = '/setup/audio/api/input-level?device=' + encodeURIComponent(deviceId)
+                                + '&sr=16000&channels=1&duration=' + encodeURIComponent(String(duration));
+                            fetch(url)
+                                .then(function (r) { return r.json(); })
+                                .then(function (j) {
+                                    if (!j || !j.success) return;
+                                    var level = (+j.level || 0) * sens;
+                                    var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                                    var el = _getMicElems(partId);
+                                    if (el.lbl) {
+                                        var extra = (j && j.fallbackUsed) ? ('  using ' + (j.device || 'sysdefault') + ' (fallback)') : '';
+                                        el.lbl.textContent = 'Level: ' + pct + '%' + extra;
+                                    }
+                                    if (el.bar) {
+                                        el.bar.style.width = pct + '%';
+                                        el.bar.setAttribute('aria-valuenow', pct);
+                                        try { el.bar.classList.remove('bg-success', 'bg-warning', 'bg-danger'); } catch (e) { }
+                                        el.bar.classList.add(pct < 50 ? 'bg-success' : (pct < 80 ? 'bg-warning' : 'bg-danger'));
+                                    }
+
+                                })
+                                .catch(function () { })
+                                .finally(function () {
+                                    if (!window._micMeterActive[partId]) return;
+                                    // schedule next sample after current finishes; small gap to avoid overlap
+                                    var gapMs = Math.max(50, Math.round(duration * 1000 * 0.2));
+                                    window._micMeterTimers[partId] = setTimeout(step, gapMs);
+                                });
+                        })();
+                    };
+                })();
+
             }
 
             function renderTestControls(part) {
@@ -1535,8 +1703,22 @@
                         break;
                     case 'microphone':
                         html += '<div class="btn-group btn-group-sm" data-testid="mic-controls">';
-                        html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'getLevel\',{},\'' + resultId + '\')">Get Level</button>';
+                        html += '<button class="btn btn-primary" onclick="startMicMeter(\'' + part.id + '\')">Get Level</button>';
+                        html += '<button class="btn btn-outline-secondary" onclick="stopMicMeter(\'' + part.id + '\')">Stop Meter</button>';
                         html += '</div>';
+                        html += '<div class="mt-2" style="max-width:300px">';
+                        html += '  <div class="progress" style="height: 10px;">';
+                        html += '    <div id="mic-meter-bar-' + part.id + '" class="progress-bar bg-success" role="progressbar" style="width:0%" aria-valuemin="0" aria-valuemax="100"></div>';
+                        html += '  </div>';
+                        html += '  <div id="mic-meter-label-' + part.id + '" class="small text-muted mt-1">Level: 0%</div>';
+                        html += '</div>';
+                        // Add PipeWire source switching controls
+                        html += '<div class="row g-2 align-items-center mt-2">';
+                        html += '  <div class="col-auto"><small class="text-muted">PipeWire Source:</small></div>';
+                        html += '  <div class="col-auto"><select id="mic-source-' + part.id + '" class="form-select form-select-sm" style="width:200px"><option value="default">Default</option></select></div>';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-outline-info" onclick="loadMicrophoneSources(\'' + part.id + '\')">🔄 Refresh</button></div>';
+                        html += '</div>';
+                        html += '<span id="mic-device-' + part.id + '" data-dev="' + ((part.config && part.config.deviceId) ? part.config.deviceId : '') + '" data-sens="' + ((part.config && part.config.sensitivity) != null ? part.config.sensitivity : 1) + '" data-winms="' + ((part.config && part.config.windowMs) != null ? part.config.windowMs : 100) + '" style="display:none;"></span>';
                         break;
                     case 'speaker':
                         html += '<div class="row g-2 align-items-center" data-testid="speaker-controls">';
@@ -1545,6 +1727,13 @@
                         html += '  <div class="col-auto">Vol:</div>';
                         html += '  <div class="col-auto"><input id="spk-vol-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="' + ((part.config && part.config.volume) ? part.config.volume : 50) + '" min="0" max="100"/></div>';
                         html += '  <div class="col-auto"><button class="btn btn-sm btn-success" onclick="sendPartAction(\'' + part.id + '\',\'setVolume\',{ volume: parseInt(document.getElementById(\'spk-vol-' + part.id + '\').value,10)||0 },\'' + resultId + '\')">Set Volume</button></div>';
+                        html += '</div>';
+                        // Add PipeWire sink switching controls
+                        html += '<div class="row g-2 align-items-center mt-2">';
+                        html += '  <div class="col-auto"><small class="text-muted">PipeWire Sink:</small></div>';
+                        html += '  <div class="col-auto"><select id="spk-sink-' + part.id + '" class="form-select form-select-sm" style="width:200px"><option value="default">Default</option></select></div>';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-outline-info" onclick="loadSpeakerSinks(\'' + part.id + '\')">🔄 Refresh</button></div>';
+                        html += '  <div class="col-auto"><button class="btn btn-sm btn-warning" onclick="switchSpeakerSink(\'' + part.id + '\')">🔄 Switch Sink</button></div>';
                         html += '</div>';
                         break;
                     case 'webcam':
@@ -1573,11 +1762,36 @@
                         html += '<div class="text-muted">No controls available</div>';
                 }
                 container.innerHTML = html;
+                // Auto-start mic meter when opening microphone test drawer
+                try {
+                    if ((part.type || '').replace(/\-/g, '_') === 'microphone' && typeof startMicMeter === 'function') {
+                        startMicMeter(part.id);
+                    }
+                } catch (e) { /* ignore */ }
             }
 
             function sendPartAction(partId, action, params, resultId, silent) {
                 var payload = { action: action, params: params || {} };
                 var resultEl = document.getElementById(resultId);
+                function sanitizeHardwareText(txt) {
+                    try {
+                        if (!txt || typeof txt !== 'string') return txt;
+                        var lines = txt.split(/\r?\n/);
+                        var drop = [
+                            /^ALSA lib/i,
+                            /jack server/i,
+                            /Cannot connect to server socket/i,
+                            /Cannot connect to server request channel/i,
+                            /JackShmReadWritePtr/i,
+                            /DeprecationWarning/i
+                        ];
+                        lines = lines.filter(function (l) {
+                            return !drop.some(function (r) { return r.test(l); });
+                        });
+                        var out = lines.join('\n');
+                        return out.replace(/\n{3,}/g, '\n\n');
+                    } catch (e) { return txt; }
+                }
                 fetch('/setup/parts/api/parts/' + partId + '/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1585,13 +1799,12 @@
                 })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
-                        if (resultEl) {
-                            var txt = (data && data.message) ? data.message : JSON.stringify(data);
-                            resultEl.textContent = txt;
-                        }
+                        var raw = (data && data.message) ? data.message : JSON.stringify(data);
+                        var txt = sanitizeHardwareText(raw);
+                        if (resultEl) { resultEl.textContent = txt; }
                         if (!silent) {
-                            if (data && data.success) showAlert('success', data.message || 'Action succeeded');
-                            else showAlert('danger', (data && (data.error || data.message)) || 'Action failed');
+                            if (data && data.success) showAlert('success', txt || 'Action succeeded');
+                            else showAlert('danger', sanitizeHardwareText((data && (data.error || data.message)) || 'Action failed'));
                         }
                     })
                     .catch(function (err) {
@@ -1670,23 +1883,6 @@
                         // Show Apply-to-mjpg button for webcam type
                         var _applyBtn = document.getElementById('applyMjpgBtn');
                         if (_applyBtn) _applyBtn.style.display = '';
-                        // Microphone edit group handling
-                        (function () {
-                            var grp = document.getElementById('editMicrophoneGroup');
-                            if (!grp) return;
-                            if (part.type === 'microphone') {
-                                grp.style.display = '';
-                                scanAudioInputsInto('editAudioInputSelect', 'editAudioInputScanResults');
-                                var cfg = part.config || {};
-                                setTimeout(function () {
-                                    try {
-                                        var sel = document.getElementById('editAudioInputSelect');
-                                        if (sel && cfg.deviceId) sel.value = cfg.deviceId;
-                                    } catch (e) { /* ignore */ }
-                                }, 250);
-                            } else { grp.style.display = 'none'; }
-                        })()
-
 
                     } else {
                         // Hide Apply-to-mjpg button when not webcam
@@ -1714,6 +1910,30 @@
                                 opt.textContent = servoTypes[k].label || k;
                                 editServoTypeSel.appendChild(opt);
                             });
+
+                            // Microphone edit group handling (separate from webcam)
+                            (function () {
+                                var grp = document.getElementById('editMicrophoneGroup');
+                                if (!grp) return;
+                                if (part.type === 'microphone') {
+                                    grp.style.display = '';
+                                    scanAudioInputsInto('editAudioInputSelect', 'editAudioInputScanResults');
+                                    var cfg = part.config || {};
+                                    setTimeout(function () {
+                                        try {
+                                            var sel = document.getElementById('editAudioInputSelect');
+                                            if (sel && cfg.deviceId) sel.value = cfg.deviceId;
+                                            var sEl = document.getElementById('editAudioSensitivity');
+                                            if (sEl && cfg.sensitivity != null) sEl.value = String(cfg.sensitivity);
+                                            var wEl = document.getElementById('editMicWindowMs');
+                                            if (wEl && cfg.windowMs != null) wEl.value = String(cfg.windowMs);
+                                        } catch (e) { /* ignore */ }
+                                    }, 250);
+                                } else {
+                                    grp.style.display = 'none';
+                                }
+                            })();
+
                             editServoTypeSel.dataset.filled = '1';
 
                         }
@@ -1854,6 +2074,12 @@
                             var mSel = document.getElementById('editAudioInputSelect');
                             var mid = mSel ? mSel.value : '';
                             if (mid) config.deviceId = mid;
+                            var sEl = document.getElementById('editAudioSensitivity');
+                            var wEl = document.getElementById('editMicWindowMs');
+                            var sens = sEl ? parseFloat(sEl.value || '1') : 1;
+                            if (isFinite(sens) && sens > 0) config.sensitivity = sens;
+                            var winMs = wEl ? parseInt(wEl.value || '100', 10) : 100;
+                            if (isFinite(winMs) && winMs >= 50) config.windowMs = winMs;
                         } catch (e) { /* ignore */ }
                     }
 
@@ -1980,6 +2206,12 @@
                         var mSel = document.getElementById('editAudioInputSelect');
                         var mid = mSel ? mSel.value : '';
                         if (mid) config.deviceId = mid;
+                        var sEl2 = document.getElementById('editAudioSensitivity');
+                        var wEl2 = document.getElementById('editMicWindowMs');
+                        var sens2 = sEl2 ? parseFloat(sEl2.value || '1') : 1;
+                        if (isFinite(sens2) && sens2 > 0) config.sensitivity = sens2;
+                        var winMs2 = wEl2 ? parseInt(wEl2.value || '100', 10) : 100;
+                        if (isFinite(winMs2) && winMs2 >= 50) config.windowMs = winMs2;
                     } catch (e) { /* ignore */ }
                 }
 
@@ -2121,25 +2353,23 @@
                         window.scanAudioInputsInto = function (selectId, resultsId) {
                             var sel = document.getElementById(selectId);
                             var out = document.getElementById(resultsId);
-                            if (out) out.textContent = 'Scanning inputs...';
-                            fetch('/setup/audio/api/inputs')
+                            if (out) out.textContent = 'Scanning PipeWire sources...';
+                            fetch('/setup/audio/api/sources')
                                 .then(function (r) { return r.json(); })
                                 .then(function (j) {
                                     if (!sel) return;
-                                    sel.innerHTML = '<option value="">Select an audio input...</option>';
-                                    var list = (j && j.inputs) || [];
+                                    sel.innerHTML = '<option value="default">Default PipeWire Source</option>';
+                                    var list = (j && j.sources) || [];
                                     list.forEach(function (it) {
                                         var opt = document.createElement('option');
                                         opt.value = it.id || '';
                                         opt.textContent = it.description || it.name || it.id;
                                         sel.appendChild(opt);
                                     });
-                                    if (out) out.textContent = !list.length ? 'No inputs found' : list.map(function (it) {
-                                        return '🎤 ' + (it.description || (it.name + ' (' + it.id + ')'));
-                                    }).join('\n');
+                                    if (out) out.textContent = list.length ? ('Found ' + list.length + ' PipeWire sources') : 'No PipeWire sources found';
                                 })
                                 .catch(function () {
-                                    if (out) out.textContent = 'Error scanning inputs';
+                                    if (out) out.textContent = 'Error scanning PipeWire sources';
                                 });
                         };
                     });
@@ -2202,6 +2432,86 @@
                 }
                 var hidden = document.getElementById('editPca9685Channel');
                 if (hidden) hidden.value = ch;
+            }
+
+            // PipeWire device switching functions
+            function loadSpeakerSinks(partId) {
+                var select = document.getElementById('spk-sink-' + partId);
+                if (!select) return;
+
+                select.innerHTML = '<option value="default">Loading...</option>';
+                fetch('/setup/audio/api/sinks')
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        select.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+                        var list = (j && j.sinks) || [];
+                        list.forEach(function (sink) {
+                            var opt = document.createElement('option');
+                            opt.value = sink.id || '';
+                            opt.textContent = sink.description || sink.name || sink.id;
+                            select.appendChild(opt);
+                        });
+                    })
+                    .catch(function () {
+                        select.innerHTML = '<option value="default">Error loading sinks</option>';
+                    });
+            }
+
+            function loadMicrophoneSources(partId) {
+                var select = document.getElementById('mic-source-' + partId);
+                if (!select) return;
+
+                select.innerHTML = '<option value="default">Loading...</option>';
+                fetch('/setup/audio/api/sources')
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        select.innerHTML = '<option value="default">Default PipeWire Source</option>';
+                        var list = (j && j.sources) || [];
+                        list.forEach(function (source) {
+                            var opt = document.createElement('option');
+                            opt.value = source.id || '';
+                            opt.textContent = source.description || source.name || source.id;
+                            select.appendChild(opt);
+                        });
+                    })
+                    .catch(function () {
+                        select.innerHTML = '<option value="default">Error loading sources</option>';
+                    });
+            }
+
+            function switchSpeakerSink(partId) {
+                var select = document.getElementById('spk-sink-' + partId);
+                if (!select || !select.value) {
+                    alert('Please select a sink first');
+                    return;
+                }
+
+                // Get active streams for this part and move them
+                fetch('/parts/api/speaker/streams?partId=' + partId)
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (j.success && j.streams && j.streams.length > 0) {
+                            // Move each active stream to the new sink
+                            var promises = j.streams.map(function (stream) {
+                                return fetch('/parts/api/speaker/move-stream', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ streamId: stream.id, sinkId: select.value })
+                                });
+                            });
+
+                            Promise.all(promises).then(function () {
+                                alert('Moved ' + j.streams.length + ' active streams to ' + select.options[select.selectedIndex].text);
+                            }).catch(function (err) {
+                                alert('Error moving streams: ' + err.message);
+                            });
+                        } else {
+                            alert('No active streams found for this speaker');
+                        }
+                    })
+                    .catch(function (err) {
+                        alert('Error getting streams: ' + err.message);
+                    });
             }
         </script>
     </main>
