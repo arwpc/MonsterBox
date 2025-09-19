@@ -54,11 +54,19 @@ class ElevenLabsSTTService {
             // Create a proper stream from the buffer for FormData
             const { Readable } = await import('stream');
             const audioStream = Readable.from(audioBuffer);
-            audioStream.path = 'audio.wav'; // Set filename for FormData
+
+            const mimeType = options.mimeType || 'audio/wav';
+            const filename = mimeType === 'audio/webm' ? 'audio.webm' :
+                mimeType === 'audio/mpeg' ? 'audio.mp3' :
+                    mimeType === 'audio/ogg' ? 'audio.ogg' :
+                        mimeType === 'audio/flac' ? 'audio.flac' :
+                            mimeType === 'audio/m4a' ? 'audio.m4a' : 'audio.wav';
+
+            audioStream.path = filename; // Set filename for FormData
 
             formData.append('audio', audioStream, {
-                filename: 'audio.wav',
-                contentType: 'audio/wav',
+                filename,
+                contentType: mimeType,
                 knownLength: audioBuffer.length
             });
 

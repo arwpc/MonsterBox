@@ -27,18 +27,28 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts</a></li>
-                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration</a></li>
-                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a></li>
-                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
-                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super Powers</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i>
+                                    Calibration</a></li>
+                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i>
+                                    Poses</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i>
+                                    Webcam</a></li>
+                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i>
+                                    Super Powers</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i>
+                                    System</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI Settings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live Mode</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live
+                            Mode</a></li>
                     <li class="nav-item"><a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
                 </ul>
                 <%- include('../partials/characterMenu') %>
@@ -170,8 +180,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="maxDuration" class="form-label">Max Duration (seconds)</label>
-                                    <input type="number" class="form-control" id="maxDuration" name="max_duration" 
-                                           min="30" max="600" value="300">
+                                    <input type="number" class="form-control" id="maxDuration" name="max_duration"
+                                        min="30" max="600" value="300">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -192,7 +202,7 @@
                         <div class="mb-3">
                             <label for="agentPrompt" class="form-label">System Prompt *</label>
                             <textarea class="form-control" id="agentPrompt" name="prompt" rows="4" required
-                                      placeholder="Define your agent's personality, behavior, and response style..."></textarea>
+                                placeholder="Define your agent's personality, behavior, and response style..."></textarea>
                             <div class="form-text">
                                 This prompt defines how your agent will behave and respond to trick-or-treaters.
                             </div>
@@ -202,7 +212,7 @@
                         <div class="mb-3">
                             <label for="firstMessage" class="form-label">First Message</label>
                             <textarea class="form-control" id="firstMessage" name="first_message" rows="2"
-                                      placeholder="The first thing your agent will say when someone approaches..."></textarea>
+                                placeholder="The first thing your agent will say when someone approaches..."></textarea>
                         </div>
                     </form>
                 </div>
@@ -255,7 +265,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="editAgentPrompt" class="form-label">System Prompt *</label>
-                            <textarea class="form-control" id="editAgentPrompt" name="prompt" rows="4" required></textarea>
+                            <textarea class="form-control" id="editAgentPrompt" name="prompt" rows="4"
+                                required></textarea>
                         </div>
                     </form>
                 </div>

@@ -251,18 +251,47 @@ class ElevenLabsAgentService {
      */
     async testAgent(agentId, testMessage = "Hello, how are you?") {
         try {
-            // This would typically involve creating a test conversation
-            // For now, we'll return a mock response
+            const result = await this.chatWithAgent(agentId, testMessage);
             return {
-                success: true,
-                message: 'Agent test completed successfully',
-                response: 'Test conversation initiated'
+                success: result.success,
+                message: result.success ? 'Agent test completed successfully' : 'Agent test failed',
+                response: result.replyText || null,
+                error: result.error || null
             };
         } catch (error) {
             console.error('Agent test error:', error);
             return {
                 success: false,
                 error: error.message
+            };
+        }
+    }
+
+    /**
+     * Send a user message to an agent and get a reply
+     */
+    async chatWithAgent(agentId, userText) {
+        try {
+            const response = await axios.post(
+                `${this.config.baseUrl}/convai/agents/${agentId}/messages`,
+                { text: userText },
+                {
+                    headers: {
+                        'xi-api-key': this.config.apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: this.config.timeout
+                }
+            );
+
+            const data = response.data || {};
+            const replyText = data.reply || data.text || data.message || '';
+            return { success: true, replyText, raw: data };
+        } catch (error) {
+            console.error('Agent chat error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.detail || error.message
             };
         }
     }

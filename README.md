@@ -681,6 +681,74 @@ Endpoints:
 - POST /setup/characters/api/select { id } → set current character
 
 
+
+## 🧠 AI Settings & Conversation (STT → AI → TTS)
+
+MonsterBox includes an integrated AI pipeline powered by ElevenLabs services and your configured AI Agents.
+
+Pages
+- AI Settings Hub: http://localhost:3000/ai-settings
+- STT: http://localhost:3000/ai-settings/stt
+- TTS: http://localhost:3000/ai-settings/tts
+- Agents: http://localhost:3000/ai-settings/agents
+- Character Assignment: http://localhost:3000/ai-settings/character-assignment
+
+What works now
+- Save/load STT and TTS configuration (persisted under data/ai-config/)
+- Microphone file transcription and live browser recording → STT → transcript display
+- TTS generation and playback in the browser or routed to a Speaker part
+- Voice Library listing + Voice Cloning (upload samples)
+- Agents CRUD + voice previews + per-agent quick test
+- Character ↔ Agent assignment + conversation test per character
+- One-click homepage “Test Conversation” button
+
+API endpoints (selected)
+- STT
+  - GET /api/elevenlabs/stt/capabilities
+  - GET /api/elevenlabs/stt/models
+  - GET /api/elevenlabs/stt/config
+  - POST /api/elevenlabs/stt/config { model, language, ... }
+  - POST /api/elevenlabs/stt/transcribe (multipart/form-data: audio)
+- TTS
+  - GET /api/elevenlabs/voices
+  - GET /api/elevenlabs/tts/models
+  - GET /api/elevenlabs/tts/config
+  - POST /api/elevenlabs/tts/config { voice_id, model, voice_settings }
+  - POST /api/elevenlabs/tts/generate { text, voice_id, model, voice_settings } → audio stream
+  - POST /api/elevenlabs/voices/clone (multipart/form-data: files[])
+- Agents
+  - GET /api/elevenlabs/agents
+  - POST /api/elevenlabs/agents { name, model, voice_id, prompt, ... }
+  - PATCH /api/elevenlabs/agents/:id { name?, prompt?, ... }
+  - DELETE /api/elevenlabs/agents/:id
+- Conversation (end-to-end)
+  - POST /api/elevenlabs/conversation/test { characterId?, agentId?, text }
+    - Returns JSON with replyText for quick UI tests
+  - POST /api/elevenlabs/conversation (multipart/form-data: audio?) { characterId?, agentId?, text? }
+    - Returns TTS audio stream of the AI reply
+
+Configuration storage
+- STT config → data/ai-config/stt-config.json
+- TTS config → data/ai-config/tts-config.json
+
+How the flow works
+1) Audio in: Either upload an audio file, record in-browser, or type text
+2) STT: /stt/transcribe converts audio to text (if audio provided)
+3) AI: Text is sent to the selected Agent (by agentId or by character assignment)
+4) TTS: AI reply text is synthesized with configured voice → audio stream
+5) Playback: In-browser or through a selected Speaker part
+
+Notes
+- ElevenLabs API key is managed via the existing ElevenLabs Configuration screen (masked in UI)
+- Client JS uses ES5 syntax only (no modern bundlers required)
+- Microphone live-recording uses MediaRecorder; browser will ask for mic permission
+
+#### Testing (automated)
+- Unit/API-lite: MB_TEST_MODE=1 npm run test:ai
+- UI (Playwright): MB_TEST_MODE=1 npm run test:ui
+  - Starts the app automatically and runs tests in tests/playwright/
+
+
 ### Characters API Examples
 
 ```bash

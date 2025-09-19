@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import FormData from 'form-data';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
 
 class ElevenLabsTTSService {
@@ -74,6 +75,15 @@ class ElevenLabsTTSService {
      */
     async generateSpeech(text, voiceId, options = {}) {
         try {
+            // Lightweight test mode to avoid external API calls during automated tests
+            if (process.env.MB_TEST_MODE === '1') {
+                return {
+                    success: true,
+                    audioBuffer: Buffer.from('RIFF....WAVE'),
+                    contentType: 'audio/wav'
+                };
+            }
+
             const requestData = {
                 text: text,
                 model_id: options.model || 'eleven_monolingual_v1',

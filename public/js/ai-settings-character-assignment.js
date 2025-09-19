@@ -429,19 +429,27 @@ CharacterAssignmentManager.prototype.testAssignment = function (characterId) {
 };
 
 CharacterAssignmentManager.prototype.runConversationTest = function () {
-    var testMessage = document.getElementById('testConversationMessage').value;
+    var self = this;
+    var testMessage = document.getElementById('testConversationMessage').value || 'Hello!';
     var resultsDiv = document.getElementById('conversationTestResults');
+    var characterId = document.getElementById('currentCharacter').value;
 
-    // TODO: Implement conversation test
-    console.log('Running conversation test with message:', testMessage);
-
-    // Show mock results
-    document.getElementById('agentResponseText').textContent = 'This is a mock response from the AI agent. The actual implementation will connect to ElevenLabs.';
-    document.getElementById('audioStatus').textContent = 'Generated';
-    document.getElementById('audioStatus').className = 'badge bg-success';
-
-    resultsDiv.style.display = 'block';
-    this.showAlert('Conversation test completed (mock)', 'info');
+    fetch('/api/elevenlabs/conversation/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: characterId, text: testMessage })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) {
+                document.getElementById('agentResponseText').textContent = data.replyText || '(no text)';
+                document.getElementById('audioStatus').textContent = 'Generated';
+                document.getElementById('audioStatus').className = 'badge bg-success';
+                resultsDiv.style.display = 'block';
+                self.showAlert('Conversation test succeeded', 'success');
+            } else {
+                self.showAlert('Conversation test failed', 'danger');
+            }
+        })
+        .catch(function (e) { console.error('Conversation test error', e); self.showAlert('Conversation test failed', 'danger'); });
 };
 
 CharacterAssignmentManager.prototype.createAgentForCharacter = function (characterId) {
@@ -481,32 +489,38 @@ CharacterAssignmentManager.prototype.createAndAssignAgent = function () {
     var formData = new FormData(form);
     var agentData = {};
 
-    for (var pair of formData.entries()) {
-        agentData[pair[0]] = pair[1];
-    }
+    for (var pair of formData.entries()) { agentData[pair[0]] = pair[1]; }
 
-    var characterId = agentData.characterId;
-    delete agentData.characterId;
+    var characterId = agentData.characterId; delete agentData.characterId;
 
-    // Validation
     if (!agentData.name || !agentData.voice_id || !agentData.prompt) {
         this.showAlert('Please fill in all required fields', 'warning');
         return;
     }
 
-    // TODO: Create agent and assign to character
-    console.log('Creating and assigning agent:', agentData, 'to character:', characterId);
+    var createBtn = document.getElementById('createAndAssignAgent');
+    var originalText = createBtn.innerHTML;
+    createBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Creating...';
+    createBtn.disabled = true;
 
-    // Mock success
-    this.showAlert('Agent created and assigned successfully!', 'success');
-
-    // Close modal
-    var modal = bootstrap.Modal.getInstance(document.getElementById('createAgentForCharacterModal'));
-    modal.hide();
-
-    // Refresh data
-    this.loadAgents();
-    this.loadAssignments();
+    fetch('/api/elevenlabs/agents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(agentData) })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success && data.agent && data.agent.id) {
+                return self.updateAssignment(characterId, data.agent.id);
+            } else {
+                throw new Error('Agent creation failed');
+            }
+        })
+        .then(function () {
+            self.showAlert('Agent created and assigned successfully!', 'success');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('createAgentForCharacterModal'));
+            modal.hide();
+            self.loadAgents();
+            self.loadAssignments();
+        })
+        .catch(function (e) { console.error('Create/Assign error', e); self.showAlert('Failed to create and assign agent', 'danger'); })
+        .finally(function () { createBtn.innerHTML = originalText; createBtn.disabled = false; });
 };
 
 CharacterAssignmentManager.prototype.autoCreateAgents = function () {

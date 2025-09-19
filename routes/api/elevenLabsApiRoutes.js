@@ -6,6 +6,7 @@
 import express from 'express';
 import multer from 'multer';
 import elevenLabsConfigService from '../../services/elevenLabsConfigService.js';
+import { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig } from '../../services/aiConfigStore.js';
 
 const router = express.Router();
 
@@ -107,25 +108,27 @@ router.post('/stt/transcribe', requireElevenLabsConfig, upload.single('audio'), 
     try {
         const { default: elevenLabsSTTService } = await import('../../services/elevenLabsSTTService.js');
 
-        // Handle file upload
         if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                error: 'No audio file provided'
-            });
+            return res.status(400).json({ success: false, error: 'No audio file provided' });
         }
 
         const audioBuffer = req.file.buffer;
-        const options = req.body || {};
+        const options = Object.assign({}, req.body || {}, { mimeType: req.file.mimetype });
 
         const result = await elevenLabsSTTService.transcribeAudio(audioBuffer, options);
-        res.json(result);
+        if (result && result.success) {
+            return res.json({
+                success: true,
+                text: result.transcript || result.text || '',
+                confidence: result.confidence || null,
+                language: result.language || null,
+                duration: result.duration || null
+            });
+        }
+        return res.status(400).json(result || { success: false, error: 'Transcription failed' });
     } catch (error) {
         console.error('STT transcription error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Transcription failed'
-        });
+        res.status(500).json({ success: false, error: 'Transcription failed' });
     }
 });
 
@@ -290,5 +293,87 @@ router.get('/tts/models', requireElevenLabsConfig, async (req, res) => {
         });
     }
 });
+
+// STT Config
+router.get('/stt/config', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const cfg = await getSTTConfig();
+        res.json({ success: true, config: cfg });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+router.post('/stt/config', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const saved = await saveSTTConfig(req.body || {});
+        res.json({ success: true, config: saved });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// TTS Config
+router.get('/tts/config', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const cfg = await getTTSConfig();
+        res.json({ success: true, config: cfg });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+router.post('/tts/config', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const saved = await saveTTSConfig(req.body || {});
+        res.json({ success: true, config: saved });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// Voice cloning
+router.post('/voices/clone', requireElevenLabsConfig, upload.array('files', 5), async (req, res) => {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const name = (req.body && req.body.name) || 'Cloned Voice';
+        const description = (req.body && req.body.description) || '';
+        const files = (req.files || []).map(f => f.buffer);
+        const result = await elevenLabsTTSService.cloneVoice(name, description, files);
+        res.json(result);
+    } catch (error) {
+        console.error('Voice cloning error:', error);
+        res.status(500).json({ success: false, error: 'Voice cloning failed' });
+    }
+});
+
+// Conversation endpoints
+router.post('/conversation/test', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: conversationService } = await import('../../services/conversationService.js');
+        const { characterId, agentId, text } = req.body || {};
+        const result = await conversationService.converse({ characterId, agentId, text });
+        if (!result.success) return res.status(400).json(result);
+        // For test endpoint, return JSON (no audio stream)
+        res.json({ success: true, replyText: result.replyText, agentUsed: result.agentUsed });
+    } catch (error) {
+        console.error('Conversation test error:', error);
+        res.status(500).json({ success: false, error: 'Conversation test failed' });
+    }
+});
+
+router.post('/conversation', requireElevenLabsConfig, upload.single('audio'), async (req, res) => {
+    try {
+        const { default: conversationService } = await import('../../services/conversationService.js');
+        const { characterId, agentId, text } = req.body || {};
+        const audioBuffer = req.file ? req.file.buffer : null;
+        const result = await conversationService.converse({ characterId, agentId, audioBuffer, text });
+        if (!result.success) return res.status(400).json(result);
+        res.set({ 'Content-Type': result.contentType || 'audio/mpeg' });
+        return res.send(result.audioBuffer);
+    } catch (error) {
+        console.error('Conversation error:', error);
+        res.status(500).json({ success: false, error: 'Conversation failed' });
+    }
+});
+
 
 export default router;

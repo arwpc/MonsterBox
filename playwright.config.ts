@@ -31,7 +31,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm start',
+    command: 'MB_TEST_MODE=1 npm start',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: true,
     timeout: 120_000

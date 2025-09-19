@@ -237,21 +237,31 @@ TTSManager.prototype.saveConfiguration = function () {
     var config = {};
 
     for (var pair of formData.entries()) {
-        if (pair[0] === 'use_speaker_boost') {
-            config[pair[0]] = true; // Checkbox is checked
-        } else {
-            config[pair[0]] = pair[1];
-        }
+        config[pair[0]] = pair[1];
     }
 
-    // Handle unchecked checkbox
-    if (!config.use_speaker_boost) {
-        config.use_speaker_boost = false;
-    }
+    // Normalize types
+    config.stability = parseFloat(config.stability || '0.5');
+    config.similarity_boost = parseFloat(config.similarity_boost || '0.5');
+    config.style = parseFloat(config.style || '0');
+    config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
+    config.voice_id = config.defaultVoice || '';
+    config.model = config.ttsModel || config.model || 'eleven_monolingual_v1';
 
-    // TODO: Save configuration to backend
-    console.log('Saving TTS configuration:', config);
-    this.showAlert('TTS configuration saved successfully!', 'success');
+    fetch('/api/elevenlabs/tts/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) self.showAlert('TTS configuration saved successfully!', 'success');
+            else self.showAlert('Failed to save TTS configuration', 'danger');
+        })
+        .catch(function (e) {
+            console.error('Save TTS config error', e);
+            self.showAlert('Failed to save TTS configuration', 'danger');
+        });
 };
 
 TTSManager.prototype.testTTSConfiguration = function () {

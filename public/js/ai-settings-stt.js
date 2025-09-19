@@ -8,6 +8,9 @@ function STTManager() {
     this.models = [];
     this.microphoneParts = [];
     this.currentConfig = {};
+    this.mediaRecorder = null;
+    this.chunks = [];
+    this.stream = null;
 }
 
 STTManager.prototype.init = function () {
@@ -188,17 +191,34 @@ STTManager.prototype.saveConfiguration = function () {
         config[pair[0]] = pair[1];
     }
 
-    // TODO: Save configuration to backend
-    console.log('Saving STT configuration:', config);
-    this.showAlert('STT configuration saved successfully!', 'success');
+    fetch('/api/elevenlabs/stt/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success) self.showAlert('STT configuration saved successfully!', 'success');
+            else self.showAlert('Failed to save STT configuration', 'danger');
+        })
+        .catch(function (e) {
+            console.error('Save STT config error', e);
+            self.showAlert('Failed to save STT configuration', 'danger');
+        });
 };
 
 STTManager.prototype.testSTTConfiguration = function () {
     var self = this;
-
-    // TODO: Test STT configuration
-    console.log('Testing STT configuration...');
-    this.showAlert('STT configuration test completed!', 'info');
+    fetch('/api/elevenlabs/stt/capabilities')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success !== false) self.showAlert('STT capabilities fetched successfully.', 'success');
+            else self.showAlert('Failed to fetch STT capabilities', 'danger');
+        })
+        .catch(function (e) {
+            console.error('STT capabilities error', e);
+            self.showAlert('Failed to fetch STT capabilities', 'danger');
+        });
 };
 
 STTManager.prototype.transcribeAudioFile = function () {
@@ -261,32 +281,71 @@ STTManager.prototype.showTranscriptionResults = function (data) {
 
 STTManager.prototype.startRecording = function () {
     var self = this;
-
-    // TODO: Implement live recording
-    console.log('Starting recording...');
-
     var startBtn = document.getElementById('startRecording');
     var stopBtn = document.getElementById('stopRecording');
 
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showAlert('getUserMedia not supported in this browser', 'danger');
+        return;
+    }
 
-    this.showAlert('Recording started (feature coming soon)', 'info');
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        self.stream = stream;
+        try {
+            self.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        } catch (e) {
+            console.warn('MediaRecorder mimeType not supported, falling back');
+            self.mediaRecorder = new MediaRecorder(stream);
+        }
+        self.chunks = [];
+        self.mediaRecorder.ondataavailable = function (ev) {
+            if (ev.data && ev.data.size > 0) self.chunks.push(ev.data);
+        };
+        self.mediaRecorder.onstop = function () {
+            var blob = new Blob(self.chunks, { type: 'audio/webm' });
+            var form = new FormData();
+            form.append('audio', blob, 'recording.webm');
+            fetch('/api/elevenlabs/stt/transcribe', { method: 'POST', body: form })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.success) self.showTranscriptionResults(data);
+                    else self.showAlert('Transcription failed: ' + (data && data.error || 'Unknown'), 'danger');
+                })
+                .catch(function (e) {
+                    console.error('Transcribe error', e);
+                    self.showAlert('Transcription failed', 'danger');
+                });
+        };
+        self.mediaRecorder.start();
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        self.showAlert('Recording started', 'info');
+    }).catch(function (err) {
+        console.error('getUserMedia error', err);
+        self.showAlert('Microphone access denied', 'danger');
+    });
 };
 
 STTManager.prototype.stopRecording = function () {
     var self = this;
-
-    // TODO: Implement stop recording
-    console.log('Stopping recording...');
-
     var startBtn = document.getElementById('startRecording');
     var stopBtn = document.getElementById('stopRecording');
 
+    try {
+        if (self.mediaRecorder && self.mediaRecorder.state !== 'inactive') {
+            self.mediaRecorder.stop();
+        }
+        if (self.stream) {
+            self.stream.getTracks().forEach(function (t) { t.stop(); });
+            self.stream = null;
+        }
+        self.showAlert('Recording stopped', 'info');
+    } catch (e) {
+        console.warn('Stop recording error', e);
+    }
+
     startBtn.disabled = false;
     stopBtn.disabled = true;
-
-    this.showAlert('Recording stopped (feature coming soon)', 'info');
 };
 
 STTManager.prototype.testMicrophoneIntegration = function () {
@@ -298,9 +357,19 @@ STTManager.prototype.testMicrophoneIntegration = function () {
         return;
     }
 
-    // TODO: Test microphone integration
-    console.log('Testing microphone integration with part:', microphoneSelect.value);
-    this.showAlert('Microphone integration test completed!', 'success');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showAlert('getUserMedia not supported in this browser', 'danger');
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        // Immediately stop to verify permissions/integration
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        self.showAlert('Microphone is accessible and working!', 'success');
+    }).catch(function (err) {
+        console.error('Microphone test error', err);
+        self.showAlert('Microphone access failed', 'danger');
+    });
 };
 
 STTManager.prototype.showAlert = function (message, type) {

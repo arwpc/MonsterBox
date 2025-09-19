@@ -10,7 +10,9 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "reporter": [
       [
@@ -38,7 +40,9 @@
         "outputDir": "/home/remote/MonsterBox/test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "chromium",
         "name": "chromium",
         "testDir": "/home/remote/MonsterBox/tests/playwright",
@@ -55,23 +59,70 @@
     "version": "1.55.0",
     "workers": 1,
     "webServer": {
-      "command": "npm start",
+      "command": "MB_TEST_MODE=1 npm start",
       "url": "http://127.0.0.1:3000",
       "reuseExistingServer": true,
       "timeout": 120000
     }
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments.",
-      "stack": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments."
+      "title": "ai-settings.spec.js",
+      "file": "ai-settings.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "AI Settings - quick actions",
+          "file": "ai-settings.spec.js",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Test Conversation shows a success alert",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5111,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-09-19T03:43:41.136Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0c4d99a407b98d764f52-9061ff8c72517dfdac8f",
+              "file": "ai-settings.spec.js",
+              "line": 7,
+              "column": 3
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2025-09-08T01:14:44.585Z",
-    "duration": 122.25599999999986,
-    "expected": 0,
+    "startTime": "2025-09-19T03:43:36.917Z",
+    "duration": 14615.646999999999,
+    "expected": 1,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
