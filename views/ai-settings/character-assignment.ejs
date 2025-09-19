@@ -27,18 +27,32 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts</a></li>
-                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration</a></li>
-                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a></li>
-                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
-                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super Powers</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i>
+                                    Calibration</a></li>
+                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i>
+                                    Poses</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i>
+                                    Webcam</a></li>
+                            <li><a class="dropdown-item" href="/ai-settings"><i class="bi bi-brain"></i> AI Settings</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i>
+                                    Super Powers</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i>
+                                    System</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI Settings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live Mode</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI
+                            Settings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live
+                            Mode</a></li>
                     <li class="nav-item"><a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
                 </ul>
                 <%- include('../partials/characterMenu') %>
@@ -205,8 +219,8 @@
                     </div>
                     <div class="mb-3">
                         <label for="testConversationMessage" class="form-label">Test Message</label>
-                        <input type="text" class="form-control" id="testConversationMessage" 
-                               value="Hello! I'm trick-or-treating tonight!">
+                        <input type="text" class="form-control" id="testConversationMessage"
+                            value="Hello! I'm trick-or-treating tonight!">
                     </div>
                     <div id="conversationTestResults" class="mt-4" style="display: none;">
                         <h6>Conversation Test Results:</h6>
@@ -217,7 +231,7 @@
                                     <div id="agentResponseText"></div>
                                 </div>
                                 <div class="mb-2">
-                                    <strong>Audio Generated:</strong> 
+                                    <strong>Audio Generated:</strong>
                                     <span id="audioStatus" class="badge bg-secondary">-</span>
                                 </div>
                                 <div>
@@ -278,7 +292,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="newAgentPrompt" class="form-label">System Prompt</label>
-                            <textarea class="form-control" id="newAgentPrompt" name="prompt" rows="3" required></textarea>
+                            <textarea class="form-control" id="newAgentPrompt" name="prompt" rows="3"
+                                required></textarea>
                         </div>
                     </form>
                 </div>
