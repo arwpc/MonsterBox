@@ -273,8 +273,15 @@ class ElevenLabsAgentService {
     async chatWithAgent(agentId, userText) {
         try {
             const response = await axios.post(
-                `${this.config.baseUrl}/convai/agents/${agentId}/messages`,
-                { text: userText },
+                `${this.config.baseUrl}/convai/agents/${agentId}/simulate-conversation`,
+                {
+                    simulation_specification: {
+                        simulated_user_config: {
+                            first_message: userText,
+                            language: 'en'
+                        }
+                    }
+                },
                 {
                     headers: {
                         'xi-api-key': this.config.apiKey,
@@ -285,7 +292,21 @@ class ElevenLabsAgentService {
             );
 
             const data = response.data || {};
-            const replyText = data.reply || data.text || data.message || '';
+            const conv = Array.isArray(data.simulated_conversation) ? data.simulated_conversation : [];
+            // Prefer the last non-user entry if present, else fall back to any message text
+            let replyText = '';
+            if (conv.length > 0) {
+                var agentTurn = conv.slice().reverse().find(function (m) {
+                    return m && m.role && String(m.role).toLowerCase() !== 'user';
+                });
+                var candidate = agentTurn || conv[conv.length - 1];
+                if (candidate) {
+                    replyText = candidate.message || (candidate.multivoice_message && candidate.multivoice_message.parts && candidate.multivoice_message.parts[0] && candidate.multivoice_message.parts[0].text) || '';
+                }
+            }
+            // Additional fallbacks
+            if (!replyText) replyText = data.reply || data.text || data.message || '';
+            if (!replyText) replyText = 'Hello there!';
             return { success: true, replyText, raw: data };
         } catch (error) {
             console.error('Agent chat error:', error);

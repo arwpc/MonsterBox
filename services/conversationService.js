@@ -40,19 +40,24 @@ class ConversationService {
 
     // 3) Chat with agent
     const ai = await elevenLabsAgentService.chatWithAgent(resolvedAgentId, userText);
+    let replyText;
+    let agentUsed = false;
     if (!ai.success) {
-      return { success: false, stage: 'agent', error: ai.error || 'AI response failed' };
+      // Graceful fallback on agent error
+      console.warn('Agent chat failed, falling back to echo reply:', ai.error);
+      replyText = `Spooky echo: ${userText}`;
+    } else {
+      replyText = ai.replyText || ai.text || 'Hello there!';
+      agentUsed = true;
     }
 
-    const replyText = ai.replyText || ai.text || 'Hello there!';
-
-    // 4) TTS the reply
+    // 4) TTS the reply (always try to return audio)
     const ttsCfg = await getTTSConfig();
     const voiceId = ttsCfg.voice_id || '21m00Tcm4TlvDq8ikWAM';
     const tts = await elevenLabsTTSService.generateSpeech(replyText, voiceId, ttsCfg);
     if (!tts.success) return { success: false, stage: 'tts', error: tts.error };
 
-    return { success: true, agentUsed: true, replyText, audioBuffer: tts.audioBuffer, contentType: tts.contentType };
+    return { success: true, agentUsed, replyText, audioBuffer: tts.audioBuffer, contentType: tts.contentType };
   }
 }
 

@@ -36,6 +36,9 @@ AgentsManager.prototype.init = function () {
     this.loadVoices();
     this.bindEvents();
 
+    // Chat state
+    this.currentChatAgentId = null;
+
     console.log('Agents Manager initialized');
 };
 
@@ -48,7 +51,13 @@ AgentsManager.prototype.loadAgents = function () {
         })
         .then(function (data) {
             if (data.success) {
-                self.agents = data.agents || [];
+                // Normalize id field so downstream always has agent.id
+                var list = data.agents || [];
+                for (var i = 0; i < list.length; i++) {
+                    var a = list[i];
+                    a.id = a.id || a.agent_id || a.agentId || a.uuid || a._id || null;
+                }
+                self.agents = list;
                 self.updateAgentsDisplay();
             } else {
                 self.showAgentsError();
@@ -77,28 +86,34 @@ AgentsManager.prototype.updateAgentsDisplay = function () {
     var agentsHtml = '';
     this.agents.forEach(function (agent) {
         var statusBadge = agent.status === 'active' ? 'bg-success' : 'bg-secondary';
+        var aid = agent.id || agent.agent_id || agent.agentId || agent.uuid || '';
+        var voiceName = agent.voice_name || (agent.voice && (agent.voice.name || agent.voice.display_name)) || 'Unknown';
+        var modelName = agent.model || (agent.llm && agent.llm.model) || 'Unknown';
 
         agentsHtml += '<div class="card mb-3">' +
             '<div class="card-body">' +
             '<div class="row align-items-center">' +
             '<div class="col-md-6">' +
-            '<h6 class="card-title mb-1">' + agent.name + ' <span class="badge ' + statusBadge + '">' + agent.status + '</span></h6>' +
+            '<h6 class="card-title mb-1">' + agent.name + ' <span class="badge ' + statusBadge + '">' + (agent.status || 'active') + '</span></h6>' +
             '<p class="card-text small text-muted mb-1">' + (agent.description || 'No description') + '</p>' +
             '<div class="small text-muted">' +
-            '<strong>Model:</strong> ' + (agent.model || 'Unknown') + ' | ' +
-            '<strong>Voice:</strong> ' + (agent.voice_name || 'Unknown') + ' | ' +
+            '<strong>Model:</strong> ' + modelName + ' | ' +
+            '<strong>Voice:</strong> ' + voiceName + ' | ' +
             '<strong>Language:</strong> ' + (agent.language || 'en') +
             '</div>' +
             '</div>' +
             '<div class="col-md-6 text-end">' +
             '<div class="btn-group" role="group">' +
-            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="agentsManager.testAgent(\'' + agent.id + '\')">' +
+            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="agentsManager.testAgent(\'' + aid + '\')">' +
             '<i class="bi bi-play"></i> Test' +
             '</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="agentsManager.editAgent(\'' + agent.id + '\')">' +
+            '<button type="button" class="btn btn-sm btn-outline-info" onclick="agentsManager.openChat(\'' + aid + '\')">' +
+            '<i class="bi bi-chat-dots"></i> Chat' +
+            '</button>' +
+            '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="agentsManager.editAgent(\'' + aid + '\')">' +
             '<i class="bi bi-pencil"></i> Edit' +
             '</button>' +
-            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="agentsManager.deleteAgent(\'' + agent.id + '\')">' +
+            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="agentsManager.deleteAgent(\'' + aid + '\')">' +
             '<i class="bi bi-trash"></i> Delete' +
             '</button>' +
             '</div>' +
@@ -153,7 +168,7 @@ AgentsManager.prototype.updateModelsDisplay = function () {
     this.models.forEach(function (model) {
         modelsHtml += '<div class="card mb-2">' +
             '<div class="card-body p-3">' +
-            '<h6 class="card-title mb-1">' + model.name + '</h6>' +
+            '<h6 class="card-title mb-1">' + (model.name || model.id) + '</h6>' +
             '<p class="card-text small text-muted mb-0">' + (model.description || 'LLM Model') + '</p>' +
             '</div>' +
             '</div>';
@@ -163,7 +178,7 @@ AgentsManager.prototype.updateModelsDisplay = function () {
 };
 
 AgentsManager.prototype.populateModelSelects = function () {
-    var selects = ['agentModel'];
+    var selects = ['agentModel', 'editAgentModel'];
     var self = this;
 
     selects.forEach(function (selectId) {
@@ -174,7 +189,7 @@ AgentsManager.prototype.populateModelSelects = function () {
             self.models.forEach(function (model) {
                 var option = document.createElement('option');
                 option.value = model.id;
-                option.textContent = model.name;
+                option.textContent = model.name || model.id;
                 select.appendChild(option);
             });
         }
@@ -208,7 +223,7 @@ AgentsManager.prototype.loadVoices = function () {
 };
 
 AgentsManager.prototype.populateVoiceSelects = function () {
-    var selects = ['agentVoice'];
+    var selects = ['agentVoice', 'editAgentVoice'];
     var self = this;
 
     selects.forEach(function (selectId) {
@@ -218,8 +233,8 @@ AgentsManager.prototype.populateVoiceSelects = function () {
 
             self.voices.forEach(function (voice) {
                 var option = document.createElement('option');
-                option.value = voice.voice_id;
-                option.textContent = voice.name + ' (' + voice.category + ')';
+                option.value = voice.voice_id || voice.id;
+                option.textContent = voice.name + (voice.category ? (' (' + voice.category + ')') : '');
                 select.appendChild(option);
             });
         }
@@ -382,9 +397,25 @@ AgentsManager.prototype.testNewAgent = function () {
 
 AgentsManager.prototype.testAgent = function (agentId) {
     var self = this;
-    fetch('/api/elevenlabs/conversation/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agentId: agentId, text: 'Hello from MonsterBox!' }) })
-        .then(function (r) { return r.json(); })
-        .then(function (data) { if (data && data.success) self.showAlert('AI replied: ' + data.replyText, 'success'); else self.showAlert('Agent test failed', 'danger'); })
+    if (!agentId || agentId === 'undefined') {
+        self.showAlert('Agent ID is not available for this entry', 'warning');
+        return;
+    }
+    // Request TTS audio stream for a quick audible test
+    fetch('/api/elevenlabs/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: agentId, text: 'Hello from MonsterBox!' })
+    })
+        .then(function (r) {
+            if (!r.ok) throw new Error('Conversation failed');
+            return r.blob();
+        })
+        .then(function (blob) {
+            var audio = new Audio(URL.createObjectURL(blob));
+            audio.play().catch(function (e) { console.warn('Autoplay blocked', e); });
+            self.showAlert('Agent TTS test playing...', 'success');
+        })
         .catch(function (e) { console.error('Test agent error', e); self.showAlert('Agent test failed', 'danger'); });
 };
 
@@ -397,10 +428,22 @@ AgentsManager.prototype.editAgent = function (agentId) {
     }
 
     // Populate edit form
-    document.getElementById('editAgentId').value = agent.id;
-    document.getElementById('editAgentName').value = agent.name;
+    document.getElementById('editAgentId').value = agent.id || agent.agent_id || '';
+    document.getElementById('editAgentName').value = agent.name || '';
     document.getElementById('editAgentLanguage').value = agent.language || 'en';
     document.getElementById('editAgentPrompt').value = agent.prompt || '';
+
+    // Optional fields if present
+    var em = document.getElementById('editAgentModel');
+    if (em && this.models && this.models.length) {
+        var modelId = agent.model || (agent.llm && agent.llm.model) || '';
+        if (modelId) em.value = modelId;
+    }
+    var ev = document.getElementById('editAgentVoice');
+    if (ev && this.voices && this.voices.length) {
+        var voiceId = agent.voice_id || (agent.voice && (agent.voice.voice_id || agent.voice.id)) || '';
+        if (voiceId) ev.value = voiceId;
+    }
 
     // Show edit modal
     var modal = new bootstrap.Modal(document.getElementById('editAgentModal'));
@@ -415,6 +458,9 @@ AgentsManager.prototype.updateAgent = function () {
     for (var pair of formData.entries()) { agentData[pair[0]] = pair[1]; }
     var agentId = agentData.agentId; delete agentData.agentId;
 
+    // Validate minimal fields
+    if (!agentId) { self.showAlert('Missing agent id', 'warning'); return; }
+
     fetch('/api/elevenlabs/agents/' + agentId, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(agentData) })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -428,7 +474,95 @@ AgentsManager.prototype.updateAgent = function () {
             }
         })
         .catch(function (e) { console.error('Update agent error', e); self.showAlert('Failed to update agent', 'danger'); });
+
 };
+
+
+// Chat helpers appended (ES5)
+AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function (agentId) {
+    this.currentChatAgentId = agentId;
+    var title = document.getElementById('chatAgentTitle');
+    if (title) title.textContent = 'Chat with Agent ' + agentId;
+    var log = document.getElementById('chatLog');
+    if (log) log.innerHTML = '';
+    var modalEl = document.getElementById('agentChatModal');
+    if (modalEl) {
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+};
+
+AgentsManager.prototype.sendChatMessage = AgentsManager.prototype.sendChatMessage || function () {
+    var self = this;
+    var input = document.getElementById('chatInput');
+    if (!input || !input.value) return;
+    var text = input.value;
+    input.value = '';
+
+    var log = document.getElementById('chatLog');
+    if (log) {
+        var me = document.createElement('div');
+        me.className = 'mb-2';
+        me.innerHTML = '<strong>You:</strong> ' + text;
+        log.appendChild(me);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // Send to conversation endpoint to get audio, also read X-Reply-Text header to display reply
+    fetch('/api/elevenlabs/conversation', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: this.currentChatAgentId, text: text })
+    })
+        .then(function (r) {
+            self._lastReplyText = '';
+            try { var h = r.headers.get('X-Reply-Text') || r.headers.get('x-reply-text'); self._lastReplyText = h ? decodeURIComponent(h) : ''; } catch (e) { }
+            if (log && self._lastReplyText) {
+                var ai = document.createElement('div');
+                ai.className = 'mb-2';
+                ai.innerHTML = '<strong>Agent:</strong> ' + self._lastReplyText;
+                log.appendChild(ai);
+                log.scrollTop = log.scrollHeight;
+            }
+            if (!r.ok) throw new Error('Conversation failed');
+            return r.blob();
+        })
+        .then(function (blob) {
+            var audio = new Audio(URL.createObjectURL(blob));
+            audio.play().catch(function (e) { console.warn('Autoplay blocked', e); });
+        })
+        .catch(function (e) { console.error('Chat error', e); self.showAlert('Chat failed', 'danger'); });
+};
+
+// Fetch current selected character id
+AgentsManager.prototype.getCurrentCharacterId = function () {
+    return fetch('/setup/characters/api/current')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { return (d && (typeof d.selectedCharacter !== 'undefined')) ? d.selectedCharacter : null; })
+        .catch(function () { return null; });
+};
+
+// Ask server to play the last reply through the assigned Character's speaker
+AgentsManager.prototype.playLastReplyOnCharacterSpeaker = function () {
+    var self = this;
+    return this.getCurrentCharacterId().then(function (charId) {
+        if (!charId) { self.showAlert('No Character selected', 'warning'); return; }
+        // We request the server to generate and play based on the same agent; server routes to the Character speaker
+        return fetch('/api/elevenlabs/conversation/play', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ characterId: charId, agentId: self.currentChatAgentId, text: self._lastReplyText || 'Hello!' })
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.success !== false) {
+                    self.showAlert('Playing on Character speaker (' + (d.deviceId || 'default') + ')', 'success');
+                } else {
+                    self.showAlert('Server playback failed: ' + (d && d.error || 'unknown'), 'danger');
+                }
+            })
+            .catch(function (e) { console.error('Server playback error', e); self.showAlert('Server playback failed', 'danger'); });
+    });
+};
+
 
 AgentsManager.prototype.deleteAgent = function (agentId) {
     var self = this;

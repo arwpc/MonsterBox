@@ -367,11 +367,35 @@ router.post('/conversation', requireElevenLabsConfig, upload.single('audio'), as
         const audioBuffer = req.file ? req.file.buffer : null;
         const result = await conversationService.converse({ characterId, agentId, audioBuffer, text });
         if (!result.success) return res.status(400).json(result);
+        // Include reply text as a header so the client can render it while streaming audio
+        if (result.replyText) {
+            res.set('X-Reply-Text', encodeURIComponent(String(result.replyText)));
+        }
         res.set({ 'Content-Type': result.contentType || 'audio/mpeg' });
         return res.send(result.audioBuffer);
     } catch (error) {
         console.error('Conversation error:', error);
         res.status(500).json({ success: false, error: 'Conversation failed' });
+    }
+});
+
+// Play conversation audio on the server using the assigned Character speaker (PipeWire)
+router.post('/conversation/play', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: conversationService } = await import('../../services/conversationService.js');
+        const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
+        const { characterId, agentId, text } = req.body || {};
+        const result = await conversationService.converse({ characterId, agentId, text });
+        if (!result.success) return res.status(400).json(result);
+        const play = await serverPlaybackService.playBufferOnCharacterSpeaker(result.audioBuffer, {
+            characterId: characterId ? Number(characterId) : null,
+            contentType: result.contentType || 'audio/mpeg',
+            volume: 80
+        });
+        return res.json(play);
+    } catch (error) {
+        console.error('Conversation server playback error:', error);
+        res.status(500).json({ success: false, error: 'Conversation server playback failed' });
     }
 });
 

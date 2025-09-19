@@ -743,6 +743,32 @@ Notes
 - Client JS uses ES5 syntax only (no modern bundlers required)
 - Microphone live-recording uses MediaRecorder; browser will ask for mic permission
 
+
+#### AI Status, Unfinished Tasks & Next Steps
+
+Current status
+- End‑to‑end STT → AI → TTS works via /api/elevenlabs/conversation and /conversation/test
+- STT/TTS configs persist under data/ai-config/, UI buttons wired (STT record/upload, TTS preview, Agents CRUD/test, Character ↔ Agent assignment, homepage Test Conversation)
+- Voice library listing and voice cloning endpoints present
+
+Unfinished (near‑term)
+- Add real‑time input VU meter on AI Settings → STT recorder and Character Assignment test panel (match Audio Center meters)
+- Ensure TTS auto‑plays and routes to the Speaker assigned to the current Character; verify autoplay behavior across Chrome/Firefox on RPi4b
+- Harden error handling (timeouts, model/voice unavailability) with clear user toasts; add retry/backoff; cache models/voices
+- Security pass for ElevenLabs API key (env loading, masking, no accidental logs); confirm docs and UI reflect this
+
+Automated tests to add
+- Mocha API tests (MB_TEST_MODE) for STT models/capabilities/config, TTS models/config/generate, Voices list/clone, Agents CRUD/test, Conversation test/stream
+- Playwright e2e (Firefox headless on RPi4b) covering every AI Settings button and flows, plus homepage “Test Conversation”
+
+Next steps (execution order)
+1) Implement Mocha tests with axios/nock mocks for all ElevenLabs routes and conversation endpoints
+2) Add Playwright e2e that drives: STT record→transcribe, TTS preview, Agents create/edit/test, Character assignment test, homepage Test Conversation
+3) Add VU meters to STT and Character Assignment panels; refine recorder UX (state, cancel, timer)
+4) Verify/finish speaker routing for TTS: use the Speaker assigned to the active Character, with safe fallback to default device
+5) Improve resilience (timeouts, retries/backoff, cached lists) and surface errors via non-blocking toasts
+6) Optional (post‑v1): jaw animation sync without sockets (derive amplitude from playback and drive jaw servo via existing part actions)
+
 #### Testing (automated)
 - Unit/API-lite: MB_TEST_MODE=1 npm run test:ai
 - UI (Playwright): MB_TEST_MODE=1 npm run test:ui

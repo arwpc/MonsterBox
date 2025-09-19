@@ -263,10 +263,34 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAgentModel" class="form-label">LLM Model *</label>
+                                    <select class="form-select" id="editAgentModel" name="model">
+                                        <option value="">Select model...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAgentVoice" class="form-label">Voice *</label>
+                                    <select class="form-select" id="editAgentVoice" name="voice_id">
+                                        <option value="">Select voice...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="editAgentPrompt" class="form-label">System Prompt *</label>
                             <textarea class="form-control" id="editAgentPrompt" name="prompt" rows="4"
                                 required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAgentFirstMessage" class="form-label">First Message</label>
+                            <textarea class="form-control" id="editAgentFirstMessage" name="first_message"
+                                rows="2"></textarea>
                         </div>
                     </form>
                 </div>
@@ -275,6 +299,38 @@
                     <button type="button" class="btn btn-success" id="updateAgent">
                         <i class="bi bi-check-circle"></i> Update Agent
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Chat Modal (standalone; not nested in other modals) -->
+    <div class="modal fade" id="agentChatModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-chat-dots"></i> <span id="chatAgentTitle">Chat</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chatLog" class="border rounded p-2 mb-3"
+                        style="height: 300px; overflow:auto; background:#111;">
+                        <div class="text-muted">Type a message to start chatting with the agent…</div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="chatInput" class="form-control" placeholder="Say something spooky…">
+                        <button class="btn btn-primary" type="button"
+                            onclick="window.agentsManager && window.agentsManager.sendChatMessage()">
+                            <i class="bi bi-send"></i> Send
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-warning"
+                        onclick="window.agentsManager && window.agentsManager.playLastReplyOnCharacterSpeaker()">
+                        <i class="bi bi-volume-up"></i> Play on Character Speaker
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
