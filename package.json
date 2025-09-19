@@ -13,7 +13,12 @@
     "test:ui": "playwright test",
     "test:ui:ai": "playwright test -g 'AI Settings - quick actions'",
     "test:ui-headed": "playwright test --headed",
-    "test:all": "npm run test:unit && npm run test:ui"
+    "test:all": "npm run test:unit && npm run test:ui",
+    "setup": "bash setup-monsterbox.sh",
+    "setup:webcam": "bash scripts/setup-webcam.sh",
+    "check": "bash scripts/system-check.sh",
+    "install:python": "python3 -m pip install --user -r utils/requirements.txt",
+    "postinstall": "node scripts/post-install.js"
   },
   "keywords": [
     "animatronic",
