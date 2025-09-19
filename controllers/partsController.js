@@ -417,6 +417,12 @@ export const testPart = async (req, res) => {
     }
 };
 
+// Helper function to get part by ID (for internal use)
+export const getPartByIdHelper = async (id) => {
+    const parts = await loadParts();
+    return parts.find(part => String(part.id) === String(id)) || null;
+};
+
 export default {
     getAllParts,
     getPartById,

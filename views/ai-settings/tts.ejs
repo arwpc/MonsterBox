@@ -27,18 +27,30 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts</a></li>
-                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration</a></li>
-                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a></li>
-                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
-                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super Powers</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                            <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i>
+                                    Calibration</a></li>
+                            <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i>
+                                    Poses</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i>
+                                    Webcam</a></li>
+                            <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i>
+                                    Super Powers</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i>
+                                    System</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI Settings</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live Mode</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/ai-settings"><i class="bi bi-brain"></i> AI
+                            Settings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/live"><i class="bi bi-play-circle"></i> Live
+                            Mode</a></li>
                     <li class="nav-item"><a class="nav-link" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
                 </ul>
                 <%- include('../partials/characterMenu') %>
@@ -101,8 +113,8 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="stability" class="form-label">Stability</label>
-                                        <input type="range" class="form-range" id="stability" name="stability" 
-                                               min="0" max="1" step="0.1" value="0.5">
+                                        <input type="range" class="form-range" id="stability" name="stability" min="0"
+                                            max="1" step="0.1" value="0.5">
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted">Variable</small>
                                             <small class="text-muted">Stable</small>
@@ -112,8 +124,8 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="similarityBoost" class="form-label">Similarity Boost</label>
-                                        <input type="range" class="form-range" id="similarityBoost" name="similarity_boost" 
-                                               min="0" max="1" step="0.1" value="0.5">
+                                        <input type="range" class="form-range" id="similarityBoost"
+                                            name="similarity_boost" min="0" max="1" step="0.1" value="0.5">
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted">Low</small>
                                             <small class="text-muted">High</small>
@@ -125,8 +137,8 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="style" class="form-label">Style</label>
-                                        <input type="range" class="form-range" id="style" name="style" 
-                                               min="0" max="1" step="0.1" value="0.0">
+                                        <input type="range" class="form-range" id="style" name="style" min="0" max="1"
+                                            step="0.1" value="0.0">
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted">Natural</small>
                                             <small class="text-muted">Expressive</small>
@@ -135,7 +147,8 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3 form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="speakerBoost" name="use_speaker_boost" checked>
+                                        <input class="form-check-input" type="checkbox" id="speakerBoost"
+                                            name="use_speaker_boost" checked>
                                         <label class="form-check-label" for="speakerBoost">
                                             Use Speaker Boost
                                         </label>
@@ -162,8 +175,8 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="testText" class="form-label">Test Text</label>
-                            <textarea class="form-control" id="testText" rows="3" 
-                                      placeholder="Enter text to convert to speech...">Hello! This is a test of the ElevenLabs text-to-speech system. How does this voice sound?</textarea>
+                            <textarea class="form-control" id="testText" rows="3"
+                                placeholder="Enter text to convert to speech...">Hello! This is a test of the ElevenLabs text-to-speech system. How does this voice sound?</textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
@@ -191,28 +204,6 @@
                             <audio controls class="w-100">
                                 Your browser does not support the audio element.
                             </audio>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Voice Library & Speaker Integration -->
-            <div class="col-lg-4">
-                <!-- Voice Library -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-collection"></i> Voice Library
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="voiceLibrary">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <p class="mt-2">Loading voices...</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -249,9 +240,32 @@
                     <div class="card-body">
                         <p class="small text-muted">Clone custom voices from audio samples</p>
                         <div class="d-grid">
-                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#voiceCloningModal">
+                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
+                                data-bs-target="#voiceCloningModal">
                                 <i class="bi bi-plus-circle"></i> Clone Voice
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Library -->
+            <div class="col-lg-4">
+                <!-- Voice Library -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-collection"></i> Voice Library
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="voiceLibrary">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading voices...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -281,8 +295,10 @@
                         </div>
                         <div class="mb-3">
                             <label for="audioSamples" class="form-label">Audio Samples</label>
-                            <input type="file" class="form-control" id="audioSamples" name="files" multiple accept="audio/*">
-                            <div class="form-text">Upload 3-5 audio samples (WAV, MP3) of the voice you want to clone</div>
+                            <input type="file" class="form-control" id="audioSamples" name="files" multiple
+                                accept="audio/*">
+                            <div class="form-text">Upload 3-5 audio samples (WAV, MP3) of the voice you want to clone
+                            </div>
                         </div>
                     </form>
                 </div>

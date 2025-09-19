@@ -50,9 +50,16 @@ class ElevenLabsSTTService {
     async transcribeAudio(audioBuffer, options = {}) {
         try {
             const formData = new FormData();
-            formData.append('audio', audioBuffer, {
+
+            // Create a proper stream from the buffer for FormData
+            const { Readable } = await import('stream');
+            const audioStream = Readable.from(audioBuffer);
+            audioStream.path = 'audio.wav'; // Set filename for FormData
+
+            formData.append('audio', audioStream, {
                 filename: 'audio.wav',
-                contentType: 'audio/wav'
+                contentType: 'audio/wav',
+                knownLength: audioBuffer.length
             });
 
             // Add optional parameters

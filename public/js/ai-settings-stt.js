@@ -212,7 +212,7 @@ STTManager.prototype.transcribeAudioFile = function () {
 
     var file = fileInput.files[0];
     var formData = new FormData();
-    formData.append('audioFile', file);
+    formData.append('audio', file);
 
     // Show loading state
     var transcribeBtn = document.getElementById('transcribeFile');

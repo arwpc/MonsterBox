@@ -140,6 +140,12 @@ TTSManager.prototype.populateSpeakerSelect = function () {
         option.textContent = part.name + ' (' + part.id + ')';
         speakerSelect.appendChild(option);
     });
+
+    // Auto-select the first speaker for better UX
+    if (this.speakerParts.length > 0) {
+        speakerSelect.value = this.speakerParts[0].id;
+        console.log('Auto-selected speaker:', this.speakerParts[0].name);
+    }
 };
 
 TTSManager.prototype.showSpeakerError = function () {
@@ -313,6 +319,27 @@ TTSManager.prototype.generateSpeech = function () {
 };
 
 TTSManager.prototype.playGeneratedAudio = function (audioBlob) {
+    var self = this;
+
+    // Try to get the current character's assigned speaker first
+    var characterSpeaker = this.getCurrentCharacterSpeaker();
+    var selectedSpeaker = characterSpeaker || document.getElementById('speakerPart').value;
+
+    console.log('TTS Playback - Character speaker:', characterSpeaker, 'Selected speaker:', selectedSpeaker);
+
+    if (!selectedSpeaker) {
+        // Fallback to browser audio if no speaker selected
+        this.playAudioInBrowser(audioBlob);
+        this.showAlert('No speaker selected - playing in browser', 'warning');
+        return;
+    }
+
+    // Send audio to selected speaker hardware
+    console.log('Playing TTS through speaker:', selectedSpeaker);
+    this.playAudioThroughSpeaker(audioBlob, selectedSpeaker);
+};
+
+TTSManager.prototype.playAudioInBrowser = function (audioBlob) {
     var audioPlayer = document.getElementById('audioPlayer');
     var audio = audioPlayer.querySelector('audio');
 
@@ -320,8 +347,11 @@ TTSManager.prototype.playGeneratedAudio = function (audioBlob) {
     var audioUrl = URL.createObjectURL(audioBlob);
     audio.src = audioUrl;
 
-    // Show the audio player
+    // Show the audio player and auto-play
     audioPlayer.style.display = 'block';
+    audio.play().catch(function (error) {
+        console.warn('Auto-play failed:', error);
+    });
 
     // Clean up the object URL when audio ends
     audio.addEventListener('ended', function () {
@@ -329,12 +359,94 @@ TTSManager.prototype.playGeneratedAudio = function (audioBlob) {
     });
 };
 
-TTSManager.prototype.previewVoice = function (voiceId) {
+TTSManager.prototype.playAudioThroughSpeaker = function (audioBlob, speakerId) {
     var self = this;
 
-    // TODO: Implement voice preview
+    // Convert blob to FormData for upload
+    var formData = new FormData();
+    formData.append('audio', audioBlob, 'tts-test.mp3');
+
+    fetch('/setup/parts/api/parts/' + speakerId + '/play-audio', {
+        method: 'POST',
+        body: formData
+    })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                self.showAlert('Audio playing through ' + self.getSpeakerName(speakerId), 'success');
+            } else {
+                self.showAlert('Failed to play through speaker: ' + (data.error || 'Unknown error'), 'danger');
+                // Fallback to browser audio
+                self.playAudioInBrowser(audioBlob);
+            }
+        })
+        .catch(function (error) {
+            console.error('Speaker playback error:', error);
+            self.showAlert('Speaker playback failed - playing in browser', 'warning');
+            // Fallback to browser audio
+            self.playAudioInBrowser(audioBlob);
+        });
+};
+
+TTSManager.prototype.getSpeakerName = function (speakerId) {
+    var speaker = this.speakerParts.find(function (s) { return s.id === speakerId; });
+    return speaker ? speaker.name : 'Speaker';
+};
+
+TTSManager.prototype.getCurrentCharacterSpeaker = function () {
+    // If we have speaker parts loaded, use the first available one as default
+    // This ensures TTS always goes through hardware when possible
+    if (this.speakerParts && this.speakerParts.length > 0) {
+        console.log('Using default speaker for character:', this.speakerParts[0].name);
+        return this.speakerParts[0].id;
+    }
+
+    return null; // No speakers available, will fallback to browser audio
+};
+
+TTSManager.prototype.previewVoice = function (voiceId) {
+    var self = this;
     console.log('Previewing voice:', voiceId);
-    this.showAlert('Voice preview (feature coming soon)', 'info');
+
+    var previewText = "Hello! This is a preview of this voice. How does it sound?";
+
+    var requestData = {
+        text: previewText,
+        voice_id: voiceId,
+        model: document.getElementById('ttsModel').value || 'eleven_monolingual_v1',
+        voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
+            style: 0.0,
+            use_speaker_boost: true
+        }
+    };
+
+    fetch('/api/elevenlabs/tts/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+        .then(function (response) {
+            if (response.ok) {
+                return response.blob();
+            } else {
+                throw new Error('Failed to generate voice preview');
+            }
+        })
+        .then(function (audioBlob) {
+            // Play preview through the same system as main TTS
+            self.playGeneratedAudio(audioBlob);
+            self.showAlert('Voice preview generated!', 'success');
+        })
+        .catch(function (error) {
+            console.error('Voice preview error:', error);
+            self.showAlert('Failed to generate voice preview', 'danger');
+        });
 };
 
 TTSManager.prototype.testSpeakerIntegration = function () {

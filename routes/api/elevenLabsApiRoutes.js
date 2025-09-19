@@ -246,7 +246,16 @@ router.get('/voices/:id', requireElevenLabsConfig, async (req, res) => {
 router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
     try {
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
-        const { text, voice_id, options } = req.body;
+        const { text, voice_id, model, voice_settings } = req.body;
+
+        // Convert frontend format to service format
+        const options = {
+            model: model,
+            stability: voice_settings?.stability,
+            similarity_boost: voice_settings?.similarity_boost,
+            style: voice_settings?.style,
+            use_speaker_boost: voice_settings?.use_speaker_boost
+        };
 
         const result = await elevenLabsTTSService.generateSpeech(text, voice_id, options);
 

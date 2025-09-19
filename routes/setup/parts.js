@@ -4,10 +4,27 @@
  */
 
 import express from 'express';
-import partsController from '../../controllers/partsController.js';
+import multer from 'multer';
+import partsController, { getPartByIdHelper } from '../../controllers/partsController.js';
 import hardwareService from '../../services/hardwareService/index.js';
 
 const router = express.Router();
+
+// Configure multer for audio file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit for audio files
+    },
+    fileFilter: (req, file, cb) => {
+        // Accept audio files
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only audio files are allowed'), false);
+        }
+    }
+});
 
 // Setup parts page
 router.get('/', async (req, res) => {
@@ -73,6 +90,65 @@ router.get('/api/speaker/stats', async (req, res) => {
     } catch (error) {
         console.error('Error getting speaker stats:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Play audio through specific speaker part
+router.post('/api/parts/:id/play-audio', upload.single('audio'), async (req, res) => {
+    try {
+        const partId = req.params.id;
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No audio file provided'
+            });
+        }
+
+        // Get the part details
+        const part = await getPartByIdHelper(partId);
+        if (!part || part.type !== 'speaker') {
+            return res.status(404).json({
+                success: false,
+                error: 'Speaker part not found'
+            });
+        }
+
+        // Save the audio file temporarily and play it
+        const fs = await import('fs');
+        const path = await import('path');
+        const tempDir = '/tmp';
+        const tempFilename = `tts-${Date.now()}.mp3`;
+        const tempPath = path.join(tempDir, tempFilename);
+
+        // Write the audio buffer to a temporary file
+        await fs.promises.writeFile(tempPath, req.file.buffer);
+
+        // Play the audio through the speaker using controlPart
+        const result = await hardwareService.controlPart(partId, 'play', {
+            filename: tempPath,
+            volume: part.config?.volume || 50
+        });
+
+        // Clean up the temporary file after a delay
+        setTimeout(() => {
+            fs.promises.unlink(tempPath).catch(err => {
+                console.warn('Failed to clean up temp audio file:', err);
+            });
+        }, 5000);
+
+        res.json({
+            success: true,
+            message: `Audio playing through ${part.name}`,
+            result: result
+        });
+
+    } catch (error) {
+        console.error('Error playing audio through speaker:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 
