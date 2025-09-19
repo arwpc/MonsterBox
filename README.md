@@ -744,36 +744,84 @@ Notes
 - Microphone live-recording uses MediaRecorder; browser will ask for mic permission
 
 
-#### AI Status, Unfinished Tasks & Next Steps
+### Updated AI Management — Status
 
-Current status
-- End‑to‑end STT → AI → TTS works via /api/elevenlabs/conversation and /conversation/test
-- STT/TTS configs persist under data/ai-config/, UI buttons wired (STT record/upload, TTS preview, Agents CRUD/test, Character ↔ Agent assignment, homepage Test Conversation)
-- Voice library listing and voice cloning endpoints present
+Overview
+- Agents management and chat testing are implemented end-to-end.
+- ElevenLabs integration (STT/TTS/Agents) is wired and functional.
+- Chat Agent works but is slow; it currently uses HTTP simulate-conversation, not MonsterBox's real-time WebSocket pipeline.
 
-Unfinished (near‑term)
-- Add real‑time input VU meter on AI Settings → STT recorder and Character Assignment test panel (match Audio Center meters)
-- Ensure TTS auto‑plays and routes to the Speaker assigned to the current Character; verify autoplay behavior across Chrome/Firefox on RPi4b
-- Harden error handling (timeouts, model/voice unavailability) with clear user toasts; add retry/backoff; cache models/voices
-- Security pass for ElevenLabs API key (env loading, masking, no accidental logs); confirm docs and UI reflect this
+What works now
+- Agents CRUD on /ai-settings/agents:
+  - Edit LLM, voice, language, system prompt, first message
+  - Test and Chat buttons per agent
+- Chat modal:
+  - Sends a user message, gets agent reply text, auto-plays TTS in-browser
+  - "Play on Character Speaker" verifies server-side PipeWire routing to the selected Character's speaker
+- Conversation routes:
+  - POST /api/elevenlabs/conversation/test → reply JSON (fast checks)
+  - POST /api/elevenlabs/conversation → audio (X-Reply-Text header)
+  - POST /api/elevenlabs/conversation/play → server playback to Character speaker
+- Resilience:
+  - If the ElevenLabs agent call fails or times out, we fall back to a safe reply and still generate TTS (no UI dead ends)
 
-Automated tests to add
-- Mocha API tests (MB_TEST_MODE) for STT models/capabilities/config, TTS models/config/generate, Voices list/clone, Agents CRUD/test, Conversation test/stream
-- Playwright e2e (Firefox headless on RPi4b) covering every AI Settings button and flows, plus homepage “Test Conversation”
+Current limitations and gaps
+- Latency: Using HTTP simulate-conversation; no token/text streaming, so replies arrive slowly.
+- Not using MonsterBox's internal WebSocket system for the Agent Chat flow (so no realtime partials, barge-in, or incremental jaw sync).
+- No client/server VU meters in the Chat modal yet.
+- Limited resilience/caching (voices/models/agents) and minimal UI toasts.
+- No automated tests yet for Agents Chat + server playback path.
 
-Next steps (execution order)
-1) Implement Mocha tests with axios/nock mocks for all ElevenLabs routes and conversation endpoints
-2) Add Playwright e2e that drives: STT record→transcribe, TTS preview, Agents create/edit/test, Character assignment test, homepage Test Conversation
-3) Add VU meters to STT and Character Assignment panels; refine recorder UX (state, cancel, timer)
-4) Verify/finish speaker routing for TTS: use the Speaker assigned to the active Character, with safe fallback to default device
-5) Improve resilience (timeouts, retries/backoff, cached lists) and surface errors via non-blocking toasts
-6) Optional (post‑v1): jaw animation sync without sockets (derive amplitude from playback and drive jaw servo via existing part actions)
+Why it's slow
+- HTTP simulate-conversation returns only after ElevenLabs finishes the full reply; there's no partial streaming.
+- TTS is triggered only after the full reply is received; no pipeline overlap or early playback.
 
-#### Testing (automated)
-- Unit/API-lite: MB_TEST_MODE=1 npm run test:ai
-- UI (Playwright): MB_TEST_MODE=1 npm run test:ui
-  - Starts the app automatically and runs tests in tests/playwright/
+Recent error snapshot
+- Intermittent long-latency/timeout observed from ElevenLabs simulate-conversation:
+  - AxiosError: timeout of 30000ms exceeded
+  - URL: https://api.elevenlabs.io/v1/convai/agents/<agent_id>/simulate-conversation
+  - Origin: ElevenLabsAgentService.chatWithAgent → ConversationService.converse → /api/elevenlabs/conversation
+- Current behavior: we catch this and fall back to a local safe reply and TTS so the UI continues to function.
 
+Next steps (proposed)
+1) Switch to ElevenLabs ConvAI WebSocket for Chat
+   - Use wss://api.elevenlabs.io/v1/convai/conversation?agent_id=...
+   - Stream partial text and/or audio; render partials in the Chat modal to reduce perceived latency.
+   - Keep "no sockets for parts" promise by limiting WS to AI chat/testing (not parts control).
+
+2) Bridge through MonsterBox's internal WS bus for instrumentation
+   - Mirror agent text/audio events into the internal WS bus to power:
+     - Realtime telemetry (latency breakdowns, partial text events)
+     - Optional jaw sync and other visual indicators
+     - Centralized logging/metrics with trace IDs for debugging
+
+3) Define minimal buffering for streamed TTS to avoid choppy server playback while keeping latency low
+   - Target initial buffer of ~120–250 ms before playback start
+   - Apply jitter buffer and small chunk coalescing on server playback path
+   - Expose a latency vs. smoothness slider in advanced settings
+
+4) UX/telemetry
+   - Add VU meters to Chat modal (browser playback) and a "server VU" indicator when routing via Character speaker
+   - Show timing breakdowns (agent RTT, TTS time, total); clear toasts for failures/timeouts
+
+5) Caching and resilience
+   - Cache voices/models/agents with a manual refresh button
+   - Retries with exponential backoff and circuit breaking for agent/TTS calls (surface state in UI)
+
+6) Automated tests
+   - Mocha API tests for conversation/test, conversation, conversation/play (MB_TEST_MODE)
+   - Playwright e2e on RPi4b (Firefox headless): Agents page Chat, auto-play, server playback button, edit/save
+
+Acceptance criteria
+- Chat modal displays streamed partial responses within 300–600 ms under typical conditions; finalizes smoothly.
+- "Play on Character Speaker" reproduces streamed audio with minimal extra latency and remains routed to the selected Character's device.
+- VU meters reflect activity in both local (browser) and server playback modes.
+- If ElevenLabs is slow or down, UI falls back with a clear message and still returns a reply+TTS; logs include trace IDs.
+- Unit and e2e tests pass on RPi4b.
+
+Implementation notes
+- HTTP simulate-conversation is a functional baseline but has higher tail latency and timeouts; moving to ConvAI WS is the correct path for responsiveness.
+- Bridging through the internal WS bus gives us unified instrumentation without reintroducing sockets for parts control.
 
 ### Characters API Examples
 
