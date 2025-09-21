@@ -42,6 +42,7 @@ AgentsManager.prototype.init = function () {
     this._lastAudioData = null;
     this.wsChat = null;
     this.useWebSocket = true; // Enable WebSocket for real-time chat
+    this.audioOutputMode = 'local'; // 'local' for browser, 'speaker' for character speaker
 
     // Initialize WebSocket chat if available
     this.initWebSocketChat();
@@ -622,32 +623,44 @@ AgentsManager.prototype.getCurrentCharacterId = function () {
         .catch(function () { return null; });
 };
 
-// Ask server to play the last reply through the assigned Character's speaker
-AgentsManager.prototype.playLastReplyOnCharacterSpeaker = function () {
-    var self = this;
-    return this.getCurrentCharacterId().then(function (charId) {
-        if (!charId) {
-            self.showAlert('No Character selected', 'warning');
-            return;
-        }
+// Set audio output mode (local browser or character speaker)
+AgentsManager.prototype.setAudioOutput = function (mode) {
+    this.audioOutputMode = mode;
+    console.log('🔊 Audio output mode set to:', mode);
 
-        // Check if we have audio data from the last WebSocket response
-        if (self._lastAudioData) {
-            console.log('🔊 Playing last audio response on character speaker');
-            return self.playAudioOnCharacterSpeaker(self._lastAudioData, charId);
-        } else if (self._lastReplyText) {
-            // If no audio but we have text, generate TTS and play
-            console.log('🔊 Generating TTS for character speaker playback');
-            return self.generateAndPlayTTSOnCharacterSpeaker(self._lastReplyText, charId);
-        } else {
-            self.showAlert('No audio or text to play', 'warning');
-        }
-    });
+    // Update UI to show current mode
+    var statusIndicator = document.getElementById('wsConnectionStatus');
+    if (statusIndicator) {
+        var modeText = mode === 'local' ? 'Browser Audio' : 'Character Speaker';
+        var modeClass = mode === 'local' ? 'bg-primary' : 'bg-success';
+        statusIndicator.className = 'badge ' + modeClass;
+        statusIndicator.textContent = 'WebSocket Connected - ' + modeText;
+    }
+
+    this.showAlert('Audio output: ' + (mode === 'local' ? 'Browser (Local)' : 'Character Speaker'), 'info');
 };
 
 // Play audio data on character's configured speaker
 AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, characterId) {
     var self = this;
+
+    // If no characterId provided, get current character
+    if (!characterId) {
+        this.getCurrentCharacterId().then(function (charId) {
+            if (charId) {
+                self.playAudioOnCharacterSpeaker(audioBase64, charId);
+            } else {
+                console.warn('⚠️ No character selected for speaker playback');
+                self.showAlert('No Character selected - using browser audio', 'warning');
+                // Fallback to local playback
+                self.audioOutputMode = 'local';
+                document.getElementById('audioLocal').checked = true;
+                self.playAudioChunk(audioBase64);
+            }
+        });
+        return;
+    }
+
     console.log('🔊 Playing audio on character speaker, length:', audioBase64.length);
 
     return fetch('/api/elevenlabs/play-audio', {
@@ -662,43 +675,26 @@ AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, cha
         .then(function (r) { return r.json(); })
         .then(function (d) {
             if (d && d.success !== false) {
-                self.showAlert('Playing on Character speaker (' + (d.device || 'default') + ')', 'success');
+                console.log('✅ Character speaker playback successful:', d.device);
+                // Don't show alert for every audio chunk - too noisy
             } else {
-                self.showAlert('Character speaker playback failed: ' + (d && d.error || 'unknown'), 'danger');
+                console.error('❌ Character speaker playback failed:', d && d.error);
+                self.showAlert('Speaker playback failed - switching to browser', 'warning');
+                // Auto-fallback to local
+                self.audioOutputMode = 'local';
+                document.getElementById('audioLocal').checked = true;
             }
         })
         .catch(function (e) {
             console.error('Character speaker playback error', e);
-            self.showAlert('Character speaker playback failed: ' + e.message, 'danger');
+            self.showAlert('Speaker connection failed - using browser', 'warning');
+            // Auto-fallback to local
+            self.audioOutputMode = 'local';
+            document.getElementById('audioLocal').checked = true;
         });
 };
 
-// Generate TTS and play on character's configured speaker
-AgentsManager.prototype.generateAndPlayTTSOnCharacterSpeaker = function (text, characterId) {
-    var self = this;
-    console.log('🔊 Generating TTS for character speaker:', text);
 
-    return fetch('/api/elevenlabs/generate-and-play', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            text: text,
-            characterId: characterId
-        })
-    })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            if (d && d.success !== false) {
-                self.showAlert('TTS playing on Character speaker (' + (d.device || 'default') + ')', 'success');
-            } else {
-                self.showAlert('TTS generation failed: ' + (d && d.error || 'unknown'), 'danger');
-            }
-        })
-        .catch(function (e) {
-            console.error('TTS generation error', e);
-            self.showAlert('TTS generation failed: ' + e.message, 'danger');
-        });
-};
 
 
 AgentsManager.prototype.deleteAgent = function (agentId) {
@@ -911,6 +907,16 @@ AgentsManager.prototype.pcmToWav = function (pcmData, sampleRate, numChannels, b
 
 // Play audio chunk from WebSocket (ElevenLabs real-time audio)
 AgentsManager.prototype.playAudioChunk = function (audioBase64) {
+    var self = this;
+
+    // Check audio output mode
+    if (this.audioOutputMode === 'speaker') {
+        // Play through character's configured speaker
+        this.playAudioOnCharacterSpeaker(audioBase64);
+        return;
+    }
+
+    // Default: Play locally in browser
     try {
         // Convert base64 to binary data
         var audioData = atob(audioBase64);
@@ -924,7 +930,7 @@ AgentsManager.prototype.playAudioChunk = function (audioBase64) {
         var wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
         var audio = new Audio(URL.createObjectURL(wavBlob));
 
-        // Play audio immediately
+        // Play audio immediately in browser
         audio.play().catch(function (e) {
             // If autoplay is blocked, try alternative approaches
             if (e.name === 'NotAllowedError') {
@@ -935,7 +941,7 @@ AgentsManager.prototype.playAudioChunk = function (audioBase64) {
         });
 
     } catch (error) {
-        console.error('❌ Audio playback failed:', error.message);
+        console.error('❌ Local audio playback failed:', error.message);
     }
 };
 
