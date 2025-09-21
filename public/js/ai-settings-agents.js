@@ -650,6 +650,19 @@ AgentsManager.prototype.setAudioOutput = function (mode) {
 };
 
 // Play audio data on character's configured speaker
+// Helper: convert ArrayBuffer to base64 (chunk-safe)
+AgentsManager.prototype._arrayBufferToBase64 = function (buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var chunkSize = 0x8000; // 32KB chunks to avoid call stack issues
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+        var sub = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        binary += String.fromCharCode.apply(null, sub);
+    }
+    return btoa(binary);
+};
+
+// Play audio data on character's configured speaker
 AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, characterId) {
     var self = this;
 
@@ -670,15 +683,30 @@ AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, cha
         return;
     }
 
-    console.log('🔊 Playing audio on character speaker, length:', audioBase64.length);
+    console.log('🔊 Playing audio on character speaker (converting to WAV), length:', audioBase64.length);
+
+    // Convert PCM base64 to WAV base64 with correct sample rate
+    try {
+        var pcmBinary = atob(audioBase64);
+        var pcmBytes = new Uint8Array(pcmBinary.length);
+        for (var i = 0; i < pcmBinary.length; i++) {
+            pcmBytes[i] = pcmBinary.charCodeAt(i);
+        }
+        var wavBuffer = this.pcmToWav(pcmBytes, 16000, 1, 16);
+        var wavBase64 = this._arrayBufferToBase64(wavBuffer);
+    } catch (convErr) {
+        console.warn('⚠️ Failed to convert PCM to WAV for speaker playback:', convErr.message);
+        // Fallback: send original (may be choppy if wrong format)
+        wavBase64 = audioBase64;
+    }
 
     return fetch('/api/elevenlabs/play-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            audioData: audioBase64,
+            audioData: wavBase64,
             characterId: characterId,
-            format: 'mp3'
+            format: 'wav'
         })
     })
         .then(function (r) { return r.json(); })
@@ -961,8 +989,8 @@ AgentsManager.prototype.playAudioChunk = function (audioBase64) {
             pcmData[i] = audioData.charCodeAt(i);
         }
 
-        // Convert PCM to WAV format
-        var wavBuffer = this.pcmToWav(pcmData, 22050, 1, 16);
+        // Convert PCM to WAV format (fix sample rate to 16kHz to match realtime stream)
+        var wavBuffer = this.pcmToWav(pcmData, 16000, 1, 16);
         var wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
         var audio = new Audio(URL.createObjectURL(wavBlob));
 
