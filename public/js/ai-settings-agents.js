@@ -774,19 +774,71 @@ AgentsManager.prototype.showChatMessage = function (sender, text, type, response
     log.scrollTop = log.scrollHeight;
 };
 
-// Play audio chunk from WebSocket
+// Play audio chunk from WebSocket (ElevenLabs real-time audio)
 AgentsManager.prototype.playAudioChunk = function (audioBase64) {
     try {
+        console.log('🎵 Playing audio chunk, length:', audioBase64.length);
+
+        // Convert base64 to binary data
         var audioData = atob(audioBase64);
         var audioArray = new Uint8Array(audioData.length);
         for (var i = 0; i < audioData.length; i++) {
             audioArray[i] = audioData.charCodeAt(i);
         }
-        var audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
-        var audio = new Audio(URL.createObjectURL(audioBlob));
-        audio.play().catch(function (e) { console.warn('Audio playback failed:', e); });
+
+        // Try multiple audio formats that ElevenLabs might use
+        var audioFormats = [
+            'audio/wav',
+            'audio/mpeg',
+            'audio/mp3',
+            'audio/webm',
+            'audio/ogg'
+        ];
+
+        var self = this;
+        var tryFormat = function (formatIndex) {
+            if (formatIndex >= audioFormats.length) {
+                console.error('❌ All audio formats failed');
+                return;
+            }
+
+            var format = audioFormats[formatIndex];
+            var audioBlob = new Blob([audioArray], { type: format });
+            var audio = new Audio(URL.createObjectURL(audioBlob));
+
+            audio.addEventListener('canplay', function () {
+                console.log('✅ Audio format working:', format);
+                audio.play().catch(function (e) {
+                    console.warn('Audio autoplay blocked:', e);
+                    // Try to play anyway for user-initiated actions
+                    setTimeout(function () {
+                        audio.play().catch(function (e2) {
+                            console.warn('Delayed audio play failed:', e2);
+                        });
+                    }, 100);
+                });
+            });
+
+            audio.addEventListener('error', function (e) {
+                console.warn('Audio format failed:', format, e);
+                // Try next format
+                tryFormat(formatIndex + 1);
+            });
+
+            // Set a timeout to try next format if this one doesn't work
+            setTimeout(function () {
+                if (audio.readyState === 0) {
+                    console.warn('Audio format timeout:', format);
+                    tryFormat(formatIndex + 1);
+                }
+            }, 500);
+        };
+
+        // Start with the first format
+        tryFormat(0);
+
     } catch (error) {
-        console.error('Failed to play audio chunk:', error);
+        console.error('❌ Failed to play audio chunk:', error);
     }
 };
 
