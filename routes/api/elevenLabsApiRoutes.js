@@ -345,57 +345,166 @@ router.post('/voices/clone', requireElevenLabsConfig, upload.array('files', 5), 
     }
 });
 
-// Conversation endpoints
+// OLD CONVERSATION ENDPOINTS DISABLED - USE REAL-TIME WEBSOCKET ONLY
+// All conversation functionality now handled by WebSocket service on port 8795
+// Visit /ai-settings/agents and use Chat buttons for real-time conversation
+
 router.post('/conversation/test', requireElevenLabsConfig, async (req, res) => {
-    try {
-        const { default: conversationService } = await import('../../services/conversationService.js');
-        const { characterId, agentId, text } = req.body || {};
-        const result = await conversationService.converse({ characterId, agentId, text });
-        if (!result.success) return res.status(400).json(result);
-        // For test endpoint, return JSON (no audio stream)
-        res.json({ success: true, replyText: result.replyText, agentUsed: result.agentUsed });
-    } catch (error) {
-        console.error('Conversation test error:', error);
-        res.status(500).json({ success: false, error: 'Conversation test failed' });
-    }
+    res.status(410).json({
+        success: false,
+        error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',
+        websocket_url: 'ws://localhost:8795',
+        ui_url: '/ai-settings/agents'
+    });
 });
 
 router.post('/conversation', requireElevenLabsConfig, upload.single('audio'), async (req, res) => {
+    res.status(410).json({
+        success: false,
+        error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',
+        websocket_url: 'ws://localhost:8795',
+        ui_url: '/ai-settings/agents'
+    });
+});
+
+router.post('/conversation/play', requireElevenLabsConfig, async (req, res) => {
+    res.status(410).json({
+        success: false,
+        error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',
+        websocket_url: 'ws://localhost:8795',
+        ui_url: '/ai-settings/agents'
+    });
+});
+
+// Play base64 audio data through character's configured speaker
+router.post('/play-audio', async (req, res) => {
     try {
-        const { default: conversationService } = await import('../../services/conversationService.js');
-        const { characterId, agentId, text } = req.body || {};
-        const audioBuffer = req.file ? req.file.buffer : null;
-        const result = await conversationService.converse({ characterId, agentId, audioBuffer, text });
-        if (!result.success) return res.status(400).json(result);
-        // Include reply text as a header so the client can render it while streaming audio
-        if (result.replyText) {
-            res.set('X-Reply-Text', encodeURIComponent(String(result.replyText)));
+        const { audioData, characterId, format = 'mp3' } = req.body;
+
+        if (!audioData || !characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'audioData and characterId are required'
+            });
         }
-        res.set({ 'Content-Type': result.contentType || 'audio/mpeg' });
-        return res.send(result.audioBuffer);
+
+        const fs = await import('fs');
+        const path = await import('path');
+        const os = await import('os');
+
+        // Create temporary file from base64 data
+        const tempDir = os.tmpdir();
+        const tempFileName = `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${format}`;
+        const tempFilePath = path.join(tempDir, tempFileName);
+
+        // Convert base64 to buffer and write to temp file
+        const audioBuffer = Buffer.from(audioData, 'base64');
+        await fs.promises.writeFile(tempFilePath, audioBuffer);
+
+        // Use server playback service to play through character's speaker
+        const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
+        const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+            characterId: characterId,
+            contentType: `audio/${format}`,
+            volume: 80
+        });
+
+        // Clean up temp file
+        try {
+            await fs.promises.unlink(tempFilePath);
+        } catch (cleanupError) {
+            console.warn('⚠️ Failed to clean up temp audio file:', cleanupError.message);
+        }
+
+        if (result.success) {
+            return res.json({
+                success: true,
+                played: true,
+                device: result.deviceId || 'default',
+                message: `Audio played on character ${characterId} speaker`
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to play audio',
+                details: result.error
+            });
+        }
+
     } catch (error) {
-        console.error('Conversation error:', error);
-        res.status(500).json({ success: false, error: 'Conversation failed' });
+        console.error('❌ Error playing base64 audio:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to play audio',
+            details: error.message
+        });
     }
 });
 
-// Play conversation audio on the server using the assigned Character speaker (PipeWire)
-router.post('/conversation/play', requireElevenLabsConfig, async (req, res) => {
+// Generate TTS and play on character's configured speaker
+router.post('/generate-and-play', async (req, res) => {
     try {
-        const { default: conversationService } = await import('../../services/conversationService.js');
+        const { text, characterId } = req.body;
+
+        if (!text || !characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'text and characterId are required'
+            });
+        }
+
+        // Use ElevenLabs TTS service to generate speech
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+
+        // Get character's voice settings (if available)
+        let voiceId = 'pNInz6obpgDQGcFmaJgB'; // Default voice
+        // TODO: Get character's configured voice ID from database/config
+
+        const ttsResult = await elevenLabsTTSService.generateSpeech(text, voiceId, {
+            model: 'eleven_multilingual_v2',
+            stability: 0.5,
+            similarity_boost: 0.75
+        });
+
+        if (!ttsResult.success) {
+            return res.status(500).json({
+                success: false,
+                error: 'TTS generation failed',
+                details: ttsResult.error
+            });
+        }
+
+        // Play the generated audio through character's speaker
         const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
-        const { characterId, agentId, text } = req.body || {};
-        const result = await conversationService.converse({ characterId, agentId, text });
-        if (!result.success) return res.status(400).json(result);
-        const play = await serverPlaybackService.playBufferOnCharacterSpeaker(result.audioBuffer, {
-            characterId: characterId ? Number(characterId) : null,
-            contentType: result.contentType || 'audio/mpeg',
+        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
+            characterId: characterId,
+            contentType: 'audio/mpeg',
             volume: 80
         });
-        return res.json(play);
+
+        if (playResult.success) {
+            return res.json({
+                success: true,
+                played: true,
+                device: playResult.deviceId || 'default',
+                message: `TTS played on character ${characterId} speaker`,
+                text: text
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to play TTS audio',
+                details: playResult.error
+            });
+        }
+
     } catch (error) {
-        console.error('Conversation server playback error:', error);
-        res.status(500).json({ success: false, error: 'Conversation server playback failed' });
+        console.error('❌ Error generating and playing TTS:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to generate and play TTS',
+            details: error.message
+        });
     }
 });
 

@@ -39,6 +39,7 @@ AgentsManager.prototype.init = function () {
     // Chat state
     this.currentChatAgentId = null;
     this._lastReplyText = '';
+    this._lastAudioData = null;
     this.wsChat = null;
     this.useWebSocket = true; // Enable WebSocket for real-time chat
 
@@ -625,22 +626,78 @@ AgentsManager.prototype.getCurrentCharacterId = function () {
 AgentsManager.prototype.playLastReplyOnCharacterSpeaker = function () {
     var self = this;
     return this.getCurrentCharacterId().then(function (charId) {
-        if (!charId) { self.showAlert('No Character selected', 'warning'); return; }
-        // We request the server to generate and play based on the same agent; server routes to the Character speaker
-        return fetch('/api/elevenlabs/conversation/play', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ characterId: charId, agentId: self.currentChatAgentId, text: self._lastReplyText || 'Hello!' })
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (d && d.success !== false) {
-                    self.showAlert('Playing on Character speaker (' + (d.deviceId || 'default') + ')', 'success');
-                } else {
-                    self.showAlert('Server playback failed: ' + (d && d.error || 'unknown'), 'danger');
-                }
-            })
-            .catch(function (e) { console.error('Server playback error', e); self.showAlert('Server playback failed', 'danger'); });
+        if (!charId) {
+            self.showAlert('No Character selected', 'warning');
+            return;
+        }
+
+        // Check if we have audio data from the last WebSocket response
+        if (self._lastAudioData) {
+            console.log('🔊 Playing last audio response on character speaker');
+            return self.playAudioOnCharacterSpeaker(self._lastAudioData, charId);
+        } else if (self._lastReplyText) {
+            // If no audio but we have text, generate TTS and play
+            console.log('🔊 Generating TTS for character speaker playback');
+            return self.generateAndPlayTTSOnCharacterSpeaker(self._lastReplyText, charId);
+        } else {
+            self.showAlert('No audio or text to play', 'warning');
+        }
     });
+};
+
+// Play audio data on character's configured speaker
+AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, characterId) {
+    var self = this;
+    console.log('🔊 Playing audio on character speaker, length:', audioBase64.length);
+
+    return fetch('/api/elevenlabs/play-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            audioData: audioBase64,
+            characterId: characterId,
+            format: 'mp3'
+        })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d && d.success !== false) {
+                self.showAlert('Playing on Character speaker (' + (d.device || 'default') + ')', 'success');
+            } else {
+                self.showAlert('Character speaker playback failed: ' + (d && d.error || 'unknown'), 'danger');
+            }
+        })
+        .catch(function (e) {
+            console.error('Character speaker playback error', e);
+            self.showAlert('Character speaker playback failed: ' + e.message, 'danger');
+        });
+};
+
+// Generate TTS and play on character's configured speaker
+AgentsManager.prototype.generateAndPlayTTSOnCharacterSpeaker = function (text, characterId) {
+    var self = this;
+    console.log('🔊 Generating TTS for character speaker:', text);
+
+    return fetch('/api/elevenlabs/generate-and-play', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: text,
+            characterId: characterId
+        })
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d && d.success !== false) {
+                self.showAlert('TTS playing on Character speaker (' + (d.device || 'default') + ')', 'success');
+            } else {
+                self.showAlert('TTS generation failed: ' + (d && d.error || 'unknown'), 'danger');
+            }
+        })
+        .catch(function (e) {
+            console.error('TTS generation error', e);
+            self.showAlert('TTS generation failed: ' + e.message, 'danger');
+        });
 };
 
 
@@ -702,16 +759,49 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
             self.showChatMessage('System', 'Connected to agent - ready for instant chat!', 'success');
         };
 
+        // Initialize audio chunk aggregation
+        this._audioChunks = [];
+        this._audioTimeout = null;
+
         this.wsChat.onAgentResponse = function (message) {
             var responseTime = Date.now() - self.lastMessageTime;
-            console.log('🤖 WebSocket agent response in', responseTime + 'ms');
+            console.log('🤖 Agent response in ' + responseTime + 'ms');
 
-            self._lastReplyText = message.text;
-            self.showChatMessage('Agent', message.text, 'agent', responseTime);
+            // Show agent response text (but avoid duplicate generic messages)
+            var responseText = message.text || 'Agent response';
+            if (responseText && responseText !== 'Audio response received' && responseText !== 'Audio response') {
+                // Show the actual response text
+                self._lastReplyText = responseText;
+                self.showChatMessage('Agent', responseText, 'agent', responseTime);
+            } else if (message.audio && (!self._lastReplyText || self._lastReplyText === 'Audio response received')) {
+                // If we only have audio and no meaningful text, show a placeholder
+                self.showChatMessage('Agent', '🎵 Audio response', 'agent', responseTime);
+            }
 
-            // Play audio if available
+            // Handle audio chunks - aggregate them for smoother playback
             if (message.audio) {
-                self.playAudioChunk(message.audio);
+                self._audioChunks.push(message.audio);
+
+                // Clear existing timeout
+                if (self._audioTimeout) {
+                    clearTimeout(self._audioTimeout);
+                }
+
+                // Set timeout to play aggregated audio after brief pause
+                self._audioTimeout = setTimeout(function () {
+                    if (self._audioChunks.length > 0) {
+                        // Play the largest audio chunk (usually the complete response)
+                        var largestChunk = self._audioChunks.reduce(function (prev, current) {
+                            return current.length > prev.length ? current : prev;
+                        });
+
+                        // Store the largest chunk for "Play on Character Speaker" button
+                        self._lastAudioData = largestChunk;
+
+                        self.playAudioChunk(largestChunk);
+                        self._audioChunks = []; // Clear chunks after playing
+                    }
+                }, 500); // 500ms delay to aggregate chunks
             }
         };
 
@@ -774,71 +864,78 @@ AgentsManager.prototype.showChatMessage = function (sender, text, type, response
     log.scrollTop = log.scrollHeight;
 };
 
+// Convert PCM audio data to WAV format for browser playback
+AgentsManager.prototype.pcmToWav = function (pcmData, sampleRate, numChannels, bitsPerSample) {
+    sampleRate = sampleRate || 22050;
+    numChannels = numChannels || 1;
+    bitsPerSample = bitsPerSample || 16;
+
+    var bytesPerSample = bitsPerSample / 8;
+    var blockAlign = numChannels * bytesPerSample;
+    var byteRate = sampleRate * blockAlign;
+    var dataSize = pcmData.length;
+    var fileSize = 36 + dataSize;
+
+    var buffer = new ArrayBuffer(44 + dataSize);
+    var view = new DataView(buffer);
+
+    // WAV header
+    var writeString = function (offset, string) {
+        for (var i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, fileSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    // Copy PCM data
+    var offset = 44;
+    for (var i = 0; i < pcmData.length; i++) {
+        view.setUint8(offset + i, pcmData[i]);
+    }
+
+    return buffer;
+};
+
 // Play audio chunk from WebSocket (ElevenLabs real-time audio)
 AgentsManager.prototype.playAudioChunk = function (audioBase64) {
     try {
-        console.log('🎵 Playing audio chunk, length:', audioBase64.length);
-
         // Convert base64 to binary data
         var audioData = atob(audioBase64);
-        var audioArray = new Uint8Array(audioData.length);
+        var pcmData = new Uint8Array(audioData.length);
         for (var i = 0; i < audioData.length; i++) {
-            audioArray[i] = audioData.charCodeAt(i);
+            pcmData[i] = audioData.charCodeAt(i);
         }
 
-        // Try multiple audio formats that ElevenLabs might use
-        var audioFormats = [
-            'audio/wav',
-            'audio/mpeg',
-            'audio/mp3',
-            'audio/webm',
-            'audio/ogg'
-        ];
+        // Convert PCM to WAV format
+        var wavBuffer = this.pcmToWav(pcmData, 22050, 1, 16);
+        var wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+        var audio = new Audio(URL.createObjectURL(wavBlob));
 
-        var self = this;
-        var tryFormat = function (formatIndex) {
-            if (formatIndex >= audioFormats.length) {
-                console.error('❌ All audio formats failed');
-                return;
+        // Play audio immediately
+        audio.play().catch(function (e) {
+            // If autoplay is blocked, try alternative approaches
+            if (e.name === 'NotAllowedError') {
+                console.log('🔇 Audio autoplay blocked - user interaction required');
+            } else {
+                console.warn('🎵 Audio play error:', e.message);
             }
-
-            var format = audioFormats[formatIndex];
-            var audioBlob = new Blob([audioArray], { type: format });
-            var audio = new Audio(URL.createObjectURL(audioBlob));
-
-            audio.addEventListener('canplay', function () {
-                console.log('✅ Audio format working:', format);
-                audio.play().catch(function (e) {
-                    console.warn('Audio autoplay blocked:', e);
-                    // Try to play anyway for user-initiated actions
-                    setTimeout(function () {
-                        audio.play().catch(function (e2) {
-                            console.warn('Delayed audio play failed:', e2);
-                        });
-                    }, 100);
-                });
-            });
-
-            audio.addEventListener('error', function (e) {
-                console.warn('Audio format failed:', format, e);
-                // Try next format
-                tryFormat(formatIndex + 1);
-            });
-
-            // Set a timeout to try next format if this one doesn't work
-            setTimeout(function () {
-                if (audio.readyState === 0) {
-                    console.warn('Audio format timeout:', format);
-                    tryFormat(formatIndex + 1);
-                }
-            }, 500);
-        };
-
-        // Start with the first format
-        tryFormat(0);
+        });
 
     } catch (error) {
-        console.error('❌ Failed to play audio chunk:', error);
+        console.error('❌ Audio playback failed:', error.message);
     }
 };
 

@@ -17,26 +17,26 @@ function WebSocketChatClient() {
 /**
  * Connect to WebSocket server
  */
-WebSocketChatClient.prototype.connect = function() {
+WebSocketChatClient.prototype.connect = function () {
     var self = this;
-    
+
     try {
         var wsUrl = 'ws://' + window.location.hostname + ':8795';
         console.log('🔌 Connecting to WebSocket:', wsUrl);
-        
+
         this.ws = new WebSocket(wsUrl);
-        
-        this.ws.onopen = function() {
+
+        this.ws.onopen = function () {
             console.log('✅ WebSocket connected');
             self.isConnected = true;
             self.reconnectAttempts = 0;
             self.onConnectionStatusChange(true);
-            
+
             // Process any queued messages
             self.processMessageQueue();
         };
-        
-        this.ws.onmessage = function(event) {
+
+        this.ws.onmessage = function (event) {
             try {
                 var message = JSON.parse(event.data);
                 self.handleServerMessage(message);
@@ -44,23 +44,23 @@ WebSocketChatClient.prototype.connect = function() {
                 console.error('❌ Failed to parse WebSocket message:', error);
             }
         };
-        
-        this.ws.onclose = function(event) {
+
+        this.ws.onclose = function (event) {
             console.log('🔌 WebSocket disconnected:', event.code, event.reason);
             self.isConnected = false;
             self.onConnectionStatusChange(false);
-            
+
             // Attempt reconnection if not intentional
             if (event.code !== 1000 && self.reconnectAttempts < self.maxReconnectAttempts) {
                 self.attemptReconnect();
             }
         };
-        
-        this.ws.onerror = function(error) {
+
+        this.ws.onerror = function (error) {
             console.error('❌ WebSocket error:', error);
             self.onConnectionStatusChange(false);
         };
-        
+
     } catch (error) {
         console.error('❌ Failed to create WebSocket connection:', error);
         this.onConnectionStatusChange(false);
@@ -70,13 +70,13 @@ WebSocketChatClient.prototype.connect = function() {
 /**
  * Attempt to reconnect
  */
-WebSocketChatClient.prototype.attemptReconnect = function() {
+WebSocketChatClient.prototype.attemptReconnect = function () {
     var self = this;
-    
+
     this.reconnectAttempts++;
     console.log('🔄 Attempting reconnect ' + this.reconnectAttempts + '/' + this.maxReconnectAttempts);
-    
-    setTimeout(function() {
+
+    setTimeout(function () {
         self.connect();
     }, this.reconnectDelay * this.reconnectAttempts);
 };
@@ -84,39 +84,39 @@ WebSocketChatClient.prototype.attemptReconnect = function() {
 /**
  * Start conversation with agent
  */
-WebSocketChatClient.prototype.startConversation = function(agentId) {
+WebSocketChatClient.prototype.startConversation = function (agentId) {
     this.currentAgentId = agentId;
-    
+
     var message = {
         type: 'start_conversation',
         agentId: agentId
     };
-    
+
     this.sendMessage(message);
 };
 
 /**
  * Send chat message to agent
  */
-WebSocketChatClient.prototype.sendChatMessage = function(text) {
+WebSocketChatClient.prototype.sendChatMessage = function (text) {
     if (!text || !text.trim()) return;
-    
+
     var message = {
         type: 'send_message',
         text: text.trim()
     };
-    
+
     this.sendMessage(message);
 };
 
 /**
  * End current conversation
  */
-WebSocketChatClient.prototype.endConversation = function() {
+WebSocketChatClient.prototype.endConversation = function () {
     var message = {
         type: 'end_conversation'
     };
-    
+
     this.sendMessage(message);
     this.currentAgentId = null;
 };
@@ -124,7 +124,7 @@ WebSocketChatClient.prototype.endConversation = function() {
 /**
  * Send message to server
  */
-WebSocketChatClient.prototype.sendMessage = function(message) {
+WebSocketChatClient.prototype.sendMessage = function (message) {
     if (this.isConnected && this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify(message));
     } else {
@@ -137,7 +137,7 @@ WebSocketChatClient.prototype.sendMessage = function(message) {
 /**
  * Process queued messages
  */
-WebSocketChatClient.prototype.processMessageQueue = function() {
+WebSocketChatClient.prototype.processMessageQueue = function () {
     while (this.messageQueue.length > 0) {
         var message = this.messageQueue.shift();
         this.sendMessage(message);
@@ -147,33 +147,45 @@ WebSocketChatClient.prototype.processMessageQueue = function() {
 /**
  * Handle message from server
  */
-WebSocketChatClient.prototype.handleServerMessage = function(message) {
+WebSocketChatClient.prototype.handleServerMessage = function (message) {
     switch (message.type) {
         case 'connected':
             this.sessionId = message.sessionId;
             console.log('🎭 Connected to chat server:', this.sessionId);
             break;
-            
+
         case 'conversation_started':
             console.log('✅ Conversation started with agent:', message.agentId);
             this.onConversationStarted(message);
             break;
-            
+
         case 'agent_response':
             console.log('🤖 Agent response received');
             this.onAgentResponse(message);
             break;
-            
+
         case 'conversation_ended':
             console.log('🔚 Conversation ended');
             this.onConversationEnded(message);
             break;
-            
+
         case 'error':
             console.error('❌ Server error:', message.message);
             this.onError(message);
             break;
-            
+
+        case 'interruption':
+            console.log('⚠️ Conversation interrupted:', message.reason);
+            if (this.onInterruption) {
+                this.onInterruption(message);
+            }
+            break;
+
+        case 'debug':
+            // Debug messages from server - log but don't forward to UI
+            console.log('🔍 Debug:', message.originalType, message.data);
+            break;
+
         default:
             console.log('📨 Unknown message type:', message.type, message);
     }
@@ -182,7 +194,7 @@ WebSocketChatClient.prototype.handleServerMessage = function(message) {
 /**
  * Disconnect from WebSocket
  */
-WebSocketChatClient.prototype.disconnect = function() {
+WebSocketChatClient.prototype.disconnect = function () {
     if (this.ws) {
         this.ws.close(1000, 'Client disconnect');
         this.ws = null;
@@ -196,27 +208,27 @@ WebSocketChatClient.prototype.disconnect = function() {
 /**
  * Event handlers (to be overridden)
  */
-WebSocketChatClient.prototype.onConnectionStatusChange = function(connected) {
+WebSocketChatClient.prototype.onConnectionStatusChange = function (connected) {
     // Override this method to handle connection status changes
     console.log('Connection status:', connected ? 'Connected' : 'Disconnected');
 };
 
-WebSocketChatClient.prototype.onConversationStarted = function(message) {
+WebSocketChatClient.prototype.onConversationStarted = function (message) {
     // Override this method to handle conversation start
     console.log('Conversation started:', message);
 };
 
-WebSocketChatClient.prototype.onAgentResponse = function(message) {
+WebSocketChatClient.prototype.onAgentResponse = function (message) {
     // Override this method to handle agent responses
     console.log('Agent response:', message.text);
 };
 
-WebSocketChatClient.prototype.onConversationEnded = function(message) {
+WebSocketChatClient.prototype.onConversationEnded = function (message) {
     // Override this method to handle conversation end
     console.log('Conversation ended:', message.message);
 };
 
-WebSocketChatClient.prototype.onError = function(message) {
+WebSocketChatClient.prototype.onError = function (message) {
     // Override this method to handle errors
     console.error('Chat error:', message.message);
 };
@@ -224,7 +236,7 @@ WebSocketChatClient.prototype.onError = function(message) {
 /**
  * Get connection status
  */
-WebSocketChatClient.prototype.getConnectionStatus = function() {
+WebSocketChatClient.prototype.getConnectionStatus = function () {
     return {
         connected: this.isConnected,
         sessionId: this.sessionId,

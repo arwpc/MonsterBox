@@ -266,7 +266,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
             if (!connection) return;
 
-            console.log(`📨 ElevenLabs message type: ${message.type}`);
+
 
             switch (message.type) {
                 case 'conversation_initiation_metadata':
@@ -277,19 +277,18 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // Real-time audio response with text
                     if (message.audio_event) {
                         const audioData = message.audio_event.audio_base_64;
-                        // Try multiple fields for text content
-                        const responseText = message.agent_response ||
+                        // Try multiple fields for text content - check audio_event first
+                        const responseText = message.audio_event?.agent_response ||
+                            message.audio_event?.text ||
+                            message.agent_response ||
                             message.text ||
-                            message.audio_event.text ||
-                            message.audio_event.agent_response ||
-                            'Audio response received';
+                            null;
 
-                        console.log(`🎵 Audio response: "${responseText}"`);
-                        console.log(`🔍 Full audio message:`, JSON.stringify(message, null, 2));
+
 
                         this.sendToClient(sessionId, {
                             type: 'agent_response',
-                            text: responseText,
+                            text: responseText || 'Audio response',
                             audio: audioData,
                             timestamp: Date.now(),
                             realTime: true
@@ -299,19 +298,24 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 case 'agent_response':
                     // Text-only agent response
-                    const responseText = message.agent_response || message.text || message.message || '';
-                    console.log(`💬 Text response: "${responseText}"`);
+                    const responseText = message.agent_response_event?.agent_response ||
+                        message.agent_response ||
+                        message.text ||
+                        message.message ||
+                        '';
+
+
 
                     this.sendToClient(sessionId, {
                         type: 'agent_response',
-                        text: responseText,
+                        text: responseText || 'Text response',
                         timestamp: Date.now(),
                         realTime: true
                     });
                     break;
 
                 case 'ping':
-                    // Handle ping/pong for connection keepalive
+                    // Handle ping/pong for connection keepalive (silent)
                     if (message.ping_event && connection.elevenLabsWs) {
                         const pongMessage = {
                             type: 'pong',
@@ -330,7 +334,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'interruption':
-                    console.log(`⚠️ Interruption for ${sessionId}: ${message.interruption_event?.reason}`);
+                    // Handle interruptions silently - they're normal in real-time conversation
                     this.sendToClient(sessionId, {
                         type: 'interruption',
                         reason: message.interruption_event?.reason || 'Unknown'
@@ -338,13 +342,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 default:
-                    console.log(`🔍 Unknown ElevenLabs message type: ${message.type}`);
-                    // Forward other messages as-is for debugging
-                    this.sendToClient(sessionId, {
-                        type: 'debug',
-                        originalType: message.type,
-                        data: message
-                    });
+                    // Ignore unknown message types to keep console clean
+                    break;
             }
 
         } catch (error) {
