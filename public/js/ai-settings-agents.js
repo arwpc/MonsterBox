@@ -43,6 +43,7 @@ AgentsManager.prototype.init = function () {
     this.wsChat = null;
     this.useWebSocket = true; // Enable WebSocket for real-time chat
     this.audioOutputMode = 'local'; // 'local' for browser, 'speaker' for character speaker
+    this._isPlayingAudio = false; // Prevent simultaneous audio playback
 
     // Initialize WebSocket chat if available
     this.initWebSocketChat();
@@ -494,6 +495,14 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
     var log = document.getElementById('chatLog');
     if (log) log.innerHTML = '';
 
+    // Clean up any existing audio processing
+    if (this._audioTimeout) {
+        clearTimeout(this._audioTimeout);
+        this._audioTimeout = null;
+    }
+    this._audioChunks = [];
+    this._lastAudioData = null;
+
     // Start WebSocket conversation if available
     if (this.useWebSocket && this.wsChat && this.wsChat.isConnected) {
         console.log('🚀 Starting WebSocket conversation with agent:', agentId);
@@ -777,8 +786,9 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
             // Handle audio chunks - aggregate them for smoother playback
             if (message.audio) {
                 self._audioChunks.push(message.audio);
+                console.log('🎵 Audio chunk received, total chunks:', self._audioChunks.length, 'size:', message.audio.length);
 
-                // Clear existing timeout
+                // Clear existing timeout to prevent multiple simultaneous playbacks
                 if (self._audioTimeout) {
                     clearTimeout(self._audioTimeout);
                 }
@@ -786,18 +796,31 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
                 // Set timeout to play aggregated audio after brief pause
                 self._audioTimeout = setTimeout(function () {
                     if (self._audioChunks.length > 0) {
-                        // Play the largest audio chunk (usually the complete response)
+                        console.log('🎵 Processing', self._audioChunks.length, 'audio chunks for playback');
+
+                        // Concatenate all chunks for complete audio
+                        var totalLength = self._audioChunks.reduce(function (sum, chunk) {
+                            return sum + chunk.length;
+                        }, 0);
+
+                        // Use the largest chunk (usually most complete)
                         var largestChunk = self._audioChunks.reduce(function (prev, current) {
                             return current.length > prev.length ? current : prev;
                         });
 
-                        // Store the largest chunk for "Play on Character Speaker" button
+                        console.log('🎵 Playing audio chunk of size:', largestChunk.length, 'from', self._audioChunks.length, 'total chunks');
+
+                        // Store for potential replay
                         self._lastAudioData = largestChunk;
 
+                        // Play the audio (respects toggle setting)
                         self.playAudioChunk(largestChunk);
-                        self._audioChunks = []; // Clear chunks after playing
+
+                        // Clear chunks after playing
+                        self._audioChunks = [];
+                        self._audioTimeout = null;
                     }
-                }, 500); // 500ms delay to aggregate chunks
+                }, 300); // Reduced to 300ms for faster response
             }
         };
 
@@ -909,10 +932,23 @@ AgentsManager.prototype.pcmToWav = function (pcmData, sampleRate, numChannels, b
 AgentsManager.prototype.playAudioChunk = function (audioBase64) {
     var self = this;
 
+    // Prevent multiple simultaneous playbacks
+    if (this._isPlayingAudio) {
+        console.log('🔇 Skipping audio playback - already playing');
+        return;
+    }
+
+    this._isPlayingAudio = true;
+    console.log('🔊 Starting audio playback, mode:', this.audioOutputMode, 'size:', audioBase64.length);
+
     // Check audio output mode
     if (this.audioOutputMode === 'speaker') {
         // Play through character's configured speaker
         this.playAudioOnCharacterSpeaker(audioBase64);
+        // Reset flag after a delay (speaker playback is async)
+        setTimeout(function () {
+            self._isPlayingAudio = false;
+        }, 1000);
         return;
     }
 
@@ -931,7 +967,9 @@ AgentsManager.prototype.playAudioChunk = function (audioBase64) {
         var audio = new Audio(URL.createObjectURL(wavBlob));
 
         // Play audio immediately in browser
-        audio.play().catch(function (e) {
+        audio.play().then(function () {
+            console.log('✅ Local audio playback started successfully');
+        }).catch(function (e) {
             // If autoplay is blocked, try alternative approaches
             if (e.name === 'NotAllowedError') {
                 console.log('🔇 Audio autoplay blocked - user interaction required');
@@ -940,8 +978,20 @@ AgentsManager.prototype.playAudioChunk = function (audioBase64) {
             }
         });
 
+        // Reset playback flag when audio ends
+        audio.addEventListener('ended', function () {
+            self._isPlayingAudio = false;
+            console.log('🔊 Local audio playback completed');
+        });
+
+        // Also reset after a timeout as fallback
+        setTimeout(function () {
+            self._isPlayingAudio = false;
+        }, 10000); // 10 second max
+
     } catch (error) {
         console.error('❌ Local audio playback failed:', error.message);
+        self._isPlayingAudio = false;
     }
 };
 
