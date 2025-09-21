@@ -38,6 +38,12 @@ AgentsManager.prototype.init = function () {
 
     // Chat state
     this.currentChatAgentId = null;
+    this._lastReplyText = '';
+    this.wsChat = null;
+    this.useWebSocket = true; // Enable WebSocket for real-time chat
+
+    // Initialize WebSocket chat if available
+    this.initWebSocketChat();
 
     console.log('Agents Manager initialized');
 };
@@ -485,6 +491,17 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
     if (title) title.textContent = 'Chat with Agent ' + agentId;
     var log = document.getElementById('chatLog');
     if (log) log.innerHTML = '';
+
+    // Start WebSocket conversation if available
+    if (this.useWebSocket && this.wsChat && this.wsChat.isConnected) {
+        console.log('🚀 Starting WebSocket conversation with agent:', agentId);
+        this.wsChat.startConversation(agentId);
+        this.showChatMessage('System', 'Connecting to agent via WebSocket...', 'info');
+    } else {
+        console.log('📱 WebSocket not available, using HTTP fallback');
+        this.showChatMessage('System', 'Connected via HTTP (slower responses)', 'warning');
+    }
+
     var modalEl = document.getElementById('agentChatModal');
     if (modalEl) {
         var modal = new bootstrap.Modal(modalEl);
@@ -495,42 +512,105 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
 AgentsManager.prototype.sendChatMessage = AgentsManager.prototype.sendChatMessage || function () {
     var self = this;
     var input = document.getElementById('chatInput');
-    if (!input || !input.value) return;
-    var text = input.value;
+    if (!input || !input.value.trim()) return;
+    var text = input.value.trim();
     input.value = '';
 
+    // Show user message
+    this.showChatMessage('You', text, 'user');
+
+    // Record message time for response time calculation
+    this.lastMessageTime = Date.now();
+
+    // Use WebSocket ONLY - no HTTP fallback for real-time chat
+    if (this.useWebSocket && this.wsChat && this.wsChat.isConnected) {
+        console.log('📡 Sending via WebSocket...');
+        this.wsChat.sendChatMessage(text);
+        return;
+    }
+
+    // If WebSocket not available, show error instead of slow HTTP fallback
+    console.error('❌ WebSocket not available - real-time chat required');
+    this.showChatMessage('System', 'WebSocket connection required for real-time chat. Please refresh the page.', 'error');
+};
+
+// HTTP fallback method
+AgentsManager.prototype.sendChatMessageHTTP = AgentsManager.prototype.sendChatMessageHTTP || function (text) {
+    var self = this;
+
+    // Add typing indicator
     var log = document.getElementById('chatLog');
     if (log) {
-        var me = document.createElement('div');
-        me.className = 'mb-2';
-        me.innerHTML = '<strong>You:</strong> ' + text;
-        log.appendChild(me);
+        var typing = document.createElement('div');
+        typing.className = 'mb-2 text-muted';
+        typing.id = 'typing-indicator';
+        typing.innerHTML = '<strong>Agent:</strong> <em>typing...</em>';
+        log.appendChild(typing);
         log.scrollTop = log.scrollHeight;
     }
 
-    // Send to conversation endpoint to get audio, also read X-Reply-Text header to display reply
-    fetch('/api/elevenlabs/conversation', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+    // Use the faster test endpoint for immediate responses
+    var startTime = Date.now();
+    fetch('/api/elevenlabs/conversation/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId: this.currentChatAgentId, text: text })
     })
         .then(function (r) {
-            self._lastReplyText = '';
-            try { var h = r.headers.get('X-Reply-Text') || r.headers.get('x-reply-text'); self._lastReplyText = h ? decodeURIComponent(h) : ''; } catch (e) { }
-            if (log && self._lastReplyText) {
-                var ai = document.createElement('div');
-                ai.className = 'mb-2';
-                ai.innerHTML = '<strong>Agent:</strong> ' + self._lastReplyText;
-                log.appendChild(ai);
-                log.scrollTop = log.scrollHeight;
-            }
+            // Remove typing indicator
+            var typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+
             if (!r.ok) throw new Error('Conversation failed');
-            return r.blob();
+            return r.json();
+        })
+        .then(function (data) {
+            var responseTime = Date.now() - startTime;
+            console.log('HTTP Chat response time:', responseTime + 'ms');
+
+            if (data.success && data.replyText) {
+                self._lastReplyText = data.replyText;
+                var fastBadge = data.fastResponse ? ' <small class="badge bg-warning">HTTP</small>' : ' <small class="badge bg-info">HTTP</small>';
+                self.showChatMessage('Agent', data.replyText + fastBadge, 'agent', responseTime);
+
+                // Optional: Generate TTS audio in background (non-blocking)
+                if (data.agentUsed && !data.fastResponse) {
+                    self.generateTTSAudio(data.replyText);
+                }
+            } else {
+                throw new Error('No reply received');
+            }
+        })
+        .catch(function (e) {
+            // Remove typing indicator on error
+            var typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+
+            console.error('HTTP Chat error', e);
+            self.showChatMessage('System', 'Chat failed - ' + e.message, 'error');
+        });
+};
+
+// Generate TTS audio in background (non-blocking)
+AgentsManager.prototype.generateTTSAudio = AgentsManager.prototype.generateTTSAudio || function (text) {
+    var self = this;
+    // Generate TTS audio without blocking the chat
+    fetch('/api/elevenlabs/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: this.currentChatAgentId, text: text })
+    })
+        .then(function (r) {
+            if (r.ok) return r.blob();
+            throw new Error('TTS generation failed');
         })
         .then(function (blob) {
             var audio = new Audio(URL.createObjectURL(blob));
             audio.play().catch(function (e) { console.warn('Autoplay blocked', e); });
         })
-        .catch(function (e) { console.error('Chat error', e); self.showAlert('Chat failed', 'danger'); });
+        .catch(function (e) {
+            console.warn('Background TTS failed:', e.message);
+        });
 };
 
 // Fetch current selected character id
@@ -597,6 +677,117 @@ AgentsManager.prototype.showAlert = function (message, type) {
             alertDiv.parentNode.removeChild(alertDiv);
         }
     }, 5000);
+};
+
+// Initialize WebSocket chat client
+AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocketChat || function () {
+    var self = this;
+
+    if (!this.useWebSocket || !window.WebSocketChatClient) {
+        console.log('WebSocket chat disabled or not available');
+        return;
+    }
+
+    try {
+        this.wsChat = new window.WebSocketChatClient();
+
+        // Override event handlers
+        this.wsChat.onConnectionStatusChange = function (connected) {
+            console.log('🔌 WebSocket chat:', connected ? 'Connected' : 'Disconnected');
+            self.updateChatConnectionStatus(connected);
+        };
+
+        this.wsChat.onConversationStarted = function (message) {
+            console.log('✅ WebSocket conversation started with:', message.agentId);
+            self.showChatMessage('System', 'Connected to agent - ready for instant chat!', 'success');
+        };
+
+        this.wsChat.onAgentResponse = function (message) {
+            var responseTime = Date.now() - self.lastMessageTime;
+            console.log('🤖 WebSocket agent response in', responseTime + 'ms');
+
+            self._lastReplyText = message.text;
+            self.showChatMessage('Agent', message.text, 'agent', responseTime);
+
+            // Play audio if available
+            if (message.audio) {
+                self.playAudioChunk(message.audio);
+            }
+        };
+
+        this.wsChat.onConversationEnded = function (message) {
+            console.log('🔚 WebSocket conversation ended');
+            self.showChatMessage('System', 'Conversation ended', 'info');
+        };
+
+        this.wsChat.onError = function (message) {
+            console.error('❌ WebSocket chat error:', message.message);
+            self.showChatMessage('System', 'Error: ' + message.message, 'error');
+
+            // Fallback to HTTP if WebSocket fails
+            self.useWebSocket = false;
+            console.log('🔄 Falling back to HTTP chat');
+        };
+
+        // Connect to WebSocket server
+        this.wsChat.connect();
+
+    } catch (error) {
+        console.error('❌ Failed to initialize WebSocket chat:', error);
+        this.useWebSocket = false;
+    }
+};
+
+// Update chat connection status indicator
+AgentsManager.prototype.updateChatConnectionStatus = function (connected) {
+    var statusIndicator = document.getElementById('wsConnectionStatus');
+    if (statusIndicator) {
+        statusIndicator.className = connected ? 'badge bg-success' : 'badge bg-danger';
+        statusIndicator.textContent = connected ? 'WebSocket Connected' : 'WebSocket Disconnected';
+    }
+};
+
+// Show chat message in the chat log
+AgentsManager.prototype.showChatMessage = function (sender, text, type, responseTime) {
+    var log = document.getElementById('chatLog');
+    if (!log) return;
+
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'mb-2';
+
+    var badge = '';
+    var timeInfo = '';
+
+    if (type === 'success') {
+        badge = ' <small class="badge bg-success">System</small>';
+    } else if (type === 'error') {
+        badge = ' <small class="badge bg-danger">Error</small>';
+    } else if (type === 'info') {
+        badge = ' <small class="badge bg-info">Info</small>';
+    } else if (type === 'agent' && responseTime) {
+        var speedBadge = responseTime < 1000 ? 'success' : responseTime < 3000 ? 'warning' : 'secondary';
+        timeInfo = ' <small class="badge bg-' + speedBadge + '">' + responseTime + 'ms</small>';
+    }
+
+    messageDiv.innerHTML = '<strong>' + sender + ':</strong> ' + text + badge + timeInfo;
+    log.appendChild(messageDiv);
+    log.scrollTop = log.scrollHeight;
+};
+
+// Play audio chunk from WebSocket
+AgentsManager.prototype.playAudioChunk = function (audioBase64) {
+    try {
+        var audioData = atob(audioBase64);
+        var audioArray = new Uint8Array(audioData.length);
+        for (var i = 0; i < audioData.length; i++) {
+            audioArray[i] = audioData.charCodeAt(i);
+        }
+        var audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+        var audio = new Audio(URL.createObjectURL(audioBlob));
+        audio.play().catch(function (e) { console.warn('Audio playback failed:', e); });
+    } catch (error) {
+        console.error('Failed to play audio chunk:', error);
+    }
 };
 
 // Initialize when DOM is loaded

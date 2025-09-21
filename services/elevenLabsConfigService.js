@@ -73,6 +73,7 @@ class ElevenLabsConfigService {
             apiKey: apiKey,
             baseUrl: this.config.ELEVENLABS_BASE_URL || 'https://api.elevenlabs.io/v1',
             timeout: parseInt(this.config.WEBSOCKET_TIMEOUT) || 30000,
+            conversationTimeout: parseInt(this.config.ELEVENLABS_CONVERSATION_TIMEOUT) || 120000,
             reconnectAttempts: parseInt(this.config.WEBSOCKET_RECONNECT_ATTEMPTS) || 3
         };
     }

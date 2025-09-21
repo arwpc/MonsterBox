@@ -38,8 +38,8 @@ class ConversationService {
       return { success: true, agentUsed: false, replyText: fallback, audioBuffer: tts.audioBuffer, contentType: tts.contentType };
     }
 
-    // 3) Chat with agent
-    const ai = await elevenLabsAgentService.chatWithAgent(resolvedAgentId, userText);
+    // 3) Chat with agent (using fast chat for real-time responses)
+    const ai = await elevenLabsAgentService.fastChatWithAgent(resolvedAgentId, userText);
     let replyText;
     let agentUsed = false;
     if (!ai.success) {

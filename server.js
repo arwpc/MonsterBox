@@ -27,6 +27,7 @@ import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
+import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -174,6 +175,15 @@ app.listen(PORT, '0.0.0.0', async () => {
         console.log(`⚠️  mjpg-streamer service not detected on port 8090`);
         console.log(`   To enable webcam streaming, run: sudo systemctl start mjpg-streamer`);
     }
+
+    // Start WebSocket server for real-time AI chat
+    try {
+        await elevenLabsWebSocketService.startWebSocketServer();
+        console.log(`🚀 Real-time AI chat: ws://localhost:8795`);
+    } catch (error) {
+        console.error(`❌ Failed to start WebSocket server:`, error.message);
+        console.log(`   AI chat will use HTTP fallback (slower responses)`);
+    }
 });
 
 // Graceful shutdown handling
@@ -195,6 +205,13 @@ async function gracefulShutdown(signal) {
         await motionTrackingCleanup();
     } catch (error) {
         console.warn('Motion tracking cleanup error:', (error && error.message) || error);
+    }
+
+    try {
+        // Stop WebSocket server
+        await elevenLabsWebSocketService.stopWebSocketServer();
+    } catch (error) {
+        console.warn('WebSocket server cleanup error:', (error && error.message) || error);
     }
 
     clearTimeout(hardExitTimer);

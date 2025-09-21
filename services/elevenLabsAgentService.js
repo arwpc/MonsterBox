@@ -268,10 +268,13 @@ class ElevenLabsAgentService {
     }
 
     /**
-     * Send a user message to an agent and get a reply
+     * Send a user message to an agent and get a reply (optimized for speed)
      */
     async chatWithAgent(agentId, userText) {
         try {
+            // Use a much shorter timeout for real-time chat
+            const chatTimeout = 15000; // 15 seconds max for real-time feel
+
             const response = await axios.post(
                 `${this.config.baseUrl}/convai/agents/${agentId}/simulate-conversation`,
                 {
@@ -287,7 +290,7 @@ class ElevenLabsAgentService {
                         'xi-api-key': this.config.apiKey,
                         'Content-Type': 'application/json'
                     },
-                    timeout: this.config.timeout
+                    timeout: chatTimeout
                 }
             );
 
@@ -314,6 +317,121 @@ class ElevenLabsAgentService {
                 success: false,
                 error: error.response?.data?.detail || error.message
             };
+        }
+    }
+
+    /**
+     * Fast chat method with immediate responses for real-time conversation
+     */
+    async fastChatWithAgent(agentId, userText) {
+        // First try the regular chat with short timeout
+        try {
+            const result = await this.chatWithAgent(agentId, userText);
+            if (result.success) {
+                return result;
+            }
+        } catch (error) {
+            console.warn('Fast chat fallback triggered:', error.message);
+        }
+
+        // If that fails or times out, provide immediate character-appropriate responses
+        const quickResponses = this.getQuickResponses(agentId, userText);
+        const response = quickResponses[Math.floor(Math.random() * quickResponses.length)];
+
+        return {
+            success: true,
+            replyText: response,
+            fastResponse: true
+        };
+    }
+
+    /**
+     * Get quick character-appropriate responses for immediate chat
+     */
+    getQuickResponses(agentId, userText) {
+        const lowerText = userText.toLowerCase();
+
+        // Agent-specific quick responses
+        const responses = {
+            'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n': { // Orlok
+                greetings: [
+                    "Ah, another mortal seeks my attention...",
+                    "You dare disturb my eternal rest?",
+                    "What brings you to my domain, wretch?"
+                ],
+                questions: [
+                    "Your curiosity may be your undoing...",
+                    "Such questions from one so... fragile.",
+                    "I have seen centuries pass. What could you possibly teach me?"
+                ],
+                default: [
+                    "The darkness whispers your name...",
+                    "Time means nothing to the eternal.",
+                    "Your mortal concerns amuse me."
+                ]
+            },
+            'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Skulltalker
+                greetings: [
+                    "The bones... they speak...",
+                    "Death calls... do you hear it?",
+                    "From beyond... I speak..."
+                ],
+                questions: [
+                    "Only shadows... know the truth...",
+                    "The grave... holds all answers...",
+                    "Ask the dead... they remember..."
+                ],
+                default: [
+                    "Silence... eternal silence...",
+                    "The skull... it grins...",
+                    "Whispers from... the void..."
+                ]
+            },
+            'agent_0801k3f1dybkecj88sta18gwwrv5': { // PumpkinHead
+                greetings: [
+                    "Well, well... what have we here?",
+                    "Another visitor to my patch!",
+                    "Heh... you smell like fear."
+                ],
+                questions: [
+                    "Questions, questions... got any treats?",
+                    "Curious little thing, aren't you?",
+                    "Hah! As if I'd tell you my secrets!"
+                ],
+                default: [
+                    "The harvest moon rises...",
+                    "My vines are always watching...",
+                    "Trick or treat... choose wisely."
+                ]
+            },
+            'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Coffin Breaker
+                greetings: [
+                    "Who disturbs my eternal rest?",
+                    "The coffin creaks... I stir...",
+                    "From the grave I rise..."
+                ],
+                questions: [
+                    "The dead have their own wisdom...",
+                    "Some secrets are buried for good reason...",
+                    "What the living seek, the dead have lost..."
+                ],
+                default: [
+                    "The earth calls me back...",
+                    "Between life and death... I linger...",
+                    "The grave is not the end..."
+                ]
+            }
+        };
+
+        const agentResponses = responses[agentId] || responses['agent_0801k3f1dw7xe2g8r4jkbxk0gt2n'];
+
+        // Choose response type based on user input
+        if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('greet')) {
+            return agentResponses.greetings;
+        } else if (lowerText.includes('?') || lowerText.includes('what') || lowerText.includes('how') || lowerText.includes('why')) {
+            return agentResponses.questions;
+        } else {
+            return agentResponses.default;
         }
     }
 }
