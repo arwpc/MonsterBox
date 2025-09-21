@@ -126,5 +126,56 @@
     },
     "created": "2025-09-18T02:13:35.224Z",
     "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "Neck",
+    "type": "servo",
+    "pin": null,
+    "description": "Coffin neck servo - standard positioning servo",
+    "config": {
+      "modelId": "4",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-19T20:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Jaw Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "Coffin jaw servo - standard positioning servo",
+    "config": {
+      "modelId": "4",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-19T20:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "Eyes",
+    "type": "servo",
+    "pin": null,
+    "description": "Coffin eyes servo - standard positioning servo",
+    "config": {
+      "modelId": "4",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 8,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-19T20:00:00.000Z",
+    "enabled": true
   }
 ]
