@@ -172,6 +172,39 @@ router.get('/stt/listen/status', async (req, res) => {
     }
 });
 
+// Diagnostic: capture short sample via server path and (optionally) transcribe
+router.post('/stt/testSample', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: serverSTTListener } = await import('../../services/serverSTTListener.js');
+        const { default: elevenLabsSTTService } = await import('../../services/elevenLabsSTTService.js');
+        const deviceId = (req.body && req.body.deviceId) || 'default';
+        const duration = parseFloat((req.query && req.query.duration) || '2') || 2;
+        const dryRun = String((req.query && req.query.dryRun) || '0') === '1';
+        const model = (req.body && req.body.model) || 'eleven_multilingual_v2';
+        const language = (req.body && req.body.language) || 'auto';
+
+        const wav = await serverSTTListener.captureChunkWav(deviceId, duration);
+        const sizeBytes = (wav && wav.length) || 0;
+        const usedPath = serverSTTListener._lastCapturePath || 'unknown';
+
+        if (dryRun) {
+            return res.json({ success: true, sizeBytes, usedPath });
+        }
+        if (!wav || !wav.length) {
+            return res.status(400).json({ success: false, error: 'No audio captured', sizeBytes, usedPath });
+        }
+        const result = await elevenLabsSTTService.transcribeAudio(wav, { mimeType: 'audio/wav', model, language });
+        if (result && result.success) {
+            return res.json({ success: true, sizeBytes, usedPath, text: result.transcript || result.text || '' });
+        }
+        return res.status(400).json({ success: false, error: (result && result.error) || 'Transcription failed', sizeBytes, usedPath });
+    } catch (e) {
+        console.error('stt/testSample error:', e);
+        res.status(500).json({ success: false, error: 'stt/testSample failed', details: e.message });
+    }
+});
+
+
 // Agent Routes
 router.get('/agents', requireElevenLabsConfig, async (req, res) => {
     try {

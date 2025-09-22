@@ -172,6 +172,11 @@ STTManager.prototype.bindEvents = function () {
     if (stopListeningBtn) {
         stopListeningBtn.addEventListener('click', function () { self.stopListening(); });
     }
+    // 2s diagnostic test
+    var twoSecBtn = document.getElementById('sttTwoSecTest');
+    if (twoSecBtn) {
+        twoSecBtn.addEventListener('click', function () { self.runTwoSecondTest(); });
+    }
 
     // Legacy buttons (safe no-ops if elements removed)
     var testSTTBtn = document.getElementById('testSTT');
@@ -577,6 +582,34 @@ STTManager.prototype.stopListening = function () {
     fetch('/api/elevenlabs/stt/listen/stop', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: self.serverSessionId })
     }).then(function () { cleanup(); }).catch(function () { cleanup(); });
+};
+
+STTManager.prototype.runTwoSecondTest = function () {
+    var self = this;
+    var devId = self.getSelectedMicDeviceId();
+    if (!devId) { self.showAlert('Select a Microphone Part first', 'warning'); return; }
+    var body = {
+        deviceId: devId,
+        model: (document.getElementById('sttModel') || {}).value || 'eleven_multilingual_v2',
+        language: (document.getElementById('sttLanguage') || {}).value || 'auto'
+    };
+    var btn = document.getElementById('sttTwoSecTest');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Testing...'; }
+    fetch('/api/elevenlabs/stt/testSample?duration=2', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j || !j.success) {
+            self.showAlert('2s test failed: ' + ((j && j.error) || 'Unknown'), 'danger');
+            return;
+        }
+        var msg = 'Captured ' + j.sizeBytes + ' bytes via ' + (j.usedPath || 'unknown') + (j.text ? ('; Transcript: "' + j.text.substring(0, 80) + '"') : '');
+        self.showAlert(msg, 'success');
+    }).catch(function (e) {
+        console.error('2s test error', e);
+        self.showAlert('2s test failed', 'danger');
+    }).finally(function () {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-mic-fill"></i> 2s Test'; }
+    });
 };
 
 

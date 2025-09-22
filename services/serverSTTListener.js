@@ -8,11 +8,17 @@ import { spawn } from 'child_process';
 import elevenLabsSTTService from './elevenLabsSTTService.js';
 import pipewireService from './pipewireService.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 class ServerSTTListener {
   constructor() {
     this.sessions = new Map(); // sessionId -> { deviceId, model, language, running, timer, transcript }
     this.captureDurationSec = 0.8; // slightly longer to avoid ultra-short empty chunks
     this.pollIntervalMs = 500; // poll with a small buffer
+    this._lastCapturePath = null; // 'python' | 'ffmpeg' | 'arecord' | 'parec'
   }
 
   startSession({ deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' }) {
@@ -98,6 +104,33 @@ class ServerSTTListener {
     }
   }
 
+  _getMicWrapperPath() {
+    return path.resolve(__dirname, '../python_wrappers/microphone_cli.py');
+  }
+
+  _captureWithPython(sourceArg, durationSec) {
+    return new Promise((resolve) => {
+      try {
+        const sr = 16000, ch = 1;
+        const script = this._getMicWrapperPath();
+        const args = [script, 'record_wav', String(sourceArg || 'default'), String(sr), String(ch), String(durationSec || 1)];
+        const env = Object.assign({}, process.env, { PULSE_SOURCE: String(sourceArg || 'default') });
+        const py = spawn('python3', args, { stdio: ['ignore', 'pipe', 'ignore'], env });
+        const chunks = [];
+        py.stdout.on('data', (d) => chunks.push(d));
+        py.on('error', () => resolve(Buffer.alloc(0)));
+        py.on('close', (code) => {
+          const buf = chunks.length ? Buffer.concat(chunks) : Buffer.alloc(0);
+          if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎙️ python record_wav exit', code, 'bytes=', buf.length);
+          resolve(code === 0 ? buf : Buffer.alloc(0));
+        });
+      } catch (_) {
+        resolve(Buffer.alloc(0));
+      }
+    });
+  }
+
+
   async captureChunkWav(deviceId, durationSec) {
     const sr = 16000, ch = 1;
     const src = await this.resolvePulseSourceId(deviceId);
@@ -105,19 +138,27 @@ class ServerSTTListener {
     if (process.env.MB_DEBUG_AUDIO === '1') {
       console.log(`🎙️ STT capture from source: ${sourceArg} (requested: ${deviceId}) for ${durationSec || 1}s`);
     }
-    return new Promise((resolve) => {
-      function byteLen(arr) { try { return arr.reduce(function (n, c) { return n + c.length; }, 0); } catch (_) { return 0; } }
-      function finish(buf) { try { resolve(buf || Buffer.alloc(0)); } catch (_) { resolve(Buffer.alloc(0)); } }
 
-      // Primary: ffmpeg (PulseAudio) to WAV on stdout
+    // 1) First try Python/PyAudio route which is verified working on Orlok
+    const pyBuf = await this._captureWithPython(sourceArg, durationSec);
+    if (pyBuf && pyBuf.length > 44) { // WAV header is 44 bytes
+      this._lastCapturePath = 'python';
+      return pyBuf;
+    }
+
+    // 2) Fallback chain: ffmpeg -> arecord -> parec
+    return new Promise((resolve) => {
+      const self = this;
+      function byteLen(arr) { try { return arr.reduce(function (n, c) { return n + c.length; }, 0); } catch (_) { return 0; } }
+      function finish(buf, pathTag) { try { self._lastCapturePath = pathTag || self._lastCapturePath; resolve(buf || Buffer.alloc(0)); } catch (_) { resolve(Buffer.alloc(0)); } }
+
+      // Primary fallback: ffmpeg (PulseAudio) to WAV on stdout
       var ffArgs = ['-hide_banner', '-loglevel', 'error', '-f', 'pulse', '-i', sourceArg,
         '-t', String(durationSec || 1), '-ac', String(ch), '-ar', String(sr), '-f', 'wav', 'pipe:1'];
       var ff = spawn('ffmpeg', ffArgs, { stdio: ['ignore', 'pipe', 'ignore'] });
       var chunks = [];
-      var finished = false;
 
       function tryFallbackArecord() {
-        if (finished) return; finished = true;
         // Fallback 1: arecord with PulseAudio plugin; pass source via env
         var arArgs = ['-D', 'pulse', '-q', '-t', 'wav', '-r', String(sr), '-f', 'S16_LE', '-c', String(ch), '-d', String(durationSec || 1), '-'];
         var env = Object.assign({}, process.env, { PULSE_SOURCE: sourceArg });
@@ -127,7 +168,7 @@ class ServerSTTListener {
         ar.on('error', function () { tryFallbackParec(); });
         ar.on('close', function (code) {
           if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎙️ STT fallback arecord exit', code, 'bytes=', byteLen(chunks));
-          if (code === 0 && chunks.length) return finish(Buffer.concat(chunks));
+          if (code === 0 && chunks.length) return finish(Buffer.concat(chunks), 'arecord');
           tryFallbackParec();
         });
       }
@@ -141,19 +182,19 @@ class ServerSTTListener {
           var pr = spawn('parec', args, { stdio: ['ignore', 'pipe', 'ignore'] });
           var timer = setTimeout(function () { try { pr.kill('SIGINT'); } catch (_) { } }, Math.max(50, Math.round((durationSec || 1) * 1000)));
           pr.stdout.on('data', function (d) { chunks.push(d); });
-          pr.on('error', function () { finish(Buffer.alloc(0)); });
+          pr.on('error', function () { finish(Buffer.alloc(0), 'parec'); });
           pr.on('close', (code) => {
             if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎙️ STT fallback parec exit', code, 'bytes=', byteLen(chunks));
             try { clearTimeout(timer); } catch (_) { }
             if (chunks.length) {
               const raw = Buffer.concat(chunks);
-              const wav = this._encodeWavPCM16LE(raw, sr, ch);
-              return finish(wav && wav.length ? wav : Buffer.alloc(0));
+              const wav = self._encodeWavPCM16LE(raw, sr, ch);
+              return finish(wav && wav.length ? wav : Buffer.alloc(0), 'parec');
             }
-            finish(Buffer.alloc(0));
+            finish(Buffer.alloc(0), 'parec');
           });
         } catch (_) {
-          finish(Buffer.alloc(0));
+          finish(Buffer.alloc(0), 'parec');
         }
       }
 
@@ -161,7 +202,8 @@ class ServerSTTListener {
       ff.on('error', function () { tryFallbackArecord(); });
       ff.on('close', function (code) {
         if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎙️ STT primary ffmpeg exit', code, 'bytes=', byteLen(chunks));
-        if (code === 0 && chunks.length) finish(Buffer.concat(chunks)); else tryFallbackArecord();
+        if (code === 0 && chunks.length) return finish(Buffer.concat(chunks), 'ffmpeg');
+        tryFallbackArecord();
       });
     });
   }
