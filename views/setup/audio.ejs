@@ -288,6 +288,25 @@
       </div>
     </div>
 
+    <!-- Microphone Parts Controls -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-mic"></i> Microphone Parts Controls</h5>
+            <button class="btn btn-outline-secondary btn-sm" onclick="refreshMicParts()">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+          <div class="card-body" id="mic-parts-controls">
+            <div id="mic-parts-list" class="list-group">
+              <div class="list-group-item text-muted">Loading microphone parts…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Advanced Settings -->
     <div class="row mb-4">
       <div class="col-12">
@@ -404,17 +423,20 @@
     async function loadSystemConfiguration() {
       try {
         console.log('🔧 Loading system configuration...');
-        const [configResponse, hardwareResponse] = await Promise.all([
+        const [configResponse, hardwareResponse, partsResponse] = await Promise.all([
           fetch('/setup/audio/api/system-config'),
-          fetch('/setup/audio/api/hardware-devices')
+          fetch('/setup/audio/api/hardware-devices'),
+          fetch('/setup/parts/api/parts?type=microphone')
         ]);
 
         const configData = await configResponse.json();
         const hardwareData = await hardwareResponse.json();
+        const partsData = await partsResponse.json();
 
-        if (configData.success && hardwareData.success) {
+        if (configData.success && hardwareData.success && partsData.success) {
           currentConfig = configData.config;
           currentConfig.hardwareDevices = hardwareData.devices;
+          currentConfig.microphoneParts = partsData.parts || [];
           updateUI();
         } else {
           showNotification('Failed to load system configuration', 'error');
@@ -440,9 +462,160 @@
 
       // Update current device info
       updateCurrentDeviceInfo();
+
+      // Update microphone parts controls
+      updateMicPartsUI();
     }
 
     // Update system status indicators
+
+    // Update microphone parts controls UI
+    function updateMicPartsUI() {
+      const container = document.getElementById('mic-parts-list');
+      if (!container) return;
+      const parts = (currentConfig && currentConfig.microphoneParts) || [];
+      if (parts.length === 0) {
+        container.innerHTML = '<div class="list-group-item text-muted">No microphone parts found</div>';
+        return;
+      }
+      let html = '';
+      parts.forEach(function (part) {
+        const devId = (part.config && part.config.deviceId) || 'default';
+        const sens = (part.config && part.config.sensitivity != null) ? part.config.sensitivity : 1;
+        const gainPct = (part.config && part.config.inputGainPercent != null) ? part.config.inputGainPercent : 100;
+        html += '<div class="list-group-item">';
+        html += '  <div class="d-flex justify-content-between align-items-center">';
+        html += '    <div>';
+        html += '      <strong>' + part.name + '</strong><br>';
+        html += '      <small class="text-muted">Device: ' + devId + ' | Part ID: ' + part.id + '</small>';
+        html += '    </div>';
+        html += '    <div class="text-end" style="min-width: 180px;">';
+        html += '      <div class="vu-meter-container" style="padding:4px 8px;">';
+        html += '        <div class="vu-meter" id="mic-vu-' + part.id + '"><div class="vu-bar"></div></div>';
+        html += '        <div class="vu-label"><span id="mic-vu-' + part.id + '-level-text">0%</span></div>';
+        html += '      </div>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '  <div class="row mt-2">';
+        html += '    <div class="col-md-6">';
+        html += '      <label class="form-label">Sensitivity</label>';
+        html += '      <div class="input-group">';
+        html += '        <input type="range" min="0.1" max="3.0" step="0.1" class="form-range" id="mic-sens-' + part.id + '" value="' + sens + '" />';
+        html += '        <span class="ms-2 small" id="mic-sens-' + part.id + '-val">' + sens + '</span>';
+        html += '      </div>';
+        html += '    </div>';
+        html += '    <div class="col-md-6">';
+        html += '      <label class="form-label">Input Level (Gain)</label>';
+        html += '      <div class="input-group">';
+        html += '        <input type="range" min="0" max="200" step="1" class="form-range" id="mic-gain-' + part.id + '" value="' + gainPct + '" />';
+        html += '        <span class="ms-2 small" id="mic-gain-' + part.id + '-val">' + gainPct + '%</span>';
+        html += '      </div>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+      });
+      container.innerHTML = html;
+
+      // Bind handlers and start VU monitoring per part
+      parts.forEach(function (part) {
+        const devId = (part.config && part.config.deviceId) || 'default';
+        // VU meter start
+        startVUMeterMonitoring(devId, 'input', 'mic-vu-' + part.id);
+        // Sensitivity change
+        const sensEl = document.getElementById('mic-sens-' + part.id);
+        const sensValEl = document.getElementById('mic-sens-' + part.id + '-val');
+        if (sensEl && sensValEl) {
+          sensEl.addEventListener('input', function () {
+            sensValEl.textContent = sensEl.value;
+          });
+          sensEl.addEventListener('change', function () {
+            saveMicSensitivity(part.id, parseFloat(sensEl.value));
+          });
+        }
+        // Gain change
+        const gainEl = document.getElementById('mic-gain-' + part.id);
+        const gainValEl = document.getElementById('mic-gain-' + part.id + '-val');
+        if (gainEl && gainValEl) {
+          gainEl.addEventListener('input', function () {
+            gainValEl.textContent = gainEl.value + '%';
+          });
+          gainEl.addEventListener('change', function () {
+            applyMicGain(part.id, devId, parseInt(gainEl.value, 10));
+          });
+        }
+      });
+    }
+
+    async function refreshMicParts() {
+      try {
+        const res = await fetch('/setup/parts/api/parts?type=microphone');
+        const data = await res.json();
+        if (data.success) {
+          currentConfig.microphoneParts = data.parts || [];
+          updateMicPartsUI();
+          showNotification('Microphone parts refreshed', 'success');
+        } else {
+          showNotification('Failed to load microphone parts', 'error');
+        }
+      } catch (e) {
+        showNotification('Error refreshing microphone parts', 'error');
+      }
+    }
+
+    async function saveMicSensitivity(partId, sensitivity) {
+      try {
+        // Load current part, then update config.sensitivity
+        const res = await fetch('/setup/parts/api/parts/' + partId);
+        const data = await res.json();
+        if (!data.success) throw new Error('Part load failed');
+        const part = data.part;
+        const newConfig = Object.assign({}, part.config || {}, { sensitivity: sensitivity, inputGainPercent: part.config && part.config.inputGainPercent });
+        const putRes = await fetch('/setup/parts/api/parts/' + partId, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: newConfig })
+        });
+        const putData = await putRes.json();
+        if (putData.success) {
+          showNotification('Sensitivity saved for ' + part.name, 'success');
+        } else {
+          showNotification('Failed to save sensitivity: ' + (putData.error || ''), 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showNotification('Error saving sensitivity', 'error');
+      }
+    }
+
+    async function applyMicGain(partId, deviceId, gainPercent) {
+      try {
+        // Apply immediately via PipeWire
+        const res = await fetch('/setup/audio/api/set-input-gain', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId: deviceId, gainPercent: gainPercent })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Persist to part config for visibility
+          const partRes = await fetch('/setup/parts/api/parts/' + partId);
+          const partData = await partRes.json();
+          if (partData.success) {
+            const part = partData.part;
+            const newConfig = Object.assign({}, part.config || {}, { inputGainPercent: gainPercent });
+            await fetch('/setup/parts/api/parts/' + partId, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ config: newConfig })
+            });
+          }
+          showNotification('Input gain applied to ' + deviceId + ' (' + gainPercent + '%)', 'success');
+        } else {
+          showNotification('Failed to apply input gain: ' + (data.error || ''), 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showNotification('Error applying input gain', 'error');
+      }
+    }
+
     function updateSystemStatus() {
       const status = currentConfig.pipewireStatus;
 
@@ -473,7 +646,9 @@
           option.value = device.id;
           option.textContent = device.description || device.name;
           option.setAttribute('data-type', device.type);
-          if (device.isDefault || device.id === currentConfig.defaultSink) {
+          const selSink = (window._forceSelectedSink || currentConfig.defaultSink);
+          const isSelected = (device.id === selSink || device.name === selSink || (device.description && device.description.indexOf(selSink) !== -1));
+          if (isSelected) {
             option.selected = true;
           }
           sinkSelect.appendChild(option);
@@ -490,12 +665,26 @@
           option.value = device.id;
           option.textContent = device.description || device.name;
           option.setAttribute('data-type', device.type);
-          if (device.isDefault || device.id === currentConfig.defaultSource) {
+          const selSource = (window._forceSelectedSource || currentConfig.defaultSource);
+          const isSelected = (device.id === selSource || device.name === selSource || (device.description && device.description.indexOf(selSource) !== -1));
+          if (isSelected) {
             option.selected = true;
           }
           sourceSelect.appendChild(option);
         });
       }
+
+      // If we have a locally remembered selection, prefer it when present
+      try {
+        var lsSink = localStorage.getItem('setupAudio.defaultSink');
+        if (!window._forceSelectedSink && lsSink && sinkSelect.querySelector('option[value="' + lsSink + '"]')) {
+          sinkSelect.value = lsSink;
+        }
+        var lsSource = localStorage.getItem('setupAudio.defaultSource');
+        if (!window._forceSelectedSource && lsSource && sourceSelect.querySelector('option[value="' + lsSource + '"]')) {
+          sourceSelect.value = lsSource;
+        }
+      } catch (e) { }
     }
 
     // Update device lists
@@ -556,11 +745,13 @@
     // Update current device info
     function updateCurrentDeviceInfo() {
       // Update current sink info
+      const selSink = currentConfig.defaultSink;
       const currentSink = currentConfig.availableSinks.find(function (s) {
-        return s.id === currentConfig.defaultSink;
+        return s.id === selSink || s.name === selSink || (s.description && s.description.indexOf(selSink) !== -1);
       });
 
       const sinkInfo = document.getElementById('current-sink-info');
+
       if (currentSink) {
         sinkInfo.innerHTML =
           '<strong>' + (currentSink.description || currentSink.name) + '</strong><br>' +
@@ -570,8 +761,9 @@
       }
 
       // Update current source info
+      const selSource = currentConfig.defaultSource;
       const currentSource = currentConfig.availableSources.find(function (s) {
-        return s.id === currentConfig.defaultSource;
+        return s.id === selSource || s.name === selSource || (s.description && s.description.indexOf(selSource) !== -1);
       });
 
       const sourceInfo = document.getElementById('current-source-info');
@@ -599,6 +791,16 @@
 
         console.log('💾 Saving configuration:', { defaultSink, defaultSource });
 
+        // Persist user choice locally and force-select immediately so the UI reflects the user's choice
+        try { localStorage.setItem('setupAudio.defaultSink', defaultSink); } catch (e) { }
+        try { localStorage.setItem('setupAudio.defaultSource', defaultSource); } catch (e) { }
+        window._forceSelectedSink = defaultSink;
+        window._forceSelectedSource = defaultSource;
+        const sinkSelectEl = document.getElementById('default-sink');
+        const sourceSelectEl = document.getElementById('default-source');
+        if (sinkSelectEl && sinkSelectEl.querySelector('option[value="' + defaultSink + '"]')) sinkSelectEl.value = defaultSink;
+        if (sourceSelectEl && sourceSelectEl.querySelector('option[value="' + defaultSource + '"]')) sourceSelectEl.value = defaultSource;
+
         const response = await fetch('/setup/audio/api/system-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -613,6 +815,11 @@
         } else {
           showNotification('Failed to save configuration: ' + data.error, 'error');
         }
+        // Clear force after a short delay to allow UI to stabilize
+        setTimeout(function () {
+          window._forceSelectedSink = null;
+          window._forceSelectedSource = null;
+        }, 800);
       } catch (error) {
         console.error('Error saving configuration:', error);
         showNotification('Error saving configuration', 'error');
@@ -708,29 +915,37 @@
       }
     }
 
+    const vuMeterBusy = {};
     function startVUMeterMonitoring(deviceId, deviceType, meterId) {
-      // Stop existing monitoring
+      // Stop existing monitoring for this meter
       if (vuMeterIntervals[meterId]) {
         clearInterval(vuMeterIntervals[meterId]);
       }
 
-      // Start new monitoring
-      console.log('🎵 Starting VU meter monitoring for', deviceId, deviceType);
+      // Start new monitoring with throttle and no console spam
+      if (window.MONSTERBOX_DEBUG_AUDIO) console.log('🎵 Starting VU meter monitoring for', deviceId, deviceType);
+      vuMeterBusy[meterId] = false;
+
       vuMeterIntervals[meterId] = setInterval(async function () {
+        if (vuMeterBusy[meterId]) return; // prevent overlapping fetches
+        vuMeterBusy[meterId] = true;
         try {
           const response = await fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=' + deviceType);
           const data = await response.json();
 
-          if (data.success) {
-            updateVUMeter(meterId, data.level);
-            if (data.level > 0.01) {
-              console.log('🎵 VU level detected:', data.level, 'for', deviceId);
+          if (data && data.success) {
+            var level = (typeof data.level === 'number') ? data.level : 0;
+            updateVUMeter(meterId, level);
+            if (window.MONSTERBOX_DEBUG_AUDIO && level > 0.01) {
+              console.log('🎵 VU level detected:', level, 'for', deviceId);
             }
           }
         } catch (error) {
-          console.warn('VU meter update failed:', error);
+          if (window.MONSTERBOX_DEBUG_AUDIO) console.warn('VU meter update failed:', error);
+        } finally {
+          vuMeterBusy[meterId] = false;
         }
-      }, 50); // Update every 50ms for very responsive real-time monitoring
+      }, 100); // 100ms: snappier VU without overlapping fetches
     }
 
     function stopVUMeterMonitoring(meterId) {

@@ -8,9 +8,20 @@ function STTManager() {
     this.models = [];
     this.microphoneParts = [];
     this.currentConfig = {};
+    // Client mic recorder (legacy, no longer used for real-time)
     this.mediaRecorder = null;
     this.chunks = [];
     this.stream = null;
+    // VU meter
+    this.vuTimer = null;
+    this.currentMicDeviceId = null;
+    // Server-side listening session
+    this.isListening = false;
+    this.serverSessionId = null;
+    this.statusPollTimer = null;
+    this.lastTranscriptText = '';
+    this.lastStatusError = '';
+    this.mediaRecorderTimeslice = 1000; // ms per chunk (legacy)
 }
 
 STTManager.prototype.init = function () {
@@ -31,13 +42,14 @@ STTManager.prototype.loadSTTModels = function () {
             return response.json();
         })
         .then(function (data) {
-            if (data.success) {
-                self.models = data.models || [];
-                self.updateModelsDisplay();
-                self.populateModelSelect();
-            } else {
+            var hasModels = data && data.models && data.models.length >= 0;
+            if (data && data.success === false) {
                 self.showModelsError();
+                return;
             }
+            self.models = hasModels ? data.models : [];
+            self.updateModelsDisplay();
+            self.populateModelSelect();
         })
         .catch(function (error) {
             console.error('Failed to load STT models:', error);
@@ -47,6 +59,7 @@ STTManager.prototype.loadSTTModels = function () {
 
 STTManager.prototype.updateModelsDisplay = function () {
     var modelsContainer = document.getElementById('sttModels');
+    if (!modelsContainer) return; // models list removed from UI
 
     if (this.models.length === 0) {
         modelsContainer.innerHTML = '<div class="text-center text-muted">No STT models available</div>';
@@ -83,6 +96,7 @@ STTManager.prototype.populateModelSelect = function () {
 
 STTManager.prototype.showModelsError = function () {
     var modelsContainer = document.getElementById('sttModels');
+    if (!modelsContainer) return; // models list removed from UI
     modelsContainer.innerHTML = '<div class="alert alert-warning">' +
         '<i class="bi bi-exclamation-triangle me-2"></i>' +
         'Failed to load STT models' +
@@ -97,7 +111,7 @@ STTManager.prototype.loadMicrophoneParts = function () {
             return response.json();
         })
         .then(function (data) {
-            self.microphoneParts = (data.success && data.parts) ? data.parts.filter(part => part.type === 'microphone') : [];
+            self.microphoneParts = (data.success && data.parts) ? data.parts.filter(function (part) { return part.type === 'microphone'; }) : [];
             self.populateMicrophoneSelect();
         })
         .catch(function (error) {
@@ -141,36 +155,40 @@ STTManager.prototype.bindEvents = function () {
         });
     }
 
-    // Test STT button
+    // Microphone selection -> start VU meter
+    var micSelect = document.getElementById('microphonePart');
+    if (micSelect) {
+        micSelect.addEventListener('change', function () { self.onMicSelectionChange(); });
+        // Initialize once loaded
+        setTimeout(function () { self.onMicSelectionChange(); }, 0);
+    }
+
+    // New real-time controls
+    var startListeningBtn = document.getElementById('startListening');
+    var stopListeningBtn = document.getElementById('stopListening');
+    if (startListeningBtn) {
+        startListeningBtn.addEventListener('click', function () { self.startListening(); });
+    }
+    if (stopListeningBtn) {
+        stopListeningBtn.addEventListener('click', function () { self.stopListening(); });
+    }
+
+    // Legacy buttons (safe no-ops if elements removed)
     var testSTTBtn = document.getElementById('testSTT');
     if (testSTTBtn) {
-        testSTTBtn.addEventListener('click', function () {
-            self.testSTTConfiguration();
-        });
+        testSTTBtn.addEventListener('click', function () { self.testSTTConfiguration(); });
     }
-
-    // File transcription
     var transcribeFileBtn = document.getElementById('transcribeFile');
     if (transcribeFileBtn) {
-        transcribeFileBtn.addEventListener('click', function () {
-            self.transcribeAudioFile();
-        });
+        transcribeFileBtn.addEventListener('click', function () { self.transcribeAudioFile(); });
     }
-
-    // Recording controls
     var startRecordingBtn = document.getElementById('startRecording');
     var stopRecordingBtn = document.getElementById('stopRecording');
-
     if (startRecordingBtn) {
-        startRecordingBtn.addEventListener('click', function () {
-            self.startRecording();
-        });
+        startRecordingBtn.addEventListener('click', function () { self.startRecording(); });
     }
-
     if (stopRecordingBtn) {
-        stopRecordingBtn.addEventListener('click', function () {
-            self.stopRecording();
-        });
+        stopRecordingBtn.addEventListener('click', function () { self.stopRecording(); });
     }
 
     // Microphone integration test
@@ -191,19 +209,33 @@ STTManager.prototype.saveConfiguration = function () {
         config[pair[0]] = pair[1];
     }
 
-    fetch('/api/elevenlabs/stt/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-    })
-        .then(function (r) { return r.json(); })
+    // Include microphone selection and defaults
+    var micSelect = document.getElementById('microphonePart');
+    config.microphonePartId = micSelect && micSelect.value ? micSelect.value : null;
+    config.microphoneDeviceId = self.getSelectedMicDeviceId() || null;
+    config.format = 'mp3';
+
+    // Persist to current Character
+    self.getCurrentCharacterId()
+        .then(function (charId) {
+            if (!charId) {
+                self.showAlert('No current Character selected. Use the Character menu.', 'warning');
+                return null;
+            }
+            return fetch('/setup/characters/api/characters/' + charId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sttConfig: config })
+            });
+        })
+        .then(function (r) { return r ? r.json() : null; })
         .then(function (data) {
-            if (data && data.success) self.showAlert('STT configuration saved successfully!', 'success');
-            else self.showAlert('Failed to save STT configuration', 'danger');
+            if (data && data.success) self.showAlert('Saved STT settings to Character', 'success');
+            else self.showAlert('Failed to save STT settings to Character', 'danger');
         })
         .catch(function (e) {
-            console.error('Save STT config error', e);
-            self.showAlert('Failed to save STT configuration', 'danger');
+            console.error('Save STT config (character) error', e);
+            self.showAlert('Failed to save STT settings to Character', 'danger');
         });
 };
 
@@ -350,31 +382,22 @@ STTManager.prototype.stopRecording = function () {
 
 STTManager.prototype.testMicrophoneIntegration = function () {
     var self = this;
-    var microphoneSelect = document.getElementById('microphonePart');
-
-    if (!microphoneSelect.value) {
-        this.showAlert('Please select a microphone part first', 'warning');
-        return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        this.showAlert('getUserMedia not supported in this browser', 'danger');
-        return;
-    }
-
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-        // Immediately stop to verify permissions/integration
-        stream.getTracks().forEach(function (t) { t.stop(); });
-        self.showAlert('Microphone is accessible and working!', 'success');
-    }).catch(function (err) {
-        console.error('Microphone test error', err);
-        self.showAlert('Microphone access failed', 'danger');
-    });
+    var devId = self.getSelectedMicDeviceId();
+    if (!devId) { self.showAlert('Please select a Microphone Part first', 'warning'); return; }
+    var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(devId) + '&deviceType=input';
+    fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.success) self.showAlert('Microphone device reachable (level: ' + Math.round((+j.level || 0) * 100) + '%)', 'success');
+            else self.showAlert('Microphone level check failed', 'danger');
+        })
+        .catch(function () { self.showAlert('Microphone level check error', 'danger'); });
 };
 
 STTManager.prototype.showAlert = function (message, type) {
     // Create Bootstrap alert
     var alertDiv = document.createElement('div');
+
     alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed';
     alertDiv.style.top = '20px';
     alertDiv.style.right = '20px';
@@ -397,6 +420,165 @@ STTManager.prototype.showAlert = function (message, type) {
         }
     }, 5000);
 };
+// Helpers for Character and Microphone
+STTManager.prototype.getCurrentCharacterId = function () {
+    return fetch('/setup/characters/api/current')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { return d && d.selectedCharacter ? d.selectedCharacter : null; })
+        .catch(function () { return null; });
+};
+
+STTManager.prototype.getSelectedMicDeviceId = function () {
+    var micSelect = document.getElementById('microphonePart');
+    if (!micSelect || !micSelect.value) return null;
+    var selId = String(micSelect.value);
+    for (var i = 0; i < this.microphoneParts.length; i++) {
+        if (String(this.microphoneParts[i].id) === selId) {
+            return this.microphoneParts[i].config && this.microphoneParts[i].config.deviceId;
+        }
+    }
+    return null;
+};
+
+// VU meter handling
+STTManager.prototype.onMicSelectionChange = function () {
+    this.currentMicDeviceId = this.getSelectedMicDeviceId();
+    if (this.currentMicDeviceId) this.startVUMeter(); else this.stopVUMeter();
+};
+
+STTManager.prototype.startVUMeter = function () {
+    var self = this;
+    self.stopVUMeter();
+    if (!self.currentMicDeviceId) return;
+    var meterEl = document.getElementById('micVUMeter');
+    var labelEl = document.getElementById('micVULabel');
+    if (!meterEl || !labelEl) return;
+
+    self.vuTimer = setInterval(function () {
+        var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
+        fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!j || !j.success) return;
+                var level = +j.level || 0;
+                var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                meterEl.style.width = pct + '%';
+                meterEl.setAttribute('aria-valuenow', String(pct));
+                labelEl.textContent = pct + '%';
+            })
+            .catch(function () { /* ignore */ });
+    }, 300);
+};
+
+STTManager.prototype.stopVUMeter = function () {
+    if (this.vuTimer) {
+        clearInterval(this.vuTimer);
+        this.vuTimer = null;
+    }
+    var meterEl = document.getElementById('micVUMeter');
+    var labelEl = document.getElementById('micVULabel');
+    if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); }
+    if (labelEl) { labelEl.textContent = '0%'; }
+};
+
+// Live transcription UI
+STTManager.prototype.appendTranscript = function (text) {
+    var area = document.getElementById('liveTranscript');
+    if (!area) return;
+    var t = (text || '').trim();
+    if (!t) return;
+    area.textContent = (area.textContent ? area.textContent + ' ' : '') + t;
+    area.scrollTop = area.scrollHeight;
+};
+
+// Real-time listening using server-side Microphone Part
+STTManager.prototype.startListening = function () {
+    var self = this;
+    var startBtn = document.getElementById('startListening');
+    var stopBtn = document.getElementById('stopListening');
+
+    var devId = self.getSelectedMicDeviceId();
+    if (!devId) { self.showAlert('Select a Microphone Part first', 'warning'); return; }
+
+    var area = document.getElementById('liveTranscript');
+    if (area) area.textContent = '';
+    self.lastTranscriptText = '';
+
+    var body = {
+        deviceId: devId,
+        model: (document.getElementById('sttModel') || {}).value || 'eleven_multilingual_v2',
+        language: (document.getElementById('sttLanguage') || {}).value || 'auto'
+    };
+
+    fetch('/api/elevenlabs/stt/listen/start', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j || !j.success) { self.showAlert('Failed to start listening', 'danger'); return; }
+        self.serverSessionId = j.sessionId; self.isListening = true;
+        if (startBtn) startBtn.disabled = true; if (stopBtn) stopBtn.disabled = false;
+        self.showAlert('Listening started (server)', 'info');
+        // begin polling status
+        self.statusPollTimer = setInterval(function () { self.pollTranscript(); }, 300); // faster UI updates
+    }).catch(function () { self.showAlert('Failed to start listening', 'danger'); });
+};
+
+STTManager.prototype.pollTranscript = function () {
+    var self = this; if (!self.serverSessionId) return;
+    fetch('/api/elevenlabs/stt/listen/status?sessionId=' + encodeURIComponent(self.serverSessionId))
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (!j || !j.success) return;
+            if (j.lastError && j.lastError !== self.lastStatusError) { self.lastStatusError = j.lastError; self.showAlert('STT warning: ' + j.lastError, 'warning'); }
+            if (!j.lastError && self.lastStatusError) { self.lastStatusError = ''; }
+
+            // Debug counters (helps determine if audio is reaching server/ElevenLabs)
+            var prev = self._lastCounters || {};
+            if (typeof j.chunksCaptured === 'number' && j.chunksCaptured !== prev.chunksCaptured) {
+                if (window.MONSTERBOX_DEBUG_AUDIO) {
+                    console.log('[STT] captured=%d, withAudio=%d, transcribed=%d, lastChunkBytes=%d, err=%s',
+                        j.chunksCaptured, j.chunksWithAudio, j.chunksTranscribed, j.lastChunkBytes, j.lastError || '');
+                }
+                // Notify once if we are capturing audio but not getting transcripts
+                if (!j.lastError && j.chunksWithAudio > 0 && j.chunksTranscribed === 0 && !self._notifiedNoTranscriptYet) {
+                    self._notifiedNoTranscriptYet = true;
+                    self.showAlert('Capturing audio but no transcription yet. Please speak clearly for 2–3 seconds.', 'info');
+                }
+                self._lastCounters = {
+                    chunksCaptured: j.chunksCaptured,
+                    chunksWithAudio: j.chunksWithAudio,
+                    chunksTranscribed: j.chunksTranscribed,
+                    lastChunkBytes: j.lastChunkBytes
+                };
+            }
+
+            var text = String(j.transcript || '');
+            if (text && text !== self.lastTranscriptText) {
+                var area = document.getElementById('liveTranscript');
+                if (area) { area.textContent = text; area.scrollTop = area.scrollHeight; }
+                self.lastTranscriptText = text;
+            }
+        }).catch(function () { });
+};
+
+STTManager.prototype.stopListening = function () {
+    var self = this;
+    var startBtn = document.getElementById('startListening');
+    var stopBtn = document.getElementById('stopListening');
+
+    function cleanup() {
+        self.isListening = false; self.serverSessionId = null;
+        if (self.statusPollTimer) { clearInterval(self.statusPollTimer); self.statusPollTimer = null; }
+        if (startBtn) startBtn.disabled = false; if (stopBtn) stopBtn.disabled = true;
+        self.showAlert('Listening stopped', 'info');
+    }
+
+    if (!self.serverSessionId) { cleanup(); return; }
+
+    fetch('/api/elevenlabs/stt/listen/stop', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: self.serverSessionId })
+    }).then(function () { cleanup(); }).catch(function () { cleanup(); });
+};
+
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {

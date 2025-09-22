@@ -69,6 +69,14 @@ class ElevenLabsSTTService {
                 contentType: mimeType,
                 knownLength: audioBuffer.length
             });
+            // Compatibility: some SDKs expect 'file' instead of 'audio'
+            try {
+                formData.append('file', audioBuffer, {
+                    filename,
+                    contentType: mimeType,
+                    knownLength: audioBuffer.length
+                });
+            } catch (_) { /* no-op */ }
 
             // Add optional parameters
             if (options.model) {
@@ -76,6 +84,10 @@ class ElevenLabsSTTService {
             }
             if (options.language) {
                 formData.append('language', options.language);
+            }
+
+            if (process.env.MB_DEBUG_AUDIO === '1') {
+                console.log(`🎙️ Sending STT chunk to ElevenLabs (${mimeType}, ${audioBuffer.length} bytes, model=${options.model || 'default'}, lang=${options.language || 'auto'})`);
             }
 
             const response = await axios.post(
@@ -89,6 +101,10 @@ class ElevenLabsSTTService {
                     timeout: this.config.timeout
                 }
             );
+
+            if (process.env.MB_DEBUG_AUDIO === '1') {
+                console.log(`📝 STT response: text='${(response.data && response.data.text) ? String(response.data.text).slice(0, 60) : ''}'`);
+            }
 
             return {
                 success: true,

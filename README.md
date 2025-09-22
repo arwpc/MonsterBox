@@ -251,10 +251,11 @@ MonsterBox 4.0 now includes a **centralized audio configuration interface** at `
 - **Dynamic device switching** without restarting applications
 
 **📊 Real-Time VU Meters**
-- **Input VU Meter**: Shows actual microphone levels with 50ms updates
-- **Output VU Meter**: Volume-based level indication for speakers
-- **Very Low Latency**: 0.1 second sampling for responsive feedback
-- **Professional gradient bars**: Green → Yellow → Orange → Red based on levels
+- **Input VU Meter**: Peak-based level from 30ms capture windows (snappy on claps/music)
+- **Output VU Meter**: Volume/activity proxy for speakers
+- **Ultra low latency**: ~100ms UI updates with no overlapping requests
+- **Quiet by default**; enable debug with `MB_DEBUG_AUDIO=1` (server) or `window.MONSTERBOX_DEBUG_AUDIO=true` (browser)
+- **Professional gradient bars**: Green → Yellow → Orange → Red
 
 **🎵 Live Stream Monitoring**
 - **Active stream detection** and real-time routing
@@ -274,7 +275,21 @@ MonsterBox 4.0 now includes a **centralized audio configuration interface** at `
 4. **Test Devices**: Click test buttons to verify audio input/output
 5. **Save Configuration**: Settings persist automatically
 
-### 🎯 **API Endpoints**
+### �️ Microphone Parts Controls (Sensitivity + Input Gain) — NEW
+
+- Per‑microphone controls at the top of Setup → Audio
+- Sensitivity: persisted to `part.config.sensitivity` (range ~0.1–3.0)
+- Input Level (Gain): 0–200% applied immediately via PipeWire and persisted to `part.config.inputGainPercent`
+- VU Meter: peak‑based, ~100ms updates from 30ms capture windows; no browser mic access (server‑side capture)
+- Changes apply instantly to hardware and are saved to the part
+
+Troubleshooting
+- If the meter doesn’t move: ensure the System Default Source is the intended mic, then click Test Audio Input
+- ALSA‑style IDs (e.g., `hw:4,0`) are supported; the app maps them to the correct PipeWire/Pulse source when saving defaults
+- To see detailed logs: `MB_DEBUG_AUDIO=1 npm start` (server) or in DevTools: `window.MONSTERBOX_DEBUG_AUDIO = true`
+
+
+### �🎯 **API Endpoints**
 
 ```bash
 # Get system configuration
@@ -331,7 +346,7 @@ curl -s http://localhost:3000/setup/audio/api/active-streams | jq
 **PipeWire Integration Features**
 - **Automatic device fallback**: Uses PyAudio defaults with `PULSE_SOURCE` environment variable routing
 - **Concurrent capture**: Multiple microphones can capture simultaneously without conflicts
-- **Optimized performance**: 256-frame buffers and shorter capture windows (0.15s default) for better responsiveness
+- **Optimized performance**: 128-frame buffers and 0.03s capture windows; peak-based level for instant response
 - **Graceful error handling**: Falls back to working devices when specified device is unavailable
 
 ## 🎧 End‑to‑end PipeWire Audio Test (Speaker → Microphone)
@@ -693,6 +708,45 @@ Pages
 - Agents: http://localhost:3000/ai-settings/agents
 - Character Assignment: http://localhost:3000/ai-settings/character-assignment
 
+
+### 🎙️ Real-time STT (server-side, PipeWire) — NEW
+
+The STT page now performs real-time transcription using the selected Microphone Part on the server (PipeWire/WirePlumber). No browser microphone permissions are required.
+
+Requirements
+- PipeWire + WirePlumber running (see Audio setup above)
+- ffmpeg available on the server (used to capture short PCM chunks from the PipeWire source)
+- ElevenLabs API key configured (required to Start Listening)
+
+Where
+- Page: http://localhost:3000/ai-settings/stt
+- Microphone Integration: Select a Microphone Part (PipeWire source) and see its VU meter
+- Real-time Transcription: Start Listening / Stop Listening + live transcript area
+
+How it works (v1)
+- Server captures 1s WAV chunks from the selected PipeWire source and sends them to ElevenLabs STT
+- Transcripts are aggregated and shown live in the page
+- VU meter samples the device level ~3–4×/sec via the existing audio level API
+
+Quick test with room loopback
+1) Ensure your Character has a Speaker and a Microphone configured (PipeWire sink/source)
+2) Open the STT page and click Start Listening
+3) In another terminal, play `/data/testtalking.mp3` through your speaker (for example via the app or a player)
+4) Watch the live transcript populate as the mic hears the audio
+
+Troubleshooting mic capture
+- Input seems low: verify the correct Microphone Part is selected and the VU meter is moving
+- Increase mic sensitivity in the Microphone Part config if your hardware supports it
+- Confirm PipeWire default source matches expectations: `pactl info | grep Source`
+- Verify ffmpeg is present: `ffmpeg -version`
+- If the VU moves but transcription is sparse, bring the mic closer or increase playback volume to improve SNR
+
+Playwright smoke test (STT page)
+````bash
+# Run only the STT page smoke test
+npm run test:ui -- tests/playwright/ai-settings-stt.spec.js
+````
+
 What works now
 - Save/load STT and TTS configuration (persisted under data/ai-config/)
 - Microphone file transcription and live browser recording → STT → transcript display
@@ -709,6 +763,9 @@ API endpoints (selected)
   - GET /api/elevenlabs/stt/config
   - POST /api/elevenlabs/stt/config { model, language, ... }
   - POST /api/elevenlabs/stt/transcribe (multipart/form-data: audio)
+  - POST /api/elevenlabs/stt/listen/start { deviceId, model, language }
+  - GET /api/elevenlabs/stt/listen/status?sessionId=...
+  - POST /api/elevenlabs/stt/listen/stop { sessionId }
 - TTS
   - GET /api/elevenlabs/voices
   - GET /api/elevenlabs/tts/models
@@ -741,7 +798,7 @@ How the flow works
 Notes
 - ElevenLabs API key is managed via the existing ElevenLabs Configuration screen (masked in UI)
 - Client JS uses ES5 syntax only (no modern bundlers required)
-- Microphone live-recording uses MediaRecorder; browser will ask for mic permission
+- STT page uses a server-side Microphone Part (PipeWire) for real-time listening; no browser mic permission needed
 
 
 ### 🔊 Audio Output Toggle (Local ↔ Speaker) — NEW

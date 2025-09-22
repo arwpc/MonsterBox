@@ -122,10 +122,12 @@
     "config": {
       "deviceId": "sysdefault",
       "sensitivity": 2.5,
-      "windowMs": 100
+      "windowMs": 100,
+      "inputGainPercent": 187
     },
     "created": "2025-09-18T02:13:35.224Z",
-    "enabled": true
+    "enabled": true,
+    "updated": "2025-09-22T01:50:29.385Z"
   },
   {
     "id": "10",

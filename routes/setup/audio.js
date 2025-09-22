@@ -95,7 +95,7 @@ router.get('/api/input-level', async (req, res) => {
         const ch = String(req.query.ch || req.query.channels || '1');
         const duration = String(req.query.duration || '0.2');
 
-        console.log(`🎤 Testing input level for device: ${device}`);
+        if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Testing input level for device: ${device}`);
 
         async function probe(dev) {
             const out = await runWrapper('microphone_cli.py', ['get_level', dev, sr, ch, duration], { enableLogging: false, timeoutMs: 4000 });
@@ -238,13 +238,44 @@ router.post('/api/system-config', async (req, res) => {
         const results = [];
 
         if (defaultSink && defaultSink !== 'auto') {
-            const sinkResult = await pipewireService.setDefaultSink(defaultSink);
-            results.push({ type: 'sink', success: sinkResult.success, error: sinkResult.error });
+            let sinkToSet = defaultSink;
+            try {
+                if (String(defaultSink).startsWith('hw:')) {
+                    const devices = await pipewireService.listHardwareDevices();
+                    const alsaOut = (devices.outputs || []).find(d => d.id === defaultSink);
+                    const sinks = await pipewireService.listSinks();
+                    if (alsaOut && sinks && sinks.length) {
+                        const match = sinks.find(s => (s.name && alsaOut.name && s.name.indexOf(alsaOut.name) !== -1)
+                            || (s.description && alsaOut.name && s.description.indexOf(alsaOut.name) !== -1)
+                            || (s.name && alsaOut.description && alsaOut.description.indexOf(s.name) !== -1));
+                        if (match) sinkToSet = match.id || match.name;
+                    }
+                }
+            } catch (_) { /* best-effort mapping */ }
+
+            const sinkResult = await pipewireService.setDefaultSink(sinkToSet);
+            results.push({ type: 'sink', requested: defaultSink, applied: sinkToSet, success: sinkResult.success, error: sinkResult.error });
         }
 
         if (defaultSource && defaultSource !== 'auto') {
-            const sourceResult = await pipewireService.setDefaultSource(defaultSource);
-            results.push({ type: 'source', success: sourceResult.success, error: sourceResult.error });
+            let toSet = defaultSource;
+            try {
+                // Map ALSA-style id (hw:...) to a PipeWire/Pulse source id/name
+                if (String(defaultSource).startsWith('hw:')) {
+                    const devices = await pipewireService.listHardwareDevices();
+                    const alsa = (devices.inputs || []).find(d => d.id === defaultSource);
+                    const sources = await pipewireService.listSources();
+                    if (alsa && sources && sources.length) {
+                        const match = sources.find(s => (s.name && alsa.name && s.name.indexOf(alsa.name) !== -1)
+                            || (s.description && alsa.name && s.description.indexOf(alsa.name) !== -1)
+                            || (s.name && alsa.description && alsa.description.indexOf(s.name) !== -1));
+                        if (match) toSet = match.id || match.name;
+                    }
+                }
+            } catch (_) { /* best-effort mapping */ }
+
+            const sourceResult = await pipewireService.setDefaultSource(toSet);
+            results.push({ type: 'source', requested: defaultSource, applied: toSet, success: sourceResult.success, error: sourceResult.error });
         }
 
         const allSuccessful = results.every(r => r.success);
@@ -324,13 +355,41 @@ router.get('/api/hardware-devices', async (req, res) => {
     }
 });
 
+// Set input gain (source volume)
+router.post('/api/set-input-gain', async (req, res) => {
+    try {
+        const { sourceId, deviceId, gain, gainPercent } = req.body || {};
+        // Accept either sourceId or deviceId
+        const id = sourceId || deviceId;
+        if (!id) {
+            return res.status(400).json({ success: false, error: 'sourceId or deviceId is required' });
+        }
+        // gain is linear 0..2; gainPercent 0..200
+        let vol = typeof gain === 'number' ? gain : undefined;
+        if (vol == null && typeof gainPercent === 'number') {
+            vol = Math.max(0, Math.min(200, gainPercent)) / 100.0;
+        }
+        if (vol == null) {
+            return res.status(400).json({ success: false, error: 'gain (0..2) or gainPercent (0..200) required' });
+        }
+        const result = await pipewireService.setSourceVolume(String(id), Number(vol));
+        if (!result.success) {
+            return res.status(500).json({ success: false, error: result.error || 'Failed to set source volume' });
+        }
+        res.json({ success: true, method: result.method, sourceId: id, gain: vol });
+    } catch (error) {
+        console.error('Error setting input gain:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Get active audio streams
 router.get('/api/active-streams', async (req, res) => {
     try {
-        console.log('🎵 Getting active streams...');
+        if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎵 Getting active streams...');
         const streams = await pipewireService.listActiveStreams();
 
-        console.log(`🎵 Found ${streams.length} active streams`);
+        if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎵 Found ${streams.length} active streams`);
         res.json({ success: true, streams });
     } catch (error) {
         console.error('Error getting active streams:', error.message);
@@ -367,20 +426,20 @@ router.get('/api/audio-levels', async (req, res) => {
 
         if (deviceType === 'input') {
             // Get microphone level with shorter duration for real-time response
-            console.log(`🎤 Getting level for input device: ${deviceId}`);
+            if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for input device: ${deviceId}`);
             const result = await runWrapper('microphone_cli.py', [
                 'get_level',
                 deviceId || 'default',
-                '16000',  // Use same sample rate as working in logs
+                '16000',  // Sample rate
                 '1',
-                '0.1'     // Use same duration as working in logs
-            ], { timeoutMs: 2000 });
+                '0.03'     // Short duration for snappy VU (30ms)
+            ], { timeoutMs: 2000, enableLogging: false });
 
             if (result) {
                 try {
                     const data = JSON.parse(result);
                     const level = data.level || 0;
-                    console.log(`🎤 Input level: ${level} for device: ${deviceId}`);
+                    if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Input level: ${level} for device: ${deviceId}`);
                     res.json({
                         success: true,
                         level: level,

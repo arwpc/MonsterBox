@@ -90,7 +90,7 @@ router.post('/test-connection', requireElevenLabsConfig, async (req, res) => {
 });
 
 // STT Routes
-router.get('/stt/capabilities', requireElevenLabsConfig, async (req, res) => {
+router.get('/stt/capabilities', async (req, res) => {
     try {
         const { default: elevenLabsSTTService } = await import('../../services/elevenLabsSTTService.js');
         const capabilities = await elevenLabsSTTService.getSTTCapabilities();
@@ -129,6 +129,46 @@ router.post('/stt/transcribe', requireElevenLabsConfig, upload.single('audio'), 
     } catch (error) {
         console.error('STT transcription error:', error);
         res.status(500).json({ success: false, error: 'Transcription failed' });
+    }
+});
+
+
+// Real-time STT server-side listener (Microphone Part)
+router.post('/stt/listen/start', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { default: serverSTTListener } = await import('../../services/serverSTTListener.js');
+        const { deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' } = req.body || {};
+        const result = serverSTTListener.startSession({ deviceId, model, language });
+        res.json(result);
+    } catch (error) {
+        console.error('Error starting STT listener:', error);
+        res.status(500).json({ success: false, error: 'Failed to start listener' });
+    }
+});
+
+router.post('/stt/listen/stop', async (req, res) => {
+    try {
+        const { default: serverSTTListener } = await import('../../services/serverSTTListener.js');
+        const { sessionId } = req.body || {};
+        if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
+        const result = serverSTTListener.stopSession(sessionId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error stopping STT listener:', error);
+        res.status(500).json({ success: false, error: 'Failed to stop listener' });
+    }
+});
+
+router.get('/stt/listen/status', async (req, res) => {
+    try {
+        const { default: serverSTTListener } = await import('../../services/serverSTTListener.js');
+        const { sessionId } = req.query || {};
+        if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
+        const result = serverSTTListener.getStatus(sessionId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting STT listener status:', error);
+        res.status(500).json({ success: false, error: 'Failed to get status' });
     }
 });
 

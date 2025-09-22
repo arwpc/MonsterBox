@@ -67,9 +67,6 @@
                         <a href="/ai-settings" class="btn btn-outline-secondary me-2">
                             <i class="bi bi-arrow-left"></i> Back to AI Settings
                         </a>
-                        <button class="btn btn-primary" id="testSTT">
-                            <i class="bi bi-play-circle"></i> Test STT
-                        </button>
                     </div>
                 </div>
             </div>
@@ -111,19 +108,7 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="audioFormat" class="form-label">Audio Format</label>
-                                        <select class="form-select" id="audioFormat" name="format">
-                                            <option value="wav">WAV</option>
-                                            <option value="mp3">MP3</option>
-                                            <option value="m4a">M4A</option>
-                                            <option value="flac">FLAC</option>
-                                            <option value="ogg">OGG</option>
-                                            <option value="webm">WebM</option>
-                                        </select>
-                                    </div>
-                                </div>
+
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="sampleRate" class="form-label">Sample Rate</label>
@@ -146,65 +131,30 @@
                     </div>
                 </div>
 
-                <!-- STT Testing -->
+                <!-- Real-time STT -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <i class="bi bi-mic-fill"></i> Test STT
+                            <i class="bi bi-mic-fill"></i> Real-time Transcription
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="audioFile" class="form-label">Upload Audio File</label>
-                                    <input type="file" class="form-control" id="audioFile" accept="audio/*">
-                                    <div class="form-text">Supported: WAV, MP3, M4A, FLAC, OGG, WebM (Max: 25MB)</div>
-                                </div>
-                                <button type="button" class="btn btn-primary" id="transcribeFile">
-                                    <i class="bi bi-upload"></i> Transcribe File
+                        <div class="row g-3 align-items-center">
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success" id="startListening">
+                                    <i class="bi bi-record-circle"></i> Start Listening
                                 </button>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Live Microphone Test</label>
-                                    <div class="d-grid gap-2">
-                                        <button type="button" class="btn btn-success" id="startRecording">
-                                            <i class="bi bi-record-circle"></i> Start Recording
-                                        </button>
-                                        <button type="button" class="btn btn-danger" id="stopRecording" disabled>
-                                            <i class="bi bi-stop-circle"></i> Stop Recording
-                                        </button>
-                                    </div>
-                                </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger" id="stopListening" disabled>
+                                    <i class="bi bi-stop-circle"></i> Stop Listening
+                                </button>
                             </div>
                         </div>
-
-                        <!-- Transcription Results -->
-                        <div id="transcriptionResults" class="mt-4" style="display: none;">
-                            <h6>Transcription Results:</h6>
-                            <div class="card bg-dark border-secondary">
-                                <div class="card-body">
-                                    <div id="transcriptionText" class="mb-2"></div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <small class="text-muted">
-                                                <strong>Confidence:</strong> <span id="transcriptionConfidence">-</span>
-                                            </small>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted">
-                                                <strong>Language:</strong> <span id="transcriptionLanguage">-</span>
-                                            </small>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted">
-                                                <strong>Duration:</strong> <span id="transcriptionDuration">-</span>
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="mt-3">
+                            <label class="form-label">Live Transcription</label>
+                            <div id="liveTranscript" class="form-control bg-dark text-light"
+                                style="height: 200px; overflow-y: auto;"></div>
                         </div>
                     </div>
                 </div>
@@ -212,24 +162,7 @@
 
             <!-- STT Models & Microphone Integration -->
             <div class="col-lg-4">
-                <!-- Available Models -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-cpu"></i> Available Models
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="sttModels">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <p class="mt-2">Loading STT models...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Microphone Integration -->
                 <div class="card mt-4">
@@ -245,6 +178,15 @@
                                 <option value="">Loading microphone parts...</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Input Level</label>
+                            <div class="progress" style="height: 10px;">
+                                <div id="micVUMeter" class="progress-bar bg-info" role="progressbar" style="width: 0%"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small id="micVULabel" class="text-muted">0%</small>
+                        </div>
+
                         <div class="d-grid">
                             <button type="button" class="btn btn-info" id="testMicrophoneIntegration">
                                 <i class="bi bi-arrow-repeat"></i> Test Microphone → STT

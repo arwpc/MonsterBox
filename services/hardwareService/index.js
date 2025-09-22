@@ -713,7 +713,7 @@ const HARDWARE_CONTROLLERS = {
         },
 
         async getLevel({ deviceId = 'default', sampleRate = 16000, channels = 1, duration = 0.15 }) {
-            console.log(`🎤 Getting level for PipeWire source: ${deviceId}`);
+            if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for PipeWire source: ${deviceId}`);
 
             async function probe(dev) {
                 const out = await runWrapper('microphone_cli.py',

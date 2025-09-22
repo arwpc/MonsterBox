@@ -391,8 +391,17 @@ class PipeWireService {
      */
     async setDefaultSink(sinkId) {
         try {
-            await pexec(`pactl set-default-sink ${sinkId}`);
-            return { success: true, sinkId };
+            const id = String(sinkId || '').trim();
+            const isNumeric = /^\d+$/.test(id);
+            if (isNumeric) {
+                // Prefer wpctl for numeric PipeWire IDs
+                await pexec(`wpctl set-default ${id}`);
+                return { success: true, method: 'wpctl', sinkId: id };
+            }
+            const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
+            const target = isAlias ? '@DEFAULT_SINK@' : id;
+            await pexec(`pactl set-default-sink ${target}`);
+            return { success: true, method: 'pactl', sinkId: target };
         } catch (error) {
             console.error('Failed to set default sink:', error.message);
             return { success: false, error: error.message };
@@ -404,8 +413,17 @@ class PipeWireService {
      */
     async setDefaultSource(sourceId) {
         try {
-            await pexec(`pactl set-default-source ${sourceId}`);
-            return { success: true, sourceId };
+            const id = String(sourceId || '').trim();
+            const isNumeric = /^\d+$/.test(id);
+            if (isNumeric) {
+                // Prefer wpctl for numeric PipeWire IDs
+                await pexec(`wpctl set-default ${id}`);
+                return { success: true, method: 'wpctl', sourceId: id };
+            }
+            const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
+            const target = isAlias ? '@DEFAULT_SOURCE@' : id;
+            await pexec(`pactl set-default-source ${target}`);
+            return { success: true, method: 'pactl', sourceId: target };
         } catch (error) {
             console.error('Failed to set default source:', error.message);
             return { success: false, error: error.message };
@@ -435,6 +453,35 @@ class PipeWireService {
         } catch (error) {
             console.warn('Could not get default source:', error.message);
             return 'auto';
+        }
+    }
+
+    /**
+     * Set input source volume (gain)
+     * @param {string} sourceId - PipeWire/Pulse source identifier (numeric wpctl id or pactl name)
+     * @param {number} volume - 0.0..2.0 linear (1.0 = 100%)
+     */
+    async setSourceVolume(sourceId, volume) {
+        try {
+            const v = Math.max(0, Math.min(2, Number(volume) || 0));
+            const id = String(sourceId || '').trim();
+            // Map ALSA/default-like ids to default PipeWire/Pulse targets
+            const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
+            const wpTarget = isAlias ? '@DEFAULT_AUDIO_SOURCE@' : id;
+            const paTarget = isAlias ? '@DEFAULT_SOURCE@' : id;
+            // Try wpctl first (accepts 0.0..1.0+)
+            try {
+                await pexec(`wpctl set-volume ${wpTarget} ${v}`);
+                return { success: true, method: 'wpctl', sourceId: wpTarget, volume: v };
+            } catch (_) {
+                // Fallback to pactl with percentage
+                const pct = Math.round(v * 100);
+                await pexec(`pactl set-source-volume ${paTarget} ${pct}%`);
+                return { success: true, method: 'pactl', sourceId: paTarget, volume: v };
+            }
+        } catch (error) {
+            console.error('Failed to set source volume:', error.message);
+            return { success: false, error: error.message };
         }
     }
 

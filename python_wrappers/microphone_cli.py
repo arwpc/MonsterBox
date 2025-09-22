@@ -105,7 +105,7 @@ if __name__ == '__main__':
                 channels = max_in
 
             # Optimized buffer size for shorter capture windows
-            frames_per_buffer = 256  # Smaller buffer for better responsiveness
+            frames_per_buffer = 128  # Smaller buffer for lower latency responsiveness
             fmt = pyaudio.paInt16  # enables audioop.rms
 
             try:
@@ -118,6 +118,7 @@ if __name__ == '__main__':
             loops = max(1, int(round((sample_rate * float(duration)) / float(frames_per_buffer))))
             levels_sum = 0.0
             frames = 0
+            peak = 0.0
 
             # Capture and calculate RMS level
             for _ in range(loops):
@@ -125,7 +126,10 @@ if __name__ == '__main__':
                     data = stream.read(frames_per_buffer, exception_on_overflow=False)
                     frames += 1
                     rms = float(audioop.rms(data, 2))  # 2 bytes/sample for paInt16
-                    levels_sum += (rms / 32768.0)  # Normalize to 0-1 range
+                    norm = (rms / 32768.0)  # Normalize to 0-1 range
+                    levels_sum += norm
+                    if norm > peak:
+                        peak = norm
                 except Exception:
                     # Skip problematic frames but continue
                     pass
@@ -134,8 +138,9 @@ if __name__ == '__main__':
             stream.close()
 
             avg = (levels_sum / frames) if frames > 0 else 0.0
+            # Report peak as 'level' for snappy VU response, also include avg for debugging/optional UI use
             ok(deviceId=device_id, sampleRate=sample_rate, channels=channels, duration=duration,
-               frames=frames, level=avg, message="PipeWire level %.4f" % avg)
+               frames=frames, level=peak, avg=avg, message="PipeWire peak %.4f avg %.4f" % (peak, avg))
         finally:
             try:
                 pa.terminate()
