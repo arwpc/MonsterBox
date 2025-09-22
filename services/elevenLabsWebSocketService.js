@@ -7,6 +7,48 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
 import fetch from 'node-fetch';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
+import serverSTTListener from './serverSTTListener.js';
+import serverPlaybackService from './serverPlaybackService.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readConfig } from './configService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function resolvePartsPath() {
+    try {
+        const cfg = await readConfig();
+        const appRoot = path.resolve(__dirname, '..');
+        if (cfg && cfg.dataPath) {
+            return path.resolve(appRoot, cfg.dataPath, 'parts.json');
+        }
+        return path.resolve(appRoot, 'data', 'parts.json');
+    } catch (e) {
+        const appRoot = path.resolve(__dirname, '..');
+        return path.resolve(appRoot, 'data', 'parts.json');
+    }
+}
+
+async function getMicrophoneDeviceForCharacter(characterId) {
+    try {
+        const partsFile = await resolvePartsPath();
+        const content = await fs.readFile(partsFile, 'utf8');
+        const parts = JSON.parse(content);
+        if (Array.isArray(parts)) {
+            const mic = parts.find(p => String(p.type).toLowerCase() === 'microphone' && Number(p.characterId) === Number(characterId));
+            if (mic) {
+                const cfg = mic.config || {};
+                return cfg.inputDevice || cfg.audioDeviceId || mic.inputDevice || 'default';
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Could not resolve microphone for character:', e.message);
+    }
+    return 'default';
+}
+
 
 class ElevenLabsWebSocketService extends EventEmitter {
     constructor() {
@@ -66,7 +108,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
             elevenLabsWs: null,
             agentId: null,
             isActive: false,
-            startTime: new Date()
+            startTime: new Date(),
+            // New runtime fields for output/mic routing
+            characterId: null,
+            outputMode: 'server',    // 'server' | 'local'
+            micSource: 'server',     // 'server' | 'browser'
+            serverMicTimer: null,
+            serverMicActive: false
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -108,14 +156,50 @@ class ElevenLabsWebSocketService extends EventEmitter {
             switch (message.type) {
                 case 'start_conversation':
                     await this.startConversation(sessionId, message.agentId);
+                    // If server mic is selected, begin streaming immediately
+                    if (connection.micSource === 'server') {
+                        this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
+                    }
                     break;
 
                 case 'send_message':
                     await this.sendMessageToAgent(sessionId, message.text);
                     break;
 
+                case 'set_character':
+                    connection.characterId = (typeof message.characterId !== 'undefined' ? message.characterId : null);
+                    break;
+
+                case 'set_output_mode':
+                    connection.outputMode = (message && message.mode === 'local') ? 'local' : 'server';
+                    break;
+
+                case 'set_mic_source':
+                    connection.micSource = (message && message.source === 'browser') ? 'browser' : 'server';
+                    if (connection.isActive) {
+                        if (connection.micSource === 'server') this._startServerMicLoop(sessionId);
+                        else this._stopServerMicLoop(sessionId, true);
+                    }
+                    break;
+
+                case 'browser_audio_chunk':
+                    // Forward browser-sent PCM16k (base64) directly to ElevenLabs
+                    try {
+                        if (connection && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                            const audio64 = (message && message.audio) ? String(message.audio) : '';
+                            connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: audio64 }));
+                        }
+                    } catch (_) { /* noop */ }
+                    break;
+
+                case 'eos':
+                    // Client signals end-of-speech explicitly
+                    this._sendEmptyAudioChunkToAgent(sessionId);
+                    break;
+
                 case 'end_conversation':
                     await this.endConversation(sessionId);
+                    this._stopServerMicLoop(sessionId, true);
                     break;
 
                 default:
@@ -339,7 +423,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'interruption':
-                    // Handle interruptions silently - they're normal in real-time conversation
+                    // Stop any active server playback immediately (barge-in)
+                    try {
+                        if (connection && connection.characterId != null) {
+                            serverPlaybackService.stopForCharacter(connection.characterId);
+                        } else {
+                            serverPlaybackService.stopAll();
+                        }
+                    } catch (_) { /* best-effort */ }
                     this.sendToClient(sessionId, {
                         type: 'interruption',
                         reason: message.interruption_event?.reason || 'Unknown'
@@ -383,12 +474,64 @@ class ElevenLabsWebSocketService extends EventEmitter {
             message: 'Real-time conversation ended'
         });
     }
+    /**
+     * Server microphone capture loop -> send user_audio_chunk to ElevenLabs
+     */
+    async _startServerMicLoop(sessionId) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection || !connection.isActive) return;
+        if (connection.serverMicActive) return;
+        connection.serverMicActive = true;
+
+        const tick = async () => {
+            if (!connection.serverMicActive || !connection.isActive) return;
+            try {
+                const deviceId = (connection.characterId != null)
+                    ? await getMicrophoneDeviceForCharacter(connection.characterId)
+                    : 'default';
+                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.03);
+                if (wav && wav.length > 44 && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                    const raw = wav.subarray(44); // strip 44-byte WAV header -> raw PCM16LE
+                    const b64 = raw.toString('base64');
+                    connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
+                }
+            } catch (_) { /* ignore per-frame errors */ }
+            finally {
+                if (connection.serverMicActive && connection.isActive) {
+                    connection.serverMicTimer = setTimeout(tick, 25); // ~40 fps -> 25ms
+                }
+            }
+        };
+
+        connection.serverMicTimer = setTimeout(tick, 5);
+    }
+
+    _stopServerMicLoop(sessionId, sendEos) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection) return;
+        connection.serverMicActive = false;
+        if (connection.serverMicTimer) { try { clearTimeout(connection.serverMicTimer); } catch (_) { } connection.serverMicTimer = null; }
+        if (sendEos) this._sendEmptyAudioChunkToAgent(sessionId);
+    }
+
+    _sendEmptyAudioChunkToAgent(sessionId) {
+        const c = this.activeConnections.get(sessionId);
+        try {
+            if (c && c.elevenLabsWs && c.elevenLabsWs.readyState === WebSocket.OPEN) {
+                c.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: '' }));
+            }
+        } catch (_) { /* noop */ }
+    }
+
 
     /**
      * Handle client disconnect
      */
     handleClientDisconnect(sessionId) {
         console.log(`🔌 Client disconnected: ${sessionId}`);
+
+        // Stop any server mic loop and send EOS
+        try { this._stopServerMicLoop(sessionId, true); } catch (_) { /* noop */ }
 
         const connection = this.activeConnections.get(sessionId);
         if (connection) {

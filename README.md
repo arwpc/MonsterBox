@@ -742,6 +742,14 @@ Playback routing
 
 Status and next steps
 - Now
+- Implemented (current build):
+  - ElevenLabs ConvAI WS bridge on ws://<host>:8795
+  - Server Mic streaming (PipeWire) → PCM16k 20–40ms frames → user_audio_chunk
+  - Barge-in: interruption events immediately stop server speaker playback
+  - Client defaults to Speaker (server) output; Local (browser) remains available
+- Pending (requires approval):
+  - Browser Mic webm/opus → server transcode to PCM16k (ffmpeg) — currently stubbed with a clear warning
+
   - Server playback through Character speaker is the preferred path.
   - Browser mic path exists for remote tests; server mic capture works for STT and is being aligned with ConvAI streaming.
 - vNext (tracked)
