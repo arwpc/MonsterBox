@@ -709,6 +709,64 @@ Pages
 - Character Assignment: http://localhost:3000/ai-settings/character-assignment
 
 
+
+### 🤖 Conversational Agent (ElevenLabs ConvAI, RPi4b, PipeWire) — UPDATED DESIGN SUMMARY
+
+This build reuses MonsterBox’s existing ElevenLabs, audio, and WebSocket infrastructure to enable an Alexa‑like conversational agent on Raspberry Pi 4b.
+
+Key points
+- Reuse first: services/elevenLabsWebSocketService.js for the ConvAI WebSocket; services/serverPlaybackService.js for server speaker playback; services/serverSTTListener.js + python_wrappers for 16 kHz PCM capture.
+- Dual mic modes supported:
+  - Browser Mic (remote testing): convenient when you’re away from the animatronic.
+  - Server Mic (animatronic): authoritative capture through PipeWire on the Pi for realistic operation.
+- Playback defaults to the Character’s Speaker (server, PipeWire). Local (browser) playback remains as a fallback.
+- Low-latency path aligns with ElevenLabs guidance: 16 kHz mono PCM in 20–40 ms chunks, immediate playback, planned barge‑in.
+
+API Key (keep on Pi; never in the browser)
+- Option A: environment variable (recommended)
+  - `export XI_API_KEY=sk_...` (add to your service environment)
+- Option B: file‑based secret (secure-by-default)
+  - Write key to `/etc/monsterbox/elevenlabs.key` and set permissions `chmod 600 /etc/monsterbox/elevenlabs.key`
+  - The server reads this file at startup if present (no browser exposure)
+- You can still manage/update the key from the AI Settings page; it is masked in the UI and never sent to the client.
+
+Mic source selection
+- In chat/testing UIs, select mic source:
+  - Browser Mic: uses getUserMedia; good for remote debugging.
+  - Server Mic: uses the Character’s Microphone Part via PipeWire; best for animatronic runs.
+- VU meters: browser mic shows a local VU; server mic uses the existing server audio level API.
+
+Playback routing
+- Speaker (server): routes ElevenLabs audio to the Character’s configured PipeWire sink via serverPlaybackService.
+- Local (browser): decodes and plays in‑browser as a fallback; ensure autoplay policies are satisfied by a prior user gesture.
+
+Status and next steps
+- Now
+  - Server playback through Character speaker is the preferred path.
+  - Browser mic path exists for remote tests; server mic capture works for STT and is being aligned with ConvAI streaming.
+- vNext (tracked)
+  - Server mic → user_audio_chunk framing at 16 kHz PCM for ConvAI WS.
+  - Browser mic (opus/webm) → low‑CPU server transcode → PCM → user_audio_chunk.
+  - Barge‑in: stop speaker playback immediately on interruption events from ConvAI.
+
+Testing (Playwright on RPi4b, Firefox headless)
+- We will add e2e tests that simulate real conversations:
+  - Open Agents → Chat, pick agent+character, toggle output (Local/Speaker), send a message, assert streamed text appears and audio begins promptly.
+  - For Speaker mode, assert server logs/telemetry indicate playback on the selected sink; for Local mode, verify the audio element plays.
+- Example setup (arm64 OS required):
+````bash
+npm install -D @playwright/test
+npx playwright install firefox
+# Optional system libs on Pi (may require sudo):
+sudo npx playwright install-deps firefox
+
+# Example targeted run (once tests are added):
+npx playwright test --project=firefox tests/playwright/convai-conversation.spec.js --reporter=line --workers=1
+````
+
+See also
+- ConversationDesign.MD for the full design, acceptance criteria, and rollout plan.
+
 ### 🎙️ Real-time STT (server-side, PipeWire) — NEW
 
 The STT page now performs real-time transcription using the selected Microphone Part on the server (PipeWire/WirePlumber). No browser microphone permissions are required.
