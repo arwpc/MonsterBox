@@ -8,6 +8,9 @@ function STTManager() {
     this.models = [];
     this.microphoneParts = [];
     this.currentConfig = {};
+    this.savedConfig = null;
+    this.modelsLoaded = false;
+    this.micsLoaded = false;
     // Client mic recorder (legacy, no longer used for real-time)
     this.mediaRecorder = null;
     this.chunks = [];
@@ -29,6 +32,7 @@ STTManager.prototype.init = function () {
 
     this.loadSTTModels();
     this.loadMicrophoneParts();
+    this.loadSavedConfig();
     this.bindEvents();
 
     console.log('STT Manager initialized');
@@ -50,6 +54,8 @@ STTManager.prototype.loadSTTModels = function () {
             self.models = hasModels ? data.models : [];
             self.updateModelsDisplay();
             self.populateModelSelect();
+            self.modelsLoaded = true;
+            self.applySavedConfigIfReady();
         })
         .catch(function (error) {
             console.error('Failed to load STT models:', error);
@@ -113,11 +119,69 @@ STTManager.prototype.loadMicrophoneParts = function () {
         .then(function (data) {
             self.microphoneParts = (data.success && data.parts) ? data.parts.filter(function (part) { return part.type === 'microphone'; }) : [];
             self.populateMicrophoneSelect();
+            self.micsLoaded = true;
+            self.applySavedConfigIfReady();
         })
         .catch(function (error) {
             console.error('Failed to load microphone parts:', error);
             self.showMicrophoneError();
         });
+};
+
+// Load saved STT config (model, language, sampleRate, microphone)
+STTManager.prototype.loadSavedConfig = function () {
+    var self = this;
+    fetch('/api/elevenlabs/stt/config')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (!j || j.success === false) return;
+            self.savedConfig = j.config || {};
+            self.currentConfig = self.savedConfig;
+            self.applySavedConfigIfReady();
+        })
+        .catch(function () { /* ignore */ });
+};
+
+STTManager.prototype.applySavedConfigIfReady = function () {
+    var cfg = this.savedConfig;
+    if (!cfg) return;
+    // Model
+    if (this.modelsLoaded) {
+        var modelSelect = document.getElementById('sttModel');
+        if (modelSelect && cfg.model) {
+            modelSelect.value = cfg.model;
+        }
+        var langSelect = document.getElementById('sttLanguage');
+        if (langSelect && cfg.language) {
+            langSelect.value = cfg.language;
+        }
+        var srSelect = document.getElementById('sampleRate');
+        if (srSelect && cfg.sampleRate) {
+            srSelect.value = String(cfg.sampleRate);
+        }
+    }
+    // Microphone
+    if (this.micsLoaded) {
+        var micSelect = document.getElementById('microphonePart');
+        if (micSelect && cfg.microphonePartId) {
+            micSelect.value = String(cfg.microphonePartId);
+            this.onMicSelectionChange();
+        }
+    }
+};
+
+// Save subset of STT config immediately (called on change)
+STTManager.prototype.savePartialConfig = function (patch) {
+    var self = this;
+    var base = self.savedConfig || {};
+    var merged = {};
+    for (var k in base) merged[k] = base[k];
+    for (var p in patch) merged[p] = patch[p];
+    return fetch('/api/elevenlabs/stt/config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(merged)
+    }).then(function (r) { return r.json(); })
+        .then(function (j) { if (j && j.success) { self.savedConfig = j.config; self.currentConfig = j.config; } })
+        .catch(function () { /* ignore */ });
 };
 
 STTManager.prototype.populateMicrophoneSelect = function () {
@@ -155,12 +219,43 @@ STTManager.prototype.bindEvents = function () {
         });
     }
 
-    // Microphone selection -> start VU meter
+    // Microphone selection -> start VU meter and save
     var micSelect = document.getElementById('microphonePart');
     if (micSelect) {
-        micSelect.addEventListener('change', function () { self.onMicSelectionChange(); });
+        micSelect.addEventListener('change', function () {
+            self.onMicSelectionChange();
+            var partId = micSelect && micSelect.value ? micSelect.value : null;
+            var deviceId = self.getSelectedMicDeviceId() || null;
+            self.savePartialConfig({ microphonePartId: partId, microphoneDeviceId: deviceId });
+        });
         // Initialize once loaded
         setTimeout(function () { self.onMicSelectionChange(); }, 0);
+    }
+
+    // Autosave STT dropdown changes
+    var modelSelect = document.getElementById('sttModel');
+    if (modelSelect) {
+        modelSelect.addEventListener('change', function () {
+            var m = modelSelect.value;
+            if (m === 'scribe_english_v1') {
+                var langSelect2 = document.getElementById('sttLanguage');
+                if (langSelect2) { langSelect2.value = 'en'; }
+                self.savePartialConfig({ model: m, language: 'en' });
+            } else {
+                self.savePartialConfig({ model: m });
+            }
+        });
+    }
+    var langSelect = document.getElementById('sttLanguage');
+    if (langSelect) {
+        langSelect.addEventListener('change', function () { self.savePartialConfig({ language: langSelect.value }); });
+    }
+    var srSelect = document.getElementById('sampleRate');
+    if (srSelect) {
+        srSelect.addEventListener('change', function () {
+            var v = parseInt(srSelect.value, 10);
+            self.savePartialConfig({ sampleRate: v });
+        });
     }
 
     // New real-time controls
@@ -220,27 +315,46 @@ STTManager.prototype.saveConfiguration = function () {
     config.microphoneDeviceId = self.getSelectedMicDeviceId() || null;
     config.format = 'mp3';
 
-    // Persist to current Character
-    self.getCurrentCharacterId()
-        .then(function (charId) {
-            if (!charId) {
-                self.showAlert('No current Character selected. Use the Character menu.', 'warning');
-                return null;
+    // Persist to global STT config
+    fetch('/api/elevenlabs/stt/config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config)
+    })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.success) {
+                self.savedConfig = j.config; self.currentConfig = j.config;
+                self.showAlert('Saved STT configuration', 'success');
+            } else {
+                self.showAlert('Failed to save STT configuration', 'danger');
             }
-            return fetch('/setup/characters/api/characters/' + charId, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sttConfig: config })
-            });
-        })
-        .then(function (r) { return r ? r.json() : null; })
-        .then(function (data) {
-            if (data && data.success) self.showAlert('Saved STT settings to Character', 'success');
-            else self.showAlert('Failed to save STT settings to Character', 'danger');
         })
         .catch(function (e) {
-            console.error('Save STT config (character) error', e);
-            self.showAlert('Failed to save STT settings to Character', 'danger');
+            console.error('Save STT config (global) error', e);
+            self.showAlert('Failed to save STT configuration', 'danger');
+        })
+        .then(function () {
+            // Also persist to current Character (kept for compatibility)
+            return self.getCurrentCharacterId()
+                .then(function (charId) {
+                    if (!charId) {
+                        self.showAlert('No current Character selected. Use the Character menu.', 'warning');
+                        return null;
+                    }
+                    return fetch('/setup/characters/api/characters/' + charId, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sttConfig: config })
+                    });
+                })
+                .then(function (r) { return r ? r.json() : null; })
+                .then(function (data) {
+                    if (data && data.success) self.showAlert('Saved STT settings to Character', 'success');
+                    else self.showAlert('Failed to save STT settings to Character', 'danger');
+                })
+                .catch(function (e) {
+                    console.error('Save STT config (character) error', e);
+                    self.showAlert('Failed to save STT settings to Character', 'danger');
+                });
         });
 };
 
@@ -511,7 +625,7 @@ STTManager.prototype.startListening = function () {
 
     var body = {
         deviceId: devId,
-        model: (document.getElementById('sttModel') || {}).value || 'eleven_multilingual_v2',
+        model: (document.getElementById('sttModel') || {}).value || 'scribe_v1',
         language: (document.getElementById('sttLanguage') || {}).value || 'auto'
     };
 
@@ -599,7 +713,8 @@ STTManager.prototype.runTwoSecondTest = function () {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     }).then(function (r) { return r.json(); }).then(function (j) {
         if (!j || !j.success) {
-            self.showAlert('2s test failed: ' + ((j && j.error) || 'Unknown'), 'danger');
+            var sizeInfo = (j && typeof j.sizeBytes === 'number') ? (' (bytes=' + j.sizeBytes + ', path=' + (j.usedPath || 'unknown') + ')') : '';
+            self.showAlert('2s test failed: ' + ((j && j.error) || 'Unknown') + sizeInfo, 'danger');
             return;
         }
         var msg = 'Captured ' + j.sizeBytes + ' bytes via ' + (j.usedPath || 'unknown') + (j.text ? ('; Transcript: "' + j.text.substring(0, 80) + '"') : '');

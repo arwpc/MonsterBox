@@ -22,14 +22,14 @@ class ElevenLabsSTTService {
             return {
                 models: [
                     {
-                        id: 'eleven_multilingual_v2',
-                        name: 'Multilingual V2',
-                        description: 'Advanced multilingual speech recognition',
-                        languages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh', 'ja', 'hu', 'ko']
+                        id: 'scribe_v1',
+                        name: 'Scribe v1 (Multilingual)',
+                        description: 'ElevenLabs speech-to-text model (multilingual)',
+                        languages: ['auto', 'en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh', 'ja', 'hu', 'ko']
                     },
                     {
-                        id: 'eleven_english_v1',
-                        name: 'English V1',
+                        id: 'scribe_english_v1',
+                        name: 'Scribe English v1',
                         description: 'Optimized for English speech recognition',
                         languages: ['en']
                     }
@@ -64,30 +64,30 @@ class ElevenLabsSTTService {
 
             audioStream.path = filename; // Set filename for FormData
 
-            formData.append('audio', audioStream, {
+            // ElevenLabs STT expects 'file' form field
+            formData.append('file', audioStream, {
                 filename,
-                contentType: mimeType,
-                knownLength: audioBuffer.length
+                contentType: mimeType
             });
-            // Compatibility: some SDKs expect 'file' instead of 'audio'
-            try {
-                formData.append('file', audioBuffer, {
-                    filename,
-                    contentType: mimeType,
-                    knownLength: audioBuffer.length
-                });
-            } catch (_) { /* no-op */ }
 
-            // Add optional parameters
-            if (options.model) {
-                formData.append('model_id', options.model);
+            // Map English-only alias to actual model and enforce language
+            var modelToSend = options.model || 'scribe_v1';
+            var langToSend = options.language;
+            if (modelToSend === 'scribe_english_v1') {
+                modelToSend = 'scribe_v1';
+                if (!langToSend || langToSend === 'auto') langToSend = 'en';
             }
-            if (options.language) {
-                formData.append('language', options.language);
+
+            // Required by ElevenLabs STT
+            formData.append('model_id', modelToSend);
+
+            // Only pass language if explicitly provided and not 'auto'
+            if (langToSend && langToSend !== 'auto') {
+                formData.append('language', langToSend);
             }
 
             if (process.env.MB_DEBUG_AUDIO === '1') {
-                console.log(`🎙️ Sending STT chunk to ElevenLabs (${mimeType}, ${audioBuffer.length} bytes, model=${options.model || 'default'}, lang=${options.language || 'auto'})`);
+                console.log(`🎙️ Sending STT chunk to ElevenLabs (${mimeType}, ${audioBuffer.length} bytes, model=${options.model || 'scribe_v1'}, lang=${options.language || 'auto'})`);
             }
 
             const response = await axios.post(
@@ -114,11 +114,24 @@ class ElevenLabsSTTService {
                 duration: response.data.duration || null
             };
         } catch (error) {
-            console.error('STT transcription error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            // Normalize ElevenLabs error into a readable string
+            var msg = '';
+            try {
+                var data = error && error.response && error.response.data;
+                var detail = data && data.detail;
+                if (typeof detail === 'string') {
+                    msg = detail;
+                } else if (Array.isArray(detail)) {
+                    msg = detail.map(function (d) { return (d && (d.msg || d.message || JSON.stringify(d))); }).join('; ');
+                } else if (detail && typeof detail === 'object') {
+                    msg = detail.msg || detail.message || JSON.stringify(detail);
+                }
+                if (!msg) msg = (data && (data.message || data.error)) || '';
+            } catch (_) { /* ignore */ }
+            if (!msg) msg = error && (error.message || String(error)) || 'Unknown STT error';
+            if (msg.length > 300) msg = msg.slice(0, 300) + '…';
+            if (process.env.MB_DEBUG_AUDIO === '1') console.warn('STT transcription error:', msg);
+            return { success: false, error: msg };
         }
     }
 
@@ -128,14 +141,14 @@ class ElevenLabsSTTService {
     getSTTConfig(useCase = 'conversation') {
         const configs = {
             conversation: {
-                model: 'eleven_multilingual_v2',
-                language: 'en',
+                model: 'scribe_v1',
+                language: 'auto',
                 format: 'wav',
                 sampleRate: 16000,
                 channels: 1
             },
             transcription: {
-                model: 'eleven_multilingual_v2',
+                model: 'scribe_v1',
                 language: 'auto',
                 format: 'wav',
                 sampleRate: 44100,

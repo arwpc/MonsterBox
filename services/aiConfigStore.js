@@ -32,11 +32,13 @@ export async function getSTTConfig() {
   const d = await readJson('stt-config.json');
   return (
     d || {
-      model: 'eleven_multilingual_v2',
-      language: 'en',
+      model: 'scribe_v1',
+      language: 'auto',
       format: 'wav',
       sampleRate: 16000,
       channels: 1,
+      microphonePartId: null,
+      microphoneDeviceId: null,
     }
   );
 }

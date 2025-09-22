@@ -137,7 +137,12 @@ router.post('/stt/transcribe', requireElevenLabsConfig, upload.single('audio'), 
 router.post('/stt/listen/start', requireElevenLabsConfig, async (req, res) => {
     try {
         const { default: serverSTTListener } = await import('../../services/serverSTTListener.js');
-        const { deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' } = req.body || {};
+        const { getSTTConfig } = await import('../../services/aiConfigStore.js');
+        const saved = await getSTTConfig();
+        const body = req.body || {};
+        const deviceId = body.deviceId || 'default';
+        const model = body.model || saved.model || 'scribe_v1';
+        const language = body.language || saved.language || 'auto';
         const result = serverSTTListener.startSession({ deviceId, model, language });
         res.json(result);
     } catch (error) {
@@ -180,8 +185,6 @@ router.post('/stt/testSample', requireElevenLabsConfig, async (req, res) => {
         const deviceId = (req.body && req.body.deviceId) || 'default';
         const duration = parseFloat((req.query && req.query.duration) || '2') || 2;
         const dryRun = String((req.query && req.query.dryRun) || '0') === '1';
-        const model = (req.body && req.body.model) || 'eleven_multilingual_v2';
-        const language = (req.body && req.body.language) || 'auto';
 
         const wav = await serverSTTListener.captureChunkWav(deviceId, duration);
         const sizeBytes = (wav && wav.length) || 0;
@@ -193,6 +196,11 @@ router.post('/stt/testSample', requireElevenLabsConfig, async (req, res) => {
         if (!wav || !wav.length) {
             return res.status(400).json({ success: false, error: 'No audio captured', sizeBytes, usedPath });
         }
+        // Use saved STT configuration for model/language
+        const { getSTTConfig } = await import('../../services/aiConfigStore.js');
+        const saved = await getSTTConfig();
+        const model = saved.model || 'scribe_v1';
+        const language = saved.language || undefined;
         const result = await elevenLabsSTTService.transcribeAudio(wav, { mimeType: 'audio/wav', model, language });
         if (result && result.success) {
             return res.json({ success: true, sizeBytes, usedPath, text: result.transcript || result.text || '' });

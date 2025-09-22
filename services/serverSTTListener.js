@@ -16,10 +16,27 @@ const __dirname = path.dirname(__filename);
 class ServerSTTListener {
   constructor() {
     this.sessions = new Map(); // sessionId -> { deviceId, model, language, running, timer, transcript }
-    this.captureDurationSec = 0.8; // slightly longer to avoid ultra-short empty chunks
-    this.pollIntervalMs = 500; // poll with a small buffer
+    this.captureDurationSec = 1.2; // longer chunks improve accuracy for English model
+    this.pollIntervalMs = 650; // slight overlap to maintain continuity
     this._lastCapturePath = null; // 'python' | 'ffmpeg' | 'arecord' | 'parec'
   }
+
+  _errText(e) {
+    try {
+      if (!e) return '';
+      if (typeof e === 'string') return e;
+      if (e.message) return String(e.message);
+      if (Array.isArray(e)) return e.map((x) => x && (x.msg || x.message || JSON.stringify(x))).join('; ');
+      if (e.detail) {
+        var d = e.detail;
+        if (typeof d === 'string') return d;
+        if (Array.isArray(d)) return d.map((x) => x && (x.msg || x.message || JSON.stringify(x))).join('; ');
+        if (typeof d === 'object') return d.msg || d.message || JSON.stringify(d);
+      }
+      return JSON.stringify(e);
+    } catch (_) { return String(e); }
+  }
+
 
   startSession({ deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' }) {
     const sessionId = 'stt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -38,19 +55,19 @@ class ServerSTTListener {
         state.lastChunkBytes = sz;
         if (sz > 0) {
           state.chunksWithAudio += 1;
-          const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model, language });
+          const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model: state.model, language: state.language });
           if (result && result.success && (result.transcript || result.text)) {
             const text = (result.transcript || result.text || '').trim();
             if (text) { state.transcript += (state.transcript ? ' ' : '') + text; state.chunksTranscribed += 1; }
             state.lastError = null; state.lastActivityAt = Date.now();
           } else {
-            state.lastError = (result && result.error) || 'STT failed';
+            state.lastError = this._errText((result && result.error) || 'STT failed');
           }
         } else {
-          state.lastError = 'No audio captured (0 bytes)';
+          state.lastError = 'No audio captured (0 bytes)'; // harmless, will retry
         }
       } catch (e) {
-        state.lastError = e && e.message || String(e);
+        state.lastError = this._errText(e);
       } finally {
         if (state.running) state.timer = setTimeout(tick, this.pollIntervalMs);
       }
