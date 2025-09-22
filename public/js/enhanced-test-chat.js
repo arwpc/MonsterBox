@@ -357,8 +357,8 @@ class EnhancedTestChat {
             this.updateConnectionStatus('connected', 'Ready');
             console.log('✅ Enhanced Test Chat initialized');
 
-        // Initialize jaw toggle status
-        this.refreshJawStatus().catch(() => {});
+            // Initialize jaw toggle status
+            this.refreshJawStatus().catch(() => { });
 
         } catch (error) {
             console.error('❌ Failed to initialize Enhanced Test Chat:', error);
@@ -371,9 +371,9 @@ class EnhancedTestChat {
      */
     async initializeElevenLabsConnection() {
         try {
-            // Use secure WebSocket proxy (wss://8872) if page is loaded over HTTPS, otherwise direct connection (ws://8671)
+            // Connect directly to the ElevenLabs WS bridge (default port 8795)
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const port = window.location.protocol === 'https:' ? '8872' : '8671'; // 8872 is the secure proxy port, 8671 is the direct service port
+            const port = '8795';
             const wsUrl = `${protocol}//${window.location.hostname}:${port}`;
 
             console.log('🔗 Connecting to ElevenLabs WebSocket:', wsUrl);
@@ -522,111 +522,111 @@ class EnhancedTestChat {
             }
 
             switch (message.type) {
-            case 'connected':
-                console.log('🔗 ElevenLabs service connected, session:', message.sessionId);
-                console.log('🎭 Available characters:', message.availableCharacters);
-                break;
+                case 'connected':
+                    console.log('🔗 ElevenLabs service connected, session:', message.sessionId);
+                    console.log('🎭 Available characters:', message.availableCharacters);
+                    break;
 
-            case 'conversation_started':
-                this.addMessage('system', `Connected to ${message.characterName}`, {
-                    characterName: 'System',
-                    isInfo: true
-                });
-                break;
-
-            case 'conversation_initiation_metadata':
-                console.log('🎯 Conversation metadata:', message.conversation_initiation_metadata_event);
-                this.conversationId = message.conversation_initiation_metadata_event?.conversation_id;
-                break;
-
-            case 'ping':
-                // Handle ping messages silently
-                break;
-
-            case 'transcript':
-                // Unified transcript handling for both user and assistant
-                this.handleTranscript({ role: message.role, text: message.text });
-                // If this is the assistant's reply to our typed message, clear typing and unlock UI
-                if ((message.role === 'assistant' || message.role === 'bot') && this.pendingMessage) {
-                    if (this.pendingMessage.typingId) {
-                        this.removeTypingIndicator(this.pendingMessage.typingId);
-                    }
-                    this.handleMessageComplete();
-                }
-                break;
-
-            case 'audio':
-                // Unify audio handling: support both proxied (audioData) and direct (audio_event.audio_base_64)
-                if (message.audio_event && message.audio_event.audio_base_64) {
-                    this.handleElevenLabsAudio(message.audio_event.audio_base_64);
-                } else {
-                    this.handleAudioResponse(message);
-                }
-                break;
-
-            case 'user_transcript':
-                // Handle user speech transcription from ElevenLabs
-                console.log('👤 User transcript from ElevenLabs:', message.user_transcription_event?.user_transcript);
-                if (message.user_transcription_event?.user_transcript) {
-                    this.addMessage('user', message.user_transcription_event.user_transcript, {
-                        characterName: 'You',
-                        isTranscript: true
+                case 'conversation_started':
+                    this.addMessage('system', `Connected to ${message.characterName}`, {
+                        characterName: 'System',
+                        isInfo: true
                     });
-                }
-                break;
+                    break;
 
-            case 'agent_response':
-                // Handle AI response text from ElevenLabs
-                console.log('🤖 Agent response from ElevenLabs:', message.agent_response_event?.agent_response);
-                if (message.agent_response_event?.agent_response) {
-                    this.addMessage('bot', message.agent_response_event.agent_response, {
-                        characterName: this.currentCharacter ? this.currentCharacter.name : 'AI Assistant'
-                    });
-                    // Clear typing and unlock UI for typed message flow
-                    if (this.pendingMessage) {
+                case 'conversation_initiation_metadata':
+                    console.log('🎯 Conversation metadata:', message.conversation_initiation_metadata_event);
+                    this.conversationId = message.conversation_initiation_metadata_event?.conversation_id;
+                    break;
+
+                case 'ping':
+                    // Handle ping messages silently
+                    break;
+
+                case 'transcript':
+                    // Unified transcript handling for both user and assistant
+                    this.handleTranscript({ role: message.role, text: message.text });
+                    // If this is the assistant's reply to our typed message, clear typing and unlock UI
+                    if ((message.role === 'assistant' || message.role === 'bot') && this.pendingMessage) {
                         if (this.pendingMessage.typingId) {
                             this.removeTypingIndicator(this.pendingMessage.typingId);
                         }
                         this.handleMessageComplete();
                     }
-                }
-                break;
+                    break;
 
-            case 'audio':
-                // Handle audio response from ElevenLabs
-                console.log('🔊 Audio response from ElevenLabs:', message.audio_event);
-                if (message.audio_event?.audio_base_64) {
-                    this.handleElevenLabsAudio(message.audio_event.audio_base_64);
-                }
-                break;
+                case 'audio':
+                    // Unify audio handling: support both proxied (audioData) and direct (audio_event.audio_base_64)
+                    if (message.audio_event && message.audio_event.audio_base_64) {
+                        this.handleElevenLabsAudio(message.audio_event.audio_base_64);
+                    } else {
+                        this.handleAudioResponse(message);
+                    }
+                    break;
 
-            case 'conversation_end':
-                this.addMessage('system', 'Conversation ended', {
-                    characterName: 'System',
-                    isInfo: true
-                });
-                // Ensure UI is unlocked if a message was in-flight
-                if (this.pendingMessage) {
-                    if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                case 'user_transcript':
+                    // Handle user speech transcription from ElevenLabs
+                    console.log('👤 User transcript from ElevenLabs:', message.user_transcription_event?.user_transcript);
+                    if (message.user_transcription_event?.user_transcript) {
+                        this.addMessage('user', message.user_transcription_event.user_transcript, {
+                            characterName: 'You',
+                            isTranscript: true
+                        });
+                    }
+                    break;
+
+                case 'agent_response':
+                    // Handle AI response text from ElevenLabs
+                    console.log('🤖 Agent response from ElevenLabs:', message.agent_response_event?.agent_response);
+                    if (message.agent_response_event?.agent_response) {
+                        this.addMessage('bot', message.agent_response_event.agent_response, {
+                            characterName: this.currentCharacter ? this.currentCharacter.name : 'AI Assistant'
+                        });
+                        // Clear typing and unlock UI for typed message flow
+                        if (this.pendingMessage) {
+                            if (this.pendingMessage.typingId) {
+                                this.removeTypingIndicator(this.pendingMessage.typingId);
+                            }
+                            this.handleMessageComplete();
+                        }
+                    }
+                    break;
+
+                case 'audio':
+                    // Handle audio response from ElevenLabs
+                    console.log('🔊 Audio response from ElevenLabs:', message.audio_event);
+                    if (message.audio_event?.audio_base_64) {
+                        this.handleElevenLabsAudio(message.audio_event.audio_base_64);
+                    }
+                    break;
+
+                case 'conversation_end':
+                    this.addMessage('system', 'Conversation ended', {
+                        characterName: 'System',
+                        isInfo: true
+                    });
+                    // Ensure UI is unlocked if a message was in-flight
+                    if (this.pendingMessage) {
+                        if (this.pendingMessage.typingId) this.removeTypingIndicator(this.pendingMessage.typingId);
+                        this.handleMessageComplete();
+                    }
+                    break;
+
+                case 'error':
+                    const errorMsg = message.error || message.message || 'Unknown error';
+                    console.error('❌ ElevenLabs error:', errorMsg);
+                    this.addMessage('system', `Error: ${errorMsg}`, {
+                        characterName: 'System',
+                        isError: true
+                    });
                     this.handleMessageComplete();
-                }
-                break;
+                    break;
 
-            case 'error':
-                const errorMsg = message.error || message.message || 'Unknown error';
-                console.error('❌ ElevenLabs error:', errorMsg);
-                this.addMessage('system', `Error: ${errorMsg}`, {
-                    characterName: 'System',
-                    isError: true
-                });
-                this.handleMessageComplete();
-                break;
-
-            default:
-                console.log('📥 Unknown ElevenLabs message type:', message.type, message);
-                // Don't treat unknown message types as errors, just log them
-                break;
-        }
+                default:
+                    console.log('📥 Unknown ElevenLabs message type:', message.type, message);
+                    // Don't treat unknown message types as errors, just log them
+                    break;
+            }
         } catch (error) {
             console.error('❌ Error handling ElevenLabs message:', error, message);
         }
@@ -679,52 +679,52 @@ class EnhancedTestChat {
             // Convert Uint8Array back to Int16Array for analysis
             const int16Data = new Int16Array(pcmData.buffer);
 
-        let totalEnergy = 0;
-        let maxAmplitude = 0;
-        let nonZeroSamples = 0;
+            let totalEnergy = 0;
+            let maxAmplitude = 0;
+            let nonZeroSamples = 0;
 
-        // Calculate audio energy and statistics
-        for (let i = 0; i < int16Data.length; i++) {
-            const sample = Math.abs(int16Data[i]);
-            totalEnergy += sample * sample;
-            maxAmplitude = Math.max(maxAmplitude, sample);
-            if (sample > 100) { // Threshold for non-silence
-                nonZeroSamples++;
+            // Calculate audio energy and statistics
+            for (let i = 0; i < int16Data.length; i++) {
+                const sample = Math.abs(int16Data[i]);
+                totalEnergy += sample * sample;
+                maxAmplitude = Math.max(maxAmplitude, sample);
+                if (sample > 100) { // Threshold for non-silence
+                    nonZeroSamples++;
+                }
             }
-        }
 
-        const averageEnergy = totalEnergy / int16Data.length;
-        const activityRatio = nonZeroSamples / int16Data.length;
+            const averageEnergy = totalEnergy / int16Data.length;
+            const activityRatio = nonZeroSamples / int16Data.length;
 
-        // Thresholds for speech detection (more sensitive for ElevenLabs server_vad)
-        // Adaptive thresholds using current VAD settings for sensitivity
-        const vadThreshold = parseFloat(this.vadThresholdInline?.value || '0.5');
-        // Map VAD threshold (0..1) to amplitude/energy thresholds. Lower vad => lower thresholds (more sensitive)
-        const amplitudeThreshold = Math.max(80, Math.round(600 - 500 * (1 - vadThreshold))); // range ~100..600
-        const energyThreshold = Math.max(120000, Math.round(800000 - 680000 * (1 - vadThreshold))); // range ~120k..800k
-        const activityThreshold = Math.max(0.002, 0.02 - 0.018 * (1 - vadThreshold)); // range ~0.002..0.02
+            // Thresholds for speech detection (more sensitive for ElevenLabs server_vad)
+            // Adaptive thresholds using current VAD settings for sensitivity
+            const vadThreshold = parseFloat(this.vadThresholdInline?.value || '0.5');
+            // Map VAD threshold (0..1) to amplitude/energy thresholds. Lower vad => lower thresholds (more sensitive)
+            const amplitudeThreshold = Math.max(80, Math.round(600 - 500 * (1 - vadThreshold))); // range ~100..600
+            const energyThreshold = Math.max(120000, Math.round(800000 - 680000 * (1 - vadThreshold))); // range ~120k..800k
+            const activityThreshold = Math.max(0.002, 0.02 - 0.018 * (1 - vadThreshold)); // range ~0.002..0.02
 
-        const hasActivity = averageEnergy > energyThreshold ||
-                           maxAmplitude > amplitudeThreshold ||
-                           activityRatio > activityThreshold;
+            const hasActivity = averageEnergy > energyThreshold ||
+                maxAmplitude > amplitudeThreshold ||
+                activityRatio > activityThreshold;
 
-        // Silence cutoff using character's silenceDuration setting (ms)
-        const silenceMs = parseInt(this.silenceDurationInline?.value || '700');
-        if (hasActivity) {
-            this.lastSpeechTime = Date.now();
-        } else if (this.lastSpeechTime && (Date.now() - this.lastSpeechTime > silenceMs)) {
-            // Consider end-of-speech if we've had silence longer than threshold
-            if (this.speechDetected) {
-                console.log('🎙️ End-of-speech by silence timeout, signaling to ElevenLabs');
-                this.speechDetected = false;
-                this.stopCurrentAudio();
-                this.sendEndOfSpeechToElevenLabs();
+            // Silence cutoff using character's silenceDuration setting (ms)
+            const silenceMs = parseInt(this.silenceDurationInline?.value || '700');
+            if (hasActivity) {
+                this.lastSpeechTime = Date.now();
+            } else if (this.lastSpeechTime && (Date.now() - this.lastSpeechTime > silenceMs)) {
+                // Consider end-of-speech if we've had silence longer than threshold
+                if (this.speechDetected) {
+                    console.log('🎙️ End-of-speech by silence timeout, signaling to ElevenLabs');
+                    this.speechDetected = false;
+                    this.stopCurrentAudio();
+                    this.sendEndOfSpeechToElevenLabs();
+                }
             }
-        }
 
-        console.log(`🎙️ Audio activity: energy=${averageEnergy.toFixed(0)}, max=${maxAmplitude}, activity=${(activityRatio*100).toFixed(1)}%, hasActivity=${hasActivity}, ampThr=${amplitudeThreshold}, engThr=${energyThreshold}`);
+            console.log(`🎙️ Audio activity: energy=${averageEnergy.toFixed(0)}, max=${maxAmplitude}, activity=${(activityRatio * 100).toFixed(1)}%, hasActivity=${hasActivity}, ampThr=${amplitudeThreshold}, engThr=${energyThreshold}`);
 
-        return hasActivity;
+            return hasActivity;
         } catch (error) {
             console.error('❌ Error detecting audio activity:', error);
             return false;
@@ -904,14 +904,22 @@ class EnhancedTestChat {
             // Store the agent ID for use in messages
             this.currentAgentId = agentId;
 
-            // Send conversation start message (using the format expected by the service)
+            // Send conversation start message with agent and character
             const startMessage = {
                 type: 'start_conversation',
+                agentId: agentId,
                 characterId: character.id
             };
 
             console.log('📤 Starting conversation with:', startMessage);
             this.elevenLabsWs.send(JSON.stringify(startMessage));
+
+            // Default to server-side output and server microphone for animatronic
+            try {
+                this.elevenLabsWs.send(JSON.stringify({ type: 'set_character', characterId: character.id }));
+                this.elevenLabsWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'server' }));
+                this.elevenLabsWs.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+            } catch (e) { /* best-effort */ }
 
             this.addMessage('system', `Connected to ElevenLabs service. Ready to chat with ${character.char_name || character.name}!`, {
                 characterName: 'System',
@@ -1041,7 +1049,7 @@ class EnhancedTestChat {
             this.updateConnectionStatus('connected', 'Ready');
 
             // Refresh jaw status when character changes
-            await this.refreshJawStatus().catch(() => {});
+            await this.refreshJawStatus().catch(() => { });
 
         } catch (error) {
             console.error('❌ Error selecting character:', error);
@@ -2111,10 +2119,10 @@ class EnhancedTestChat {
     stopCurrentAudio() {
         try {
             if (this.currentAudio) {
-                try { this.currentAudio.pause(); } catch (e) {}
+                try { this.currentAudio.pause(); } catch (e) { }
                 // Revoke blob URL if present
                 if (this.currentAudio._blobUrl) {
-                    try { URL.revokeObjectURL(this.currentAudio._blobUrl); } catch (e) {}
+                    try { URL.revokeObjectURL(this.currentAudio._blobUrl); } catch (e) { }
                 }
                 this.currentAudio.src = '';
                 this.currentAudio = null;

@@ -63,10 +63,22 @@ class ElevenLabsConfigService {
      * Get ElevenLabs API configuration
      */
     getElevenLabsConfig() {
-        const apiKey = this.config.ELEVENLABS_API_KEY;
+        let apiKey = this.config.ELEVENLABS_API_KEY;
+
+        // Secure file-based fallback: /etc/monsterbox/elevenlabs.key (chmod 600)
+        if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
+            try {
+                const keyPath = '/etc/monsterbox/elevenlabs.key';
+                if (fs.existsSync(keyPath)) {
+                    const raw = fs.readFileSync(keyPath, 'utf8');
+                    const k = (raw || '').trim();
+                    if (k) apiKey = k;
+                }
+            } catch (_) { /* ignore */ }
+        }
 
         if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-            throw new Error('ElevenLabs API key not configured. Please set ELEVENLABS_API_KEY in .env file.');
+            throw new Error('ElevenLabs API key not configured. Set ELEVENLABS_API_KEY or provide /etc/monsterbox/elevenlabs.key (600).');
         }
 
         return {

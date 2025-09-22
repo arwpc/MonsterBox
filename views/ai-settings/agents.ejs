@@ -328,20 +328,40 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <div class="btn-group me-auto" role="group" aria-label="Audio Output Toggle">
-                        <input type="radio" class="btn-check" name="audioOutput" id="audioLocal" autocomplete="off"
-                            checked onchange="window.agentsManager && window.agentsManager.setAudioOutput('local')">
-                        <label class="btn btn-outline-primary" for="audioLocal">
-                            <i class="bi bi-headphones"></i> Local
-                        </label>
+                    <div class="d-flex w-100 align-items-center justify-content-between">
+                        <!-- Mic Source -->
+                        <div class="btn-group" role="group" aria-label="Microphone Source Toggle">
+                            <input type="radio" class="btn-check" name="micSource" id="micServer" autocomplete="off"
+                                checked onchange="window.agentsManager && window.agentsManager.setMicSource('server')">
+                            <label class="btn btn-outline-warning" for="micServer">
+                                <i class="bi bi-mic"></i> Server Mic
+                            </label>
 
-                        <input type="radio" class="btn-check" name="audioOutput" id="audioSpeaker" autocomplete="off"
-                            onchange="window.agentsManager && window.agentsManager.setAudioOutput('speaker')">
-                        <label class="btn btn-outline-success" for="audioSpeaker">
-                            <i class="bi bi-speaker"></i> Speaker
-                        </label>
+                            <input type="radio" class="btn-check" name="micSource" id="micBrowser" autocomplete="off"
+                                onchange="window.agentsManager && window.agentsManager.setMicSource('browser')">
+                            <label class="btn btn-outline-info" for="micBrowser" title="Requires HTTPS (or localhost)">
+                                <i class="bi bi-mic-fill"></i> Browser Mic
+                            </label>
+                        </div>
+
+                        <!-- Audio Output -->
+                        <div class="btn-group" role="group" aria-label="Audio Output Toggle">
+                            <input type="radio" class="btn-check" name="audioOutput" id="audioLocal" autocomplete="off"
+                                checked onchange="window.agentsManager && window.agentsManager.setAudioOutput('local')">
+                            <label class="btn btn-outline-primary" for="audioLocal">
+                                <i class="bi bi-headphones"></i> Local
+                            </label>
+
+                            <input type="radio" class="btn-check" name="audioOutput" id="audioSpeaker"
+                                autocomplete="off"
+                                onchange="window.agentsManager && window.agentsManager.setAudioOutput('speaker')">
+                            <label class="btn btn-outline-success" for="audioSpeaker">
+                                <i class="bi bi-speaker"></i> Speaker
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

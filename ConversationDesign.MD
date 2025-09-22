@@ -33,6 +33,12 @@ High-level architecture
 4) Barge-in
    - On interruption events from ElevenLabs, stop current playback immediately and prioritize mic input.
 
+Current status (implementation snapshot)
+- WS bridge runs on ws://<host>:8795
+- Server Mic streaming (16 kHz PCM, 20–40 ms frames) → user_audio_chunk is wired
+- Interruption events stop server speaker playback immediately (barge-in)
+- Browser mic transcode (opus/webm → PCM16k) is stubbed pending ffmpeg approval
+
 Protocols and formats
 - Mic → Agent
   - Required by ElevenLabs: base64 16-bit PCM, 16,000 Hz mono in small frames: { "user_audio_chunk": "<base64>" }.
@@ -68,7 +74,7 @@ Performance notes
 - Favor WAV/PCM path to character speaker (pw-play or mpg123 for MP3 with proper routing env vars).
 
 Testing plan (must-have)
-- Unit/API tests (Mocha): 
+- Unit/API tests (Mocha):
   - agents list/create/update; conversation/test routes; playback route returns 200 and enqueues playback.
 - Playwright e2e (Firefox headless on RPi4b):
   - “Simulated Conversation” tests that:

@@ -54,7 +54,7 @@ function pickExtensionFromContentType(ct) {
 async function writeTempAudio(buffer, contentType) {
   const ext = pickExtensionFromContentType(contentType);
   const tmpDir = os.tmpdir();
-  const filePath = path.join(tmpDir, `mb_tts_${Date.now()}_${Math.floor(Math.random()*1e6)}${ext}`);
+  const filePath = path.join(tmpDir, `mb_tts_${Date.now()}_${Math.floor(Math.random() * 1e6)}${ext}`);
   await fs.writeFile(filePath, buffer);
   return filePath;
 }
@@ -75,7 +75,7 @@ class ServerPlaybackService {
       // Use speaker_cli.py wrapper which handles PipeWire routing and players
       const args = ['play', tmpFile, String(volume), '--device', deviceId];
       let raw = await runWrapper('speaker_cli.py', args, { enableLogging: false, timeoutMs: 15000 });
-      let parsed = null; try { parsed = JSON.parse(raw); } catch (_) {}
+      let parsed = null; try { parsed = JSON.parse(raw); } catch (_) { }
 
       return {
         success: parsed ? (parsed.status === 'success') : true,
@@ -87,6 +87,29 @@ class ServerPlaybackService {
       };
     } catch (error) {
       console.error('ServerPlaybackService error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async stopForCharacter(characterId) {
+    try {
+      const deviceId = characterId ? await getSpeakerDeviceForCharacter(characterId) : 'default';
+      try {
+        await runWrapper('speaker_cli.py', ['stop', '--device', deviceId], { enableLogging: false, timeoutMs: 5000 });
+      } catch (_) { /* best-effort */ }
+      return { success: true, deviceId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async stopAll() {
+    try {
+      try {
+        await runWrapper('speaker_cli.py', ['stop'], { enableLogging: false, timeoutMs: 5000 });
+      } catch (_) { /* best-effort */ }
+      return { success: true };
+    } catch (error) {
       return { success: false, error: error.message };
     }
   }

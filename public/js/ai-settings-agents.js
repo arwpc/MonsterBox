@@ -43,10 +43,26 @@ AgentsManager.prototype.init = function () {
     this.wsChat = null;
     this.useWebSocket = true; // Enable WebSocket for real-time chat
     this.audioOutputMode = 'local'; // 'local' for browser, 'speaker' for character speaker
+    this.micSource = 'server'; // 'server' (PipeWire) or 'browser' (getUserMedia)
     this._isPlayingAudio = false; // Prevent simultaneous audio playback
 
     // Initialize WebSocket chat if available
     this.initWebSocketChat();
+
+    // Mic source UI availability (browser mic requires secure context)
+    try {
+        var insecure = !(window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname));
+        var micBrowser = document.getElementById('micBrowser');
+        var micBrowserLabel = document.querySelector('label[for="micBrowser"]');
+        if (micBrowser) {
+            if (insecure) {
+                micBrowser.disabled = true;
+                if (micBrowserLabel) micBrowserLabel.title = 'Browser microphone requires HTTPS (or localhost).';
+            } else {
+                micBrowser.disabled = false;
+            }
+        }
+    } catch (e) { /* no-op */ }
 
     console.log('Agents Manager initialized');
 };
@@ -507,6 +523,11 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
     if (this.useWebSocket && this.wsChat && this.wsChat.isConnected) {
         console.log('🚀 Starting WebSocket conversation with agent:', agentId);
         this.wsChat.startConversation(agentId);
+        // Apply current routing preferences
+        try {
+            this.wsChat.sendMessage({ type: 'set_output_mode', mode: this.audioOutputMode === 'speaker' ? 'server' : 'local' });
+            this.wsChat.sendMessage({ type: 'set_mic_source', source: this.micSource });
+        } catch (e) { /* best-effort */ }
         this.showChatMessage('System', 'Connecting to agent via WebSocket...', 'info');
     } else {
         console.log('📱 WebSocket not available, using HTTP fallback');
@@ -516,6 +537,11 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
     var modalEl = document.getElementById('agentChatModal');
     if (modalEl) {
         var modal = new bootstrap.Modal(modalEl);
+        // Ensure browser mic capture stops when modal closes
+        var self = this;
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            try { self._stopBrowserMicCapture(true); } catch (e) { }
+        }, { once: true });
         modal.show();
     }
 };
@@ -730,6 +756,85 @@ AgentsManager.prototype.playAudioOnCharacterSpeaker = function (audioBase64, cha
             document.getElementById('audioLocal').checked = true;
         });
 };
+
+// === Microphone routing (Server vs Browser) ===
+AgentsManager.prototype.setMicSource = function (source) {
+    source = (source === 'browser') ? 'browser' : 'server';
+    this.micSource = source;
+    var micServer = document.getElementById('micServer');
+    var micBrowser = document.getElementById('micBrowser');
+    if (micServer && micBrowser) { if (source === 'server') micServer.checked = true; else micBrowser.checked = true; }
+    if (this.wsChat && this.wsChat.isConnected) { try { this.wsChat.sendMessage({ type: 'set_mic_source', source: source }); } catch (e) { } }
+    if (source === 'browser') {
+        if (!(window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname))) {
+            this.showAlert('Browser microphone requires HTTPS (or localhost). Falling back to Server Mic.', 'warning');
+            this.micSource = 'server'; if (micServer) micServer.checked = true;
+            if (this.wsChat && this.wsChat.isConnected) { try { this.wsChat.sendMessage({ type: 'set_mic_source', source: 'server' }); } catch (e) { } }
+            return;
+        }
+        this._startBrowserMicCapture();
+    } else {
+        this._stopBrowserMicCapture(true);
+    }
+};
+
+AgentsManager.prototype._startBrowserMicCapture = function () {
+    var self = this;
+    if (this._browserMicStream) return;
+    navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
+        .then(function (stream) {
+            self._browserMicStream = stream;
+            self._audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+            var src = self._audioCtx.createMediaStreamSource(stream);
+            var processor = self._audioCtx.createScriptProcessor(4096, 1, 1);
+            self._browserProcessor = processor;
+            self._lastVoiceTs = Date.now();
+            processor.onaudioprocess = function (e) {
+                if (self.micSource !== 'browser' || !self.wsChat || !self.wsChat.isConnected) return;
+                var input = e.inputBuffer.getChannelData(0);
+                var down = self._downsampleBuffer(input, self._audioCtx.sampleRate, 16000);
+                var pcm = self._floatTo16BitPCM(down);
+                var active = false; for (var i = 0; i < down.length; i += 64) { if (Math.abs(down[i]) > 0.02) { active = true; break; } }
+                if (active) self._lastVoiceTs = Date.now();
+                var b64 = self._uint8ToBase64(pcm);
+                try { self.wsChat.sendMessage({ type: 'browser_audio_chunk', audio: b64 }); } catch (e) { }
+                if (!active && (Date.now() - self._lastVoiceTs > 700)) { try { self.wsChat.sendMessage({ type: 'eos' }); } catch (e) { } self._lastVoiceTs = Date.now(); }
+            };
+            src.connect(processor); processor.connect(self._audioCtx.destination);
+            self.showAlert('Browser microphone active', 'info');
+        })
+        .catch(function (err) {
+            console.error('Browser mic error:', err);
+            self.showAlert('Microphone permission failed: ' + err.message, 'danger');
+            self.micSource = 'server'; var micServer = document.getElementById('micServer'); if (micServer) micServer.checked = true;
+            if (self.wsChat && self.wsChat.isConnected) { try { self.wsChat.sendMessage({ type: 'set_mic_source', source: 'server' }); } catch (e) { } }
+        });
+};
+
+AgentsManager.prototype._stopBrowserMicCapture = function (sendEos) {
+    try {
+        if (this._browserProcessor) { this._browserProcessor.disconnect(); this._browserProcessor.onaudioprocess = null; this._browserProcessor = null; }
+        if (this._audioCtx) { this._audioCtx.close(); this._audioCtx = null; }
+        if (this._browserMicStream) { this._browserMicStream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } }); this._browserMicStream = null; }
+        if (sendEos && this.wsChat && this.wsChat.isConnected) { try { this.wsChat.sendMessage({ type: 'eos' }); } catch (e) { } }
+    } catch (_) { }
+};
+
+AgentsManager.prototype._downsampleBuffer = function (buffer, sampleRate, outRate) {
+    if (outRate === sampleRate) return buffer;
+    var ratio = sampleRate / outRate; var newLen = Math.round(buffer.length / ratio); var result = new Float32Array(newLen);
+    var oR = 0, oB = 0; while (oR < result.length) { var nextOB = Math.round((oR + 1) * ratio); var sum = 0, cnt = 0; for (var i = oB; i < nextOB && i < buffer.length; i++) { sum += buffer[i]; cnt++; } result[oR] = sum / (cnt || 1); oR++; oB = nextOB; }
+    return result;
+};
+
+AgentsManager.prototype._floatTo16BitPCM = function (float32) {
+    var out = new Uint8Array(float32.length * 2); for (var i = 0; i < float32.length; i++) { var s = Math.max(-1, Math.min(1, float32[i])); var v = s < 0 ? s * 0x8000 : s * 0x7FFF; out[i * 2] = v & 0xFF; out[i * 2 + 1] = (v >> 8) & 0xFF; } return out;
+};
+
+AgentsManager.prototype._uint8ToBase64 = function (u8) {
+    var CHUNK = 0x8000, idx = 0, len = u8.length, res = '', slice; while (idx < len) { slice = u8.subarray(idx, Math.min(idx + CHUNK, len)); res += String.fromCharCode.apply(null, slice); idx += CHUNK; } return btoa(res);
+};
+
 
 
 
