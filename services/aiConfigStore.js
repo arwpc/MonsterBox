@@ -49,7 +49,7 @@ export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
   return (
     d || {
-      voice_id: '',
+      voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
       model: 'eleven_monolingual_v1',
       stability: 0.5,
       similarity_boost: 0.5,

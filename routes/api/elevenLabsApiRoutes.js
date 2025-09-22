@@ -530,7 +530,7 @@ router.post('/generate-and-play', async (req, res) => {
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
 
         // Get character's voice settings (if available)
-        let voiceId = 'pNInz6obpgDQGcFmaJgB'; // Default voice
+        let voiceId = 'Tj9l48J9AJbry5yCP5eW'; // Default voice: Matthew Schmitz - Nosferatu Ancient Vampire Lord
         // TODO: Get character's configured voice ID from database/config
 
         const ttsResult = await elevenLabsTTSService.generateSpeech(text, voiceId, {

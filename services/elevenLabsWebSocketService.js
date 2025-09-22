@@ -25,7 +25,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
             try {
                 this.wsServer = new WebSocketServer({
                     port: this.port,
-                    perMessageDeflate: false
+                    host: '0.0.0.0', // Explicitly bind to IPv4
+                    perMessageDeflate: false,
+                    verifyClient: (info) => {
+                        console.log(`🔍 WebSocket connection attempt from: ${info.origin || 'unknown'} (${info.req.connection.remoteAddress})`);
+                        return true; // Accept all connections for now
+                    }
                 });
 
                 this.wsServer.on('connection', (ws, req) => {
