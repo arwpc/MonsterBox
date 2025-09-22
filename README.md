@@ -744,12 +744,44 @@ Notes
 - Microphone live-recording uses MediaRecorder; browser will ask for mic permission
 
 
+### 🔊 Audio Output Toggle (Local ↔ Speaker) — NEW
+
+MonsterBox’s chat now supports instant switching between Local (browser) playback and Speaker (hardware) playback during AI conversations.
+
+How to use
+- Open: http://localhost:3000/ai-settings/agents → Chat
+- Choose output:
+  - Local (🎧): Plays audio in the browser
+  - Speaker (🔊): Routes audio to the current Character’s configured speaker via PipeWire
+- Send a message and listen — you can change the toggle at any time.
+
+Implementation details
+- Real-time WebSocket chat streams PCM which is wrapped as WAV at 16,000 Hz, 1 ch, 16-bit for natural pitch and clarity
+- Speaker mode posts WAV to /api/elevenlabs/play-audio and plays through the Character’s PipeWire sink
+- Overlap prevention and short aggregation ensure smooth, non-choppy audio
+
+Quick troubleshooting
+- No audio
+  - Verify the toggle (Local vs Speaker)
+  - For Speaker: confirm your Character has a Speaker part selected (Setup → Characters) and the sink works (Setup → Audio → Test)
+  - For Local: ensure browser autoplay isn’t blocked (try interacting with the page once)
+- Choppy or noisy audio
+  - Refresh the Chat modal and retry; ensure only one tab is playing
+  - Use Speaker mode where possible (device-grade playback), and confirm PipeWire status: `wpctl status`
+- Speaker silent
+  - Test direct: `pw-play --target <sink-id> public/sounds/monster-howl-85304.mp3`
+  - Check volume and routing in Setup → Audio; verify `wpctl status` shows an active stream during playback
+
+Notes
+- The Conversation system defaults to the Character’s speaker when Speaker mode is selected; Local mode never touches system audio.
+- WAV @ 16kHz was chosen to match realtime stream format and avoid high-pitched/fast playback.
+
 ### Updated AI Management — Status
 
 Overview
 - Agents management and chat testing are implemented end-to-end.
 - ElevenLabs integration (STT/TTS/Agents) is wired and functional.
-- Chat Agent works but is slow; it currently uses HTTP simulate-conversation, not MonsterBox's real-time WebSocket pipeline.
+- Chat Agent now uses ElevenLabs real-time WebSocket with streamed audio and an Audio Output Toggle (Local ↔ Speaker) for responsive playback.
 
 What works now
 - Agents CRUD on /ai-settings/agents:
@@ -757,7 +789,8 @@ What works now
   - Test and Chat buttons per agent
 - Chat modal:
   - Sends a user message, gets agent reply text, auto-plays TTS in-browser
-  - "Play on Character Speaker" verifies server-side PipeWire routing to the selected Character's speaker
+  - Real-time audio via WebSocket with streaming aggregation for smooth playback
+  - Audio Output Toggle (Local ↔ Speaker): Local plays in-browser; Speaker routes via the current Character's configured PipeWire speaker (WAV @ 16kHz for clear, natural audio)
 - Conversation routes:
   - POST /api/elevenlabs/conversation/test → reply JSON (fast checks)
   - POST /api/elevenlabs/conversation → audio (X-Reply-Text header)
@@ -766,8 +799,8 @@ What works now
   - If the ElevenLabs agent call fails or times out, we fall back to a safe reply and still generate TTS (no UI dead ends)
 
 Current limitations and gaps
-- Latency: Using HTTP simulate-conversation; no token/text streaming, so replies arrive slowly.
-- Not using MonsterBox's internal WebSocket system for the Agent Chat flow (so no realtime partials, barge-in, or incremental jaw sync).
+- Latency: Dependent on upstream agent generation/VAD; typical 1–6s for longer replies. First audio begins quickly via streaming.
+- Realtime: WebSocket streaming is enabled. Partials are available for future indicators; barge-in/jaw sync not yet implemented.
 - No client/server VU meters in the Chat modal yet.
 - Limited resilience/caching (voices/models/agents) and minimal UI toasts.
 - No automated tests yet for Agents Chat + server playback path.
