@@ -67,40 +67,44 @@ async function getModelDefaultsForPart(part) {
 const HARDWARE_CONTROLLERS = {
     // 🔄 Motor - DC motors for movement
     motor: {
-        async control({ pin, direction = 'forward', speed = 50, duration = 1000 }) {
+        async control({ directionPin, pwmPin, direction = 'forward', speed = 50, duration = 1000 }) {
             try {
-                const out = await runWrapper('motor_cli.py', [String(direction), String(speed), String(duration), String(pin)]);
+                // Pass both direction and PWM pins directly to motor_cli.py
+                const out = await runWrapper('motor_cli.py', [String(direction), String(speed), String(duration), String(directionPin), String(pwmPin)]);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
                 return {
                     success,
                     partType: 'motor',
-                    pin: pin,
+                    directionPin: directionPin,
+                    pwmPin: pwmPin,
                     direction: direction,
                     speed: speed,
                     duration: duration,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Motor on pin ${pin} ${direction} at ${speed}%` : 'Motor command failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) ${direction} at ${speed}%` : 'Motor command failed')
                 };
             } catch (error) {
-                return { success: false, partType: 'motor', pin: pin, error: error.message };
+                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, error: error.message };
             }
         },
 
-        async stop({ pin }) {
+        async stop({ directionPin, pwmPin }) {
             try {
-                const out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(pin)]);
+                // Pass both direction and PWM pins directly to motor_cli.py
+                const out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(directionPin), String(pwmPin)]);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
                 return {
                     success,
                     partType: 'motor',
-                    pin: pin,
+                    directionPin: directionPin,
+                    pwmPin: pwmPin,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Motor on pin ${pin} stopped` : 'Motor stop failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) stopped` : 'Motor stop failed')
                 };
             } catch (error) {
-                return { success: false, partType: 'motor', pin: pin, error: error.message };
+                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, error: error.message };
             }
         }
     },
@@ -1172,6 +1176,11 @@ export async function controlPart(partId, action, params = {}) {
             if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
             if (part.maxExtension != null) normalized.maxExtension = Number(part.maxExtension);
             if (part.maxRetraction != null) normalized.maxRetraction = Number(part.maxRetraction);
+        }
+        if (type === 'motor') {
+            if (part.directionPin != null) normalized.directionPin = Number(part.directionPin);
+            if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
+            if (part.maxDuration != null) normalized.maxDuration = Number(part.maxDuration);
         }
         if ((type === 'light' || type === 'led' || type === 'sensor' || type === 'motion_sensor') && pinFromPart == null) {
             // Ensure a pin is present if possible

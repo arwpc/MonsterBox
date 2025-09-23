@@ -1653,7 +1653,7 @@
                     case 'motor':
                         html += '<div class="row g-2 align-items-center" data-testid="motor-controls">';
                         html += '<div class="col-auto">Dir:</div>';
-                        html += '<div class="col-auto"><select id="motor-dir-' + part.id + '" class="form-select form-select-sm"><option value="cw">CW</option><option value="ccw">CCW</option></select></div>';
+                        html += '<div class="col-auto"><select id="motor-dir-' + part.id + '" class="form-select form-select-sm"><option value="forward">Forward</option><option value="backward">Backward</option></select></div>';
                         html += '<div class="col-auto">Speed:</div>';
                         html += '<div class="col-auto"><input id="motor-speed-' + part.id + '" type="number" class="form-control form-control-sm" style="width:80px" value="50" min="0" max="100"/></div>';
                         html += '<div class="col-auto">ms:</div>';
@@ -1944,6 +1944,13 @@
                     document.getElementById('editMaxExtension').value = part.maxExtension != null ? part.maxExtension : 15000;
                     document.getElementById('editMaxRetraction').value = part.maxRetraction != null ? part.maxRetraction : 15000;
 
+                } else if (part.type === 'motor') {
+                    // Show motor specific fields (same pin group as linear actuator)
+                    pinGroup.style.display = 'none';
+                    editActuatorPinGroup.style.display = '';
+                    editActuatorLimitsGroup.style.display = 'none'; // Motors don't need extension limits
+                    document.getElementById('editDirectionPin').value = part.directionPin != null ? part.directionPin : '';
+                    document.getElementById('editPwmPin').value = part.pwmPin != null ? part.pwmPin : '';
 
                 } else if (partTypes[part.type] && partTypes[part.type].requiresPin) {
                     // Show regular pin field for other parts
@@ -2331,6 +2338,11 @@
                     payload.pwmPin = parseInt(document.getElementById('editPwmPin').value, 10);
                     payload.maxExtension = parseInt(document.getElementById('editMaxExtension').value, 10) || 15000;
                     payload.maxRetraction = parseInt(document.getElementById('editMaxRetraction').value, 10) || 15000;
+                } else if (type === 'motor') {
+                    // Add motor specific fields
+                    payload.directionPin = parseInt(document.getElementById('editDirectionPin').value, 10);
+                    payload.pwmPin = parseInt(document.getElementById('editPwmPin').value, 10);
+                    payload.maxDuration = 10000; // 10 second safety limit for motors
                 } else if (requiresPin) {
                     payload.pin = parseInt(pin, 10);
                 }

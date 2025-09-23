@@ -11,28 +11,30 @@ import json
 import subprocess
 
 # Add the scripts directory to Python path for direct import if needed (repo root)
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../scripts'))
+SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 sys.path.insert(0, SCRIPTS_DIR)
 
 
 def main():
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 6:
         print(json.dumps({
             "status": "error",
-            "message": "Usage: motor_cli.py <direction> <speed> <duration_ms> <base_pin>"
+            "message": "Usage: motor_cli.py <direction> <speed> <duration_ms> <dir_pin> <pwm_pin>"
         }))
         sys.exit(1)
 
     direction = sys.argv[1]
     speed = sys.argv[2]
     duration = sys.argv[3]
-    base_pin = sys.argv[4]
+    dir_pin = sys.argv[4]
+    pwm_pin = sys.argv[5]
 
     try:
-        dir_pin = str(int(base_pin))
-        pwm_pin = str(int(base_pin) + 1)
+        # Validate pins are integers
+        int(dir_pin)
+        int(pwm_pin)
     except Exception:
-        print(json.dumps({"status": "error", "message": "base_pin must be an integer"}))
+        print(json.dumps({"status": "error", "message": "dir_pin and pwm_pin must be integers"}))
         sys.exit(1)
 
     script_path = os.path.join(SCRIPTS_DIR, 'motor_control.py')
