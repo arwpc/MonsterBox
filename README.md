@@ -32,6 +32,17 @@
 - **Background Subtraction**: Advanced MOG2 algorithm for robust motion detection
 - **Real-time Performance**: Optimized for Raspberry Pi 4B with minimal CPU overhead
 
+### 🎵 **Audio Library System**
+- **Centralized Audio Management**: Shared audio library accessible to all animatronic characters
+- **Professional Audio Player**: WaveSurfer.js integration with waveform visualization, playback controls, and basic editing
+- **Advanced Metadata Extraction**: Automatic extraction of duration, sample rate, channels, bitrate, artist, genre using music-metadata
+- **Comprehensive Search & Filtering**: Text search, category filtering, format filtering, duration filtering, advanced search combinations
+- **Drag & Drop Upload**: Multi-file upload with progress indicators, automatic metadata extraction, and batch processing
+- **Character-Specific Playback**: Integration with character speaker systems for hardware audio output
+- **Audio Management Features**: Favorites, tagging, categorization, bulk operations (favorite, delete, change category)
+- **Format Support**: MP3, WAV, OGG, M4A, AAC, FLAC with automatic format detection
+- **Scene Integration**: Audio files can be selected and used in scenes, poses, and character interactions
+
 ## ⚡ New Pi Quick Install (Raspberry Pi 4B)
 
 1) System setup (runs updates, audio/video deps, mjpg-streamer, groups, etc.)
@@ -129,6 +140,7 @@ The application will be available at:
 - **Dashboard**: http://localhost:3000
 - **Setup**: http://localhost:3000/setup  ← **Start here for parts creation**
 - **Live Mode**: http://localhost:3000/live
+- **Audio Library**: http://localhost:3000/audio-library  ← **NEW: Centralized audio management**
 
 ## 🦴 **Linear Actuator Configuration**
 
@@ -306,6 +318,34 @@ MonsterBox 4.0 now includes a **centralized audio configuration interface** at `
 3. **Monitor Audio Levels**: Watch real-time VU meters during testing
 4. **Test Devices**: Click test buttons to verify audio input/output
 5. **Save Configuration**: Settings persist automatically
+
+### 🎵 **Audio Library Usage**
+
+1. **Access Audio Library**: Navigate to `http://localhost:3000/audio-library`
+2. **Upload Audio Files**:
+   - Click "Upload Audio" or drag & drop files directly onto the page
+   - Supports MP3, WAV, OGG, M4A, AAC, FLAC formats
+   - Automatic metadata extraction (duration, artist, genre, etc.)
+3. **Organize Your Library**:
+   - Add titles, descriptions, and tags to audio files
+   - Categorize files (monster-sounds, ambient, music, voice, effects, etc.)
+   - Mark favorites for quick access
+4. **Advanced Search & Filtering**:
+   - Use the search bar for text-based searching
+   - Filter by category, format, favorites
+   - Use "Advanced" button for detailed filtering (duration, file size, upload date, artist, genre)
+5. **Professional Audio Player**:
+   - Click any audio file to open the advanced player
+   - View waveform visualization with zoom controls
+   - Use playback controls (play, pause, stop, skip)
+   - Set trim points for basic editing
+6. **Character Integration**:
+   - Play audio files directly on character speakers
+   - Volume control and character-specific audio settings
+   - Integration with scenes and poses for automated playback
+7. **Bulk Operations**:
+   - Enable "Bulk Select" mode to manage multiple files
+   - Bulk favorite/unfavorite, change categories, or delete files
 
 ### �️ Microphone Parts Controls (Sensitivity + Input Gain) — NEW
 
