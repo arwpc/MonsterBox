@@ -617,9 +617,18 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
                                 if (text) {
-                                    this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
-                                    // reset buffer after a successful partial to avoid repeats
-                                    connection.sttPcm = Buffer.alloc(0);
+                                    let allow = true;
+                                    if ((lang || '').slice(0, 2) === 'en') {
+                                        if (_isBracketedSfx(text) || !_isLikelyEnglish(text)) {
+                                            allow = false;
+                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered', data: { text } }); } catch (_) { }
+                                        }
+                                    }
+                                    if (allow) {
+                                        this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
+                                        // reset buffer after a successful partial to avoid repeats
+                                        connection.sttPcm = Buffer.alloc(0);
+                                    }
                                 }
                             }
                         } catch (e) {
