@@ -6,11 +6,17 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from '../configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const POSES_FILE = path.resolve(__dirname, '../../data/poses.json');
+async function getPosesFilePath() {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(__dirname, '../..');
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+  return path.resolve(appRoot, dataDir, 'poses.json');
+}
 
 /**
  * Load all poses for a character
@@ -19,7 +25,8 @@ const POSES_FILE = path.resolve(__dirname, '../../data/poses.json');
  */
 export async function loadPoses(characterId) {
     try {
-        const data = await fs.readFile(POSES_FILE, 'utf8');
+        const posesFile = await getPosesFilePath();
+        const data = await fs.readFile(posesFile, 'utf8');
         const posesData = JSON.parse(data);
 
         // Filter poses for the specified character
@@ -50,8 +57,9 @@ export async function loadPoses(characterId) {
  */
 export async function savePoses(posesData) {
     try {
+        const posesFile = await getPosesFilePath();
         const jsonData = JSON.stringify(posesData, null, 2);
-        await fs.writeFile(POSES_FILE, jsonData, 'utf8');
+        await fs.writeFile(posesFile, jsonData, 'utf8');
         console.log('✅ Poses saved successfully');
     } catch (error) {
         console.error('❌ Failed to save poses:', error.message);
@@ -149,7 +157,8 @@ export async function deletePose(characterId, poseId) {
  */
 export async function getTemplates() {
     try {
-        const data = await fs.readFile(POSES_FILE, 'utf8');
+        const posesFile = await getPosesFilePath();
+        const data = await fs.readFile(posesFile, 'utf8');
         const posesData = JSON.parse(data);
         return posesData.templates || {};
     } catch (error) {

@@ -6,12 +6,18 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from './configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to calibration data file
-const CALIBRATION_FILE = path.resolve(__dirname, '../data/linear_actuator_calibrations.json');
+// Get calibration file path (character-aware)
+async function getCalibrationFilePath() {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(__dirname, '..');
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+  return path.resolve(appRoot, dataDir, 'linear_actuator_calibrations.json');
+}
 
 /**
  * Load calibration data from file
@@ -19,7 +25,8 @@ const CALIBRATION_FILE = path.resolve(__dirname, '../data/linear_actuator_calibr
  */
 export async function loadCalibrations() {
     try {
-        const data = await fs.readFile(CALIBRATION_FILE, 'utf8');
+        const calibrationFile = await getCalibrationFilePath();
+        const data = await fs.readFile(calibrationFile, 'utf8');
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -36,7 +43,8 @@ export async function loadCalibrations() {
  * @returns {Promise<void>}
  */
 export async function saveCalibrations(calibrations) {
-    await fs.writeFile(CALIBRATION_FILE, JSON.stringify(calibrations, null, 2));
+    const calibrationFile = await getCalibrationFilePath();
+    await fs.writeFile(calibrationFile, JSON.stringify(calibrations, null, 2));
 }
 
 /**

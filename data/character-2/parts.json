@@ -1,0 +1,28 @@
+[
+  {
+    "id": "1",
+    "name": "PunkinCam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-23T04:45:19.434Z",
+    "enabled": true
+  },
+  {
+    "id": "2",
+    "name": "PunkinShake",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-23T04:47:28.499Z",
+    "enabled": true,
+    "directionPin": 6,
+    "pwmPin": 13,
+    "maxDuration": 10000
+  }
+]

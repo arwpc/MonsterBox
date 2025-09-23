@@ -1,19 +1,27 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from './configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASE_DIR = path.resolve(__dirname, '..', 'data', 'ai-config');
+async function getAIConfigDir() {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(__dirname, '..');
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+  return path.resolve(appRoot, dataDir, 'ai-config');
+}
 
 async function ensureDir() {
-  await fs.mkdir(BASE_DIR, { recursive: true });
+  const baseDir = await getAIConfigDir();
+  await fs.mkdir(baseDir, { recursive: true });
 }
 
 async function readJson(file) {
   try {
-    const full = path.join(BASE_DIR, file);
+    const baseDir = await getAIConfigDir();
+    const full = path.join(baseDir, file);
     const txt = await fs.readFile(full, 'utf8');
     return JSON.parse(txt);
   } catch (e) {
@@ -23,7 +31,8 @@ async function readJson(file) {
 
 async function writeJson(file, data) {
   await ensureDir();
-  const full = path.join(BASE_DIR, file);
+  const baseDir = await getAIConfigDir();
+  const full = path.join(baseDir, file);
   await fs.writeFile(full, JSON.stringify(data, null, 2), 'utf8');
   return data;
 }

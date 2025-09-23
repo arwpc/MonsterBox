@@ -18,7 +18,10 @@ export async function readConfig() {
 
 export async function updateSelectedCharacter(id) {
   const config = await readConfig();
-  const next = Object.assign({}, config, { selectedCharacter: id });
+  const next = Object.assign({}, config, {
+    selectedCharacter: id,
+    dataPath: `data/character-${id}`  // Dynamic data path for character isolation
+  });
   await fs.writeFile(CONFIG_FILE, JSON.stringify(next, null, 2), 'utf8');
   return next;
 }

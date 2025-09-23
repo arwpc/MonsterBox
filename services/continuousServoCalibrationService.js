@@ -5,8 +5,14 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { readConfig } from './configService.js';
 
-const CALIBRATION_FILE = path.join(process.cwd(), 'data', 'servo_calibrations.json');
+async function getCalibrationFilePath() {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(process.cwd());
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+  return path.resolve(appRoot, dataDir, 'servo_calibrations.json');
+}
 
 /**
  * Load all servo calibrations from file
@@ -14,7 +20,8 @@ const CALIBRATION_FILE = path.join(process.cwd(), 'data', 'servo_calibrations.js
  */
 export async function loadCalibrations() {
     try {
-        const data = await fs.readFile(CALIBRATION_FILE, 'utf8');
+        const calibrationFile = await getCalibrationFilePath();
+        const data = await fs.readFile(calibrationFile, 'utf8');
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -31,7 +38,8 @@ export async function loadCalibrations() {
  * @returns {Promise<void>}
  */
 export async function saveCalibrations(calibrations) {
-    await fs.writeFile(CALIBRATION_FILE, JSON.stringify(calibrations, null, 2));
+    const calibrationFile = await getCalibrationFilePath();
+    await fs.writeFile(calibrationFile, JSON.stringify(calibrations, null, 2));
 }
 
 /**

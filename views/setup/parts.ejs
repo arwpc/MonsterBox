@@ -1096,10 +1096,14 @@
                     pca9685Group.style.display = 'none';
                 }
 
-                // Show linear actuator specific options
+                // Show linear actuator and motor specific options
                 if (partType === 'linear_actuator') {
                     actuatorPinGroup.style.display = 'block';
                     actuatorLimitsGroup.style.display = 'block';
+                    descriptionGroup.style.display = 'none';
+                } else if (partType === 'motor') {
+                    actuatorPinGroup.style.display = 'block';
+                    actuatorLimitsGroup.style.display = 'none'; // Motors don't need extension limits
                     descriptionGroup.style.display = 'none';
                 } else {
                     actuatorPinGroup.style.display = 'none';
@@ -1302,6 +1306,14 @@
                     if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
                     if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
                     if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
+                } else if (type === 'motor') {
+                    // Handle motor specific fields (same pins as linear actuator)
+                    var directionPin = formData.get('directionPin');
+                    var pwmPin = formData.get('pwmPin');
+
+                    if (directionPin) payload.directionPin = parseInt(directionPin, 10);
+                    if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
+                    payload.maxDuration = 10000; // 10 second safety limit for motors
                 } else {
                     // Handle regular pin for other part types
                     var pin = formData.get('pin');

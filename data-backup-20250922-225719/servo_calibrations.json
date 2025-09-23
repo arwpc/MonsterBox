@@ -141,31 +141,6 @@
     "timing_data": {},
     "functionality_status": "working"
   },
-  "30": {
-    "part_id": 30,
-    "part_name": "Elbow of Orlok",
-    "servo_type": "continuous",
-    "channel": 1,
-    "calibrated_date": "2025-09-01T20:13:26.523734",
-    "stop_pulse_us": 1500,
-    "cw_pulse_us": 1000,
-    "ccw_pulse_us": 2000,
-    "positions": {
-      "extended": {
-        "description": "Fully extended position",
-        "calibrated": false
-      },
-      "retracted": {
-        "description": "Fully retracted position",
-        "calibrated": false
-      },
-      "neutral": {
-        "description": "Neutral/middle position",
-        "calibrated": false
-      }
-    },
-    "timing_data": {}
-  },
   "33": {
     "part_id": 33,
     "part_name": "Skull Talking Jaw",
