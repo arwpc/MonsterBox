@@ -527,6 +527,11 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
         try {
             this.wsChat.sendMessage({ type: 'set_output_mode', mode: this.audioOutputMode === 'speaker' ? 'server' : 'local' });
             this.wsChat.sendMessage({ type: 'set_mic_source', source: this.micSource });
+            // Also set STT language based on agent's configured language (default to 'en')
+            var agent = (this.agents || []).find(function (a) { return (a.id || a.agent_id || a.agentId) === agentId; });
+            var lang = agent && agent.language ? String(agent.language).toLowerCase() : 'en';
+            if (lang && lang.length > 2) lang = lang.slice(0, 2);
+            this.wsChat.sendMessage({ type: 'set_stt_language', language: lang || 'en' });
         } catch (e) { /* best-effort */ }
         // Send current Character so Server Mic uses the Character's Microphone Part
         try {
@@ -903,6 +908,7 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
         this.wsChat.onConnectionStatusChange = function (connected) {
             console.log('🔌 WebSocket chat:', connected ? 'Connected' : 'Disconnected');
             self.updateChatConnectionStatus(connected);
+            try { self._setChatStatus('character', null); self._setChatStatus('device', null); self._setChatStatus('stt', connected ? 'ready' : 'disconnected'); } catch (e) { }
         };
 
         this.wsChat.onConversationStarted = function (message) {
@@ -911,6 +917,8 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
             if (self.micSource === 'server') {
                 self.showChatMessage('System', 'Server Mic streaming active — speak to the animatronic.', 'info');
             }
+            // Populate status line with current character selection
+            try { self.getCurrentCharacterId().then(function (cid) { self._setChatStatus('character', cid); }); } catch (e) { }
         };
 
         // Show server mic hint
@@ -921,19 +929,42 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
         // Wire partial STT transcripts to chat log
         this.wsChat.onPartialTranscript = function (msg) {
             var t = (msg && msg.text) ? String(msg.text).trim() : '';
-            if (t) self.showChatMessage('You (STT)', t, 'secondary');
+            if (t) {
+                self.showChatMessage('You (STT)', t, 'secondary');
+                try { self._setChatStatus('stt', 'ok'); } catch (e) { }
+            }
         };
 
         // Start VU meter polling for Server Mic (defer until helpers are defined)
         setTimeout(function () { if (self._startChatVUMeter) try { self._startChatVUMeter(); } catch (e) { } }, 0);
+
+        // Debug breadcrumbs from server to update status line
+        this.wsChat.onDebug = function (msg) {
+            try {
+                if (msg && msg.originalType === 'server_mic_device' && msg.data && msg.data.deviceId) {
+                    self._setChatStatus('device', msg.data.deviceId);
+                } else if (msg && msg.originalType === 'server_mic_tick' && msg.data) {
+                    if (typeof msg.data.suppressed !== 'undefined') {
+                        self._setChatStatus('stt', msg.data.suppressed ? 'suppressed' : 'ok');
+                    }
+                } else if (msg && msg.originalType === 'set_character') {
+                    self._setChatStatus('character', (msg.data && msg.data.characterId) || null);
+                }
+            } catch (e) { }
+        };
+
+        // STT errors
+        this.wsChat.onSTTError = function (msg) {
+            try { self._setChatStatus('stt', (msg && msg.message) ? ('error: ' + msg.message) : 'error'); } catch (e) { }
+        };
 
         // Initialize audio chunk aggregation
         this._audioChunks = [];
         this._audioTimeout = null;
 
         this.wsChat.onAgentResponse = function (message) {
-            var responseTime = Date.now() - self.lastMessageTime;
-            console.log('🤖 Agent response in ' + responseTime + 'ms');
+            var responseTime = (typeof self.lastMessageTime === 'number') ? (Date.now() - self.lastMessageTime) : null;
+            if (responseTime != null) console.log('🤖 Agent response in ' + responseTime + 'ms');
 
             // Show agent response text (but avoid duplicate generic messages)
             var responseText = message.text || 'Agent response';
@@ -1073,6 +1104,23 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
         };
 
         // Stop VU and browser mic on modal close
+
+        // Update inline chat status (character/device/stt)
+        AgentsManager.prototype._setChatStatus = function (key, value) {
+            try {
+                if (key === 'character') {
+                    var elc = document.getElementById('chatStatusCharacter');
+                    if (elc) elc.textContent = (value === null || typeof value === 'undefined') ? '-' : String(value);
+                } else if (key === 'device') {
+                    var eld = document.getElementById('chatStatusDevice');
+                    if (eld) eld.textContent = value ? String(value) : '-';
+                } else if (key === 'stt') {
+                    var els = document.getElementById('chatStatusSTT');
+                    if (els) els.textContent = value ? String(value) : '-';
+                }
+            } catch (_) { }
+        };
+
         (function () {
             var modalEl = document.getElementById('agentChatModal');
             if (!modalEl) return;

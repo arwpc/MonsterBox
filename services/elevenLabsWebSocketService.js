@@ -42,6 +42,30 @@ function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
     }
 }
 
+
+// Simple heuristics to reduce false STT when expecting English only
+function _isBracketedSfx(text) {
+    try { return /^\s*\([^)]{1,120}\)\s*$/.test(text); } catch (_) { return false; }
+}
+function _isLikelyEnglish(text) {
+    try {
+        if (!text) return false;
+        // Drop if any non-ASCII present (catches many other scripts and emojis)
+        if (/[^\x00-\x7F]/.test(text)) return false;
+        // Keep if mostly letters/digits/basic punctuation
+        var compact = String(text).replace(/\s+/g, '');
+        if (!compact) return false;
+        var letters = (compact.match(/[A-Za-z]/g) || []).length;
+        var total = compact.length;
+        if (!letters) return false;
+        var ratio = letters / total;
+        if (ratio < 0.55) return false;
+        // Require at least one vowel to avoid SFX-like tokens
+        if (!/[AEIOUaeiou]/.test(text)) return false;
+        return true;
+    } catch (_) { return false; }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -144,7 +168,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
             serverMicTimer: null,
             serverMicActive: false,
             sttLastAt: 0,
-            sttPcm: Buffer.alloc(0)  // rolling PCM buffer for partial STT
+            sttPcm: Buffer.alloc(0), // rolling PCM buffer for partial STT
+            _dbgLastTs: 0,           // throttle for client debug breadcrumbs
+            sttLanguage: null,       // per-connection STT language override
+            suppressMicUntilMs: 0    // suppress server mic during server playback
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -198,6 +225,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 case 'set_character':
                     connection.characterId = (typeof message.characterId !== 'undefined' ? message.characterId : null);
+                    // Send breadcrumb so client can display active character id
+                    this.sendToClient(sessionId, { type: 'debug', originalType: 'set_character', data: { characterId: connection.characterId } });
                     break;
 
                 case 'set_output_mode':
@@ -206,10 +235,20 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 case 'set_mic_source':
                     connection.micSource = (message && message.source === 'browser') ? 'browser' : 'server';
+                    // Breadcrumb for UI
+                    this.sendToClient(sessionId, { type: 'debug', originalType: 'set_mic_source', data: { source: connection.micSource } });
                     if (connection.isActive) {
                         if (connection.micSource === 'server') this._startServerMicLoop(sessionId);
                         else this._stopServerMicLoop(sessionId, true);
                     }
+                    break;
+
+                case 'set_stt_language':
+                    try {
+                        const lang = (message && message.language) ? String(message.language).toLowerCase() : '';
+                        connection.sttLanguage = lang ? (lang.length > 2 ? lang.slice(0, 2) : lang) : null;
+                        this.sendToClient(sessionId, { type: 'debug', originalType: 'set_stt_language', data: { language: connection.sttLanguage } });
+                    } catch (_) { /* noop */ }
                     break;
 
                 case 'browser_audio_chunk':
@@ -288,6 +327,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 connection.elevenLabsWs = elevenLabsWs;
                 connection.agentId = agentId;
                 connection.isActive = true;
+
+
+                // Ensure server mic loop is running once active
+                if (connection.micSource === 'server') {
+                    try { this._startServerMicLoop(sessionId); } catch (_) { }
+                }
 
                 // Send conversation initiation with optimized config for speed
                 elevenLabsWs.send(JSON.stringify({
@@ -403,7 +448,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             message.text ||
                             null;
 
-
+                        // If we're outputting on server speaker, suppress mic during playback
+                        try {
+                            const c = this.activeConnections.get(sessionId);
+                            if (c && c.outputMode === 'server') {
+                                c.suppressMicUntilMs = Date.now() + 1200; // extend on each chunk
+                            }
+                        } catch (_) { }
 
                         this.sendToClient(sessionId, {
                             type: 'agent_response',
@@ -509,7 +560,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
      */
     async _startServerMicLoop(sessionId) {
         const connection = this.activeConnections.get(sessionId);
-        if (!connection || !connection.isActive) return;
+        if (!connection) return;
         if (connection.serverMicActive) return;
         connection.serverMicActive = true;
 
@@ -542,14 +593,18 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         }
                     } catch (_) { /* noop */ }
 
-                    // 1) Stream to ElevenLabs real-time agent
-                    if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                    // Current time and suppression check (avoid echo during server playback)
+                    const now = Date.now();
+                    const suppressed = connection.suppressMicUntilMs && (now < connection.suppressMicUntilMs);
+
+                    // 1) Stream to ElevenLabs real-time agent (unless suppressed)
+                    if (!suppressed && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                         const b64 = raw.toString('base64');
                         connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
                     }
-                    // 2) Throttled STT transcription for on-screen "You (STT)" lines
-                    const now = Date.now();
-                    if (!connection.sttLastAt || (now - connection.sttLastAt) >= 1000) {
+
+                    // 2) Throttled STT transcription for on-screen "You (STT)" lines (unless suppressed)
+                    if (!suppressed && (!connection.sttLastAt || (now - connection.sttLastAt) >= 1000)) {
                         connection.sttLastAt = now;
                         try {
                             const sttCfg = await getSTTConfig();
@@ -558,7 +613,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 : null;
                             if (pcmForStt) {
                                 const sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
-                                const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: sttCfg.language });
+                                const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
+                                const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
                                 if (text) {
                                     this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
@@ -566,11 +622,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                     connection.sttPcm = Buffer.alloc(0);
                                 }
                             }
-                        } catch (_) { /* ignore individual STT errors */ }
+                        } catch (e) {
+                            try {
+                                const msg = (e && (e.message || e.error || e.toString && e.toString())) || 'STT failed';
+                                this.sendToClient(sessionId, { type: 'stt_error', message: String(msg).slice(0, 200) });
+                            } catch (_) { /* noop */ }
+                        }
                     }
-                    // 3) Debug bytes to client occasionally
-                    if ((Date.now() % 5) === 0) {
-                        this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_chunk', data: { bytes: raw.length } });
+                    // 3) Periodic client breadcrumb with device and bytes captured (once per second)
+                    if (!connection._dbgLastTs || (now - connection._dbgLastTs) >= 1000) {
+                        connection._dbgLastTs = now;
+                        try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_tick', data: { deviceId, bytes: raw.length, suppressed: !!suppressed } }); } catch (_) { }
                     }
                 }
             } catch (_) { /* ignore per-frame errors */ }
