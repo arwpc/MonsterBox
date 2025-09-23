@@ -13,5 +13,9 @@
       "microphoneDeviceId": "sysdefault",
       "format": "mp3"
     }
+  },
+  {
+    "id": 4,
+    "name": "Skulltalker"
   }
 ]

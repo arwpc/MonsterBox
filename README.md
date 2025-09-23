@@ -32,6 +32,38 @@
 - **Background Subtraction**: Advanced MOG2 algorithm for robust motion detection
 - **Real-time Performance**: Optimized for Raspberry Pi 4B with minimal CPU overhead
 
+## ⚡ New Pi Quick Install (Raspberry Pi 4B)
+
+1) System setup (runs updates, audio/video deps, mjpg-streamer, groups, etc.)
+
+```bash
+sudo bash install.sh
+```
+
+2) Configure ElevenLabs API key (secure, server-side)
+
+```bash
+# Replace with your real key (provided by you)
+KEY="sk_your_key_here"
+sudo mkdir -p /etc/monsterbox
+printf "%s" "$KEY" | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null
+sudo chown "$USER":"$USER" /etc/monsterbox/elevenlabs.key
+sudo chmod 600 /etc/monsterbox/elevenlabs.key
+```
+
+3) Install node packages and start
+
+```bash
+npm ci
+npm start
+```
+
+4) Select Skulltalker as the active character (optional)
+
+- Either edit config/app-config.json → set `"selectedCharacter": 4`
+- Or once the server is running: `curl -X POST -H 'Content-Type: application/json' -d '{"id":4}' http://127.0.0.1:3000/setup/characters/api/select`
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites

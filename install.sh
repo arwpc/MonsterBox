@@ -24,7 +24,7 @@ print_warning() {
 }
 
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then 
+if [ "$EUID" -ne 0 ]; then
     print_error "Please run as root (use: sudo bash install.sh)"
     exit 1
 fi
@@ -155,7 +155,7 @@ print_status "Configuring hardware interfaces..."
 raspi-config nonint do_i2c 0
 print_success "I2C enabled"
 
-# Enable SPI  
+# Enable SPI
 raspi-config nonint do_spi 0
 print_success "SPI enabled"
 
@@ -253,6 +253,24 @@ done
 alsactl store || true
 
 print_success "Audio system configured"
+
+# 16. Configure ElevenLabs API Key (optional via env)
+print_status "Configuring ElevenLabs API key (if provided)..."
+
+# Accept either ELEVENLABS_API_KEY or XI_API_KEY from the environment
+ELEVEN_KEY="${ELEVENLABS_API_KEY:-$XI_API_KEY}"
+
+if [ -n "$ELEVEN_KEY" ]; then
+    mkdir -p /etc/monsterbox
+    echo -n "$ELEVEN_KEY" > /etc/monsterbox/elevenlabs.key
+    chown "$ACTUAL_USER":"$ACTUAL_USER" /etc/monsterbox/elevenlabs.key || true
+    chmod 600 /etc/monsterbox/elevenlabs.key
+    print_success "Wrote ElevenLabs API key to /etc/monsterbox/elevenlabs.key"
+else
+    print_warning "No ELEVENLABS_API_KEY (or XI_API_KEY) found in environment. You can set it later with:"
+    echo "    sudo mkdir -p /etc/monsterbox && echo -n 'sk_...' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key"
+fi
+
 
 print_success "MonsterBox 4.0 system installation complete!"
 print_warning "Please reboot your Raspberry Pi to ensure all changes take effect"
