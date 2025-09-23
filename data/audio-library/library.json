@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "createdAt": "2025-09-23T05:39:19.673Z",
-  "lastModified": "2025-09-23T17:55:23.638Z",
+  "lastModified": "2025-09-23T21:07:45.482Z",
   "categories": [
     "monster-sounds",
     "ambient",
@@ -14,7 +14,7 @@
     "nature",
     "other"
   ],
-  "totalSize": 7898732,
+  "totalSize": 7718920,
   "audio": [
     {
       "id": "ba5adb09-7e25-49bd-80d8-12bb9aff1f35",
@@ -42,8 +42,8 @@
       "lastModified": "2025-09-23T15:27:24.570Z",
       "waveformGenerated": true,
       "favorite": false,
-      "playCount": 2,
-      "lastPlayed": "2025-09-23T17:26:03.450Z"
+      "playCount": 3,
+      "lastPlayed": "2025-09-23T21:07:09.583Z"
     },
     {
       "id": "54ef9d8c-3c05-4394-b670-c1808774654c",
@@ -72,8 +72,8 @@
       "lastModified": "2025-09-23T15:27:24.583Z",
       "waveformGenerated": true,
       "favorite": false,
-      "playCount": 1,
-      "lastPlayed": "2025-09-23T17:26:02.100Z"
+      "playCount": 2,
+      "lastPlayed": "2025-09-23T21:07:07.137Z"
     },
     {
       "id": "faa40a1e-9f84-4347-a043-2e137ed8a441",
@@ -277,61 +277,7 @@
       "favorite": false,
       "playCount": 4,
       "lastPlayed": "2025-09-23T17:34:10.244Z"
-    },
-    {
-      "id": "559347ef-1682-4fea-9e34-1544f88539b6",
-      "title": "Testtalking",
-      "description": "Character 1 audio files - Testtalking",
-      "filename": "559347ef-1682-4fea-9e34-1544f88539b6.mp3",
-      "originalFilename": "testtalking.mp3",
-      "format": "mp3",
-      "duration": 5.616326530612245,
-      "fileSize": 89906,
-      "sampleRate": 44100,
-      "channels": 1,
-      "bitrate": 128000,
-      "tags": [
-        "voice"
-      ],
-      "category": "voice",
-      "artist": null,
-      "album": null,
-      "genre": null,
-      "year": null,
-      "uploadedAt": "2025-09-23T15:27:24.785Z",
-      "lastModified": "2025-09-23T15:27:24.785Z",
-      "waveformGenerated": true,
-      "favorite": false,
-      "playCount": 4,
-      "lastPlayed": "2025-09-23T17:54:53.631Z"
-    },
-    {
-      "id": "b0dbf452-e1c3-44cc-b441-1b468bde86fa",
-      "title": "Testtalking",
-      "description": "Character 4 audio files - Testtalking",
-      "filename": "b0dbf452-e1c3-44cc-b441-1b468bde86fa.mp3",
-      "originalFilename": "testtalking.mp3",
-      "format": "mp3",
-      "duration": 5.616326530612245,
-      "fileSize": 89906,
-      "sampleRate": 44100,
-      "channels": 1,
-      "bitrate": 128000,
-      "tags": [
-        "voice"
-      ],
-      "category": "voice",
-      "artist": null,
-      "album": null,
-      "genre": null,
-      "year": null,
-      "uploadedAt": "2025-09-23T15:27:24.793Z",
-      "lastModified": "2025-09-23T15:27:24.793Z",
-      "waveformGenerated": true,
-      "favorite": false,
-      "playCount": 13,
-      "lastPlayed": "2025-09-23T17:55:23.638Z"
     }
   ],
-  "totalFiles": 11
+  "totalFiles": 9
 }

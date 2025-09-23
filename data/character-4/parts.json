@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "sdf",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-23T20:44:11.007Z",
+    "enabled": true
+  }
+]

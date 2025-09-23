@@ -48,8 +48,9 @@ CharacterAssignmentManager.prototype.loadCharacters = function () {
         .then(function (response) {
             return response.json();
         })
-        .then(function (characters) {
-            self.characters = characters || [];
+        .then(function (data) {
+            // API returns { success: true, characters: [...] }
+            self.characters = (data && data.characters) || [];
             self.populateCharacterSelect();
         })
         .catch(function (error) {
@@ -397,6 +398,8 @@ CharacterAssignmentManager.prototype.updateAssignment = function (characterId, a
                     document.getElementById('currentAgent').value = agentId || '';
                 }
 
+                // Refresh the assignments display to show updated status
+                self.updateAssignmentsDisplay();
                 self.updateStatistics();
                 self.showAlert(data.message || 'Assignment updated', 'success');
             } else {

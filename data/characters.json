@@ -12,7 +12,8 @@
       "microphonePartId": "9",
       "microphoneDeviceId": "sysdefault",
       "format": "mp3"
-    }
+    },
+    "elevenLabsAgentId": "undefined"
   },
   {
     "id": 2,
@@ -20,6 +21,7 @@
   },
   {
     "id": 4,
-    "name": "Skulltalker"
+    "name": "Skulltalker",
+    "elevenLabsAgentId": "undefined"
   }
 ]
