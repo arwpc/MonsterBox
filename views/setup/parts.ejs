@@ -1556,6 +1556,7 @@
                 } else {
                     drawer.style.display = 'none';
                     try { if (typeof stopMicMeter === 'function') stopMicMeter(partId); } catch (e) { /* ignore */ }
+                    try { if (typeof stopMotionMonitoring === 'function') stopMotionMonitoring(partId); } catch (e) { /* ignore */ }
                 }
                 // Microphone test-drawer level meter helpers
                 (function () {
@@ -1697,9 +1698,19 @@
                     case 'motion_sensor':
                         html += '<div class="btn-group btn-group-sm" role="group" data-testid="motion-controls">';
                         html += '<button class="btn btn-primary" onclick="sendPartAction(\'' + part.id + '\',\'read\',{},\'' + resultId + '\')">Read</button>';
-                        html += '<button class="btn btn-outline-secondary" onclick="startLivePoll(\'' + part.id + '\',\'read\',\'' + resultId + '\')">Start 5s Poll</button>';
+                        html += '<button class="btn btn-outline-secondary" onclick="startMotionMonitoring(\'' + part.id + '\',\'' + resultId + '\')">Start Monitor</button>';
+                        html += '<button class="btn btn-outline-danger" onclick="stopMotionMonitoring(\'' + part.id + '\')">Stop Monitor</button>';
                         html += '</div>';
-                        html += '<div class="text-muted small mt-1">Hint: Motion sensors report 1 when motion is detected.</div>';
+                        // Motion Status Indicator
+                        html += '<div class="mt-3" style="max-width:300px">';
+                        html += '  <div class="d-flex align-items-center justify-content-center p-3 rounded" id="motion-indicator-' + part.id + '" style="background-color: #28a745; color: white; font-weight: bold; text-align: center; transition: all 0.3s ease;">';
+                        html += '    <div class="d-flex align-items-center">';
+                        html += '      <div class="me-2" style="width: 20px; height: 20px; border-radius: 50%; background-color: currentColor; box-shadow: 0 0 10px currentColor;"></div>';
+                        html += '      <span id="motion-status-text-' + part.id + '">NO MOTION</span>';
+                        html += '    </div>';
+                        html += '  </div>';
+                        html += '</div>';
+                        html += '<div class="text-muted small mt-1">Green = No Motion | Red = Motion Detected</div>';
                         break;
                     case 'microphone':
                         html += '<div class="btn-group btn-group-sm" data-testid="mic-controls">';
@@ -1822,6 +1833,90 @@
                     elapsed += interval;
                     if (elapsed >= total) clearInterval(handle);
                 }, interval);
+            }
+
+            // Motion Sensor Monitoring Functions
+            if (!window._motionMonitorTimers) window._motionMonitorTimers = {};
+
+            function startMotionMonitoring(partId, resultId) {
+                // Stop any existing monitoring for this part
+                stopMotionMonitoring(partId);
+
+                var indicator = document.getElementById('motion-indicator-' + partId);
+                var statusText = document.getElementById('motion-status-text-' + partId);
+
+                if (!indicator || !statusText) {
+                    console.warn('Motion indicator elements not found for part:', partId);
+                    return;
+                }
+
+                // Start continuous monitoring
+                window._motionMonitorTimers[partId] = setInterval(function() {
+                    fetch('/setup/parts/api/parts/' + partId + '/test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'read', params: {} })
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.success && data.testResult && data.testResult.details) {
+                            var motionDetected = data.testResult.details.motionDetected;
+                            updateMotionIndicator(partId, motionDetected);
+
+                            // Update result display if available
+                            var resultEl = document.getElementById(resultId);
+                            if (resultEl) {
+                                var timestamp = new Date().toLocaleTimeString();
+                                resultEl.textContent = timestamp + ': ' + (motionDetected ? 'MOTION DETECTED' : 'No motion');
+                            }
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Motion monitoring error:', error);
+                    });
+                }, 500); // Poll every 500ms for responsive motion detection
+
+                // Update button states
+                updateMotionButtons(partId, true);
+            }
+
+            function stopMotionMonitoring(partId) {
+                if (window._motionMonitorTimers && window._motionMonitorTimers[partId]) {
+                    clearInterval(window._motionMonitorTimers[partId]);
+                    delete window._motionMonitorTimers[partId];
+                }
+
+                // Reset indicator to green (no motion)
+                updateMotionIndicator(partId, false);
+
+                // Update button states
+                updateMotionButtons(partId, false);
+            }
+
+            function updateMotionIndicator(partId, motionDetected) {
+                var indicator = document.getElementById('motion-indicator-' + partId);
+                var statusText = document.getElementById('motion-status-text-' + partId);
+
+                if (!indicator || !statusText) return;
+
+                if (motionDetected) {
+                    // Bright Red for motion detected
+                    indicator.style.backgroundColor = '#dc3545';
+                    indicator.style.color = 'white';
+                    indicator.style.boxShadow = '0 0 20px rgba(220, 53, 69, 0.6)';
+                    statusText.textContent = 'MOTION DETECTED';
+                } else {
+                    // Green for no motion
+                    indicator.style.backgroundColor = '#28a745';
+                    indicator.style.color = 'white';
+                    indicator.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.4)';
+                    statusText.textContent = 'NO MOTION';
+                }
+            }
+
+            function updateMotionButtons(partId, isMonitoring) {
+                // This function could be used to update button states if needed
+                // For now, we'll keep it simple
             }
 
 
