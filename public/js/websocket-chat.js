@@ -186,6 +186,10 @@ WebSocketChatClient.prototype.handleServerMessage = function (message) {
             }
             break;
 
+        case 'stt_partial':
+            if (this.onPartialTranscript) this.onPartialTranscript(message);
+            break;
+
         case 'debug':
             // Debug messages from server - log but don't forward to UI
             console.log('🔍 Debug:', message.originalType, message.data);

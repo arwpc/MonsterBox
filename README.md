@@ -807,6 +807,41 @@ Troubleshooting mic capture
 - Verify ffmpeg is present: `ffmpeg -version`
 - If the VU moves but transcription is sparse, bring the mic closer or increase playback volume to improve SNR
 
+
+### 🎙️ STT configuration and usage (models, mic, tests) — UPDATED
+
+- Model selection
+  - Choose between:
+    - Scribe v1 (Multilingual)
+    - Scribe English v1 (optimized for English)
+  - When you select "Scribe English v1" the app automatically pins Language = English and maps it to ElevenLabs `scribe_v1` under the hood for best accuracy.
+  - If you prefer multilingual but want English output, set Language = English instead of Auto to prevent language hopping.
+
+- Microphone selection
+  - Select a Microphone Part (PipeWire source) in the right panel. The choice is saved with STT config and auto‑restored.
+  - VU meter updates are server‑side (no browser mic permission required).
+
+- Persistence
+  - Model, Language, Sample Rate, and Microphone are persisted in `data/ai-config/stt-config.json` and auto‑applied when you open the page.
+  - Changing any dropdown auto‑saves immediately; the Save button also writes to the current Character for compatibility.
+
+- 2s Test diagnostic
+  - Button: "2s Test" (captures ~2s and transcribes once)
+  - Response includes capture size and path, e.g. `Captured 64044 bytes via python` (primary path is PyAudio/PipeWire; ffmpeg/arecord/parec are fallbacks).
+  - Endpoint: `POST /api/elevenlabs/stt/testSample?duration=2`
+
+- Real‑time listening
+  - Start Listening captures ~1.2s WAV chunks with ~650ms polling and aggregates transcripts live.
+  - Uses your saved Model/Language/Microphone.
+
+- Troubleshooting STT
+  - Toasts now show readable messages instead of `[object Object]`.
+  - Common cases:
+    - "No audio captured (0 bytes)" — check Microphone selection and PipeWire default source; ensure the VU meter moves.
+    - "Capturing audio but no transcription yet" — speak clearly for 2–3 seconds; English model prefers slightly longer voiced chunks.
+    - "Field required: model_id" — restart the server to pick up the latest code if you recently updated.
+  - For best English accuracy: select "Scribe English v1" (auto‑sets Language to English), or keep Multilingual and set Language = English.
+
 Playwright smoke test (STT page)
 ````bash
 # Run only the STT page smoke test

@@ -528,6 +528,15 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
             this.wsChat.sendMessage({ type: 'set_output_mode', mode: this.audioOutputMode === 'speaker' ? 'server' : 'local' });
             this.wsChat.sendMessage({ type: 'set_mic_source', source: this.micSource });
         } catch (e) { /* best-effort */ }
+        // Send current Character so Server Mic uses the Character's Microphone Part
+        try {
+            var selfRef = this;
+            this.getCurrentCharacterId().then(function (cid) {
+                if (cid != null && selfRef.wsChat && selfRef.wsChat.isConnected) {
+                    selfRef.wsChat.sendMessage({ type: 'set_character', characterId: cid });
+                }
+            });
+        } catch (e) { /* noop */ }
         this.showChatMessage('System', 'Connecting to agent via WebSocket...', 'info');
     } else {
         console.log('📱 WebSocket not available, using HTTP fallback');
@@ -541,6 +550,8 @@ AgentsManager.prototype.openChat = AgentsManager.prototype.openChat || function 
         var self = this;
         modalEl.addEventListener('hidden.bs.modal', function () {
             try { self._stopBrowserMicCapture(true); } catch (e) { }
+            try { self._stopChatVUMeter(); } catch (e) { }
+            try { if (self.wsChat && self.wsChat.isConnected) { self.wsChat.endConversation(); } } catch (e) { }
         }, { once: true });
         modal.show();
     }
@@ -765,6 +776,8 @@ AgentsManager.prototype.setMicSource = function (source) {
     var micBrowser = document.getElementById('micBrowser');
     if (micServer && micBrowser) { if (source === 'server') micServer.checked = true; else micBrowser.checked = true; }
     if (this.wsChat && this.wsChat.isConnected) { try { this.wsChat.sendMessage({ type: 'set_mic_source', source: source }); } catch (e) { } }
+    // Update VU meter
+    try { if (source === 'server') this._startChatVUMeter(); else this._stopChatVUMeter(); } catch (e) { }
     if (source === 'browser') {
         if (!(window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname))) {
             this.showAlert('Browser microphone requires HTTPS (or localhost). Falling back to Server Mic.', 'warning');
@@ -895,7 +908,24 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
         this.wsChat.onConversationStarted = function (message) {
             console.log('✅ WebSocket conversation started with:', message.agentId);
             self.showChatMessage('System', 'Connected to agent - ready for instant chat!', 'success');
+            if (self.micSource === 'server') {
+                self.showChatMessage('System', 'Server Mic streaming active — speak to the animatronic.', 'info');
+            }
         };
+
+        // Show server mic hint
+        if (self.micSource === 'server') {
+            self.showChatMessage('System', 'Server Mic streaming active — speak to the animatronic.', 'info');
+        }
+
+        // Wire partial STT transcripts to chat log
+        this.wsChat.onPartialTranscript = function (msg) {
+            var t = (msg && msg.text) ? String(msg.text).trim() : '';
+            if (t) self.showChatMessage('You (STT)', t, 'secondary');
+        };
+
+        // Start VU meter polling for Server Mic (defer until helpers are defined)
+        setTimeout(function () { if (self._startChatVUMeter) try { self._startChatVUMeter(); } catch (e) { } }, 0);
 
         // Initialize audio chunk aggregation
         this._audioChunks = [];
@@ -970,6 +1000,93 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
             self.useWebSocket = false;
             console.log('🔄 Falling back to HTTP chat');
         };
+
+
+        // Resolve Character's microphone deviceId (from Parts)
+        AgentsManager.prototype._resolveCharacterMicDeviceId = function () {
+            var self = this;
+            return this.getCurrentCharacterId().then(function (cid) {
+                // If no Character selected, fall back to saved STT config or 'default'
+                if (cid == null) {
+                    return fetch('/api/elevenlabs/stt/config')
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) {
+                            if (j && j.success && j.config) {
+                                var c = j.config;
+                                return c.microphoneDeviceId || c.deviceId || 'default';
+                            }
+                            return 'default';
+                        })
+                        .catch(function () { return 'default'; });
+                }
+                // Otherwise, use the Character's Microphone Part; if missing, fall back to STT config
+                return fetch('/setup/parts/api/parts')
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (!j || !j.success || !Array.isArray(j.parts)) return null;
+                        var mic = j.parts.find(function (p) { return String(p.type).toLowerCase() === 'microphone' && Number(p.characterId) === Number(cid); });
+                        if (mic) {
+                            var cfg = mic.config || {};
+                            return cfg.deviceId || cfg.inputDevice || cfg.audioDeviceId || mic.inputDevice || 'default';
+                        }
+                        // Fallback: saved STT config
+                        return fetch('/api/elevenlabs/stt/config')
+                            .then(function (r2) { return r2.json(); })
+                            .then(function (j2) { var c2 = j2 && j2.config || {}; return c2.microphoneDeviceId || c2.deviceId || 'default'; })
+                            .catch(function () { return 'default'; });
+                    })
+                    .catch(function () { return 'default'; });
+            });
+        };
+
+        // Chat VU meter polling
+        AgentsManager.prototype._startChatVUMeter = function () {
+            var self = this;
+            try { self._stopChatVUMeter(); } catch (e) { }
+            if (self.micSource !== 'server') return; // only for server mic
+            self._vuBusy = false;
+            self._vuTimer = null;
+            self._resolveCharacterMicDeviceId().then(function (devId) {
+                if (!devId) return;
+                var bar = document.getElementById('chatVUMeterBar');
+                if (!bar) return;
+                self._vuTimer = setInterval(function () {
+                    if (self._vuBusy) return;
+                    self._vuBusy = true;
+                    fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(devId) + '&deviceType=input')
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) {
+                            if (!j || !j.success) return;
+                            var level = +j.level || 0;
+                            var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                            bar.style.width = pct + '%';
+                            bar.setAttribute('aria-valuenow', String(pct));
+                        })
+                        .catch(function () { })
+                        .finally(function () { self._vuBusy = false; });
+                }, 300);
+            });
+        };
+
+        AgentsManager.prototype._stopChatVUMeter = function () {
+            if (this._vuTimer) { try { clearInterval(this._vuTimer); } catch (_) { } this._vuTimer = null; }
+        };
+
+        // Stop VU and browser mic on modal close
+        (function () {
+            var modalEl = document.getElementById('agentChatModal');
+            if (!modalEl) return;
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                if (window.agentsManager) {
+                    try { window.agentsManager._stopChatVUMeter(); } catch (e) { }
+                }
+            });
+        })();
+        // Interruption event (barge-in from agent)
+        this.wsChat.onInterruption = function (msg) {
+            self.showChatMessage('System', 'Interruption: ' + (msg && msg.reason ? msg.reason : 'stopped'), 'info');
+        };
+
 
         // Connect to WebSocket server
         this.wsChat.connect();

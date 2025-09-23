@@ -9,10 +9,38 @@ import fetch from 'node-fetch';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
 import serverSTTListener from './serverSTTListener.js';
 import serverPlaybackService from './serverPlaybackService.js';
+import elevenLabsSTTService from './elevenLabsSTTService.js';
+import { getSTTConfig } from './aiConfigStore.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
+
+// Minimal WAV encoder for PCM16LE mono (16kHz)
+function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
+    try {
+        const dataLen = rawPcm.length;
+        const blockAlign = channels * 2;
+        const byteRate = sampleRate * blockAlign;
+        const header = Buffer.alloc(44);
+        header.write('RIFF', 0);
+        header.writeUInt32LE(36 + dataLen, 4);
+        header.write('WAVE', 8);
+        header.write('fmt ', 12);
+        header.writeUInt32LE(16, 16);
+        header.writeUInt16LE(1, 20);
+        header.writeUInt16LE(channels, 22);
+        header.writeUInt32LE(sampleRate, 24);
+        header.writeUInt32LE(byteRate, 28);
+        header.writeUInt16LE(blockAlign, 32);
+        header.writeUInt16LE(16, 34);
+        header.write('data', 36);
+        header.writeUInt32LE(dataLen, 40);
+        return Buffer.concat([header, rawPcm]);
+    } catch (_) {
+        return Buffer.alloc(0);
+    }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,7 +68,7 @@ async function getMicrophoneDeviceForCharacter(characterId) {
             const mic = parts.find(p => String(p.type).toLowerCase() === 'microphone' && Number(p.characterId) === Number(characterId));
             if (mic) {
                 const cfg = mic.config || {};
-                return cfg.inputDevice || cfg.audioDeviceId || mic.inputDevice || 'default';
+                return cfg.deviceId || cfg.inputDevice || cfg.audioDeviceId || mic.inputDevice || 'default';
             }
         }
     } catch (e) {
@@ -114,7 +142,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
             outputMode: 'server',    // 'server' | 'local'
             micSource: 'server',     // 'server' | 'browser'
             serverMicTimer: null,
-            serverMicActive: false
+            serverMicActive: false,
+            sttLastAt: 0,
+            sttPcm: Buffer.alloc(0)  // rolling PCM buffer for partial STT
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -484,21 +514,69 @@ class ElevenLabsWebSocketService extends EventEmitter {
         connection.serverMicActive = true;
 
         const tick = async () => {
-            if (!connection.serverMicActive || !connection.isActive) return;
+            if (!connection.serverMicActive) return;
+            if (!connection.isActive) { // wait until real-time agent socket is ready
+                connection.serverMicTimer = setTimeout(tick, 100);
+                return;
+            }
             try {
-                const deviceId = (connection.characterId != null)
-                    ? await getMicrophoneDeviceForCharacter(connection.characterId)
-                    : 'default';
-                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.03);
-                if (wav && wav.length > 44 && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                let deviceId = 'default';
+                if (connection.characterId != null) {
+                    deviceId = await getMicrophoneDeviceForCharacter(connection.characterId);
+                } else {
+                    try { const cfg = await getSTTConfig(); deviceId = cfg.deviceId || cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
+                }
+                if (deviceId !== connection._lastDevId) { connection._lastDevId = deviceId; try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { } }
+                // Capture ~250ms chunks to reduce process-spawn overhead and improve stability
+                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.25);
+                if (wav && wav.length > 44) {
                     const raw = wav.subarray(44); // strip 44-byte WAV header -> raw PCM16LE
-                    const b64 = raw.toString('base64');
-                    connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
+
+                    // Accumulate raw PCM into rolling buffer for partial STT (keep ~2s max)
+                    try {
+                        if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
+                        connection.sttPcm = Buffer.concat([connection.sttPcm, raw]);
+                        const maxBytes = 16000 * 2 * 2; // 2 seconds @16kHz mono 16-bit
+                        if (connection.sttPcm.length > maxBytes) {
+                            connection.sttPcm = connection.sttPcm.slice(connection.sttPcm.length - maxBytes);
+                        }
+                    } catch (_) { /* noop */ }
+
+                    // 1) Stream to ElevenLabs real-time agent
+                    if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        const b64 = raw.toString('base64');
+                        connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
+                    }
+                    // 2) Throttled STT transcription for on-screen "You (STT)" lines
+                    const now = Date.now();
+                    if (!connection.sttLastAt || (now - connection.sttLastAt) >= 1000) {
+                        connection.sttLastAt = now;
+                        try {
+                            const sttCfg = await getSTTConfig();
+                            const pcmForStt = (connection.sttPcm && connection.sttPcm.length >= 20000)
+                                ? connection.sttPcm.slice(-Math.min(connection.sttPcm.length, 16000 * 2 * 2))
+                                : null;
+                            if (pcmForStt) {
+                                const sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
+                                const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: sttCfg.language });
+                                const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
+                                if (text) {
+                                    this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
+                                    // reset buffer after a successful partial to avoid repeats
+                                    connection.sttPcm = Buffer.alloc(0);
+                                }
+                            }
+                        } catch (_) { /* ignore individual STT errors */ }
+                    }
+                    // 3) Debug bytes to client occasionally
+                    if ((Date.now() % 5) === 0) {
+                        this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_chunk', data: { bytes: raw.length } });
+                    }
                 }
             } catch (_) { /* ignore per-frame errors */ }
             finally {
                 if (connection.serverMicActive && connection.isActive) {
-                    connection.serverMicTimer = setTimeout(tick, 25); // ~40 fps -> 25ms
+                    connection.serverMicTimer = setTimeout(tick, 250); // ~4 fps -> 250ms for stability
                 }
             }
         };
