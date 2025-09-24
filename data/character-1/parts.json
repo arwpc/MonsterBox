@@ -1551,5 +1551,1407 @@
     },
     "created": "2025-09-24T02:12:40.444Z",
     "enabled": true
+  },
+  {
+    "id": "130",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:16:15.481Z",
+    "enabled": true
+  },
+  {
+    "id": "131",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:16:19.581Z",
+    "enabled": true
+  },
+  {
+    "id": "132",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:16:23.691Z",
+    "enabled": true
+  },
+  {
+    "id": "133",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:16:27.559Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "134",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:16:30.845Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "135",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:16:33.488Z",
+    "enabled": true
+  },
+  {
+    "id": "136",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:16:36.593Z",
+    "enabled": true
+  },
+  {
+    "id": "137",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:16:39.452Z",
+    "enabled": true
+  },
+  {
+    "id": "138",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:16:42.413Z",
+    "enabled": true
+  },
+  {
+    "id": "139",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:16:46.548Z",
+    "enabled": true
+  },
+  {
+    "id": "140",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:17:34.408Z",
+    "enabled": true
+  },
+  {
+    "id": "141",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:18:40.813Z",
+    "enabled": true
+  },
+  {
+    "id": "142",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:18:45.286Z",
+    "enabled": true
+  },
+  {
+    "id": "143",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:18:49.260Z",
+    "enabled": true
+  },
+  {
+    "id": "144",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:18:53.441Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "145",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:18:56.848Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "146",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:18:59.658Z",
+    "enabled": true
+  },
+  {
+    "id": "147",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:19:02.571Z",
+    "enabled": true
+  },
+  {
+    "id": "148",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:19:05.660Z",
+    "enabled": true
+  },
+  {
+    "id": "149",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:19:08.693Z",
+    "enabled": true
+  },
+  {
+    "id": "150",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:19:13.102Z",
+    "enabled": true
+  },
+  {
+    "id": "151",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:20:01.371Z",
+    "enabled": true
+  },
+  {
+    "id": "152",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:20:05.729Z",
+    "enabled": true
+  },
+  {
+    "id": "153",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:20:10.211Z",
+    "enabled": true
+  },
+  {
+    "id": "154",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:20:14.443Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "155",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:20:17.800Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "156",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:20:21.085Z",
+    "enabled": true
+  },
+  {
+    "id": "157",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:20:24.027Z",
+    "enabled": true
+  },
+  {
+    "id": "158",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:20:27.520Z",
+    "enabled": true
+  },
+  {
+    "id": "159",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:20:30.673Z",
+    "enabled": true
+  },
+  {
+    "id": "160",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:20:35.233Z",
+    "enabled": true
+  },
+  {
+    "id": "161",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:24:23.396Z",
+    "enabled": true
+  },
+  {
+    "id": "162",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:24:28.455Z",
+    "enabled": true
+  },
+  {
+    "id": "163",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:24:32.799Z",
+    "enabled": true
+  },
+  {
+    "id": "164",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:24:36.983Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "165",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:24:40.503Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "166",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:24:43.603Z",
+    "enabled": true
+  },
+  {
+    "id": "167",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:24:46.652Z",
+    "enabled": true
+  },
+  {
+    "id": "168",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:24:49.796Z",
+    "enabled": true
+  },
+  {
+    "id": "169",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:24:52.910Z",
+    "enabled": true
+  },
+  {
+    "id": "170",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:24:57.525Z",
+    "enabled": true
+  },
+  {
+    "id": "171",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:25:02.333Z",
+    "enabled": true
+  },
+  {
+    "id": "172",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:25:07.338Z",
+    "enabled": true
+  },
+  {
+    "id": "173",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:25:10.111Z",
+    "enabled": true
+  },
+  {
+    "id": "174",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:25:36.681Z",
+    "enabled": true
+  },
+  {
+    "id": "175",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:25:41.549Z",
+    "enabled": true
+  },
+  {
+    "id": "176",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:25:46.471Z",
+    "enabled": true
+  },
+  {
+    "id": "177",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:25:51.180Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "178",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:25:54.720Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "179",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:25:58.181Z",
+    "enabled": true
+  },
+  {
+    "id": "180",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:26:01.515Z",
+    "enabled": true
+  },
+  {
+    "id": "181",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:26:05.196Z",
+    "enabled": true
+  },
+  {
+    "id": "182",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:26:08.861Z",
+    "enabled": true
+  },
+  {
+    "id": "183",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:26:13.692Z",
+    "enabled": true
+  },
+  {
+    "id": "184",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:26:18.799Z",
+    "enabled": true
+  },
+  {
+    "id": "185",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:26:24.330Z",
+    "enabled": true
+  },
+  {
+    "id": "186",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:26:27.204Z",
+    "enabled": true
+  },
+  {
+    "id": "187",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:27:42.797Z",
+    "enabled": true
+  },
+  {
+    "id": "188",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:27:48.311Z",
+    "enabled": true
+  },
+  {
+    "id": "189",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:27:53.254Z",
+    "enabled": true
+  },
+  {
+    "id": "190",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:27:58.069Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "191",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:28:01.674Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "192",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:28:04.966Z",
+    "enabled": true
+  },
+  {
+    "id": "193",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:28:08.514Z",
+    "enabled": true
+  },
+  {
+    "id": "194",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:28:12.079Z",
+    "enabled": true
+  },
+  {
+    "id": "195",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:28:15.484Z",
+    "enabled": true
+  },
+  {
+    "id": "196",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:28:20.527Z",
+    "enabled": true
+  },
+  {
+    "id": "197",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:28:25.601Z",
+    "enabled": true
+  },
+  {
+    "id": "198",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:28:31.373Z",
+    "enabled": true
+  },
+  {
+    "id": "199",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:28:34.274Z",
+    "enabled": true
+  },
+  {
+    "id": "200",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:31:15.227Z",
+    "enabled": true
+  },
+  {
+    "id": "201",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:31:20.658Z",
+    "enabled": true
+  },
+  {
+    "id": "202",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:31:25.502Z",
+    "enabled": true
+  },
+  {
+    "id": "203",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:31:30.711Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "204",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:31:34.579Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "205",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:31:38.104Z",
+    "enabled": true
+  },
+  {
+    "id": "206",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:31:42.110Z",
+    "enabled": true
+  },
+  {
+    "id": "207",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:31:45.552Z",
+    "enabled": true
+  },
+  {
+    "id": "208",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:31:48.987Z",
+    "enabled": true
+  },
+  {
+    "id": "209",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:31:54.075Z",
+    "enabled": true
+  },
+  {
+    "id": "210",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:31:59.420Z",
+    "enabled": true
+  },
+  {
+    "id": "211",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:32:05.089Z",
+    "enabled": true
+  },
+  {
+    "id": "212",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:32:08.391Z",
+    "enabled": true
+  },
+  {
+    "id": "213",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:35:43.238Z",
+    "enabled": true
+  },
+  {
+    "id": "214",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:35:49.170Z",
+    "enabled": true
+  },
+  {
+    "id": "215",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:35:54.714Z",
+    "enabled": true
+  },
+  {
+    "id": "216",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:35:59.966Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "217",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:36:04.140Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "218",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:36:08.096Z",
+    "enabled": true
+  },
+  {
+    "id": "219",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:36:11.787Z",
+    "enabled": true
+  },
+  {
+    "id": "220",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:36:15.823Z",
+    "enabled": true
+  },
+  {
+    "id": "221",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:36:19.324Z",
+    "enabled": true
+  },
+  {
+    "id": "222",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:36:24.955Z",
+    "enabled": true
+  },
+  {
+    "id": "223",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:36:30.348Z",
+    "enabled": true
+  },
+  {
+    "id": "224",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:36:36.276Z",
+    "enabled": true
+  },
+  {
+    "id": "225",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:36:39.653Z",
+    "enabled": true
+  },
+  {
+    "id": "226",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:38:21.169Z",
+    "enabled": true
+  },
+  {
+    "id": "227",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 1,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:38:27.058Z",
+    "enabled": true
+  },
+  {
+    "id": "228",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "channel": 2,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T20:38:32.740Z",
+    "enabled": true
+  },
+  {
+    "id": "229",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-24T20:38:39.134Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "230",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-24T20:38:43.044Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "231",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-24T20:38:46.922Z",
+    "enabled": true
+  },
+  {
+    "id": "232",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-24T20:38:50.767Z",
+    "enabled": true
+  },
+  {
+    "id": "233",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-24T20:38:54.539Z",
+    "enabled": true
+  },
+  {
+    "id": "234",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T20:38:58.465Z",
+    "enabled": true
+  },
+  {
+    "id": "235",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T20:39:03.827Z",
+    "enabled": true
+  },
+  {
+    "id": "236",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1,
+      "windowMs": 100
+    },
+    "created": "2025-09-24T20:39:09.554Z",
+    "enabled": true
+  },
+  {
+    "id": "237",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-24T20:39:15.744Z",
+    "enabled": true
+  },
+  {
+    "id": "238",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-24T20:39:19.106Z",
+    "enabled": true
   }
 ]

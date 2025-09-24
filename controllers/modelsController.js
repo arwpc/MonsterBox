@@ -8,9 +8,16 @@ const __dirname = path.dirname(__filename);
 
 const TYPE_TO_FILE = {
   servo: 'servo_models.json',
-  led: 'led_models.json',
   linear_actuator: 'linear_actuator_models.json',
-  webcam: 'webcam_models.json'
+  motor: 'motor_models.json',
+  led: 'led_models.json',
+  light: 'light_models.json',
+  sensor: 'sensor_models.json',
+  motion_sensor: 'motion_sensor_models.json',
+  microphone: 'microphone_models.json',
+  speaker: 'speaker_models.json',
+  webcam: 'webcam_models.json',
+  head_tracking: 'head_tracking_models.json'
 };
 
 async function getDataDir() {

@@ -58,3 +58,7 @@ apps/monsterbox4/.playwright/
 apps/monsterbox4/tests/ui/screenshots/
 apps/monsterbox4/tests/ui/videos/
 apps/monsterbox4/tests/ui/traces/
+
+
+# Generic archives
+*.zip

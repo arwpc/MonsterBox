@@ -71,7 +71,7 @@ export const loadParts = async () => {
 };
 
 // Save parts to file
-const saveParts = async (parts) => {
+export const saveParts = async (parts) => {
     const filePath = await getPartsFilePath();
 
     // Ensure data directory exists

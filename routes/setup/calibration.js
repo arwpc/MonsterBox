@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { loadParts } from '../../controllers/partsController.js';
+import { loadParts, saveParts } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
 import * as linearActuatorCalibration from '../../services/linearActuatorCalibrationService.js';
 import * as servoService from '../../services/hardwareService/servo.js';
@@ -36,6 +36,205 @@ router.get('/', async (req, res) => {
         });
     }
 });
+
+// Calibration page helper APIs (model-aware)
+// List parts for calibration (with lightweight flags for UI)
+router.get('/api/parts', async (req, res) => {
+    try {
+        const parts = await loadParts();
+        const list = parts.map(p => ({
+            id: String(p.id),
+            name: p.name,
+            type: p.type,
+            modelId: p.modelId || null,
+            config: p.config || {},
+            enabled: !!p.enabled,
+            // Flags for UI
+            needsModel: ['servo', 'linear_actuator', 'motor'].includes(p.type) ? !p.modelId : false
+        }));
+        res.json({ success: true, parts: list });
+    } catch (err) {
+        console.error('Calibration api/parts failed:', err);
+        res.status(500).json({ success: false, error: 'Failed to load parts' });
+    }
+});
+
+// Assign/update model for a part
+router.post('/api/parts/:id/model', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { modelId } = req.body || {};
+        if (!modelId) return res.status(400).json({ success: false, error: 'modelId required' });
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        parts[idx] = { ...parts[idx], modelId: String(modelId), updated: new Date().toISOString() };
+        await saveParts(parts);
+        res.json({ success: true, message: 'Model assigned', part: { id: String(parts[idx].id), modelId: parts[idx].modelId } });
+    } catch (err) {
+        console.error('Assign model failed:', err);
+        res.status(500).json({ success: false, error: 'Failed to assign model' });
+    }
+});
+
+// Update part overrides (stored in part.config)
+router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { overrides } = req.body || {};
+        if (!overrides || typeof overrides !== 'object') {
+            return res.status(400).json({ success: false, error: 'overrides object required' });
+        }
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const prev = parts[idx].config || {};
+        parts[idx].config = { ...prev, ...overrides };
+        parts[idx].updated = new Date().toISOString();
+        await saveParts(parts);
+        res.json({ success: true, message: 'Overrides saved', config: parts[idx].config });
+    } catch (err) {
+        console.error('Save overrides failed:', err);
+        res.status(500).json({ success: false, error: 'Failed to save overrides' });
+    }
+});
+
+
+// Effective values (Model -> Overrides -> Effective)
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readConfig } from '../../services/configService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const MODEL_FILE_BY_TYPE = {
+    servo: 'servo_models.json',
+    linear_actuator: 'linear_actuator_models.json',
+    motor: 'motor_models.json',
+};
+
+async function getDataDir() {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..', '..');
+    return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : '../data');
+}
+
+async function loadModelById(type, id) {
+    const dataDir = await getDataDir();
+    const file = MODEL_FILE_BY_TYPE[type];
+    if (!file) return null;
+    const fp = path.resolve(dataDir, file);
+    try {
+        const raw = await fs.readFile(fp, 'utf8');
+        const arr = JSON.parse(raw || '[]');
+        return arr.find(m => String(m.id) === String(id)) || null;
+    } catch {
+        return null;
+    }
+}
+
+function deepMerge(a = {}, b = {}) {
+    const out = Array.isArray(a) ? [...a] : { ...a };
+    Object.keys(b || {}).forEach(k => {
+        const av = a ? a[k] : undefined;
+        const bv = b[k];
+        if (av && typeof av === 'object' && !Array.isArray(av) && bv && typeof bv === 'object' && !Array.isArray(bv)) {
+            out[k] = deepMerge(av, bv);
+        } else {
+            out[k] = bv;
+        }
+    });
+    return out;
+}
+
+router.get('/api/parts/:id/effective', async (req, res) => {
+    try {
+        const parts = await loadParts();
+        const part = parts.find(p => String(p.id) === String(req.params.id));
+        if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
+        const type = part.type;
+        const modelId = part.modelId || part.config?.modelId || null;
+        const model = modelId ? await loadModelById(type, modelId) : null;
+        const modelDefaults = model && model.defaults ? model.defaults : {};
+        const overrides = part.config || {};
+        const runtime = {}; // placeholder for future runtime_cal_state
+        const effective = deepMerge(deepMerge(modelDefaults, overrides), runtime);
+        res.json({ success: true, part: { id: String(part.id), type, name: part.name, modelId }, model: model || null, modelDefaults, overrides, runtime, effective });
+    } catch (err) {
+        console.error('effective error', err);
+        res.status(500).json({ success: false, error: 'Failed to compute effective' });
+    }
+});
+
+// Markers CRUD on parts.json
+router.get('/api/parts/:id/markers', async (req, res) => {
+    try {
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        res.json({ success: true, markers: parts[idx].markers || [] });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Failed to get markers' });
+    }
+});
+
+router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
+    try {
+        const { name, kind = 'absolute', value, unit, speed, durationMs, locked } = req.body || {};
+        if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'name required' });
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
+        const i2 = markers.findIndex(m => m.name === name);
+        const next = { name: name.trim(), kind, locked: !!locked };
+        if (kind === 'absolute') { next.value = value; if (unit) next.unit = unit; }
+        if (kind === 'preset') { next.speed = speed; next.durationMs = durationMs; }
+        if (i2 === -1) markers.push(next); else markers[i2] = next;
+        parts[idx].markers = markers;
+        await saveParts(parts);
+        res.json({ success: true, markers });
+    } catch (e) {
+        console.error('save marker failed', e);
+        res.status(500).json({ success: false, error: 'Failed to save marker' });
+    }
+});
+
+router.delete('/api/parts/:id/markers/:name', async (req, res) => {
+    try {
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
+        const next = markers.filter(m => m.name !== req.params.name);
+        parts[idx].markers = next;
+        await saveParts(parts);
+        res.json({ success: true, markers: next });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Failed to delete marker' });
+    }
+});
+
+router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req, res) => {
+    try {
+        const { newName } = req.body || {};
+        if (!newName || !newName.trim()) return res.status(400).json({ success: false, error: 'newName required' });
+        const parts = await loadParts();
+        const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
+        const i2 = markers.findIndex(m => m.name === req.params.oldName);
+        if (i2 === -1) return res.status(404).json({ success: false, error: 'Marker not found' });
+        markers[i2].name = newName.trim();
+        await saveParts(parts);
+        res.json({ success: true, markers });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Failed to rename marker' });
+    }
+});
+
 
 // Linear actuator calibration page
 router.get('/linear_actuator/:id', async (req, res) => {

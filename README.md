@@ -24,6 +24,24 @@ How to re‑run tests
 - Unit: `npm run -s test:unit`
 - UI: `npm run -s test:ui`
 
+
+### Playwright End‑to‑End (Comprehensive Characters) — Headed Mode
+
+This E2E suite validates full UI workflow and character data isolation across all 4 characters (PumpkinHead, Coffin Breaker, Orlok, Skulltalker) using real clicks and form interactions.
+
+- Single run (headed):
+  - `npm run -s test:e2e:live`
+- Keep retrying until green (headed):
+  - `bash -lc 'until npm run -s test:e2e:live; do sleep 2; done'`
+- Headless variant:
+  - `npm run -s test:e2e`
+
+Notes
+- Uses API-backed waits for character selection (source-of-truth), and resilient selectors for parts/testing drawers.
+- Cleans up only E2E‑created parts between retries to prevent cross‑character contamination.
+- Base URL uses 127.0.0.1 and Playwright is configured in `playwright.config.ts`.
+
+
 ---
 
 
@@ -163,10 +181,10 @@ pactl set-default-source <source-name>
 ```
 
 The application will be available at:
-- **Dashboard**: http://localhost:3000
-- **Setup**: http://localhost:3000/setup  ← **Start here for parts creation**
-- **Live Mode**: http://localhost:3000/live
-- **Audio Library**: http://localhost:3000/audio-library  ← **✅ FULLY OPERATIONAL: Centralized audio management**
+- **Dashboard**: http://127.0.0.1:3000
+- **Setup**: http://127.0.0.1:3000/setup  ← **Start here for parts creation**
+- **Live Mode**: http://127.0.0.1:3000/live
+- **Audio Library**: http://127.0.0.1:3000/audio-library  ← **✅ FULLY OPERATIONAL: Centralized audio management**
 
 ## 🦴 **Linear Actuator Configuration**
 
@@ -805,9 +823,20 @@ http://localhost:3000/setup/webcam/api/parts/42/stream?auto=1
 
 MonsterBox 4.0 lets you manage multiple characters and pick which one is active. The active character is used throughout the app for parts and poses.
 
-- Manage at Setup → Characters (http://localhost:3000/setup/characters)
+- Manage at Setup → Characters (http://127.0.0.1:3000/setup/characters)
 - Current selection is shown in the navbar dropdown and can be changed from any page
 - Persisted in data/characters.json; current selection is also stored in app config
+
+Character Data Isolation
+- When you select a character, the app updates `config/app-config.json` with:
+  - `selectedCharacter: <id>` and `dataPath: "data/character-<id>"`
+- All persistent files are stored under the active character’s data path, for example:
+  - `data/character-<id>/parts.json`
+  - `data/character-<id>/poses.json`
+  - `data/character-<id>/servo_calibrations.json` and other calibration files
+  - `data/character-<id>/ai-config/` (STT/TTS/Agents settings)
+- Switching characters atomically switches the data directory, ensuring strict isolation across characters.
+
 
 Endpoints:
 - GET /setup/characters/api/characters → list characters
