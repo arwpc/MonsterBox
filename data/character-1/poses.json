@@ -1,1 +1,77 @@
-[]
+{
+  "characterId": 1,
+  "poses": [
+    {
+      "id": 1,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-24T01:58:24.827Z"
+    },
+    {
+      "id": 2,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-09-24T02:12:19.051Z"
+    }
+  ],
+  "templates": {
+    "elbow": {
+      "description": "Elbow bend presets",
+      "options": [
+        {
+          "name": "Straight",
+          "angleDeg": 0
+        },
+        {
+          "name": "Half Bend",
+          "angleDeg": 45
+        },
+        {
+          "name": "Full Bend",
+          "angleDeg": 90
+        }
+      ]
+    },
+    "head": {
+      "description": "Head motions",
+      "options": [
+        {
+          "name": "Stop",
+          "action": "stop"
+        },
+        {
+          "name": "Wiggle",
+          "action": "random"
+        },
+        {
+          "name": "Rotate 360",
+          "action": "rotate_360"
+        }
+      ]
+    }
+  }
+}

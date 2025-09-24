@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Jaw of Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T01:12:35.937Z",
+    "enabled": true
+  },
+  {
+    "id": "2",
+    "name": "Head of Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-24T01:13:23.670Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Skulltalker Cam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-24T01:15:12.306Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "name": "Skulltalker Movement",
+    "type": "motion_sensor",
+    "pin": 17,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-24T01:15:56.323Z",
+    "enabled": true
+  }
+]

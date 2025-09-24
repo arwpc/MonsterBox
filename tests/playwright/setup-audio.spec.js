@@ -34,7 +34,8 @@ test.describe('Setup Audio page - Microphone Parts Controls', () => {
       // Slide a little to trigger events (do not assert network)
       const sensValue = await firstSens.inputValue().catch(() => '1');
       const newSens = Math.min(3.0, Math.max(0.1, parseFloat(sensValue || '1') + 0.1));
-      await firstSens.fill(String(newSens));
+      // Use fixed precision to avoid floating point artifacts like 2.8000000000000003 causing malformed fill
+      await firstSens.fill(Number(newSens).toFixed(1));
       await firstSens.dispatchEvent('change');
 
       const gainValue = await firstGain.inputValue().catch(() => '100');

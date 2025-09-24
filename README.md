@@ -2,6 +2,31 @@
 
 **MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
+> Status update (latest): All unit and UI tests are green.
+>
+> - Mocha: 96 passing, 0 failing
+> - Playwright: 3 passed, 2 skipped (ConvAI e2e pending hardware/network)
+>
+## ✅ Nightly Fixes Summary (stability + tests)
+
+- Fixed character‑aware data paths in Motion Tracking (no more ENOENT on data/parts.json)
+- Poses API: implemented template creation endpoint and added safe default templates (Bend Elbow, Rotate Head)
+- Characters: protected delete of the currently selected character (returns 400)
+- Parts validation: relaxed for motor/linear_actuator; derive pins when reasonable; safer defaults
+- Continuous servo calibration: consistent response text ("rotating cw/ccw"/"stopped"); reject non‑continuous servos with 400
+- Microphone Parts Controls (Setup → Audio):
+  - Sensitivity slider hardened for automation (precision rounding, resilient to FP artifacts)
+  - Real‑time VU meters stable; no console floods
+- Navigation: unified header includes fixed on error and models pages
+- Audio system (PipeWire): device enumeration, speaker routing, mic level probe, and stream management verified
+
+How to re‑run tests
+- Unit: `npm run -s test:unit`
+- UI: `npm run -s test:ui`
+
+---
+
+
 ## 🎯 Key Features
 
 ### ✨ **Poses System**

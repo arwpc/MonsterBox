@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
+import { readConfig } from '../services/configService.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +30,14 @@ const DEFAULT_CONFIG = {
   backgroundLearningRate: 0.02,
   noiseReductionKernelSize: 3
 };
+
+// Resolve parts.json honoring dynamic dataPath
+async function getPartsFilePath() {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(__dirname, '..');
+  const dataDir = (cfg && cfg.dataPath) ? cfg.dataPath : '../data';
+  return path.resolve(appRoot, dataDir, 'parts.json');
+}
 
 /**
  * Start motion tracking for a webcam part
@@ -382,19 +392,21 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
  */
 async function getWebcamDevicePath(webcamId) {
   try {
-    const partsPath = path.join(__dirname, '../data/parts.json');
-    const partsData = await fs.readFile(partsPath, 'utf8');
-    const parts = JSON.parse(partsData);
-
-    const webcamPart = parts.find(p => String(p.id) === String(webcamId) && p.type === 'webcam');
-    if (!webcamPart) {
-      return null;
+    const partsPath = await getPartsFilePath();
+    let parts = [];
+    try {
+      const partsData = await fs.readFile(partsPath, 'utf8');
+      parts = JSON.parse(partsData);
+    } catch (e) {
+      if (e && e.code !== 'ENOENT') throw e; // surface unexpected errors
+      parts = [];
     }
 
-    // Get device path from part config
+    const webcamPart = parts.find(p => String(p.id) === String(webcamId) && p.type === 'webcam');
+    if (!webcamPart) return null;
+
     const config = webcamPart.config || {};
     return config.devicePath || config.device || '/dev/video0';
-
   } catch (error) {
     console.error('Error getting webcam device path:', error);
     return null;
@@ -421,11 +433,16 @@ async function checkMjpgStreamerHealth() {
  */
 async function getWebcamPart(webcamId) {
   try {
-    const partsPath = path.join(__dirname, '../data/parts.json');
-    const partsData = await fs.readFile(partsPath, 'utf8');
-    const parts = JSON.parse(partsData);
-
-    return parts.find(p => String(p.id) === String(webcamId) && p.type === 'webcam');
+    const partsPath = await getPartsFilePath();
+    let parts = [];
+    try {
+      const partsData = await fs.readFile(partsPath, 'utf8');
+      parts = JSON.parse(partsData);
+    } catch (e) {
+      if (e && e.code !== 'ENOENT') throw e;
+      parts = [];
+    }
+    return parts.find(p => String(p.id) === String(webcamId) && p.type === 'webcam') || null;
   } catch (error) {
     console.error('Error getting webcam part:', error);
     return null;
@@ -437,9 +454,15 @@ async function getWebcamPart(webcamId) {
  */
 async function getAvailableServoParts() {
   try {
-    const partsPath = path.join(__dirname, '../data/parts.json');
-    const partsData = await fs.readFile(partsPath, 'utf8');
-    const parts = JSON.parse(partsData);
+    const partsPath = await getPartsFilePath();
+    let parts = [];
+    try {
+      const partsData = await fs.readFile(partsPath, 'utf8');
+      parts = JSON.parse(partsData);
+    } catch (e) {
+      if (e && e.code !== 'ENOENT') throw e;
+      parts = [];
+    }
 
     return parts.filter(p => p.type === 'servo').map(servo => ({
       id: servo.id,

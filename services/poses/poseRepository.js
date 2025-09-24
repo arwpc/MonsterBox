@@ -18,6 +18,27 @@ async function getPosesFilePath() {
   return path.resolve(appRoot, dataDir, 'poses.json');
 }
 
+function getDefaultTemplates() {
+  return {
+    elbow: {
+      description: 'Elbow bend presets',
+      options: [
+        { name: 'Straight', angleDeg: 0 },
+        { name: 'Half Bend', angleDeg: 45 },
+        { name: 'Full Bend', angleDeg: 90 }
+      ]
+    },
+    head: {
+      description: 'Head motions',
+      options: [
+        { name: 'Stop', action: 'stop' },
+        { name: 'Wiggle', action: 'random' },
+        { name: 'Rotate 360', action: 'rotate_360' }
+      ]
+    }
+  };
+}
+
 /**
  * Load all poses for a character
  * @param {number} characterId - Character ID
@@ -31,21 +52,22 @@ export async function loadPoses(characterId) {
 
         // Filter poses for the specified character
         if (posesData.characterId === characterId) {
-            return posesData;
+            // Ensure templates are present with sensible defaults
+            return Object.assign({}, posesData, { templates: posesData.templates || getDefaultTemplates() });
         }
 
         // Return empty structure if no poses for this character
         return {
             characterId,
             poses: [],
-            templates: posesData.templates || {}
+            templates: posesData.templates || getDefaultTemplates()
         };
     } catch (error) {
         console.warn('⚠️ Could not load poses:', error.message);
         return {
             characterId,
             poses: [],
-            templates: {}
+            templates: getDefaultTemplates()
         };
     }
 }
@@ -59,6 +81,8 @@ export async function savePoses(posesData) {
     try {
         const posesFile = await getPosesFilePath();
         const jsonData = JSON.stringify(posesData, null, 2);
+        // Ensure directory exists
+        await fs.mkdir(path.dirname(posesFile), { recursive: true });
         await fs.writeFile(posesFile, jsonData, 'utf8');
         console.log('✅ Poses saved successfully');
     } catch (error) {
@@ -160,10 +184,12 @@ export async function getTemplates() {
         const posesFile = await getPosesFilePath();
         const data = await fs.readFile(posesFile, 'utf8');
         const posesData = JSON.parse(data);
-        return posesData.templates || {};
+        const fileTemplates = posesData.templates || {};
+        // Merge defaults with file templates (file wins)
+        return Object.assign({}, getDefaultTemplates(), fileTemplates);
     } catch (error) {
         console.warn('⚠️ Could not load pose templates:', error.message);
-        return {};
+        return getDefaultTemplates();
     }
 }
 
