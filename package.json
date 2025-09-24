@@ -11,6 +11,7 @@
     "test:ai": "mocha tests/ai/**/*.test.js --timeout 5000",
     "test:unit": "mocha tests/00-server-boot.test.js tests/basic.test.js tests/models.test.js tests/hardware/**/*.test.js --timeout 15000",
     "test:ui": "playwright test",
+    "test:ui:live": "playwright test -c playwright.config.js test/live-mode-queue.spec.js",
     "test:ui:ai": "playwright test -g 'AI Settings - quick actions'",
     "test:ui-headed": "playwright test --headed",
     "test:all": "npm run test:unit && npm run test:ui",
