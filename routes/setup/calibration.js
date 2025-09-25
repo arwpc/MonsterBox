@@ -4,6 +4,8 @@
  */
 
 import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
 import { loadParts, saveParts } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
 import * as linearActuatorCalibration from '../../services/linearActuatorCalibrationService.js';
@@ -41,7 +43,23 @@ router.get('/', async (req, res) => {
 // List parts for calibration (with lightweight flags for UI)
 router.get('/api/parts', async (req, res) => {
     try {
-        const parts = await loadParts();
+        const { characterId } = req.query;
+        let parts = await loadParts();
+
+        // Filter by character if specified
+        if (characterId) {
+            const characterPartsPath = path.join(process.cwd(), 'data', 'characters', String(characterId), 'parts.json');
+            try {
+                const characterPartsData = await fs.readFile(characterPartsPath, 'utf8');
+                const characterParts = JSON.parse(characterPartsData);
+                // Filter to only parts that belong to this character
+                const characterPartIds = characterParts.map(p => String(p.id));
+                parts = parts.filter(p => characterPartIds.includes(String(p.id)));
+            } catch (e) {
+                console.warn(`No character-specific parts found for character ${characterId}, showing all parts`);
+            }
+        }
+
         const list = parts.map(p => ({
             id: String(p.id),
             name: p.name,

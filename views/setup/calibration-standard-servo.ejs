@@ -13,450 +13,452 @@
 </head>
 
 <body>
-      <!-- Unified Navigation - Same on ALL pages -->
-    <%- include('../components/unified-navigation', { page: 'setup-calibration' }) %>
+  <!-- Unified Navigation - Same on ALL pages -->
+  <%- include('../components/unified-navigation', { page: 'setup-calibration' }) %>
 
-  <main class="container-fluid py-4">
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h1><i class="bi bi-sliders"></i> Calibrate Standard Servo</h1>
-            <p class="text-muted mb-0"><i class="bi bi-arrow-left"></i> <a href="/setup/parts"
-                class="text-decoration-none">Back to Parts</a></p>
-          </div>
-          <div class="text-end">
-            <h4 class="mb-0">🎛️ <%= part.name %>
-            </h4>
-            <small class="text-muted">ID: <%= part.id %> | Channel: <%= part.config && part.config.channel %> | Type:
-                  <%= (part.config && part.config.servoType) || 'standard' %></small>
+    <main class="container-fluid py-4">
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h1><i class="bi bi-sliders"></i> Calibrate Standard Servo</h1>
+              <p class="text-muted mb-0"><i class="bi bi-arrow-left"></i> <a href="/setup/parts"
+                  class="text-decoration-none">Back to Parts</a></p>
+            </div>
+            <div class="text-end">
+              <h4 class="mb-0">🎛️ <%= part.name %>
+              </h4>
+              <small class="text-muted">ID: <%= part.id %> | Channel: <%= part.config && part.config.channel %> | Type:
+                    <%= (part.config && part.config.servoType) || 'standard' %></small>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div id="statusArea" class="alert alert-secondary">Ready</div>
+      <div id="statusArea" class="alert alert-secondary">Ready</div>
 
-    <div class="row g-3">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Pulse Calibration</div>
-          <div class="card-body">
-            <div class="row g-2 align-items-end">
-              <div class="col-4">
-                <label class="form-label">Min Pulse (µs)</label>
-                <input id="minPulse" type="number" class="form-control"
-                  value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.min) || 1000 %>">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Pulse Calibration</div>
+            <div class="card-body">
+              <div class="row g-2 align-items-end">
+                <div class="col-4">
+                  <label class="form-label">Min Pulse (µs)</label>
+                  <input id="minPulse" type="number" class="form-control"
+                    value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.min) || 1000 %>">
+                </div>
+                <div class="col-4">
+                  <label class="form-label">Center Pulse (µs)</label>
+                  <input id="centerPulse" type="number" class="form-control"
+                    value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.center) || 1500 %>">
+                </div>
+                <div class="col-4">
+                  <label class="form-label">Max Pulse (µs)</label>
+                  <input id="maxPulse" type="number" class="form-control"
+                    value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.max) || 2000 %>">
+                </div>
               </div>
-              <div class="col-4">
-                <label class="form-label">Center Pulse (µs)</label>
-                <input id="centerPulse" type="number" class="form-control"
-                  value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.center) || 1500 %>">
-              </div>
-              <div class="col-4">
-                <label class="form-label">Max Pulse (µs)</label>
-                <input id="maxPulse" type="number" class="form-control"
-                  value="<%= (calibrationStatus.pulses && calibrationStatus.pulses.max) || 2000 %>">
+              <div class="mt-3">
+                <button id="saveMinPulse" class="btn btn-outline-success btn-sm">Save Min</button>
+                <button id="saveCenterPulse" class="btn btn-outline-success btn-sm">Save Center</button>
+                <button id="saveMaxPulse" class="btn btn-outline-success btn-sm">Save Max</button>
+                <button id="resetCalibrationBtn" class="btn btn-outline-danger btn-sm float-end">Reset</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">Move to Angle</div>
+            <div class="card-body">
+              <div class="mb-2 d-flex align-items-center">
+                <input id="angleSlider" type="range" min="0" max="180" value="90" class="form-range me-3">
+                <div class="input-group w-auto">
+                  <input id="angleInput" type="number" class="form-control" value="90">
+                  <span class="input-group-text">°</span>
+                </div>
+                <button id="moveBtn" class="btn btn-primary btn-sm ms-3">Move</button>
+              </div>
+              <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary btn-sm" data-angle="0">Min</button>
+                <button class="btn btn-outline-secondary btn-sm" data-angle="90">Center</button>
+                <button class="btn btn-outline-secondary btn-sm" data-angle="180">Max</button>
+              </div>
+              <div class="btn-group ms-2" role="group">
+                <button class="btn btn-outline-secondary btn-sm" data-nudge="-5">-5°</button>
+                <button class="btn btn-outline-secondary btn-sm" data-nudge="-1">-1°</button>
+                <button class="btn btn-outline-secondary btn-sm" data-nudge="1">+1°</button>
+                <button class="btn btn-outline-secondary btn-sm" data-nudge="5">+5°</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Saved Positions</span>
+          <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width: 260px;">
+              <label class="input-group-text" for="copyFromSelect"><i class="bi bi-files"></i></label>
+              <select id="copyFromSelect" class="form-select">
+                <option value="">Copy from… (same type)</option>
+                <% if (otherStandardServos && otherStandardServos.length) { otherStandardServos.forEach(function(s){ %>
+                  <option value="<%= s.id %>">
+                    <%= s.name %>
+                  </option>
+                  <% }); } %>
+              </select>
+              <button id="copyFromBtn" class="btn btn-outline-warning" type="button">Copy</button>
+            </div>
+            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#savePositionModal">Save
+              Position</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row g-2" id="savedPositions">
+            <% const positions=(calibrationStatus && calibrationStatus.positions) || {}; const
+              keys=Object.keys(positions); %>
+              <% if (!keys.length) { %>
+                <div class="col-12 text-muted">No positions saved yet.</div>
+                <% } else { %>
+                  <% keys.forEach(function(name){ var pos=positions[name] || {}; %>
+                    <div class="col-auto d-flex align-items-center gap-1" data-pos-container="<%= name %>">
+                      <span class="badge bg-success saved-position-badge" data-position-name="<%= name %>"
+                        data-angle="<%= pos.angle %>" data-description="<%= pos.description || '' %>">
+                        <i class="bi bi-check-circle"></i>
+                        <%= name %>
+                      </span>
+                      <button class="btn btn-outline-light btn-sm edit-position-btn" data-name="<%= name %>"
+                        data-angle="<%= pos.angle %>" data-description="<%= pos.description || '' %>"
+                        data-bs-toggle="modal" data-bs-target="#editPositionModal" title="Edit"><i
+                          class="bi bi-pencil"></i></button>
+                      <button class="btn btn-outline-danger btn-sm delete-position-btn" data-name="<%= name %>"
+                        title="Delete"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <% }) %>
+                      <% } %>
+          </div>
+
+          <% if (suggestedPositions && suggestedPositions.length) { %>
             <div class="mt-3">
-              <button id="saveMinPulse" class="btn btn-outline-success btn-sm">Save Min</button>
-              <button id="saveCenterPulse" class="btn btn-outline-success btn-sm">Save Center</button>
-              <button id="saveMaxPulse" class="btn btn-outline-success btn-sm">Save Max</button>
-              <button id="resetCalibrationBtn" class="btn btn-outline-danger btn-sm float-end">Reset</button>
+              <div class="fw-bold mb-1">Suggested</div>
+              <% suggestedPositions.forEach(function(sp){ %>
+                <button class="btn btn-outline-info btn-sm save-position-btn" data-position="<%= sp.name %>"
+                  data-description="<%= sp.description %>">
+                  <%= sp.name %>
+                </button>
+                <% }) %>
             </div>
+            <% } %>
+        </div>
+      </div>
+    </main>
+
+    <!-- Save Position Modal -->
+    <div class="modal fade" id="savePositionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+          <div class="modal-header">
+            <h5 class="modal-title">Save Position</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input id="positionNameInput" type="text" class="form-control" placeholder="e.g., right_90">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <input id="positionDescInput" type="text" class="form-control" placeholder="Optional">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Angle (°)</label>
+              <input id="positionAngleInput" type="number" class="form-control" value="90">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="confirmSavePositionBtn" type="button" class="btn btn-primary"
+              data-bs-dismiss="modal">Save</button>
           </div>
         </div>
       </div>
-
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">Move to Angle</div>
-          <div class="card-body">
-            <div class="mb-2 d-flex align-items-center">
-              <input id="angleSlider" type="range" min="0" max="180" value="90" class="form-range me-3">
-              <div class="input-group w-auto">
-                <input id="angleInput" type="number" class="form-control" value="90">
-                <span class="input-group-text">°</span>
-              </div>
-              <button id="moveBtn" class="btn btn-primary btn-sm ms-3">Move</button>
+    </div>
+    <!-- Edit Position Modal -->
+    <div class="modal fade" id="editPositionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Position</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input id="editOriginalName" type="hidden">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input id="editPositionNameInput" type="text" class="form-control">
             </div>
-            <div class="btn-group" role="group">
-              <button class="btn btn-outline-secondary btn-sm" data-angle="0">Min</button>
-              <button class="btn btn-outline-secondary btn-sm" data-angle="90">Center</button>
-              <button class="btn btn-outline-secondary btn-sm" data-angle="180">Max</button>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <input id="editPositionDescInput" type="text" class="form-control" placeholder="Optional">
             </div>
-            <div class="btn-group ms-2" role="group">
-              <button class="btn btn-outline-secondary btn-sm" data-nudge="-5">-5°</button>
-              <button class="btn btn-outline-secondary btn-sm" data-nudge="-1">-1°</button>
-              <button class="btn btn-outline-secondary btn-sm" data-nudge="1">+1°</button>
-              <button class="btn btn-outline-secondary btn-sm" data-nudge="5">+5°</button>
+            <div class="mb-3">
+              <label class="form-label">Angle (°)</label>
+              <input id="editPositionAngleInput" type="number" class="form-control" value="90">
             </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="confirmEditPositionBtn" type="button" class="btn btn-primary"
+              data-bs-dismiss="modal">Save</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card mt-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Saved Positions</span>
-        <div class="d-flex align-items-center gap-2">
-          <div class="input-group input-group-sm" style="width: 260px;">
-            <label class="input-group-text" for="copyFromSelect"><i class="bi bi-files"></i></label>
-            <select id="copyFromSelect" class="form-select">
-              <option value="">Copy from… (same type)</option>
-              <% if (otherStandardServos && otherStandardServos.length) { otherStandardServos.forEach(function(s){ %>
-                <option value="<%= s.id %>">
-                  <%= s.name %>
-                </option>
-                <% }); } %>
-            </select>
-            <button id="copyFromBtn" class="btn btn-outline-warning" type="button">Copy</button>
-          </div>
-          <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#savePositionModal">Save
-            Position</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="row g-2" id="savedPositions">
-          <% const positions=(calibrationStatus && calibrationStatus.positions) || {}; const
-            keys=Object.keys(positions); %>
-            <% if (!keys.length) { %>
-              <div class="col-12 text-muted">No positions saved yet.</div>
-              <% } else { %>
-                <% keys.forEach(function(name){ var pos=positions[name] || {}; %>
-                  <div class="col-auto d-flex align-items-center gap-1" data-pos-container="<%= name %>">
-                    <span class="badge bg-success saved-position-badge" data-position-name="<%= name %>"
-                      data-angle="<%= pos.angle %>" data-description="<%= pos.description || '' %>">
-                      <i class="bi bi-check-circle"></i>
-                      <%= name %>
-                    </span>
-                    <button class="btn btn-outline-light btn-sm edit-position-btn" data-name="<%= name %>"
-                      data-angle="<%= pos.angle %>" data-description="<%= pos.description || '' %>"
-                      data-bs-toggle="modal" data-bs-target="#editPositionModal" title="Edit"><i
-                        class="bi bi-pencil"></i></button>
-                    <button class="btn btn-outline-danger btn-sm delete-position-btn" data-name="<%= name %>"
-                      title="Delete"><i class="bi bi-trash"></i></button>
-                  </div>
-                  <% }) %>
-                    <% } %>
-        </div>
 
-        <% if (suggestedPositions && suggestedPositions.length) { %>
-          <div class="mt-3">
-            <div class="fw-bold mb-1">Suggested</div>
-            <% suggestedPositions.forEach(function(sp){ %>
-              <button class="btn btn-outline-info btn-sm save-position-btn" data-position="<%= sp.name %>"
-                data-description="<%= sp.description %>">
-                <%= sp.name %>
-              </button>
-              <% }) %>
-          </div>
-          <% } %>
-      </div>
-    </div>
-  </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/monsterbox4.js"></script>
+    <script src="/js/character-menu.js"></script>
 
-  <!-- Save Position Modal -->
-  <div class="modal fade" id="savePositionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content bg-dark text-light">
-        <div class="modal-header">
-          <h5 class="modal-title">Save Position</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input id="positionNameInput" type="text" class="form-control" placeholder="e.g., right_90">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <input id="positionDescInput" type="text" class="form-control" placeholder="Optional">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Angle (°)</label>
-            <input id="positionAngleInput" type="number" class="form-control" value="90">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button id="confirmSavePositionBtn" type="button" class="btn btn-primary"
-            data-bs-dismiss="modal">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Edit Position Modal -->
-  <div class="modal fade" id="editPositionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content bg-dark text-light">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Position</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <input id="editOriginalName" type="hidden">
-          <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input id="editPositionNameInput" type="text" class="form-control">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <input id="editPositionDescInput" type="text" class="form-control" placeholder="Optional">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Angle (°)</label>
-            <input id="editPositionAngleInput" type="number" class="form-control" value="90">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button id="confirmEditPositionBtn" type="button" class="btn btn-primary"
-            data-bs-dismiss="modal">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <script>
+      (function () {
+        var partId = '<%= String(part.id) %>';
 
+        function showStatus(msg, type) {
+          var el = document.getElementById('statusArea');
+          el.className = 'alert alert-' + (type || 'secondary');
+          el.textContent = msg;
+        }
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/js/monsterbox4.js"></script>
-  <script src="/js/character-menu.js"></script>
+        function syncAngle(val) {
+          document.getElementById('angleSlider').value = val;
+          document.getElementById('angleInput').value = val;
+          document.getElementById('positionAngleInput').value = val;
+        }
 
-  <script>
-    (function () {
-      var partId = '<%= String(part.id) %>';
+        document.getElementById('angleSlider').addEventListener('input', function () { syncAngle(this.value); });
+        document.getElementById('angleInput').addEventListener('input', function () { syncAngle(this.value); });
 
-      function showStatus(msg, type) {
-        var el = document.getElementById('statusArea');
-        el.className = 'alert alert-' + (type || 'secondary');
-        el.textContent = msg;
-      }
-
-      function syncAngle(val) {
-        document.getElementById('angleSlider').value = val;
-        document.getElementById('angleInput').value = val;
-        document.getElementById('positionAngleInput').value = val;
-      }
-
-      document.getElementById('angleSlider').addEventListener('input', function () { syncAngle(this.value); });
-      document.getElementById('angleInput').addEventListener('input', function () { syncAngle(this.value); });
-
-      Array.prototype.forEach.call(document.querySelectorAll('[data-angle]'), function (btn) {
-        btn.addEventListener('click', function () { syncAngle(this.getAttribute('data-angle')); });
-      });
-
-      Array.prototype.forEach.call(document.querySelectorAll('[data-nudge]'), function (btn) {
-        btn.addEventListener('click', function () {
-          var n = parseInt(this.getAttribute('data-nudge'), 10);
-          var cur = parseInt(document.getElementById('angleInput').value, 10) || 0;
-          syncAngle(Math.max(0, Math.min(180, cur + n)));
+        Array.prototype.forEach.call(document.querySelectorAll('[data-angle]'), function (btn) {
+          btn.addEventListener('click', function () { syncAngle(this.getAttribute('data-angle')); });
         });
-      });
 
-      document.getElementById('moveBtn').addEventListener('click', async function () {
-        var ang = parseInt(document.getElementById('angleInput').value, 10);
-        try {
-          showStatus('Moving to ' + ang + '° ...', 'info');
-          var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/move', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: ang })
-          });
-          var result = await resp.json();
-          if (result.success) showStatus(result.message || ('Moved to ' + ang + '°'), 'success');
-          else showStatus(result.message || 'Failed to move', 'danger');
-        } catch (e) { showStatus('Move failed: ' + e.message, 'danger'); }
-      });
-
-      async function savePulse(pulseType, value) {
-        try {
-          showStatus('Saving ' + pulseType + ' pulse ...', 'info');
-          var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/save-pulse', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pulseType: pulseType, pulseUs: parseInt(value, 10) })
-          });
-          var out = await resp.json();
-          if (out.success) {
-            showStatus(out.message, 'success');
-            var map = { min: 0, center: 90, max: 180 };
-            if (map[pulseType] != null) {
-              addSavedPositionBadge(pulseType, map[pulseType]);
-            }
-          } else {
-            showStatus(out.error || 'Failed to save pulse', 'danger');
-          }
-        } catch (e) { showStatus('Save pulse failed: ' + e.message, 'danger'); }
-      }
-      document.getElementById('saveMinPulse').addEventListener('click', function () { savePulse('min', document.getElementById('minPulse').value); });
-      document.getElementById('saveCenterPulse').addEventListener('click', function () { savePulse('center', document.getElementById('centerPulse').value); });
-      document.getElementById('saveMaxPulse').addEventListener('click', function () { savePulse('max', document.getElementById('maxPulse').value); });
-
-      // Save Position modal confirm
-      document.getElementById('confirmSavePositionBtn').addEventListener('click', async function () {
-        var name = document.getElementById('positionNameInput').value;
-        var desc = document.getElementById('positionDescInput').value;
-        var ang = parseInt(document.getElementById('positionAngleInput').value, 10);
-        if (!name || !name.trim()) { showStatus('Position name is required', 'danger'); return; }
-
-        try {
-          showStatus('Saving position "' + name + '" ...', 'info');
-          var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/save-position', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ positionName: name.trim(), description: desc, angle: ang })
-          });
-          var out = await resp.json();
-          if (out.success) {
-            showStatus(out.message, 'success');
-            addSavedPositionBadge(name.trim(), ang);
-          } else {
-            showStatus(out.error || 'Failed to save position', 'danger');
-          }
-        } catch (e) { showStatus('Save position failed: ' + e.message, 'danger'); }
-      });
-
-      function addSavedPositionBadge(name, angle, description) {
-        var cont = document.getElementById('savedPositions');
-        // Avoid duplicates
-        if (cont.querySelector('[data-position-name="' + name + '"]')) return;
-        var badgeDiv = document.createElement('div');
-        badgeDiv.className = 'col-auto d-flex align-items-center gap-1';
-        badgeDiv.setAttribute('data-pos-container', name);
-        var descAttr = (description || '').replace(/"/g, '&quot;');
-        badgeDiv.innerHTML = '<span class="badge bg-success saved-position-badge" data-position-name="' + name + '" data-angle="' + angle + '" data-description="' + descAttr + '"><i class="bi bi-check-circle"></i> ' + name + '</span>' +
-          ' <button class="btn btn-outline-light btn-sm edit-position-btn" data-name="' + name + '" data-angle="' + angle + '" data-description="' + descAttr + '" data-bs-toggle="modal" data-bs-target="#editPositionModal" title="Edit"><i class="bi bi-pencil"></i></button>' +
-          ' <button class="btn btn-outline-danger btn-sm delete-position-btn" data-name="' + name + '" title="Delete"><i class="bi bi-trash"></i></button>';
-        cont.appendChild(badgeDiv);
-        bindSavedPositionClicks();
-        bindEditDeleteHandlers();
-      }
-
-      function bindSavedPositionClicks() {
-        Array.prototype.forEach.call(document.querySelectorAll('.saved-position-badge'), function (el) {
-          if (el.dataset._bound) return; el.dataset._bound = '1';
-          el.addEventListener('click', async function () {
-            var ang = parseInt(this.getAttribute('data-angle') || '', 10);
-            if (isNaN(ang)) { showStatus('No angle stored for this position', 'danger'); return; }
-            try {
-              showStatus('Moving to ' + ang + '° ...', 'info');
-              var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: ang }) });
-              var out = await resp.json();
-              if (out.success) showStatus(out.message || ('Moved to ' + ang + '°'), 'success'); else showStatus(out.error || 'Failed to move', 'danger');
-            } catch (e) { showStatus('Move failed: ' + e.message, 'danger'); }
-          });
-        });
-      }
-      bindSavedPositionClicks();
-
-      // Edit/Delete wiring for saved positions
-      function bindEditDeleteHandlers() {
-        // Delete
-        Array.prototype.forEach.call(document.querySelectorAll('.delete-position-btn'), function (btn) {
-          if (btn.dataset._bound) return; btn.dataset._bound = '1';
-          btn.addEventListener('click', async function () {
-            var name = this.getAttribute('data-name');
-            try {
-              var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(name), { method: 'DELETE' });
-              var out = await resp.json();
-              if (out.success) {
-                showStatus(out.message, 'success');
-                var container = document.querySelector('[data-pos-container="' + name + '"]');
-                if (container && container.parentNode) container.parentNode.removeChild(container);
-              } else { showStatus(out.error || 'Delete failed', 'danger'); }
-            } catch (e) { showStatus('Delete failed: ' + e.message, 'danger'); }
-          });
-        });
-        // Edit
-        Array.prototype.forEach.call(document.querySelectorAll('.edit-position-btn'), function (btn) {
-          if (btn.dataset._bound) return; btn.dataset._bound = '1';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-nudge]'), function (btn) {
           btn.addEventListener('click', function () {
-            var name = this.getAttribute('data-name');
-            var ang = parseInt(this.getAttribute('data-angle') || '0', 10) || 0;
-            var desc = this.getAttribute('data-description') || '';
-            document.getElementById('editOriginalName').value = name;
-            document.getElementById('editPositionNameInput').value = name;
-            document.getElementById('editPositionDescInput').value = desc;
-            document.getElementById('editPositionAngleInput').value = ang;
+            var n = parseInt(this.getAttribute('data-nudge'), 10);
+            var cur = parseInt(document.getElementById('angleInput').value, 10) || 0;
+            syncAngle(Math.max(0, Math.min(180, cur + n)));
           });
         });
-      }
-      bindEditDeleteHandlers();
 
-      // Confirm Edit Save
-      document.getElementById('confirmEditPositionBtn').addEventListener('click', async function () {
-        var original = document.getElementById('editOriginalName').value;
-        var newName = document.getElementById('editPositionNameInput').value.trim();
-        var desc = document.getElementById('editPositionDescInput').value;
-        var ang = parseInt(document.getElementById('editPositionAngleInput').value, 10);
-        if (!newName) { showStatus('Name required', 'danger'); return; }
-        try {
-          if (newName !== original) {
-            var r = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(original) + '/rename', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newName: newName })
+        document.getElementById('moveBtn').addEventListener('click', async function () {
+          var ang = parseInt(document.getElementById('angleInput').value, 10);
+          try {
+            showStatus('Moving to ' + ang + '° ...', 'info');
+            var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/move', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: ang })
             });
-            var rj = await r.json();
-            if (!rj.success) { showStatus(rj.error || 'Rename failed', 'danger'); return; }
-          }
-          var u = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(newName) + '/update', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: desc, angle: ang })
-          });
-          var uj = await u.json();
-          if (uj.success) {
-            showStatus(uj.message || 'Updated', 'success');
-            var cont = document.querySelector('[data-pos-container="' + original + '"]') || document.querySelector('[data-pos-container="' + newName + '"]');
-            if (cont) {
-              cont.setAttribute('data-pos-container', newName);
-              var badge = cont.querySelector('.saved-position-badge');
-              if (badge) {
-                badge.setAttribute('data-position-name', newName);
-                badge.setAttribute('data-angle', ang);
-                badge.setAttribute('data-description', desc || '');
-                badge.innerHTML = '<i class="bi bi-check-circle"></i> ' + newName;
-              }
-              var editBtn = cont.querySelector('.edit-position-btn');
-              if (editBtn) { editBtn.setAttribute('data-name', newName); editBtn.setAttribute('data-angle', ang); editBtn.setAttribute('data-description', desc || ''); }
-              var delBtn = cont.querySelector('.delete-position-btn');
-              if (delBtn) { delBtn.setAttribute('data-name', newName); }
-            }
-          } else { showStatus(uj.error || 'Update failed', 'danger'); }
-        } catch (e) { showStatus('Update failed: ' + e.message, 'danger'); }
-      });
-
-      // Copy Calibration
-      document.getElementById('copyFromBtn').addEventListener('click', async function () {
-        var fromId = document.getElementById('copyFromSelect').value;
-        if (!fromId) { showStatus('Select a source to copy from', 'warning'); return; }
-        try {
-          showStatus('Copying calibration...', 'info');
-          var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/copy-from', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromPartId: fromId })
-          });
-          var out = await resp.json();
-          if (out.success) { showStatus(out.message, 'success'); setTimeout(function () { location.reload(); }, 800); }
-          else { showStatus(out.error || 'Copy failed', 'danger'); }
-        } catch (e) { showStatus('Copy failed: ' + e.message, 'danger'); }
-      });
-
-
-      // Suggested quick-save buttons
-      Array.prototype.forEach.call(document.querySelectorAll('.save-position-btn'), function (btn) {
-        btn.addEventListener('click', function () {
-          var name = this.getAttribute('data-position');
-          document.getElementById('positionNameInput').value = name;
-          document.getElementById('positionDescInput').value = this.getAttribute('data-description') || '';
-          var curAng = parseInt(document.getElementById('angleInput').value, 10) || 90;
-          document.getElementById('positionAngleInput').value = curAng;
+            var result = await resp.json();
+            if (result.success) showStatus(result.message || ('Moved to ' + ang + '°'), 'success');
+            else showStatus(result.message || 'Failed to move', 'danger');
+          } catch (e) { showStatus('Move failed: ' + e.message, 'danger'); }
         });
-      });
 
-      // Reset calibration
-      document.getElementById('resetCalibrationBtn').addEventListener('click', async function () {
-        try {
-          var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/reset', { method: 'POST' });
-          var out = await resp.json();
-          if (out.success) { showStatus(out.message || 'Calibration reset', 'success'); setTimeout(function () { location.reload(); }, 1200); }
-          else { showStatus(out.message || 'Nothing to reset', 'warning'); }
-        } catch (e) { showStatus('Reset failed: ' + e.message, 'danger'); }
-      });
-    })();
-  </script>
+        async function savePulse(pulseType, value) {
+          try {
+            showStatus('Saving ' + pulseType + ' pulse ...', 'info');
+            var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/save-pulse', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pulseType: pulseType, pulseUs: parseInt(value, 10) })
+            });
+            var out = await resp.json();
+            if (out.success) {
+              showStatus(out.message, 'success');
+              var map = { min: 0, center: 90, max: 180 };
+              if (map[pulseType] != null) {
+                addSavedPositionBadge(pulseType, map[pulseType]);
+              }
+            } else {
+              showStatus(out.error || 'Failed to save pulse', 'danger');
+            }
+          } catch (e) { showStatus('Save pulse failed: ' + e.message, 'danger'); }
+        }
+        document.getElementById('saveMinPulse').addEventListener('click', function () { savePulse('min', document.getElementById('minPulse').value); });
+        document.getElementById('saveCenterPulse').addEventListener('click', function () { savePulse('center', document.getElementById('centerPulse').value); });
+        document.getElementById('saveMaxPulse').addEventListener('click', function () { savePulse('max', document.getElementById('maxPulse').value); });
+
+        // Save Position modal confirm
+        document.getElementById('confirmSavePositionBtn').addEventListener('click', async function () {
+          var name = document.getElementById('positionNameInput').value;
+          var desc = document.getElementById('positionDescInput').value;
+          var ang = parseInt(document.getElementById('positionAngleInput').value, 10);
+          if (!name || !name.trim()) { showStatus('Position name is required', 'danger'); return; }
+
+          try {
+            showStatus('Saving position "' + name + '" ...', 'info');
+            var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/save-position', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ positionName: name.trim(), description: desc, angle: ang })
+            });
+            var out = await resp.json();
+            if (out.success) {
+              showStatus(out.message, 'success');
+              addSavedPositionBadge(name.trim(), ang);
+            } else {
+              showStatus(out.error || 'Failed to save position', 'danger');
+            }
+          } catch (e) { showStatus('Save position failed: ' + e.message, 'danger'); }
+        });
+
+        function addSavedPositionBadge(name, angle, description) {
+          var cont = document.getElementById('savedPositions');
+          // Avoid duplicates
+          if (cont.querySelector('[data-position-name="' + name + '"]')) return;
+          var badgeDiv = document.createElement('div');
+          badgeDiv.className = 'col-auto d-flex align-items-center gap-1';
+          badgeDiv.setAttribute('data-pos-container', name);
+          var descAttr = (description || '').replace(/"/g, '&quot;');
+          badgeDiv.innerHTML = '<span class="badge bg-success saved-position-badge" data-position-name="' + name + '" data-angle="' + angle + '" data-description="' + descAttr + '"><i class="bi bi-check-circle"></i> ' + name + '</span>' +
+            ' <button class="btn btn-outline-light btn-sm edit-position-btn" data-name="' + name + '" data-angle="' + angle + '" data-description="' + descAttr + '" data-bs-toggle="modal" data-bs-target="#editPositionModal" title="Edit"><i class="bi bi-pencil"></i></button>' +
+            ' <button class="btn btn-outline-danger btn-sm delete-position-btn" data-name="' + name + '" title="Delete"><i class="bi bi-trash"></i></button>';
+          cont.appendChild(badgeDiv);
+          bindSavedPositionClicks();
+          bindEditDeleteHandlers();
+        }
+
+        function bindSavedPositionClicks() {
+          Array.prototype.forEach.call(document.querySelectorAll('.saved-position-badge'), function (el) {
+            if (el.dataset._bound) return; el.dataset._bound = '1';
+            el.addEventListener('click', async function () {
+              var ang = parseInt(this.getAttribute('data-angle') || '', 10);
+              if (isNaN(ang)) { showStatus('No angle stored for this position', 'danger'); return; }
+              try {
+                showStatus('Moving to ' + ang + '° ...', 'info');
+                var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: ang }) });
+                var out = await resp.json();
+                if (out.success) showStatus(out.message || ('Moved to ' + ang + '°'), 'success'); else showStatus(out.error || 'Failed to move', 'danger');
+              } catch (e) { showStatus('Move failed: ' + e.message, 'danger'); }
+            });
+          });
+        }
+        bindSavedPositionClicks();
+
+        // Edit/Delete wiring for saved positions
+        function bindEditDeleteHandlers() {
+          // Delete
+          Array.prototype.forEach.call(document.querySelectorAll('.delete-position-btn'), function (btn) {
+            if (btn.dataset._bound) return; btn.dataset._bound = '1';
+            btn.addEventListener('click', async function () {
+              var name = this.getAttribute('data-name');
+              try {
+                var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(name), { method: 'DELETE' });
+                var out = await resp.json();
+                if (out.success) {
+                  showStatus(out.message, 'success');
+                  var container = document.querySelector('[data-pos-container="' + name + '"]');
+                  if (container && container.parentNode) container.parentNode.removeChild(container);
+                } else { showStatus(out.error || 'Delete failed', 'danger'); }
+              } catch (e) { showStatus('Delete failed: ' + e.message, 'danger'); }
+            });
+          });
+          // Edit
+          Array.prototype.forEach.call(document.querySelectorAll('.edit-position-btn'), function (btn) {
+            if (btn.dataset._bound) return; btn.dataset._bound = '1';
+            btn.addEventListener('click', function () {
+              var name = this.getAttribute('data-name');
+              var ang = parseInt(this.getAttribute('data-angle') || '0', 10) || 0;
+              var desc = this.getAttribute('data-description') || '';
+              document.getElementById('editOriginalName').value = name;
+              document.getElementById('editPositionNameInput').value = name;
+              document.getElementById('editPositionDescInput').value = desc;
+              document.getElementById('editPositionAngleInput').value = ang;
+            });
+          });
+        }
+        bindEditDeleteHandlers();
+
+        // Confirm Edit Save
+        document.getElementById('confirmEditPositionBtn').addEventListener('click', async function () {
+          var original = document.getElementById('editOriginalName').value;
+          var newName = document.getElementById('editPositionNameInput').value.trim();
+          var desc = document.getElementById('editPositionDescInput').value;
+          var ang = parseInt(document.getElementById('editPositionAngleInput').value, 10);
+          if (!newName) { showStatus('Name required', 'danger'); return; }
+          try {
+            if (newName !== original) {
+              var r = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(original) + '/rename', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newName: newName })
+              });
+              var rj = await r.json();
+              if (!rj.success) { showStatus(rj.error || 'Rename failed', 'danger'); return; }
+            }
+            var u = await fetch('/setup/calibration/api/standard_servo/' + partId + '/positions/' + encodeURIComponent(newName) + '/update', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: desc, angle: ang })
+            });
+            var uj = await u.json();
+            if (uj.success) {
+              showStatus(uj.message || 'Updated', 'success');
+              var cont = document.querySelector('[data-pos-container="' + original + '"]') || document.querySelector('[data-pos-container="' + newName + '"]');
+              if (cont) {
+                cont.setAttribute('data-pos-container', newName);
+                var badge = cont.querySelector('.saved-position-badge');
+                if (badge) {
+                  badge.setAttribute('data-position-name', newName);
+                  badge.setAttribute('data-angle', ang);
+                  badge.setAttribute('data-description', desc || '');
+                  badge.innerHTML = '<i class="bi bi-check-circle"></i> ' + newName;
+                }
+                var editBtn = cont.querySelector('.edit-position-btn');
+                if (editBtn) { editBtn.setAttribute('data-name', newName); editBtn.setAttribute('data-angle', ang); editBtn.setAttribute('data-description', desc || ''); }
+                var delBtn = cont.querySelector('.delete-position-btn');
+                if (delBtn) { delBtn.setAttribute('data-name', newName); }
+              }
+            } else { showStatus(uj.error || 'Update failed', 'danger'); }
+          } catch (e) { showStatus('Update failed: ' + e.message, 'danger'); }
+        });
+
+        // Copy Calibration
+        document.getElementById('copyFromBtn').addEventListener('click', async function () {
+          var fromId = document.getElementById('copyFromSelect').value;
+          if (!fromId) { showStatus('Select a source to copy from', 'warning'); return; }
+          try {
+            showStatus('Copying calibration...', 'info');
+            var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/copy-from', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromPartId: fromId })
+            });
+            var out = await resp.json();
+            if (out.success) { showStatus(out.message, 'success'); setTimeout(function () { location.reload(); }, 800); }
+            else { showStatus(out.error || 'Copy failed', 'danger'); }
+          } catch (e) { showStatus('Copy failed: ' + e.message, 'danger'); }
+        });
+
+
+        // Suggested quick-save buttons
+        Array.prototype.forEach.call(document.querySelectorAll('.save-position-btn'), function (btn) {
+          btn.addEventListener('click', function () {
+            var name = this.getAttribute('data-position');
+            document.getElementById('positionNameInput').value = name;
+            document.getElementById('positionDescInput').value = this.getAttribute('data-description') || '';
+            var curAng = parseInt(document.getElementById('angleInput').value, 10) || 90;
+            document.getElementById('positionAngleInput').value = curAng;
+          });
+        });
+
+        // Reset calibration
+        document.getElementById('resetCalibrationBtn').addEventListener('click', async function () {
+          try {
+            var resp = await fetch('/setup/calibration/api/standard_servo/' + partId + '/reset', { method: 'POST' });
+            var out = await resp.json();
+            if (out.success) { showStatus(out.message || 'Calibration reset', 'success'); setTimeout(function () { location.reload(); }, 1200); }
+            else { showStatus(out.message || 'Nothing to reset', 'warning'); }
+          } catch (e) { showStatus('Reset failed: ' + e.message, 'danger'); }
+        });
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/character-menu.js"></script>
 </body>
 
 </html>
