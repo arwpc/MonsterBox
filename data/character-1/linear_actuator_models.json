@@ -110,5 +110,27 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758751124852",
+    "name": "E2E LA Model",
+    "description": "linear_actuator defaults",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751344451",
+    "name": "E2E LA Model",
+    "description": "linear_actuator defaults",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

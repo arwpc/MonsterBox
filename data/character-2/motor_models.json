@@ -18,5 +18,45 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758750688709",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758750784007",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751205099",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751423846",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

@@ -38,5 +38,25 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758751126467",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751346267",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

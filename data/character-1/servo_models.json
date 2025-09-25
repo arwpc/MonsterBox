@@ -125,5 +125,31 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758751122718",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751342473",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

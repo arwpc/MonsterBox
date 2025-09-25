@@ -24,5 +24,57 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758750684508",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758750780331",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751201943",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758751420406",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]
