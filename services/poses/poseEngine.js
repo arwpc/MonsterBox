@@ -70,9 +70,13 @@ async function preparePoseCommands(pose, options) {
 
     for (const part of pose.parts) {
         try {
+            console.log(`🔧 Preparing part ${part.partId} (${part.type})`);
             const command = await preparePart(part, options);
             if (command) {
                 commands.push(command);
+                console.log(`✅ Part ${part.partId} prepared successfully`);
+            } else {
+                console.warn(`⚠️ Part ${part.partId} returned null command`);
             }
         } catch (error) {
             console.warn(`⚠️ Skipping part ${part.partId}: ${error.message}`);
@@ -101,13 +105,16 @@ async function preparePart(part, options) {
         throw new Error(`Part ${partId} not found in parts.json`);
     }
 
-    // Validate part type matches
-    if (partMetadata.type !== type) {
+    // Validate part type matches (normalize underscores vs hyphens)
+    const normalizedPoseType = type.replace('_', '-');
+    const normalizedPartType = partMetadata.type.replace('_', '-');
+    if (normalizedPartType !== normalizedPoseType) {
         throw new Error(`Part type mismatch: expected ${type}, got ${partMetadata.type}`);
     }
 
-    // Prepare command based on part type
-    switch (type) {
+    // Prepare command based on part type (normalize underscores vs hyphens)
+    const normalizedType = type.replace('_', '-');
+    switch (normalizedType) {
         case 'servo':
             return await prepareServoCommand(partId, target, partMetadata, options);
 
@@ -116,6 +123,12 @@ async function preparePart(part, options) {
 
         case 'motor':
             return await prepareMotorCommand(partId, target, partMetadata, options);
+
+        case 'light':
+            return await prepareLightCommand(partId, target, partMetadata, options);
+
+        case 'led':
+            return await prepareLEDCommand(partId, target, partMetadata, options);
 
         default:
             throw new Error(`Unsupported part type: ${type}`);
@@ -214,6 +227,59 @@ async function prepareContinuousServoCommand(partId, continuous, partMetadata, c
 }
 
 /**
+ * Prepare linear actuator command
+ * @param {number} partId - Part ID
+ * @param {Object} target - Target configuration
+ * @param {Object} partMetadata - Part metadata from parts.json
+ * @param {Object} options - Execution options
+ * @returns {Promise<Object>} - Actuator command
+ */
+async function prepareActuatorCommand(partId, target, partMetadata, options) {
+    const { distance, speed = 50 } = target;
+
+    if (distance === undefined) {
+        throw new Error(`Linear actuator target must specify distance for part ${partId}`);
+    }
+
+    return {
+        type: 'linear_actuator',
+        action: 'moveTo',
+        partId,
+        params: {
+            directionPin: partMetadata.directionPin || 18,
+            pwmPin: partMetadata.pwmPin || 13,
+            distance: Math.max(0, Math.min(distance, partMetadata.maxExtension || 15000)),
+            speed: Math.max(1, Math.min(100, speed)),
+            duration: target.durationMs || 2000
+        }
+    };
+}
+
+/**
+ * Prepare motor command
+ * @param {number} partId - Part ID
+ * @param {Object} target - Target configuration
+ * @param {Object} partMetadata - Part metadata from parts.json
+ * @param {Object} options - Execution options
+ * @returns {Promise<Object>} - Motor command
+ */
+async function prepareMotorCommand(partId, target, partMetadata, options) {
+    const { speed = 50, direction = 'forward', duration = 1000 } = target;
+
+    return {
+        type: 'motor',
+        action: 'run',
+        partId,
+        params: {
+            pin: partMetadata.pin || partMetadata.gpioPin,
+            speed: Math.max(0, Math.min(100, speed)),
+            direction: direction,
+            duration: duration
+        }
+    };
+}
+
+/**
  * Execute prepared commands
  * @param {Array} commands - Array of commands to execute
  * @param {boolean} concurrent - Execute concurrently or sequentially
@@ -247,6 +313,18 @@ async function executeCommand(command) {
         switch (command.type) {
             case 'servo':
                 return await executeServoCommand(command);
+
+            case 'linear_actuator':
+                return await executeActuatorCommand(command);
+
+            case 'motor':
+                return await executeMotorCommand(command);
+
+            case 'light':
+                return await executeLightCommand(command);
+
+            case 'led':
+                return await executeLEDCommand(command);
 
             default:
                 throw new Error(`Unsupported command type: ${command.type}`);
@@ -283,6 +361,122 @@ async function executeServoCommand(command) {
 
         default:
             throw new Error(`Unknown servo action: ${action}`);
+    }
+
+    return {
+        success: true,
+        partId,
+        action,
+        params
+    };
+}
+
+/**
+ * Execute linear actuator command
+ * @param {Object} command - Actuator command
+ * @returns {Promise<Object>} - Execution result
+ */
+async function executeActuatorCommand(command) {
+    const { action, partId, params } = command;
+
+    // Import actuator service
+    const { default: actuatorService } = await import('../hardwareService/actuator.js');
+
+    switch (action) {
+        case 'moveTo':
+            await actuatorService.moveTo(params);
+            break;
+
+        default:
+            throw new Error(`Unknown actuator action: ${action}`);
+    }
+
+    return {
+        success: true,
+        partId,
+        action,
+        params
+    };
+}
+
+/**
+ * Execute motor command
+ * @param {Object} command - Motor command
+ * @returns {Promise<Object>} - Execution result
+ */
+async function executeMotorCommand(command) {
+    const { action, partId, params } = command;
+
+    // Import motor service
+    const { default: motorService } = await import('../hardwareService/motor.js');
+
+    switch (action) {
+        case 'run':
+            await motorService.run(params);
+            break;
+
+        default:
+            throw new Error(`Unknown motor action: ${action}`);
+    }
+
+    return {
+        success: true,
+        partId,
+        action,
+        params
+    };
+}
+
+/**
+ * Execute light command
+ * @param {Object} command - Light command
+ * @returns {Promise<Object>} - Execution result
+ */
+async function executeLightCommand(command) {
+    const { action, partId, params } = command;
+
+    // Import light service
+    const { default: lightService } = await import('../hardwareService/light.js');
+
+    switch (action) {
+        case 'toggle':
+        case 'turnOn':
+        case 'turnOff':
+            await lightService[action](params);
+            break;
+
+        default:
+            throw new Error(`Unknown light action: ${action}`);
+    }
+
+    return {
+        success: true,
+        partId,
+        action,
+        params
+    };
+}
+
+/**
+ * Execute LED command
+ * @param {Object} command - LED command
+ * @returns {Promise<Object>} - Execution result
+ */
+async function executeLEDCommand(command) {
+    const { action, partId, params } = command;
+
+    // Import light service (LEDs use same service as lights)
+    const { default: lightService } = await import('../hardwareService/light.js');
+
+    switch (action) {
+        case 'on':
+        case 'off':
+        case 'toggle':
+            await lightService[action](params);
+            break;
+
+        default:
+            throw new Error(`Unknown LED action: ${action}`);
     }
 
     return {
@@ -335,17 +529,61 @@ function clampServoAngle(angle, calibration) {
 }
 
 /**
+ * Prepare light command
+ * @param {number} partId - Part ID
+ * @param {Object} target - Target configuration
+ * @param {Object} partMetadata - Part metadata
+ * @param {Object} options - Execution options
+ * @returns {Promise<Object>} - Light command
+ */
+async function prepareLightCommand(partId, target, partMetadata, options) {
+    return {
+        type: 'light',
+        partId,
+        action: target.action || 'toggle',
+        brightness: target.brightness || 100,
+        duration: target.duration || 1000
+    };
+}
+
+/**
+ * Prepare LED command
+ * @param {number} partId - Part ID
+ * @param {Object} target - Target configuration
+ * @param {Object} partMetadata - Part metadata
+ * @param {Object} options - Execution options
+ * @returns {Promise<Object>} - LED command
+ */
+async function prepareLEDCommand(partId, target, partMetadata, options) {
+    return {
+        type: 'led',
+        partId,
+        action: target.action || 'on',
+        color: target.color || '#FFFFFF',
+        brightness: target.brightness || 100,
+        duration: target.duration || 1000
+    };
+}
+
+/**
  * Get part metadata from parts.json
  * @param {number} partId - Part ID
  * @returns {Promise<Object|null>} - Part metadata
  */
 async function getPartMetadata(partId) {
     try {
-        const partsPath = path.resolve(__dirname, '../../../../data/parts.json');
+        // Import the parts service to get current parts data
+        const { default: partsService } = await import('../configService.js');
+        const config = await partsService.readConfig();
+
+        // Load parts from character-specific directory
+        const characterId = config.selectedCharacter || 3;
+        const partsPath = path.resolve(__dirname, `../../data/character-${characterId}/parts.json`);
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);
 
-        return parts.find(part => part.id === partId) || null;
+        // parts.json is an array, not an object with a parts property
+        return parts.find(part => part.id == partId) || null;
     } catch (error) {
         console.warn(`⚠️ Could not load part metadata: ${error.message}`);
         return null;
