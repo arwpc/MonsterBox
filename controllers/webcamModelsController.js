@@ -10,11 +10,31 @@ async function getModelsFilePath() {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..');
   const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
-  return path.resolve(appRoot, dataDir, 'webcam_models.json');
+  const modelsDir = path.resolve(appRoot, dataDir, 'models');
+  return path.resolve(modelsDir, 'webcam_models.json');
+}
+
+async function ensureDir(filePath) {
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
 }
 
 async function loadModels() {
   const filePath = await getModelsFilePath();
+  // Migrate from legacy root path if needed
+  try {
+    await fs.access(filePath);
+  } catch (e) {
+    try {
+      const cfg = await readConfig();
+      const appRoot = path.resolve(__dirname, '..');
+      const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+      const legacyPath = path.resolve(appRoot, dataDir, 'webcam_models.json');
+      const legacyData = await fs.readFile(legacyPath, 'utf8');
+      await ensureDir(filePath);
+      await fs.writeFile(filePath, legacyData, 'utf8');
+    } catch (_) { /* ignore */ }
+  }
   try {
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data);
@@ -25,6 +45,7 @@ async function loadModels() {
 
 async function saveModels(models) {
   const filePath = await getModelsFilePath();
+  await ensureDir(filePath);
   await fs.writeFile(filePath, JSON.stringify(models, null, 2), 'utf8');
 }
 

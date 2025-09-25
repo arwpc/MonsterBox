@@ -32,8 +32,7 @@ router.get('/', async (req, res) => {
         res.render('setup/parts', {
             title: 'Setup Parts - MonsterBox 4.0',
             page: 'setup-parts',
-            config: { theme: 'dark' },
-            currentCharacter: null
+            config: { theme: 'dark' }
         });
     } catch (error) {
         console.error('Error rendering parts setup page:', error);
@@ -41,7 +40,6 @@ router.get('/', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load parts setup page',
             message: error.message
         });

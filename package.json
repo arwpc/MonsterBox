@@ -21,7 +21,8 @@
     "setup:webcam": "bash scripts/setup-webcam.sh",
     "check": "bash scripts/system-check.sh",
     "install:python": "python3 -m pip install --user -r utils/requirements.txt",
-    "postinstall": "node scripts/post-install.js"
+    "postinstall": "node scripts/post-install.js",
+    "migrate:models": "node scripts/migrate-models.js"
   },
   "keywords": [
     "animatronic",

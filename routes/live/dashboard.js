@@ -18,40 +18,38 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-function getCurrentCharacterId(req){
-  return (parseInt(req.app.locals?.config?.selectedCharacter,10)) || 4;
+function getCurrentCharacterId(req) {
+  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || 4;
 }
 
-async function getDataDir(){
+async function getDataDir() {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..', '..');
   return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : 'data');
 }
 
-async function loadParts(){
-  try { const p = await getDataDir(); const txt = await fs.readFile(path.resolve(p, 'parts.json'), 'utf8'); return JSON.parse(txt)||[]; } catch(_){ return []; }
+async function loadParts() {
+  try { const p = await getDataDir(); const txt = await fs.readFile(path.resolve(p, 'parts.json'), 'utf8'); return JSON.parse(txt) || []; } catch (_) { return []; }
 }
 
 // Live dashboard page
 router.get('/', async (req, res) => {
-    try {
-        res.render('live/dashboard', {
-            title: 'Live Dashboard - MonsterBox 4.0',
-            page: 'live-dashboard',
-            config: { theme: 'dark' },
-            currentCharacter: getCurrentCharacterId(req)
-        });
-    } catch (error) {
-        console.error('Error rendering live dashboard page:', error);
-        res.status(500).render('error', {
-            title: 'Error',
-            page: 'error',
-            config: { theme: 'dark' },
-            currentCharacter: null,
-            error: 'Failed to load live dashboard page',
-            message: error.message
-        });
-    }
+  try {
+    res.render('live/dashboard', {
+      title: 'Live Dashboard - MonsterBox 4.0',
+      page: 'live-dashboard',
+      config: { theme: 'dark' }
+    });
+  } catch (error) {
+    console.error('Error rendering live dashboard page:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      page: 'error',
+      config: { theme: 'dark' },
+      error: 'Failed to load live dashboard page',
+      message: error.message
+    });
+  }
 });
 
 // API endpoints for live dashboard

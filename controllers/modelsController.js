@@ -26,6 +26,10 @@ async function getDataDir() {
   return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : '../data');
 }
 
+function getGlobalModelsDirSync(baseDataDir) {
+  return path.resolve(baseDataDir, 'models');
+}
+
 async function ensureDir(filePath) {
   const dir = path.dirname(filePath);
   await fs.mkdir(dir, { recursive: true });
@@ -35,7 +39,9 @@ async function getModelsFilePath(type) {
   const dataDir = await getDataDir();
   const fname = TYPE_TO_FILE[type];
   if (!fname) throw new Error(`Unsupported model type: ${type}`);
-  return path.resolve(dataDir, fname);
+  // Use global shared models directory: <data>/models/<type>_models.json
+  const globalDir = getGlobalModelsDirSync(dataDir);
+  return path.resolve(globalDir, fname);
 }
 
 async function seedServoModelsIfNeeded(filePath) {
@@ -79,6 +85,20 @@ async function seedServoModelsIfNeeded(filePath) {
 
 async function loadModels(type) {
   const filePath = await getModelsFilePath(type);
+  // Migrate from legacy root data path (e.g., data/servo_models.json) to global shared directory (data/models/...)
+  try {
+    await fs.access(filePath);
+  } catch (e) {
+    try {
+      const dataDir = await getDataDir();
+      const legacyPath = path.resolve(dataDir, TYPE_TO_FILE[type]);
+      const legacyData = await fs.readFile(legacyPath, 'utf8');
+      await ensureDir(filePath);
+      await fs.writeFile(filePath, legacyData, 'utf8');
+    } catch (_) {
+      // ignore if legacy not found
+    }
+  }
   if (type === 'servo') await seedServoModelsIfNeeded(filePath);
   try {
     const data = await fs.readFile(filePath, 'utf8');

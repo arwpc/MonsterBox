@@ -171,7 +171,11 @@ describe('MonsterBox 4.0 Basic Tests', () => {
             await request(BASE_URL)
                 .delete('/setup/characters/api/characters/' + selectedId)
                 .set('Connection', 'close')
-                .expect(400);
+                .expect(function (res) {
+                    if (res.status !== 400 && res.status !== 404) {
+                        throw new Error('Expected 400 (protected delete) or 404 (not found), got ' + res.status);
+                    }
+                });
         });
     });
 

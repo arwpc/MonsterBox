@@ -14,8 +14,7 @@ router.get('/', async (req, res) => {
         res.render('setup/poses', {
             title: 'Setup Poses - MonsterBox 4.0',
             page: 'setup-poses',
-            config: { theme: 'dark' },
-            currentCharacter: null
+            config: { theme: 'dark' }
         });
     } catch (error) {
         console.error('Error rendering poses setup page:', error);
@@ -23,7 +22,6 @@ router.get('/', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load poses setup page',
             message: error.message
         });

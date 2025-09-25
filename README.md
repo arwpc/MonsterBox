@@ -849,6 +849,30 @@ Endpoints:
 
 
 
+## 📦 Global Models (Shared Across Characters) + Migration
+
+MonsterBox 4.0 now stores hardware Models globally under `data/models/` so you can build a reusable database of servos, actuators, sensors, audio devices, etc. Parts, calibration, poses, and AI config remain character‑isolated under `data/character-<id>/`.
+
+- Global location: `data/models/<type>_models.json` (e.g., `servo_models.json`)
+- Applies to: servo, linear_actuator, motor, led, light, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
+- Backward compatible: the app auto‑reads legacy files if present and seeds empty sets when needed
+
+### One‑time migration (non‑destructive)
+
+Merges any legacy per‑character and root‑level model files into the new global location. Source files are kept intact.
+
+```bash
+npm run migrate:models
+```
+
+What it does
+- Scans `data/<type>_models.json` and `data/character-*/<type>_models.json`
+- Merges into `data/models/<type>_models.json`
+- De‑duplicates by `(name + defaults)`; generates unique string ids when needed
+
+
+
+
 ## 🧠 AI Settings & Conversation (STT → AI → TTS)
 
 MonsterBox includes an integrated AI pipeline powered by ElevenLabs services and your configured AI Agents.

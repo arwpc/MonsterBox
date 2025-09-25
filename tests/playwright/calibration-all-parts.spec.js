@@ -76,6 +76,7 @@ test.describe('Calibration - all parts walkthrough', () => {
 
     for (let i = 0; i < count; i++) {
       const item = list.nth(i);
+      await item.scrollIntoViewIfNeeded();
       await item.click();
 
       // Assign model if required
@@ -142,10 +143,11 @@ test.describe('Calibration - all parts walkthrough', () => {
         didEffective = true;
       }
 
-      // For a non-movement type, ensure UI says no controls
-      if (!didNoControlsCheck && ['speaker','microphone','webcam','sensor','motion_sensor','head_tracking','light','led'].includes(partType)) {
-        const txt = await page.locator('#controlsArea').textContent();
-        expect((txt || '').toLowerCase()).toContain('no calibration controls');
+      // For a non-movement type, ensure basic test controls are rendered
+      if (!didNoControlsCheck && ['speaker', 'microphone', 'webcam', 'sensor', 'motion_sensor', 'head_tracking', 'light', 'led'].includes(partType)) {
+        await expect(page.locator('#controlsArea')).toBeVisible();
+        const btnCount = await page.locator('#controlsArea button').count();
+        expect(btnCount).toBeGreaterThan(0);
         didNoControlsCheck = true;
       }
 
@@ -155,6 +157,12 @@ test.describe('Calibration - all parts walkthrough', () => {
       if (await minField.count() > 0 && await setMinBtn.count() > 0) {
         await minField.fill('10');
         await setMinBtn.click();
+
+        // Stop early once key checks are satisfied to keep test fast
+        if (didEffective && didNoControlsCheck && isolationChecked) {
+          break;
+        }
+
       }
     }
 

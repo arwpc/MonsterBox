@@ -100,11 +100,13 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i>
-                        <span id="charLabel">
-                            <% if (typeof currentCharacter !=='undefined' && currentCharacter) { %>Character <%=
-                                    currentCharacter %>
-                                    <% } else { %>No Character<% } %>
-                        </span>
+                        <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter :
+                            ((typeof config !=='undefined' && config && config.selectedCharacter) ?
+                            config.selectedCharacter : null); %>
+                            <span id="charLabel" data-char-id="<%= __cur || '' %>">
+                                <% if (__cur) { %>Character <%= __cur %>
+                                        <% } else { %>No Character<% } %>
+                            </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" id="charMenu">
                         <li>

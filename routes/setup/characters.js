@@ -13,8 +13,7 @@ router.get('/', async function (req, res) {
     res.render('setup/characters', {
       title: 'Setup Characters - MonsterBox 4.0',
       page: 'setup-characters',
-      config: { theme: 'dark' },
-      currentCharacter: null
+      config: { theme: 'dark' }
     });
   } catch (err) {
     console.error('Error rendering characters page:', err);

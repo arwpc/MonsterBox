@@ -10,22 +10,6 @@
     "elevenLabsAgentId": "undefined"
   },
   {
-    "id": 3,
-    "name": "Orlok",
-    "description": "Count Orlok - Vampire animatronic with moving arms and glowing eyes",
-    "created": "2025-09-14T09:57:00.000Z",
-    "enabled": true,
-    "sttConfig": {
-      "model": "scribe_v1",
-      "language": "auto",
-      "sampleRate": "16000",
-      "microphonePartId": "7",
-      "microphoneDeviceId": "default",
-      "format": "mp3"
-    },
-    "elevenLabsAgentId": "undefined"
-  },
-  {
     "id": 4,
     "name": "Skulltalker",
     "elevenLabsAgentId": "undefined"

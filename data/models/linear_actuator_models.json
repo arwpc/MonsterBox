@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1757818992065",
+    "name": "Actuator X",
+    "description": "Generic LA",
+    "defaults": {
+      "maxExtension": 100,
+      "maxRetraction": 0,
+      "speedDefault": 50
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758565654155",
+    "name": "Model for linear_actuator",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758745768914",
+    "name": "E2E LA Model",
+    "description": "linear_actuator defaults",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758816992950",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]

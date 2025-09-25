@@ -1,8 +1,8 @@
 {
   "port": 3000,
   "theme": "dark",
-  "selectedCharacter": 3,
-  "dataPath": "data/character-3",
+  "selectedCharacter": 2,
+  "dataPath": "data/character-2",
   "pythonScriptsPath": "ARCHIVE/scripts/hardware",
   "enableHardware": true,
   "enableSafetyChecks": true,

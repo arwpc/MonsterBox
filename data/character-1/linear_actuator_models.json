@@ -132,5 +132,148 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758816992950",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758817223524",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758819658454",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758819701164",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758822232410",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758822271904",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758825975324",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826012465",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826408007",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826654889",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758828108624",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758828716271",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758829949491",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

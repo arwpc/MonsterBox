@@ -61,12 +61,23 @@ export async function remove(req, res) {
   var id = parseId(req.params.id);
   if (id === null) return res.status(400).json({ success: false, error: 'Invalid id' });
   try {
-    var cfg = await readConfig();
-    if (cfg && typeof cfg.selectedCharacter !== 'undefined' && cfg.selectedCharacter === id) {
+    // Prefer in-memory selection (authoritative during runtime), fall back to disk
+    var selected = (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null;
+    if (selected === null) {
+      var cfg = await readConfig();
+      selected = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
+    }
+    if (selected !== null && selected === id) {
       return res.status(400).json({ success: false, error: 'Cannot delete the currently selected character' });
     }
     var ok = await deleteCharacter(id);
-    if (!ok) return res.status(404).json({ success: false, error: 'Not found' });
+    if (!ok) {
+      // If this id is (or was) the selected one, treat as protected delete
+      if (selected !== null && selected === id) {
+        return res.status(400).json({ success: false, error: 'Cannot delete the currently selected character' });
+      }
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -74,8 +85,13 @@ export async function remove(req, res) {
 }
 
 export async function getCurrent(req, res) {
-  var sel = (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null;
-  res.json({ success: true, selectedCharacter: sel });
+  try {
+    var cfg = await readConfig();
+    var sel = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
+    res.json({ success: true, selectedCharacter: sel });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 }
 
 export async function setSelected(req, res) {

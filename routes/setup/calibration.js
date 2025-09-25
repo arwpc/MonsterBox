@@ -14,6 +14,12 @@ import * as continuousServoCalibration from '../../services/continuousServoCalib
 import hardwareService from '../../services/hardwareService/index.js';
 import * as standardServoCalibration from '../../services/standardServoCalibrationService.js';
 
+import { fileURLToPath } from 'url';
+import { readConfig } from '../../services/configService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const router = express.Router();
 
@@ -23,8 +29,7 @@ router.get('/', async (req, res) => {
         res.render('setup/calibration', {
             title: 'Setup Calibration - MonsterBox 4.0',
             page: 'setup-calibration',
-            config: { theme: 'dark' },
-            currentCharacter: null
+            config: { theme: 'dark' }
         });
     } catch (error) {
         console.error('Error rendering calibration setup page:', error);
@@ -32,7 +37,6 @@ router.get('/', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load calibration setup page',
             message: error.message
         });
@@ -60,16 +64,61 @@ router.get('/api/parts', async (req, res) => {
             }
         }
 
-        const list = parts.map(p => ({
-            id: String(p.id),
-            name: p.name,
-            type: p.type,
-            modelId: p.modelId || null,
-            config: p.config || {},
-            enabled: !!p.enabled,
-            // Flags for UI
-            needsModel: ['servo', 'linear_actuator', 'motor'].includes(p.type) ? !p.modelId : false
+        // GPIO conflict detection among enabled parts within the current set
+        function pinsFor(p) {
+            const out = [];
+            if (p && p.enabled) {
+                if (p.pin != null) out.push(String(p.pin));
+                if (p.directionPin != null) out.push(String(p.directionPin));
+                if (p.pwmPin != null) out.push(String(p.pwmPin));
+            }
+            return out;
+        }
+        const pinCounts = {};
+        parts.forEach(p => pinsFor(p).forEach(pin => { pinCounts[pin] = (pinCounts[pin] || 0) + 1; }));
+
+        // Build items with async needsCalibration
+        const list = await Promise.all(parts.map(async (p) => {
+            let needsCalibration = false;
+            if (p.type === 'servo') {
+                const isCont = String(p.config && p.config.servoType || 'standard').toLowerCase() === 'continuous';
+                if (isCont) {
+                    try {
+                        const status = await continuousServoCalibration.getCalibrationStatus(p.id);
+                        needsCalibration = !(status && (status.pulseCalibrated || status.positionsCalibrated));
+                    } catch (_) { needsCalibration = true; }
+                } else {
+                    try {
+                        const status = await standardServoCalibration.getCalibrationStatus(p.id);
+                        needsCalibration = !(status && (status.pulseCalibrated || status.positionsCalibrated));
+                    } catch (_) { needsCalibration = true; }
+                }
+            } else if (p.type === 'linear_actuator') {
+                try {
+                    const status = await linearActuatorCalibration.getCalibrationStatus(p.id);
+                    needsCalibration = !(status && (status.fullyCalibrated === true));
+                } catch (_) { needsCalibration = true; }
+            } else {
+                needsCalibration = false;
+            }
+
+            const gpioPins = pinsFor(p);
+            const gpioConflict = gpioPins.some(pin => (pinCounts[pin] || 0) > 1);
+
+            return {
+                id: String(p.id),
+                name: p.name,
+                type: p.type,
+                modelId: p.modelId || null,
+                config: p.config || {},
+                enabled: !!p.enabled,
+                // Flags for UI
+                needsModel: !p.modelId,
+                needsCalibration: !!needsCalibration,
+                gpioConflict: !!gpioConflict
+            };
         }));
+
         res.json({ success: true, parts: list });
     } catch (err) {
         console.error('Calibration api/parts failed:', err);
@@ -119,18 +168,19 @@ router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
 
 
 // Effective values (Model -> Overrides -> Effective)
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { readConfig } from '../../services/configService.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const MODEL_FILE_BY_TYPE = {
     servo: 'servo_models.json',
     linear_actuator: 'linear_actuator_models.json',
     motor: 'motor_models.json',
+    led: 'led_models.json',
+    light: 'light_models.json',
+    sensor: 'sensor_models.json',
+    motion_sensor: 'motion_sensor_models.json',
+    microphone: 'microphone_models.json',
+    speaker: 'speaker_models.json',
+    webcam: 'webcam_models.json',
+    head_tracking: 'head_tracking_models.json',
 };
 
 async function getDataDir() {
@@ -139,17 +189,38 @@ async function getDataDir() {
     return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : '../data');
 }
 
+function getGlobalModelsDirSync(baseDataDir) {
+    return path.resolve(baseDataDir, 'models');
+}
+
+async function ensureDir(filePath) {
+    const dir = path.dirname(filePath);
+    await fs.mkdir(dir, { recursive: true });
+}
+
 async function loadModelById(type, id) {
     const dataDir = await getDataDir();
     const file = MODEL_FILE_BY_TYPE[type];
     if (!file) return null;
-    const fp = path.resolve(dataDir, file);
+    const globalDir = getGlobalModelsDirSync(dataDir);
+    const fp = path.resolve(globalDir, file);
     try {
+        // Try new global location first
         const raw = await fs.readFile(fp, 'utf8');
         const arr = JSON.parse(raw || '[]');
         return arr.find(m => String(m.id) === String(id)) || null;
-    } catch {
-        return null;
+    } catch (err) {
+        // Attempt migration from legacy root location
+        try {
+            const legacyPath = path.resolve(dataDir, file);
+            const legacyRaw = await fs.readFile(legacyPath, 'utf8');
+            await ensureDir(fp);
+            await fs.writeFile(fp, legacyRaw, 'utf8');
+            const arr = JSON.parse(legacyRaw || '[]');
+            return arr.find(m => String(m.id) === String(id)) || null;
+        } catch (_) {
+            return null;
+        }
     }
 }
 
@@ -266,7 +337,6 @@ router.get('/linear_actuator/:id', async (req, res) => {
                 title: 'Part Not Found',
                 page: 'error',
                 config: { theme: 'dark' },
-                currentCharacter: null,
                 error: 'Linear actuator not found',
                 message: `No linear actuator found with ID: ${partId}`
             });
@@ -277,7 +347,6 @@ router.get('/linear_actuator/:id', async (req, res) => {
                 title: 'Invalid Part Type',
                 page: 'error',
                 config: { theme: 'dark' },
-                currentCharacter: null,
                 error: 'Invalid part type',
                 message: `Part ${partId} is not a linear actuator`
             });
@@ -289,7 +358,6 @@ router.get('/linear_actuator/:id', async (req, res) => {
             title: `Calibrate ${part.name} - MonsterBox 4.0`,
             page: 'setup-calibration-linear-actuator',
             config: { theme: 'dark' },
-            currentCharacter: null,
             part: part,
             calibrationStatus: calibrationStatus
         });
@@ -299,7 +367,6 @@ router.get('/linear_actuator/:id', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load calibration page',
             message: error.message
         });
@@ -502,7 +569,7 @@ router.get('/standard_servo/:id', async (req, res) => {
 
         if (!part) {
             return res.status(404).render('error', {
-                title: 'Part Not Found', page: 'error', config: { theme: 'dark' }, currentCharacter: null,
+                title: 'Part Not Found', page: 'error', config: { theme: 'dark' },
                 error: 'Part not found', message: `No part found with ID: ${partId}`
             });
         }
@@ -510,7 +577,7 @@ router.get('/standard_servo/:id', async (req, res) => {
         // Verify this is a standard positional servo (not continuous)
         if (part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
             return res.status(400).render('error', {
-                title: 'Invalid Part Type', page: 'error', config: { theme: 'dark' }, currentCharacter: null,
+                title: 'Invalid Part Type', page: 'error', config: { theme: 'dark' },
                 error: 'Invalid part type', message: 'This calibration page is only for standard positional servos'
             });
         }
@@ -527,7 +594,7 @@ router.get('/standard_servo/:id', async (req, res) => {
             title: `Calibrate ${part.name} - MonsterBox 4.0`,
             page: 'setup-calibration-standard-servo',
             config: { theme: 'dark' },
-            currentCharacter: null,
+
             part,
             calibrationStatus,
             suggestedPositions,
@@ -535,7 +602,7 @@ router.get('/standard_servo/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Error rendering standard servo calibration page:', error);
-        res.status(500).render('error', { title: 'Error', page: 'error', config: { theme: 'dark' }, currentCharacter: null, error: 'Failed to render page', message: error.message });
+        res.status(500).render('error', { title: 'Error', page: 'error', config: { theme: 'dark' }, error: 'Failed to render page', message: error.message });
     }
 });
 
@@ -728,7 +795,7 @@ router.get('/continuous_servo/1', async (req, res) => {
             title: 'Invalid Part Type',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
+
             error: 'Invalid part type',
             message: 'This calibration page is only for continuous servos'
         });
@@ -737,7 +804,7 @@ router.get('/continuous_servo/1', async (req, res) => {
             title: 'Invalid Part Type',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
+
             error: 'Invalid part type',
             message: 'This calibration page is only for continuous servos'
         });
@@ -758,7 +825,7 @@ router.get('/continuous_servo/:id', async (req, res) => {
                     title: 'Part Not Found',
                     page: 'error',
                     config: { theme: 'dark' },
-                    currentCharacter: null,
+
                     error: 'Part not found',
                     message: `No part found with ID: ${partId}`
                 });
@@ -767,7 +834,7 @@ router.get('/continuous_servo/:id', async (req, res) => {
                 title: 'Invalid Part Type',
                 page: 'error',
                 config: { theme: 'dark' },
-                currentCharacter: null,
+
                 error: 'Invalid part type',
                 message: 'This calibration page is only for continuous servos'
             });
@@ -779,7 +846,7 @@ router.get('/continuous_servo/:id', async (req, res) => {
                 title: 'Invalid Part Type',
                 page: 'error',
                 config: { theme: 'dark' },
-                currentCharacter: null,
+
                 error: 'Invalid part type',
                 message: 'This calibration page is only for continuous servos'
             });
@@ -792,7 +859,6 @@ router.get('/continuous_servo/:id', async (req, res) => {
             title: `Calibrate ${part.name} - MonsterBox 4.0`,
             page: 'setup-calibration-continuous-servo',
             config: { theme: 'dark' },
-            currentCharacter: null,
             part: part,
             calibrationStatus: calibrationStatus,
             suggestedPositions: suggestedPositions
@@ -803,7 +869,6 @@ router.get('/continuous_servo/:id', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load calibration page',
             message: error.message
         });

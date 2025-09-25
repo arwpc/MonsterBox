@@ -59,10 +59,20 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Global template variables
-app.use((req, res, next) => {
-    res.locals.config = config;
-    req.app.locals.config = config;
-    res.locals.currentCharacter = config.selectedCharacter || null;
+app.use(async (req, res, next) => {
+    try {
+        // Refresh from disk so a just-selected character is reflected immediately after redirect
+        const latest = await loadConfig();
+        const merged = Object.assign({}, req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : {}, latest);
+        req.app.locals.config = merged;
+        res.locals.config = merged;
+        res.locals.currentCharacter = merged.selectedCharacter || null;
+    } catch (_) {
+        const fallback = req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : config;
+        req.app.locals.config = fallback;
+        res.locals.config = fallback;
+        res.locals.currentCharacter = fallback.selectedCharacter || null;
+    }
     next();
 });
 
@@ -91,7 +101,7 @@ app.get('/', (req, res) => {
         title: 'MonsterBox 4.0',
         page: 'dashboard',
         config: { theme: 'dark' },
-        currentCharacter: null
+        currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
     });
 });
 
@@ -101,7 +111,7 @@ app.get('/setup', (req, res) => {
         title: 'Setup - MonsterBox 4.0',
         page: 'setup',
         config: { theme: 'dark' },
-        currentCharacter: null
+        currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
     });
 });
 

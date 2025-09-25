@@ -15,8 +15,7 @@ router.get('/', async (req, res) => {
         res.render('setup/audio', {
             title: 'Setup Audio - MonsterBox 4.0',
             page: 'setup-audio',
-            config: { theme: 'dark' },
-            currentCharacter: null
+            config: { theme: 'dark' }
         });
     } catch (error) {
         console.error('Error rendering audio setup page:', error);
@@ -24,7 +23,6 @@ router.get('/', async (req, res) => {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },
-            currentCharacter: null,
             error: 'Failed to load audio setup page',
             message: error.message
         });

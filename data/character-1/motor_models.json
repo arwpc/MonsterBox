@@ -58,5 +58,135 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1758816995271",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758817225626",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758819660303",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758819703581",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758822234244",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758822273851",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758825977488",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826014416",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826410229",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758826657178",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758828110877",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758828718043",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758829951686",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

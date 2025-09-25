@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1758745770625",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1758816995271",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]

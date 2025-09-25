@@ -74,6 +74,19 @@
         </div>
       </div>
 
+      <!-- Quick Model assignment (always visible) -->
+      <div class="mb-3">
+        <label class="form-label">Model</label>
+        <div class="input-group">
+          <select id="modelSelect" class="form-select">
+            <option value="">Select model</option>
+          </select>
+          <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
+        </div>
+        <div class="form-text">Models are shared across all characters. Overrides remain part-specific.</div>
+      </div>
+
+
       <div class="row g-3">
         <!-- Left Sidebar: Devices -->
         <div class="col-12 col-xl-3">
@@ -108,9 +121,12 @@
               </div>
             </div>
             <div class="card-body">
+
               <ul class="nav nav-tabs" id="devTabs" role="tablist">
                 <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab"
                     data-bs-target="#tabControls" type="button">Controls</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                    data-bs-target="#tabEdit" type="button">Edit</button></li>
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
                     data-bs-target="#tabModel" type="button">Model/Overrides</button></li>
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
@@ -123,19 +139,41 @@
                 <div class="tab-pane fade show active" id="tabControls">
                   <div id="controlsArea" class="text-muted">Select a device to show controls.</div>
                 </div>
+                <!-- Edit (basic part settings) -->
+                <div class="tab-pane fade" id="tabEdit">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Name</label>
+                      <input id="editName" class="form-control" placeholder="Part name">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editEnabled">
+                        <label class="form-check-label" for="editEnabled">Enabled</label>
+                      </div>
+                    </div>
+                    <div class="col-12" id="pinFields">
+                      <!-- Pin-specific fields will be rendered here -->
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Description</label>
+                      <input id="editDescription" class="form-control" placeholder="Describe this part">
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Config (JSON)</label>
+                      <textarea id="editConfig" class="form-control" rows="6" placeholder="{}"></textarea>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                      <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save</button>
+                    </div>
+                  </div>
+                </div>
                 <!-- Model/Overrides -->
                 <div class="tab-pane fade" id="tabModel">
                   <div class="row g-3">
                     <div class="col-12">
-                      <label class="form-label">Model</label>
-                      <div class="input-group">
-                        <select id="modelSelect" class="form-select">
-                          <option value="">Select model…</option>
-                        </select>
-                        <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
-                      </div>
-                      <div class="form-text">Each part must have a model. Defaults from the model can be overridden
-                        per-part below.</div>
+                      <div class="alert alert-secondary py-2">Use the Model selector above to assign or change the
+                        model. Defaults can be overridden below.</div>
                     </div>
                     <div class="col-12">
                       <label class="form-label">Overrides (JSON)</label>
@@ -297,8 +335,12 @@
             a.href = 'javascript:void(0)';
             a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
             a.setAttribute('data-pid', p.id);
+            var badges = '';
+            if (p.needsModel) badges += '<span class="badge text-bg-warning me-1">Needs Model</span>';
+            if (p.needsCalibration) badges += '<span class="badge text-bg-info me-1">Needs Cal</span>';
+            if (p.gpioConflict) badges += '<span class="badge text-bg-danger">GPIO</span>';
             a.innerHTML = `<div><div class="fw-semibold">${p.name}</div><small class="text-muted">${p.type}</small></div>` +
-              `<div>${p.needsModel ? '<span class="badge text-bg-warning">Needs Model</span>' : ''}</div>`;
+              `<div>${badges}</div>`;
             a.addEventListener('click', () => selectPart(p.id));
             elList.appendChild(a);
           });
@@ -306,15 +348,18 @@
         searchEl.addEventListener('input', () => renderList(parts));
 
         async function selectPart(id) {
-          selected = parts.find(p => String(p.id) === String(id));
+          selected = parts.find(function (p) { return String(p.id) === String(id); });
           if (!selected) return;
           devName.textContent = selected.name;
-          devMeta.textContent = `ID: ${selected.id} | Type: ${selected.type}`;
+          devMeta.textContent = 'ID: ' + selected.id + ' | Type: ' + selected.type;
           modelBadge.textContent = 'Model: ' + (selected.modelId || '—');
           overridesEditor.value = JSON.stringify(selected.config || {}, null, 2);
           await ensureModelsLoaded(selected.type);
           populateModelSelect(selected.type, selected.modelId);
+          var ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+          if (ctrlTabBtn) ctrlTabBtn.click();
           renderControls(selected);
+          renderEdit(selected);
           refreshEffective(selected.id);
         }
 
@@ -361,6 +406,8 @@
             modelBadge.textContent = 'Model: ' + val;
             // reflect badge in list
             loadParts();
+            var ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+            if (ctrlTabBtn) ctrlTabBtn.click();
           } else alert(j.error || 'Failed to assign model');
         });
 
@@ -450,10 +497,189 @@
             el.querySelector('#retractBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Retracting…'; try { await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'retract', speed: spd(), duration: dur() }) }); if (st) st.textContent = 'Done'; setTimeout(() => { if (st) st.textContent = ''; }, 800); } catch (e) { if (st) st.textContent = 'Failed'; } });
             el.querySelector('#stopBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…'; try { await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { method: 'POST' }); if (st) st.textContent = 'Stopped'; setTimeout(() => { if (st) st.textContent = ''; }, 800); } catch (e) { if (st) st.textContent = 'Failed'; } });
           } else if (part.type === 'motor') {
-            el.innerHTML = '<div class="alert alert-secondary">Motor control coming soon. Assign a model and set overrides.</div>';
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
+              '<input type="number" id="motSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
+              '<input type="number" id="motDur" class="form-control form-control-lg" value="500" style="width:140px"> ms' +
+              '<button id="motRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Run</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#motRun').addEventListener('click', function () {
+              var dir = document.getElementById('motDir').value;
+              var speed = parseInt(document.getElementById('motSpd').value || '50', 10);
+              var duration = parseInt(document.getElementById('motDur').value || '500', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'control', params: { direction: dir, speed: speed, duration: duration } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'light') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="lightToggle" class="btn btn-primary btn-lg"><i class="bi bi-lightbulb"></i> Toggle</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#lightToggle').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle' })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'led') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<input type="range" id="ledBri" min="0" max="100" value="50" class="form-range" style="width:320px">' +
+              '<button id="ledSet" class="btn btn-success btn-lg"><i class="bi bi-brightness-high"></i> Set</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#ledSet').addEventListener('click', function () {
+              var bri = parseInt(document.getElementById('ledBri').value || '50', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Setting…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setBrightness', params: { brightness: bri } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'speaker') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="spkPlay" class="btn btn-success btn-lg"><i class="bi bi-megaphone"></i> Play Preview</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#spkPlay').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'play' })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'microphone') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<div class="progress" style="width:260px;height:24px"><div id="micVu" class="progress-bar" style="width:0%"></div></div>' +
+              '<span id="micLevel" class="ms-2">0</span>' +
+              '<button id="micPoll" class="btn btn-outline-secondary btn-lg"><i class="bi bi-activity"></i> Poll</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            function pollOnce() {
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getLevel' })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                var lvl = (j && j.testResult && (j.testResult.details && (j.testResult.details.level || j.testResult.details.value))) || 0;
+                var n = Math.max(0, Math.min(100, parseInt(lvl, 10) || 0));
+                var bar = document.getElementById('micVu'); var txt = document.getElementById('micLevel');
+                if (bar) bar.style.width = n + '%'; if (txt) txt.textContent = n;
+              }).catch(function () { });
+            }
+            var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
+          } else if (part.type === 'webcam') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<a class="btn btn-primary btn-lg" href="http://localhost:8090/?action=stream" target="_blank"><i class="bi bi-camera-video"></i> Open Stream</a>' +
+              '<button id="camSnap" class="btn btn-outline-secondary btn-lg"><i class="bi bi-camera"></i> Capture</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#camSnap').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Capturing…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'capture' })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'sensor' || part.type === 'motion_sensor') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="snsRead" class="btn btn-primary btn-lg"><i class="bi bi-graph-up"></i> Read</button>' +
+              '<pre id="snsOut" class="ms-2 small"></pre>' +
+              '</div>';
+            el.querySelector('#snsRead').addEventListener('click', function () {
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read' })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                var out = document.getElementById('snsOut');
+                if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
+              }).catch(function () { });
+            });
+          } else if (part.type === 'head_tracking') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="htGet" class="btn btn-primary btn-lg"><i class="bi bi-bullseye"></i> Get Position</button>' +
+              '<pre id="htOut" class="ms-2 small"></pre>' +
+              '</div>';
+            el.querySelector('#htGet').addEventListener('click', function () {
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPosition' })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                var out = document.getElementById('htOut');
+                if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
+              }).catch(function () { });
+            });
           } else {
-            el.innerHTML = '<div class="alert alert-secondary">This device type has no calibration controls.</div>';
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="quickTest" class="btn btn-outline-secondary btn-lg"><i class="bi bi-gear"></i> Quick Test</button>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
+              '</div>';
+            el.querySelector('#quickTest').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Testing…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
           }
+
+          function renderPinFields(part) {
+            var container = document.getElementById('pinFields');
+            if (!container) return;
+            var html = '';
+            function field(id, label, type, placeholder) {
+              return '<div class="col-md-3"><label class="form-label">' + label + '</label>' +
+                '<input id="' + id + '" class="form-control" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
+            }
+            if (part.type === 'motor' || part.type === 'linear_actuator') {
+              html += '<div class="row g-3">';
+              html += field('editPin', 'PWM Pin', 'number', 'GPIO');
+              html += field('editDirectionPin', 'Direction Pin', 'number', 'GPIO');
+              html += '</div>';
+            } else if (part.type === 'servo' || part.type === 'led' || part.type === 'light' || part.type === 'sensor' || part.type === 'motion_sensor') {
+              html += '<div class="row g-3">' + field('editPin', 'Pin', 'number', 'GPIO') + '</div>';
+            } else {
+              html = '<div class="text-muted">No pin fields for this part type.</div>';
+            }
+            container.innerHTML = html;
+            // Populate current values if present
+            var cfg = part || {};
+            var pin = (cfg.pin != null ? cfg.pin : (cfg.config && cfg.config.pin));
+            var pwm = (cfg.pwmPin != null ? cfg.pwmPin : (cfg.config && cfg.config.pwmPin));
+            var dir = (cfg.directionPin != null ? cfg.directionPin : (cfg.config && cfg.config.directionPin));
+            var el;
+            el = document.getElementById('editPin'); if (el && pin != null) el.value = pin;
+            el = document.getElementById('editDirectionPin'); if (el && dir != null) el.value = dir;
+            el = document.getElementById('editPwmPin'); if (el && pwm != null) el.value = pwm;
+          }
+
+          function renderEdit(part) {
+            var n = document.getElementById('editName'); if (n) n.value = part.name || '';
+            var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
+            var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
+            var c = document.getElementById('editConfig'); if (c) c.value = JSON.stringify(part.config || {}, null, 2);
+            renderPinFields(part);
+            var save = document.getElementById('saveEditBtn');
+            if (save && !save._bound) {
+              save._bound = true;
+              save.addEventListener('click', function () {
+                if (!selected) return;
+                var payload = {
+                  name: (document.getElementById('editName') || {}).value,
+                  enabled: !!((document.getElementById('editEnabled') || {}).checked),
+                  description: (document.getElementById('editDescription') || {}).value,
+                  config: {}
+                };
+                try { payload.config = JSON.parse((document.getElementById('editConfig') || { value: '{}' }).value || '{}'); } catch (e) { alert('Config must be valid JSON'); return; }
+                var p;
+                p = document.getElementById('editPin'); if (p && p.value !== '') payload.pin = parseInt(p.value, 10);
+                p = document.getElementById('editDirectionPin'); if (p && p.value !== '') payload.directionPin = parseInt(p.value, 10);
+                p = document.getElementById('editPwmPin'); if (p && p.value !== '') payload.pwmPin = parseInt(p.value, 10);
+                fetch('/setup/parts/api/parts/' + encodeURIComponent(selected.id), {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                }).then(function (r) { return r.json(); }).then(function () {
+                  // Refresh list
+                  if (typeof loadParts === 'function') loadParts();
+                }).catch(function () { alert('Failed to save'); });
+              });
+            }
+          }
+
         }
 
         function renderBottomRail(items) {
