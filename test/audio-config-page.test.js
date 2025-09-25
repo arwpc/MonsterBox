@@ -26,7 +26,7 @@ describe('PipeWire Audio Configuration Page', () => {
         expect(res.data.config).to.have.property('availableSinks');
         expect(res.data.config).to.have.property('availableSources');
         expect(res.data.config).to.have.property('pipewireStatus');
-        
+
         console.log(`✅ System config API: ${res.data.config.availableSinks.length} sinks, ${res.data.config.availableSources.length} sources`);
         console.log(`✅ PipeWire tools: wpctl=${res.data.config.pipewireStatus.wpctl}, pactl=${res.data.config.pipewireStatus.pactl}`);
     });
@@ -36,7 +36,7 @@ describe('PipeWire Audio Configuration Page', () => {
             defaultSink: 'auto',
             defaultSource: 'auto'
         }, { validateStatus: () => true });
-        
+
         expect(res.status).to.equal(200);
         expect(res.data).to.have.property('success', true);
         console.log('✅ System configuration save works');
@@ -48,7 +48,7 @@ describe('PipeWire Audio Configuration Page', () => {
             testType: 'speaker',
             deviceId: 'default'
         }, { validateStatus: () => true });
-        
+
         expect(speakerRes.status).to.equal(200);
         expect(speakerRes.data).to.have.property('success');
         expect(speakerRes.data).to.have.property('testType', 'speaker');
@@ -59,7 +59,7 @@ describe('PipeWire Audio Configuration Page', () => {
             testType: 'microphone',
             deviceId: 'default'
         }, { validateStatus: () => true });
-        
+
         expect(micRes.status).to.equal(200);
         expect(micRes.data).to.have.property('success');
         expect(micRes.data).to.have.property('testType', 'microphone');
@@ -71,7 +71,7 @@ describe('PipeWire Audio Configuration Page', () => {
             testType: 'invalid',
             deviceId: 'default'
         }, { validateStatus: () => true });
-        
+
         expect(res.status).to.equal(400);
         expect(res.data).to.have.property('success', false);
         expect(res.data).to.have.property('error');
@@ -80,20 +80,20 @@ describe('PipeWire Audio Configuration Page', () => {
 
     it('should provide PipeWire device enumeration', async () => {
         // Test sinks endpoint
-        const sinksRes = await axios.get(`${BASE_URL}/setup/audio/api/sinks`, { validateStatus: () => true });
+        const sinksRes = await axios.get(`${BASE_URL}/setup/audio/api/outputs`, { validateStatus: () => true });
         expect(sinksRes.status).to.equal(200);
         expect(sinksRes.data).to.have.property('success', true);
-        expect(sinksRes.data).to.have.property('sinks');
-        expect(sinksRes.data.sinks).to.be.an('array');
+        expect(sinksRes.data).to.have.property('outputs');
+        expect(sinksRes.data.outputs).to.be.an('array');
 
         // Test sources endpoint
-        const sourcesRes = await axios.get(`${BASE_URL}/setup/audio/api/sources`, { validateStatus: () => true });
+        const sourcesRes = await axios.get(`${BASE_URL}/setup/audio/api/inputs`, { validateStatus: () => true });
         expect(sourcesRes.status).to.equal(200);
         expect(sourcesRes.data).to.have.property('success', true);
-        expect(sourcesRes.data).to.have.property('sources');
-        expect(sourcesRes.data.sources).to.be.an('array');
+        expect(sourcesRes.data).to.have.property('inputs');
+        expect(sourcesRes.data.inputs).to.be.an('array');
 
-        console.log(`✅ Device enumeration: ${sinksRes.data.sinks.length} sinks, ${sourcesRes.data.sources.length} sources`);
+        console.log(`✅ Device enumeration: ${sinksRes.data.outputs.length} sinks, ${sourcesRes.data.inputs.length} sources`);
     });
 
     it('should provide PipeWire tools check', async () => {
@@ -101,7 +101,7 @@ describe('PipeWire Audio Configuration Page', () => {
         expect(res.status).to.equal(200);
         expect(res.data).to.have.property('success', true);
         expect(res.data).to.have.property('tools');
-        
+
         const tools = res.data.tools;
         console.log('✅ PipeWire tools check:');
         Object.keys(tools).forEach(tool => {

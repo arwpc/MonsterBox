@@ -37,7 +37,7 @@ describe('PipeWire System Integration', () => {
             expect(res.status).to.equal(200);
             expect(res.data).to.have.property('success', true);
             expect(res.data).to.have.property('tools');
-            
+
             const tools = res.data.tools;
             console.log('🔧 PipeWire tools status:');
             Object.keys(tools).forEach(tool => {
@@ -46,21 +46,21 @@ describe('PipeWire System Integration', () => {
         });
 
         it('should enumerate PipeWire sinks', async () => {
-            const res = await axios.get(`${BASE_URL}/setup/audio/api/sinks`, { validateStatus: () => true });
+            const res = await axios.get(`${BASE_URL}/setup/audio/api/outputs`, { validateStatus: () => true });
             expect(res.status).to.equal(200);
             expect(res.data).to.have.property('success', true);
-            expect(res.data).to.have.property('sinks');
-            expect(res.data.sinks).to.be.an('array');
-            console.log(`🔊 Found ${res.data.sinks.length} PipeWire sinks`);
+            expect(res.data).to.have.property('outputs');
+            expect(res.data.outputs).to.be.an('array');
+            console.log(`🔊 Found ${res.data.outputs.length} PipeWire sinks`);
         });
 
         it('should enumerate PipeWire sources', async () => {
-            const res = await axios.get(`${BASE_URL}/setup/audio/api/sources`, { validateStatus: () => true });
+            const res = await axios.get(`${BASE_URL}/setup/audio/api/inputs`, { validateStatus: () => true });
             expect(res.status).to.equal(200);
             expect(res.data).to.have.property('success', true);
-            expect(res.data).to.have.property('sources');
-            expect(res.data.sources).to.be.an('array');
-            console.log(`🎤 Found ${res.data.sources.length} PipeWire sources`);
+            expect(res.data).to.have.property('inputs');
+            expect(res.data.inputs).to.be.an('array');
+            console.log(`🎤 Found ${res.data.inputs.length} PipeWire sources`);
         });
     });
 
@@ -81,18 +81,18 @@ describe('PipeWire System Integration', () => {
             expect(res.status).to.be.oneOf([200, 201]);
             expect(res.data).to.have.property('success', true);
             expect(res.data).to.have.property('part');
-            
+
             testSpeaker = res.data.part;
             console.log(`✅ Created PipeWire speaker: ${testSpeaker.name} (ID: ${testSpeaker.id})`);
         });
 
         it('should test speaker playback with stream tracking', async () => {
             expect(testSpeaker).to.not.be.null;
-            
+
             const playRes = await axios.post(`${BASE_URL}/setup/parts/api/parts/${testSpeaker.id}/test`, {
                 action: 'play',
-                params: { 
-                    filename: 'public/sounds/monster-howl-85304.mp3', 
+                params: {
+                    filename: 'public/sounds/monster-howl-85304.mp3',
                     volume: 15,
                     partId: testSpeaker.id
                 }
@@ -110,7 +110,7 @@ describe('PipeWire System Integration', () => {
 
         it('should test volume control', async () => {
             expect(testSpeaker).to.not.be.null;
-            
+
             const volRes = await axios.post(`${BASE_URL}/setup/parts/api/parts/${testSpeaker.id}/test`, {
                 action: 'setVolume',
                 params: { volume: 40 }
@@ -123,7 +123,7 @@ describe('PipeWire System Integration', () => {
 
         it('should test stop functionality', async () => {
             expect(testSpeaker).to.not.be.null;
-            
+
             const stopRes = await axios.post(`${BASE_URL}/setup/parts/api/parts/${testSpeaker.id}/test`, {
                 action: 'stop',
                 params: { partId: testSpeaker.id }
@@ -153,17 +153,17 @@ describe('PipeWire System Integration', () => {
             expect(res.status).to.be.oneOf([200, 201]);
             expect(res.data).to.have.property('success', true);
             expect(res.data).to.have.property('part');
-            
+
             testMicrophone = res.data.part;
             console.log(`✅ Created PipeWire microphone: ${testMicrophone.name} (ID: ${testMicrophone.id})`);
         });
 
         it('should test microphone level detection', async () => {
             expect(testMicrophone).to.not.be.null;
-            
+
             const levelRes = await axios.post(`${BASE_URL}/setup/parts/api/parts/${testMicrophone.id}/test`, {
                 action: 'getLevel',
-                params: { 
+                params: {
                     deviceId: 'default',
                     duration: 0.15
                 }
@@ -172,7 +172,7 @@ describe('PipeWire System Integration', () => {
             expect(levelRes.status).to.equal(200);
             expect(levelRes.data).to.have.property('testResult');
             console.log(`🎤 Microphone level test: ${levelRes.data.testResult.success ? 'SUCCESS' : 'EXPECTED_FAIL'}`);
-            
+
             if (levelRes.data.testResult.success && levelRes.data.testResult.level !== undefined) {
                 console.log(`📊 Detected audio level: ${levelRes.data.testResult.level}`);
             }
@@ -185,7 +185,7 @@ describe('PipeWire System Integration', () => {
             expect(statsRes.status).to.equal(200);
             expect(statsRes.data).to.have.property('success', true);
             expect(statsRes.data).to.have.property('stats');
-            
+
             const stats = statsRes.data.stats;
             console.log(`📊 Stream statistics:`);
             console.log(`  Total streams: ${stats.total || 0}`);
@@ -201,8 +201,8 @@ describe('PipeWire System Integration', () => {
 
             // Try multiple operations simultaneously
             const operations = [
-                axios.get(`${BASE_URL}/setup/audio/api/sinks`, { validateStatus: () => true }),
-                axios.get(`${BASE_URL}/setup/audio/api/sources`, { validateStatus: () => true }),
+                axios.get(`${BASE_URL}/setup/audio/api/outputs`, { validateStatus: () => true }),
+                axios.get(`${BASE_URL}/setup/audio/api/inputs`, { validateStatus: () => true }),
                 axios.get(`${BASE_URL}/setup/parts/api/speaker/stats`, { validateStatus: () => true })
             ];
 
@@ -210,7 +210,7 @@ describe('PipeWire System Integration', () => {
             results.forEach((res, index) => {
                 expect(res.status).to.equal(200);
             });
-            
+
             console.log('✅ Concurrent operations completed successfully');
         });
     });

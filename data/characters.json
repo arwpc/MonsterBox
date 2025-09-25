@@ -1,11 +1,13 @@
 [
   {
     "id": 1,
-    "name": "PumpkinHead"
+    "name": "PumpkinHead",
+    "elevenLabsAgentId": "undefined"
   },
   {
     "id": 2,
-    "name": "Coffin Breaker"
+    "name": "Coffin Breaker",
+    "elevenLabsAgentId": "undefined"
   },
   {
     "id": 3,
@@ -14,17 +16,18 @@
     "created": "2025-09-14T09:57:00.000Z",
     "enabled": true,
     "sttConfig": {
-      "model": "scribe_english_v1",
-      "language": "en",
+      "model": "scribe_v1",
+      "language": "auto",
       "sampleRate": "16000",
-      "microphonePartId": "9",
-      "microphoneDeviceId": "sysdefault",
+      "microphonePartId": "7",
+      "microphoneDeviceId": "default",
       "format": "mp3"
     },
     "elevenLabsAgentId": "undefined"
   },
   {
     "id": 4,
-    "name": "Skulltalker"
+    "name": "Skulltalker",
+    "elevenLabsAgentId": "undefined"
   }
 ]

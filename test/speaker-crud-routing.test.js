@@ -45,12 +45,12 @@ async function remove(id) {
 
 describe('PipeWire Speaker: CRUD, routing, and test actions', () => {
   it('PipeWire sinks endpoint returns an array', async () => {
-    const res = await axios.get(`${BASE_URL}/setup/audio/api/sinks`, { validateStatus: () => true });
+    const res = await axios.get(`${BASE_URL}/setup/audio/api/outputs`, { validateStatus: () => true });
     expect(res.status).to.equal(200);
     expect(res.data).to.have.property('success', true);
-    expect(res.data).to.have.property('sinks');
-    expect(res.data.sinks).to.be.an('array');
-    console.log(`✅ Found ${res.data.sinks.length} PipeWire sinks`);
+    expect(res.data).to.have.property('outputs');
+    expect(res.data.outputs).to.be.an('array');
+    console.log(`✅ Found ${res.data.outputs.length} PipeWire sinks`);
   });
 
   it('create → play → setVolume → stop → delete with PipeWire', async () => {

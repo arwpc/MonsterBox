@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "id": "1758764524630",
+    "name": "Standard 5mm LED",
+    "description": "Common 5mm LED, various colors, 20mA max current",
+    "defaults": {
+      "brightness": 50,
+      "pwmFrequency": 1000,
+      "maxCurrent": 20,
+      "forwardVoltage": 2
+    },
+    "controlsSchema": {
+      "type": "pwm",
+      "dimmable": true
+    },
+    "meta": {
+      "notes": "Standard through-hole LED. Use appropriate resistor for current limiting.",
+      "controlType": [
+        "PWM",
+        "Digital"
+      ],
+      "current": "20mA",
+      "voltage": "1.8-2.2V",
+      "colors": [
+        "Red",
+        "Green",
+        "Blue",
+        "Yellow",
+        "White"
+      ]
+    }
+  },
+  {
+    "id": "1758764542414",
+    "name": "High Power 1W LED",
+    "description": "1W high power LED, requires heat sink, 350mA max current",
+    "defaults": {
+      "brightness": 30,
+      "pwmFrequency": 1000,
+      "maxCurrent": 350,
+      "forwardVoltage": 3.2
+    },
+    "controlsSchema": {
+      "type": "pwm",
+      "dimmable": true
+    },
+    "meta": {
+      "notes": "High power LED requires proper heat dissipation and current control.",
+      "controlType": [
+        "PWM"
+      ],
+      "current": "350mA",
+      "voltage": "3.0-3.4V",
+      "power": "1W",
+      "heatSink": "Required"
+    }
+  }
+]

@@ -10,7 +10,7 @@ import os
 import json
 
 # Add the scripts directory to Python path (repo root)
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../scripts')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
 
 try:
     from led_control import control_led

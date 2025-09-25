@@ -18,47 +18,79 @@
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' ? 'active' : '' %>"
-                       href="#" role="button" data-bs-toggle="dropdown">
+                        href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Setup
                     </a>
                     <ul class="dropdown-menu">
-                        <li><h6 class="dropdown-header">Hardware</h6></li>
-                        <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts & Calibration</a></li>
-                        <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a></li>
-                        <li><a class="dropdown-item" href="/setup/models"><i class="bi bi-gear-wide-connected"></i> Models</a></li>
+                        <li>
+                            <h6 class="dropdown-header">Hardware</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/parts"><i class="bi bi-cpu"></i> Parts</a></li>
+                        <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration
+                                Mgmt</a></li>
+                        <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/models"><i class="bi bi-gear-wide-connected"></i>
+                                Models</a></li>
 
-                        <li><hr class="dropdown-divider"></li>
-                        <li><h6 class="dropdown-header">Media</h6></li>
-                        <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio Configuration</a></li>
-                        <li><a class="dropdown-item" href="/audio-library"><i class="bi bi-music-note-list"></i> Audio Library</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">Media</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio
+                                Configuration</a></li>
+                        <li><a class="dropdown-item" href="/audio-library"><i class="bi bi-music-note-list"></i> Audio
+                                Library</a></li>
 
-                        <li><hr class="dropdown-divider"></li>
-                        <li><h6 class="dropdown-header">AI Settings</h6></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">AI Settings</h6>
+                        </li>
                         <li><a class="dropdown-item" href="/ai-settings"><i class="bi bi-robot"></i> Overview</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/stt"><i class="bi bi-mic"></i> Speech-to-Text</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/agents"><i class="bi bi-people"></i> AI Agents</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/tts"><i class="bi bi-volume-up"></i> Text-to-Speech</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/stt"><i class="bi bi-mic"></i>
+                                Speech-to-Text</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/agents"><i class="bi bi-people"></i> AI
+                                Agents</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/tts"><i class="bi bi-volume-up"></i>
+                                Text-to-Speech</a></li>
 
-                        <li><hr class="dropdown-divider"></li>
-                        <li><h6 class="dropdown-header">Character Management</h6></li>
-                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Characters</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/character-assignment"><i class="bi bi-person-gear"></i> Character AI Assignment</a></li>
-                        <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super Powers</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">Character Management</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i>
+                                Characters</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/character-assignment"><i
+                                    class="bi bi-person-gear"></i> Character AI Assignment</a></li>
+                        <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super
+                                Powers</a></li>
 
-                        <li><hr class="dropdown-divider"></li>
-                        <li><h6 class="dropdown-header">System</h6></li>
-                        <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">System</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a>
+                        </li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <%= page === 'live' || page === 'poses' || page === 'scenes' ? 'active' : '' %>"
-                       href="#" role="button" data-bs-toggle="dropdown">
+                        href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-play-circle"></i> Activities
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/live"><i class="bi bi-broadcast"></i> Live Mode</a></li>
-                        <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a></li>
+                        <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a>
+                        </li>
                         <li><a class="dropdown-item" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
                     </ul>
                 </li>
@@ -69,15 +101,21 @@
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i>
                         <span id="charLabel">
-                            <% if (typeof currentCharacter !== 'undefined' && currentCharacter) { %>Character <%= currentCharacter %>
-                            <% } else { %>No Character<% } %>
+                            <% if (typeof currentCharacter !=='undefined' && currentCharacter) { %>Character <%=
+                                    currentCharacter %>
+                                    <% } else { %>No Character<% } %>
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" id="charMenu">
-                        <li><h6 class="dropdown-header">Character Selection</h6></li>
+                        <li>
+                            <h6 class="dropdown-header">Character Selection</h6>
+                        </li>
                         <li class="px-3 py-2 text-muted" id="charLoading">Loading...</li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Manage Characters</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Manage
+                                Characters</a></li>
                     </ul>
                 </li>
             </ul>

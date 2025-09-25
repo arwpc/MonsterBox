@@ -1,1 +1,151 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Left Arm",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-25T00:59:57.170Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "2",
+    "name": "Eye of Orlok",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video1",
+      "deviceId": 1
+    },
+    "created": "2025-09-25T01:02:00.891Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Right Arm of Satan",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-25T01:02:49.756Z",
+    "enabled": true,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "4",
+    "name": "Orlok Head Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-25T01:04:57.059Z",
+    "enabled": true
+  },
+  {
+    "id": "5",
+    "name": "Elbow of Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-25T01:08:23.638Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Forearm",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 5,
+      "address": 64,
+      "pca9685Frequency": 50,
+      "invertDirection": false
+    },
+    "created": "2025-09-25T01:11:52.297Z",
+    "enabled": true,
+    "updated": "2025-09-25T01:12:26.272Z"
+  },
+  {
+    "id": "7",
+    "name": "Ears of Orlok",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1.7,
+      "windowMs": 100
+    },
+    "created": "2025-09-25T01:14:56.213Z",
+    "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "Orlok Motion",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-25T01:16:26.221Z",
+    "enabled": true
+  },
+  {
+    "id": "9",
+    "name": "Hand of Death",
+    "type": "light",
+    "pin": 26,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-25T01:17:51.507Z",
+    "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "Concurrent Speaker 1",
+    "type": "speaker",
+    "pin": null,
+    "description": "Concurrent Speaker 1",
+    "config": {
+      "audioDeviceId": "default"
+    },
+    "created": "2025-09-25T01:26:00.496Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Concurrent Speaker 1",
+    "type": "speaker",
+    "pin": null,
+    "description": "Concurrent Speaker 1",
+    "config": {
+      "audioDeviceId": "default"
+    },
+    "created": "2025-09-25T01:42:50.027Z",
+    "enabled": true
+  }
+]

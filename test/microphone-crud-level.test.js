@@ -10,12 +10,12 @@ const BASE_URL = 'http://localhost:3000';
 
 describe('PipeWire Microphone: sources enumeration and level test', () => {
   it('PipeWire sources endpoint returns an array', async () => {
-    const res = await axios.get(`${BASE_URL}/setup/audio/api/sources`, { validateStatus: () => true });
+    const res = await axios.get(`${BASE_URL}/setup/audio/api/inputs`, { validateStatus: () => true });
     expect(res.status).to.equal(200);
     expect(res.data).to.have.property('success', true);
-    expect(res.data).to.have.property('sources');
-    expect(res.data.sources).to.be.an('array');
-    console.log(`✅ Found ${res.data.sources.length} PipeWire sources`);
+    expect(res.data).to.have.property('inputs');
+    expect(res.data.inputs).to.be.an('array');
+    console.log(`✅ Found ${res.data.inputs.length} PipeWire sources`);
   });
 
   it('input-level endpoint responds with PipeWire defaults (may return error if no mic)', async () => {

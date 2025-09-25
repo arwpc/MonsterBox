@@ -1,1 +1,118 @@
-{}
+{
+  "4": {
+    "part_id": 4,
+    "part_name": "Orlok Head Servo",
+    "servo_type": "continuous",
+    "channel": 0,
+    "calibrated_date": "2025-09-25T01:06:52.688Z",
+    "stop_pulse_us": 1500,
+    "cw_pulse_us": 1200,
+    "ccw_pulse_us": 1800,
+    "positions": {
+      "forward": {
+        "description": "0° - Facing directly forward",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:05:26.015Z",
+        "motion": {
+          "direction": "cw",
+          "speed": 51,
+          "duration": 500
+        }
+      },
+      "left_90": {
+        "description": "90° - Facing left",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:05:55.854Z",
+        "motion": {
+          "direction": "cw",
+          "speed": 25,
+          "duration": 1100
+        }
+      },
+      "backward": {
+        "description": "180° - Facing backward",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:06:17.866Z",
+        "motion": {
+          "direction": "cw",
+          "speed": 100,
+          "duration": 2000
+        }
+      },
+      "right_90": {
+        "description": "90° - Facing right",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:06:52.688Z",
+        "motion": {
+          "direction": "cw",
+          "speed": 46,
+          "duration": 300
+        }
+      }
+    },
+    "timing_data": {},
+    "functionality_status": "working"
+  },
+  "5": {
+    "part_id": 5,
+    "part_name": "Elbow of Orlok",
+    "servo_type": "standard",
+    "channel": 4,
+    "calibrated_date": "2025-09-25T01:11:16.938Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "max": {
+        "description": "",
+        "angle": 180,
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:11:16.938Z"
+      },
+      "min": {
+        "description": "",
+        "angle": 0,
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:10:47.456Z"
+      }
+    },
+    "functionality_status": "working"
+  },
+  "6": {
+    "part_id": 6,
+    "part_name": "Forearm",
+    "servo_type": "standard",
+    "channel": 5,
+    "calibrated_date": "2025-09-25T01:14:11.135Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "min": {
+        "description": "Minimum angle",
+        "angle": 166,
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:13:07.063Z"
+      },
+      "max": {
+        "description": "Max Position (open hand)",
+        "angle": 52,
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:13:33.899Z"
+      },
+      "center": {
+        "description": "Holding a Sword Hand",
+        "angle": 112,
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:14:11.134Z"
+      }
+    },
+    "functionality_status": "working"
+  }
+}
