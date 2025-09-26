@@ -1,1 +1,100 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Head on Swivel",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "3",
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50,
+      "invertDirection": false
+    },
+    "created": "2025-09-26T14:02:37.354Z",
+    "enabled": true,
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "unit": "deg"
+      }
+    ],
+    "modelId": "3",
+    "updated": "2025-09-26T14:22:43.068Z"
+  },
+  {
+    "id": "2",
+    "name": "Jaw Servo Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "2",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-26T14:05:43.717Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Skulltalkers Eyes",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "modelId": "default-uvc-1",
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-26T14:06:55.650Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "name": "Skulltalker - MonsterBox",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 50,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-09-26T14:08:08.217Z",
+    "enabled": true
+  },
+  {
+    "id": "5",
+    "name": "Motion Sensor",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-26T14:08:50.402Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Ears of Skulltalker",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default",
+      "sensitivity": 1.2,
+      "windowMs": 100
+    },
+    "created": "2025-09-26T14:09:44.019Z",
+    "enabled": true
+  }
+]
