@@ -1,26 +1,6 @@
 {
   "port": 3000,
   "theme": "dark",
-  "selectedCharacter": 2,
-  "dataPath": "data/character-2",
-  "pythonScriptsPath": "ARCHIVE/scripts/hardware",
-  "enableHardware": true,
-  "enableSafetyChecks": true,
-  "commandTimeout": 8000,
-  "maxConcurrentCommands": 5,
-  "poses": {
-    "enableSafetyClamps": true,
-    "defaultExecutionMode": "sequential",
-    "maxExecutionTime": 30000
-  },
-  "media": {
-    "webcamPort": 8081,
-    "audioDevice": "default",
-    "enableLocalStreaming": true
-  },
-  "elevenLabs": {
-    "enableConversationalAI": true,
-    "enableJawAnimation": true,
-    "localOnly": true
-  }
+  "selectedCharacter": 3,
+  "dataPath": "data/character-3"
 }

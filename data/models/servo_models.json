@@ -245,5 +245,68 @@
       "voltage": "4.8-6.8V",
       "weight": "60g"
     }
+  },
+  {
+    "id": "1758764520000",
+    "name": "Nema17 Stepper Motor",
+    "description": "Precision stepper motor, 200 steps/revolution (1.8° per step), ideal for animatronics positioning",
+    "defaults": {
+      "stepsPerRevolution": 200,
+      "stepAngle": 1.8,
+      "minAngle": -1800,
+      "maxAngle": 1800,
+      "centerAngle": 0,
+      "holdingTorque": 4000,
+      "operatingVoltage": 12,
+      "ratedCurrent": 1700,
+      "resistance": 1.5,
+      "inductance": 3,
+      "maxStepRate": 1000
+    },
+    "controlsSchema": {
+      "type": "stepper",
+      "feedback": false,
+      "continuous": true,
+      "requiresDriver": true,
+      "driverTypes": [
+        "A4988",
+        "DRV8825",
+        "TMC2208",
+        "TMC2209"
+      ]
+    },
+    "meta": {
+      "notes": "Standard Nema17 stepper motor perfect for precise positioning in animatronics. Requires stepper driver (A4988, DRV8825, etc.). Excellent for head tracking, eye movement, jaw control, and other precise mechanical animations. Can rotate continuously in both directions with 1.8° precision.",
+      "controlType": [
+        "STEP_DIR",
+        "SPI"
+      ],
+      "torque": "4000g·cm (40N·cm)",
+      "speed": "Variable (up to 1000 steps/sec)",
+      "voltage": "12V",
+      "current": "1.7A per phase",
+      "weight": "280g",
+      "mounting": "NEMA 17 (42.3mm x 42.3mm)",
+      "applications": [
+        "Head tracking systems",
+        "Eye movement mechanisms",
+        "Jaw control",
+        "Precise joint positioning",
+        "Camera pan/tilt",
+        "Rotating platforms"
+      ],
+      "wiring": {
+        "phases": 2,
+        "wires": 4,
+        "coilResistance": "1.5Ω per phase",
+        "coilInductance": "3.0mH per phase"
+      },
+      "driverSettings": {
+        "microstepping": "1/16 recommended for smooth motion",
+        "currentLimit": "1.7A (adjust based on cooling)",
+        "stepPulseWidth": "2μs minimum",
+        "directionSetupTime": "1μs minimum"
+      }
+    }
   }
 ]

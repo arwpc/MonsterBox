@@ -184,9 +184,9 @@ const MODEL_FILE_BY_TYPE = {
 };
 
 async function getDataDir() {
-    const cfg = await readConfig();
+    // Models are always global, not character-specific
     const appRoot = path.resolve(__dirname, '..', '..');
-    return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : '../data');
+    return path.resolve(appRoot, 'data');
 }
 
 function getGlobalModelsDirSync(baseDataDir) {

@@ -103,10 +103,14 @@
                         <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter :
                             ((typeof config !=='undefined' && config && config.selectedCharacter) ?
                             config.selectedCharacter : null); %>
-                            <span id="charLabel" data-char-id="<%= __cur || '' %>">
-                                <% if (__cur) { %>Character <%= __cur %>
-                                        <% } else { %>No Character<% } %>
-                            </span>
+                            <% var __curName=(typeof currentCharacterName !=='undefined' && currentCharacterName) ?
+                                currentCharacterName : null; %>
+                                <span id="charLabel" data-char-id="<%= __cur || '' %>">
+                                    <% if (__curName) { %>
+                                        <%= __curName %>
+                                            <% } else if (__cur) { %>Character <%= __cur %>
+                                                    <% } else { %>No Character<% } %>
+                                </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" id="charMenu">
                         <li>

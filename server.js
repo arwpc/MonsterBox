@@ -58,6 +58,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Master layout rendering helper
+app.use((req, res, next) => {
+    res.renderWithLayout = function (contentTemplate, options = {}) {
+        const layoutOptions = {
+            title: options.title || 'MonsterBox 4.0',
+            page: options.page || 'dashboard',
+            config: req.app.locals.config,
+            currentCharacter: res.locals.currentCharacter,
+            styles: options.styles,
+            scripts: options.scripts,
+            headExtras: options.headExtras,
+            bodyExtras: options.bodyExtras,
+            includeMainWrapper: options.includeMainWrapper !== false,
+            content: ''
+        };
+
+        // Render the content template first
+        res.render(contentTemplate, options, (err, html) => {
+            if (err) return res.status(500).send(err.message);
+
+            // Then render with master layout
+            layoutOptions.content = html;
+            res.render('layouts/master', layoutOptions);
+        });
+    };
+    next();
+});
+
 // Global template variables
 app.use(async (req, res, next) => {
     try {
@@ -67,11 +95,26 @@ app.use(async (req, res, next) => {
         req.app.locals.config = merged;
         res.locals.config = merged;
         res.locals.currentCharacter = merged.selectedCharacter || null;
+
+        // Load character name for navigation
+        if (merged.selectedCharacter) {
+            try {
+                const charactersData = await fs.readFile(path.join(__dirname, 'data', 'characters.json'), 'utf8');
+                const characters = JSON.parse(charactersData);
+                const currentChar = characters.find(c => c.id === merged.selectedCharacter);
+                res.locals.currentCharacterName = currentChar ? currentChar.name : null;
+            } catch (e) {
+                res.locals.currentCharacterName = null;
+            }
+        } else {
+            res.locals.currentCharacterName = null;
+        }
     } catch (_) {
         const fallback = req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : config;
         req.app.locals.config = fallback;
         res.locals.config = fallback;
         res.locals.currentCharacter = fallback.selectedCharacter || null;
+        res.locals.currentCharacterName = null;
     }
     next();
 });
@@ -97,11 +140,70 @@ app.use('/api/elevenlabs', elevenLabsApiRoutes);
 
 // Main dashboard route
 app.get('/', (req, res) => {
-    res.render('index', {
-        title: 'MonsterBox 4.0',
+    res.renderWithLayout('index', {
+        title: 'MonsterBox 4.0 Dashboard',
         page: 'dashboard',
-        config: { theme: 'dark' },
-        currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
+        bodyExtras: `
+            <script>
+                // Load poses count and quick poses
+                document.addEventListener('DOMContentLoaded', function () {
+                    loadPosesData();
+                });
+
+                async function loadPosesData() {
+                    try {
+                        const response = await fetch('/poses');
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Update poses count
+                            document.getElementById('poses-count').textContent = data.poses.length;
+
+                            // Show quick poses (first 5)
+                            const quickPosesContainer = document.getElementById('quick-poses');
+                            if (data.poses.length > 0) {
+                                const quickPoses = data.poses.slice(0, 5);
+                                quickPosesContainer.innerHTML = quickPoses.map(pose =>
+                                    \`<div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>\${pose.name}</span>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="executePose(\${pose.id})">
+                                        <i class="bi bi-play"></i>
+                                    </button>
+                                </div>\`
+                                ).join('');
+                            } else {
+                                quickPosesContainer.innerHTML =
+                                    \`<div class="text-center text-muted">
+                                    <i class="bi bi-plus-circle fs-1"></i>
+                                    <p>No poses created yet</p>
+                                    <a href="/setup/poses" class="btn btn-sm btn-primary">Create First Pose</a>
+                                </div>\`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Failed to load poses:', error);
+                        document.getElementById('poses-count').textContent = 'Error';
+                    }
+                }
+
+                async function executePose(poseId) {
+                    try {
+                        const response = await fetch(\`/poses/\${poseId}/execute\`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            console.log('Pose executed successfully:', result.message);
+                        } else {
+                            console.error('Pose execution failed:', result.error);
+                        }
+                    } catch (error) {
+                        console.error('Failed to execute pose:', error);
+                    }
+                }
+            </script>
+        `
     });
 });
 

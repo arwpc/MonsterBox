@@ -1,6 +1,6 @@
 {
   "model": "scribe_v1",
-  "language": "auto",
+  "language": "en",
   "sampleRate": "16000",
   "microphonePartId": "7",
   "microphoneDeviceId": "default",

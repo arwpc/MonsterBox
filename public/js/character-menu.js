@@ -2,7 +2,7 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function setLabel(name) {
     var el = document.getElementById('charLabel');
-    if (el) { el.textContent = name ? ('Character ' + name) : 'No Character'; }
+    if (el) { el.textContent = name || 'No Character'; }
   }
   function populateMenu(chars, selectedId) {
     var ul = document.getElementById('charMenu');
@@ -37,7 +37,11 @@
             var nm = null;
             for (var m = 0; m < chars.length; m++) { if (chars[m].id === id) { nm = chars[m].name; break; } }
             setLabel(nm || String(id));
-            location.reload();
+            // Update the data-char-id attribute
+            var el = document.getElementById('charLabel');
+            if (el) { el.setAttribute('data-char-id', String(id)); }
+            // Wait a moment for server state to update, then reload
+            setTimeout(function () { location.reload(); }, 200);
           }
         });
     });

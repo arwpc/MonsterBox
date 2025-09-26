@@ -1,0 +1,13 @@
+<% if (typeof scripts !== 'undefined' && scripts) { %>
+    <% if (Array.isArray(scripts)) { %>
+        <% scripts.forEach(function(script){ %>
+            <script src="<%= script %>"></script>
+        <% }); %>
+    <% } else { %>
+        <script src="<%= scripts %>"></script>
+    <% } %>
+<% } %>
+
+<% if (typeof bodyExtras !== 'undefined' && bodyExtras) { %>
+    <%- bodyExtras %>
+<% } %>
