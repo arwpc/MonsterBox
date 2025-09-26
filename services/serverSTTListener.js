@@ -7,6 +7,7 @@
 import { spawn } from 'child_process';
 import elevenLabsSTTService from './elevenLabsSTTService.js';
 import pipewireService from './pipewireService.js';
+import { getSTTConfig } from './aiConfigStore.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,8 +43,19 @@ class ServerSTTListener {
     const sessionId = 'stt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const state = {
       deviceId, model, language, running: true, transcript: '', lastError: null, timer: null,
-      chunksCaptured: 0, chunksWithAudio: 0, chunksTranscribed: 0, lastChunkBytes: 0, startedAt: Date.now(), lastActivityAt: null
+      chunksCaptured: 0, chunksWithAudio: 0, chunksTranscribed: 0, lastChunkBytes: 0, startedAt: Date.now(), lastActivityAt: null,
+      vadEnabled: false, vadThreshold: 0.03
     };
+    // Load VAD settings asynchronously from STT config (no await to keep sync start)
+    try {
+      getSTTConfig().then((cfg) => {
+        if (!cfg) return;
+        state.vadEnabled = !!cfg.vadEnabled;
+        if (typeof cfg.vadThreshold === 'number') {
+          var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.03; state.vadThreshold = t;
+        }
+      }).catch(() => { /* ignore */ });
+    } catch (_) { /* ignore */ }
     this.sessions.set(sessionId, state);
 
     const tick = async () => {
@@ -55,13 +67,27 @@ class ServerSTTListener {
         state.lastChunkBytes = sz;
         if (sz > 0) {
           state.chunksWithAudio += 1;
-          const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model: state.model, language: state.language });
-          if (result && result.success && (result.transcript || result.text)) {
-            const text = (result.transcript || result.text || '').trim();
-            if (text) { state.transcript += (state.transcript ? ' ' : '') + text; state.chunksTranscribed += 1; }
-            state.lastError = null; state.lastActivityAt = Date.now();
+          // Basic amplitude-based VAD gating (RMS on PCM16 from WAV)
+          var shouldTranscribe = true;
+          try {
+            if (state.vadEnabled) {
+              var rms = this._computeWavRms(buffer);
+              var thr = state.vadThreshold || 0.03;
+              if (!(rms >= thr)) { shouldTranscribe = false; }
+            }
+          } catch (_) { /* ignore */ }
+          if (shouldTranscribe) {
+            const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model: state.model, language: state.language });
+            if (result && result.success && (result.transcript || result.text)) {
+              const text = (result.transcript || result.text || '').trim();
+              if (text) { state.transcript += (state.transcript ? ' ' : '') + text; state.chunksTranscribed += 1; }
+              state.lastError = null; state.lastActivityAt = Date.now();
+            } else {
+              state.lastError = this._errText((result && result.error) || 'STT failed');
+            }
           } else {
-            state.lastError = this._errText((result && result.error) || 'STT failed');
+            // Below VAD threshold: treat as silence (no error)
+            state.lastError = null;
           }
         } else {
           state.lastError = 'No audio captured (0 bytes)'; // harmless, will retry
@@ -119,6 +145,21 @@ class ServerSTTListener {
     } catch (_) {
       return Buffer.alloc(0);
     }
+  }
+
+  _computeWavRms(buf) {
+    try {
+      if (!buf || buf.length < 64) return 0.0;
+      // Find 'data' chunk start (simplified: assume header 44 bytes)
+      var off = 44; if (off >= buf.length) return 0.0;
+      var len = buf.length - off; var n = Math.floor(len / 2); if (n <= 0) return 0.0;
+      var sum = 0.0; var i = 0; var view = buf;
+      for (i = 0; i < n; i++) {
+        var sample = view.readInt16LE(off + i * 2);
+        var norm = sample / 32768.0; sum += norm * norm;
+      }
+      var rms = Math.sqrt(sum / n); if (!isFinite(rms)) return 0.0; return rms;
+    } catch (_) { return 0.0; }
   }
 
   _getMicWrapperPath() {

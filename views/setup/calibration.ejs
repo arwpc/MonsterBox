@@ -567,16 +567,104 @@
             }
             var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
           } else if (part.type === 'webcam') {
-            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-              '<a class="btn btn-primary btn-lg" href="http://localhost:8090/?action=stream" target="_blank"><i class="bi bi-camera-video"></i> Open Stream</a>' +
-              '<button id="camSnap" class="btn btn-outline-secondary btn-lg"><i class="bi bi-camera"></i> Capture</button>' +
-              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
-            el.querySelector('#camSnap').addEventListener('click', function () {
-              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Capturing…';
+            // Webcam live preview + typical controls (brightness, contrast, saturation, IR if available) and digital zoom
+            el.innerHTML = '' +
+              '<div class="row g-3 align-items-start">' +
+              '<div class="col-md-6">' +
+              '<div class="border bg-black d-flex justify-content-center align-items-center" style="width:100%;max-width:420px;height:320px;overflow:hidden">' +
+              '<img id="camPreview" src="/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/stream" style="max-width:none;transform-origin:center center;transform:scale(1)">' +
+              '</div>' +
+              '<div class="mt-2">' +
+              '<label class="form-label small">Digital zoom: <span id="zoomVal">100%</span></label>' +
+              '<input type="range" class="form-range" id="camZoom" min="100" max="300" step="5" value="100">' +
+              '</div>' +
+              '<div class="mt-2 d-flex flex-wrap gap-2">' +
+              '<a class="btn btn-outline-primary" href="http://localhost:8090/?action=stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+              '<button id="camSnap" class="btn btn-outline-secondary"><i class="bi bi-camera"></i> Capture</button>' +
+              '</div>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
+              '</div>' +
+              '<div class="col-md-6">' +
+              '<div class="d-flex justify-content-between align-items-center mb-2">' +
+              '<h6 class="mb-0"><i class="bi bi-sliders"></i> Controls</h6>' +
+              '<div class="d-flex gap-2">' +
+              '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info"><i class="bi bi-arrow-repeat"></i> Load</button>' +
+              '<button id="applyCamCtrls" class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
+              '</div>' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Brightness <span id="lbl_brightness" class="text-muted"></span></label>' +
+              '<input id="ctrl_brightness" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Contrast <span id="lbl_contrast" class="text-muted"></span></label>' +
+              '<input id="ctrl_contrast" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Saturation <span id="lbl_saturation" class="text-muted"></span></label>' +
+              '<input id="ctrl_saturation" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="form-check form-switch mb-2">' +
+              '<input class="form-check-input" type="checkbox" id="ctrl_ir">' +
+              '<label class="form-check-label" for="ctrl_ir">IR Cut / Night Mode</label>' +
+              '</div>' +
+              '</div>' +
+              '</div>';
+
+            // Zoom
+            var zoom = el.querySelector('#camZoom'); var zoomLbl = el.querySelector('#zoomVal'); var prev = el.querySelector('#camPreview');
+            function applyZoom() { var v = parseInt(zoom.value, 10) || 100; if (zoomLbl) zoomLbl.textContent = v + '%'; if (prev) prev.style.transform = 'scale(' + (v / 100) + ')'; }
+            if (zoom) { zoom.addEventListener('input', applyZoom); applyZoom(); }
+
+            // Capture
+            var st = el.querySelector('#ctrlStatus');
+            var capBtn = el.querySelector('#camSnap');
+            if (capBtn) capBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Capturing…';
               fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'capture' })
               }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
                 .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+
+            // Controls load/apply
+            function setIf(elm, v, min, max) { if (!elm) return; var nv = (typeof v === 'number') ? v : (parseInt(v, 10) || 0); if (typeof min === 'number') nv = Math.max(min, nv); if (typeof max === 'number') nv = Math.min(max, nv); elm.value = String(nv); var lbl = el.querySelector('#lbl_' + (elm.id.split('_')[1] || '')); if (lbl) lbl.textContent = '(' + nv + ')'; }
+            function readControlsFromUI() {
+              var o = {};
+              var b = el.querySelector('#ctrl_brightness'); if (b) o.brightness = parseInt(b.value, 10);
+              var c = el.querySelector('#ctrl_contrast'); if (c) o.contrast = parseInt(c.value, 10);
+              var s = el.querySelector('#ctrl_saturation'); if (s) o.saturation = parseInt(s.value, 10);
+              var ir = el.querySelector('#ctrl_ir'); if (ir) o.ir_cut = ir.checked ? 1 : 0;
+              return o;
+            }
+            var loadBtn = el.querySelector('#loadCamCtrls');
+            if (loadBtn) loadBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Loading controls…';
+              fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/list')
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                  if (!j || j.success === false) { if (st) st.textContent = 'Failed to load controls'; return; }
+                  var ctrls = j.controls || {};
+                  // Common V4L2 control keys
+                  setIf(el.querySelector('#ctrl_brightness'), ctrls.brightness, 0, 255);
+                  setIf(el.querySelector('#ctrl_contrast'), ctrls.contrast, 0, 255);
+                  setIf(el.querySelector('#ctrl_saturation'), ctrls.saturation, 0, 255);
+                  var ir = el.querySelector('#ctrl_ir'); if (ir) { var v = (ctrls.ir_cut != null ? ctrls.ir_cut : (ctrls.infrared != null ? ctrls.infrared : 0)); ir.checked = !!(+v); }
+                  if (st) st.textContent = 'Controls loaded'; setTimeout(function () { if (st) st.textContent = ''; }, 800);
+                })
+                .catch(function () { if (st) st.textContent = 'Failed to load controls'; });
+            });
+            var applyBtn = el.querySelector('#applyCamCtrls');
+            if (applyBtn) applyBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Applying…';
+              var controls = readControlsFromUI();
+              fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                if (j && j.success) { if (st) st.textContent = 'Applied'; }
+                else { if (st) st.textContent = 'Failed: ' + (j && j.error || ''); }
+                setTimeout(function () { if (st) st.textContent = ''; }, 1000);
+              }).catch(function () { if (st) st.textContent = 'Failed'; });
             });
           } else if (part.type === 'sensor' || part.type === 'motion_sensor') {
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +

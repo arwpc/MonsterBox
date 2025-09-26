@@ -160,6 +160,18 @@ STTManager.prototype.applySavedConfigIfReady = function () {
             srSelect.value = String(cfg.sampleRate);
         }
     }
+    // VAD UI (if present)
+    var vadE = document.getElementById('vadEnabled');
+    if (vadE && typeof cfg.vadEnabled !== 'undefined') { vadE.checked = !!cfg.vadEnabled; }
+    var vadT = document.getElementById('vadThreshold');
+    var vadLbl = document.getElementById('vadThresholdLabel');
+    if (vadT) {
+        var pct = Math.round(((cfg.vadThreshold != null ? cfg.vadThreshold : 0.03) * 100));
+        if (!(pct >= 1 && pct <= 30)) pct = 3;
+        vadT.value = String(pct);
+        if (vadLbl) vadLbl.textContent = pct + '%';
+    }
+
     // Microphone
     if (this.micsLoaded) {
         var micSelect = document.getElementById('microphonePart');
@@ -287,6 +299,38 @@ STTManager.prototype.bindEvents = function () {
     if (startRecordingBtn) {
         startRecordingBtn.addEventListener('click', function () { self.startRecording(); });
     }
+
+    // Input Gain live control
+    var inputGain = document.getElementById('inputGain');
+    var inputGainLabel = document.getElementById('inputGainLabel');
+    function applyInputGainNow() {
+        if (!inputGain) return; var pct = parseInt(inputGain.value, 10) || 100;
+        if (inputGainLabel) inputGainLabel.textContent = pct + '%';
+        var devId = self.getSelectedMicDeviceId(); if (!devId) return;
+        fetch('/setup/audio/api/set-input-gain', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId: devId, gainPercent: pct })
+        }).catch(function () { /* ignore */ });
+    }
+    if (inputGain) { inputGain.addEventListener('input', applyInputGainNow); }
+
+    // VAD tuning controls
+    var vadEnabledEl = document.getElementById('vadEnabled');
+    var vadThresholdEl = document.getElementById('vadThreshold');
+    var vadLbl = document.getElementById('vadThresholdLabel');
+    if (vadEnabledEl) {
+        vadEnabledEl.addEventListener('change', function () {
+            self.savePartialConfig({ vadEnabled: !!vadEnabledEl.checked });
+        });
+    }
+    if (vadThresholdEl) {
+        vadThresholdEl.addEventListener('input', function () {
+            var p = parseInt(vadThresholdEl.value, 10) || 3; if (vadLbl) vadLbl.textContent = p + '%';
+            var thr = Math.max(0.01, Math.min(0.3, p / 100));
+            self.savePartialConfig({ vadThreshold: thr });
+        });
+    }
+
     if (stopRecordingBtn) {
         stopRecordingBtn.addEventListener('click', function () { self.stopRecording(); });
     }

@@ -146,6 +146,31 @@
                                 <small id="micVULabel" class="text-muted">0%</small>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label">Input Gain <span id="inputGainLabel"
+                                        class="text-muted">100%</span></label>
+                                <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1"
+                                    value="100">
+                                <div class="form-text">Adjusted via PipeWire/PulseAudio (applies immediately)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="vadEnabled">
+                                    <label class="form-check-label" for="vadEnabled">Enable Voice Activity Detection
+                                        (VAD)</label>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="form-label">VAD Threshold <span id="vadThresholdLabel"
+                                            class="text-muted">3%</span></label>
+                                    <input type="range" class="form-range" id="vadThreshold" min="1" max="30" step="1"
+                                        value="3">
+                                </div>
+                                <div class="form-text">Tune while watching the VU meter. Saved with STT config; restart
+                                    "Start Listening" to apply.</div>
+                            </div>
+
+
                             <div class="d-grid">
                                 <button type="button" class="btn btn-info" id="testMicrophoneIntegration">
                                     <i class="bi bi-arrow-repeat"></i> Test Microphone → STT

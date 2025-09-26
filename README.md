@@ -558,6 +558,18 @@ bash scripts/test-mjpg-integration.sh
 - **Direct stream**: http://localhost:8090/?action=stream
 - **MonsterBox integration**: http://localhost:3000/setup/webcam
 
+### ✨ Webcam Controls in Calibration (Edit tab) — NEW
+
+- Where: Setup → Calibration → select your Webcam part → Edit tab (center panel)
+- What you get now:
+  - Live MJPEG preview with digital zoom slider (100–300%)
+  - Typical V4L2 controls with Bootstrap sliders: Brightness, Contrast, Saturation
+  - IR Cut / Night Mode toggle (if supported by your camera)
+  - Load controls reads current device values via v4l2; Apply & Save writes them to the device and persists to the Part config
+- Tech: Uses `/setup/webcam/api/parts/:id/controls/list` and `/controls/set` on top of the existing mjpg-streamer proxy stream `/setup/webcam/api/parts/:id/stream`
+- Tip: Pair with Models in Setup → Models (type=webcam) to define default control schemas for similar cameras
+
+
 
 ### 🔧 Dynamic Webcam Device Assignment (Device → mjpg-streamer)
 
@@ -992,6 +1004,13 @@ Troubleshooting mic capture
     - Scribe English v1 (optimized for English)
   - When you select "Scribe English v1" the app automatically pins Language = English and maps it to ElevenLabs `scribe_v1` under the hood for best accuracy.
   - If you prefer multilingual but want English output, set Language = English instead of Auto to prevent language hopping.
+
+
+- VAD and Input Gain — NEW
+  - Input Gain: adjust 0–200% live with the slider under Microphone Integration; applies immediately via PipeWire
+  - VAD: toggle Voice Activity Detection and set Threshold (1–30%) to gate transcription on speech energy
+    - Threshold maps to WAV RMS amplitude; start around 3–5% and tune while watching the VU
+    - Settings are saved in STT config and applied the next time you click Start Listening
 
 - Microphone selection
   - Select a Microphone Part (PipeWire source) in the right panel. The choice is saved with STT config and auto‑restored.
