@@ -64,14 +64,17 @@
     </div>
 
     <main class="container-fluid py-3">
-      <!-- Mode Toggle -->
-      <div class="mb-3">
+      <!-- Mode Toggle and Add Part Button -->
+      <div class="mb-3 d-flex justify-content-between align-items-center">
         <div class="btn-group" role="group">
           <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
           <label class="btn btn-outline-warning" for="modeCal">CALIBRATE</label>
           <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
           <label class="btn btn-outline-info" for="modeOperate">OPERATE</label>
         </div>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal">
+          <i class="bi bi-plus-circle"></i> Add Part
+        </button>
       </div>
 
       <!-- Quick Model assignment (always visible) -->
@@ -139,12 +142,16 @@
                 <div class="tab-pane fade show active" id="tabControls">
                   <div id="controlsArea" class="text-muted">Select a device to show controls.</div>
                 </div>
-                <!-- Edit (basic part settings) -->
+                <!-- Edit (comprehensive part settings) -->
                 <div class="tab-pane fade" id="tabEdit">
                   <div class="row g-3">
                     <div class="col-md-6">
                       <label class="form-label">Name</label>
                       <input id="editName" class="form-control" placeholder="Part name">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Type</label>
+                      <input id="editType" class="form-control" readonly>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                       <div class="form-check form-switch">
@@ -152,19 +159,42 @@
                         <label class="form-check-label" for="editEnabled">Enabled</label>
                       </div>
                     </div>
-                    <div class="col-12" id="pinFields">
-                      <!-- Pin-specific fields will be rendered here -->
+
+                    <!-- Dynamic configuration area for type-specific settings -->
+                    <div class="col-12" id="editConfigArea">
+                      <!-- Type-specific configuration fields will be rendered here -->
                     </div>
+
                     <div class="col-12">
                       <label class="form-label">Description</label>
                       <input id="editDescription" class="form-control" placeholder="Describe this part">
                     </div>
+
+                    <!-- Advanced JSON Config (collapsible) -->
                     <div class="col-12">
-                      <label class="form-label">Config (JSON)</label>
-                      <textarea id="editConfig" class="form-control" rows="6" placeholder="{}"></textarea>
+                      <div class="card">
+                        <div class="card-header">
+                          <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#advancedConfigCollapse">
+                            <i class="bi bi-chevron-down"></i> Advanced Configuration (JSON)
+                          </button>
+                        </div>
+                        <div class="collapse" id="advancedConfigCollapse">
+                          <div class="card-body">
+                            <textarea id="editConfig" class="form-control" rows="6" placeholder="{}"></textarea>
+                            <div class="form-text">Direct JSON configuration - use with caution</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div class="col-12 d-flex justify-content-end">
-                      <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save</button>
+
+                    <div class="col-12 d-flex justify-content-between">
+                      <button id="deletePartBtn" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Part</button>
+                      <div>
+                        <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;" onclick="applyWebcamToMjpg()">
+                          <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
+                        </button>
+                        <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save Changes</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -737,34 +767,492 @@
           }
 
           function renderEdit(part) {
+            // Populate basic fields
             var n = document.getElementById('editName'); if (n) n.value = part.name || '';
+            var t = document.getElementById('editType'); if (t) t.value = part.type || '';
             var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
             var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
             var c = document.getElementById('editConfig'); if (c) c.value = JSON.stringify(part.config || {}, null, 2);
-            renderPinFields(part);
+
+            // Render type-specific configuration
+            renderEditConfigArea(part);
+
+            // Bind save button (only once)
             var save = document.getElementById('saveEditBtn');
             if (save && !save._bound) {
               save._bound = true;
               save.addEventListener('click', function () {
-                if (!selected) return;
-                var payload = {
-                  name: (document.getElementById('editName') || {}).value,
-                  enabled: !!((document.getElementById('editEnabled') || {}).checked),
-                  description: (document.getElementById('editDescription') || {}).value,
-                  config: {}
-                };
-                try { payload.config = JSON.parse((document.getElementById('editConfig') || { value: '{}' }).value || '{}'); } catch (e) { alert('Config must be valid JSON'); return; }
-                var p;
-                p = document.getElementById('editPin'); if (p && p.value !== '') payload.pin = parseInt(p.value, 10);
-                p = document.getElementById('editDirectionPin'); if (p && p.value !== '') payload.directionPin = parseInt(p.value, 10);
-                p = document.getElementById('editPwmPin'); if (p && p.value !== '') payload.pwmPin = parseInt(p.value, 10);
-                fetch('/setup/parts/api/parts/' + encodeURIComponent(selected.id), {
-                  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                }).then(function (r) { return r.json(); }).then(function () {
-                  // Refresh list
-                  if (typeof loadParts === 'function') loadParts();
-                }).catch(function () { alert('Failed to save'); });
+                savePartChanges();
               });
+            }
+
+            // Bind delete button (only once)
+            var deleteBtn = document.getElementById('deletePartBtn');
+            if (deleteBtn && !deleteBtn._bound) {
+              deleteBtn._bound = true;
+              deleteBtn.addEventListener('click', function () {
+                deleteSelectedPart();
+              });
+            }
+
+            // Show/hide mjpg button for webcam parts
+            var mjpgBtn = document.getElementById('applyMjpgBtn');
+            if (mjpgBtn) {
+              mjpgBtn.style.display = (part.type === 'webcam') ? 'inline-block' : 'none';
+            }
+          }
+
+          function renderEditConfigArea(part) {
+            const container = document.getElementById('editConfigArea');
+            if (!container) return;
+
+            const type = part.type;
+            const config = part.config || {};
+            let html = '';
+
+
+
+            // Generate type-specific configuration fields
+            switch (type) {
+              case 'servo':
+                html = generateEditServoConfig(part, config);
+                break;
+              case 'motor':
+              case 'linear_actuator':
+                html = generateEditMotorConfig(part, config, type);
+                break;
+              case 'light':
+              case 'led':
+                html = generateEditLightConfig(part, config, type);
+                break;
+              case 'sensor':
+              case 'motion_sensor':
+                html = generateEditSensorConfig(part, config, type);
+                break;
+              case 'webcam':
+                html = generateEditWebcamConfig(part, config);
+                break;
+              case 'microphone':
+                html = generateEditMicrophoneConfig(part, config);
+                break;
+              case 'speaker':
+                html = generateEditSpeakerConfig(part, config);
+                break;
+              default:
+                html = '<div class="text-muted">No specific configuration for this part type.</div>';
+            }
+
+            container.innerHTML = html;
+
+            // Populate values after rendering
+            populateEditConfigValues(part, config);
+
+            // Populate servo model dropdown if it's a servo
+            if (type === 'servo') {
+              populateEditServoModels();
+            }
+          }
+
+          function generateEditServoConfig(part, config) {
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-gear"></i> Servo Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <label class="form-label">GPIO Pin</label>
+                      <input type="number" class="form-control" id="editServoPin" min="1" max="40">
+                      <div class="form-text">Not used with PCA9685</div>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Servo Type</label>
+                      <select class="form-select" id="editServoType">
+                        <option value="standard">Standard (0-180°)</option>
+                        <option value="continuous">Continuous Rotation</option>
+                        <option value="feedback">Feedback Servo</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Controller</label>
+                      <select class="form-select" id="editControllerType" onchange="onEditControllerTypeChange()">
+                        <option value="gpio">Direct GPIO PWM</option>
+                        <option value="pca9685">PCA9685 PWM Driver</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="editInvertDirection">
+                        <label class="form-check-label" for="editInvertDirection">
+                          Invert Direction<br><small class="text-muted">Swap CW/CCW</small>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-12">
+                      <label class="form-label">Model</label>
+                      <select class="form-select" id="editServoModel">
+                        <option value="">Select Model...</option>
+                      </select>
+                      <div class="form-text">Choose a servo model for default settings</div>
+                    </div>
+                  </div>
+
+                  <div id="editPca9685Config" style="display: none;" class="mt-3">
+                    <div class="card border-primary">
+                      <div class="card-header bg-primary text-white">
+                        <i class="bi bi-cpu"></i> PCA9685 Configuration
+                      </div>
+                      <div class="card-body">
+                        <div class="row g-3 mb-3">
+                          <div class="col-md-6">
+                            <label class="form-label">I2C Address</label>
+                            <input type="text" class="form-control" id="editPca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                            <div class="form-text">Default: 0x40</div>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">PWM Frequency (Hz)</label>
+                            <input type="number" class="form-control" id="editPca9685Frequency" value="50" min="40" max="1000">
+                            <div class="form-text">Servo standard: 50Hz</div>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Select PCA9685 Channel</label>
+                          <div class="text-center mb-2 text-muted small">Click a channel to select it</div>
+                          <div id="editPca9685Channels"></div>
+                          <input type="hidden" id="editPca9685Channel">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditMotorConfig(part, config, type) {
+            const isActuator = type === 'linear_actuator';
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-gear-wide"></i> ${isActuator ? 'Linear Actuator' : 'Motor'} Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Direction Pin</label>
+                      <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                      <div class="form-text">GPIO pin for direction control</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">PWM Pin</label>
+                      <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                      <div class="form-text">GPIO pin for PWM speed control</div>
+                    </div>
+                    ${isActuator ? `
+                    <div class="col-md-6">
+                      <label class="form-label">Max Extension (ms)</label>
+                      <input type="number" class="form-control" id="editMaxExtension" min="1000" max="30000">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Max Retraction (ms)</label>
+                      <input type="number" class="form-control" id="editMaxRetraction" min="1000" max="30000">
+                    </div>
+                    ` : `
+                    <div class="col-md-6">
+                      <label class="form-label">Max Duration (ms)</label>
+                      <input type="number" class="form-control" id="editMaxDuration" min="1000" max="30000" value="10000">
+                      <div class="form-text">Safety limit for motor operation</div>
+                    </div>
+                    `}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditLightConfig(part, config, type) {
+            const isLED = type === 'led';
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-lightbulb"></i> ${isLED ? 'LED' : 'Light'} Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">GPIO Pin</label>
+                      <input type="number" class="form-control" id="editLightPin" min="1" max="40">
+                    </div>
+                    ${isLED ? `
+                    <div class="col-md-6">
+                      <label class="form-label">Default Brightness (%)</label>
+                      <input type="number" class="form-control" id="editDefaultBrightness" min="0" max="100" value="50">
+                    </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditSensorConfig(part, config, type) {
+            const isMotion = type === 'motion_sensor';
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-${isMotion ? 'eye' : 'cpu'}"></i> ${isMotion ? 'Motion Sensor' : 'Sensor'} Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-${isMotion ? '4' : '6'}">
+                      <label class="form-label">GPIO Pin</label>
+                      <input type="number" class="form-control" id="editSensorPin" min="1" max="40">
+                    </div>
+                    ${isMotion ? `
+                    <div class="col-md-4">
+                      <label class="form-label">Sensitivity</label>
+                      <input type="number" class="form-control" id="editMotionSensitivity" min="1" max="10" value="5">
+                      <div class="form-text">Adjust motion responsiveness (1-10)</div>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Window (ms)</label>
+                      <input type="number" class="form-control" id="editMotionWindow" min="50" max="5000" value="100">
+                      <div class="form-text">Motion detection window</div>
+                    </div>
+                    ` : `
+                    <div class="col-md-6">
+                      <label class="form-label">Sensor Type</label>
+                      <select class="form-select" id="editSensorType">
+                        <option value="digital">Digital</option>
+                        <option value="analog">Analog</option>
+                      </select>
+                    </div>
+                    `}
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditWebcamConfig(part, config) {
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-camera-video"></i> Webcam Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-8">
+                      <label class="form-label">Device Path</label>
+                      <select class="form-select" id="editWebcamDevice">
+                        <option value="">Select webcam device...</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForEdit()">Scan Devices</button>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Resolution Width</label>
+                      <input type="number" class="form-control" id="editWebcamWidth" value="640">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Resolution Height</label>
+                      <input type="number" class="form-control" id="editWebcamHeight" value="480">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Frame Rate</label>
+                      <input type="number" class="form-control" id="editWebcamFps" value="30" min="1" max="60">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditMicrophoneConfig(part, config) {
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-mic"></i> Microphone Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Audio Input Device</label>
+                      <select class="form-select" id="editAudioInput">
+                        <option value="">Select audio input...</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Sensitivity</label>
+                      <input type="number" class="form-control" id="editMicSensitivity" min="0.1" max="5.0" step="0.1" value="1.2">
+                      <div class="form-text">Adjust responsiveness</div>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Window (ms)</label>
+                      <input type="number" class="form-control" id="editMicWindow" min="50" max="5000" value="100">
+                      <div class="form-text">Detection window</div>
+                    </div>
+                  </div>
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-3 d-flex align-items-end">
+                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForEdit()">Scan Inputs</button>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Sample Rate</label>
+                      <select class="form-select" id="editMicSampleRate">
+                        <option value="44100">44.1 kHz</option>
+                        <option value="48000" selected>48 kHz</option>
+                        <option value="96000">96 kHz</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Channels</label>
+                      <select class="form-select" id="editMicChannels">
+                        <option value="1" selected>Mono</option>
+                        <option value="2">Stereo</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Input Gain</label>
+                      <input type="number" class="form-control" id="editMicGain" min="0" max="100" value="50">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function generateEditSpeakerConfig(part, config) {
+            return `
+              <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-speaker"></i> Speaker Configuration</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-8">
+                      <label class="form-label">Audio Output Device</label>
+                      <select class="form-select" id="editAudioOutput">
+                        <option value="">Select audio output...</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForEdit()">Scan Outputs</button>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Volume (%)</label>
+                      <input type="number" class="form-control" id="editSpeakerVolume" min="0" max="100" value="50">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Bass (dB)</label>
+                      <input type="number" class="form-control" id="editSpeakerBass" min="-10" max="10" value="0">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Treble (dB)</label>
+                      <input type="number" class="form-control" id="editSpeakerTreble" min="-10" max="10" value="0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          function populateEditConfigValues(part, config) {
+            const type = part.type;
+
+            // Populate type-specific values
+            switch (type) {
+              case 'servo':
+                setValueIfExists('editServoPin', part.pin);
+                setValueIfExists('editServoType', config.servoType || 'standard');
+                setValueIfExists('editControllerType', config.controllerType || 'gpio');
+                setValueIfExists('editServoModel', config.modelId || '');
+
+                // Handle invert direction checkbox
+                const invertCheckbox = document.getElementById('editInvertDirection');
+                if (invertCheckbox) {
+                  invertCheckbox.checked = !!config.invertDirection;
+                }
+
+                if (config.controllerType === 'pca9685') {
+                  const pca9685Config = document.getElementById('editPca9685Config');
+                  if (pca9685Config) {
+                    pca9685Config.style.display = 'block';
+                    setValueIfExists('editPca9685Address', config.address ? '0x' + config.address.toString(16) : '0x40');
+                    setValueIfExists('editPca9685Frequency', config.pca9685Frequency || 50);
+                    setValueIfExists('editPca9685Channel', config.channel);
+
+                    // Select the PCA9685 channel button
+                    if (config.channel !== undefined) {
+                      selectEditPCA9685Channel(config.channel);
+                    }
+                  }
+                }
+                break;
+
+              case 'motor':
+              case 'linear_actuator':
+                setValueIfExists('editDirectionPin', part.directionPin);
+                setValueIfExists('editPwmPin', part.pwmPin);
+                if (type === 'linear_actuator') {
+                  setValueIfExists('editMaxExtension', part.maxExtension || config.maxExtension);
+                  setValueIfExists('editMaxRetraction', part.maxRetraction || config.maxRetraction);
+                } else {
+                  setValueIfExists('editMaxDuration', part.maxDuration || config.maxDuration || 10000);
+                }
+                break;
+
+              case 'light':
+              case 'led':
+                setValueIfExists('editLightPin', part.pin);
+                if (type === 'led') {
+                  setValueIfExists('editDefaultBrightness', config.defaultBrightness || 50);
+                }
+                break;
+
+              case 'sensor':
+              case 'motion_sensor':
+                setValueIfExists('editSensorPin', part.pin);
+                if (type === 'motion_sensor') {
+                  setValueIfExists('editMotionSensitivity', config.sensitivity || 5);
+                  setValueIfExists('editMotionWindow', config.windowMs || 100);
+                } else {
+                  setValueIfExists('editSensorType', config.sensorType || 'digital');
+                }
+                break;
+
+              case 'webcam':
+                setValueIfExists('editWebcamDevice', config.devicePath);
+                setValueIfExists('editWebcamWidth', config.width || 640);
+                setValueIfExists('editWebcamHeight', config.height || 480);
+                setValueIfExists('editWebcamFps', config.fps || 30);
+                // Load webcam devices
+                setTimeout(() => {
+                  if (typeof scanWebcamsForEdit === 'function') scanWebcamsForEdit();
+                }, 100);
+                break;
+
+              case 'microphone':
+                setValueIfExists('editAudioInput', config.deviceId);
+                setValueIfExists('editMicSampleRate', config.sampleRate || 48000);
+                setValueIfExists('editMicChannels', config.channels || 1);
+                setValueIfExists('editMicGain', config.gain || 50);
+                setValueIfExists('editMicSensitivity', config.sensitivity || 1.2);
+                setValueIfExists('editMicWindow', config.windowMs || 100);
+                // Load audio inputs
+                setTimeout(() => {
+                  if (typeof scanAudioInputsForEdit === 'function') scanAudioInputsForEdit();
+                }, 100);
+                break;
+
+              case 'speaker':
+                setValueIfExists('editAudioOutput', config.audioDeviceId);
+                setValueIfExists('editSpeakerVolume', config.volume || 50);
+                setValueIfExists('editSpeakerBass', config.bass || 0);
+                setValueIfExists('editSpeakerTreble', config.treble || 0);
+                // Load audio outputs
+                setTimeout(() => {
+                  if (typeof scanAudioOutputsForEdit === 'function') scanAudioOutputsForEdit();
+                }, 100);
+                break;
+            }
+          }
+
+          function setValueIfExists(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element && value !== undefined && value !== null) {
+              element.value = value;
             }
           }
 
@@ -814,8 +1302,1031 @@
         const goMaxBtn = document.getElementById('goMaxBtn'); if (goMaxBtn) goMaxBtn.addEventListener('click', () => goToField('maxValue'));
 
         loadParts().catch(e => console.error(e));
+
+        // Add Part Modal functionality
+        const partTypes = {
+          motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: false },
+          linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: false },
+          light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
+          led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
+          servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
+          sensor: { icon: '📡', description: 'digital/analog sensors', requiresPin: true },
+          motion_sensor: { icon: '🔍', description: 'PIR motion detection', requiresPin: true },
+          webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
+          microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },
+          speaker: { icon: '🔊', description: 'audio output devices', requiresPin: false },
+          head_tracking: { icon: '👁️', description: 'head position tracking', requiresPin: false }
+        };
+
+        // Initialize part type dropdown
+        function initAddPartModal() {
+          const typeSelect = document.getElementById('addPartType');
+          if (!typeSelect) return;
+
+          typeSelect.innerHTML = '<option value="">Select Part Type</option>';
+          Object.keys(partTypes).forEach(type => {
+            const partType = partTypes[type];
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = `${partType.icon} ${type.replace('_', ' ').toUpperCase()} - ${partType.description}`;
+            typeSelect.appendChild(option);
+          });
+        }
+
+        // Handle part type change
+        window.onAddPartTypeChange = function() {
+          const typeSelect = document.getElementById('addPartType');
+          const modelGroup = document.getElementById('addModelGroup');
+          const configArea = document.getElementById('addPartConfigArea');
+
+          if (!typeSelect || !typeSelect.value) {
+            modelGroup.style.display = 'none';
+            configArea.innerHTML = '';
+            return;
+          }
+
+          const type = typeSelect.value;
+          const partType = partTypes[type];
+
+          // Show model selection for supported types
+          if (['servo', 'webcam'].includes(type)) {
+            modelGroup.style.display = 'block';
+            loadModelsForType(type);
+          } else {
+            modelGroup.style.display = 'none';
+          }
+
+          // Generate type-specific configuration
+          configArea.innerHTML = generatePartConfig(type, partType);
+        };
+
+        function loadModelsForType(type) {
+          const modelSelect = document.getElementById('addModelSelect');
+          if (!modelSelect) return;
+
+          fetch(`/setup/models/api/${type}`)
+            .then(r => r.json())
+            .then(data => {
+              modelSelect.innerHTML = '<option value="">Select Model (optional)</option>';
+              const models = (data && data.models) || [];
+              models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name || model.id;
+                modelSelect.appendChild(option);
+              });
+            })
+            .catch(() => {
+              modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            });
+        }
+
+        function generatePartConfig(type, partType) {
+          let html = '';
+
+          // GPIO Pin for parts that require it
+          if (partType.requiresPin) {
+            html += `
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addGpioPin" class="form-label">GPIO Pin</label>
+                    <input type="number" class="form-control" id="addGpioPin" name="pin" min="1" max="40" required>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          // Type-specific configurations
+          switch (type) {
+            case 'servo':
+              html += generateServoConfig();
+              break;
+            case 'motor':
+            case 'linear_actuator':
+              html += generateMotorConfig(type);
+              break;
+            case 'webcam':
+              html += generateWebcamConfig();
+              break;
+            case 'microphone':
+              html += generateMicrophoneConfig();
+              break;
+            case 'speaker':
+              html += generateSpeakerConfig();
+              break;
+          }
+
+          return html;
+        }
+
+        function generateServoConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addServoType" class="form-label">Servo Type</label>
+                  <select class="form-select" id="addServoType" name="servoType">
+                    <option value="standard">STANDARD - 0-180° positioning</option>
+                    <option value="continuous">CONTINUOUS - continuous rotation</option>
+                    <option value="feedback">FEEDBACK - position feedback servo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addControllerType" class="form-label">Controller Type</label>
+                  <select class="form-select" id="addControllerType" name="controllerType" onchange="onAddControllerTypeChange()">
+                    <option value="gpio">Direct GPIO PWM</option>
+                    <option value="pca9685">PCA9685 PWM Driver</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="addPca9685Group" style="display: none;">
+              <div class="card border-primary mb-3">
+                <div class="card-header bg-primary text-white">
+                  <i class="bi bi-cpu"></i> PCA9685 Configuration
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="addPca9685Address" class="form-label">I2C Address</label>
+                      <input type="text" class="form-control" id="addPca9685Address" name="pca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                      <div class="form-text">Default: 0x40</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="addPca9685Frequency" class="form-label">PWM Frequency (Hz)</label>
+                      <input type="number" class="form-control" id="addPca9685Frequency" name="pca9685Frequency" value="50" min="40" max="1000">
+                      <div class="form-text">Servo standard: 50Hz</div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Select PCA9685 Channel</label>
+                    <div id="addPca9685Channels"></div>
+                    <input type="hidden" id="addPca9685Channel" name="pca9685Channel">
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateMotorConfig(type) {
+          const isActuator = type === 'linear_actuator';
+          return `
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addDirectionPin" class="form-label">Direction Pin</label>
+                  <input type="number" class="form-control" id="addDirectionPin" name="directionPin" min="1" max="40" value="18" required>
+                  <div class="form-text">GPIO pin for direction control</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addPwmPin" class="form-label">PWM Pin</label>
+                  <input type="number" class="form-control" id="addPwmPin" name="pwmPin" min="1" max="40" value="13" required>
+                  <div class="form-text">GPIO pin for PWM speed control (12,13,18,19 recommended)</div>
+                </div>
+              </div>
+            </div>
+            ${isActuator ? `
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addMaxExtension" class="form-label">Max Extension (ms)</label>
+                  <input type="number" class="form-control" id="addMaxExtension" name="maxExtension" min="1000" max="30000" value="15000">
+                  <div class="form-text">Maximum extension time to prevent damage</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addMaxRetraction" class="form-label">Max Retraction (ms)</label>
+                  <input type="number" class="form-control" id="addMaxRetraction" name="maxRetraction" min="1000" max="30000" value="15000">
+                  <div class="form-text">Maximum retraction time to prevent damage</div>
+                </div>
+              </div>
+            </div>
+            ` : ''}
+          `;
+        }
+
+        function generateWebcamConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addWebcamDevice" class="form-label">Webcam Device</label>
+                  <select class="form-select" id="addWebcamDevice">
+                    <option value="">Select a detected webcam...</option>
+                  </select>
+                  <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()">Scan Devices</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateMicrophoneConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addAudioInput" class="form-label">Audio Input</label>
+                  <select class="form-select" id="addAudioInput">
+                    <option value="">Select an audio input...</option>
+                  </select>
+                  <div class="form-text">Select a PipeWire input source for this Microphone.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()">Scan Inputs</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateSpeakerConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addAudioOutput" class="form-label">Audio Output</label>
+                  <select class="form-select" id="addAudioOutput">
+                    <option value="">Select an audio output...</option>
+                  </select>
+                  <div class="form-text">Route this Speaker to a specific PipeWire sink.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()">Scan Outputs</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
+                  <input type="number" class="form-control" id="addSpeakerVolume" min="0" max="100" value="50">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
+                  <input type="number" class="form-control" id="addSpeakerBass" min="-10" max="10" value="0">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
+                  <input type="number" class="form-control" id="addSpeakerTreble" min="-10" max="10" value="0">
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // PCA9685 controller type change handler
+        window.onAddControllerTypeChange = function() {
+          const controllerType = document.getElementById('addControllerType').value;
+          const pca9685Group = document.getElementById('addPca9685Group');
+
+          if (controllerType === 'pca9685') {
+            pca9685Group.style.display = 'block';
+            renderAddPCA9685Channels();
+          } else {
+            pca9685Group.style.display = 'none';
+          }
+        };
+
+        function renderAddPCA9685Channels() {
+          const container = document.getElementById('addPca9685Channels');
+          if (!container) return;
+
+          let html = '<div class="pca9685-board-layout">';
+          html += '<div class="text-center mb-2"><strong>PCA9685 16-Channel PWM Driver</strong></div>';
+          html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
+          html += '<div class="row g-1">';
+
+          for (let i = 0; i < 16; i++) {
+            if (i % 4 === 0) {
+              html += '<div class="col-3">';
+            }
+
+            html += `<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
+            html += `onclick="selectAddPCA9685Channel(${i})" id="add-channel-${i}">`;
+            html += `Ch ${i}`;
+            html += '</button>';
+
+            if ((i + 1) % 4 === 0) {
+              html += '</div>';
+            }
+          }
+          html += '</div></div>';
+
+          container.innerHTML = html;
+        }
+
+        window.selectAddPCA9685Channel = function(channel) {
+          // Clear previous selection
+          document.querySelectorAll('.add-pca9685-channel').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-secondary');
+          });
+
+          // Select new channel
+          const channelBtn = document.getElementById(`add-channel-${channel}`);
+          if (channelBtn) {
+            channelBtn.classList.remove('btn-outline-secondary');
+            channelBtn.classList.add('btn-primary');
+          }
+
+          // Set hidden input
+          const hiddenInput = document.getElementById('addPca9685Channel');
+          if (hiddenInput) {
+            hiddenInput.value = channel;
+          }
+        };
+
+        // Device scanning functions
+        window.scanWebcamsForAdd = function() {
+          const select = document.getElementById('addWebcamDevice');
+          if (!select) return;
+
+          fetch('/setup/webcam/api/devices/probe')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="">Select a detected webcam...</option>';
+              const devices = (data && data.results) || [];
+              devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.path || '';
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning devices</option>';
+            });
+        };
+
+        window.scanAudioInputsForAdd = function() {
+          const select = document.getElementById('addAudioInput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/inputs')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="default">Default PipeWire Source</option>';
+              const inputs = (data && data.inputs) || [];
+              inputs.forEach(input => {
+                const option = document.createElement('option');
+                option.value = input.id || '';
+                option.textContent = input.description || input.name || input.id;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning inputs</option>';
+            });
+        };
+
+        window.scanAudioOutputsForAdd = function() {
+          const select = document.getElementById('addAudioOutput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/outputs')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+              const outputs = (data && data.outputs) || [];
+              outputs.forEach(output => {
+                const option = document.createElement('option');
+                option.value = output.id || '';
+                option.textContent = output.description || output.name || output.id;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning outputs</option>';
+            });
+        };
+
+        // Part creation function
+        window.createPartFromCalibration = function() {
+          const form = document.getElementById('addPartForm');
+          const formData = new FormData(form);
+
+          const type = formData.get('type');
+          if (!type) {
+            alert('Please select a part type');
+            return;
+          }
+
+          const payload = {
+            name: formData.get('name'),
+            type: type,
+            description: formData.get('description') || ''
+          };
+
+          // Handle type-specific configurations
+          const partType = partTypes[type];
+          let config = {};
+
+          // Add model if selected
+          const modelSelect = document.getElementById('addModelSelect');
+          if (modelSelect && modelSelect.value) {
+            config.modelId = modelSelect.value;
+          }
+
+          // Handle pin-based parts
+          if (partType.requiresPin) {
+            const pin = formData.get('pin');
+            if (pin) payload.pin = parseInt(pin, 10);
+          }
+
+          // Type-specific handling
+          switch (type) {
+            case 'servo':
+              const servoType = document.getElementById('addServoType').value || 'standard';
+              const controllerType = document.getElementById('addControllerType').value || 'gpio';
+              config.servoType = servoType;
+              config.controllerType = controllerType;
+
+              if (controllerType === 'pca9685') {
+                const channel = document.getElementById('addPca9685Channel').value;
+                const address = document.getElementById('addPca9685Address').value || '0x40';
+                const frequency = document.getElementById('addPca9685Frequency').value;
+
+                config.channel = channel ? parseInt(channel, 10) : 0;
+                config.address = address.startsWith('0x') ? parseInt(address, 16) : parseInt(address, 10) || 0x40;
+                if (frequency) config.pca9685Frequency = parseInt(frequency, 10);
+              }
+              break;
+
+            case 'motor':
+            case 'linear_actuator':
+              const directionPin = formData.get('directionPin');
+              const pwmPin = formData.get('pwmPin');
+
+              if (directionPin) payload.directionPin = parseInt(directionPin, 10);
+              if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
+
+              if (type === 'linear_actuator') {
+                const maxExtension = formData.get('maxExtension');
+                const maxRetraction = formData.get('maxRetraction');
+                if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
+                if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
+              } else {
+                payload.maxDuration = 10000; // 10 second safety limit for motors
+              }
+              break;
+
+            case 'webcam':
+              const webcamDevice = document.getElementById('addWebcamDevice');
+              if (webcamDevice && webcamDevice.value) {
+                config.devicePath = webcamDevice.value;
+                const deviceId = webcamDevice.value.match(/\/dev\/video(\d+)/);
+                if (deviceId) config.deviceId = parseInt(deviceId[1], 10);
+              }
+              break;
+
+            case 'microphone':
+              const audioInput = document.getElementById('addAudioInput');
+              if (audioInput && audioInput.value) {
+                config.deviceId = audioInput.value;
+              }
+              break;
+
+            case 'speaker':
+              const audioOutput = document.getElementById('addAudioOutput');
+              if (audioOutput && audioOutput.value) {
+                config.audioDeviceId = audioOutput.value;
+              }
+
+              const volume = document.getElementById('addSpeakerVolume').value;
+              const bass = document.getElementById('addSpeakerBass').value;
+              const treble = document.getElementById('addSpeakerTreble').value;
+
+              if (volume !== '') config.volume = Math.max(0, Math.min(100, parseInt(volume, 10)));
+              if (bass !== '') config.bass = Math.max(-10, Math.min(10, parseInt(bass, 10)));
+              if (treble !== '') config.treble = Math.max(-10, Math.min(10, parseInt(treble, 10)));
+              break;
+          }
+
+          if (Object.keys(config).length) payload.config = config;
+
+          // Create the part
+          fetch('/setup/parts/api/parts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              // Close modal and reset form
+              const modal = bootstrap.Modal.getInstance(document.getElementById('addPartModal'));
+              if (modal) modal.hide();
+              document.getElementById('addPartForm').reset();
+              document.getElementById('addPartConfigArea').innerHTML = '';
+              document.getElementById('addModelGroup').style.display = 'none';
+
+              // Reload parts list
+              loadParts();
+
+              // Show success message
+              alert(`${data.message || 'Part created successfully'}`);
+            } else {
+              alert(`Failed to create part: ${data.error || 'Unknown error'}`);
+            }
+          })
+          .catch(error => {
+            console.error('Error creating part:', error);
+            alert('Error creating part');
+          });
+        };
+
+        // Edit mode functions
+        window.onEditControllerTypeChange = function() {
+          const controllerType = document.getElementById('editControllerType').value;
+          const pca9685Config = document.getElementById('editPca9685Config');
+
+          if (pca9685Config) {
+            if (controllerType === 'pca9685') {
+              pca9685Config.style.display = 'block';
+              generateEditPCA9685Channels();
+            } else {
+              pca9685Config.style.display = 'none';
+            }
+          }
+        };
+
+        function generateEditPCA9685Channels() {
+          const channelsContainer = document.getElementById('editPca9685Channels');
+          if (!channelsContainer) return;
+
+          let html = '<div class="row g-2">';
+          for (let i = 0; i < 16; i++) {
+            const col = i % 4;
+            if (col === 0 && i > 0) html += '</div><div class="row g-2">';
+
+            html += `
+              <div class="col-3">
+                <button type="button" class="btn btn-outline-primary w-100 edit-channel-btn"
+                        data-channel="${i}" onclick="selectEditPCA9685Channel(${i})">
+                  Ch.${i}
+                </button>
+              </div>
+            `;
+          }
+          html += '</div>';
+          channelsContainer.innerHTML = html;
+        }
+
+        function selectEditPCA9685Channel(channel) {
+          // Remove active class from all buttons
+          document.querySelectorAll('.edit-channel-btn').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+          });
+
+          // Add active class to selected button
+          const selectedBtn = document.querySelector(`[data-channel="${channel}"]`);
+          if (selectedBtn) {
+            selectedBtn.classList.remove('btn-outline-primary');
+            selectedBtn.classList.add('btn-primary');
+          }
+
+          // Set hidden input value
+          document.getElementById('editPca9685Channel').value = channel;
+        }
+
+        function populateEditServoModels() {
+          const modelSelect = document.getElementById('editServoModel');
+          if (!modelSelect) return;
+
+          const servoModels = modelsCache['servo'] || [];
+          modelSelect.innerHTML = '<option value="">Select Model...</option>';
+
+          servoModels.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            modelSelect.appendChild(option);
+          });
+        }
+
+        // Device scanning functions for edit mode
+        window.scanWebcamsForEdit = function() {
+          const select = document.getElementById('editWebcamDevice');
+          if (!select) return;
+
+          fetch('/setup/webcam/api/devices/probe')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="">Select webcam device...</option>';
+              const devices = (data && data.results) || [];
+              devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.path || '';
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning devices</option>';
+            });
+        };
+
+        window.scanAudioInputsForEdit = function() {
+          const select = document.getElementById('editAudioInput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/inputs')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="default">Default PipeWire Source</option>';
+              const inputs = (data && data.inputs) || [];
+              inputs.forEach(input => {
+                const option = document.createElement('option');
+                option.value = input.id || '';
+                option.textContent = input.description || input.name || input.id;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning inputs</option>';
+            });
+        };
+
+        window.scanAudioOutputsForEdit = function() {
+          const select = document.getElementById('editAudioOutput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/outputs')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+              const outputs = (data && data.outputs) || [];
+              outputs.forEach(output => {
+                const option = document.createElement('option');
+                option.value = output.id || '';
+                option.textContent = output.description || output.name || output.id;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning outputs</option>';
+            });
+        };
+
+        // Save part changes function
+        function savePartChanges() {
+          if (!selected) {
+            alert('No part selected');
+            return;
+          }
+
+          const payload = {
+            name: document.getElementById('editName').value,
+            enabled: document.getElementById('editEnabled').checked,
+            description: document.getElementById('editDescription').value,
+            config: {}
+          };
+
+          // Handle advanced JSON config if provided
+          try {
+            const jsonConfig = document.getElementById('editConfig').value;
+            if (jsonConfig.trim()) {
+              payload.config = JSON.parse(jsonConfig);
+            }
+          } catch (e) {
+            alert('Invalid JSON in advanced configuration');
+            return;
+          }
+
+          // Collect type-specific configuration
+          const type = selected.type;
+          let config = payload.config;
+
+          switch (type) {
+            case 'servo':
+              const pin = document.getElementById('editServoPin').value;
+              if (pin) payload.pin = parseInt(pin, 10);
+
+              config.servoType = document.getElementById('editServoType').value || 'standard';
+              config.controllerType = document.getElementById('editControllerType').value || 'gpio';
+
+              // Handle model selection
+              const modelId = document.getElementById('editServoModel').value;
+              if (modelId) {
+                config.modelId = modelId;
+              }
+
+              // Handle invert direction checkbox
+              const invertDirection = document.getElementById('editInvertDirection');
+              if (invertDirection) {
+                config.invertDirection = invertDirection.checked;
+              }
+
+              if (config.controllerType === 'pca9685') {
+                const channel = document.getElementById('editPca9685Channel').value;
+                const address = document.getElementById('editPca9685Address').value;
+                const frequency = document.getElementById('editPca9685Frequency').value;
+
+                if (channel !== '') config.channel = parseInt(channel, 10);
+                if (address) {
+                  config.address = address.startsWith('0x') ? parseInt(address, 16) : parseInt(address, 10);
+                }
+                if (frequency) config.pca9685Frequency = parseInt(frequency, 10);
+              }
+              break;
+
+            case 'motor':
+            case 'linear_actuator':
+              const directionPin = document.getElementById('editDirectionPin').value;
+              const pwmPin = document.getElementById('editPwmPin').value;
+
+              if (directionPin) payload.directionPin = parseInt(directionPin, 10);
+              if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
+
+              if (type === 'linear_actuator') {
+                const maxExtension = document.getElementById('editMaxExtension').value;
+                const maxRetraction = document.getElementById('editMaxRetraction').value;
+                if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
+                if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
+              } else {
+                const maxDuration = document.getElementById('editMaxDuration').value;
+                if (maxDuration) payload.maxDuration = parseInt(maxDuration, 10);
+              }
+              break;
+
+            case 'light':
+            case 'led':
+              const lightPin = document.getElementById('editLightPin').value;
+              if (lightPin) payload.pin = parseInt(lightPin, 10);
+
+              if (type === 'led') {
+                const brightness = document.getElementById('editDefaultBrightness').value;
+                if (brightness !== '') config.defaultBrightness = parseInt(brightness, 10);
+              }
+              break;
+
+            case 'sensor':
+            case 'motion_sensor':
+              const sensorPin = document.getElementById('editSensorPin').value;
+              if (sensorPin) payload.pin = parseInt(sensorPin, 10);
+
+              if (type === 'motion_sensor') {
+                const sensitivity = document.getElementById('editMotionSensitivity').value;
+                const windowMs = document.getElementById('editMotionWindow').value;
+                if (sensitivity !== '') config.sensitivity = parseInt(sensitivity, 10);
+                if (windowMs !== '') config.windowMs = parseInt(windowMs, 10);
+              } else {
+                config.sensorType = document.getElementById('editSensorType').value || 'digital';
+              }
+              break;
+
+            case 'webcam':
+              const webcamDevice = document.getElementById('editWebcamDevice').value;
+              const width = document.getElementById('editWebcamWidth').value;
+              const height = document.getElementById('editWebcamHeight').value;
+              const fps = document.getElementById('editWebcamFps').value;
+
+              if (webcamDevice) {
+                config.devicePath = webcamDevice;
+                const deviceId = webcamDevice.match(/\/dev\/video(\d+)/);
+                if (deviceId) config.deviceId = parseInt(deviceId[1], 10);
+              }
+              if (width) config.width = parseInt(width, 10);
+              if (height) config.height = parseInt(height, 10);
+              if (fps) config.fps = parseInt(fps, 10);
+              break;
+
+            case 'microphone':
+              const audioInput = document.getElementById('editAudioInput').value;
+              const sampleRate = document.getElementById('editMicSampleRate').value;
+              const channels = document.getElementById('editMicChannels').value;
+              const gain = document.getElementById('editMicGain').value;
+              const micSensitivity = document.getElementById('editMicSensitivity').value;
+              const micWindow = document.getElementById('editMicWindow').value;
+
+              if (audioInput) config.deviceId = audioInput;
+              if (sampleRate) config.sampleRate = parseInt(sampleRate, 10);
+              if (channels) config.channels = parseInt(channels, 10);
+              if (gain !== '') config.gain = parseInt(gain, 10);
+              if (micSensitivity !== '') config.sensitivity = parseFloat(micSensitivity);
+              if (micWindow !== '') config.windowMs = parseInt(micWindow, 10);
+              break;
+
+            case 'speaker':
+              const audioOutput = document.getElementById('editAudioOutput').value;
+              const volume = document.getElementById('editSpeakerVolume').value;
+              const bass = document.getElementById('editSpeakerBass').value;
+              const treble = document.getElementById('editSpeakerTreble').value;
+
+              if (audioOutput) config.audioDeviceId = audioOutput;
+              if (volume !== '') config.volume = parseInt(volume, 10);
+              if (bass !== '') config.bass = parseInt(bass, 10);
+              if (treble !== '') config.treble = parseInt(treble, 10);
+              break;
+          }
+
+          // Save the part
+          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert('Part updated successfully');
+              loadParts(); // Refresh the parts list
+            } else {
+              alert(`Failed to update part: ${data.error || 'Unknown error'}`);
+            }
+          })
+          .catch(error => {
+            console.error('Error updating part:', error);
+            alert('Error updating part');
+          });
+        }
+
+        // Delete part function
+        function deleteSelectedPart() {
+          if (!selected) {
+            alert('No part selected');
+            return;
+          }
+
+          if (!confirm(`Are you sure you want to delete "${selected.name}"? This action cannot be undone.`)) {
+            return;
+          }
+
+          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            method: 'DELETE'
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert('Part deleted successfully');
+              selected = null;
+              loadParts(); // Refresh the parts list
+
+              // Clear the interface
+              document.getElementById('devName').textContent = 'Select a device';
+              document.getElementById('devMeta').textContent = '';
+              document.getElementById('controlsArea').innerHTML = '<div class="text-muted">Select a device to show controls.</div>';
+
+              // Switch back to Controls tab
+              const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+              if (ctrlTabBtn) ctrlTabBtn.click();
+            } else {
+              alert(`Failed to delete part: ${data.error || 'Unknown error'}`);
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting part:', error);
+            alert('Error deleting part');
+          });
+        }
+
+        // Apply webcam to mjpg-streamer function
+        function applyWebcamToMjpg() {
+          if (!selected) {
+            alert('No webcam part selected');
+            return;
+          }
+
+          if (selected.type !== 'webcam') {
+            alert('Selected part is not a webcam');
+            return;
+          }
+
+          const devicePath = selected.config?.devicePath;
+          if (!devicePath) {
+            alert('Webcam device path not configured. Please save the webcam configuration first.');
+            return;
+          }
+
+          fetch(`/setup/parts/api/parts/${encodeURIComponent(selected.id)}/apply-mjpg`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`);
+            } else {
+              let msg = data.error || data.message || 'Failed to apply to mjpg-streamer';
+              if (data.needsSudo) msg += ' (needs sudo)';
+              alert(msg);
+            }
+          })
+          .catch(error => {
+            console.error('Error applying to mjpg-streamer:', error);
+            alert('Error applying to mjpg-streamer');
+          });
+        }
+
+        // Initialize modal when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+          initAddPartModal();
+
+          // Add tab change event listener to re-render edit config when Edit tab is activated
+          const editTabButton = document.querySelector('button[data-bs-target="#tabEdit"]');
+          if (editTabButton) {
+            editTabButton.addEventListener('click', function() {
+              if (selected) {
+                setTimeout(() => {
+                  renderEditConfigArea(selected);
+                }, 100);
+              }
+            });
+          }
+        });
+
       })();
     </script>
+
+    <!-- Add Part Modal -->
+    <div class="modal fade" id="addPartModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Hardware Part</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addPartForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addPartName" class="form-label">Part Name</label>
+                    <input type="text" class="form-control" id="addPartName" name="name" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addPartType" class="form-label">Part Type</label>
+                    <select class="form-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required>
+                      <option value="">Select Part Type</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Model Selection -->
+              <div class="row" id="addModelGroup" style="display:none;">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label for="addModelSelect" class="form-label">Model</label>
+                    <select class="form-select" id="addModelSelect">
+                      <option value="">Select Model (optional)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn" onclick="window.open('/setup/models', '_blank')">
+                    <i class="bi bi-plus-circle"></i> Add Model
+                  </button>
+                </div>
+              </div>
+
+              <!-- Dynamic configuration area -->
+              <div id="addPartConfigArea"></div>
+
+              <!-- Description -->
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-3">
+                    <label for="addPartDescription" class="form-label">Description</label>
+                    <input type="text" class="form-control" id="addPartDescription" name="description">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="createPartFromCalibration()">Add Part</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </body>
 
 </html>

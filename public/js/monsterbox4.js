@@ -3,6 +3,10 @@
  * Common functionality and utilities
  */
 
+if (window.MonsterBox) {
+    console.warn('MonsterBox already initialized');
+} else {
+
 class MonsterBox {
     constructor() {
         this.apiBase = '';
@@ -33,6 +37,69 @@ class MonsterBox {
                 form.classList.add('was-validated');
             }
         });
+
+        // Accessibility/focus management for all modals across the app
+        // Prevent "aria-hidden" focus warnings by blurring focused elements inside modals before hide
+        document.addEventListener('hide.bs.modal', (event) => {
+            const modal = event.target;
+            try {
+                if (modal && modal.classList && modal.classList.contains('modal')) {
+                    if (modal.contains(document.activeElement)) {
+                        document.activeElement.blur();
+                    }
+                }
+            } catch (e) {
+                console.warn('Modal hide focus guard error:', e);
+            }
+        });
+
+        // After modal hidden, restore focus to opener if known; otherwise focus body safely
+        document.addEventListener('hidden.bs.modal', (event) => {
+            const modal = event.target;
+            try {
+                const opener = modal && modal.__mb_lastTrigger;
+                if (opener && document.body.contains(opener)) {
+                    opener.focus({ preventScroll: true });
+                } else {
+                    const body = document.body;
+                    const prev = body.getAttribute('tabindex');
+                    body.setAttribute('tabindex', '-1');
+                    body.focus({ preventScroll: true });
+                    if (prev === null) {
+                        body.removeAttribute('tabindex');
+                    } else {
+                        body.setAttribute('tabindex', prev);
+                    }
+                }
+            } catch (e) {
+                // no-op
+            }
+        });
+
+        // Track the element that opened each modal so we can restore focus
+        document.addEventListener('click', (e) => {
+            const trigger = e.target && e.target.closest('[data-bs-toggle="modal"][data-bs-target], a[data-bs-toggle="modal"][href^="#"]');
+            if (trigger) {
+                const selector = trigger.getAttribute('data-bs-target') || trigger.getAttribute('href');
+                if (selector && selector.startsWith('#')) {
+                    const modal = document.querySelector(selector);
+                    if (modal) {
+                        modal.__mb_lastTrigger = trigger;
+                    }
+                }
+            }
+        }, true);
+
+        // Extra safety: blur focus immediately when a dismiss button is clicked
+        document.addEventListener('click', (e) => {
+            const dismiss = e.target && e.target.closest('[data-bs-dismiss="modal"]');
+            if (dismiss) {
+                const modal = dismiss.closest('.modal');
+                if (modal && modal.contains(document.activeElement)) {
+                    document.activeElement.blur();
+                }
+            }
+        }, true);
     }
 
     getCurrentCharacter() {
@@ -70,7 +137,7 @@ class MonsterBox {
         };
 
         const config = { ...defaultOptions, ...options };
-        
+
         if (config.body && typeof config.body === 'object') {
             config.body = JSON.stringify(config.body);
         }
@@ -108,7 +175,7 @@ class MonsterBox {
         const notification = document.createElement('div');
         notification.className = `alert alert-${type} alert-dismissible fade position-fixed`;
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
-        
+
         const iconMap = {
             success: 'check-circle',
             error: 'exclamation-triangle',
@@ -155,10 +222,10 @@ class MonsterBox {
         return new Promise((resolve) => {
             const modal = this.createConfirmModal(message, title, resolve);
             document.body.appendChild(modal);
-            
+
             const bsModal = new bootstrap.Modal(modal);
             bsModal.show();
-            
+
             modal.addEventListener('hidden.bs.modal', () => {
                 modal.remove();
             });
@@ -256,3 +323,4 @@ const mb = new MonsterBox();
 
 // Make it globally available
 window.MonsterBox = mb;
+}

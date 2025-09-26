@@ -6,7 +6,7 @@
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { loadParts, saveParts } from '../../controllers/partsController.js';
+import { loadParts, saveParts, createPart, updatePart, deletePart } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
 import * as linearActuatorCalibration from '../../services/linearActuatorCalibrationService.js';
 import * as servoService from '../../services/hardwareService/servo.js';
@@ -125,6 +125,16 @@ router.get('/api/parts', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to load parts' });
     }
 });
+
+// CRUD operations for parts in calibration interface
+// Create new part
+router.post('/api/parts', express.json(), createPart);
+
+// Update existing part
+router.put('/api/parts/:id', express.json(), updatePart);
+
+// Delete part
+router.delete('/api/parts/:id', deletePart);
 
 // Assign/update model for a part
 router.post('/api/parts/:id/model', express.json(), async (req, res) => {

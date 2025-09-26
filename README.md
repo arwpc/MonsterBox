@@ -2,11 +2,6 @@
 
 **MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
-> Status update (latest): All unit and UI tests are green.
->
-> - Mocha: 96 passing, 0 failing
-> - Playwright: 3 passed, 2 skipped (ConvAI e2e pending hardware/network)
->
 ## ✅ Nightly Fixes Summary (stability + tests)
 
 - Fixed character‑aware data paths in Motion Tracking (no more ENOENT on data/parts.json)
