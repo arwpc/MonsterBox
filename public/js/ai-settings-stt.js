@@ -112,7 +112,7 @@ STTManager.prototype.showModelsError = function () {
 STTManager.prototype.loadMicrophoneParts = function () {
     var self = this;
 
-    fetch('/setup/parts/api/parts?type=microphone')
+    fetch('/setup/calibration/api/parts?type=microphone')
         .then(function (response) {
             return response.json();
         })

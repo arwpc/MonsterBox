@@ -110,7 +110,7 @@ TTSManager.prototype.showVoicesError = function () {
 TTSManager.prototype.loadSpeakerParts = function () {
     var self = this;
 
-    fetch('/setup/parts/api/parts?type=speaker')
+    fetch('/setup/calibration/api/parts?type=speaker')
         .then(function (response) {
             return response.json();
         })
@@ -372,32 +372,57 @@ TTSManager.prototype.playAudioInBrowser = function (audioBlob) {
 TTSManager.prototype.playAudioThroughSpeaker = function (audioBlob, speakerId) {
     var self = this;
 
-    // Convert blob to FormData for upload
-    var formData = new FormData();
-    formData.append('audio', audioBlob, 'tts-test.mp3');
-
-    fetch('/setup/parts/api/parts/' + speakerId + '/play-audio', {
-        method: 'POST',
-        body: formData
-    })
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                self.showAlert('Audio playing through ' + self.getSpeakerName(speakerId), 'success');
-            } else {
-                self.showAlert('Failed to play through speaker: ' + (data.error || 'Unknown error'), 'danger');
-                // Fallback to browser audio
-                self.playAudioInBrowser(audioBlob);
-            }
-        })
-        .catch(function (error) {
-            console.error('Speaker playback error:', error);
-            self.showAlert('Speaker playback failed - playing in browser', 'warning');
-            // Fallback to browser audio
-            self.playAudioInBrowser(audioBlob);
+    // Helper: convert Blob to base64 string (without prefix)
+    function blobToBase64(blob) {
+        return new Promise(function(resolve, reject){
+            var reader = new FileReader();
+            reader.onloadend = function(){
+                var res = reader.result || '';
+                var idx = res.indexOf(',');
+                resolve(idx !== -1 ? res.slice(idx + 1) : res);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
         });
+    }
+
+    // Fetch current character id
+    function getCurrentCharacterId(){
+        return fetch('/setup/characters/api/current')
+            .then(function(r){ return r.json(); })
+            .then(function(j){ return (j && typeof j.selectedCharacter !== 'undefined') ? j.selectedCharacter : null; })
+            .catch(function(){ return null; });
+    }
+
+    Promise.all([ blobToBase64(audioBlob), getCurrentCharacterId() ])
+      .then(function(results){
+          var b64 = results[0];
+          var characterId = results[1];
+          if (!characterId) {
+              self.showAlert('No character selected - playing in browser', 'warning');
+              self.playAudioInBrowser(audioBlob);
+              return;
+          }
+          return fetch('/api/elevenlabs/play-audio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ audioData: b64, characterId: characterId, format: 'mp3' })
+          })
+          .then(function(r){ return r.json(); })
+          .then(function(j){
+              if (j && j.success) {
+                  self.showAlert('Audio playing through ' + self.getSpeakerName(speakerId), 'success');
+              } else {
+                  self.showAlert('Failed to play through speaker: ' + ((j && j.error) || 'Unknown error'), 'danger');
+                  self.playAudioInBrowser(audioBlob);
+              }
+          });
+      })
+      .catch(function(err){
+          console.error('Speaker playback error:', err);
+          self.showAlert('Speaker playback failed - playing in browser', 'warning');
+          self.playAudioInBrowser(audioBlob);
+      });
 };
 
 TTSManager.prototype.getSpeakerName = function (speakerId) {

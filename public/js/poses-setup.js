@@ -34,7 +34,7 @@ class PosesSetup {
             }
 
             // Load parts from parts API
-            const partsResponse = await mb.apiCall('/setup/parts/api/parts');
+            const partsResponse = await mb.apiCall('/setup/calibration/api/parts');
             if (partsResponse.success) {
                 // Extract all parts for pose creation (not just servos)
                 this.parts = partsResponse.parts || [];

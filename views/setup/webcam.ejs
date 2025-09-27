@@ -22,19 +22,6 @@
 
       <div class="row g-4">
         <div class="col-md-4">
-          <!-- Character Selection Card -->
-          <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-person-circle"></i> Character Selection</div>
-            <div class="card-body">
-              <div class="mb-2">
-                <label class="form-label">Active Character</label>
-                <select id="characterSelect" class="form-select">
-                  <option value="">Loading characters...</option>
-                </select>
-              </div>
-              <div id="characterInfo" class="small text-muted"></div>
-            </div>
-          </div>
 
           <div class="card">
             <div class="card-header"><i class="bi bi-hdd-network"></i> Select Webcam Part</div>
@@ -164,40 +151,6 @@
         var webcamSelectEl = document.getElementById('webcamPart');
         var headTrackingBtn = document.getElementById('enableHeadTracking');
 
-        function loadCharacters() {
-          console.log('🔄 Loading characters...');
-          fetch('/setup/characters/api/characters')
-            .then(function (r) { return r.json(); })
-            .then(function (j) {
-              console.log('👥 Characters data received:', j);
-              var sel = document.getElementById('characterSelect');
-              sel.innerHTML = '';
-              var characters = j.characters || [];
-              if (characters.length === 0) {
-                var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No characters found'; sel.appendChild(opt);
-              } else {
-                characters.forEach(function (c) {
-                  var opt = document.createElement('option');
-                  opt.value = c.id;
-                  opt.textContent = c.name || ('Character #' + c.id);
-                  sel.appendChild(opt);
-                });
-              }
-
-              // Load current character
-              return fetch('/setup/characters/api/current');
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (current) {
-              if (current.success && current.character) {
-                document.getElementById('characterSelect').value = current.character.id;
-                document.getElementById('characterInfo').textContent = 'Current: ' + current.character.name;
-              }
-            })
-            .catch(function (err) {
-              console.error('❌ Error loading characters:', err);
-            });
-        }
 
         function loadWebcams() {
           console.log('🔄 Loading webcam parts...');
@@ -593,24 +546,32 @@
 
         // Emergency stop function
         function emergencyStopAllServos() {
-          // Get all servo parts and stop them
           fetch('/setup/calibration/api/parts')
             .then(function (r) { return r.json(); })
             .then(function (data) {
-              var servos = (data.parts || []).filter(function (p) { return p.type === 'servo'; });
-              var stopPromises = servos.map(function (servo) {
-                return fetch('/setup/parts/api/parts/' + servo.id + '/test', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'stop' })
-                });
-              });
+              var parts = (data.parts || []);
+              var stops = [];
 
-              return Promise.all(stopPromises);
+              // Stop continuous servos
+              parts.filter(function (p) { return p.type === 'servo' && String((p.config && p.config.servoType) || 'standard') === 'continuous'; })
+                .forEach(function (servo) {
+                  stops.push(fetch('/setup/calibration/api/continuous_servo/' + encodeURIComponent(servo.id) + '/jog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: 'stop', speed: 0, duration: 0 })
+                  }));
+                });
+
+              // Stop linear actuators
+              parts.filter(function (p) { return p.type === 'linear_actuator'; })
+                .forEach(function (act) {
+                  stops.push(fetch('/setup/calibration/api/linear_actuator/' + encodeURIComponent(act.id) + '/stop', { method: 'POST' }));
+                });
+
+              return Promise.all(stops);
             })
             .then(function () {
-              alert('🛑 Emergency stop executed! All servos stopped.');
-              console.log('Emergency stop: All servos stopped');
+              alert('🛑 Emergency stop executed.');
             })
             .catch(function (e) {
               alert('❌ Emergency stop failed: ' + e.message);
@@ -619,7 +580,6 @@
         }
 
         initMotionTracking();
-        loadCharacters();
         loadWebcams();
       })();
     </script>

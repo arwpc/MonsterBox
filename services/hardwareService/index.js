@@ -389,8 +389,9 @@ const HARDWARE_CONTROLLERS = {
                         // For continuous servos, convert angle to direction/speed for rotation
                         // This is a fallback - continuous servos should use rotateContinuous action
                         const direction = angleDeg > 0 ? 'cw' : 'ccw';
-                        const speed = Math.min(100, Math.abs(angleDeg));
-                        args = ['rotate_continuous_pca', String(channel), direction, String(speed), '1000'];
+                        const rawSpeed = Math.min(100, Math.abs(angleDeg));
+                        const speedInt = Math.max(0, Math.min(100, Math.round(rawSpeed)));
+                        args = ['rotate_continuous_pca', String(channel), direction, String(speedInt), '1000'];
                         commandType = 'continuous rotation';
                     } else if (normType === 'feedback') {
                         // Use multi-turn function for positional/feedback servos (supports 0-1800°)
@@ -456,7 +457,9 @@ const HARDWARE_CONTROLLERS = {
                 if (controllerType === 'pca9685') {
                     // All servo types can use rotate_continuous_pca for continuous rotation
                     // The function handles the appropriate pulse width ranges internally
-                    const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speed), String(duration)];
+                    const speedInt = Math.max(0, Math.min(100, Math.round(Number(speed) || 0)));
+                    const durInt = Math.max(0, Math.round(Number(duration) || 0));
+                    const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speedInt), String(durInt)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
                     const success = typeof result === 'string' && result.includes('success');

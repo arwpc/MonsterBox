@@ -635,9 +635,17 @@
               '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
             el.querySelector('#spkPlay').addEventListener('click', function () {
               var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
-              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'play' })
-              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+              fetch('/setup/characters/api/current')
+                .then(function(r){ return r.json(); })
+                .then(function(j){ var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; })
+                .then(function(cid){
+                  return fetch('/api/elevenlabs/generate-and-play', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid })
+                  });
+                })
+                .then(function(r){ return r.json(); })
+                .then(function(){ if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function(e){ if (st) st.textContent = 'Error: ' + (e && e.message ? e.message : e); setTimeout(function(){ if (st) st.textContent=''; }, 1500); })
                 .catch(function () { if (st) st.textContent = 'Failed'; });
             });
           } else if (part.type === 'microphone') {
@@ -647,14 +655,15 @@
               '<button id="micPoll" class="btn btn-outline-secondary btn-lg"><i class="bi bi-activity"></i> Poll</button>' +
               '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
             function pollOnce() {
-              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getLevel' })
-              }).then(function (r) { return r.json(); }).then(function (j) {
-                var lvl = (j && j.testResult && (j.testResult.details && (j.testResult.details.level || j.testResult.details.value))) || 0;
-                var n = Math.max(0, Math.min(100, parseInt(lvl, 10) || 0));
-                var bar = document.getElementById('micVu'); var txt = document.getElementById('micLevel');
-                if (bar) bar.style.width = n + '%'; if (txt) txt.textContent = n;
-              }).catch(function () { });
+              var deviceId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
+              fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=input')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                  var v = Math.max(0, Math.min(100, Math.round((data && typeof data.level === 'number') ? data.level : 0)));
+                  var bar = document.getElementById('micVu'); var txt = document.getElementById('micLevel');
+                  if (bar) bar.style.width = v + '%'; if (txt) txt.textContent = v;
+                })
+                .catch(function () { /* ignore */ });
             }
             var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
           } else if (part.type === 'webcam') {
@@ -1802,7 +1811,7 @@
           if (Object.keys(config).length) payload.config = config;
 
           // Create the part
-          fetch('/setup/parts/api/parts', {
+          fetch('/setup/calibration/api/parts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

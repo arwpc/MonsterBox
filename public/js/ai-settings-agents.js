@@ -1051,7 +1051,7 @@ AgentsManager.prototype.initWebSocketChat = AgentsManager.prototype.initWebSocke
                         .catch(function () { return 'default'; });
                 }
                 // Otherwise, use the Character's Microphone Part; if missing, fall back to STT config
-                return fetch('/setup/parts/api/parts')
+                return fetch('/setup/calibration/api/parts')
                     .then(function (r) { return r.json(); })
                     .then(function (j) {
                         if (!j || !j.success || !Array.isArray(j.parts)) return null;

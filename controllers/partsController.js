@@ -34,6 +34,36 @@ const SERVO_TYPES = {
     feedback: { description: 'Feedback servo with position sensing', pulseRange: [500, 2500] }
 };
 
+// Ensure a default speaker model exists and return its id
+async function ensureDefaultSpeakerModelExists() {
+    try {
+        const appRoot = path.resolve(__dirname, '..');
+        const modelsFile = path.resolve(appRoot, 'data', 'models', 'speaker_models.json');
+        await fs.mkdir(path.dirname(modelsFile), { recursive: true });
+        let raw = '[]';
+        try { raw = await fs.readFile(modelsFile, 'utf8'); } catch (_) {}
+        let arr = [];
+        try { arr = JSON.parse(raw) || []; } catch (_) { arr = []; }
+        const defaultId = 'default_speaker';
+        const exists = arr.some(m => String(m.id) === defaultId);
+        if (!exists) {
+            arr.push({
+                id: defaultId,
+                name: 'Default Speaker Model',
+                description: 'Default output settings for character speakers',
+                defaults: { outputDevice: 'default', volume: 80, format: 'mp3' },
+                controlsSchema: {},
+                meta: {}
+            });
+            await fs.writeFile(modelsFile, JSON.stringify(arr, null, 2), 'utf8');
+        }
+        return defaultId;
+    } catch (e) {
+        console.warn('ensureDefaultSpeakerModelExists failed:', e && e.message);
+        return 'default_speaker';
+    }
+}
+
 // Get parts data file path (honor app-config.dataPath)
 const getPartsFilePath = async () => {
     const cfg = await readConfig();
@@ -210,6 +240,7 @@ export const createPart = async (req, res) => {
         }
 
         const parts = await loadParts();
+
         const newPart = {
             id: generatePartId(parts),
             name,
@@ -239,6 +270,13 @@ export const createPart = async (req, res) => {
             newPart.pwmPin = parseInt(pwmP, 10);
             newPart.maxDuration = parseInt(req.body.maxDuration, 10) || 10000; // 10 second safety limit
         }
+        // Ensure default model for speaker parts before saving
+        if (type === 'speaker' && !newPart.modelId) {
+            try {
+                newPart.modelId = await ensureDefaultSpeakerModelExists();
+            } catch (_) { /* best effort */ }
+        }
+
 
         parts.push(newPart);
         await saveParts(parts);
@@ -246,6 +284,7 @@ export const createPart = async (req, res) => {
         res.status(201).json({
             success: true,
             part: newPart,
+
             message: `${PART_TYPES[type].icon} ${name} created successfully`
         });
     } catch (error) {

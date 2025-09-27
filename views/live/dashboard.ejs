@@ -172,8 +172,12 @@
                     function send(){
                         var text = (input.value || '').trim();
                         if (!text) { status.innerHTML = '<div class="text-warning">Enter text</div>'; return; }
+                        var charEl = document.getElementById('charLabel');
+                        var characterId = (charEl && charEl.getAttribute('data-char-id')) || null;
                         btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
-                        fetch('/live/api/say-this', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text }) })
+                        var url = characterId ? '/api/elevenlabs/generate-and-play' : '/live/api/say-this';
+                        var payload = characterId ? { text: text, characterId: characterId } : { text: text };
+                        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                           .then(function(r){ return r.json(); })
                           .then(function(j){ status.innerHTML = j && j.success ? '<div class="text-success">Done</div>' : '<div class="text-danger">Failed: '+ ((j&&j.error)||'') +'</div>'; })
                           .catch(function(e){ status.innerHTML = '<div class="text-danger">Error: '+ (e && e.message ? e.message : e) +'</div>'; })
