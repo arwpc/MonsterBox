@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 
 // Route imports
-import setupPartsRoutes from './routes/setup/parts.js';
+
 import setupCalibrationRoutes from './routes/setup/calibration.js';
 import setupAudioRoutes from './routes/setup/audio.js';
 import setupWebcamRoutes from './routes/setup/webcam.js';
@@ -120,7 +120,7 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
-app.use('/setup/parts', setupPartsRoutes);
+
 app.use('/setup/calibration', setupCalibrationRoutes);
 app.use('/setup/audio', setupAudioRoutes);
 app.use('/setup/webcam', setupWebcamRoutes);

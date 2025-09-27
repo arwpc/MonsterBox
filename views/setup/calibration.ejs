@@ -1043,93 +1043,62 @@
         async function setMarkerFromCurrent(fieldId, name) {
           if (!selected) return;
 
+          let currentValue = null;
           try {
-            let currentValue = null;
-            let statusData = null;
-
-            // Get current position based on part type - NO USER INPUT, HARDWARE ONLY
+            // Try hardware-based position first
             if (selected.type === 'servo') {
               const servoType = String(selected.config?.servoType || 'standard').toLowerCase();
-              if (servoType === 'continuous') {
-                showToast('Cannot set marker from current position for continuous servos - no meaningful position available', 'error');
-                return;
-              } else {
-                // For standard servos, get current angle from hardware status
-                try {
-                  const statusResponse = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/status`);
-                  if (statusResponse.ok) {
-                    statusData = await statusResponse.json();
-                    if (statusData && statusData.currentAngle !== undefined) {
-                      currentValue = statusData.currentAngle;
-                    } else {
-                      showToast('Hardware does not report current servo position - cannot set marker automatically', 'error');
-                      return;
-                    }
-                  } else {
-                    showToast('Failed to get current servo position from hardware', 'error');
-                    return;
+              if (servoType !== 'continuous') {
+                const statusResponse = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/status`).catch(() => null);
+                if (statusResponse && statusResponse.ok) {
+                  const statusData = await statusResponse.json().catch(() => null);
+                  if (statusData && statusData.currentAngle !== undefined) {
+                    currentValue = statusData.currentAngle;
                   }
-                } catch (error) {
-                  showToast('Error communicating with servo hardware', 'error');
-                  return;
                 }
               }
             } else if (selected.type === 'linear_actuator') {
-              // For linear actuators, get current position from hardware status
-              try {
-                const statusResponse = await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(selected.id)}/status`);
-                if (statusResponse.ok) {
-                  statusData = await statusResponse.json();
-                  if (statusData && statusData.currentPosition !== undefined) {
-                    currentValue = statusData.currentPosition;
-                  } else {
-                    showToast('Hardware does not report current actuator position - cannot set marker automatically', 'error');
-                    return;
-                  }
-                } else {
-                  showToast('Failed to get current actuator position from hardware', 'error');
-                  return;
+              const statusResponse = await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(selected.id)}/status`).catch(() => null);
+              if (statusResponse && statusResponse.ok) {
+                const statusData = await statusResponse.json().catch(() => null);
+                if (statusData && statusData.currentPosition !== undefined) {
+                  currentValue = statusData.currentPosition;
                 }
-              } catch (error) {
-                showToast('Error communicating with actuator hardware', 'error');
-                return;
               }
-            } else if (selected.type === 'motor') {
-              // Motors don't have meaningful position - they have speed/direction
-              showToast('Motors do not have position markers - use speed/direction controls instead', 'error');
-              return;
-            } else {
-              // For other part types that don't have position feedback
-              showToast(`Part type "${selected.type}" does not support automatic position detection`, 'error');
+            }
+          } catch (_) { /* ignore hardware errors; will fallback */ }
+
+          // Hardware value wins; otherwise fallback to the input field value
+          if (currentValue === null || isNaN(currentValue)) {
+            const el = document.getElementById(fieldId);
+            const raw = el ? el.value : '';
+            if (raw === '') {
+              showToast('Enter a value first or move hardware to a position', 'error');
               return;
             }
-
-            if (currentValue !== null && !isNaN(currentValue)) {
-              // Set the field value
-              const el = document.getElementById(fieldId);
-              if (el) el.value = currentValue;
-
-              // Save the marker
-              const body = { name, kind: 'absolute', value: currentValue, unit: unitFor(selected) };
-              const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-              });
-
-              if (response.ok) {
-                // Refresh the markers display
-                await loadMarkers();
-                showToast(`${name} marker set to ${currentValue}${unitFor(selected) ? ' ' + unitFor(selected) : ''} from hardware position`, 'success');
-              } else {
-                showToast('Failed to save marker', 'error');
-              }
-            } else {
-              showToast('Invalid position value received from hardware', 'error');
+            const num = Number(raw);
+            if (isNaN(num)) {
+              showToast('Invalid number', 'error');
+              return;
             }
-          } catch (error) {
-            console.error('Error setting marker from current:', error);
-            showToast('Error setting marker from current position', 'error');
+            currentValue = num;
+          }
+
+          // Reflect in field
+          const el = document.getElementById(fieldId);
+          if (el) el.value = currentValue;
+
+          // Save the marker
+          const body = { name, kind: 'absolute', value: currentValue, unit: unitFor(selected) };
+          const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          }).catch(() => null);
+
+          if (response && response.ok) {
+            await loadMarkers();
+            showToast(`${name} marker set to ${currentValue}${unitFor(selected) ? ' ' + unitFor(selected) : ''}`, 'success');
+          } else {
+            showToast('Failed to save marker', 'error');
           }
         }
         async function goToField(fieldId) {

@@ -114,5 +114,175 @@
     "config": {},
     "created": "2025-09-26T21:42:28.462Z",
     "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Servo-Std-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-09-27T15:38:10.185Z",
+    "enabled": true,
+    "modelId": "1",
+    "updated": "2025-09-27T15:38:17.340Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "12",
+    "name": "Servo-Cont-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-09-27T15:38:10.268Z",
+    "enabled": true
+  },
+  {
+    "id": "13",
+    "name": "Servo-Fb-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-09-27T15:38:10.317Z",
+    "enabled": true
+  },
+  {
+    "id": "14",
+    "name": "LinearAct-Skulltalker",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-27T15:38:10.356Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "15",
+    "name": "Motor-Skulltalker",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-27T15:38:10.400Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "16",
+    "name": "LED-Skulltalker",
+    "type": "led",
+    "pin": 20,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-27T15:38:10.442Z",
+    "enabled": true
+  },
+  {
+    "id": "17",
+    "name": "Light-Skulltalker",
+    "type": "light",
+    "pin": 21,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-27T15:38:10.483Z",
+    "enabled": true
+  },
+  {
+    "id": "18",
+    "name": "Sensor-Skulltalker",
+    "type": "sensor",
+    "pin": 22,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-27T15:38:10.533Z",
+    "enabled": true
+  },
+  {
+    "id": "19",
+    "name": "Motion-Skulltalker",
+    "type": "motion_sensor",
+    "pin": 23,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-27T15:38:10.580Z",
+    "enabled": true
+  },
+  {
+    "id": "20",
+    "name": "Webcam-Skulltalker",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-09-27T15:38:10.622Z",
+    "enabled": true
+  },
+  {
+    "id": "21",
+    "name": "Microphone-Skulltalker",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-09-27T15:38:10.666Z",
+    "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "Speaker-Skulltalker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-09-27T15:38:10.702Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "HeadTrack-Skulltalker",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-27T15:38:10.739Z",
+    "enabled": true
   }
 ]

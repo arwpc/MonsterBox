@@ -254,6 +254,23 @@ alsactl store || true
 
 print_success "Audio system configured"
 
+# 16b. Apply MonsterBox OS performance optimizations (idempotent)
+print_status "Applying OS performance optimizations (CPU governor, sysctl, service priority)..."
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$REPO_DIR/scripts/optimize-pi-performance.sh" ]; then
+    bash "$REPO_DIR/scripts/optimize-pi-performance.sh" || print_warning "optimize-pi-performance.sh reported a non-fatal issue"
+else
+    print_warning "scripts/optimize-pi-performance.sh not found; skipping OS tuning"
+fi
+
+# 16c. Set low-latency mjpg-streamer defaults via systemd drop-in (idempotent)
+print_status "Tuning mjpg-streamer defaults for low latency (640x480@24fps q80)..."
+if [ -f "$REPO_DIR/scripts/tune-mjpg.sh" ]; then
+    bash "$REPO_DIR/scripts/tune-mjpg.sh" /dev/video0 640x480 24 80 || print_warning "tune-mjpg.sh reported a non-fatal issue"
+else
+    print_warning "scripts/tune-mjpg.sh not found; skipping mjpg-streamer tuning"
+fi
+
 # 16. Configure ElevenLabs API Key (optional via env)
 print_status "Configuring ElevenLabs API key (if provided)..."
 

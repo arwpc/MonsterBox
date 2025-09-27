@@ -60,7 +60,7 @@ async function verifyNavigationShell(page) {
 async function verifySetupLinksPresent(page) {
   // We only assert that anchor tags exist somewhere in DOM; not necessarily visible if collapsed
   const links = [
-    '/setup/parts', '/setup/calibration', '/setup/webcam', '/setup/models',
+    '/setup/calibration', '/setup/webcam', '/setup/models',
     '/setup/audio', '/audio-library', '/setup/characters', '/setup/super-powers', '/setup/system'
   ];
   for (const href of links) {

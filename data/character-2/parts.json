@@ -51,12 +51,22 @@
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 0,
-      "address": 64,
-      "pca9685Frequency": 50
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
     },
-    "created": "2025-09-25T23:47:53.173Z",
-    "enabled": true
+    "created": "2025-09-27T15:37:36.442Z",
+    "enabled": true,
+    "modelId": "1",
+    "updated": "2025-09-27T15:37:43.784Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
   },
   {
     "id": "18",
@@ -67,11 +77,10 @@
     "config": {
       "servoType": "continuous",
       "controllerType": "pca9685",
-      "channel": 1,
-      "address": 64,
-      "pca9685Frequency": 50
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
     },
-    "created": "2025-09-25T23:47:55.595Z",
+    "created": "2025-09-27T15:37:36.480Z",
     "enabled": true
   },
   {
@@ -83,11 +92,10 @@
     "config": {
       "servoType": "feedback",
       "controllerType": "pca9685",
-      "channel": 2,
-      "address": 64,
-      "pca9685Frequency": 50
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
     },
-    "created": "2025-09-25T23:47:57.826Z",
+    "created": "2025-09-27T15:37:36.513Z",
     "enabled": true
   },
   {
@@ -97,7 +105,7 @@
     "pin": null,
     "description": "extending/retracting movements",
     "config": {},
-    "created": "2025-09-25T23:48:00.047Z",
+    "created": "2025-09-27T15:37:36.551Z",
     "enabled": true,
     "directionPin": 18,
     "pwmPin": 13,
@@ -111,7 +119,7 @@
     "pin": null,
     "description": "DC motors for movement",
     "config": {},
-    "created": "2025-09-25T23:48:01.816Z",
+    "created": "2025-09-27T15:37:36.588Z",
     "enabled": true,
     "directionPin": 22,
     "pwmPin": 12,
@@ -124,7 +132,7 @@
     "pin": 18,
     "description": "PWM-controlled with brightness",
     "config": {},
-    "created": "2025-09-25T23:48:03.937Z",
+    "created": "2025-09-27T15:37:36.626Z",
     "enabled": true
   },
   {
@@ -134,7 +142,7 @@
     "pin": 19,
     "description": "basic on/off lighting",
     "config": {},
-    "created": "2025-09-25T23:48:05.215Z",
+    "created": "2025-09-27T15:37:36.672Z",
     "enabled": true
   },
   {
@@ -144,7 +152,7 @@
     "pin": 20,
     "description": "digital/analog sensors",
     "config": {},
-    "created": "2025-09-25T23:48:06.632Z",
+    "created": "2025-09-27T15:37:36.713Z",
     "enabled": true
   },
   {
@@ -154,7 +162,7 @@
     "pin": 21,
     "description": "PIR motion detection",
     "config": {},
-    "created": "2025-09-25T23:48:08.229Z",
+    "created": "2025-09-27T15:37:36.763Z",
     "enabled": true
   },
   {
@@ -163,8 +171,10 @@
     "type": "webcam",
     "pin": null,
     "description": "video capture devices",
-    "config": {},
-    "created": "2025-09-25T23:48:10.600Z",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-09-27T15:37:36.802Z",
     "enabled": true
   },
   {
@@ -174,14 +184,10 @@
     "pin": null,
     "description": "audio input devices",
     "config": {
-      "deviceId": "default",
-      "sensitivity": 1.1,
-      "windowMs": 100,
-      "inputGainPercent": 101
+      "deviceId": "default"
     },
-    "created": "2025-09-25T23:48:13.419Z",
-    "enabled": true,
-    "updated": "2025-09-25T23:49:00.984Z"
+    "created": "2025-09-27T15:37:36.837Z",
+    "enabled": true
   },
   {
     "id": "28",
@@ -190,12 +196,10 @@
     "pin": null,
     "description": "audio output devices",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 50,
-      "bass": 0,
-      "treble": 0
+      "device": "default",
+      "volume": 50
     },
-    "created": "2025-09-25T23:48:16.528Z",
+    "created": "2025-09-27T15:37:36.880Z",
     "enabled": true
   },
   {
@@ -205,7 +209,7 @@
     "pin": null,
     "description": "computer vision tracking",
     "config": {},
-    "created": "2025-09-25T23:48:18.065Z",
+    "created": "2025-09-27T15:37:36.919Z",
     "enabled": true
   }
 ]

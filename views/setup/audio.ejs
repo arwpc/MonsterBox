@@ -391,7 +391,7 @@
           const [configResponse, hardwareResponse, partsResponse] = await Promise.all([
             fetch('/setup/audio/api/system-config'),
             fetch('/setup/audio/api/hardware-devices'),
-            fetch('/setup/parts/api/parts?type=microphone')
+            fetch('/setup/calibration/api/parts?type=microphone')
           ]);
 
           const configData = await configResponse.json();
@@ -513,7 +513,7 @@
 
       async function refreshMicParts() {
         try {
-          const res = await fetch('/setup/parts/api/parts?type=microphone');
+          const res = await fetch('/setup/calibration/api/parts?type=microphone');
           const data = await res.json();
           if (data.success) {
             currentConfig.microphoneParts = data.parts || [];
@@ -530,12 +530,12 @@
       async function saveMicSensitivity(partId, sensitivity) {
         try {
           // Load current part, then update config.sensitivity
-          const res = await fetch('/setup/parts/api/parts/' + partId);
+          const res = await fetch('/setup/calibration/api/parts/' + partId);
           const data = await res.json();
           if (!data.success) throw new Error('Part load failed');
           const part = data.part;
           const newConfig = Object.assign({}, part.config || {}, { sensitivity: sensitivity, inputGainPercent: part.config && part.config.inputGainPercent });
-          const putRes = await fetch('/setup/parts/api/parts/' + partId, {
+          const putRes = await fetch('/setup/calibration/api/parts/' + partId, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ config: newConfig })
           });
@@ -561,12 +561,12 @@
           const data = await res.json();
           if (data.success) {
             // Persist to part config for visibility
-            const partRes = await fetch('/setup/parts/api/parts/' + partId);
+            const partRes = await fetch('/setup/calibration/api/parts/' + partId);
             const partData = await partRes.json();
             if (partData.success) {
               const part = partData.part;
               const newConfig = Object.assign({}, part.config || {}, { inputGainPercent: gainPercent });
-              await fetch('/setup/parts/api/parts/' + partId, {
+              await fetch('/setup/calibration/api/parts/' + partId, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ config: newConfig })
               });

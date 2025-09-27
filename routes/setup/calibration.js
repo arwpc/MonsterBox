@@ -353,10 +353,15 @@ router.get('/api/parts/:id/effective', async (req, res) => {
     }
 });
 
-// Markers CRUD on parts.json
+// Markers CRUD on parts.json (character-aware)
 router.get('/api/parts/:id/markers', async (req, res) => {
     try {
-        const parts = await loadParts();
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (_) {}
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
         res.json({ success: true, markers: parts[idx].markers || [] });
@@ -369,7 +374,12 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
     try {
         const { name, kind = 'absolute', value, unit, speed, durationMs, locked } = req.body || {};
         if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'name required' });
-        const parts = await loadParts();
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (_) {}
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
         const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
@@ -379,7 +389,7 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
         if (kind === 'preset') { next.speed = speed; next.durationMs = durationMs; }
         if (i2 === -1) markers.push(next); else markers[i2] = next;
         parts[idx].markers = markers;
-        await saveParts(parts);
+        await saveCharacterParts(characterId, parts);
         res.json({ success: true, markers });
     } catch (e) {
         console.error('save marker failed', e);
@@ -389,13 +399,18 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
 
 router.delete('/api/parts/:id/markers/:name', async (req, res) => {
     try {
-        const parts = await loadParts();
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (_) {}
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
         const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
         const next = markers.filter(m => m.name !== req.params.name);
         parts[idx].markers = next;
-        await saveParts(parts);
+        await saveCharacterParts(characterId, parts);
         res.json({ success: true, markers: next });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to delete marker' });
@@ -406,14 +421,19 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
     try {
         const { newName } = req.body || {};
         if (!newName || !newName.trim()) return res.status(400).json({ success: false, error: 'newName required' });
-        const parts = await loadParts();
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (_) {}
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
         const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
         const i2 = markers.findIndex(m => m.name === req.params.oldName);
         if (i2 === -1) return res.status(404).json({ success: false, error: 'Marker not found' });
         markers[i2].name = newName.trim();
-        await saveParts(parts);
+        await saveCharacterParts(characterId, parts);
         res.json({ success: true, markers });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to rename marker' });

@@ -172,5 +172,175 @@
     "created": "2025-09-26T01:39:15.432Z",
     "enabled": true,
     "updated": "2025-09-26T01:44:35.906Z"
+  },
+  {
+    "id": "13",
+    "name": "Servo-Std-Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-09-27T15:37:53.446Z",
+    "enabled": true,
+    "modelId": "1",
+    "updated": "2025-09-27T15:38:00.767Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "14",
+    "name": "Servo-Cont-Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-09-27T15:37:53.504Z",
+    "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "Servo-Fb-Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-09-27T15:37:53.542Z",
+    "enabled": true
+  },
+  {
+    "id": "16",
+    "name": "LinearAct-Orlok",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-27T15:37:53.580Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "17",
+    "name": "Motor-Orlok",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-27T15:37:53.625Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "18",
+    "name": "LED-Orlok",
+    "type": "led",
+    "pin": 19,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-27T15:37:53.670Z",
+    "enabled": true
+  },
+  {
+    "id": "19",
+    "name": "Light-Orlok",
+    "type": "light",
+    "pin": 20,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-27T15:37:53.714Z",
+    "enabled": true
+  },
+  {
+    "id": "20",
+    "name": "Sensor-Orlok",
+    "type": "sensor",
+    "pin": 21,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-27T15:37:53.753Z",
+    "enabled": true
+  },
+  {
+    "id": "21",
+    "name": "Motion-Orlok",
+    "type": "motion_sensor",
+    "pin": 22,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-27T15:37:53.789Z",
+    "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "Webcam-Orlok",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-09-27T15:37:53.828Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "Microphone-Orlok",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-09-27T15:37:53.865Z",
+    "enabled": true
+  },
+  {
+    "id": "24",
+    "name": "Speaker-Orlok",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-09-27T15:37:53.908Z",
+    "enabled": true
+  },
+  {
+    "id": "25",
+    "name": "HeadTrack-Orlok",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-27T15:37:53.950Z",
+    "enabled": true
   }
 ]

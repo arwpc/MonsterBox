@@ -63,6 +63,9 @@ async function exerciseControlsForSelected(page) {
 test.describe('Calibration - all parts walkthrough', () => {
   test('assign models, exercise controls, verify effective/markers and isolation', async ({ page }) => {
     await ensureSeedModels(page);
+    // Ensure character 1 is selected for character-scoped calibration data
+    await page.request.post('/setup/characters/api/select', { data: { id: 1 } });
+
 
     await page.goto('/setup/calibration');
 

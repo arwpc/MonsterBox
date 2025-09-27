@@ -114,6 +114,64 @@ npm start
 - Or once the server is running: `curl -X POST -H 'Content-Type: application/json' -d '{"id":4}' http://127.0.0.1:3000/setup/characters/api/select`
 
 
+
+### OS Performance Hardening (applied by install.sh)
+
+These optimizations are applied automatically by install.sh and can be re-run anytime:
+- CPU governor → performance on all cores
+- sysctl: vm.swappiness=10, vm.dirty_background_ratio=5, vm.dirty_ratio=20, fs.inotify.max_user_watches=524288
+- systemd service priorities for monsterbox and mjpg-streamer: Nice=-5, CPUWeight/IOWeight=90, Restart=on-failure
+- Disable unused services when present: bluetooth, avahi-daemon
+- mjpg-streamer systemd drop-in for low latency defaults: 640x480 @ 24 fps, quality=80
+
+Manual re-run (optional):
+
+````bash
+sudo bash scripts/optimize-pi-performance.sh
+sudo bash scripts/tune-mjpg.sh /dev/video0 640x480 24 80
+````
+
+
+### Webcam performance + controls (RPi4B)
+
+- Low‑latency defaults applied via systemd drop‑in (scripts/tune-mjpg.sh): 640x480 @ 24 fps, JPEG q=80
+- Stream piping optimized in server (Node.js stream piping vs Web Streams) for reduced buffering
+- Device mapping and control endpoints:
+  - GET  /setup/webcam/api/parts/:id/controls → enumerate v4l2 controls for the webcam part’s device
+  - PUT  /setup/webcam/api/parts/:id/controls  with { controls, persist } → apply controls and optionally persist into part config
+  - PUT  /setup/webcam/api/parts/:id/apply-device → re‑apply saved device mapping and persisted controls
+- Quick smoke tests available under scripts/smoke/*.mjs
+
+### Calibration‑first workflow for parts
+
+- The Parts page has been removed. Creation, editing, and testing are now performed exclusively in the Calibration workflow.
+- Go directly to http://localhost:3000/setup/calibration
+- Calibration now scopes data per character and will create sane defaults when missing (e.g., default markers). UI falls back to current input values when live position probes are unavailable to avoid blocking saves.
+
+### AI Settings – STT (input gain + VAD persistence)
+
+- Input Gain slider now applies live to the selected microphone device:
+  - POST /setup/audio/api/set-input-gain { deviceId, gainPercent }
+- VAD settings persist immediately into global STT config:
+  - POST /api/elevenlabs/stt/config { vadEnabled, vadThreshold, ... }
+- 2‑second sample test button is optional; it may be disabled in some environments. Non‑critical failures here shouldn’t block the rest of the flow.
+
+### Verification status (current)
+
+- Unit tests: passing
+- Playwright
+  - navigation-and-character-persistence.spec.js: PASS
+  - stt-vad-and-gain.spec.js: PASS
+  - calibration‑webcam‑controls.spec.js: PASS
+  - calibration‑all‑parts.spec.js: PASS
+  - e2e‑comprehensive‑characters.spec.js: PASS (ignores known benign 410/deprecation logs and optional STT variability)
+
+### Notes
+
+- E2E comprehensive flow is now stable; the test filters known benign console noise (HTTP 410 Gone and optional 2s STT test variability) while still surfacing real errors.
+- The legacy Parts page and routes have been removed; use Setup → Calibration for all create/edit/test flows.
+- Optional: a lightweight MJPG FPS/latency profiler script is included (see Webcam section).
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -211,15 +269,15 @@ Linear actuators require specific configuration for safe operation:
 
 **NEW**: Complete calibration system for defining min/max endpoints:
 
-- **Access**: Click the **Calibrate** button (🎚️) next to any linear actuator in Setup → Parts
+- **Access**: Open Setup → Calibration, select your linear actuator from the list, and open its calibration panel
 - **Simple Controls**: Jog extend/retract with adjustable speed and duration
 - **Position Saving**: Save min (fully retracted) and max (fully extended) positions
 - **Visual Status**: Green checkmarks show which positions are calibrated
 - **Safety Features**: Emergency stop button and movement duration limits
 
 **Calibration Process:**
-1. Navigate to `http://localhost:3000/setup/parts`
-2. Find your linear actuator and click the **Calibrate** button
+1. Navigate to `http://localhost:3000/setup/calibration`
+2. Select your linear actuator in the device list and enter the calibration view
 3. Use jog controls to move actuator to minimum position → Save Min
 4. Use jog controls to move actuator to maximum position → Save Max
 5. Calibration data is stored in `data/linear_actuator_calibrations.json`
@@ -236,7 +294,7 @@ Linear actuators require specific configuration for safe operation:
 
 Complete calibration and control for standard positional servos is implemented.
 
-- Access: Setup → Parts → Calibrate (sliders icon) on a standard servo
+- Access: Setup → Calibration → Standard Servo
   - Route: `GET /setup/calibration/standard_servo/:id`
 - Pulse Calibration: Save Min / Center / Max (stores µs pulse widths)
   - Also auto-creates named positions: `min` → 0°, `center` → 90°, `max` → 180°
@@ -275,7 +333,7 @@ This app includes a unified GoBilda model that supports both continuous and posi
 - Defaults: controllerType=pca9685, neutralPulse=1500, continuous 900–2100µs, positional 500–2500µs mapping to 0–1800°
 
 ### Configure the Head Servo (Orlok)
-1) Setup → Parts → Create → type=servo
+1) Setup → Calibration → Create Part → type=servo
 2) Select Model: "GoBilda 2000 Series Dual‑Mode (New Spec)"
 3) Controller: PCA9685
    - I2C Address: 0x40
@@ -315,7 +373,7 @@ The GoBilda dual‑mode servo internally closes the loop in positional mode (500
 ## 🧩 Setup Pages
 
 - Setup Hub: http://localhost:3000/setup
-- Parts: http://localhost:3000/setup/parts
+
 - Poses: http://localhost:3000/setup/poses
 - Characters: http://localhost:3000/setup/characters
 - Calibration: http://localhost:3000/setup/calibration
@@ -448,7 +506,7 @@ curl -s http://localhost:3000/setup/audio/api/active-streams | jq
 
 ## 🔊 Speakers (PipeWire routing, volume, EQ) — UPDATED
 
-- Add/Edit a Speaker in Setup → Parts, choose a **PipeWire Sink** from the dropdown (scanned via `wpctl status`).
+- Create/Edit a Speaker in Setup → Calibration, choose a **PipeWire Sink** from the dropdown (scanned via `wpctl status`).
 - Persisted per speaker: `config.audioDeviceId`, `config.volume` (0–100), `config.bass`, `config.treble`.
 - All playback for that Speaker is routed to its configured PipeWire sink:
   - **WAV files**: `pw-play --target <sink>` (preferred for PipeWire)
@@ -473,7 +531,7 @@ curl -s http://localhost:3000/setup/audio/api/active-streams | jq
 
 ## 🎤 Microphones (PipeWire sources + level probe) — UPDATED
 
-- Add/Edit a Microphone in Setup → Parts, pick a **PipeWire Source** from the dropdown (scanned via `wpctl status`).
+- Create/Edit a Microphone in Setup → Calibration, pick a **PipeWire Source** from the dropdown (scanned via `wpctl status`).
 - Persisted per mic: `config.deviceId`, `config.sensitivity`, `config.sampleRate`, `config.channels`, `config.windowMs`.
 - **Quick Level Test**: From the Create/Edit modal, click Quick Level Test to sample RMS using PyAudio with PipeWire defaults
 - **Real-time device switching**: Change microphone source in test controls without recreating the part
@@ -553,6 +611,34 @@ bash scripts/test-mjpg-integration.sh
 - **Direct stream**: http://localhost:8090/?action=stream
 - **MonsterBox integration**: http://localhost:3000/setup/webcam
 
+### Optional: MJPG FPS/Latency Profiler
+
+Use the lightweight profiler to sample stream FPS and inter-frame timing without extra dependencies:
+
+````bash
+node scripts/tools/mjpg-profiler.mjs --url http://localhost:8090/?action=stream --seconds 5
+# or with env vars
+MJPG_URL=http://localhost:8090/?action=stream DURATION=8 node scripts/tools/mjpg-profiler.mjs
+````
+
+Example output:
+
+````json
+{
+  "url": "http://localhost:8090/?action=stream",
+  "secondsObserved": 5,
+  "bytesReceived": 2365471,
+  "frames": 122,
+  "estimatedFPS": 24.35,
+  "avgFrameBytes": 19386,
+  "avgInterFrameMs": 41,
+  "boundaryFromHeader": "--boundary",
+  "firstByteDelayMs": 47,
+  "streamActiveMs": 4994
+}
+````
+
+
 ### ✨ Webcam Controls in Calibration (Edit tab) — NEW
 
 - Where: Setup → Calibration → select your Webcam part → Edit tab (center panel)
@@ -572,7 +658,7 @@ MonsterBox uses mjpg-streamer (port 8090) for MJPEG-only streaming. You can dyna
 
 Steps
 1) Assign device to a Webcam part
-   - Setup → Parts → Create/Edit → type=webcam
+   - Setup → Calibration → Create/Edit → type=webcam
    - Click Scan Devices, select a /dev/videoX, then Save (persists as config.devicePath and config.deviceId)
 2) Apply device to mjpg-streamer
    - Edit the same Webcam part → click “Apply to mjpg-streamer”
@@ -605,7 +691,7 @@ Troubleshooting
   - curl -I http://localhost:8090/?action=stream
 
 Notes
-- The legacy “Scan Devices” action on Setup → Webcam is deprecated for assignment; configuration now lives in Setup → Parts.
+- The legacy “Scan Devices” action on Setup → Webcam is deprecated for assignment; configuration now lives in Setup → Calibration.
 - Consider udev rules to persist friendly names per USB ID when multiple cameras are present.
 - Defaults are 640x480 @ 15 fps (MJPG). You can extend models/part config to expose resolution/fps/quality per camera.
 
@@ -744,7 +830,7 @@ lsof /dev/video0 || fuser -v /dev/video0
 
 ### UI usage (Setup → Webcam)
 
-1) Create a webcam Part (Setup → Parts → Create → type=webcam)
+1) Create a webcam Part (Setup → Calibration → Create Part → type=webcam)
    - Leave config empty to auto-detect, or set `config.devicePath` (e.g., "/dev/video0")
 2) Go to Setup → Webcam
 3) Click "Scan Devices" to probe /dev/videoN
@@ -1519,7 +1605,7 @@ npm run test:all
 - Ensure app-config.json points dataPath to `../../data` (legacy Orlok JSON)
 - Export env so tests expect real hardware results:
   - `MONSTERBOX_HARDWARE_AVAILABLE=true`
-- Quick manual checks via Setup → Parts drawers or curl:
+- Quick manual checks via Setup → Calibration panels or curl:
   - Servo: moveToAngle 10–15°; verify motion and no binding
   - LED: setBrightness 50%; Blink 2 cycles
   - Light: toggle on/off
@@ -1619,7 +1705,7 @@ Current controller coverage (apps/monsterbox4/services/hardwareService):
 
 Note: There is no simulation fallback. If a wrapper or hardware dependency is missing, the API returns a descriptive error with raw stderr/stdout to aid diagnosis.
 
-Recommended UI behavior on Setup → Parts:
+Recommended UI behavior on Setup → Calibration (per-part panels):
 - Each part row exposes a compact “Test” drawer with per‑type controls:
   - Servo: angle slider; rotate cw/ccw; stop
   - Motor: direction, speed, duration

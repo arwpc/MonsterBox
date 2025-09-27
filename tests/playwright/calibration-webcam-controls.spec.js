@@ -62,13 +62,13 @@ test.describe('Calibration - Webcam Controls (Edit experience in Controls tab)',
     await loadBtn.click();
     await listReq;
 
-    // Change one control, then Apply & Save triggers POST to set
+    // Change one control, then Apply & Save triggers PUT to set
     await page.locator('#ctrl_brightness').fill('200');
-    const setReq = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes('/controls/set'));
+    const setReq = page.waitForRequest((req) => req.method() === 'PUT' && req.url().includes('/controls/set'));
     await applyBtn.click();
     const req = await setReq;
 
-    // Verify post body minimally well-formed
+    // Verify body minimally well-formed
     const body = req.postDataJSON();
     expect(body).toBeTruthy();
     expect(body.persist).toBeTruthy();

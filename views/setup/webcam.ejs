@@ -201,7 +201,7 @@
 
         function loadWebcams() {
           console.log('🔄 Loading webcam parts...');
-          fetch('/setup/parts/api/parts')
+          fetch('/setup/calibration/api/parts')
             .then(function (r) { return r.json(); })
             .then(function (j) {
               console.log('📦 Parts data received:', j);
@@ -594,7 +594,7 @@
         // Emergency stop function
         function emergencyStopAllServos() {
           // Get all servo parts and stop them
-          fetch('/setup/parts/api/parts')
+          fetch('/setup/calibration/api/parts')
             .then(function (r) { return r.json(); })
             .then(function (data) {
               var servos = (data.parts || []).filter(function (p) { return p.type === 'servo'; });

@@ -8,7 +8,6 @@ import fs from 'fs';
 import path from 'path';
 
 const filesToFix = [
-    { file: 'views/setup/parts.ejs', page: 'setup-parts' },
     { file: 'views/setup/calibration.ejs', page: 'setup-calibration' },
     { file: 'views/setup/webcam.ejs', page: 'setup-webcam' },
     { file: 'views/setup/poses.ejs', page: 'setup-poses' },
