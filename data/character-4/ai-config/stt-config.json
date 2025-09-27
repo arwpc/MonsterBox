@@ -3,7 +3,6 @@
   "language": "auto",
   "sampleRate": "16000",
   "microphonePartId": "6",
-  "microphoneDeviceId": "default",
-  "format": "mp3",
-  "vadThreshold": 0.12
+  "microphoneDeviceId": null,
+  "format": "mp3"
 }

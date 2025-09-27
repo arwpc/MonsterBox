@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "createdAt": "2025-09-23T05:39:19.673Z",
-  "lastModified": "2025-09-26T01:50:14.253Z",
+  "lastModified": "2025-09-27T02:33:21.579Z",
   "categories": [
     "monster-sounds",
     "ambient",
@@ -14,7 +14,7 @@
     "nature",
     "other"
   ],
-  "totalSize": 7718920,
+  "totalSize": 11761838,
   "audio": [
     {
       "id": "ba5adb09-7e25-49bd-80d8-12bb9aff1f35",
@@ -277,7 +277,34 @@
       "favorite": false,
       "playCount": 5,
       "lastPlayed": "2025-09-26T01:50:14.253Z"
+    },
+    {
+      "id": "e3d409e7-6d30-4e5e-8f11-d87d16515a0f",
+      "title": "203876288",
+      "description": "SlipKnot - Duality",
+      "filename": "e3d409e7-6d30-4e5e-8f11-d87d16515a0f.mp3",
+      "originalFilename": "203876288.mp3",
+      "format": "mp3",
+      "duration": 252.65632653061223,
+      "fileSize": 4042918,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bitrate": 128000,
+      "tags": [
+        "slipknot"
+      ],
+      "category": "music",
+      "artist": null,
+      "album": null,
+      "genre": null,
+      "year": null,
+      "uploadedAt": "2025-09-27T02:32:03.605Z",
+      "lastModified": "2025-09-27T02:32:03.605Z",
+      "waveformGenerated": true,
+      "favorite": false,
+      "playCount": 3,
+      "lastPlayed": "2025-09-27T02:33:21.579Z"
     }
   ],
-  "totalFiles": 9
+  "totalFiles": 10
 }

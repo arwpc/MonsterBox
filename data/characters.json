@@ -31,7 +31,7 @@
       "language": "auto",
       "sampleRate": "16000",
       "microphonePartId": "6",
-      "microphoneDeviceId": "default",
+      "microphoneDeviceId": null,
       "format": "mp3"
     }
   }
