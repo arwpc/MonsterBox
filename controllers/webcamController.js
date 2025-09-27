@@ -3,6 +3,8 @@ import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
+import { Readable } from 'stream';
+
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 
@@ -352,31 +354,39 @@ export const streamMJPEG = async (req, res) => {
       req.on('close', cleanup);
       req.on('aborted', cleanup);
 
-      // Pipe the stream response to client with better error handling
-      streamResponse.body.pipeTo(new WritableStream({
-        write(chunk) {
-          if (!closed && !res.destroyed) {
-            try {
-              res.write(chunk);
-            } catch (e) {
-              // Silently handle write errors (client disconnected)
-              cleanup();
-            }
-          }
-        },
-        close() {
-          cleanup();
-        },
-        abort() {
-          cleanup();
-        }
-      })).catch((error) => {
-        // Only log non-timeout errors to reduce noise
+      // Pipe using Node.js streams to minimize buffering/latency
+      const nodeReadable = (typeof Readable !== 'undefined' && Readable.fromWeb)
+        ? Readable.fromWeb(streamResponse.body)
+        : streamResponse.body;
+
+      nodeReadable.on?.('error', (error) => {
         if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
           console.error('Stream piping error:', error);
         }
         cleanup();
       });
+
+      // Pipe to response
+      if (nodeReadable.pipe) {
+        nodeReadable.pipe(res);
+        nodeReadable.on?.('end', () => cleanup());
+      } else {
+        // Fallback to manual reads (very old Node/webstreams)
+        streamResponse.body.pipeTo(new WritableStream({
+          write(chunk) {
+            if (!closed && !res.destroyed) {
+              try { res.write(chunk); } catch (_) { cleanup(); }
+            }
+          },
+          close() { cleanup(); },
+          abort() { cleanup(); }
+        })).catch((error) => {
+          if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
+            console.error('Stream piping error:', error);
+          }
+          cleanup();
+        });
+      }
 
     } catch (fetchError) {
       console.error('mjpg-streamer fetch error:', fetchError);

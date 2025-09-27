@@ -750,7 +750,7 @@
               if (st) st.textContent = 'Applying…';
               var controls = readControlsFromUI();
               fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/set', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
               }).then(function (r) { return r.json(); }).then(function (j) {
                 if (j && j.success) { if (st) st.textContent = 'Applied'; }
                 else { if (st) st.textContent = 'Failed: ' + (j && j.error || ''); }
@@ -2062,7 +2062,7 @@
             return;
           }
 
-          fetch(`/setup/parts/api/parts/${encodeURIComponent(selected.id)}/apply-mjpg`, {
+          fetch(`/setup/webcam/api/parts/${encodeURIComponent(selected.id)}/apply-device`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
@@ -2103,6 +2103,26 @@
       })();
 
       // Global functions that need to be accessible from event handlers
+      // Ensure toast notifications are available globally for handlers defined below
+      if (!window.showToast) {
+        window.showToast = function(message, type = 'info') {
+          let toastContainer = document.getElementById('toast-container');
+          if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(toastContainer);
+          }
+          const toast = document.createElement('div');
+          toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+          toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
+          toast.innerHTML = `${message}\n<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+          toastContainer.appendChild(toast);
+          setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+        }
+      }
+
+
 
       // Save part changes function - moved to global scope
       async function savePartChanges() {

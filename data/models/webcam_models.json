@@ -1,43 +1,43 @@
 [
-    {
-        "id": "default-uvc-1",
-        "name": "Generic UVC Webcam",
-        "description": "Typical USB UVC camera defaults with common V4L2 controls",
-        "defaults": {
-            "resolution": "640x480",
-            "fps": 15,
-            "quality": 85
-        },
-        "controlsSchema": {
-            "brightness": {
-                "type": "range",
-                "min": 0,
-                "max": 255,
-                "step": 1,
-                "default": 128
-            },
-            "contrast": {
-                "type": "range",
-                "min": 0,
-                "max": 255,
-                "step": 1,
-                "default": 128
-            },
-            "saturation": {
-                "type": "range",
-                "min": 0,
-                "max": 255,
-                "step": 1,
-                "default": 128
-            },
-            "ir_cut": {
-                "type": "boolean",
-                "default": false
-            }
-        },
-        "meta": {
-            "vendor": "UVC",
-            "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply"
-        }
+  {
+    "id": "default-uvc-1",
+    "name": "Generic UVC Webcam",
+    "description": "Typical USB UVC camera defaults with common V4L2 controls",
+    "defaults": {
+      "resolution": "640x480",
+      "fps": 15,
+      "quality": 85
+    },
+    "controlsSchema": {
+      "brightness": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "contrast": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "saturation": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "ir_cut": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "meta": {
+      "vendor": "UVC",
+      "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply"
     }
+  }
 ]
