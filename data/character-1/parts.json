@@ -5115,5 +5115,188 @@
     "config": {},
     "created": "2025-09-27T15:37:14.883Z",
     "enabled": true
+  },
+  {
+    "id": "364",
+    "name": "T Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-09-27T19:37:13.098Z",
+    "enabled": true
+  },
+  {
+    "id": "365",
+    "name": "T LED",
+    "type": "led",
+    "pin": 21,
+    "description": "LED",
+    "config": {},
+    "created": "2025-09-27T19:37:14.381Z",
+    "enabled": true
+  },
+  {
+    "id": "366",
+    "name": "T Light",
+    "type": "light",
+    "pin": 20,
+    "description": "Light",
+    "config": {},
+    "created": "2025-09-27T19:37:14.660Z",
+    "enabled": true
+  },
+  {
+    "id": "367",
+    "name": "T Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "DC motor",
+    "config": {},
+    "created": "2025-09-27T19:37:15.170Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 19,
+    "maxDuration": 10000
+  },
+  {
+    "id": "368",
+    "name": "T Act",
+    "type": "linear_actuator",
+    "pin": 19,
+    "description": "Linear actuator",
+    "config": {},
+    "created": "2025-09-27T19:37:15.458Z",
+    "enabled": true,
+    "directionPin": 19,
+    "pwmPin": 20,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "369",
+    "name": "T Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Sensor",
+    "config": {
+      "sensorType": "digital"
+    },
+    "created": "2025-09-27T19:37:16.737Z",
+    "enabled": true
+  },
+  {
+    "id": "370",
+    "name": "T Motion",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "Motion",
+    "config": {},
+    "created": "2025-09-27T19:37:16.988Z",
+    "enabled": true
+  },
+  {
+    "id": "371",
+    "name": "T Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "Mic",
+    "config": {},
+    "created": "2025-09-27T19:37:17.235Z",
+    "enabled": true
+  },
+  {
+    "id": "372",
+    "name": "T Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "Speaker",
+    "config": {},
+    "created": "2025-09-27T19:37:17.787Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "373",
+    "name": "T Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "Webcam",
+    "config": {},
+    "created": "2025-09-27T19:37:18.115Z",
+    "enabled": true
+  },
+  {
+    "id": "374",
+    "name": "T HT",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "Head tracking",
+    "config": {},
+    "created": "2025-09-27T19:37:20.796Z",
+    "enabled": true
+  },
+  {
+    "id": "375",
+    "name": "Test Motor",
+    "type": "motor",
+    "pin": 18,
+    "description": "Test DC motor for movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "enablePin": 19
+    },
+    "created": "2025-09-27T19:37:30.793Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 19,
+    "maxDuration": 10000
+  },
+  {
+    "id": "376",
+    "name": "Test Servo",
+    "type": "servo",
+    "pin": 12,
+    "description": "Test servo for precise angle control",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-09-27T19:37:30.816Z",
+    "enabled": true
+  },
+  {
+    "id": "377",
+    "name": "Test LED",
+    "type": "led",
+    "pin": 13,
+    "description": "PWM-controlled LED with brightness",
+    "config": {
+      "brightness": 128,
+      "pwmFrequency": 1000,
+      "color": "white"
+    },
+    "created": "2025-09-27T19:37:30.842Z",
+    "enabled": true
+  },
+  {
+    "id": "378",
+    "name": "Test Sensor",
+    "type": "sensor",
+    "pin": 14,
+    "description": "Digital/analog sensor",
+    "config": {
+      "sensorType": "digital",
+      "pullUp": true,
+      "threshold": 512
+    },
+    "created": "2025-09-27T19:37:30.864Z",
+    "enabled": true
   }
 ]

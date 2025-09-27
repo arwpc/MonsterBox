@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "headtrack_opencv_face",
+    "name": "OpenCV Face Tracking",
+    "description": "Face detection and tracking",
+    "defaults": { "trackingMode": "face", "smoothing": 0.5 },
+    "controlsSchema": {},
+    "meta": { "implementation": "OpenCV" }
+  }
+]

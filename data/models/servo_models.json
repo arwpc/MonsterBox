@@ -1,24 +1,27 @@
 [
   {
-    "id": "1",
+    "id": "servo_hooyij_ds3240mg",
     "name": "Hooyij 40kg DS3240MG",
     "manufacturer": "Hooyij",
     "defaults": {
-      "minPulse": 400,
-      "maxPulse": 2800,
+      "minPulse": 500,
+      "maxPulse": 2500,
       "neutralPulse": 1500,
       "rotationRangeDeg": 180,
       "servoType": "standard"
     },
     "meta": {
-      "notes": "High torque waterproof servo ideal for arm joints, elbows, and heavy-duty applications requiring precise positioning. Supports extended pulse width range for maximum mechanical travel.",
+      "notes": "Waterproof high-torque digital servo. PWM 500-2500us, neutral 1500us.",
       "controlType": [
         "PWM"
-      ]
+      ],
+      "torque": "40kg·cm (7.4V)",
+      "voltage": "4.8-7.4V",
+      "speed": "~0.15s/60deg"
     }
   },
   {
-    "id": "2",
+    "id": "servo_miuzei_mg90s",
     "name": "Miuzei MG90S",
     "manufacturer": "Miuzei",
     "defaults": {
@@ -29,868 +32,115 @@
       "servoType": "standard"
     },
     "meta": {
-      "notes": "Compact and lightweight; suitable for small applications like RC models.",
+      "notes": "9g micro metal gear servo. PWM 500-2400us, 180deg travel.",
       "controlType": [
         "PWM"
-      ]
+      ],
+      "torque": "~2.0-2.2kg·cm",
+      "voltage": "4.8-6.0V",
+      "speed": "~0.10s/60deg"
     }
   },
   {
-    "id": "3",
-    "name": "GoBilda 2000 Series Dual-Mode (New Spec)",
-    "manufacturer": "GoBilda",
-    "defaults": {
-      "servoType": "continuous",
-      "controllerType": "pca9685",
-      "neutralPulse": 1500,
-      "minPulse": 900,
-      "maxPulse": 2100,
-      "positionalMinPulse": 500,
-      "positionalMaxPulse": 2500,
-      "rotationRangeDeg": 1800
-    },
-    "meta": {
-      "notes": "New unified model for GoBilda 2000 series 5-turn dual-mode servo. Default mode: Continuous (900–2100µs active, 1500µs neutral, CW with increasing PWM). Positional/Feedback mode supported (500–2500µs maps to 0–1800°). Specs: 64g, 300:1, 25T spline, 4.8–7.4V, 0.17–0.25s/60°, 17.2–25.2 kg·cm, stall 2–3A, deadband 4µs, 5-turn max in positional mode.",
-      "controlType": [
-        "PWM"
-      ]
-    }
-  },
-  {
-    "id": "4",
+    "id": "servo_fitec_fs90r",
     "name": "FITEC FS90R",
     "manufacturer": "FITEC",
     "defaults": {
-      "minPulse": 700,
-      "maxPulse": 2300,
+      "minPulse": 1000,
+      "maxPulse": 2000,
       "neutralPulse": 1500,
-      "rotationRangeDeg": 180,
+      "rotationRangeDeg": 360,
       "servoType": "continuous"
     },
     "meta": {
-      "notes": "Continuous rotation micro servo. Use pulse width 700-1500µs for CW rotation (faster as pulse decreases), 1500µs to stop, and 1500-2300µs for CCW rotation (faster as pulse increases).",
-      "controlType": [
-        "PWM"
-      ]
-    }
-  },
-  {
-    "id": "1758745766819",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758816990869",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758764438741",
-    "name": "SG90 Micro Servo",
-    "description": "Popular 9g micro servo, 180° rotation, 1.2kg·cm torque",
-    "defaults": {
-      "pwmFrequency": 50,
-      "minPulseWidth": 1000,
-      "maxPulseWidth": 2000,
-      "centerPulseWidth": 1500,
-      "minAngle": 0,
-      "maxAngle": 180,
-      "centerAngle": 90
-    },
-    "controlsSchema": {
-      "type": "standard",
-      "feedback": false,
-      "continuous": false
-    },
-    "meta": {
-      "notes": "Most common hobbyist servo. 4.8-6V operating voltage. 20ms PWM period (50Hz).",
+      "notes": "Continuous rotation micro servo. 1500us=stop; <1500us=CW; >1500us=CCW.",
       "controlType": [
         "PWM"
       ],
-      "torque": "1.2kg·cm",
-      "speed": "0.1s/60°",
-      "voltage": "4.8-6V",
-      "weight": "9g"
+      "voltage": "4.8-6.0V"
     }
   },
   {
-    "id": "1758764456514",
-    "name": "MG996R High Torque Servo",
-    "description": "Metal gear servo, 180° rotation, 9.4kg·cm torque",
+    "id": "servo_miuzei_25kg",
+    "name": "Miuzei 25KG High Torque Servo (25T, 180deg)",
+    "manufacturer": "Miuzei",
     "defaults": {
-      "pwmFrequency": 50,
-      "minPulseWidth": 1000,
-      "maxPulseWidth": 2000,
-      "centerPulseWidth": 1500,
-      "minAngle": 0,
-      "maxAngle": 180,
-      "centerAngle": 90
-    },
-    "controlsSchema": {
-      "type": "standard",
-      "feedback": false,
-      "continuous": false
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
     },
     "meta": {
-      "notes": "High torque metal gear servo for heavy-duty applications. 4.8-7.2V operating voltage.",
+      "notes": "Waterproof 25kg·cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
       "controlType": [
         "PWM"
       ],
-      "torque": "9.4kg·cm",
-      "speed": "0.2s/60°",
-      "voltage": "4.8-7.2V",
-      "weight": "55g"
+      "torque": "25kg·cm",
+      "voltage": "4.8-7.4V"
     }
   },
   {
-    "id": "1758764471264",
-    "name": "SG90 Continuous Rotation",
-    "description": "Continuous rotation version of SG90, 360° rotation",
-    "defaults": {
-      "pwmFrequency": 50,
-      "minPulseWidth": 1000,
-      "maxPulseWidth": 2000,
-      "centerPulseWidth": 1500,
-      "stopPulseWidth": 1500,
-      "minAngle": -180,
-      "maxAngle": 180,
-      "centerAngle": 0
-    },
-    "controlsSchema": {
-      "type": "continuous",
-      "feedback": false,
-      "continuous": true
-    },
-    "meta": {
-      "notes": "Continuous rotation servo. 1500μs = stop, <1500μs = CCW, >1500μs = CW",
-      "controlType": [
-        "PWM"
-      ],
-      "torque": "1.2kg·cm",
-      "speed": "0.1s/60°",
-      "voltage": "4.8-6V",
-      "weight": "9g"
-    }
-  },
-  {
-    "id": "1758764485589",
-    "name": "HS-422 Standard Servo",
-    "description": "Hitec standard servo, 180° rotation, 3.3kg·cm torque",
-    "defaults": {
-      "pwmFrequency": 50,
-      "minPulseWidth": 900,
-      "maxPulseWidth": 2100,
-      "centerPulseWidth": 1500,
-      "minAngle": 0,
-      "maxAngle": 180,
-      "centerAngle": 90
-    },
-    "controlsSchema": {
-      "type": "standard",
-      "feedback": false,
-      "continuous": false
-    },
-    "meta": {
-      "notes": "Reliable standard servo from Hitec. Slightly wider pulse range than SG90.",
-      "controlType": [
-        "PWM"
-      ],
-      "torque": "3.3kg·cm",
-      "speed": "0.21s/60°",
-      "voltage": "4.8-6V",
-      "weight": "45g"
-    }
-  },
-  {
-    "id": "1758764499517",
-    "name": "DS3218MG Digital Servo",
-    "description": "High torque digital servo with metal gears, 180° rotation",
-    "defaults": {
-      "pwmFrequency": 50,
-      "minPulseWidth": 500,
-      "maxPulseWidth": 2500,
-      "centerPulseWidth": 1500,
-      "minAngle": 0,
-      "maxAngle": 180,
-      "centerAngle": 90
-    },
-    "controlsSchema": {
-      "type": "standard",
-      "feedback": false,
-      "continuous": false
-    },
-    "meta": {
-      "notes": "High-end digital servo with wide pulse range and high torque. Great for animatronics.",
-      "controlType": [
-        "PWM"
-      ],
-      "torque": "20kg·cm",
-      "speed": "0.16s/60°",
-      "voltage": "4.8-6.8V",
-      "weight": "60g"
-    }
-  },
-  {
-    "id": "1758764520000",
-    "name": "Nema17 Stepper Motor",
-    "description": "Precision stepper motor, 200 steps/revolution (1.8° per step), ideal for animatronics positioning",
-    "defaults": {
-      "stepsPerRevolution": 200,
-      "stepAngle": 1.8,
-      "minAngle": -1800,
-      "maxAngle": 1800,
-      "centerAngle": 0,
-      "holdingTorque": 4000,
-      "operatingVoltage": 12,
-      "ratedCurrent": 1700,
-      "resistance": 1.5,
-      "inductance": 3,
-      "maxStepRate": 1000
-    },
-    "controlsSchema": {
-      "type": "stepper",
-      "feedback": false,
-      "continuous": true,
-      "requiresDriver": true,
-      "driverTypes": [
-        "A4988",
-        "DRV8825",
-        "TMC2208",
-        "TMC2209"
-      ]
-    },
-    "meta": {
-      "notes": "Standard Nema17 stepper motor perfect for precise positioning in animatronics. Requires stepper driver (A4988, DRV8825, etc.). Excellent for head tracking, eye movement, jaw control, and other precise mechanical animations. Can rotate continuously in both directions with 1.8° precision.",
-      "controlType": [
-        "STEP_DIR",
-        "SPI"
-      ],
-      "torque": "4000g·cm (40N·cm)",
-      "speed": "Variable (up to 1000 steps/sec)",
-      "voltage": "12V",
-      "current": "1.7A per phase",
-      "weight": "280g",
-      "mounting": "NEMA 17 (42.3mm x 42.3mm)",
-      "applications": [
-        "Head tracking systems",
-        "Eye movement mechanisms",
-        "Jaw control",
-        "Precise joint positioning",
-        "Camera pan/tilt",
-        "Rotating platforms"
-      ],
-      "wiring": {
-        "phases": 2,
-        "wires": 4,
-        "coilResistance": "1.5Ω per phase",
-        "coilInductance": "3.0mH per phase"
-      },
-      "driverSettings": {
-        "microstepping": "1/16 recommended for smooth motion",
-        "currentLimit": "1.7A (adjust based on cooling)",
-        "stepPulseWidth": "2μs minimum",
-        "directionSetupTime": "1μs minimum"
-      }
-    }
-  },
-  {
-    "id": "1758955720115",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759000797011",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758980643453",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759000978494",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758980672488",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001114065",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758981927990",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001203375",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758981958711",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001328068",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758982055235",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001350968",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758982086424",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001428240",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   },
   {
-    "id": "1758982178697",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758982245685",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984247616",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984271429",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984290766",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984310886",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984363760",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984387392",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984407274",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984427520",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984658899",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984683613",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984703273",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984723913",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984780591",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984804785",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984824492",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758984844824",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758986920685",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758986942388",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758986959811",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758986976598",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987018272",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987038086",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987055637",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987072661",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987201190",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987221650",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987239489",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987256203",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987297213",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987317876",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987336403",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987354213",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987437044",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987458502",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987475533",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758987492268",
-    "name": "E2E Servo Model",
-    "description": "servo defaults",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
+    "id": "1759001525061",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
     "controlsSchema": {},
     "meta": {}
   }

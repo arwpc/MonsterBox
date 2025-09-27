@@ -6,6 +6,7 @@
 import servoService from './servo.js';
 import pca9685Service from './pca9685.js';
 import actuatorService from './actuator.js';
+import stepperService from './stepper.js';
 import { runWrapper } from './exec.js';
 import pipewireService from '../pipewireService.js';
 import streamRoutingService from '../streamRoutingService.js';
@@ -36,9 +37,17 @@ function typeToModelsFile(type) {
     var t = (type || '').replace(/\-/g, '_');
     switch (t) {
         case 'servo': return 'servo_models.json';
+        case 'motor': return 'motor_models.json';
+        case 'stepper': return 'motor_models.json'; // stepper models are stored with motors
         case 'led': return 'led_models.json';
+        case 'light': return 'light_models.json';
         case 'linear_actuator': return 'linear_actuator_models.json';
+        case 'sensor': return 'sensor_models.json';
+        case 'motion_sensor': return 'motion_sensor_models.json';
+        case 'microphone': return 'microphone_models.json';
+        case 'speaker': return 'speaker_models.json';
         case 'webcam': return 'webcam_models.json';
+        case 'head_tracking': return 'head_tracking_models.json';
         default: return null;
     }
 }
@@ -100,6 +109,8 @@ const HARDWARE_CONTROLLERS = {
                     partType: 'motor',
                     directionPin: directionPin,
                     pwmPin: pwmPin,
+
+
                     rawOutput: out,
                     message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) stopped` : 'Motor stop failed')
                 };
@@ -539,6 +550,72 @@ const HARDWARE_CONTROLLERS = {
                     pin: pin,
                     error: error.message
                 };
+            }
+        }
+    },
+
+
+    // 🧭 Stepper - step/dir control (NEMA 17, etc.)
+    stepper: {
+        async moveSteps({ stepPin, dirPin, direction = 'cw', steps, stepDelayUs = 1000, enablePin }) {
+            try {
+                const out = await stepperService.moveSteps({ stepPin, dirPin, direction, steps, stepDelayUs, enablePin });
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'stepper',
+                    stepPin,
+                    dirPin,
+                    direction,
+                    steps,
+                    stepDelayUs,
+                    enablePin,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Stepper (${stepPin}/${dirPin}) ${direction} ${steps} steps` : 'Stepper move failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'stepper', stepPin, dirPin, error: error.message };
+            }
+        },
+
+        async rotate({ stepPin, dirPin, direction = 'cw', revolutions = 1, microstepping = 16, rpm = 60, enablePin }) {
+            try {
+                const out = await stepperService.rotate({ stepPin, dirPin, direction, revolutions, microstepping, rpm, enablePin });
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'stepper',
+                    stepPin,
+                    dirPin,
+                    direction,
+                    revolutions,
+                    microstepping,
+                    rpm,
+                    enablePin,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `Stepper (${stepPin}/${dirPin}) ${direction} ${revolutions} rev @ μ${microstepping}, ${rpm} RPM` : 'Stepper rotate failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'stepper', stepPin, dirPin, error: error.message };
+            }
+        },
+
+        async stop({ enablePin } = {}) {
+            try {
+                const out = await stepperService.stop({ enablePin });
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                return {
+                    success,
+                    partType: 'stepper',
+                    enablePin,
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? 'Stepper stopped' : 'Stepper stop failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'stepper', error: error.message };
             }
         }
     },

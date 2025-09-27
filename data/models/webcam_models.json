@@ -39,5 +39,69 @@
       "vendor": "UVC",
       "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply"
     }
+  },
+  {
+    "id": "1759000797057",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759000978542",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001114107",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001203417",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001328110",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001351009",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001428279",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759001525112",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

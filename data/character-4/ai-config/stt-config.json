@@ -2,7 +2,7 @@
   "model": "scribe_v1",
   "language": "auto",
   "sampleRate": "16000",
-  "microphonePartId": "6",
-  "microphoneDeviceId": null,
+  "microphonePartId": "21",
+  "microphoneDeviceId": "default",
   "format": "mp3"
 }

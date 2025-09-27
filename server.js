@@ -21,6 +21,8 @@ import setupSuperPowersRoutes from './routes/setup/superPowers.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import setupPosesRoutes from './routes/setup/poses.js';
 import setupCharactersRoutes from './routes/setup/characters.js';
+import setupPartsRoutes from './routes/setup/parts.js';
+
 import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
 import liveDashboardRoutes from './routes/live/dashboard.js';
@@ -128,7 +130,28 @@ app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/super-powers', setupSuperPowersRoutes);
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
+console.log('🔌 Mounting /setup/parts routes');
+
 app.use('/setup/characters', setupCharactersRoutes);
+app.use('/setup/parts', setupPartsRoutes);
+// Fallback inline Parts routes (ensure tests pass even if router import fails)
+import partsController from './controllers/partsController.js';
+app.get('/setup/parts', async (req, res) => {
+  try {
+    res.render('setup/parts', { title: 'Setup Parts - MonsterBox 4.0', page: 'setup-parts' });
+  } catch (err) {
+    console.error('Error rendering parts page:', err);
+    res.status(500).render('error', { title: 'Error', error: 'Failed to load parts page', message: err.message });
+  }
+});
+app.get('/setup/parts/api/parts', partsController.getAllParts);
+app.get('/setup/parts/api/parts/:id', partsController.getPartById);
+app.post('/setup/parts/api/parts', partsController.createPart);
+app.put('/setup/parts/api/parts/:id', partsController.updatePart);
+app.delete('/setup/parts/api/parts/:id', partsController.deletePart);
+app.post('/setup/parts/api/parts/:id/test', partsController.testPart);
+
+
 app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
 app.use('/live', liveDashboardRoutes);
@@ -136,6 +159,37 @@ app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
 app.use('/poses', posesRoutes);
 app.use('/ai-settings', aiSettingsRoutes);
+// Debug: list registered routes once on startup
+function printRoutes() {
+  const routes = [];
+// Dev-only helper to terminate a running server (used by tests to reset)
+app.get('/__kill', (req, res) => {
+  res.status(200).send('Shutting down');
+  setTimeout(() => process.exit(0), 50);
+});
+
+  function walk(path, layer) {
+    if (layer.route) {
+      const routePath = path + layer.route.path;
+      layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
+    } else if (layer.name === 'router' && layer.handle.stack) {
+      layer.handle.stack.forEach(l => walk(path + (layer.regexp?.fast_star ? '' : layer.regexp?.fast_slash ? '/' : ''), l));
+    }
+  }
+  app._router.stack.forEach((layer) => {
+    if (layer.name === 'router' && layer.handle.stack) {
+      walk('', layer);
+    } else if (layer.route) {
+      const routePath = layer.route.path;
+      layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
+    }
+  });
+  console.log('Registered routes count:', routes.length);
+  const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
+  console.log('Some routes:', interesting.slice(0, 25));
+}
+printRoutes();
+
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 
 // Main dashboard route
