@@ -46,59 +46,167 @@
   },
   {
     "id": "3",
-    "name": "Skulltalkers Eyes",
+    "name": "Skulltalkers Eyes Updated",
     "type": "webcam",
     "pin": null,
-    "description": "video capture devices",
+    "description": "Updated webcam description",
     "config": {
-      "modelId": "default-uvc-1",
       "devicePath": "/dev/video0",
-      "deviceId": 0
+      "deviceId": 0,
+      "width": 1920,
+      "height": 1080,
+      "fps": 30
     },
     "created": "2025-09-26T14:06:55.650Z",
-    "enabled": true
+    "enabled": true,
+    "updated": "2025-09-26T21:49:52.537Z"
   },
   {
     "id": "4",
-    "name": "Skulltalker - MonsterBox",
+    "name": "Skulltalker - MonsterBox Updated",
     "type": "speaker",
     "pin": null,
-    "description": "audio output devices",
+    "description": "Updated speaker description",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 50,
-      "bass": 0,
-      "treble": 0
+      "device": "default",
+      "volume": 75,
+      "bass": 5,
+      "treble": 3
     },
     "created": "2025-09-26T14:08:08.217Z",
-    "enabled": true
+    "enabled": true,
+    "updated": "2025-09-26T21:50:11.852Z"
   },
   {
     "id": "5",
-    "name": "Motion Sensor",
+    "name": "Motion Sensor Detailed Debug",
     "type": "motion_sensor",
-    "pin": 18,
-    "description": "PIR motion detection sensor",
+    "pin": 28,
+    "description": "Testing with detailed debug logging",
     "config": {
-      "sensitivity": 7,
-      "windowMs": 200
+      "sensitivity": 12,
+      "windowMs": 600
     },
     "created": "2025-09-26T14:08:50.402Z",
     "enabled": true,
-    "updated": "2025-09-26T17:29:13.580Z"
+    "updated": "2025-09-27T00:58:52.691Z"
   },
   {
     "id": "6",
-    "name": "Ears of Skulltalker",
+    "name": "Ears of Skulltalker Updated",
     "type": "microphone",
     "pin": null,
-    "description": "audio input devices",
+    "description": "Updated microphone description",
     "config": {
-      "deviceId": "default",
-      "sensitivity": 1.2,
-      "windowMs": 100
+      "device": "default",
+      "sampleRate": 44100,
+      "gain": 1.5
     },
     "created": "2025-09-26T14:09:44.019Z",
+    "enabled": true,
+    "updated": "2025-09-26T21:50:02.971Z"
+  },
+  {
+    "id": "9",
+    "name": "Second Test Servo Updated",
+    "type": "servo",
+    "pin": 19,
+    "description": "Updated servo description",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 8,
+      "address": 64,
+      "pca9685Frequency": 60,
+      "invertDirection": true,
+      "modelId": "2"
+    },
+    "created": "2025-09-26T21:36:01.769Z",
+    "enabled": true,
+    "updated": "2025-09-26T21:49:34.423Z"
+  },
+  {
+    "id": "10",
+    "name": "Motion Skulltalker",
+    "type": "motion_sensor",
+    "pin": 23,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-26T21:42:28.462Z",
     "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Test Motor Updated",
+    "type": "motor",
+    "pin": null,
+    "description": "Updated motor description",
+    "config": {
+      "maxDuration": 1500
+    },
+    "created": "2025-09-26T21:47:59.042Z",
+    "enabled": true,
+    "directionPin": 19,
+    "pwmPin": 18,
+    "maxDuration": 10000,
+    "updated": "2025-09-26T21:48:48.129Z"
+  },
+  {
+    "id": "12",
+    "name": "Test Linear Actuator Updated",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "Updated linear actuator description",
+    "config": {
+      "maxExtension": 120,
+      "maxRetraction": 120
+    },
+    "created": "2025-09-26T21:48:07.330Z",
+    "enabled": true,
+    "directionPin": 21,
+    "pwmPin": 20,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "updated": "2025-09-26T21:48:56.744Z"
+  },
+  {
+    "id": "13",
+    "name": "Test LED Updated",
+    "type": "led",
+    "pin": 23,
+    "description": "Updated LED description",
+    "config": {
+      "brightness": 90
+    },
+    "created": "2025-09-26T21:48:15.828Z",
+    "enabled": true,
+    "updated": "2025-09-26T21:49:05.178Z"
+  },
+  {
+    "id": "14",
+    "name": "Test Light Updated",
+    "type": "light",
+    "pin": 24,
+    "description": "Updated light description",
+    "config": {
+      "brightness": 80
+    },
+    "created": "2025-09-26T21:48:24.736Z",
+    "enabled": true,
+    "updated": "2025-09-26T21:49:14.701Z"
+  },
+  {
+    "id": "15",
+    "name": "Test Sensor Updated",
+    "type": "sensor",
+    "pin": 25,
+    "description": "Updated sensor description",
+    "config": {
+      "sensitivity": 8,
+      "windowMs": 200
+    },
+    "created": "2025-09-26T21:48:32.714Z",
+    "enabled": true,
+    "updated": "2025-09-26T21:49:22.746Z"
   }
 ]

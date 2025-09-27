@@ -353,6 +353,10 @@
           const j = await res.json();
           if (!j.success) throw new Error('Failed to load parts');
           parts = j.parts || [];
+
+          // Set global variable for access from global scope functions
+          window.allParts = parts;
+
           renderList(parts);
           renderBottomRail(parts);
         }
@@ -380,6 +384,10 @@
         async function selectPart(id) {
           selected = parts.find(function (p) { return String(p.id) === String(id); });
           if (!selected) return;
+
+          // Set global variable for access from global scope functions
+          window.selectedPartId = selected.id;
+          window.selectedPart = selected;
           devName.textContent = selected.name;
           devMeta.textContent = 'ID: ' + selected.id + ' | Type: ' + selected.type;
           modelBadge.textContent = 'Model: ' + (selected.modelId || '—');
@@ -391,6 +399,10 @@
           renderControls(selected);
           renderEdit(selected);
           refreshEffective(selected.id);
+
+          // Enable Remove button when a part is selected
+          const removeBtn = document.getElementById('btnRemove');
+          if (removeBtn) removeBtn.disabled = false;
         }
 
         async function ensureModelsLoaded(type) {
@@ -464,8 +476,29 @@
           if (j.success) { selected.config = j.config; refreshEffective(selected.id); }
         });
 
+        // Global variable to track live test intervals
+        let globalLiveTestInterval = null;
+        let globalIsLiveTestRunning = false;
+
         function renderControls(part) {
           const el = document.getElementById('controlsArea');
+
+          // Clean up any running live tests when switching parts
+          if (globalLiveTestInterval) {
+            clearInterval(globalLiveTestInterval);
+            globalLiveTestInterval = null;
+            globalIsLiveTestRunning = false;
+          }
+
+          // Handle null part (no selection)
+          if (!part) {
+            el.innerHTML = '<div class="text-muted text-center py-4">Select a part to see controls</div>';
+            // Disable Remove button when no part is selected
+            const removeBtn = document.getElementById('btnRemove');
+            if (removeBtn) removeBtn.disabled = true;
+            return;
+          }
+
           if (part.type === 'servo') {
             const isCont = String(part.config?.servoType || 'standard') === 'continuous';
             if (isCont) {
@@ -482,12 +515,26 @@
                 const speed = parseInt(document.getElementById('spd').value || '35', 10);
                 const duration = parseInt(document.getElementById('dur').value || '300', 10);
                 const st = document.getElementById('ctrlStatus');
-                if (st) st.textContent = 'Executing…';
+                if (st) st.textContent = `${part.name} (ID: ${part.id}) ${dir} at ${speed}%…`;
+                console.log(`Continuous servo: ${part.name} (ID: ${part.id}) direction: ${dir}, speed: ${speed}%, duration: ${duration}ms`);
                 try {
-                  await fetch(`/setup/calibration/api/continuous_servo/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: dir, speed, duration }) });
-                  if (st) st.textContent = 'Done';
-                  setTimeout(() => { if (st) st.textContent = ''; }, 800);
-                } catch (e) { if (st) st.textContent = 'Failed'; }
+                  const response = await fetch(`/setup/calibration/api/continuous_servo/${encodeURIComponent(part.id)}/jog`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: dir, speed, duration })
+                  });
+                  if (response.ok) {
+                    if (st) st.textContent = `${part.name} ${dir} complete`;
+                    console.log(`Successfully jogged continuous servo ${part.name} ${dir}`);
+                  } else {
+                    if (st) st.textContent = 'Jog failed';
+                    console.error(`Failed to jog continuous servo ${part.name}:`, response.status);
+                  }
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } catch (e) {
+                  if (st) st.textContent = 'Jog error';
+                  console.error(`Error jogging continuous servo ${part.name}:`, e);
+                }
               }));
             } else {
               el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
@@ -503,12 +550,26 @@
               el.querySelector('#goAng').addEventListener('click', async () => {
                 const angle = parseInt(n.value || '90', 10);
                 const st = document.getElementById('ctrlStatus');
-                if (st) st.textContent = 'Moving…';
+                if (st) st.textContent = `Moving ${part.name} (ID: ${part.id}) to ${angle}°…`;
+                console.log(`Moving servo: ${part.name} (ID: ${part.id}) to angle: ${angle}°`);
                 try {
-                  await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(part.id)}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle }) });
-                  if (st) st.textContent = 'Done';
-                  setTimeout(() => { if (st) st.textContent = ''; }, 800);
-                } catch (e) { if (st) st.textContent = 'Failed'; }
+                  const response = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(part.id)}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ angle })
+                  });
+                  if (response.ok) {
+                    if (st) st.textContent = `${part.name} moved to ${angle}°`;
+                    console.log(`Successfully moved servo ${part.name} to ${angle}°`);
+                  } else {
+                    if (st) st.textContent = 'Move failed';
+                    console.error(`Failed to move servo ${part.name}:`, response.status);
+                  }
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } catch (e) {
+                  if (st) st.textContent = 'Move error';
+                  console.error(`Error moving servo ${part.name}:`, e);
+                }
 
               });
             }
@@ -722,6 +783,159 @@
                 if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
               }).catch(function () { });
             });
+          } else if (part.type === 'motion_sensor') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-3">' +
+              '<button id="readMotion" class="btn btn-outline-info btn-lg"><i class="bi bi-eye"></i> Read</button>' +
+              '<button id="startLiveTest" class="btn btn-success btn-lg"><i class="bi bi-play-circle"></i> Start Live Test</button>' +
+              '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
+              '</div>' +
+              '<div class="mt-3">' +
+                '<div class="d-flex align-items-center gap-3">' +
+                  '<div class="d-flex align-items-center gap-2">' +
+                    '<div id="motionIndicator" class="rounded-circle" style="width:24px;height:24px;background-color:#6c757d;border:2px solid #dee2e6;"></div>' +
+                    '<span id="motionStatus" class="fw-semibold text-muted">Ready to test</span>' +
+                  '</div>' +
+                  '<div id="motionDetails" class="small text-muted"></div>' +
+                '</div>' +
+              '</div>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+
+            // Use global variables for live test tracking
+
+            // Read button - single reading
+            el.querySelector('#readMotion').addEventListener('click', async function () {
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              if (st) st.textContent = `Reading ${part.name} motion sensor...`;
+              try {
+                const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({})
+                });
+                const result = await response.json();
+
+                if (response.ok && result.testResult) {
+                  const motionDetected = result.testResult.motionDetected || false;
+                  const timestamp = new Date().toLocaleTimeString();
+
+                  // Update indicator
+                  if (motionDetected) {
+                    indicator.style.backgroundColor = '#dc3545'; // Red
+                    indicator.style.borderColor = '#dc3545';
+                    status.textContent = 'MOTION DETECTED';
+                    status.className = 'fw-semibold text-danger';
+                  } else {
+                    indicator.style.backgroundColor = '#198754'; // Green
+                    indicator.style.borderColor = '#198754';
+                    status.textContent = 'No Motion';
+                    status.className = 'fw-semibold text-success';
+                  }
+
+                  details.textContent = `Last read: ${timestamp}`;
+                  if (st) st.textContent = `${part.name} read complete`;
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } else {
+                  if (st) st.textContent = 'Read failed';
+                  status.textContent = 'Read error';
+                  status.className = 'fw-semibold text-warning';
+                }
+              } catch (error) {
+                console.error(`Error reading motion sensor ${part.name}:`, error);
+                if (st) st.textContent = 'Read error';
+                status.textContent = 'Communication error';
+                status.className = 'fw-semibold text-warning';
+              }
+            });
+
+            // Start Live Test button
+            el.querySelector('#startLiveTest').addEventListener('click', function () {
+              const startBtn = document.getElementById('startLiveTest');
+              const stopBtn = document.getElementById('stopLiveTest');
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              startBtn.style.display = 'none';
+              stopBtn.style.display = 'inline-block';
+              globalIsLiveTestRunning = true;
+
+              if (st) st.textContent = `Live testing ${part.name} - monitoring for movement...`;
+              status.textContent = 'Live monitoring...';
+              status.className = 'fw-semibold text-primary';
+
+              // Start continuous polling
+              globalLiveTestInterval = setInterval(async () => {
+                if (!globalIsLiveTestRunning) return;
+
+                try {
+                  const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                  });
+                  const result = await response.json();
+
+                  if (response.ok && result.testResult) {
+                    const motionDetected = result.testResult.motionDetected || false;
+                    const timestamp = new Date().toLocaleTimeString();
+
+                    // Update indicator with animation
+                    if (motionDetected) {
+                      indicator.style.backgroundColor = '#dc3545'; // Bright Red
+                      indicator.style.borderColor = '#dc3545';
+                      indicator.style.boxShadow = '0 0 10px rgba(220, 53, 69, 0.5)';
+                      status.textContent = 'MOVEMENT DETECTED!';
+                      status.className = 'fw-semibold text-danger';
+                    } else {
+                      indicator.style.backgroundColor = '#198754'; // Green
+                      indicator.style.borderColor = '#198754';
+                      indicator.style.boxShadow = 'none';
+                      status.textContent = 'No Movement';
+                      status.className = 'fw-semibold text-success';
+                    }
+
+                    details.textContent = `Live monitoring - Last update: ${timestamp}`;
+                  }
+                } catch (error) {
+                  console.error(`Error in live test for ${part.name}:`, error);
+                }
+              }, 500); // Poll every 500ms for responsive detection
+            });
+
+            // Stop Live Test button
+            el.querySelector('#stopLiveTest').addEventListener('click', function () {
+              const startBtn = document.getElementById('startLiveTest');
+              const stopBtn = document.getElementById('stopLiveTest');
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              globalIsLiveTestRunning = false;
+              if (globalLiveTestInterval) {
+                clearInterval(globalLiveTestInterval);
+                globalLiveTestInterval = null;
+              }
+
+              startBtn.style.display = 'inline-block';
+              stopBtn.style.display = 'none';
+
+              // Reset indicator
+              indicator.style.backgroundColor = '#6c757d';
+              indicator.style.borderColor = '#dee2e6';
+              indicator.style.boxShadow = 'none';
+              status.textContent = 'Live test stopped';
+              status.className = 'fw-semibold text-muted';
+              details.textContent = '';
+
+              if (st) st.textContent = `Live test stopped for ${part.name}`;
+              setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+            });
           } else {
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
               '<button id="quickTest" class="btn btn-outline-secondary btn-lg"><i class="bi bi-gear"></i> Quick Test</button>' +
@@ -761,493 +975,32 @@
             var pwm = (cfg.pwmPin != null ? cfg.pwmPin : (cfg.config && cfg.config.pwmPin));
             var dir = (cfg.directionPin != null ? cfg.directionPin : (cfg.config && cfg.config.directionPin));
             var el;
-            el = document.getElementById('editPin'); if (el && pin != null) el.value = pin;
+            el = document.getElementById('editPin');
+            if (el) {
+              // For motors/linear actuators, editPin is the PWM pin
+              if (part.type === 'motor' || part.type === 'linear_actuator') {
+                if (pwm != null) el.value = pwm;
+              } else {
+                // For other parts, editPin is the regular pin
+                if (pin != null) el.value = pin;
+              }
+            }
             el = document.getElementById('editDirectionPin'); if (el && dir != null) el.value = dir;
-            el = document.getElementById('editPwmPin'); if (el && pwm != null) el.value = pwm;
           }
 
-          function renderEdit(part) {
-            // Populate basic fields
-            var n = document.getElementById('editName'); if (n) n.value = part.name || '';
-            var t = document.getElementById('editType'); if (t) t.value = part.type || '';
-            var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
-            var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
-            var c = document.getElementById('editConfig'); if (c) c.value = JSON.stringify(part.config || {}, null, 2);
+          // renderEdit function moved to global scope
 
-            // Render type-specific configuration
-            renderEditConfigArea(part);
+          // renderEditConfigArea function moved to global scope
 
-            // Bind save button (only once)
-            var save = document.getElementById('saveEditBtn');
-            if (save && !save._bound) {
-              save._bound = true;
-              save.addEventListener('click', function () {
-                savePartChanges();
-              });
-            }
+          // generateEditServoConfig function moved to global scope
+          // Duplicate functions removed - moved to global scope
 
-            // Bind delete button (only once)
-            var deleteBtn = document.getElementById('deletePartBtn');
-            if (deleteBtn && !deleteBtn._bound) {
-              deleteBtn._bound = true;
-              deleteBtn.addEventListener('click', function () {
-                deleteSelectedPart();
-              });
-            }
+          // All duplicate generate functions removed - moved to global scope
 
-            // Show/hide mjpg button for webcam parts
-            var mjpgBtn = document.getElementById('applyMjpgBtn');
-            if (mjpgBtn) {
-              mjpgBtn.style.display = (part.type === 'webcam') ? 'inline-block' : 'none';
-            }
-          }
+          // All remaining duplicate generate functions removed - moved to global scope
+          // All duplicate functions completely removed
 
-          function renderEditConfigArea(part) {
-            const container = document.getElementById('editConfigArea');
-            if (!container) return;
-
-            const type = part.type;
-            const config = part.config || {};
-            let html = '';
-
-
-
-            // Generate type-specific configuration fields
-            switch (type) {
-              case 'servo':
-                html = generateEditServoConfig(part, config);
-                break;
-              case 'motor':
-              case 'linear_actuator':
-                html = generateEditMotorConfig(part, config, type);
-                break;
-              case 'light':
-              case 'led':
-                html = generateEditLightConfig(part, config, type);
-                break;
-              case 'sensor':
-              case 'motion_sensor':
-                html = generateEditSensorConfig(part, config, type);
-                break;
-              case 'webcam':
-                html = generateEditWebcamConfig(part, config);
-                break;
-              case 'microphone':
-                html = generateEditMicrophoneConfig(part, config);
-                break;
-              case 'speaker':
-                html = generateEditSpeakerConfig(part, config);
-                break;
-              default:
-                html = '<div class="text-muted">No specific configuration for this part type.</div>';
-            }
-
-            container.innerHTML = html;
-
-            // Populate values after rendering
-            populateEditConfigValues(part, config);
-
-            // Populate servo model dropdown if it's a servo
-            if (type === 'servo') {
-              populateEditServoModels();
-            }
-          }
-
-          function generateEditServoConfig(part, config) {
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-gear"></i> Servo Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-3">
-                      <label class="form-label">GPIO Pin</label>
-                      <input type="number" class="form-control" id="editServoPin" min="1" max="40">
-                      <div class="form-text">Not used with PCA9685</div>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Servo Type</label>
-                      <select class="form-select" id="editServoType">
-                        <option value="standard">Standard (0-180°)</option>
-                        <option value="continuous">Continuous Rotation</option>
-                        <option value="feedback">Feedback Servo</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Controller</label>
-                      <select class="form-select" id="editControllerType" onchange="onEditControllerTypeChange()">
-                        <option value="gpio">Direct GPIO PWM</option>
-                        <option value="pca9685">PCA9685 PWM Driver</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="editInvertDirection">
-                        <label class="form-check-label" for="editInvertDirection">
-                          Invert Direction<br><small class="text-muted">Swap CW/CCW</small>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-12">
-                      <label class="form-label">Model</label>
-                      <select class="form-select" id="editServoModel">
-                        <option value="">Select Model...</option>
-                      </select>
-                      <div class="form-text">Choose a servo model for default settings</div>
-                    </div>
-                  </div>
-
-                  <div id="editPca9685Config" style="display: none;" class="mt-3">
-                    <div class="card border-primary">
-                      <div class="card-header bg-primary text-white">
-                        <i class="bi bi-cpu"></i> PCA9685 Configuration
-                      </div>
-                      <div class="card-body">
-                        <div class="row g-3 mb-3">
-                          <div class="col-md-6">
-                            <label class="form-label">I2C Address</label>
-                            <input type="text" class="form-control" id="editPca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
-                            <div class="form-text">Default: 0x40</div>
-                          </div>
-                          <div class="col-md-6">
-                            <label class="form-label">PWM Frequency (Hz)</label>
-                            <input type="number" class="form-control" id="editPca9685Frequency" value="50" min="40" max="1000">
-                            <div class="form-text">Servo standard: 50Hz</div>
-                          </div>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Select PCA9685 Channel</label>
-                          <div class="text-center mb-2 text-muted small">Click a channel to select it</div>
-                          <div id="editPca9685Channels"></div>
-                          <input type="hidden" id="editPca9685Channel">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditMotorConfig(part, config, type) {
-            const isActuator = type === 'linear_actuator';
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-gear-wide"></i> ${isActuator ? 'Linear Actuator' : 'Motor'} Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-6">
-                      <label class="form-label">Direction Pin</label>
-                      <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
-                      <div class="form-text">GPIO pin for direction control</div>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">PWM Pin</label>
-                      <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
-                      <div class="form-text">GPIO pin for PWM speed control</div>
-                    </div>
-                    ${isActuator ? `
-                    <div class="col-md-6">
-                      <label class="form-label">Max Extension (ms)</label>
-                      <input type="number" class="form-control" id="editMaxExtension" min="1000" max="30000">
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Max Retraction (ms)</label>
-                      <input type="number" class="form-control" id="editMaxRetraction" min="1000" max="30000">
-                    </div>
-                    ` : `
-                    <div class="col-md-6">
-                      <label class="form-label">Max Duration (ms)</label>
-                      <input type="number" class="form-control" id="editMaxDuration" min="1000" max="30000" value="10000">
-                      <div class="form-text">Safety limit for motor operation</div>
-                    </div>
-                    `}
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditLightConfig(part, config, type) {
-            const isLED = type === 'led';
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-lightbulb"></i> ${isLED ? 'LED' : 'Light'} Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-6">
-                      <label class="form-label">GPIO Pin</label>
-                      <input type="number" class="form-control" id="editLightPin" min="1" max="40">
-                    </div>
-                    ${isLED ? `
-                    <div class="col-md-6">
-                      <label class="form-label">Default Brightness (%)</label>
-                      <input type="number" class="form-control" id="editDefaultBrightness" min="0" max="100" value="50">
-                    </div>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditSensorConfig(part, config, type) {
-            const isMotion = type === 'motion_sensor';
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-${isMotion ? 'eye' : 'cpu'}"></i> ${isMotion ? 'Motion Sensor' : 'Sensor'} Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-${isMotion ? '4' : '6'}">
-                      <label class="form-label">GPIO Pin</label>
-                      <input type="number" class="form-control" id="editSensorPin" min="1" max="40">
-                    </div>
-                    ${isMotion ? `
-                    <div class="col-md-4">
-                      <label class="form-label">Sensitivity</label>
-                      <input type="number" class="form-control" id="editMotionSensitivity" min="1" max="10" value="5">
-                      <div class="form-text">Adjust motion responsiveness (1-10)</div>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Window (ms)</label>
-                      <input type="number" class="form-control" id="editMotionWindow" min="50" max="5000" value="100">
-                      <div class="form-text">Motion detection window</div>
-                    </div>
-                    ` : `
-                    <div class="col-md-6">
-                      <label class="form-label">Sensor Type</label>
-                      <select class="form-select" id="editSensorType">
-                        <option value="digital">Digital</option>
-                        <option value="analog">Analog</option>
-                      </select>
-                    </div>
-                    `}
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditWebcamConfig(part, config) {
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-camera-video"></i> Webcam Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-8">
-                      <label class="form-label">Device Path</label>
-                      <select class="form-select" id="editWebcamDevice">
-                        <option value="">Select webcam device...</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForEdit()">Scan Devices</button>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Resolution Width</label>
-                      <input type="number" class="form-control" id="editWebcamWidth" value="640">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Resolution Height</label>
-                      <input type="number" class="form-control" id="editWebcamHeight" value="480">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Frame Rate</label>
-                      <input type="number" class="form-control" id="editWebcamFps" value="30" min="1" max="60">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditMicrophoneConfig(part, config) {
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-mic"></i> Microphone Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-6">
-                      <label class="form-label">Audio Input Device</label>
-                      <select class="form-select" id="editAudioInput">
-                        <option value="">Select audio input...</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Sensitivity</label>
-                      <input type="number" class="form-control" id="editMicSensitivity" min="0.1" max="5.0" step="0.1" value="1.2">
-                      <div class="form-text">Adjust responsiveness</div>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Window (ms)</label>
-                      <input type="number" class="form-control" id="editMicWindow" min="50" max="5000" value="100">
-                      <div class="form-text">Detection window</div>
-                    </div>
-                  </div>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-3 d-flex align-items-end">
-                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForEdit()">Scan Inputs</button>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Sample Rate</label>
-                      <select class="form-select" id="editMicSampleRate">
-                        <option value="44100">44.1 kHz</option>
-                        <option value="48000" selected>48 kHz</option>
-                        <option value="96000">96 kHz</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Channels</label>
-                      <select class="form-select" id="editMicChannels">
-                        <option value="1" selected>Mono</option>
-                        <option value="2">Stereo</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Input Gain</label>
-                      <input type="number" class="form-control" id="editMicGain" min="0" max="100" value="50">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function generateEditSpeakerConfig(part, config) {
-            return `
-              <div class="card mb-3">
-                <div class="card-header"><i class="bi bi-speaker"></i> Speaker Configuration</div>
-                <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-8">
-                      <label class="form-label">Audio Output Device</label>
-                      <select class="form-select" id="editAudioOutput">
-                        <option value="">Select audio output...</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                      <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForEdit()">Scan Outputs</button>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Volume (%)</label>
-                      <input type="number" class="form-control" id="editSpeakerVolume" min="0" max="100" value="50">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Bass (dB)</label>
-                      <input type="number" class="form-control" id="editSpeakerBass" min="-10" max="10" value="0">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Treble (dB)</label>
-                      <input type="number" class="form-control" id="editSpeakerTreble" min="-10" max="10" value="0">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          function populateEditConfigValues(part, config) {
-            const type = part.type;
-
-            // Populate type-specific values
-            switch (type) {
-              case 'servo':
-                setValueIfExists('editServoPin', part.pin);
-                setValueIfExists('editServoType', config.servoType || 'standard');
-                setValueIfExists('editControllerType', config.controllerType || 'gpio');
-                setValueIfExists('editServoModel', config.modelId || '');
-
-                // Handle invert direction checkbox
-                const invertCheckbox = document.getElementById('editInvertDirection');
-                if (invertCheckbox) {
-                  invertCheckbox.checked = !!config.invertDirection;
-                }
-
-                if (config.controllerType === 'pca9685') {
-                  const pca9685Config = document.getElementById('editPca9685Config');
-                  if (pca9685Config) {
-                    pca9685Config.style.display = 'block';
-                    setValueIfExists('editPca9685Address', config.address ? '0x' + config.address.toString(16) : '0x40');
-                    setValueIfExists('editPca9685Frequency', config.pca9685Frequency || 50);
-                    setValueIfExists('editPca9685Channel', config.channel);
-
-                    // Select the PCA9685 channel button
-                    if (config.channel !== undefined) {
-                      selectEditPCA9685Channel(config.channel);
-                    }
-                  }
-                }
-                break;
-
-              case 'motor':
-              case 'linear_actuator':
-                setValueIfExists('editDirectionPin', part.directionPin);
-                setValueIfExists('editPwmPin', part.pwmPin);
-                if (type === 'linear_actuator') {
-                  setValueIfExists('editMaxExtension', part.maxExtension || config.maxExtension);
-                  setValueIfExists('editMaxRetraction', part.maxRetraction || config.maxRetraction);
-                } else {
-                  setValueIfExists('editMaxDuration', part.maxDuration || config.maxDuration || 10000);
-                }
-                break;
-
-              case 'light':
-              case 'led':
-                setValueIfExists('editLightPin', part.pin);
-                if (type === 'led') {
-                  setValueIfExists('editDefaultBrightness', config.defaultBrightness || 50);
-                }
-                break;
-
-              case 'sensor':
-              case 'motion_sensor':
-                setValueIfExists('editSensorPin', part.pin);
-                if (type === 'motion_sensor') {
-                  setValueIfExists('editMotionSensitivity', config.sensitivity || 5);
-                  setValueIfExists('editMotionWindow', config.windowMs || 100);
-                } else {
-                  setValueIfExists('editSensorType', config.sensorType || 'digital');
-                }
-                break;
-
-              case 'webcam':
-                setValueIfExists('editWebcamDevice', config.devicePath);
-                setValueIfExists('editWebcamWidth', config.width || 640);
-                setValueIfExists('editWebcamHeight', config.height || 480);
-                setValueIfExists('editWebcamFps', config.fps || 30);
-                // Load webcam devices
-                setTimeout(() => {
-                  if (typeof scanWebcamsForEdit === 'function') scanWebcamsForEdit();
-                }, 100);
-                break;
-
-              case 'microphone':
-                setValueIfExists('editAudioInput', config.deviceId);
-                setValueIfExists('editMicSampleRate', config.sampleRate || 48000);
-                setValueIfExists('editMicChannels', config.channels || 1);
-                setValueIfExists('editMicGain', config.gain || 50);
-                setValueIfExists('editMicSensitivity', config.sensitivity || 1.2);
-                setValueIfExists('editMicWindow', config.windowMs || 100);
-                // Load audio inputs
-                setTimeout(() => {
-                  if (typeof scanAudioInputsForEdit === 'function') scanAudioInputsForEdit();
-                }, 100);
-                break;
-
-              case 'speaker':
-                setValueIfExists('editAudioOutput', config.audioDeviceId);
-                setValueIfExists('editSpeakerVolume', config.volume || 50);
-                setValueIfExists('editSpeakerBass', config.bass || 0);
-                setValueIfExists('editSpeakerTreble', config.treble || 0);
-                // Load audio outputs
-                setTimeout(() => {
-                  if (typeof scanAudioOutputsForEdit === 'function') scanAudioOutputsForEdit();
-                }, 100);
-                break;
-            }
-          }
+          // populateEditConfigValues function moved to global scope
 
           function setValueIfExists(elementId, value) {
             const element = document.getElementById(elementId);
@@ -1286,6 +1039,99 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
           }).catch(() => { });
         }
+
+        async function setMarkerFromCurrent(fieldId, name) {
+          if (!selected) return;
+
+          try {
+            let currentValue = null;
+            let statusData = null;
+
+            // Get current position based on part type - NO USER INPUT, HARDWARE ONLY
+            if (selected.type === 'servo') {
+              const servoType = String(selected.config?.servoType || 'standard').toLowerCase();
+              if (servoType === 'continuous') {
+                showToast('Cannot set marker from current position for continuous servos - no meaningful position available', 'error');
+                return;
+              } else {
+                // For standard servos, get current angle from hardware status
+                try {
+                  const statusResponse = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/status`);
+                  if (statusResponse.ok) {
+                    statusData = await statusResponse.json();
+                    if (statusData && statusData.currentAngle !== undefined) {
+                      currentValue = statusData.currentAngle;
+                    } else {
+                      showToast('Hardware does not report current servo position - cannot set marker automatically', 'error');
+                      return;
+                    }
+                  } else {
+                    showToast('Failed to get current servo position from hardware', 'error');
+                    return;
+                  }
+                } catch (error) {
+                  showToast('Error communicating with servo hardware', 'error');
+                  return;
+                }
+              }
+            } else if (selected.type === 'linear_actuator') {
+              // For linear actuators, get current position from hardware status
+              try {
+                const statusResponse = await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(selected.id)}/status`);
+                if (statusResponse.ok) {
+                  statusData = await statusResponse.json();
+                  if (statusData && statusData.currentPosition !== undefined) {
+                    currentValue = statusData.currentPosition;
+                  } else {
+                    showToast('Hardware does not report current actuator position - cannot set marker automatically', 'error');
+                    return;
+                  }
+                } else {
+                  showToast('Failed to get current actuator position from hardware', 'error');
+                  return;
+                }
+              } catch (error) {
+                showToast('Error communicating with actuator hardware', 'error');
+                return;
+              }
+            } else if (selected.type === 'motor') {
+              // Motors don't have meaningful position - they have speed/direction
+              showToast('Motors do not have position markers - use speed/direction controls instead', 'error');
+              return;
+            } else {
+              // For other part types that don't have position feedback
+              showToast(`Part type "${selected.type}" does not support automatic position detection`, 'error');
+              return;
+            }
+
+            if (currentValue !== null && !isNaN(currentValue)) {
+              // Set the field value
+              const el = document.getElementById(fieldId);
+              if (el) el.value = currentValue;
+
+              // Save the marker
+              const body = { name, kind: 'absolute', value: currentValue, unit: unitFor(selected) };
+              const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+
+              if (response.ok) {
+                // Refresh the markers display
+                await loadMarkers();
+                showToast(`${name} marker set to ${currentValue}${unitFor(selected) ? ' ' + unitFor(selected) : ''} from hardware position`, 'success');
+              } else {
+                showToast('Failed to save marker', 'error');
+              }
+            } else {
+              showToast('Invalid position value received from hardware', 'error');
+            }
+          } catch (error) {
+            console.error('Error setting marker from current:', error);
+            showToast('Error setting marker from current position', 'error');
+          }
+        }
         async function goToField(fieldId) {
           if (!selected) return;
           const el = document.getElementById(fieldId);
@@ -1294,12 +1140,178 @@
             await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: Math.round(num) }) });
           }
         }
-        const setMinBtn = document.getElementById('setMinBtn'); if (setMinBtn) setMinBtn.addEventListener('click', () => saveMarkerFromField('minValue', 'Min'));
-        const setMidBtn = document.getElementById('setMidBtn'); if (setMidBtn) setMidBtn.addEventListener('click', () => saveMarkerFromField('midValue', 'Mid'));
-        const setMaxBtn = document.getElementById('setMaxBtn'); if (setMaxBtn) setMaxBtn.addEventListener('click', () => saveMarkerFromField('maxValue', 'Max'));
+        const setMinBtn = document.getElementById('setMinBtn'); if (setMinBtn) setMinBtn.addEventListener('click', () => setMarkerFromCurrent('minValue', 'Min'));
+        const setMidBtn = document.getElementById('setMidBtn'); if (setMidBtn) setMidBtn.addEventListener('click', () => setMarkerFromCurrent('midValue', 'Mid'));
+        const setMaxBtn = document.getElementById('setMaxBtn'); if (setMaxBtn) setMaxBtn.addEventListener('click', () => setMarkerFromCurrent('maxValue', 'Max'));
         const goMinBtn = document.getElementById('goMinBtn'); if (goMinBtn) goMinBtn.addEventListener('click', () => goToField('minValue'));
         const goMidBtn = document.getElementById('goMidBtn'); if (goMidBtn) goMidBtn.addEventListener('click', () => goToField('midValue'));
         const goMaxBtn = document.getElementById('goMaxBtn'); if (goMaxBtn) goMaxBtn.addEventListener('click', () => goToField('maxValue'));
+
+        // Add marker button
+        const addMarkerBtn = document.getElementById('addMarkerBtn');
+        if (addMarkerBtn) {
+          addMarkerBtn.addEventListener('click', async () => {
+            const nameInput = document.getElementById('newMarkerName');
+            const name = nameInput ? nameInput.value.trim() : '';
+
+            if (!name) {
+              showToast('Please enter a marker name', 'error');
+              return;
+            }
+
+            if (!selected) {
+              showToast('Please select a part first', 'error');
+              return;
+            }
+
+            try {
+              const body = { name, kind: 'absolute', value: 0, unit: unitFor(selected) };
+              const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+
+              if (response.ok) {
+                nameInput.value = '';
+                await loadMarkers();
+                showToast(`Marker "${name}" added`, 'success');
+              } else {
+                showToast('Failed to add marker', 'error');
+              }
+            } catch (error) {
+              console.error('Error adding marker:', error);
+              showToast('Error adding marker', 'error');
+            }
+          });
+        }
+
+        // Remove button functionality
+        const removeBtn = document.getElementById('btnRemove');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', async () => {
+            if (!selected) return;
+
+            const confirmMessage = `Are you sure you want to delete "${selected.name}"?\n\nThis will permanently remove the part and all associated records including:\n• Calibration data\n• Saved positions\n• Markers\n• Configuration settings\n\nThis action cannot be undone.`;
+
+            if (confirm(confirmMessage)) {
+              try {
+                const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+                  method: 'DELETE'
+                });
+
+                if (response.ok) {
+                  showToast(`Part "${selected.name}" deleted successfully`, 'success');
+                  // Clear selection and reload parts list
+                  selected = null;
+                  await loadParts();
+                  // Clear the UI
+                  renderControls(null);
+                  renderMarkers([]);
+                  renderBottomRail([]);
+                } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  showToast(`Failed to delete part: ${errorData.error || 'Unknown error'}`, 'error');
+                }
+              } catch (error) {
+                console.error('Error deleting part:', error);
+                showToast('Error deleting part', 'error');
+              }
+            }
+          });
+        }
+
+        // Load markers for the selected part
+        async function loadMarkers() {
+          if (!selected) return;
+          try {
+            const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`);
+            if (response.ok) {
+              const data = await response.json();
+              renderMarkers(data.markers || []);
+            }
+          } catch (error) {
+            console.error('Error loading markers:', error);
+          }
+        }
+
+        // Render markers in the UI
+        function renderMarkers(markers) {
+          const customMarkersEl = document.getElementById('customMarkers');
+          if (!customMarkersEl) return;
+
+          // Clear existing custom markers
+          customMarkersEl.innerHTML = '';
+
+          // Add custom markers (excluding Min, Mid, Max which are handled separately)
+          markers.filter(m => !['Min', 'Mid', 'Max'].includes(m.name)).forEach(marker => {
+            const chip = document.createElement('span');
+            chip.className = 'badge rounded-pill text-bg-secondary me-1 mb-1';
+            chip.innerHTML = `${marker.name}: ${marker.value}${marker.unit || ''} <button type="button" class="btn-close btn-close-white ms-1" onclick="deleteMarker('${marker.name}')"></button>`;
+            customMarkersEl.appendChild(chip);
+          });
+
+          // Populate Min/Mid/Max fields
+          const minMarker = markers.find(m => m.name === 'Min');
+          const midMarker = markers.find(m => m.name === 'Mid');
+          const maxMarker = markers.find(m => m.name === 'Max');
+
+          const minEl = document.getElementById('minValue');
+          const midEl = document.getElementById('midValue');
+          const maxEl = document.getElementById('maxValue');
+
+          if (minEl) minEl.value = minMarker ? minMarker.value : '';
+          if (midEl) midEl.value = midMarker ? midMarker.value : '';
+          if (maxEl) maxEl.value = maxMarker ? maxMarker.value : '';
+        }
+
+        // Delete a custom marker
+        async function deleteMarker(name) {
+          if (!selected) return;
+          try {
+            const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers/${encodeURIComponent(name)}`, {
+              method: 'DELETE'
+            });
+            if (response.ok) {
+              await loadMarkers();
+              showToast(`Marker "${name}" deleted`, 'success');
+            } else {
+              showToast('Failed to delete marker', 'error');
+            }
+          } catch (error) {
+            console.error('Error deleting marker:', error);
+            showToast('Error deleting marker', 'error');
+          }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+          // Create toast element if it doesn't exist
+          let toastContainer = document.getElementById('toast-container');
+          if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(toastContainer);
+          }
+
+          const toast = document.createElement('div');
+          toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+          toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
+          toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+
+          toastContainer.appendChild(toast);
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.remove();
+            }
+          }, 5000);
+        }
 
         loadParts().catch(e => console.error(e));
 
@@ -1991,178 +2003,7 @@
             });
         };
 
-        // Save part changes function
-        function savePartChanges() {
-          if (!selected) {
-            alert('No part selected');
-            return;
-          }
 
-          const payload = {
-            name: document.getElementById('editName').value,
-            enabled: document.getElementById('editEnabled').checked,
-            description: document.getElementById('editDescription').value,
-            config: {}
-          };
-
-          // Handle advanced JSON config if provided
-          try {
-            const jsonConfig = document.getElementById('editConfig').value;
-            if (jsonConfig.trim()) {
-              payload.config = JSON.parse(jsonConfig);
-            }
-          } catch (e) {
-            alert('Invalid JSON in advanced configuration');
-            return;
-          }
-
-          // Collect type-specific configuration
-          const type = selected.type;
-          let config = payload.config;
-
-          switch (type) {
-            case 'servo':
-              const pin = document.getElementById('editServoPin').value;
-              if (pin) payload.pin = parseInt(pin, 10);
-
-              config.servoType = document.getElementById('editServoType').value || 'standard';
-              config.controllerType = document.getElementById('editControllerType').value || 'gpio';
-
-              // Handle model selection
-              const modelId = document.getElementById('editServoModel').value;
-              if (modelId) {
-                config.modelId = modelId;
-              }
-
-              // Handle invert direction checkbox
-              const invertDirection = document.getElementById('editInvertDirection');
-              if (invertDirection) {
-                config.invertDirection = invertDirection.checked;
-              }
-
-              if (config.controllerType === 'pca9685') {
-                const channel = document.getElementById('editPca9685Channel').value;
-                const address = document.getElementById('editPca9685Address').value;
-                const frequency = document.getElementById('editPca9685Frequency').value;
-
-                if (channel !== '') config.channel = parseInt(channel, 10);
-                if (address) {
-                  config.address = address.startsWith('0x') ? parseInt(address, 16) : parseInt(address, 10);
-                }
-                if (frequency) config.pca9685Frequency = parseInt(frequency, 10);
-              }
-              break;
-
-            case 'motor':
-            case 'linear_actuator':
-              const directionPin = document.getElementById('editDirectionPin').value;
-              const pwmPin = document.getElementById('editPwmPin').value;
-
-              if (directionPin) payload.directionPin = parseInt(directionPin, 10);
-              if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
-
-              if (type === 'linear_actuator') {
-                const maxExtension = document.getElementById('editMaxExtension').value;
-                const maxRetraction = document.getElementById('editMaxRetraction').value;
-                if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
-                if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
-              } else {
-                const maxDuration = document.getElementById('editMaxDuration').value;
-                if (maxDuration) payload.maxDuration = parseInt(maxDuration, 10);
-              }
-              break;
-
-            case 'light':
-            case 'led':
-              const lightPin = document.getElementById('editLightPin').value;
-              if (lightPin) payload.pin = parseInt(lightPin, 10);
-
-              if (type === 'led') {
-                const brightness = document.getElementById('editDefaultBrightness').value;
-                if (brightness !== '') config.defaultBrightness = parseInt(brightness, 10);
-              }
-              break;
-
-            case 'sensor':
-            case 'motion_sensor':
-              const sensorPin = document.getElementById('editSensorPin').value;
-              if (sensorPin) payload.pin = parseInt(sensorPin, 10);
-
-              if (type === 'motion_sensor') {
-                const sensitivity = document.getElementById('editMotionSensitivity').value;
-                const windowMs = document.getElementById('editMotionWindow').value;
-                if (sensitivity !== '') config.sensitivity = parseInt(sensitivity, 10);
-                if (windowMs !== '') config.windowMs = parseInt(windowMs, 10);
-              } else {
-                config.sensorType = document.getElementById('editSensorType').value || 'digital';
-              }
-              break;
-
-            case 'webcam':
-              const webcamDevice = document.getElementById('editWebcamDevice').value;
-              const width = document.getElementById('editWebcamWidth').value;
-              const height = document.getElementById('editWebcamHeight').value;
-              const fps = document.getElementById('editWebcamFps').value;
-
-              if (webcamDevice) {
-                config.devicePath = webcamDevice;
-                const deviceId = webcamDevice.match(/\/dev\/video(\d+)/);
-                if (deviceId) config.deviceId = parseInt(deviceId[1], 10);
-              }
-              if (width) config.width = parseInt(width, 10);
-              if (height) config.height = parseInt(height, 10);
-              if (fps) config.fps = parseInt(fps, 10);
-              break;
-
-            case 'microphone':
-              const audioInput = document.getElementById('editAudioInput').value;
-              const sampleRate = document.getElementById('editMicSampleRate').value;
-              const channels = document.getElementById('editMicChannels').value;
-              const gain = document.getElementById('editMicGain').value;
-              const micSensitivity = document.getElementById('editMicSensitivity').value;
-              const micWindow = document.getElementById('editMicWindow').value;
-
-              if (audioInput) config.deviceId = audioInput;
-              if (sampleRate) config.sampleRate = parseInt(sampleRate, 10);
-              if (channels) config.channels = parseInt(channels, 10);
-              if (gain !== '') config.gain = parseInt(gain, 10);
-              if (micSensitivity !== '') config.sensitivity = parseFloat(micSensitivity);
-              if (micWindow !== '') config.windowMs = parseInt(micWindow, 10);
-              break;
-
-            case 'speaker':
-              const audioOutput = document.getElementById('editAudioOutput').value;
-              const volume = document.getElementById('editSpeakerVolume').value;
-              const bass = document.getElementById('editSpeakerBass').value;
-              const treble = document.getElementById('editSpeakerTreble').value;
-
-              if (audioOutput) config.audioDeviceId = audioOutput;
-              if (volume !== '') config.volume = parseInt(volume, 10);
-              if (bass !== '') config.bass = parseInt(bass, 10);
-              if (treble !== '') config.treble = parseInt(treble, 10);
-              break;
-          }
-
-          // Save the part
-          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          })
-          .then(r => r.json())
-          .then(data => {
-            if (data.success) {
-              alert('Part updated successfully');
-              loadParts(); // Refresh the parts list
-            } else {
-              alert(`Failed to update part: ${data.error || 'Unknown error'}`);
-            }
-          })
-          .catch(error => {
-            console.error('Error updating part:', error);
-            alert('Error updating part');
-          });
-        }
 
         // Delete part function
         function deleteSelectedPart() {
@@ -2260,6 +2101,791 @@
         });
 
       })();
+
+      // Global functions that need to be accessible from event handlers
+
+      // Save part changes function - moved to global scope
+      async function savePartChanges() {
+        const selected = window.selectedPart;
+        if (!selected) {
+          showToast('No part selected', 'error');
+          return;
+        }
+
+        try {
+          // Get basic fields
+          const name = document.getElementById('editName')?.value || '';
+          const type = document.getElementById('editType')?.value || '';
+          const enabled = document.getElementById('editEnabled')?.checked || false;
+          const description = document.getElementById('editDescription')?.value || '';
+
+          // Get type-specific configuration
+          const config = getEditConfigValues(selected.type);
+
+          // Get pin values for parts that have pins
+          let pin = null;
+          let directionPin = null;
+          let pwmPin = null;
+
+          if (['servo', 'led', 'light', 'sensor', 'motion_sensor'].includes(type)) {
+            // Try both editPin (from renderPinFields) and type-specific pin fields
+            const pinEl = document.getElementById('editPin') ||
+                         document.getElementById('editServoPin') ||
+                         document.getElementById('editLightPin') ||
+                         document.getElementById('editSensorPin');
+            if (pinEl && pinEl.value) pin = parseInt(pinEl.value);
+          }
+
+          if (['motor', 'linear_actuator'].includes(type)) {
+            const dirEl = document.getElementById('editDirectionPin');
+            const pwmEl = document.getElementById('editPin'); // PWM pin uses editPin for motors
+            if (dirEl && dirEl.value) directionPin = parseInt(dirEl.value);
+            if (pwmEl && pwmEl.value) pwmPin = parseInt(pwmEl.value);
+          }
+
+          // Build the update payload
+          const updateData = {
+            name,
+            type,
+            enabled,
+            description,
+            config
+          };
+
+          // Add pin fields if they exist
+          if (pin !== null) updateData.pin = pin;
+          if (directionPin !== null) updateData.directionPin = directionPin;
+          if (pwmPin !== null) updateData.pwmPin = pwmPin;
+
+          console.log('Saving part changes for', selected.name, '(', selected.type, '):', updateData);
+          console.log('Configuration extracted:', config);
+
+          // Send update request
+          const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            showToast(`Part "${name}" saved successfully`, 'success');
+
+            // Update the selected part object
+            Object.assign(selected, updateData);
+
+            // Refresh the parts list to show updated information
+            location.reload(); // Simple refresh for now
+
+            console.log('Part saved successfully:', result);
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            showToast(`Failed to save part: ${errorData.error || 'Unknown error'}`, 'error');
+            console.error('Failed to save part:', errorData);
+          }
+        } catch (error) {
+          console.error('Error saving part:', error);
+          showToast('Error saving part changes', 'error');
+        }
+      }
+
+      // Get configuration values from Edit form - moved to global scope
+      function getEditConfigValues(type) {
+        const config = {};
+        console.log('Extracting config values for part type:', type);
+
+        switch (type) {
+          case 'servo':
+            const servoType = document.getElementById('editServoType')?.value;
+            const controllerType = document.getElementById('editControllerType')?.value;
+            const invertDirection = document.getElementById('editInvertDirection')?.checked;
+            const modelId = document.getElementById('editServoModel')?.value;
+            const pca9685Address = document.getElementById('editPca9685Address')?.value;
+            const pca9685Frequency = document.getElementById('editPca9685Frequency')?.value;
+            const pca9685Channel = document.getElementById('editPca9685Channel')?.value;
+
+            if (servoType) config.servoType = servoType;
+            if (controllerType) config.controllerType = controllerType;
+            if (invertDirection !== undefined) config.invertDirection = invertDirection;
+            if (modelId) config.modelId = modelId;
+
+            if (controllerType === 'pca9685') {
+              if (pca9685Address) {
+                // Convert hex string to number
+                const addr = pca9685Address.startsWith('0x') ?
+                  parseInt(pca9685Address, 16) : parseInt(pca9685Address);
+                if (!isNaN(addr)) config.address = addr;
+              }
+              if (pca9685Frequency) config.pca9685Frequency = parseInt(pca9685Frequency);
+              if (pca9685Channel) config.channel = parseInt(pca9685Channel);
+            }
+            break;
+
+          case 'motor':
+            const maxDuration = document.getElementById('editMaxDuration')?.value;
+            if (maxDuration) config.maxDuration = parseInt(maxDuration);
+            break;
+
+          case 'linear_actuator':
+            const maxExtension = document.getElementById('editMaxExtension')?.value;
+            const maxRetraction = document.getElementById('editMaxRetraction')?.value;
+            if (maxExtension) config.maxExtension = parseInt(maxExtension);
+            if (maxRetraction) config.maxRetraction = parseInt(maxRetraction);
+            break;
+
+          case 'light':
+          case 'led':
+            const brightness = document.getElementById('editBrightness')?.value;
+            if (brightness) config.brightness = parseInt(brightness);
+            break;
+
+          case 'sensor':
+          case 'motion_sensor':
+            const sensitivity = document.getElementById('editSensitivity')?.value;
+            const windowMs = document.getElementById('editWindowMs')?.value;
+            if (sensitivity) config.sensitivity = parseInt(sensitivity);
+            if (windowMs) config.windowMs = parseInt(windowMs);
+            break;
+
+          case 'webcam':
+            const devicePath = document.getElementById('editDevicePath')?.value;
+            const deviceId = document.getElementById('editDeviceId')?.value;
+            const width = document.getElementById('editWidth')?.value;
+            const height = document.getElementById('editHeight')?.value;
+            const fps = document.getElementById('editFps')?.value;
+            if (devicePath) config.devicePath = devicePath;
+            if (deviceId) config.deviceId = parseInt(deviceId);
+            if (width) config.width = parseInt(width);
+            if (height) config.height = parseInt(height);
+            if (fps) config.fps = parseInt(fps);
+            break;
+
+          case 'microphone':
+            const micDevice = document.getElementById('editMicDevice')?.value;
+            const sampleRate = document.getElementById('editSampleRate')?.value;
+            const gain = document.getElementById('editGain')?.value;
+            if (micDevice) config.device = micDevice;
+            if (sampleRate) config.sampleRate = parseInt(sampleRate);
+            if (gain) config.gain = parseInt(gain);
+            break;
+
+          case 'speaker':
+            const speakerDevice = document.getElementById('editSpeakerDevice')?.value;
+            const volume = document.getElementById('editVolume')?.value;
+            const bass = document.getElementById('editBass')?.value;
+            const treble = document.getElementById('editTreble')?.value;
+            if (speakerDevice) config.device = speakerDevice;
+            if (volume) config.volume = parseInt(volume);
+            if (bass) config.bass = parseInt(bass);
+            if (treble) config.treble = parseInt(treble);
+            break;
+        }
+
+        console.log('Extracted config for', type, ':', config);
+        return config;
+      }
+
+      function renderEdit(part) {
+        // Populate basic fields
+        var n = document.getElementById('editName'); if (n) n.value = part.name || '';
+        var t = document.getElementById('editType'); if (t) t.value = part.type || '';
+        var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
+        var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
+        var c = document.getElementById('editConfig'); if (c) c.value = JSON.stringify(part.config || {}, null, 2);
+
+        // Render type-specific configuration
+        renderEditConfigArea(part);
+
+        // Bind save button (only once)
+        var save = document.getElementById('saveEditBtn');
+        if (save && !save._bound) {
+          save._bound = true;
+          save.addEventListener('click', function () {
+            savePartChanges();
+          });
+        }
+
+        // Bind delete button (only once)
+        var deleteBtn = document.getElementById('deletePartBtn');
+        if (deleteBtn && !deleteBtn._bound) {
+          deleteBtn._bound = true;
+          deleteBtn.addEventListener('click', function () {
+            deleteSelectedPart();
+          });
+        }
+
+        // Show/hide mjpg button for webcam parts
+        var mjpgBtn = document.getElementById('applyMjpgBtn');
+        if (mjpgBtn) {
+          mjpgBtn.style.display = (part.type === 'webcam') ? 'inline-block' : 'none';
+        }
+      }
+
+      function renderEditConfigArea(part) {
+        const container = document.getElementById('editConfigArea');
+        if (!container) return;
+
+        const type = part.type;
+        const config = part.config || {};
+        let html = '';
+
+        // Generate type-specific configuration fields
+        switch (type) {
+          case 'servo':
+            html = generateEditServoConfig(part, config);
+            break;
+          case 'motor':
+            html = generateEditMotorConfig(part, config);
+            break;
+          case 'linear_actuator':
+            html = generateEditLinearActuatorConfig(part, config);
+            break;
+          case 'light':
+          case 'led':
+            html = generateEditLightConfig(part, config, type);
+            break;
+          case 'sensor':
+          case 'motion_sensor':
+            html = generateEditSensorConfig(part, config, type);
+            break;
+          case 'webcam':
+            html = generateEditWebcamConfig(part, config);
+            break;
+          case 'microphone':
+            html = generateEditMicrophoneConfig(part, config);
+            break;
+          case 'speaker':
+            html = generateEditSpeakerConfig(part, config);
+            break;
+          default:
+            html = '<div class="alert alert-info">No specific configuration options for this part type.</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Load current values into the form fields
+        loadEditConfigValues(part, config, type);
+      }
+
+      function generateEditServoConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-gear"></i> Servo Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editServoPin" min="1" max="40">
+                  <div class="form-text">Not used with PCA9685</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Servo Type</label>
+                  <select class="form-select" id="editServoType">
+                    <option value="standard">Standard (0-180°)</option>
+                    <option value="continuous">Continuous Rotation</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Controller Type</label>
+                  <select class="form-select" id="editControllerType">
+                    <option value="gpio">Direct GPIO</option>
+                    <option value="pca9685">PCA9685 PWM Board</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Invert Direction</label>
+                  <select class="form-select" id="editInvertDirection">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                  <label class="form-label">Model</label>
+                  <select class="form-select" id="editServoModel">
+                    <option value="">Select model...</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="editPca9685Config" class="mt-3" style="display: none;">
+                <div class="card">
+                  <div class="card-header"><i class="bi bi-cpu"></i> PCA9685 Configuration</div>
+                  <div class="card-body">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">I2C Address</label>
+                        <input type="text" class="form-control" id="editPca9685Address" placeholder="0x40">
+                        <div class="form-text">Hex format (e.g., 0x40)</div>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">PWM Frequency</label>
+                        <input type="number" class="form-control" id="editPca9685Frequency" min="40" max="1000" value="50">
+                        <div class="form-text">Hz (typically 50)</div>
+                      </div>
+                    </div>
+
+                    <div class="mt-3">
+                      <label class="form-label">Channel</label>
+                      <div class="text-center mb-2 text-muted small">Click a channel to select it</div>
+                      <div id="editChannelGrid">
+                        <div class="row g-1">
+                          ${Array.from({length: 16}, (_, i) => {
+                            const isNewRow = i % 4 === 0;
+                            const isEndRow = (i + 1) % 4 === 0 || i === 15;
+                            let html = '';
+                            if (isNewRow && i > 0) html += '</div><div class="row g-1">';
+                            html += `<div class="col-3">
+                              <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 channel-btn" data-channel="${i}">Ch.${i}</button>
+                            </div>`;
+                            return html;
+                          }).join('')}
+                        </div>
+                      </div>
+                      <input type="hidden" id="editPca9685Channel">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditMotorConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-lightning"></i> Motor Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Direction Pin</label>
+                  <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for direction control</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">PWM Pin</label>
+                  <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for speed control</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Max Duration (ms)</label>
+                  <input type="number" class="form-control" id="editMaxDuration" min="100" max="10000" value="5000">
+                  <div class="form-text">Safety timeout</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditLinearActuatorConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-arrows-vertical"></i> Linear Actuator Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Direction Pin</label>
+                  <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for direction</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">PWM Pin</label>
+                  <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for speed</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Max Extension (mm)</label>
+                  <input type="number" class="form-control" id="editMaxExtension" min="10" max="1000" value="100">
+                  <div class="form-text">Maximum travel distance</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Max Retraction (mm)</label>
+                  <input type="number" class="form-control" id="editMaxRetraction" min="10" max="1000" value="100">
+                  <div class="form-text">Maximum retract distance</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditLightConfig(part, config, type) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-lightbulb"></i> ${type === 'led' ? 'LED' : 'Light'} Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editLightPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for control</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Brightness (%)</label>
+                  <input type="number" class="form-control" id="editBrightness" min="0" max="100" value="100">
+                  <div class="form-text">Default brightness level</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditSensorConfig(part, config, type) {
+        const isMotion = type === 'motion_sensor';
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-radar"></i> ${isMotion ? 'Motion Sensor' : 'Sensor'} Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editSensorPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for sensor input</div>
+                </div>
+                ${isMotion ? `
+                <div class="col-md-4">
+                  <label class="form-label">Sensitivity</label>
+                  <input type="number" class="form-control" id="editSensitivity" min="1" max="10" value="5">
+                  <div class="form-text">Detection sensitivity (1-10)</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Window (ms)</label>
+                  <input type="number" class="form-control" id="editWindowMs" min="50" max="1000" value="100">
+                  <div class="form-text">Detection window</div>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditWebcamConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-camera-video"></i> Webcam Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Device Path</label>
+                  <input type="text" class="form-control" id="editDevicePath" placeholder="/dev/video0">
+                  <div class="form-text">Video device path</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Device ID</label>
+                  <input type="number" class="form-control" id="editDeviceId" min="0" max="10" value="0">
+                  <div class="form-text">Camera device number</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Width</label>
+                  <input type="number" class="form-control" id="editWidth" value="1280">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Height</label>
+                  <input type="number" class="form-control" id="editHeight" value="720">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">FPS</label>
+                  <input type="number" class="form-control" id="editFps" min="1" max="60" value="30">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditMicrophoneConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-mic"></i> Microphone Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Device Name</label>
+                  <input type="text" class="form-control" id="editMicDevice" placeholder="default">
+                  <div class="form-text">Audio input device</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Sample Rate</label>
+                  <input type="number" class="form-control" id="editSampleRate" value="44100">
+                  <div class="form-text">Audio sample rate (Hz)</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Gain</label>
+                  <input type="number" class="form-control" id="editGain" min="0" max="100" value="50">
+                  <div class="form-text">Input gain (%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditSpeakerConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-speaker"></i> Speaker Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Device Name</label>
+                  <input type="text" class="form-control" id="editSpeakerDevice" placeholder="default">
+                  <div class="form-text">Audio output device</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Volume (%)</label>
+                  <input type="number" class="form-control" id="editVolume" min="0" max="100" value="80">
+                  <div class="form-text">Default volume level</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Bass</label>
+                  <input type="number" class="form-control" id="editBass" min="-10" max="10" value="0">
+                  <div class="form-text">Bass adjustment</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Treble</label>
+                  <input type="number" class="form-control" id="editTreble" min="-10" max="10" value="0">
+                  <div class="form-text">Treble adjustment</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function loadEditConfigValues(part, config, type) {
+        // Load values based on part type
+        switch (type) {
+          case 'servo':
+            loadEditServoValues(part, config);
+            break;
+          case 'motor':
+            loadEditMotorValues(part, config);
+            break;
+          case 'linear_actuator':
+            loadEditLinearActuatorValues(part, config);
+            break;
+          case 'light':
+          case 'led':
+            loadEditLightValues(part, config);
+            break;
+          case 'sensor':
+          case 'motion_sensor':
+            loadEditSensorValues(part, config, type);
+            break;
+          case 'webcam':
+            loadEditWebcamValues(part, config);
+            break;
+          case 'microphone':
+            loadEditMicrophoneValues(part, config);
+            break;
+          case 'speaker':
+            loadEditSpeakerValues(part, config);
+            break;
+        }
+      }
+
+      function loadEditServoValues(part, config) {
+        const pin = part.pin || config.pin;
+        const servoType = config.servoType || 'standard';
+        const controllerType = config.controllerType || 'gpio';
+        const invertDirection = config.invertDirection || false;
+        const modelId = part.modelId || config.modelId;
+        const address = config.address || config.pca9685Address || 64;
+        const frequency = config.frequency || config.pca9685Frequency || 50;
+        const channel = config.channel || config.pca9685Channel || 0;
+
+        // Set basic values
+        const pinEl = document.getElementById('editServoPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        const typeEl = document.getElementById('editServoType');
+        if (typeEl) typeEl.value = servoType;
+
+        const controllerEl = document.getElementById('editControllerType');
+        if (controllerEl) controllerEl.value = controllerType;
+
+        const invertEl = document.getElementById('editInvertDirection');
+        if (invertEl) invertEl.value = String(invertDirection);
+
+        const modelEl = document.getElementById('editServoModel');
+        if (modelEl && modelId) modelEl.value = modelId;
+
+        // PCA9685 configuration
+        const addressEl = document.getElementById('editPca9685Address');
+        if (addressEl) addressEl.value = '0x' + address.toString(16).toUpperCase();
+
+        const frequencyEl = document.getElementById('editPca9685Frequency');
+        if (frequencyEl) frequencyEl.value = frequency;
+
+        const channelEl = document.getElementById('editPca9685Channel');
+        if (channelEl) channelEl.value = channel;
+
+        // Show/hide PCA9685 config
+        const pca9685Config = document.getElementById('editPca9685Config');
+        if (pca9685Config) {
+          pca9685Config.style.display = controllerType === 'pca9685' ? 'block' : 'none';
+        }
+
+        // Set up event listeners
+        if (controllerEl && !controllerEl._listenerAdded) {
+          controllerEl._listenerAdded = true;
+          controllerEl.addEventListener('change', function() {
+            const pca9685Config = document.getElementById('editPca9685Config');
+            if (pca9685Config) {
+              pca9685Config.style.display = this.value === 'pca9685' ? 'block' : 'none';
+            }
+          });
+        }
+
+        // Set up channel grid
+        const channelButtons = document.querySelectorAll('#editChannelGrid .channel-btn');
+        channelButtons.forEach(btn => {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline-secondary');
+          if (parseInt(btn.dataset.channel) === channel) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-primary');
+          }
+
+          if (!btn._listenerAdded) {
+            btn._listenerAdded = true;
+            btn.addEventListener('click', function() {
+              channelButtons.forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-secondary');
+              });
+              this.classList.remove('btn-outline-secondary');
+              this.classList.add('btn-primary');
+              if (channelEl) channelEl.value = this.dataset.channel;
+            });
+          }
+        });
+      }
+
+      function loadEditMotorValues(part, config) {
+        const directionPin = part.directionPin || config.directionPin;
+        const pwmPin = part.pwmPin || config.pwmPin;
+        const maxDuration = config.maxDuration || 5000;
+
+        const dirEl = document.getElementById('editDirectionPin');
+        if (dirEl && directionPin != null) dirEl.value = directionPin;
+
+        const pwmEl = document.getElementById('editPwmPin');
+        if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
+
+        const maxDurEl = document.getElementById('editMaxDuration');
+        if (maxDurEl) maxDurEl.value = maxDuration;
+      }
+
+      function loadEditLinearActuatorValues(part, config) {
+        const directionPin = part.directionPin || config.directionPin;
+        const pwmPin = part.pwmPin || config.pwmPin;
+        const maxExtension = config.maxExtension || 100;
+        const maxRetraction = config.maxRetraction || 100;
+
+        const dirEl = document.getElementById('editDirectionPin');
+        if (dirEl && directionPin != null) dirEl.value = directionPin;
+
+        const pwmEl = document.getElementById('editPwmPin');
+        if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
+
+        const maxExtEl = document.getElementById('editMaxExtension');
+        if (maxExtEl) maxExtEl.value = maxExtension;
+
+        const maxRetEl = document.getElementById('editMaxRetraction');
+        if (maxRetEl) maxRetEl.value = maxRetraction;
+      }
+
+      function loadEditLightValues(part, config) {
+        const pin = part.pin || config.pin;
+        const brightness = config.brightness || 100;
+
+        const pinEl = document.getElementById('editLightPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        const brightnessEl = document.getElementById('editBrightness');
+        if (brightnessEl) brightnessEl.value = brightness;
+      }
+
+      function loadEditSensorValues(part, config, type) {
+        const pin = part.pin || config.pin;
+        const sensitivity = config.sensitivity || 5;
+        const windowMs = config.windowMs || 100;
+
+        const pinEl = document.getElementById('editSensorPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        if (type === 'motion_sensor') {
+          const sensEl = document.getElementById('editSensitivity');
+          if (sensEl) sensEl.value = sensitivity;
+
+          const windowEl = document.getElementById('editWindowMs');
+          if (windowEl) windowEl.value = windowMs;
+        }
+      }
+
+      function loadEditWebcamValues(part, config) {
+        const devicePath = config.devicePath || '/dev/video0';
+        const deviceId = config.deviceId || 0;
+        const width = config.width || 1280;
+        const height = config.height || 720;
+        const fps = config.fps || 30;
+
+        const pathEl = document.getElementById('editDevicePath');
+        if (pathEl) pathEl.value = devicePath;
+
+        const idEl = document.getElementById('editDeviceId');
+        if (idEl) idEl.value = deviceId;
+
+        const widthEl = document.getElementById('editWidth');
+        if (widthEl) widthEl.value = width;
+
+        const heightEl = document.getElementById('editHeight');
+        if (heightEl) heightEl.value = height;
+
+        const fpsEl = document.getElementById('editFps');
+        if (fpsEl) fpsEl.value = fps;
+      }
+
+      function loadEditMicrophoneValues(part, config) {
+        const device = config.device || 'default';
+        const sampleRate = config.sampleRate || 44100;
+        const gain = config.gain || 50;
+
+        const deviceEl = document.getElementById('editMicDevice');
+        if (deviceEl) deviceEl.value = device;
+
+        const rateEl = document.getElementById('editSampleRate');
+        if (rateEl) rateEl.value = sampleRate;
+
+        const gainEl = document.getElementById('editGain');
+        if (gainEl) gainEl.value = gain;
+      }
+
+      function loadEditSpeakerValues(part, config) {
+        const device = config.device || 'default';
+        const volume = config.volume || 80;
+        const bass = config.bass || 0;
+        const treble = config.treble || 0;
+
+        const deviceEl = document.getElementById('editSpeakerDevice');
+        if (deviceEl) deviceEl.value = device;
+
+        const volumeEl = document.getElementById('editVolume');
+        if (volumeEl) volumeEl.value = volume;
+
+        const bassEl = document.getElementById('editBass');
+        if (bassEl) bassEl.value = bass;
+
+        const trebleEl = document.getElementById('editTreble');
+        if (trebleEl) trebleEl.value = treble;
+      }
     </script>
 
     <!-- Add Part Modal -->

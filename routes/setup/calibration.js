@@ -23,6 +23,50 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// Character-aware parts loading and saving functions
+async function loadCharacterParts(characterId) {
+    if (!characterId) {
+        return await loadParts(); // Fall back to global parts
+    }
+
+    const characterPartsPath = path.join(process.cwd(), 'data', `character-${characterId}`, 'parts.json');
+    try {
+        const characterPartsData = await fs.readFile(characterPartsPath, 'utf8');
+        const parts = JSON.parse(characterPartsData);
+        console.log(`✅ Loaded ${parts.length} character-specific parts for character ${characterId}`);
+
+        // Debug: Check pin values in loaded parts
+        const partsWithPins = parts.filter(p => p.pin !== null && p.pin !== undefined);
+        console.log(`🔍 Parts with pin values: ${partsWithPins.length}/${parts.length}`);
+        if (partsWithPins.length > 0) {
+            console.log(`📌 Sample parts with pins:`, partsWithPins.slice(0, 2).map(p => ({id: p.id, name: p.name, pin: p.pin})));
+        }
+
+        return parts;
+    } catch (e) {
+        console.warn(`No character-specific parts found for character ${characterId} at ${characterPartsPath}, using global parts`);
+        return await loadParts();
+    }
+}
+
+async function saveCharacterParts(characterId, parts) {
+    if (!characterId) {
+        console.log('⚠️ No characterId provided, falling back to global parts save');
+        return await saveParts(parts); // Fall back to global parts
+    }
+
+    const characterPartsPath = path.join(process.cwd(), 'data', `character-${characterId}`, 'parts.json');
+    console.log(`💾 Saving character-specific parts to: ${characterPartsPath}`);
+    console.log(`📝 Parts data preview:`, JSON.stringify(parts.slice(0, 2), null, 2));
+
+    // Ensure directory exists
+    const characterDir = path.dirname(characterPartsPath);
+    await fs.mkdir(characterDir, { recursive: true });
+
+    await fs.writeFile(characterPartsPath, JSON.stringify(parts, null, 2));
+    console.log(`✅ Saved ${parts.length} character-specific parts for character ${characterId} to ${characterPartsPath}`);
+}
+
 // Setup calibration main page
 router.get('/', async (req, res) => {
     try {
@@ -48,21 +92,7 @@ router.get('/', async (req, res) => {
 router.get('/api/parts', async (req, res) => {
     try {
         const { characterId } = req.query;
-        let parts = await loadParts();
-
-        // Filter by character if specified
-        if (characterId) {
-            const characterPartsPath = path.join(process.cwd(), 'data', 'characters', String(characterId), 'parts.json');
-            try {
-                const characterPartsData = await fs.readFile(characterPartsPath, 'utf8');
-                const characterParts = JSON.parse(characterPartsData);
-                // Filter to only parts that belong to this character
-                const characterPartIds = characterParts.map(p => String(p.id));
-                parts = parts.filter(p => characterPartIds.includes(String(p.id)));
-            } catch (e) {
-                console.warn(`No character-specific parts found for character ${characterId}, showing all parts`);
-            }
-        }
+        let parts = await loadCharacterParts(characterId);
 
         // GPIO conflict detection among enabled parts within the current set
         function pinsFor(p) {
@@ -112,6 +142,15 @@ router.get('/api/parts', async (req, res) => {
                 modelId: p.modelId || null,
                 config: p.config || {},
                 enabled: !!p.enabled,
+                // Pin fields
+                pin: p.pin || null,
+                directionPin: p.directionPin || null,
+                pwmPin: p.pwmPin || null,
+                // Additional fields
+                description: p.description || '',
+                created: p.created,
+                updated: p.updated,
+                markers: p.markers || [],
                 // Flags for UI
                 needsModel: !p.modelId,
                 needsCalibration: !!needsCalibration,
@@ -130,8 +169,55 @@ router.get('/api/parts', async (req, res) => {
 // Create new part
 router.post('/api/parts', express.json(), createPart);
 
-// Update existing part
-router.put('/api/parts/:id', express.json(), updatePart);
+// Update existing part - character-aware version
+router.put('/api/parts/:id', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        // Get current character from config
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (e) {
+            console.warn('Could not get current character for part update:', e);
+        }
+
+        const parts = await loadCharacterParts(characterId);
+        const partIndex = parts.findIndex(p => String(p.id) === String(id));
+
+        if (partIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        // Update part with new data
+        parts[partIndex] = {
+            ...parts[partIndex],
+            ...updates,
+            id, // Ensure ID doesn't change
+            updated: new Date().toISOString()
+        };
+
+        await saveCharacterParts(characterId, parts);
+
+        res.json({
+            success: true,
+            part: parts[partIndex],
+            message: `Part ${parts[partIndex].name} updated successfully`
+        });
+    } catch (error) {
+        console.error('Error updating part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update part',
+            message: error.message
+        });
+    }
+});
 
 // Delete part
 router.delete('/api/parts/:id', deletePart);
