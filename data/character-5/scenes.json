@@ -66,5 +66,27 @@
       }
     ],
     "created": "2025-09-28T02:21:54.194Z"
+  },
+  {
+    "id": 3,
+    "name": "Adv Scene 1",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-09-28T23:26:09.093Z"
+  },
+  {
+    "id": 4,
+    "name": "Adv Scene 2",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-09-28T23:26:09.119Z"
   }
 ]
