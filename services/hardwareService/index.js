@@ -78,8 +78,14 @@ const HARDWARE_CONTROLLERS = {
     motor: {
         async control({ directionPin, pwmPin, direction = 'forward', speed = 50, duration = 1000 }) {
             try {
+                // Normalize direction naming (map cw/ccw -> forward/backward)
+                const dirRaw = String(direction || '').toLowerCase();
+                const normDir = (dirRaw === 'cw' || dirRaw === 'fwd' || dirRaw === 'forward') ? 'forward'
+                    : (dirRaw === 'ccw' || dirRaw === 'rev' || dirRaw === 'reverse' || dirRaw === 'back' || dirRaw === 'backward') ? 'backward'
+                    : (dirRaw === 'stop' ? 'stop' : dirRaw);
+
                 // Pass both direction and PWM pins directly to motor_cli.py
-                const out = await runWrapper('motor_cli.py', [String(direction), String(speed), String(duration), String(directionPin), String(pwmPin)]);
+                const out = await runWrapper('motor_cli.py', [String(normDir), String(speed), String(duration), String(directionPin), String(pwmPin)]);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
                 return {
@@ -87,11 +93,11 @@ const HARDWARE_CONTROLLERS = {
                     partType: 'motor',
                     directionPin: directionPin,
                     pwmPin: pwmPin,
-                    direction: direction,
+                    direction: normDir,
                     speed: speed,
                     duration: duration,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) ${direction} at ${speed}%` : 'Motor command failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) ${normDir} at ${speed}%` : 'Motor command failed')
                 };
             } catch (error) {
                 return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, error: error.message };
@@ -1261,6 +1267,17 @@ export async function controlPart(partId, action, params = {}) {
             if (part.directionPin != null) normalized.directionPin = Number(part.directionPin);
             if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
             if (part.maxDuration != null) normalized.maxDuration = Number(part.maxDuration);
+        }
+        if (type === 'stepper') {
+            // Normalize pins for stepper: prefer explicit stepPin/dirPin; else derive from base pin
+            if (part.stepPin != null) normalized.stepPin = Number(part.stepPin);
+            if (part.dirPin != null) normalized.dirPin = Number(part.dirPin);
+            if (normalized.stepPin == null && normalized.dirPin == null && pinFromPart != null) {
+                const base = Number(pinFromPart);
+                normalized.stepPin = base;
+                normalized.dirPin = base + 1;
+            }
+            if (part.enablePin != null) normalized.enablePin = Number(part.enablePin);
         }
         if ((type === 'light' || type === 'led' || type === 'sensor' || type === 'motion_sensor') && pinFromPart == null) {
             // Ensure a pin is present if possible

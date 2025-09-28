@@ -50,6 +50,10 @@
                         <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Say This</h5>
                     </div>
                     <div class="card-body">
+                        <div class="row g-2 align-items-center mb-2">
+                            <div class="col-auto"><label for="liveSpeakerSelect" class="col-form-label">Speaker</label></div>
+                            <div class="col"><select id="liveSpeakerSelect" class="form-select form-select-sm"></select></div>
+                        </div>
                         <div class="input-group">
                             <input id="sayText" type="text" class="form-control" placeholder="Type something spooky...">
                             <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
@@ -66,6 +70,22 @@
                         <small class="text-muted" id="webcamHint"></small>
                     </div>
                     <div class="card-body text-center">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Microphone</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress" role="progressbar" aria-label="Audio Level" style="height: 10px;">
+                            <div id="liveAudioLevel" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="mt-2 d-flex gap-2">
+                            <button id="liveMicStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start</button>
+                            <button id="liveMicStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
+                            <small id="liveMicStatus" class="text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+
                         <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 380px; background: #000;">
                         <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
                     </div>
@@ -109,6 +129,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/mic-panel.js"></script>
     <script>
         (function () {
             var liveDashboard = {
@@ -116,8 +137,10 @@
                 scenes: [],
                 init: function () {
                     this.bindSayThis();
+                    this.loadSpeakers();
                     this.loadPoses();
                     this.loadWebcam();
+                    try { MicPanel.init({ levelBarId: 'liveAudioLevel', startBtnId: 'liveMicStart', stopBtnId: 'liveMicStop', statusId: 'liveMicStatus', enableStt: false }); } catch(_){}
                     this.loadScenes();
                     this.loadQueue();
                     this.loadTemplates();
@@ -175,8 +198,12 @@
                         var charEl = document.getElementById('charLabel');
                         var characterId = (charEl && charEl.getAttribute('data-char-id')) || null;
                         btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
-                        var url = characterId ? '/api/elevenlabs/generate-and-play' : '/live/api/say-this';
-                        var payload = characterId ? { text: text, characterId: characterId } : { text: text };
+                        var url = '/conversation/api/say';
+                        var speakerSelect = document.getElementById('liveSpeakerSelect');
+                        var speakerPartId = speakerSelect && speakerSelect.value ? speakerSelect.value : undefined;
+                        var payload = { text: text };
+                        if (characterId) payload.characterId = characterId;
+                        if (speakerPartId) payload.speakerPartId = speakerPartId;
                         fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                           .then(function(r){ return r.json(); })
                           .then(function(j){ status.innerHTML = j && j.success ? '<div class="text-success">Done</div>' : '<div class="text-danger">Failed: '+ ((j&&j.error)||'') +'</div>'; })
@@ -186,11 +213,30 @@
                     btn.addEventListener('click', send);
                     input.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); send(); }});
                 },
+                loadSpeakers: function(){
+                    var sel = document.getElementById('liveSpeakerSelect'); if (!sel) return;
+                    sel.innerHTML = '<option value="">Loading...</option>';
+                    fetch('/conversation/api/speakers')
+                      .then(function(r){ return r.json(); })
+                      .then(function(j){
+                          var items = (j && j.speakers) || [];
+                          if (!items.length){ sel.innerHTML = '<option value="">Default device</option>'; return; }
+                          sel.innerHTML = '';
+                          for (var i=0;i<items.length;i++){
+                              var sp = items[i];
+                              var opt = document.createElement('option');
+                              opt.value = sp.id; opt.textContent = sp.name || ('Speaker ' + sp.id);
+                              if (sp.isDefault) opt.selected = true;
+                              sel.appendChild(opt);
+                          }
+                      })
+                      .catch(function(){ sel.innerHTML = '<option value="">Default device</option>'; });
+                }
                 loadWebcam: function(){
                     var img = document.getElementById('webcamImg');
                     var status = document.getElementById('webcamStatus');
                     var hint = document.getElementById('webcamHint');
-                    fetch('/live/api/webcam-stream-url')
+                    fetch('/conversation/api/webcam-stream-url')
                       .then(function(r){ return r.json(); })
                       .then(function(j){
                         if (j && j.success && j.url) { img.src = j.url; status.innerHTML = 'Streaming'; hint.innerHTML = j.url; }
@@ -305,6 +351,49 @@
                     opt.value = t.id; opt.textContent = t.name + ' (' + (t.items?t.items.length:0) + ')';
                     sel.appendChild(opt);
                   }
+                },
+                // --- Live mic meter ---
+                bindMicLive: function(){
+                    var startBtn = document.getElementById('liveMicStart');
+                    var stopBtn = document.getElementById('liveMicStop');
+                    var levelBar = document.getElementById('liveAudioLevel');
+                    var status = document.getElementById('liveMicStatus');
+                    if (!startBtn || !stopBtn || !levelBar) return;
+                    var audioCtx=null, analyser=null, dataArray=null, mediaStream=null, rafId=null, lastSend=0;
+                    function stop(){
+                        status.textContent = 'Stopped';
+                        levelBar.style.width = '0%';
+                        if (rafId){ cancelAnimationFrame(rafId); rafId=null; }
+                        try { if (mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); } } catch(_){ }
+                        try { if (audioCtx){ audioCtx.close(); } } catch(_){ }
+                        audioCtx=analyser=dataArray=mediaStream=null; lastSend=0;
+                    }
+                    async function start(){
+                        if (rafId) return;
+                        status.textContent = 'Listening...';
+                        try {
+                            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+                            audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+                            const source = audioCtx.createMediaStreamSource(mediaStream);
+                            analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024; dataArray = new Uint8Array(analyser.fftSize);
+                            source.connect(analyser);
+                            const loop = ()=>{
+                                analyser.getByteTimeDomainData(dataArray);
+                                var sum=0; for (var i=0;i<dataArray.length;i++){ var v=(dataArray[i]-128)/128; sum+=v*v; }
+                                var rms = Math.min(1, Math.sqrt(sum/dataArray.length));
+                                levelBar.style.width = Math.round(rms*100)+'%';
+                                var now = performance.now();
+                                if (now - lastSend > 120){ lastSend = now; fetch('/conversation/api/jaw-drive', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ amplitude: rms }) }).catch(function(){}); }
+                                rafId = requestAnimationFrame(loop);
+                            };
+                            rafId = requestAnimationFrame(loop);
+                        } catch (e) {
+                            status.textContent = 'Mic error'; stop();
+                        }
+                    }
+                    startBtn.addEventListener('click', start);
+                    stopBtn.addEventListener('click', stop);
+                }
                 },
                 saveTemplate: function(){
                   var name = (document.getElementById('tplName').value||'').trim();

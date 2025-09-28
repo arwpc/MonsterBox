@@ -88,10 +88,10 @@ class ElevenLabsTTSService {
                 text: text,
                 model_id: options.model || 'eleven_monolingual_v1',
                 voice_settings: {
-                    stability: options.stability || 0.5,
-                    similarity_boost: options.similarity_boost || 0.5,
-                    style: options.style || 0.0,
-                    use_speaker_boost: options.use_speaker_boost || true
+                    stability: (options.stability !== undefined ? options.stability : 0.5),
+                    similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
+                    style: (options.style !== undefined ? options.style : 0.0),
+                    use_speaker_boost: (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true)
                 }
             };
 
@@ -131,10 +131,10 @@ class ElevenLabsTTSService {
                 text: text,
                 model_id: options.model || 'eleven_monolingual_v1',
                 voice_settings: {
-                    stability: options.stability || 0.5,
-                    similarity_boost: options.similarity_boost || 0.5,
-                    style: options.style || 0.0,
-                    use_speaker_boost: options.use_speaker_boost || true
+                    stability: (options.stability !== undefined ? options.stability : 0.5),
+                    similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
+                    style: (options.style !== undefined ? options.style : 0.0),
+                    use_speaker_boost: (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true)
                 }
             };
 

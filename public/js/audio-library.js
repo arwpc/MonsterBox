@@ -12,7 +12,10 @@ class AudioLibrary {
         this.searchTimeout = null;
         this.bulkSelectMode = false;
         this.selectedAudioIds = new Set();
-        
+        // Speaker selection state
+        this.speakers = [];
+        this.selectedSpeakerPartId = null;
+
         this.init();
     }
 
@@ -20,6 +23,8 @@ class AudioLibrary {
         this.setupEventListeners();
         this.setupDragAndDrop();
         await this.loadCurrentCharacter();
+        await this.loadSpeakers();
+        this.renderSpeakerSelector();
         await this.loadAudioLibrary();
         this.populateCategoryFilters();
     }
@@ -71,11 +76,11 @@ class AudioLibrary {
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            
-            const files = Array.from(e.dataTransfer.files).filter(file => 
+
+            const files = Array.from(e.dataTransfer.files).filter(file =>
                 file.type.startsWith('audio/')
             );
-            
+
             if (files.length > 0) {
                 this.handleFileSelection(files);
             }
@@ -107,6 +112,50 @@ class AudioLibrary {
             } else {
                 this.currentCharacter = { id: 1, name: 'Default' };
             }
+    async loadSpeakers() {
+        try {
+            // Fetch all speaker parts and filter by current character
+            const res = await fetch('/setup/parts/api/parts?type=speaker');
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.parts)) {
+                const cid = this.currentCharacter && this.currentCharacter.id;
+                // Prefer current character's speakers; fall back to all if none
+                const byCharacter = data.parts.filter(p => String(p.characterId) === String(cid));
+                this.speakers = byCharacter.length ? byCharacter : data.parts;
+                this.selectedSpeakerPartId = (this.speakers[0] && this.speakers[0].id) || null;
+            } else {
+                this.speakers = [];
+                this.selectedSpeakerPartId = null;
+            }
+        } catch (e) {
+            console.error('Error loading speakers:', e);
+            this.speakers = [];
+            this.selectedSpeakerPartId = null;
+        }
+    }
+
+    renderSpeakerSelector() {
+        const sel = document.getElementById('speakerSelect');
+        if (!sel) return;
+        sel.innerHTML = '';
+        if (!this.speakers || this.speakers.length === 0) {
+            const opt = new Option('Default System Output', '');
+            sel.appendChild(opt);
+            sel.disabled = true;
+            return;
+        }
+        this.speakers.forEach(sp => {
+            const label = `${sp.name || 'Speaker ' + sp.id}${sp.characterId ? ' (Char ' + sp.characterId + ')' : ''}`;
+            const opt = new Option(label, sp.id);
+            sel.appendChild(opt);
+        });
+        if (this.selectedSpeakerPartId) sel.value = String(this.selectedSpeakerPartId);
+        sel.disabled = false;
+        sel.addEventListener('change', (e) => {
+            this.selectedSpeakerPartId = e.target.value || null;
+        });
+    }
+
         } catch (error) {
             console.error('Error loading current character:', error);
             this.currentCharacter = { id: 1, name: 'Default' };
@@ -117,7 +166,7 @@ class AudioLibrary {
         try {
             const response = await fetch('/audio-library/api/library');
             const data = await response.json();
-            
+
             if (data.success) {
                 this.audioFiles = data.audio;
                 this.categories = data.categories;
@@ -134,7 +183,7 @@ class AudioLibrary {
         document.getElementById('totalFiles').textContent = data.totalFiles;
         document.getElementById('totalSize').textContent = this.formatFileSize(data.totalSize);
         document.getElementById('totalCategories').textContent = data.categories.length;
-        
+
         const favorites = this.audioFiles.filter(audio => audio.favorite).length;
         document.getElementById('totalFavorites').textContent = favorites;
     }
@@ -142,15 +191,15 @@ class AudioLibrary {
     populateCategoryFilters() {
         const categoryFilter = document.getElementById('categoryFilter');
         const uploadCategory = document.getElementById('uploadCategory');
-        
+
         // Clear existing options (except "All Categories")
         categoryFilter.innerHTML = '<option value="all">All Categories</option>';
         uploadCategory.innerHTML = '';
-        
+
         this.categories.forEach(category => {
             const option1 = new Option(this.capitalizeFirst(category), category);
             const option2 = new Option(this.capitalizeFirst(category), category);
-            
+
             categoryFilter.appendChild(option1);
             uploadCategory.appendChild(option2);
         });
@@ -159,18 +208,18 @@ class AudioLibrary {
     renderAudioGrid() {
         const grid = document.getElementById('audioGrid');
         const emptyState = document.getElementById('emptyState');
-        
+
         if (this.audioFiles.length === 0) {
             grid.style.display = 'none';
             emptyState.style.display = 'block';
             return;
         }
-        
+
         grid.style.display = 'flex';
         emptyState.style.display = 'none';
-        
+
         grid.innerHTML = this.audioFiles.map(audio => this.createAudioCard(audio)).join('');
-        
+
         // Add event listeners to cards
         this.audioFiles.forEach(audio => {
             const card = document.getElementById(`audio-${audio.id}`);
@@ -324,7 +373,7 @@ class AudioLibrary {
 
             const response = await fetch(`/audio-library/api/library?${params}`);
             const data = await response.json();
-            
+
             if (data.success) {
                 this.audioFiles = data.audio;
                 this.renderAudioGrid();
@@ -343,12 +392,12 @@ class AudioLibrary {
     displaySelectedFiles() {
         const filesList = document.getElementById('filesList');
         const selectedFilesList = document.getElementById('selectedFilesList');
-        
+
         if (this.selectedFiles.length === 0) {
             selectedFilesList.style.display = 'none';
             return;
         }
-        
+
         selectedFilesList.style.display = 'block';
         filesList.innerHTML = this.selectedFiles.map((file, index) => `
             <div class="d-flex justify-content-between align-items-center py-1">
@@ -467,7 +516,8 @@ class AudioLibrary {
                 },
                 body: JSON.stringify({
                     characterId: this.currentCharacter.id,
-                    volume: 80
+                    volume: 80,
+                    speakerPartId: this.selectedSpeakerPartId || undefined
                 })
             });
 

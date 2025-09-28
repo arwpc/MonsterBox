@@ -32,6 +32,7 @@ import scenesApiRoutes from './routes/scenes/api.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
+import conversationRoutes from './routes/conversation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -154,6 +155,7 @@ app.post('/setup/parts/api/parts/:id/test', partsController.testPart);
 
 app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
+app.use('/conversation', conversationRoutes);
 app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);

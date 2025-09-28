@@ -185,10 +185,10 @@
       "pcaAddress": "0x40",
       "pcaChannel": 0
     },
-    "created": "2025-09-27T15:37:53.446Z",
+    "created": "2025-09-27T23:57:44.480Z",
     "enabled": true,
-    "modelId": "1",
-    "updated": "2025-09-27T15:38:00.767Z",
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-09-27T23:57:51.583Z",
     "markers": [
       {
         "name": "Min",
@@ -211,7 +211,7 @@
       "pcaAddress": "0x40",
       "pcaChannel": 1
     },
-    "created": "2025-09-27T15:37:53.504Z",
+    "created": "2025-09-27T23:57:44.534Z",
     "enabled": true
   },
   {
@@ -226,7 +226,7 @@
       "pcaAddress": "0x40",
       "pcaChannel": 2
     },
-    "created": "2025-09-27T15:37:53.542Z",
+    "created": "2025-09-27T23:57:44.583Z",
     "enabled": true
   },
   {
@@ -236,7 +236,7 @@
     "pin": null,
     "description": "extending/retracting movements",
     "config": {},
-    "created": "2025-09-27T15:37:53.580Z",
+    "created": "2025-09-27T23:57:44.630Z",
     "enabled": true,
     "directionPin": 18,
     "pwmPin": 13,
@@ -250,7 +250,7 @@
     "pin": null,
     "description": "DC motors for movement",
     "config": {},
-    "created": "2025-09-27T15:37:53.625Z",
+    "created": "2025-09-27T23:57:44.674Z",
     "enabled": true,
     "directionPin": 22,
     "pwmPin": 12,
@@ -263,7 +263,7 @@
     "pin": 19,
     "description": "PWM-controlled with brightness",
     "config": {},
-    "created": "2025-09-27T15:37:53.670Z",
+    "created": "2025-09-27T23:57:44.711Z",
     "enabled": true
   },
   {
@@ -273,7 +273,7 @@
     "pin": 20,
     "description": "basic on/off lighting",
     "config": {},
-    "created": "2025-09-27T15:37:53.714Z",
+    "created": "2025-09-27T23:57:44.746Z",
     "enabled": true
   },
   {
@@ -283,7 +283,7 @@
     "pin": 21,
     "description": "digital/analog sensors",
     "config": {},
-    "created": "2025-09-27T15:37:53.753Z",
+    "created": "2025-09-27T23:57:44.791Z",
     "enabled": true
   },
   {
@@ -293,7 +293,7 @@
     "pin": 22,
     "description": "PIR motion detection",
     "config": {},
-    "created": "2025-09-27T15:37:53.789Z",
+    "created": "2025-09-27T23:57:44.831Z",
     "enabled": true
   },
   {
@@ -305,7 +305,7 @@
     "config": {
       "device": "/dev/video0"
     },
-    "created": "2025-09-27T15:37:53.828Z",
+    "created": "2025-09-27T23:57:44.866Z",
     "enabled": true
   },
   {
@@ -317,7 +317,7 @@
     "config": {
       "deviceId": "default"
     },
-    "created": "2025-09-27T15:37:53.865Z",
+    "created": "2025-09-27T23:57:44.905Z",
     "enabled": true
   },
   {
@@ -330,8 +330,9 @@
       "device": "default",
       "volume": 50
     },
-    "created": "2025-09-27T15:37:53.908Z",
-    "enabled": true
+    "created": "2025-09-27T23:57:44.944Z",
+    "enabled": true,
+    "modelId": "default_speaker"
   },
   {
     "id": "25",
@@ -340,7 +341,7 @@
     "pin": null,
     "description": "computer vision tracking",
     "config": {},
-    "created": "2025-09-27T15:37:53.950Z",
+    "created": "2025-09-27T23:57:44.982Z",
     "enabled": true
   }
 ]

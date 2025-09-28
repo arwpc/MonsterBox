@@ -61,7 +61,130 @@
     "updated": "2025-09-27T16:29:29.285Z"
   },
   {
-    "id": "20",
+    "id": "4",
+    "name": "Servo-Std-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-09-27T23:58:01.224Z",
+    "enabled": true,
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-09-27T23:58:08.586Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "name": "Servo-Cont-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-09-27T23:58:01.279Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Servo-Fb-Skulltalker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-09-27T23:58:01.317Z",
+    "enabled": true
+  },
+  {
+    "id": "7",
+    "name": "LinearAct-Skulltalker",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-27T23:58:01.363Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "8",
+    "name": "Motor-Skulltalker",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-27T23:58:01.417Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "9",
+    "name": "LED-Skulltalker",
+    "type": "led",
+    "pin": 20,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-27T23:58:01.459Z",
+    "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "Light-Skulltalker",
+    "type": "light",
+    "pin": 21,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-27T23:58:01.498Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Sensor-Skulltalker",
+    "type": "sensor",
+    "pin": 22,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-27T23:58:01.533Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "Motion-Skulltalker",
+    "type": "motion_sensor",
+    "pin": 23,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-27T23:58:01.578Z",
+    "enabled": true
+  },
+  {
+    "id": "13",
     "name": "Webcam-Skulltalker",
     "type": "webcam",
     "pin": null,
@@ -69,11 +192,11 @@
     "config": {
       "device": "/dev/video0"
     },
-    "created": "2025-09-27T15:38:10.622Z",
+    "created": "2025-09-27T23:58:01.633Z",
     "enabled": true
   },
   {
-    "id": "21",
+    "id": "14",
     "name": "Microphone-Skulltalker",
     "type": "microphone",
     "pin": null,
@@ -81,11 +204,11 @@
     "config": {
       "deviceId": "default"
     },
-    "created": "2025-09-27T15:38:10.666Z",
+    "created": "2025-09-27T23:58:01.681Z",
     "enabled": true
   },
   {
-    "id": "22",
+    "id": "15",
     "name": "Speaker-Skulltalker",
     "type": "speaker",
     "pin": null,
@@ -94,17 +217,18 @@
       "device": "default",
       "volume": 50
     },
-    "created": "2025-09-27T15:38:10.702Z",
-    "enabled": true
+    "created": "2025-09-27T23:58:01.723Z",
+    "enabled": true,
+    "modelId": "default_speaker"
   },
   {
-    "id": "23",
+    "id": "16",
     "name": "HeadTrack-Skulltalker",
     "type": "head_tracking",
     "pin": null,
     "description": "computer vision tracking",
     "config": {},
-    "created": "2025-09-27T15:38:10.739Z",
+    "created": "2025-09-27T23:58:01.769Z",
     "enabled": true
   }
 ]

@@ -3,6 +3,26 @@
  * Handles pose management interface
  */
 
+// Safe fallback for global mb to avoid ReferenceError during early loads
+(function(){
+  if (typeof window !== 'undefined' && !window.MonsterBox) {
+    window.MonsterBox = {
+      apiCall: async (url, opts = {}) => {
+        const method = opts.method || 'GET';
+        const headers = { 'Content-Type': 'application/json' };
+        const body = opts.body && method !== 'GET' ? JSON.stringify(opts.body) : undefined;
+        const res = await fetch(url, { method, headers, body });
+        try { return await res.json(); } catch (_) { return {}; }
+      },
+      showNotification: (msg, type) => { try { console[type === 'error' ? 'error' : 'log']('[MB]', msg); } catch (_) {} },
+      resetForm: (form) => { try { form && form.reset && form.reset(); } catch (_) {} }
+    };
+  }
+  if (typeof window !== 'undefined' && !window.mb && window.MonsterBox) {
+    window.mb = window.MonsterBox;
+  }
+})();
+
 class PosesSetup {
     constructor() {
         this.poses = [];
@@ -158,7 +178,7 @@ class PosesSetup {
                         </h6>
                         <div class="d-flex flex-wrap gap-1">
                             ${template.options.map(option => `
-                                <button class="btn btn-sm btn-outline-primary" 
+                                <button class="btn btn-sm btn-outline-primary"
                                         onclick="posesSetup.quickCreateFromTemplate('${key}', '${option.name}')">
                                     ${option.name}
                                 </button>

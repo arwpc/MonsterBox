@@ -228,9 +228,9 @@ router.delete('/api/audio/:id', async (req, res) => {
  */
 router.post('/api/audio/:id/play', async (req, res) => {
     try {
-        const { characterId, volume } = req.body;
+        const { characterId, volume, speakerPartId } = req.body;
         const audio = await audioLibraryService.getAudioById(req.params.id);
-        
+
         if (!audio) {
             return res.status(404).json({
                 success: false,
@@ -240,13 +240,14 @@ router.post('/api/audio/:id/play', async (req, res) => {
 
         // Get the audio file path
         const audioFilePath = audioLibraryService.getAudioFilePath(audio.filename);
-        
+
         // Read the audio file
         const audioBuffer = await fs.readFile(audioFilePath);
-        
-        // Play through character's speaker
+
+        // Play through selected speaker (if provided) or character's configured speaker
         const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
             characterId: characterId,
+            speakerPartId: speakerPartId,
             contentType: `audio/${audio.format}`,
             volume: volume || 80
         });
@@ -254,10 +255,10 @@ router.post('/api/audio/:id/play', async (req, res) => {
         if (playResult.success) {
             // Record the play event
             await audioLibraryService.recordPlay(req.params.id);
-            
+
             res.json({
                 success: true,
-                message: `Playing "${audio.title}" on character ${characterId} speaker`,
+                message: `Playing \"${audio.title}\" on ${speakerPartId ? `speaker part ${speakerPartId}` : `character ${characterId} speaker`}`,
                 device: playResult.deviceId,
                 audio: {
                     id: audio.id,

@@ -15,6 +15,7 @@ const __dirname = path.dirname(__filename);
 // Part types with their configurations
 const PART_TYPES = {
     motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: false },
+    stepper: { icon: '🧭', description: 'step/dir stepper motors', requiresPin: false },
     linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: false },
     light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
     led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
@@ -228,6 +229,20 @@ export const createPart = async (req, res) => {
                     });
                 }
             }
+        } else if (type === 'stepper') {
+            // Accept either explicit step/dir pins OR a single base pin (step=pin, dir=pin+1)
+            const { stepPin: sPinRaw, dirPin: dPinRaw } = req.body || {};
+            if ((!sPinRaw || !dPinRaw)) {
+                if (typeof pin === 'number' || (typeof pin === 'string' && pin !== '')) {
+                    req.body.stepPin = typeof pin === 'number' ? pin : parseInt(pin, 10);
+                    req.body.dirPin = (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+                } else {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Provide either (stepPin and dirPin) or a base pin for stepper parts'
+                    });
+                }
+            }
         } else if (PART_TYPES[type] && PART_TYPES[type].requiresPin && !pin) {
             // Other parts need a single pin, except servo using PCA9685
             const isServoUsingPCA = type === 'servo' && config && (config.controllerType === 'pca9685');
@@ -260,6 +275,16 @@ export const createPart = async (req, res) => {
             newPart.pwmPin = parseInt(pwmP, 10);
             newPart.maxExtension = parseInt(maxExtension, 10) || 15000;
             newPart.maxRetraction = parseInt(maxRetraction, 10) || 15000;
+        }
+
+        // Add stepper specific fields
+        if (type === 'stepper') {
+            const sPin = (req.body && req.body.stepPin != null) ? req.body.stepPin : undefined;
+            const dPin = (req.body && req.body.dirPin != null) ? req.body.dirPin : undefined;
+            const base = newPart.pin != null ? parseInt(newPart.pin, 10) : undefined;
+            newPart.stepPin = sPin != null ? parseInt(sPin, 10) : (base != null ? base : undefined);
+            newPart.dirPin = dPin != null ? parseInt(dPin, 10) : (base != null ? base + 1 : undefined);
+            if (req.body && req.body.enablePin != null) newPart.enablePin = parseInt(req.body.enablePin, 10);
         }
 
         // Add motor specific fields
@@ -398,6 +423,7 @@ export const testPart = async (req, res) => {
         const availableActions = hardwareService.getAvailableActions(part.type) || [];
         const DEFAULT_TEST_ACTIONS = {
             motor: 'control',
+            stepper: 'moveSteps',
             linear_actuator: 'extend',
             light: 'toggle',
             led: 'setBrightness',
@@ -414,6 +440,8 @@ export const testPart = async (req, res) => {
             switch (partType) {
                 case 'motor':
                     return { direction: 'forward', speed: 50, duration: 1000 };
+                case 'stepper':
+                    return { steps: 200, speed: 200 };
                 case 'linear_actuator':
                     return { speed: 50, distance: 50 };
                 case 'led':

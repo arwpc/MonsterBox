@@ -41,6 +41,24 @@ async function getSpeakerDeviceForCharacter(characterId) {
   return 'default';
 }
 
+async function getSpeakerDeviceForPartId(speakerPartId) {
+  try {
+    const partsFile = await resolvePartsPath();
+    const content = await fs.readFile(partsFile, 'utf8');
+    const parts = JSON.parse(content);
+    if (Array.isArray(parts)) {
+      const speaker = parts.find(p => String(p.id) === String(speakerPartId) && String(p.type).toLowerCase() === 'speaker');
+      if (speaker) {
+        const cfg = speaker.config || {};
+        return cfg.outputDevice || cfg.audioDeviceId || speaker.outputDevice || 'default';
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ Could not resolve speaker for partId:', e.message);
+  }
+  return 'default';
+}
+
 function pickExtensionFromContentType(ct) {
   if (!ct) return '.mp3';
   const c = ct.toLowerCase();
@@ -69,7 +87,16 @@ class ServerPlaybackService {
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : 80;
 
-      const deviceId = characterId ? await getSpeakerDeviceForCharacter(characterId) : 'default';
+      // Determine output device priority: explicit deviceId > speakerPartId > character speaker > default
+      let deviceId = 'default';
+      if (opts.deviceId) {
+        deviceId = opts.deviceId;
+      } else if (opts.speakerPartId) {
+        deviceId = await getSpeakerDeviceForPartId(opts.speakerPartId);
+      } else if (characterId) {
+        deviceId = await getSpeakerDeviceForCharacter(characterId);
+      }
+
       const tmpFile = await writeTempAudio(buffer, contentType);
 
       // Use speaker_cli.py wrapper which handles PipeWire routing and players
@@ -91,9 +118,17 @@ class ServerPlaybackService {
     }
   }
 
-  async stopForCharacter(characterId) {
+  async stopForCharacter(characterId, opts = {}) {
     try {
-      const deviceId = characterId ? await getSpeakerDeviceForCharacter(characterId) : 'default';
+      // Determine device for stopping: explicit deviceId > speakerPartId > character speaker > default
+      let deviceId = 'default';
+      if (opts.deviceId) {
+        deviceId = opts.deviceId;
+      } else if (opts.speakerPartId) {
+        deviceId = await getSpeakerDeviceForPartId(opts.speakerPartId);
+      } else if (characterId) {
+        deviceId = await getSpeakerDeviceForCharacter(characterId);
+      }
       try {
         await runWrapper('speaker_cli.py', ['stop', '--device', deviceId], { enableLogging: false, timeoutMs: 5000 });
       } catch (_) { /* best-effort */ }
