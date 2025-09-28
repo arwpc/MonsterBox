@@ -256,17 +256,15 @@ def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_addr
         # For continuous motion, maintain PWM during duration
         if direction != 'stop' and duration_s > 0:
             time.sleep(duration_s)
-            # After duration, return to neutral to stop rotation
-            neutral_off = int((neutral / 20000.0) * 4096)
-            pca9685_set_pwm(bus, i2c_address, channel, 0, neutral_off)
+            # After duration, stop rotation WITHOUT sending a neutral pulse to avoid recentring
+            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)  # PWM off
             log_message({
                 "status": "info",
-                "message": f"Returned servo on channel {channel} to neutral (stopped)"
+                "message": f"Stopped rotation on channel {channel} after duration (PWM off)"
             })
         elif direction == 'stop':
-            # For explicit stop, optionally turn off PWM completely after brief neutral
-            time.sleep(0.1)  # Brief neutral pulse
-            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)  # Turn off PWM
+            # For explicit stop, turn off PWM completely (no neutral pulse to avoid drift)
+            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)
             log_message({
                 "status": "info",
                 "message": f"Turned off PWM for servo on channel {channel}"

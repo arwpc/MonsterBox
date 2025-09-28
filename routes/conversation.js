@@ -14,6 +14,7 @@ import serverPlaybackService from '../services/serverPlaybackService.js';
 import { getTTSConfig } from '../services/aiConfigStore.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import jawAnimationService from '../services/jawAnimationService.js';
+import * as motionTrackingController from '../controllers/motionTrackingController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,6 +106,46 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
     settings[String(characterId)] = cur;
     await writeJawSettings(settings);
     res.json({ success: true, enabled: cur.enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+// Head Tracking status for current character's webcam
+router.get('/api/head-tracking-status', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    const parts = await loadParts();
+    const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+    const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+    if (!cam) return res.json({ success: true, headTracking: { enabled: false }, warning: 'No webcam found' });
+
+    const fRes = { json: (b) => res.json(b), status: (c) => ({ json: (b) => res.status(c).json(b) }) };
+    await motionTrackingController.getHeadTrackingStatus({ query: { webcamId: cam.id } }, fRes);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// Enable/Disable head tracking using best-guess parts for current character
+router.post('/api/head-tracking', express.json(), async (req, res) => {
+  try {
+    const enabled = !!(req.body && req.body.enabled);
+    const characterId = getCurrentCharacterId(req);
+    const parts = await loadParts();
+    const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+    const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+    if (!cam) return res.status(400).json({ success: false, error: 'No webcam found for head tracking' });
+
+    const fRes = { json: (b) => res.json(b), status: (c) => ({ json: (b) => res.status(c).json(b) }) };
+
+    if (enabled) {
+      const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+      const byChar = characterId ? servos.filter(s => Number(s.characterId) === Number(characterId)) : servos;
+      const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
+      if (!pan) return res.status(400).json({ success: false, error: 'No servo found for pan axis' });
+      await motionTrackingController.enableHeadTracking({ body: { webcamId: cam.id, panServoId: pan.id, params: { rangeDeg: 60, smoothing: 0.3, deadzone: 6 } } }, fRes);
+    } else {
+      await motionTrackingController.disableHeadTracking({ body: { webcamId: cam.id } }, fRes);
+    }
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }

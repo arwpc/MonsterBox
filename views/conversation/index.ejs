@@ -54,6 +54,21 @@
               <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
             </div>
             <div id="sayStatus" class="mt-2 small"></div>
+            <hr>
+            <div class="row mt-2">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="jawToggle">
+                  <label class="form-check-label" for="jawToggle">Jaw Animation</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="headTrackToggle">
+                  <label class="form-check-label" for="headTrackToggle">Enable Head Tracking</label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -70,18 +85,7 @@
           </div>
         </div>
 
-        <div class="card mt-3">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="card-title mb-0"><i class="bi bi-lightning"></i> Jaw Animation</h5>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="jawToggle">
-              <label class="form-check-label" for="jawToggle">Enable</label>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="small text-muted">Rudimentary amplitude-driven jaw movement. Configure servo mapping in Super Powers later.</div>
-          </div>
-        </div>
+
       </div>
     </div>
   </main>
@@ -99,6 +103,7 @@
         sayStatus: null,
         speakerSelect: null,
         jawToggle: null,
+        headTrackToggle: null,
       };
       let speakers = [];
       let selectedSpeakerPartId = null;
@@ -113,6 +118,7 @@
         ui.sayStatus = $('sayStatus');
         ui.speakerSelect = $('convSpeakerSelect');
         ui.jawToggle = $('jawToggle');
+        ui.headTrackToggle = $('headTrackToggle');
         setCharName();
         bindEvents();
         await loadSpeakers();
@@ -121,6 +127,7 @@
 
         await loadWebcam();
         await loadJawSettings();
+        await loadHeadTrackStatus();
       }
 
       function setCharName(){
@@ -132,7 +139,8 @@
       function bindEvents(){
         ui.sayBtn.addEventListener('click', sendSay);
         ui.sayInput.addEventListener('keydown', function(ev){ if (ev.key==='Enter'){ ev.preventDefault(); sendSay(); }});
-        ui.jawToggle.addEventListener('change', saveJawSettings);
+        ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
+        ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
       }
 
       // Real microphone meter + amplitude-driven jaw posts
@@ -198,6 +206,18 @@
           if (j && j.success && j.url){ img.src = j.url; status.textContent = 'Streaming'; hint.textContent = j.url; }
           else { status.textContent = 'No webcam configured for this character'; }
         } catch { status.textContent = 'Failed to locate webcam'; }
+        }
+      async function loadHeadTrackStatus(){
+        try {
+          const r = await fetch('/conversation/api/head-tracking-status');
+          const j = await r.json();
+          if (j && j.success && ui.headTrackToggle){ ui.headTrackToggle.checked = !!(j.headTracking && j.headTracking.enabled); }
+        } catch {}
+      }
+      async function saveHeadTrackSettings(){
+        try {
+          await fetch('/conversation/api/head-tracking', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ enabled: !!(ui.headTrackToggle && ui.headTrackToggle.checked) }) });
+        } catch {}
       }
 
       async function loadJawSettings(){

@@ -437,19 +437,19 @@ CharacterAssignmentManager.prototype.runConversationTest = function () {
     var resultsDiv = document.getElementById('conversationTestResults');
     var characterId = document.getElementById('currentCharacter').value;
 
-    fetch('/api/elevenlabs/conversation/test', {
+    fetch('/api/elevenlabs/generate-and-play', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: characterId, text: testMessage })
     })
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data && data.success) {
-                document.getElementById('agentResponseText').textContent = data.replyText || '(no text)';
-                document.getElementById('audioStatus').textContent = 'Generated';
+                document.getElementById('agentResponseText').textContent = testMessage;
+                document.getElementById('audioStatus').textContent = 'Played';
                 document.getElementById('audioStatus').className = 'badge bg-success';
                 resultsDiv.style.display = 'block';
-                self.showAlert('Conversation test succeeded', 'success');
+                self.showAlert('Conversation test played on character speaker', 'success');
             } else {
-                self.showAlert('Conversation test failed', 'danger');
+                self.showAlert('Conversation test failed: ' + (data && data.error ? data.error : 'Unknown error'), 'danger');
             }
         })
         .catch(function (e) { console.error('Conversation test error', e); self.showAlert('Conversation test failed', 'danger'); });
@@ -571,9 +571,33 @@ CharacterAssignmentManager.prototype.clearAllAssignments = function () {
 CharacterAssignmentManager.prototype.saveAllAssignments = function () {
     var self = this;
 
-    // TODO: Save all assignments to backend
-    console.log('Saving all assignments:', this.assignments);
-    this.showAlert('All assignments saved successfully!', 'success');
+    // Collect current selections from the UI to ensure we save what the user sees
+    var requests = [];
+    this.characters.forEach(function (character) {
+        var selectSelector = 'select[onchange="characterAssignmentManager.updateAssignment(\'' + character.id + '\', this.value)"]';
+        var selectEl = document.querySelector(selectSelector);
+        var agentId = selectEl ? (selectEl.value || '') : '';
+        requests.push(fetch('/setup/characters/api/character-assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ characterId: character.id, agentId: agentId || null })
+        }).then(function (r) { return r.json(); }));
+    });
+
+    Promise.all(requests)
+        .then(function (results) {
+            var allOk = results.every(function (r) { return r && r.success; });
+            if (allOk) {
+                self.showAlert('All assignments saved successfully!', 'success');
+                self.loadAssignments();
+            } else {
+                self.showAlert('Some assignments failed to save', 'warning');
+            }
+        })
+        .catch(function (e) {
+            console.error('Save all assignments error:', e);
+            self.showAlert('Failed to save assignments', 'danger');
+        });
 };
 
 CharacterAssignmentManager.prototype.showAlert = function (message, type) {
