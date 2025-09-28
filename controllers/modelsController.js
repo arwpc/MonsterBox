@@ -10,6 +10,7 @@ const TYPE_TO_FILE = {
   servo: 'servo_models.json',
   linear_actuator: 'linear_actuator_models.json',
   motor: 'motor_models.json',
+  stepper: 'motor_models.json',
   led: 'led_models.json',
   light: 'light_models.json',
   sensor: 'sensor_models.json',

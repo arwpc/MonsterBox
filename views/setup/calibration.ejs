@@ -509,7 +509,8 @@
 
         async function ensureModelsLoaded(type) {
           if (modelsCache[type]) return;
-          const res = await fetch(`/setup/models/api/${encodeURIComponent(type)}`);
+          const apiType = type === 'stepper' ? 'motor' : type;
+          const res = await fetch(`/setup/models/api/${encodeURIComponent(apiType)}`);
           const j = await res.json();
           modelsCache[type] = j.models || [];
         }
@@ -707,6 +708,36 @@
               }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
                 .catch(function () { if (st) st.textContent = 'Failed'; });
             });
+          } else if (part.type === 'stepper') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<select id="stDir" class="form-select form-select-lg" style="width:140px"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
+              '<input type="number" id="stSteps" class="form-control form-control-lg" value="200" style="width:120px"> steps' +
+              '<input type="number" id="stDelay" class="form-control form-control-lg" value="800" style="width:160px"> us/step' +
+              '<button id="stRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Move</button>' +
+              '<button id="stStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            const runBtn = el.querySelector('#stRun');
+            if (runBtn) runBtn.addEventListener('click', function () {
+              var dir = document.getElementById('stDir').value;
+              var steps = parseInt(document.getElementById('stSteps').value || '200', 10);
+              var stepDelayUs = parseInt(document.getElementById('stDelay').value || '800', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Moving…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+            const stopBtn = el.querySelector('#stStop');
+            if (stopBtn) stopBtn.addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'stop' })
+              }).then(function () { if (st) st.textContent = 'Stopped'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+
           } else if (part.type === 'light') {
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
               '<button id="lightToggle" class="btn btn-primary btn-lg"><i class="bi bi-lightbulb"></i> Toggle</button>' +
@@ -1400,6 +1431,7 @@
         // Add Part Modal functionality
         const partTypes = {
           motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: false },
+          stepper: { icon: '🧭', description: 'Stepper Motor (STEP/DIR)', requiresPin: false },
           linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: false },
           light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
           led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
@@ -1443,7 +1475,7 @@
           const partType = partTypes[type];
 
           // Show model selection for supported types
-          if (['servo', 'webcam'].includes(type)) {
+          if (['servo', 'stepper', 'webcam'].includes(type)) {
             modelGroup.style.display = 'block';
             loadModelsForType(type);
           } else {
@@ -1458,7 +1490,8 @@
           const modelSelect = document.getElementById('addModelSelect');
           if (!modelSelect) return;
 
-          fetch(`/setup/models/api/${type}`)
+          const apiType = (type === 'stepper') ? 'motor' : type;
+          fetch(`/setup/models/api/${apiType}`)
             .then(r => r.json())
             .then(data => {
               modelSelect.innerHTML = '<option value="">Select Model (optional)</option>';
@@ -1500,6 +1533,9 @@
             case 'motor':
             case 'linear_actuator':
               html += generateMotorConfig(type);
+              break;
+            case 'stepper':
+              html += generateStepperConfig();
               break;
             case 'webcam':
               html += generateWebcamConfig();
@@ -1739,6 +1775,47 @@
             channelBtn.classList.add('btn-primary');
           }
 
+
+        function generateStepperConfig() {
+          return `
+            <div class="card mb-3">
+              <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label for="addStepPin" class="form-label">Step Pin</label>
+                    <input type="number" class="form-control" id="addStepPin" name="stepPin" min="1" max="40" value="17" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addDirPin" class="form-label">Dir Pin</label>
+                    <input type="number" class="form-control" id="addDirPin" name="dirPin" min="1" max="40" value="27" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addEnablePin" class="form-label">Enable Pin (optional)</label>
+                    <input type="number" class="form-control" id="addEnablePin" name="enablePin" min="1" max="40" placeholder="">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addMicrostepping" class="form-label">Microstepping</label>
+                    <select class="form-select" id="addMicrostepping">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="4">4</option>
+                      <option value="8">8</option>
+                      <option value="16" selected>16</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-3 mt-1">
+                  <div class="col-md-3">
+                    <label for="addStepsPerRev" class="form-label">Steps/Rev</label>
+                    <input type="number" class="form-control" id="addStepsPerRev" min="1" max="2000" value="200">
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
           // Set hidden input
           const hiddenInput = document.getElementById('addPca9685Channel');
           if (hiddenInput) {
@@ -1878,6 +1955,19 @@
               } else {
                 payload.maxDuration = 10000; // 10 second safety limit for motors
               }
+              break;
+
+            case 'stepper':
+              const stepPin = formData.get('stepPin');
+              const dirPin = formData.get('dirPin');
+              const enablePin = formData.get('enablePin');
+              if (stepPin) payload.stepPin = parseInt(stepPin, 10);
+              if (dirPin) payload.dirPin = parseInt(dirPin, 10);
+              if (enablePin) payload.enablePin = parseInt(enablePin, 10);
+              const micro = document.getElementById('addMicrostepping')?.value;
+              if (micro) { config.microstepping = parseInt(micro, 10); }
+              const spr = document.getElementById('addStepsPerRev')?.value;
+              if (spr) { config.stepsPerRevolution = parseInt(spr, 10); }
               break;
 
             case 'webcam':
@@ -2228,6 +2318,9 @@
           let pin = null;
           let directionPin = null;
           let pwmPin = null;
+          let stepPin = null;
+          let dirPin = null;
+          let enablePin = null;
 
           if (['servo', 'led', 'light', 'sensor', 'motion_sensor'].includes(type)) {
             // Try both editPin (from renderPinFields) and type-specific pin fields
@@ -2245,6 +2338,29 @@
             if (pwmEl && pwmEl.value) pwmPin = parseInt(pwmEl.value);
           }
 
+          if (type === 'stepper') {
+            const sEl = document.getElementById('editStepPin');
+            const dEl = document.getElementById('editDirPin');
+            const eEl = document.getElementById('editEnablePin');
+            if (sEl && sEl.value) stepPin = parseInt(sEl.value);
+            if (dEl && dEl.value) dirPin = parseInt(dEl.value);
+            if (eEl && eEl.value) enablePin = parseInt(eEl.value);
+
+            // Allow Advanced JSON to override stepper fields
+            try {
+              const txt = document.getElementById('editConfig')?.value || '';
+              if (txt.trim().length) {
+                const adv = JSON.parse(txt);
+                if (adv.stepPin != null) stepPin = parseInt(adv.stepPin);
+                if (adv.dirPin != null) dirPin = parseInt(adv.dirPin);
+                if (adv.enablePin != null) enablePin = parseInt(adv.enablePin);
+                if (adv.microstepping != null) config.microstepping = parseInt(adv.microstepping);
+                if (adv.stepsPerRevolution != null) config.stepsPerRevolution = parseInt(adv.stepsPerRevolution);
+                if (adv.modelId && !config.modelId) config.modelId = adv.modelId;
+              }
+            } catch (e) { /* ignore parse errors; keep form values */ }
+          }
+
           // Build the update payload
           const updateData = {
             name,
@@ -2258,6 +2374,9 @@
           if (pin !== null) updateData.pin = pin;
           if (directionPin !== null) updateData.directionPin = directionPin;
           if (pwmPin !== null) updateData.pwmPin = pwmPin;
+          if (stepPin !== null) updateData.stepPin = stepPin;
+          if (dirPin !== null) updateData.dirPin = dirPin;
+          if (enablePin !== null) updateData.enablePin = enablePin;
 
           console.log('Saving part changes for', selected.name, '(', selected.type, '):', updateData);
           console.log('Configuration extracted:', config);
@@ -2335,6 +2454,13 @@
             if (maxRetraction) config.maxRetraction = parseInt(maxRetraction);
             break;
 
+          case 'stepper':
+            const micro = document.getElementById('editMicrostepping')?.value;
+            const spr = document.getElementById('editStepsPerRev')?.value;
+            if (micro) config.microstepping = parseInt(micro);
+            if (spr) config.stepsPerRevolution = parseInt(spr);
+            break;
+
           case 'light':
           case 'led':
             const brightness = document.getElementById('editBrightness')?.value;
@@ -2393,7 +2519,20 @@
         var t = document.getElementById('editType'); if (t) t.value = part.type || '';
         var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
         var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
-        var c = document.getElementById('editConfig'); if (c) c.value = JSON.stringify(part.config || {}, null, 2);
+        var c = document.getElementById('editConfig');
+        if (c) {
+          let adv = { ...(part.config || {}) };
+          if ((part.type || '') === 'stepper') {
+            if (part.stepPin != null) adv.stepPin = Number(part.stepPin);
+            if (part.dirPin != null) adv.dirPin = Number(part.dirPin);
+            if (part.enablePin != null) adv.enablePin = Number(part.enablePin);
+            // Ensure useful defaults visible
+            if (adv.microstepping == null) adv.microstepping = 16;
+            if (adv.stepsPerRevolution == null) adv.stepsPerRevolution = 200;
+            if (part.modelId) adv.modelId = part.modelId;
+          }
+          c.value = JSON.stringify(adv, null, 2);
+        }
 
         // Render type-specific configuration
         renderEditConfigArea(part);
@@ -2441,6 +2580,9 @@
             break;
           case 'linear_actuator':
             html = generateEditLinearActuatorConfig(part, config);
+            break;
+          case 'stepper':
+            html = generateEditStepperConfig(part, config);
             break;
           case 'light':
           case 'led':
@@ -2573,6 +2715,7 @@
                   <div class="form-text">GPIO pin for speed control</div>
                 </div>
                 <div class="col-md-4">
+
                   <label class="form-label">Max Duration (ms)</label>
                   <input type="number" class="form-control" id="editMaxDuration" min="100" max="10000" value="5000">
                   <div class="form-text">Safety timeout</div>
@@ -2654,6 +2797,7 @@
                   <label class="form-label">Sensitivity</label>
                   <input type="number" class="form-control" id="editSensitivity" min="1" max="10" value="5">
                   <div class="form-text">Detection sensitivity (1-10)</div>
+
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Window (ms)</label>
@@ -2707,6 +2851,7 @@
             <div class="card-header"><i class="bi bi-mic"></i> Microphone Configuration</div>
             <div class="card-body">
               <div class="row g-3">
+
                 <div class="col-md-4">
                   <label class="form-label">Device Name</label>
                   <input type="text" class="form-control" id="editMicDevice" placeholder="default">
@@ -2772,6 +2917,9 @@
           case 'linear_actuator':
             loadEditLinearActuatorValues(part, config);
             break;
+          case 'stepper':
+            loadEditStepperValues(part, config);
+            break;
           case 'light':
           case 'led':
             loadEditLightValues(part, config);
@@ -2795,6 +2943,9 @@
       function loadEditServoValues(part, config) {
         const pin = part.pin || config.pin;
         const servoType = config.servoType || 'standard';
+
+
+
         const controllerType = config.controllerType || 'gpio';
         const invertDirection = config.invertDirection || false;
         const modelId = part.modelId || config.modelId;
@@ -2868,6 +3019,8 @@
             });
           }
         });
+
+
       }
 
       function loadEditMotorValues(part, config) {
@@ -2883,6 +3036,20 @@
 
         const maxDurEl = document.getElementById('editMaxDuration');
         if (maxDurEl) maxDurEl.value = maxDuration;
+      }
+
+      function loadEditStepperValues(part, config) {
+        const s = part.stepPin ?? config.stepPin;
+        const d = part.dirPin ?? config.dirPin;
+        const e = part.enablePin ?? config.enablePin;
+        const micro = (config && config.microstepping != null) ? config.microstepping : 16;
+        const spr = (config && config.stepsPerRevolution != null) ? config.stepsPerRevolution : 200;
+
+        const sEl = document.getElementById('editStepPin'); if (sEl && s != null) sEl.value = s;
+        const dEl = document.getElementById('editDirPin'); if (dEl && d != null) dEl.value = d;
+        const eEl = document.getElementById('editEnablePin'); if (eEl && e != null) eEl.value = e;
+        const mEl = document.getElementById('editMicrostepping'); if (mEl) mEl.value = String(micro);
+        const sprEl = document.getElementById('editStepsPerRev'); if (sprEl) sprEl.value = spr;
       }
 
       function loadEditLinearActuatorValues(part, config) {
@@ -2988,6 +3155,47 @@
         const trebleEl = document.getElementById('editTreble');
         if (trebleEl) trebleEl.value = treble;
       }
+
+      function generateEditStepperConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Step Pin</label>
+                  <input type="number" class="form-control" id="editStepPin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Dir Pin</label>
+                  <input type="number" class="form-control" id="editDirPin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Enable Pin (optional)</label>
+                  <input type="number" class="form-control" id="editEnablePin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Microstepping</label>
+                  <select class="form-select" id="editMicrostepping">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                  <label class="form-label">Steps/Rev</label>
+                  <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
     </script>
 
     <!-- Add Part Modal -->

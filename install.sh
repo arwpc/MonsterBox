@@ -59,9 +59,9 @@ apt-get install -y \
     gnupg \
     lsb-release
 
-# 3. Install Node.js 18+ (official NodeSource repository)
-print_status "Installing Node.js 18..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+# 3. Install Node.js 20 LTS (official NodeSource repository)
+print_status "Installing Node.js 20 LTS..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 
 # Verify Node.js installation
@@ -96,12 +96,12 @@ apt-get install -y \
 
 # 6. Install Audio System Dependencies
 print_status "Installing audio system dependencies..."
+# Remove PulseAudio to avoid conflicts with PipeWire
+apt-get purge -y 'pulseaudio*' || true
 apt-get install -y \
     alsa-utils \
     libasound2 \
     libasound2-dev \
-    pulseaudio \
-    pulseaudio-utils \
     pipewire \
     pipewire-alsa \
     pipewire-pulse \
@@ -110,7 +110,8 @@ apt-get install -y \
     mpg123 \
     libmp3lame0 \
     libmp3lame-dev \
-    python3-pyaudio
+    python3-pyaudio \
+    python3-websockets
 
 # 7. Install Video/Camera Dependencies
 print_status "Installing video and camera dependencies..."
@@ -132,9 +133,6 @@ apt-get install -y \
     libhdf5-dev \
     libhdf5-serial-dev \
     libgtk-3-0 \
-    libqtgui4 \
-    libqtwebkit4 \
-    libqt4-test \
     python3-pyqt5 \
     libxvidcore-dev \
     libx264-dev
@@ -222,15 +220,16 @@ make install
 # Create systemd service for MJPG-Streamer
 cat > /etc/systemd/system/mjpg-streamer.service << 'EOF'
 [Unit]
-Description=MJPG Streamer
+Description=MJPG Streamer (UVC to HTTP)
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
-ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 15 -q 85" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
+WorkingDirectory=/tmp
+ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 24 -q 80" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
 Restart=always
-RestartSec=5
+RestartSec=2
 
 [Install]
 WantedBy=multi-user.target
@@ -240,6 +239,9 @@ systemctl daemon-reload
 systemctl enable mjpg-streamer
 
 print_success "MJPG-Streamer installed and configured"
+systemctl restart mjpg-streamer
+sleep 1
+
 
 # 15. Configure Audio System
 print_status "Configuring audio system..."
@@ -289,7 +291,50 @@ else
 fi
 
 
+# 17. Create and select a new Character
+print_status "Creating and selecting a new Character..."
+read -rp "Enter new Character name: " NEW_CHAR_NAME
+if [ -z "$NEW_CHAR_NAME" ]; then
+    print_warning "No character name entered; skipping character creation."
+else
+    # Use Node.js to safely update JSON files
+    REPO_DIR="$REPO_DIR" NEW_CHAR_NAME="$NEW_CHAR_NAME" node - <<'NODE'
+const fs = require('fs');
+const path = require('path');
+
+const repoDir = process.env.REPO_DIR;
+const dataDir = path.join(repoDir, 'data');
+const charFile = path.join(dataDir, 'characters.json');
+const cfgFile = path.join(repoDir, 'config', 'app-config.json');
+const name = process.env.NEW_CHAR_NAME;
+
+function readJson(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
+}
+
+fs.mkdirSync(dataDir, { recursive: true });
+const arr = readJson(charFile, []);
+const nextId = arr.length ? Math.max(...arr.map(c => Number(c.id)||0)) + 1 : 1;
+arr.push({ id: nextId, name });
+fs.writeFileSync(charFile, JSON.stringify(arr, null, 2));
+
+const charDir = path.join(dataDir, `character-${nextId}`);
+fs.mkdirSync(charDir, { recursive: true });
+
+const cfg = readJson(cfgFile, {});
+cfg.selectedCharacter = nextId;
+cfg.dataPath = `data/character-${nextId}`;
+fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2));
+
+console.log(`Created character '${name}' with id=${nextId}`);
+NODE
+    print_success "Character '$NEW_CHAR_NAME' created and selected."
+fi
+
+
+
+
 print_success "MonsterBox 4.0 system installation complete!"
 print_warning "Please reboot your Raspberry Pi to ensure all changes take effect"
-print_status "After reboot, navigate to your MonsterBox directory and run: npm install"
+print_status "After reboot, navigate to your MonsterBox directory and run: npm ci"
 print_status "Then start MonsterBox with: npm start"

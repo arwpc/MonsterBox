@@ -20,9 +20,8 @@ function AISettingsManager() {
 AISettingsManager.prototype.init = function () {
     var self = this;
 
-    // Load configuration status on page load
+    // Load configuration status on page load; stats load only after configured
     this.loadConfigurationStatus();
-    this.loadStats();
     this.bindEvents();
 
     console.log('AI Settings Manager initialized');
@@ -53,11 +52,12 @@ AISettingsManager.prototype.updateConfigurationStatus = function (data) {
         apiKeyStatus.innerHTML = '<i class="bi bi-check-circle text-success me-2"></i>' +
             '<span>Configured (' + data.apiKey + ')</span>';
 
-        // Test connection automatically
-        this.testConnection(connectionStatus);
-
         this.config.configured = true;
         this.config.apiKey = data.apiKey;
+
+        // Test connection automatically and then load stats
+        this.testConnection(connectionStatus);
+        this.loadStats();
     } else {
         // API Key Status - Not configured
         apiKeyStatus.innerHTML = '<i class="bi bi-x-circle text-danger me-2"></i>' +
@@ -118,39 +118,41 @@ AISettingsManager.prototype.testConnection = function (statusElement) {
 AISettingsManager.prototype.loadStats = function () {
     var self = this;
 
+    // If not configured, skip remote calls and keep zero/placeholder stats
+    if (!this.config || !this.config.configured) {
+        self.stats.agents = 0;
+        self.stats.voices = 0;
+        self.stats.characters = 0;
+        self.stats.assignments = 0;
+        self.updateStatsDisplay();
+        return;
+    }
+
     // Load agents count
-    fetch('/api/elevenlabs/agents')
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                self.stats.agents = data.agents.length;
-                self.updateStatsDisplay();
-            }
-        })
-        .catch(function (error) {
-            console.error('Failed to load agents:', error);
-        });
+    fetch('/api/elevenlabs/agents').then(function (response) {
+        if (!response.ok) return Promise.reject(new Error('agents: ' + response.status));
+        return response.json();
+    }).then(function (data) {
+        if (data.success && Array.isArray(data.agents)) {
+            self.stats.agents = data.agents.length;
+            self.updateStatsDisplay();
+        }
+    }).catch(function () { /* gracefully ignore when not configured */ });
 
     // Load voices count
-    fetch('/api/elevenlabs/voices')
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (data) {
-            if (data.success) {
-                self.stats.voices = data.voices.length;
-                self.updateStatsDisplay();
-            }
-        })
-        .catch(function (error) {
-            console.error('Failed to load voices:', error);
-        });
+    fetch('/api/elevenlabs/voices').then(function (response) {
+        if (!response.ok) return Promise.reject(new Error('voices: ' + response.status));
+        return response.json();
+    }).then(function (data) {
+        if (data.success && Array.isArray(data.voices)) {
+            self.stats.voices = data.voices.length;
+            self.updateStatsDisplay();
+        }
+    }).catch(function () { /* gracefully ignore when not configured */ });
 
-    // Load characters count (placeholder - would need actual API)
-    self.stats.characters = 1; // Placeholder
-    self.stats.assignments = 0; // Placeholder
+    // Placeholder counts (could be wired later)
+    self.stats.characters = self.stats.characters || 0;
+    self.stats.assignments = self.stats.assignments || 0;
     self.updateStatsDisplay();
 };
 

@@ -101,6 +101,10 @@ router.get('/api/parts', async (req, res) => {
                 if (p.pin != null) out.push(String(p.pin));
                 if (p.directionPin != null) out.push(String(p.directionPin));
                 if (p.pwmPin != null) out.push(String(p.pwmPin));
+                // Include stepper-specific pins for conflict detection
+                if (p.stepPin != null) out.push(String(p.stepPin));
+                if (p.dirPin != null) out.push(String(p.dirPin));
+                if (p.enablePin != null) out.push(String(p.enablePin));
             }
             return out;
         }
@@ -146,6 +150,10 @@ router.get('/api/parts', async (req, res) => {
                 pin: p.pin || null,
                 directionPin: p.directionPin || null,
                 pwmPin: p.pwmPin || null,
+                // Stepper-specific pins
+                stepPin: p.stepPin || null,
+                dirPin: p.dirPin || null,
+                enablePin: p.enablePin || null,
                 // Additional fields
                 description: p.description || '',
                 created: p.created,

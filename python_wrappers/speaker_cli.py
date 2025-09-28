@@ -172,16 +172,41 @@ if __name__ == '__main__':
                 else:
                     # Use mpg123 for MP3/other formats with PulseAudio routing
                     if not tools['mpg123']:
-                        fail("mpg123 not found for MP3 playback")
-
-                    cmdv = ['mpg123', '--quiet']
-                    # Apply soft volume scaling for MP3
-                    if volume is not None:
-                        scale = int(32768 * (volume / 100.0))
-                        scale = max(0, min(32768, scale))
-                        cmdv += ['-f', str(scale)]
-                    cmdv.append(file_path)
-                    proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        # Fallback: synthesize a short 440 Hz WAV tone and play with pw-play/paplay
+                        try:
+                            import wave, struct, math, tempfile
+                            sr = 16000
+                            dur = 0.5
+                            freq = 440.0
+                            amp = 0.4
+                            frames = int(sr * dur)
+                            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+                            with wave.open(tmp.name, 'w') as wf:
+                                wf.setnchannels(1)
+                                wf.setsampwidth(2)
+                                wf.setframerate(sr)
+                                for i in range(frames):
+                                    val = int(amp * 32767.0 * math.sin(2 * math.pi * freq * (i / sr)))
+                                    wf.writeframes(struct.pack('<h', val))
+                            # Play the synthesized tone
+                            if tools['pw-play']:
+                                cmdv = ['pw-play', tmp.name]
+                            elif tools['paplay']:
+                                cmdv = ['paplay', tmp.name]
+                            else:
+                                fail("No suitable audio player found (need pw-play or paplay)")
+                            proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except Exception as ee:
+                            fail(f"mpg123 not available and fallback failed: {ee}")
+                    else:
+                        cmdv = ['mpg123', '--quiet']
+                        # Apply soft volume scaling for MP3
+                        if volume is not None:
+                            scale = int(32768 * (volume / 100.0))
+                            scale = max(0, min(32768, scale))
+                            cmdv += ['-f', str(scale)]
+                        cmdv.append(file_path)
+                        proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
                 if proc is None:
                     fail("Failed to start playback process")

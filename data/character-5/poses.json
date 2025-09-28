@@ -1,5 +1,42 @@
 {
-  "characterId": null,
-  "poses": [],
+  "characterId": 5,
+  "poses": [
+    {
+      "id": 5,
+      "name": "Groundbreaker Idle",
+      "description": "Groundbreaker in waiting position with dim eyes",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 10,
+            "duration": 500
+          }
+        },
+        {
+          "partId": 3,
+          "type": "led",
+          "target": {
+            "brightness": 10,
+            "duration": 500
+          }
+        },
+        {
+          "partId": 4,
+          "type": "led",
+          "target": {
+            "brightness": 10,
+            "duration": 500
+          }
+        }
+      ],
+      "category": "idle",
+      "concurrent": true,
+      "notes": "Waiting position between scares",
+      "created": "2025-09-28T02:21:34.937Z"
+    }
+  ],
   "templates": {}
 }
