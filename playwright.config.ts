@@ -1,40 +1,37 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testDir: 'tests/playwright',
-  timeout: 180_000,
-  expect: { timeout: 20_000 },
-  fullyParallel: false,
+  testDir: './tests',
   retries: 1,
-  workers: 1,
-  reporter: [['list'], ['html'], ['json', { outputFile: 'test-results/results.json' }]],
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'playwright-report/report.json' }]
+  ],
+
   use: {
-    baseURL: 'http://127.0.0.1:3000',
-    trace: 'retain-on-failure',
-    video: 'retain-on-failure',
+    baseURL: 'http://groundbreaker:3000', // adjust if different
+    headless: true,                       // safe for Pi/CI
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'on-first-retry',
+    viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
   },
+
   projects: [
     {
+      name: 'firefox',
+      use: { browserName: 'firefox' },
+    },
+    {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        headless: true,
-        launchOptions: {
-          args: [
-            '--use-fake-device-for-media-stream',
-            '--use-file-for-fake-audio-capture=tests/assets/hello.wav'
-          ]
-        }
-      }
-    }
+      use: { browserName: 'chromium' },
+    },
   ],
-  webServer: {
-    command: 'MB_TEST_MODE=1 npm start',
-    url: 'http://127.0.0.1:3000',
-    reuseExistingServer: true,
-    timeout: 120_000
-  }
-});
 
+  outputDir: 'test-results/',
+});
