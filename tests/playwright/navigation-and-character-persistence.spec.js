@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 // Helper: open the Character menu even if Bootstrap JS is unavailable
 async function openCharacterMenu(page) {

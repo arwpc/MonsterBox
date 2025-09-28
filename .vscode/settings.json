@@ -65,4 +65,9 @@
     "augment.nextEdit.enableGlobalBackgroundSuggestions": true,
     "augment.nextEdit.showDiffInHover": false,
     "augment.nextEdit.highlightSuggestionsInTheEditor": true
+    ,
+    "playwright.configPath": "playwright.config.ts",
+    "playwright.env": { "MB_TEST_MODE": "1" },
+    "playwright.showTrace": "on-failure"
+
 }

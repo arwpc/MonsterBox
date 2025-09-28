@@ -7,21 +7,18 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "playwright:browsers": "npx playwright install --with-deps chromium",
+    "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
 
-    // ---------- Unit & API ----------
     "test:unit": "mocha tests/**/*.test.js --timeout 15000",
-
-    // ---------- Playwright UI/UX ----------
     "test:ui": "playwright test -c playwright.config.ts",
+    "test:ui:live": "playwright test -c playwright.config.ts --headed",
     "test:ui:headed": "playwright test -c playwright.config.ts --headed",
     "test:ui:firefox": "playwright test -c playwright.config.ts --project=firefox",
-    "test:ui:workflow": "playwright test -c playwright.config.ts tests/ux/**/*.spec.ts",
-    "test:e2e": "playwright test -c playwright.config.ts tests/ux/e2e-comprehensive-characters.spec.ts",
-
-    // ---------- Combined ----------
+    "test:ui:workflow": "playwright test -c playwright.config.ts tests/playwright/**/*.spec.js",
+    "test:e2e": "playwright test -c playwright.config.ts tests/playwright/e2e-comprehensive-characters.spec.js",
+    "test:e2e:live": "playwright test -c playwright.config.ts --headed tests/playwright/e2e-comprehensive-characters.spec.js",
     "test:all": "npm run test:unit && npm run test:ui",
-
-    // ---------- Utilities ----------
     "setup": "bash setup-monsterbox.sh",
     "setup:webcam": "bash scripts/setup-webcam.sh",
     "check": "bash scripts/system-check.sh",

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 test('sanity check - page loads', async ({ page }) => {
   await page.goto('/');

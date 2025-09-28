@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 // Verifies Webcam Controls UI in Setup → Calibration → Controls tab
 // Uses route mocking to avoid dependency on actual v4l2/mjpg-streamer

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 // Minimal smoke test: load AI Settings and run the Test Conversation quick action
 // Relies on MB_TEST_MODE=1 so that ElevenLabs TTS is stubbed.

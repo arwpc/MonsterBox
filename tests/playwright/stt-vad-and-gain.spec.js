@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 // Verifies STT page exposes Input Gain + VAD controls and fires the expected network calls
 

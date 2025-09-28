@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 import fs from 'fs';
 
 // End-to-end UI test for Calibration across all currently listed parts.

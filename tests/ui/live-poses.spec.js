@@ -1,5 +1,5 @@
 // @ts-check
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 

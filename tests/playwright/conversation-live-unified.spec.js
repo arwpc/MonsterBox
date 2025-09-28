@@ -1,5 +1,5 @@
 // Playwright tests for Conversation and Live unified components
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 const BASE = 'http://127.0.0.1:3000';
 

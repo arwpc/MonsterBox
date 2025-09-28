@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 // Conversational AI e2e: Agents page Chat modal, streamed text, interruption, and speaker playback routing
 // This test is gated to run only when MB_E2E=1 (and ideally a valid ElevenLabs agent + key are configured)

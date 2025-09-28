@@ -109,6 +109,8 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
+  });
+
 // Head Tracking status for current character's webcam
 router.get('/api/head-tracking-status', async (req, res) => {
   try {

@@ -3,7 +3,7 @@
  * Tests the web interface functionality in a real browser environment
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../test.setup';
 
 const BASE_URL = 'http://localhost:3000';
 

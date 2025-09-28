@@ -57,7 +57,16 @@
     "created": "2025-09-28T20:02:33.396Z",
     "enabled": true,
     "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-09-28T20:02:40.733Z"
+    "updated": "2025-09-28T20:02:40.733Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
   },
   {
     "id": "18",
