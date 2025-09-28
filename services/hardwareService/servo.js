@@ -7,6 +7,7 @@ import { runWrapper, validateArgs } from './exec.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readConfig } from '../configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,8 +79,10 @@ export async function stop({ channel }) {
  */
 export async function getCalibration(partId) {
     try {
-        // Resolve to repo data directory
-        const calibrationPath = path.resolve(__dirname, '../../data/servo_calibrations.json');
+        const cfg = await readConfig();
+        const appRoot = path.resolve(__dirname, '../..');
+        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+        const calibrationPath = path.resolve(appRoot, dataDir, 'servo_calibrations.json');
         const calibrationData = await fs.readFile(calibrationPath, 'utf8');
         const calibrations = JSON.parse(calibrationData);
         return calibrations[String(partId)] || null;
@@ -158,12 +161,14 @@ export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
  */
 async function getServoChannel(partId) {
     try {
-        // Resolve to repo data directory
-        const partsPath = path.resolve(__dirname, '../../data/parts.json');
+        const cfg = await readConfig();
+        const appRoot = path.resolve(__dirname, '../..');
+        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+        const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);
 
-        const part = parts.find(p => p.id === partId);
+        const part = parts.find(p => String(p.id) === String(partId));
         if (!part) {
             throw new Error(`Part ${partId} not found`);
         }

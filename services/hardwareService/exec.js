@@ -112,6 +112,16 @@ export function runPy(args, options = {}) {
  * @returns {Promise<string>} - Command output
  */
 export function runWrapper(wrapperScript, scriptArgs = [], options = {}) {
+    // In CI or UI tests, short-circuit hardware calls to avoid I/O errors
+    if (String(process.env.MB_TEST_MODE || '') === '1') {
+        const payload = {
+            status: 'success',
+            message: `Simulated ${wrapperScript}`,
+            args: scriptArgs
+        };
+        // Mirror runPy() contract by resolving a string output
+        return Promise.resolve(JSON.stringify(payload));
+    }
     const wrapperPath = path.resolve(__dirname, '../../python_wrappers', wrapperScript);
     const args = [wrapperPath, ...scriptArgs];
     return runPy(args, options);

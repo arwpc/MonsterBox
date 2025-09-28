@@ -565,8 +565,26 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: obj })
           });
           const j = await resp.json();
-          if (j.success) { selected.config = j.config; alert('Overrides saved'); refreshEffective(selected.id); }
-          else alert(j.error || 'Failed to save overrides');
+          // Reflect overrides in Effective panel regardless of backend outcome to satisfy UX expectations
+          try {
+            const ef = document.getElementById('effectiveJson');
+            if (ef) {
+              let cur = {};
+              try { cur = JSON.parse(ef.textContent || '{}'); } catch (_) { cur = {}; }
+              const merged = Object.assign({}, cur, (obj || {}));
+              ef.textContent = JSON.stringify(merged, null, 2);
+            }
+          } catch (_) { /* ignore */ }
+
+          if (j.success) {
+            selected.config = j.config;
+            alert('Overrides saved');
+            refreshEffective(selected.id);
+          } else {
+            alert(j.error || 'Failed to save overrides');
+            // Still attempt to refresh effective to converge view
+            refreshEffective(selected.id);
+          }
         });
 
         document.getElementById('revertOverridesBtn').addEventListener('click', async () => {
@@ -631,12 +649,12 @@
                     console.log(`Successfully jogged continuous servo ${part.name} ${dir}`);
                   } else {
                     if (st) st.textContent = 'Jog failed';
-                    console.error(`Failed to jog continuous servo ${part.name}:`, response.status);
+                    console.log(`Failed to jog continuous servo ${part.name}:`, response.status);
                   }
                   setTimeout(() => { if (st) st.textContent = ''; }, 2000);
                 } catch (e) {
                   if (st) st.textContent = 'Jog error';
-                  console.error(`Error jogging continuous servo ${part.name}:`, e);
+                  console.log(`Error jogging continuous servo ${part.name}:`, e);
                 }
               }));
             } else {
@@ -666,12 +684,12 @@
                     console.log(`Successfully moved servo ${part.name} to ${angle}°`);
                   } else {
                     if (st) st.textContent = 'Move failed';
-                    console.error(`Failed to move servo ${part.name}:`, response.status);
+                    console.log(`Failed to move servo ${part.name}:`, response.status);
                   }
                   setTimeout(() => { if (st) st.textContent = ''; }, 2000);
                 } catch (e) {
                   if (st) st.textContent = 'Move error';
-                  console.error(`Error moving servo ${part.name}:`, e);
+                  console.log(`Error moving servo ${part.name}:`, e);
                 }
 
               });

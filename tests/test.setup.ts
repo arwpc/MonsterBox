@@ -60,6 +60,9 @@ export const test = base.extend<{
     });
 
     page.on('requestfailed', req => {
+      const err = (req.failure()?.errorText || '').toLowerCase();
+      // Ignore benign client-side aborts (navigation/cancellation), focus on real failures
+      if (err.includes('aborted')) return;
       throw new Error(`Request failed: ${req.url()} - ${req.failure()?.errorText}`);
     });
 

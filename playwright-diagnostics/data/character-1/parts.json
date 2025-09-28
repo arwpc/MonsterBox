@@ -199,6 +199,18 @@
         "locked": false,
         "value": 99,
         "unit": "deg"
+      },
+      {
+        "name": "MinA",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12
+      },
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12
       }
     ]
   },
