@@ -1,38 +1,4 @@
 {
-  "4": {
-    "part_id": 4,
-    "part_name": "Head on a Swivel",
-    "servo_type": "continuous",
-    "channel": 0,
-    "calibrated_date": "2025-09-17T22:59:48.638Z",
-    "stop_pulse_us": 1500,
-    "cw_pulse_us": 1200,
-    "ccw_pulse_us": 1800,
-    "positions": {
-      "right_90": {
-        "description": "90° - Facing right",
-        "calibrated": true,
-        "calibrated_date": "2025-09-17T01:21:22.066Z"
-      },
-      "right_45": {
-        "description": "right_45 position",
-        "calibrated": true,
-        "calibrated_date": "2025-09-17T01:21:33.027Z"
-      },
-      "forward": {
-        "description": "0° - Facing directly forward",
-        "calibrated": true,
-        "calibrated_date": "2025-09-17T22:59:48.638Z",
-        "motion": {
-          "direction": "ccw",
-          "speed": 50,
-          "duration": 500
-        }
-      }
-    },
-    "timing_data": {},
-    "functionality_status": "working"
-  },
   "5": {
     "part_id": 5,
     "part_name": "Elbow of Orlok",

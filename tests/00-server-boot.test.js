@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { spawn } from 'child_process';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 let child = null;
 
 async function waitForServer(timeoutMs = 10000) {

@@ -6,7 +6,7 @@
 import { expect } from 'chai';
 import request from 'supertest';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 async function create(type, overrides = {}) {
   const defaults = {

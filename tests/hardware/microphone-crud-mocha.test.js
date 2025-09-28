@@ -11,7 +11,7 @@
 import { expect } from 'chai';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 const HW_EXPECT = String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '').toLowerCase() === 'true';
 
 async function createMicPart(name, deviceId) {

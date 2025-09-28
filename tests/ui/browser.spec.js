@@ -140,3 +140,4 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
         await expect(page.locator('a.btn[href="/"]')).toBeVisible();
     });
 });
+

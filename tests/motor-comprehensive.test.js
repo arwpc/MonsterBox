@@ -8,7 +8,7 @@
 import { execSync } from 'child_process';
 
 const MOTOR_PART_ID = '29'; // Physical Motor part ID
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 console.log('🔄 MonsterBox 4.0 - Comprehensive Motor Test Suite');
 console.log('================================================');

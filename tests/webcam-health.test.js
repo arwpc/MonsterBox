@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 async function waitForServer(timeoutMs = 10000) {
   const start = Date.now();

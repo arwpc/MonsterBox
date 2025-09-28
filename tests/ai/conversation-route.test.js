@@ -3,7 +3,7 @@ import request from 'supertest';
 import { spawn } from 'child_process';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 let child = null;
 
 async function waitForServer(timeoutMs = 10000) {
@@ -38,15 +38,14 @@ describe('Conversation API (integration-lite)', function () {
     }
   });
 
-  it('POST /api/elevenlabs/conversation/test with text returns replyText', async () => {
+  it('POST /api/elevenlabs/conversation/test returns deprecation notice (HTTP endpoint disabled)', async () => {
     const res = await request(BASE_URL)
       .post('/api/elevenlabs/conversation/test')
-      .send({ text: 'Hello AI' })
-      .expect(200);
+      .send({ text: 'Hello AI' });
 
-    expect(res.body).to.have.property('success', true);
-    expect(res.body).to.have.property('replyText');
-    expect(res.body.replyText).to.be.a('string');
+    expect([400, 410]).to.include(res.status);
+    expect(res.body).to.have.property('success', false);
+    expect(res.body).to.have.property('error');
   });
 });
 

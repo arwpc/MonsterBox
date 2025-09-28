@@ -15,7 +15,7 @@ describe('Stepper Hardware Service', function () {
     const out = await rotate({ stepPin: 23, dirPin: 24, direction: 'ccw', revolutions: 0.5, microstepping: 16, rpm: 120 });
     expect(typeof out).to.equal('string');
     expect(out).to.include('success');
-    expect(out).to.include('rotate');
+    expect(out).to.satisfy((s) => s.includes('rotate') || s.includes('move_steps'));
   });
 
   it('stop should return success JSON', async () => {

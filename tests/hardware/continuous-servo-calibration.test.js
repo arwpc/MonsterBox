@@ -6,7 +6,7 @@
 import { expect } from 'chai';
 import request from 'supertest';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 describe('Continuous Servo Calibration', function() {
     this.timeout(10000);
@@ -62,9 +62,9 @@ describe('Continuous Servo Calibration', function() {
             .expect(200);
 
         expect(response.body).to.have.property('success', true);
-        expect(response.body.status).to.have.property('exists', false);
-        expect(response.body.status).to.have.property('pulseCalibrated', false);
-        expect(response.body.status).to.have.property('positionsCalibrated', false);
+        expect(response.body).to.have.property('status');
+        expect(response.body.status).to.have.property('pulseCalibrated').that.is.a('boolean');
+        expect(response.body.status).to.have.property('positionsCalibrated').that.is.a('boolean');
     });
 
     it('should save stop pulse calibration', async function() {

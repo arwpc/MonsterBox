@@ -7,7 +7,7 @@ import { expect } from 'chai';
 import request from 'supertest';
 
 // Use the running server instead of importing the app
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 describe('MonsterBox 4.0 Basic Tests', () => {
 
