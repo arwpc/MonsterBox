@@ -1,6 +1,9 @@
 /* Playwright global setup: ensure no stale dev server is running before starting webServer. */
 
 export default async function globalSetup() {
+  const shouldClean = process.env.PW_CLEAN_SERVER === '1' || process.env.CI === 'true';
+  if (!shouldClean) return; // do nothing locally unless explicitly requested
+
   const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
   const killURL = baseURL.replace(/\/$/, '') + '/__kill';
 
