@@ -12,6 +12,16 @@
     .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
     .status-on { background:#22c55e; }
     .status-off { background:#ef4444; }
+    /* Speech bubble overlay */
+    #webcamWrap { position: relative; }
+    #speechBubble {
+      position: absolute; left: 12px; top: 12px; max-width: 65%;
+      background: rgba(0,0,0,0.7); color: #fff; border-radius: 12px; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.15); font-size: 1rem; line-height: 1.25rem;
+      display: none;
+    }
+    #speechBubble.show { display: block; animation: fadeIn 120ms ease-in; }
+    @keyframes fadeIn { from { opacity: .4; transform: scale(.98); } to { opacity: 1; transform: none; } }
   </style>
 </head>
 <body>
@@ -32,7 +42,10 @@
             <small id="webcamHint" class="text-muted"></small>
           </div>
           <div class="card-body text-center">
-            <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 480px; background: #000;" />
+            <div id="webcamWrap">
+              <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 480px; background: #000;" />
+              <div id="speechBubble"></div>
+            </div>
             <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
           </div>
         </div>
@@ -52,6 +65,13 @@
                 <button id="sayBtn" class="btn btn-primary big-btn"><i class="bi bi-send"></i> Speak</button>
               </div>
               <div id="sayStatus" class="small mt-2"></div>
+            </div>
+
+            <div class="mb-3">
+              <button id="pressHoldBtn" class="btn btn-warning w-100 big-btn" disabled>
+                <i class="bi bi-record-circle"></i> Press and hold to talk (real-time)
+              </button>
+              <div class="form-text" id="pressHoldHelp">Enable ElevenLabs in AI Settings to use real-time talk.</div>
             </div>
 
             <div class="row g-2 mb-3">
@@ -92,6 +112,7 @@
   <script src="/js/mic-panel.js"></script>
   <script>
     (function(){
+      const CURRENT_CHARACTER = <%= JSON.stringify(currentCharacter || null) %>;
       const ui = {
         levelBar: null,
         sayBtn: null,
@@ -101,9 +122,13 @@
         headToggle: null,
         jawDot: null,
         headDot: null,
+        pressHoldBtn: null,
+        speechBubble: null,
+        pressHoldHelp: null,
       };
-      let selectedSpeakerPartId = null; // optional; using default
-      let rafId = null, mediaStream=null, audioCtx=null, analyser=null, dataArray=null, lastSend=0;
+      let ws = null;
+      let agentId = null;
+      let bubbleTimer = null;
 
       function $(id){ return document.getElementById(id); }
 
@@ -118,11 +143,17 @@
         ui.headToggle = $('headTrackToggle');
         ui.jawDot = $('jawDot');
         ui.headDot = $('headDot');
+        ui.pressHoldBtn = $('pressHoldBtn');
+        ui.speechBubble = $('speechBubble');
+        ui.pressHoldHelp = $('pressHoldHelp');
 
         bind();
+        // Ensure demo preset exists for a smooth experience
+        try { await fetch('/demo/api/apply-preset', { method: 'POST' }); } catch(_){ }
         await loadWebcam();
         await loadJaw();
         await loadHead();
+        await initRealtime();
 
         try { MicPanel.init({ levelBarId: 'audioLevel', startBtnId: 'micStart', stopBtnId: 'micStop', statusId: 'micStatus', transcriptId: null, jawToggleId: 'jawToggle', enableStt: false }); } catch(_){ }
       }
@@ -132,6 +163,18 @@
         ui.sayInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); onSpeak(); }});
         ui.jawToggle.addEventListener('change', saveJaw);
         ui.headToggle.addEventListener('change', saveHead);
+
+        // Press-and-hold events
+        const pressStart = () => startPressToTalk();
+        const pressEnd = () => stopPressToTalk();
+        ui.pressHoldBtn.addEventListener('pointerdown', pressStart);
+        ui.pressHoldBtn.addEventListener('pointerup', pressEnd);
+        ui.pressHoldBtn.addEventListener('pointerleave', pressEnd);
+        ui.pressHoldBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); pressStart(); }, { passive: false });
+        ui.pressHoldBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); pressEnd(); }, { passive: false });
+        ui.pressHoldBtn.addEventListener('mousedown', pressStart);
+        ui.pressHoldBtn.addEventListener('mouseup', pressEnd);
+        ui.pressHoldBtn.addEventListener('mouseleave', pressEnd);
       }
 
       async function loadWebcam(){
@@ -166,12 +209,75 @@
         const text = (ui.sayInput.value||'').trim(); if(!text){ ui.sayStatus.innerHTML='<span class="text-warning">Enter text</span>'; return; }
         ui.sayBtn.disabled=true; ui.sayBtn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
         try{
-          const r = await fetch('/conversation/api/say', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text, speakerPartId: selectedSpeakerPartId||undefined }) });
+          const r = await fetch('/conversation/api/say', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
           const j = await r.json();
           if (j && j.success){ ui.sayStatus.innerHTML='<span class="text-success">Done</span>'; }
           else { ui.sayStatus.innerHTML='<span class="text-danger">Failed</span>'; }
         } catch { ui.sayStatus.innerHTML='<span class="text-danger">Error</span>'; }
         finally { ui.sayBtn.disabled=false; ui.sayBtn.innerHTML='<i class="bi bi-send"></i> Speak'; }
+      }
+
+      async function initRealtime(){
+        try{
+          const r = await fetch('/api/elevenlabs/status');
+          const j = await r.json();
+          if (j && j.success && j.configured){
+            ui.pressHoldBtn.disabled = false;
+            ui.pressHoldHelp.textContent = 'Hold to speak, release to stop. Uses server microphone.';
+            // Try to pick a default agent
+            try{
+              const a = await fetch('/api/elevenlabs/agents');
+              const aj = await a.json();
+              const list = (aj && (aj.agents || aj.data || aj.items)) || [];
+              if (Array.isArray(list) && list.length){
+                const first = list[0];
+                agentId = first.id || first.agent_id || first.uuid || null;
+              }
+            } catch(_){ /* optional */ }
+          } else {
+            ui.pressHoldBtn.disabled = true;
+            ui.pressHoldHelp.textContent = 'Enable ElevenLabs in AI Settings to use real-time talk.';
+          }
+        } catch(_){ ui.pressHoldBtn.disabled = true; }
+      }
+
+      function wsUrl(){
+        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+        return scheme + '://' + location.hostname + ':8795';
+      }
+
+      function showBubble(text){
+        if (!ui.speechBubble) return;
+        ui.speechBubble.textContent = text || '';
+        ui.speechBubble.classList.add('show');
+        if (bubbleTimer) clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(()=>{ ui.speechBubble.classList.remove('show'); }, 4000);
+      }
+
+      function startPressToTalk(){
+        if (ui.pressHoldBtn.disabled) return;
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+        try {
+          ws = new WebSocket(wsUrl());
+          ws.onopen = function(){
+            // Route output and mic via server for simplicity
+            ws.send(JSON.stringify({ type: 'set_output_mode', mode: 'server' }));
+            ws.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+            if (CURRENT_CHARACTER != null) ws.send(JSON.stringify({ type: 'set_character', characterId: CURRENT_CHARACTER }));
+            if (agentId) ws.send(JSON.stringify({ type: 'start_conversation', agentId: agentId }));
+          };
+          ws.onmessage = function(ev){
+            try{
+              const msg = JSON.parse(ev.data);
+              if (msg.type === 'agent_response' && msg.text){ showBubble(msg.text); }
+            } catch(_){ }
+          };
+          ws.onerror = function(){ /* ignore */ };
+        } catch(_){ /* ignore */ }
+      }
+
+      function stopPressToTalk(){
+        try { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ type: 'end_conversation' })); setTimeout(()=>{ try{ ws.close(); }catch(_){ } ws=null; }, 100); } } catch(_){ }
       }
     })();
   </script>

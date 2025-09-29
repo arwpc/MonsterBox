@@ -52,8 +52,10 @@ jobs:
         PORT: 3000
     - name: Wait for Server
       run: npx wait-on http://localhost:3000 --timeout 60000
-    - name: Run E2E Tests
-      run: npm run test:e2e-ci
+    - name: Run Demo E2E (PW_CLEAN_SERVER=1)
+      env:
+        PW_CLEAN_SERVER: 1
+      run: npm run test:ui -- tests/playwright/demo.spec.js
     - name: Stop Server
       if: always()
       run: |

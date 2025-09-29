@@ -15,6 +15,7 @@ import { getTTSConfig } from '../services/aiConfigStore.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import jawAnimationService from '../services/jawAnimationService.js';
 import * as motionTrackingController from '../controllers/motionTrackingController.js';
+import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +91,16 @@ router.get('/api/jaw-settings', async (req, res) => {
     const settings = await readJawSettings();
     const enabled = characterId ? !!settings[String(characterId)]?.enabled : false;
     res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// GET /conversation/api/agent-status - whether ElevenLabs is configured
+router.get('/api/agent-status', async (req, res) => {
+  try {
+    const configured = !!elevenLabsConfigService.isElevenLabsConfigured();
+    res.json({ success: true, configured });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }

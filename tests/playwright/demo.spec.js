@@ -63,5 +63,14 @@ test.describe('Animatronic Demo', () => {
     tracker.assertClean();
     tracker.stop();
   });
+
+  test('Speech bubble overlay and press-to-talk presence', async ({ page }) => {
+    // Bubble element should exist
+    await expect(page.locator('#speechBubble')).toHaveCount(1);
+    // Press-and-hold button exists and is disabled by default when ElevenLabs not configured in CI
+    const btn = page.locator('#pressHoldBtn');
+    await expect(btn).toHaveCount(1);
+    await expect(btn).toBeDisabled();
+  });
 });
 
