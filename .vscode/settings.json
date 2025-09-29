@@ -68,6 +68,7 @@
     ,
     "playwright.configPath": "playwright.config.ts",
     "playwright.env": { "MB_TEST_MODE": "1" },
-    "playwright.showTrace": true
+    "playwright.showTrace": true,
+    "python.analysis.typeCheckingMode": "standard"
 
 }

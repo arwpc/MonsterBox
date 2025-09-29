@@ -78,6 +78,12 @@ router.post('/:id/play', async (req, res) => {
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
 
+    // In test mode, avoid running hardware/pose execution paths entirely
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+    if (inTest) {
+      return res.json({ success: true, played: id, steps: (scene.steps||[]).length, result: { testMode: true }, dryRun: true });
+    }
+
     const dryRun = (String(req.query?.dryRun||'').toLowerCase() === '1' || String(req.query?.dryRun||'').toLowerCase() === 'true');
     const result = await sceneExecutor.executeScene(scene, characterId, null, { dryRun });
     res.json({ success: true, played: id, steps: (scene.steps||[]).length, result, dryRun });

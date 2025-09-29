@@ -32,6 +32,12 @@ router.get('/', async (req, res) => {
 // Enumerate PipeWire sinks (audio outputs)
 router.get('/api/outputs', async (req, res) => {
     try {
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, outputs: [
+                { id: 'default', name: 'Default Output', description: 'Default Output [Recommended]' },
+                { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output' }
+            ]});
+        }
         console.log('🔊 Enumerating PipeWire audio outputs...');
         const sinks = await pipewireService.listSinks();
 
@@ -60,6 +66,12 @@ router.get('/api/outputs', async (req, res) => {
 // Enumerate PipeWire sources (audio inputs/microphones)
 router.get('/api/inputs', async (req, res) => {
     try {
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, inputs: [
+                { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
+                { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
+            ]});
+        }
         console.log('🎤 Enumerating PipeWire audio inputs...');
         const sources = await pipewireService.listSources();
 
@@ -88,6 +100,10 @@ router.get('/api/inputs', async (req, res) => {
 // Quick input level test without saving a Part (PipeWire compatible)
 router.get('/api/input-level', async (req, res) => {
     try {
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            const device = String(req.query.device || 'default');
+            return res.json({ success: true, device, level: 0.12, message: 'mocked in test mode', fallbackUsed: false });
+        }
         let device = String(req.query.device || 'default');
         const sr = String(req.query.sr || req.query.sampleRate || '16000');
         const ch = String(req.query.ch || req.query.channels || '1');
@@ -202,6 +218,22 @@ router.post('/api/set-default-source', async (req, res) => {
 // Get current system audio configuration
 router.get('/api/system-config', async (req, res) => {
     try {
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            const config = {
+                defaultSink: 'default',
+                defaultSource: 'default',
+                availableSinks: [
+                    { id: 'default', name: 'Default Output', description: 'Default Output [Recommended]' },
+                    { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output' }
+                ],
+                availableSources: [
+                    { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
+                    { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
+                ],
+                pipewireStatus: { wpctl: false, pactl: false, pwplay: false }
+            };
+            return res.json({ success: true, config });
+        }
         console.log('🔧 Getting system audio configuration...');
 
         const [sinks, sources, defaultSink, defaultSource] = await Promise.all([
@@ -301,6 +333,9 @@ router.post('/api/system-config', async (req, res) => {
 router.post('/api/test-system', async (req, res) => {
     try {
         const { testType, deviceId } = req.body;
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, testType, deviceId: deviceId || 'default', result: 'skipped in test mode' });
+        }
         console.log(`🧪 Testing audio system: ${testType} on ${deviceId}`);
 
         let result;
@@ -421,6 +456,9 @@ router.post('/api/move-stream', async (req, res) => {
 router.get('/api/audio-levels', async (req, res) => {
     try {
         const { deviceId, deviceType } = req.query;
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, level: 0.05, deviceId: deviceId || 'default', type: deviceType || 'input' });
+        }
 
         if (deviceType === 'input') {
             // Get microphone level with shorter duration for real-time response

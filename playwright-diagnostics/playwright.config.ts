@@ -6,7 +6,7 @@ export default defineConfig({
   expect: { timeout: 20_000 },
   fullyParallel: false,
   retries: 1,
-  workers: 1,
+  workers: 4,
   reporter: [['list'], ['html'], ['json', { outputFile: 'test-results/results.json' }]],
   use: {
     baseURL: 'http://127.0.0.1:3000',
