@@ -33,6 +33,7 @@ import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import conversationRoutes from './routes/conversation.js';
+import demoRoutes from './routes/demo.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -157,6 +158,7 @@ app.post('/setup/parts/api/parts/:id/test', partsController.testPart);
 app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
 app.use('/conversation', conversationRoutes);
+app.use('/demo', demoRoutes);
 app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
