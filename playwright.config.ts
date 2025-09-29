@@ -43,10 +43,11 @@ export default defineConfig({
   ],
   globalSetup: 'tests/playwright/global-setup.js',
   webServer: {
-    command: 'MB_TEST_MODE=1 node server.js',
+    // Ensure test server launches on the expected port
+    command: 'MB_TEST_MODE=1 NODE_ENV=test PORT=3000 node server.js',
     url: 'http://127.0.0.1:3000',
-    reuseExistingServer: true,
-    timeout: 120000
+    reuseExistingServer: process.env.PW_CLEAN_SERVER !== '1',
+    timeout: 180000
   },
 
 

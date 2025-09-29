@@ -26,6 +26,8 @@ import setupPartsRoutes from './routes/setup/parts.js';
 
 import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
+import videoLibraryRoutes from './routes/videoLibrary.js';
+import goblinManagementRoutes from './routes/goblinManagement.js';
 import liveDashboardRoutes from './routes/live/dashboard.js';
 import scenesRoutes from './routes/scenes/index.js';
 import posesRoutes from './routes/poses/index.js';
@@ -186,6 +188,8 @@ app.post('/setup/parts/api/parts/:id/test', partsController.testPart);
 
 app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
+app.use('/video-library', videoLibraryRoutes);
+app.use('/goblin-management', goblinManagementRoutes);
 app.use('/conversation', conversationRoutes);
 app.use('/demo', demoRoutes);
 app.use('/live', liveDashboardRoutes);

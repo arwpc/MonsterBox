@@ -24,8 +24,23 @@ async function trackHttpErrors(page, label) {
   };
 }
 
+async function waitServerReady(page) {
+  const deadline = Date.now() + 60000; // allow up to 60s when PW_CLEAN_SERVER=1
+  while (Date.now() < deadline) {
+    try {
+      const res = await page.request.get('/');
+      if (res && res.status() >= 200) return;
+    } catch {}
+    await new Promise(r => setTimeout(r, 150));
+  }
+}
 async function resetServerErrors(page) {
-  await page.request.post('/__errors/reset');
+  try {
+    await waitServerReady(page);
+    await page.request.post('/__errors/reset');
+  } catch (_) {
+    // In early startup races, server may not be up yet; ignore and continue
+  }
 }
 async function getServerErrorCount(page) {
   const res = await page.request.get('/__errors');
@@ -36,6 +51,7 @@ async function getServerErrorCount(page) {
 test.describe('Animatronic Demo', () => {
   test.beforeEach(async ({ page }) => {
     await resetServerErrors(page);
+    await waitServerReady(page);
     // Navigate to demo page
     const tracker = await trackHttpErrors(page, 'navigate to /demo');
     await page.goto('/demo', { waitUntil: 'domcontentloaded' });
@@ -98,6 +114,13 @@ test.describe('Animatronic Demo', () => {
     const spk = page.locator('#speakerSelect');
     await expect(mic).toHaveCount(1);
     await expect(spk).toHaveCount(1);
+    // Wait for device lists to populate (mocked in MB_TEST_MODE)
+    await page.waitForFunction(() => {
+      const m = document.querySelectorAll('#micSelect option').length;
+      const s = document.querySelectorAll('#speakerSelect option').length;
+      return m > 0 && s > 0;
+    }, null, { timeout: 5000 }).catch(() => {});
+
     const micOptCount = await mic.locator('option').count();
     const spkOptCount = await spk.locator('option').count();
     expect(micOptCount).toBeGreaterThan(0);

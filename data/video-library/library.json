@@ -1,0 +1,102 @@
+{
+  "videos": [
+    {
+      "id": "c1efa5eb-4ff4-4112-9c84-15d99f6ec955",
+      "title": "fire",
+      "description": "Consolidated from docs/fire.mp4",
+      "category": "effects",
+      "tags": [
+        "fire",
+        "consolidated"
+      ],
+      "originalName": "fire.mp4",
+      "fileName": "c1efa5eb-4ff4-4112-9c84-15d99f6ec955.mp4",
+      "format": "mp4",
+      "fileSize": 59218473,
+      "duration": 0,
+      "resolution": "unknown",
+      "fps": 0,
+      "bitrate": 0,
+      "uploadedAt": "2025-09-29T06:53:33.951Z",
+      "favorite": false,
+      "playCount": 0,
+      "thumbnailPath": "c1efa5eb-4ff4-4112-9c84-15d99f6ec955.jpg"
+    },
+    {
+      "id": "07610c3d-6e40-4314-9f96-2f688b445ec3",
+      "title": "water",
+      "description": "Consolidated from docs/water.mp4",
+      "category": "effects",
+      "tags": [
+        "water",
+        "consolidated"
+      ],
+      "originalName": "water.mp4",
+      "fileName": "07610c3d-6e40-4314-9f96-2f688b445ec3.mp4",
+      "format": "mp4",
+      "fileSize": 16795727,
+      "duration": 0,
+      "resolution": "unknown",
+      "fps": 0,
+      "bitrate": 0,
+      "uploadedAt": "2025-09-29T06:53:37.409Z",
+      "favorite": false,
+      "playCount": 0,
+      "thumbnailPath": "07610c3d-6e40-4314-9f96-2f688b445ec3.jpg"
+    },
+    {
+      "id": "da542d7d-7b9c-415a-adb7-cc1b3c725b66",
+      "title": "fire_test",
+      "description": "Consolidated from fire_test.mp4",
+      "category": "test-videos",
+      "tags": [
+        "test",
+        "fire",
+        "consolidated"
+      ],
+      "originalName": "fire_test.mp4",
+      "fileName": "da542d7d-7b9c-415a-adb7-cc1b3c725b66.mp4",
+      "format": "mp4",
+      "fileSize": 3197567,
+      "duration": 0,
+      "resolution": "unknown",
+      "fps": 0,
+      "bitrate": 0,
+      "uploadedAt": "2025-09-29T06:53:38.793Z",
+      "favorite": false,
+      "playCount": 0,
+      "thumbnailPath": "da542d7d-7b9c-415a-adb7-cc1b3c725b66.jpg"
+    },
+    {
+      "id": "dad5cf71-097d-42a8-b310-fa6c95fd28e1",
+      "title": "water_test",
+      "description": "Consolidated from water_test.mp4",
+      "category": "test-videos",
+      "tags": [
+        "test",
+        "water",
+        "consolidated"
+      ],
+      "originalName": "water_test.mp4",
+      "fileName": "dad5cf71-097d-42a8-b310-fa6c95fd28e1.mp4",
+      "format": "mp4",
+      "fileSize": 5298655,
+      "duration": 0,
+      "resolution": "unknown",
+      "fps": 0,
+      "bitrate": 0,
+      "uploadedAt": "2025-09-29T06:53:40.100Z",
+      "favorite": false,
+      "playCount": 0,
+      "thumbnailPath": "dad5cf71-097d-42a8-b310-fa6c95fd28e1.jpg"
+    }
+  ],
+  "categories": [
+    "scenes",
+    "effects",
+    "backgrounds",
+    "other"
+  ],
+  "version": "1.0.0",
+  "lastUpdated": "2025-09-29T06:53:40.101Z"
+}

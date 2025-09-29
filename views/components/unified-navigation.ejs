@@ -17,7 +17,7 @@
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' ? 'active' : '' %>"
+                    <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' || page === 'video-library' || page === 'goblin-management' ? 'active' : '' %>"
                         href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Setup
                     </a>
@@ -43,6 +43,10 @@
                                 Configuration</a></li>
                         <li><a class="dropdown-item" href="/audio-library"><i class="bi bi-music-note-list"></i> Audio
                                 Library</a></li>
+                        <li><a class="dropdown-item" href="/video-library"><i class="bi bi-camera-video"></i> Video
+                                Library</a></li>
+                        <li><a class="dropdown-item" href="/goblin-management"><i class="bi bi-cpu"></i> Goblin
+                                Management</a></li>
 
                         <li>
                             <hr class="dropdown-divider">

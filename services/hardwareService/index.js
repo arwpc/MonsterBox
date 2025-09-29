@@ -1292,6 +1292,14 @@ export async function controlPart(partId, action, params = {}) {
             pin: pinFromPart
         });
 
+        // Stepper convenience: convert 'speed' (steps/sec) -> stepDelayUs if not provided
+        if (type === 'stepper' && action === 'moveSteps') {
+            if ((actionParams.stepDelayUs == null || isNaN(Number(actionParams.stepDelayUs))) && actionParams.speed != null) {
+                const s = Math.max(1, Number(actionParams.speed));
+                actionParams.stepDelayUs = Math.max(200, Math.round(1_000_000 / s));
+            }
+        }
+
         const result = await actionFunction(actionParams);
 
         return {

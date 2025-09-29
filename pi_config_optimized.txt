@@ -1,0 +1,80 @@
+# MonsterBox Goblin Pi3B Optimized Configuration
+# Optimized for dedicated video playback performance
+
+# === GPU MEMORY ALLOCATION ===
+# Allocate more memory to GPU for video processing
+gpu_mem=128
+gpu_mem_256=128
+gpu_mem_512=128
+gpu_mem_1024=128
+
+# === VIDEO PERFORMANCE ===
+# Enable hardware video decoding
+gpu_codec_h264=enabled
+gpu_codec_h265=enabled
+gpu_codec_vp6=enabled
+gpu_codec_vp8=enabled
+
+# Maximum GPU frequency for video performance
+gpu_freq=500
+core_freq=500
+
+# === HDMI OUTPUT OPTIMIZATION ===
+# Force HDMI output (no auto-detection delays)
+hdmi_force_hotplug=1
+hdmi_drive=2
+
+# Set HDMI to 1080p 60Hz for consistent performance
+hdmi_group=1
+hdmi_mode=16
+
+# Disable HDMI safe mode
+config_hdmi_boost=4
+
+# === AUDIO OPTIMIZATION ===
+# Force HDMI audio output
+dtparam=audio=on
+hdmi_drive=2
+
+# === CPU GOVERNOR ===
+# Performance governor for consistent CPU speeds
+force_turbo=1
+
+# === MEMORY OPTIMIZATION ===
+# Disable unnecessary services for headless operation
+disable_splash=1
+boot_delay=0
+
+# === OVERCLOCKING (Safe for Pi3B) ===
+# Conservative overclock for better performance
+arm_freq=1300
+over_voltage=2
+
+# === POWER MANAGEMENT ===
+# Disable power management for consistent performance
+disable_poe_fan=1
+
+# === USB OPTIMIZATION ===
+# Increase USB current limit
+max_usb_current=1
+
+# === TEMPERATURE MONITORING ===
+# Set temperature limits
+temp_limit=80
+
+# === FRAMEBUFFER ===
+# Optimize framebuffer for video
+framebuffer_width=1920
+framebuffer_height=1080
+framebuffer_depth=24
+
+# === DEVICE TREE ===
+# Audio device tree
+dtparam=audio=on
+
+# === LEGACY SUPPORT ===
+# Enable legacy GL driver for better compatibility
+dtoverlay=vc4-fkms-v3d
+gpu_mem_256=128
+gpu_mem_512=128
+gpu_mem_1024=128
