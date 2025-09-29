@@ -2,7 +2,9 @@
 
 """
 PCA9685 Control Module for MonsterBox 4.0
-Direct hardware control without ARCHIVE dependencies
+"""
+Direct hardware control for MonsterBox 4.0
+"""
 """
 
 import json

@@ -68,10 +68,28 @@
             </div>
 
             <div class="mb-3">
+              <label class="form-label" for="agentSelect">Agent</label>
+              <select id="agentSelect" class="form-select">
+                <option value="" selected>Not configured</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
               <button id="pressHoldBtn" class="btn btn-warning w-100 big-btn" disabled>
                 <i class="bi bi-record-circle"></i> Press and hold to talk (real-time)
               </button>
               <div class="form-text" id="pressHoldHelp">Enable ElevenLabs in AI Settings to use real-time talk.</div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label" for="micSelect">Microphone</label>
+                <select id="micSelect" class="form-select"></select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="speakerSelect">Speaker</label>
+                <select id="speakerSelect" class="form-select"></select>
+              </div>
             </div>
 
             <div class="row g-2 mb-3">
@@ -125,6 +143,9 @@
         pressHoldBtn: null,
         speechBubble: null,
         pressHoldHelp: null,
+        agentSelect: null,
+        micSelect: null,
+        speakerSelect: null,
       };
       let ws = null;
       let agentId = null;
@@ -146,6 +167,10 @@
         ui.pressHoldBtn = $('pressHoldBtn');
         ui.speechBubble = $('speechBubble');
         ui.pressHoldHelp = $('pressHoldHelp');
+        ui.agentSelect = $('agentSelect');
+        ui.micSelect = $('micSelect');
+        ui.speakerSelect = $('speakerSelect');
+        if (ui.agentSelect) ui.agentSelect.addEventListener('change', ()=>{ agentId = ui.agentSelect.value || null; });
 
         bind();
         // Ensure demo preset exists for a smooth experience
@@ -153,6 +178,7 @@
         await loadWebcam();
         await loadJaw();
         await loadHead();
+        await loadAudioDevices();
         await initRealtime();
 
         try { MicPanel.init({ levelBarId: 'audioLevel', startBtnId: 'micStart', stopBtnId: 'micStop', statusId: 'micStatus', transcriptId: null, jawToggleId: 'jawToggle', enableStt: false }); } catch(_){ }
@@ -177,6 +203,40 @@
         ui.pressHoldBtn.addEventListener('mouseleave', pressEnd);
       }
 
+      async function loadAudioDevices(){
+        try {
+          const [inR, outR] = await Promise.all([
+            fetch('/setup/audio/api/inputs'),
+            fetch('/setup/audio/api/outputs')
+          ]);
+          const ins = await inR.json().catch(()=>({}));
+          const outs = await outR.json().catch(()=>({}));
+          const inList = (ins.inputs || ins.devices || ins.data || ins.items || []);
+          const outList = (outs.outputs || outs.devices || outs.data || outs.items || []);
+          if (ui.micSelect) {
+            ui.micSelect.innerHTML = inList.length ? '' : '<option value="default">default</option>';
+            inList.forEach(d=>{
+              const opt = document.createElement('option');
+              opt.value = d.id || d.name || d.deviceId || 'default';
+              opt.textContent = d.name || d.description || opt.value;
+              ui.micSelect.appendChild(opt);
+            });
+          }
+          if (ui.speakerSelect) {
+            ui.speakerSelect.innerHTML = outList.length ? '' : '<option value="default">default</option>';
+            outList.forEach(d=>{
+              const opt = document.createElement('option');
+              opt.value = d.id || d.name || d.deviceId || 'default';
+              opt.textContent = d.name || d.description || opt.value;
+              ui.speakerSelect.appendChild(opt);
+            });
+          }
+        } catch(_){
+          if (ui.micSelect && !ui.micSelect.options.length) ui.micSelect.innerHTML = '<option value="default">default</option>';
+          if (ui.speakerSelect && !ui.speakerSelect.options.length) ui.speakerSelect.innerHTML = '<option value="default">default</option>';
+        }
+      }
+
       async function loadWebcam(){
         const img = $('webcamImg'); const status=$('webcamStatus'); const hint=$('webcamHint');
         try {
@@ -196,11 +256,42 @@
       }
 
       async function loadHead(){
-        try { const r = await fetch('/conversation/api/head-tracking-status'); const j = await r.json(); const on = !!(j && j.success && j.headTracking && j.headTracking.enabled); ui.headToggle.checked = on; updateDot(ui.headDot, on); } catch {}
+        try {
+          const r = await fetch('/conversation/api/head-tracking-status');
+          const j = await r.json();
+          const on = !!(j && j.success && j.headTracking && j.headTracking.enabled);
+          ui.headToggle.checked = on;
+          updateDot(ui.headDot, on);
+        } catch {}
       }
+
       async function saveHead(){
         try { await fetch('/conversation/api/head-tracking', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ enabled: ui.headToggle.checked }) }); } catch {}
         updateDot(ui.headDot, ui.headToggle.checked);
+      }
+
+      async function populateAgents(){
+        if (!ui.agentSelect) return;
+        try {
+          const r = await fetch('/api/elevenlabs/agents');
+          const j = await r.json();
+          const list = (j && (j.agents || j.data || j.items)) || [];
+          ui.agentSelect.innerHTML = '';
+          list.forEach(a=>{
+            const opt = document.createElement('option');
+            opt.value = a.id || a.agent_id || a.uuid || '';
+            opt.textContent = a.name || a.label || opt.value || 'agent';
+            ui.agentSelect.appendChild(opt);
+          });
+          if (list.length){ agentId = ui.agentSelect.value; }
+          else {
+            ui.agentSelect.innerHTML = '<option value="">No agents found</option>';
+            agentId = null;
+          }
+        } catch(_){
+          ui.agentSelect.innerHTML = '<option value="">Not configured</option>';
+          agentId = null;
+        }
       }
 
       function updateDot(el, on){ if(!el) return; el.classList.toggle('status-on', !!on); el.classList.toggle('status-off', !on); }
@@ -224,16 +315,8 @@
           if (j && j.success && j.configured){
             ui.pressHoldBtn.disabled = false;
             ui.pressHoldHelp.textContent = 'Hold to speak, release to stop. Uses server microphone.';
-            // Try to pick a default agent
-            try{
-              const a = await fetch('/api/elevenlabs/agents');
-              const aj = await a.json();
-              const list = (aj && (aj.agents || aj.data || aj.items)) || [];
-              if (Array.isArray(list) && list.length){
-                const first = list[0];
-                agentId = first.id || first.agent_id || first.uuid || null;
-              }
-            } catch(_){ /* optional */ }
+            // Populate agent dropdown
+            try{ await populateAgents(); } catch(_){ /* optional */ }
           } else {
             ui.pressHoldBtn.disabled = true;
             ui.pressHoldHelp.textContent = 'Enable ElevenLabs in AI Settings to use real-time talk.';

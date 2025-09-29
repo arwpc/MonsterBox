@@ -10,6 +10,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import os from 'os';
 
 // Route imports
 
@@ -32,6 +33,7 @@ import scenesApiRoutes from './routes/scenes/api.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
+import pipewireService from './services/pipewireService.js';
 import conversationRoutes from './routes/conversation.js';
 import demoRoutes from './routes/demo.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
@@ -92,6 +94,33 @@ app.use((req, res, next) => {
 });
 
 // Global template variables
+// Also initialize structured server error stats for tests/monitoring
+app.locals.errorStats = { count: 0, recent: [] };
+function recordServerError(err, req) {
+    try {
+        const stats = req.app && req.app.locals && req.app.locals.errorStats;
+        if (!stats) return;
+        stats.count += 1;
+        stats.recent.push({
+            time: Date.now(),
+            method: req.method,
+            path: req.originalUrl || req.url,
+            message: (err && err.message) || String(err)
+        });
+        if (stats.recent.length > 100) stats.recent.splice(0, stats.recent.length - 100);
+    } catch (_) { /* ignore */ }
+}
+
+// Expose structured error stats endpoints for CI/tests
+app.get('/__errors', (req, res) => {
+    const stats = req.app.locals.errorStats || { count: 0, recent: [] };
+    res.json({ success: true, count: stats.count, recent: stats.recent });
+});
+app.post('/__errors/reset', (req, res) => {
+    req.app.locals.errorStats = { count: 0, recent: [] };
+    res.json({ success: true, reset: true });
+});
+
 app.use(async (req, res, next) => {
     try {
         // Refresh from disk so a just-selected character is reflected immediately after redirect
@@ -280,6 +309,8 @@ app.get('/setup', (req, res) => {
 if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
   app.use((err, req, res, next) => {
     try {
+      // Record server error for structured monitoring
+      recordServerError(err, req);
       // Respect explicit statuses < 500 or JSON bodies that already indicate success/failure
       const wantsJSON = (req.get('accept') || '').includes('application/json') || req.path.startsWith('/api/') || req.path.includes('/scenes/api');
       const payload = wantsJSON
@@ -298,6 +329,8 @@ if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
 // Error handling
 app.use((err, req, res, next) => {
     console.error('Error:', err);
+    // Record for structured monitoring
+    try { recordServerError(err, req); } catch {}
     res.status(500).json({
         error: 'Internal server error',
         message: err.message
@@ -352,12 +385,40 @@ async function checkMjpgStreamerHealth() {
     }
 }
 
+
+function getLanAddresses() {
+  const ifaces = os.networkInterfaces();
+  const addrs = [];
+  for (const name of Object.keys(ifaces)) {
+    for (const i of ifaces[name] || []) {
+      if (i && i.family === 'IPv4' && !i.internal) addrs.push(i.address);
+    }
+  }
+  return addrs;
+}
+
+
+
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🎭 MonsterBox 4.0 server running on port ${PORT}`);
     console.log(`📱 Dashboard: http://localhost:${PORT}`);
     console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
     console.log(`🎬 Live Mode: http://localhost:${PORT}/live`);
+
+    // LAN addresses for convenience
+    try {
+        const ips = getLanAddresses();
+        if (ips.length) {
+            console.log('🌐 LAN access:');
+            for (const ip of ips) {
+                console.log(`   - http://${ip}:${PORT} (Dashboard)`);
+                console.log(`   - http://${ip}:${PORT}/demo (Demo)`);
+                console.log(`   - ws://${ip}:8795 (Real-time chat WS)`);
+            }
+        }
+    } catch (e) { /* ignore */ }
+
 
     // Check mjpg-streamer service availability
     console.log(`📹 Checking mjpg-streamer service...`);
@@ -386,6 +447,22 @@ app.listen(PORT, '0.0.0.0', async () => {
     } catch (error) {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
     }
+
+    // Console performance monitor (CPU, Memory, Audio streams, WS clients, Webcam)
+    try {
+        let lastVideoOk = mjpgHealthy;
+        let lastVideoCheck = Date.now();
+        setInterval(async () => {
+            const load1 = (os.loadavg?.()[0] || 0).toFixed(2);
+            const rssMb = (process.memoryUsage().rss / (1024*1024)).toFixed(0);
+            let audioStreams = 0;
+            try { const streams = await pipewireService.listActiveStreams(); audioStreams = streams.length; } catch {}
+            const wsClients = (typeof elevenLabsWebSocketService.getActiveConnectionsCount === 'function') ? elevenLabsWebSocketService.getActiveConnectionsCount() : 0;
+            if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch {} lastVideoCheck = Date.now(); }
+            console.log(`Perf | CPU(load1): ${load1} | Mem(RSS): ${rssMb}MB | Audio streams: ${audioStreams} | WS clients: ${wsClients} | Webcam: ${lastVideoOk ? 'OK' : 'NO'}`);
+        }, 5000);
+    } catch {}
+
 });
 
 // Graceful shutdown handling
@@ -432,4 +509,3 @@ async function gracefulShutdown(signal) {
 process.on('SIGTERM', function () { gracefulShutdown('SIGTERM'); });
 process.on('SIGINT', function () { gracefulShutdown('SIGINT'); });
 
-export default app;

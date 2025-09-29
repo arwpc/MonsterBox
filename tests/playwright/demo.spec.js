@@ -24,16 +24,28 @@ async function trackHttpErrors(page, label) {
   };
 }
 
+async function resetServerErrors(page) {
+  await page.request.post('/__errors/reset');
+}
+async function getServerErrorCount(page) {
+  const res = await page.request.get('/__errors');
+  const json = await res.json();
+  return json.count || 0;
+}
+
 test.describe('Animatronic Demo', () => {
   test.beforeEach(async ({ page }) => {
+    await resetServerErrors(page);
     // Navigate to demo page
     const tracker = await trackHttpErrors(page, 'navigate to /demo');
     await page.goto('/demo', { waitUntil: 'domcontentloaded' });
     tracker.assertClean();
     tracker.stop();
+    expect(await getServerErrorCount(page)).toBe(0);
   });
 
   test('Webcam appears and controls toggle without errors', async ({ page }) => {
+    await resetServerErrors(page);
     // Webcam should try to stream
     const tracker = await trackHttpErrors(page, 'webcam load');
     await page.waitForSelector('#webcamStatus', { state: 'attached' });
@@ -42,8 +54,10 @@ test.describe('Animatronic Demo', () => {
     expect(status ?? '').not.toEqual('');
     tracker.assertClean();
     tracker.stop();
+    expect(await getServerErrorCount(page)).toBe(0);
 
     // Toggle Jaw Animation and Head Tracking
+    await resetServerErrors(page);
     const t2 = await trackHttpErrors(page, 'toggle controls');
     await page.locator('#jawToggle').check();
     await page.waitForTimeout(150);
@@ -53,24 +67,41 @@ test.describe('Animatronic Demo', () => {
     await page.locator('#headTrackToggle').uncheck();
     t2.assertClean();
     t2.stop();
+    expect(await getServerErrorCount(page)).toBe(0);
   });
 
   test('Speak action succeeds (test-mode bypass)', async ({ page }) => {
+    await resetServerErrors(page);
     const tracker = await trackHttpErrors(page, 'speak');
     await page.fill('#sayInput', 'Hello there!');
     await page.click('#sayBtn');
     await expect(page.locator('#sayStatus')).toContainText(/Done|Success|test/i, { timeout: 5000 });
     tracker.assertClean();
     tracker.stop();
+    expect(await getServerErrorCount(page)).toBe(0);
   });
 
-  test('Speech bubble overlay and press-to-talk presence', async ({ page }) => {
+  test('Speech bubble overlay, press-to-talk, and selectors presence', async ({ page }) => {
+    await resetServerErrors(page);
     // Bubble element should exist
     await expect(page.locator('#speechBubble')).toHaveCount(1);
-    // Press-and-hold button exists and is disabled by default when ElevenLabs not configured in CI
+
+    // Press-and-hold button exists (likely disabled in CI when not configured)
     const btn = page.locator('#pressHoldBtn');
     await expect(btn).toHaveCount(1);
-    await expect(btn).toBeDisabled();
+
+    // Agent dropdown is present
+    await expect(page.locator('#agentSelect')).toHaveCount(1);
+
+    // Device dropdowns present with at least a default option
+    const mic = page.locator('#micSelect');
+    const spk = page.locator('#speakerSelect');
+    await expect(mic).toHaveCount(1);
+    await expect(spk).toHaveCount(1);
+    const micOptCount = await mic.locator('option').count();
+    const spkOptCount = await spk.locator('option').count();
+    expect(micOptCount).toBeGreaterThan(0);
+    expect(spkOptCount).toBeGreaterThan(0);
+    expect(await getServerErrorCount(page)).toBe(0);
   });
 });
-

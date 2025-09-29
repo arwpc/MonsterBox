@@ -25,7 +25,7 @@ Guiding Constraints
 
 Immediate Priorities
 1) Wire linear actuator to real hardware
-   - Create apps/monsterbox4/python_wrappers/linear_actuator_cli.py that calls scripts/linear_actuator_control.py
+   - Create python_wrappers/linear_actuator_cli.py that calls python_wrappers/linear_actuator_control.py
    - Map actions: extend, retract, stop; params may include speed, distance or duration (choose safe defaults)
    - Update services/hardwareService/index.js controller for linear_actuator to use runWrapper and parse JSON
    - Add README examples and ensure error messages propagate to UI drawers

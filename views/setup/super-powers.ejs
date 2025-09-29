@@ -100,62 +100,124 @@
       </div>
     </div>
 
-    <!-- Character Selection -->
+    <!-- Current Character Display -->
     <div class="row mb-4">
       <div class="col-12">
         <div class="card spooky-card">
           <div class="card-body">
             <h5 class="card-title">
-              <i class="bi bi-person-ghost"></i> Character Selection
+              <i class="bi bi-person-ghost"></i> Current Character
             </h5>
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <select class="form-select spooky-border" id="characterSelect">
-                  <option value="">Select a character...</option>
-                  <% (characters || []).forEach(function(char) { %>
-                    <option value="<%= char.id %>" <%= String(char.id) === String(selectedCharacterId) ? 'selected' : '' %>>
-                      <%= char.name %>
-                    </option>
-                  <% }); %>
-                </select>
+            <% if (currentCharacter && currentCharacterName) { %>
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-success me-2">
+                      <i class="bi bi-person-check"></i>
+                    </span>
+                    <h4 class="mb-0 halloween-glow"><%= currentCharacterName %></h4>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Super powers will be configured for this character
+                  </small>
+                </div>
               </div>
-              <div class="col-md-6">
-                <small class="text-muted">
-                  <i class="bi bi-info-circle"></i> 
-                  Select the character to configure super powers for
-                </small>
+            <% } else { %>
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>No Character Selected!</strong>
+                <br>Please select a character from the navigation menu to configure super powers.
+                <br><small>Use the character dropdown in the top-right corner of the navigation bar.</small>
               </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Character Servos Summary -->
+    <div class="row mb-4" id="servosSummarySection" <% if (!currentCharacter) { %>style="display: none;"<% } %>>
+      <div class="col-12">
+        <div class="card spooky-card">
+          <div class="card-body">
+            <h5 class="card-title">
+              <i class="bi bi-robot"></i> Character Servos Overview
+            </h5>
+            <div class="row" id="servosOverviewGrid">
+              <!-- Servo cards will be populated by JavaScript -->
+              <div class="col-12 text-center text-muted py-3" id="servosLoading">
+                <i class="bi bi-hourglass-split"></i> Loading servos...
+              </div>
+            </div>
+            <div class="mt-3">
+              <small class="text-muted">
+                <i class="bi bi-info-circle"></i>
+                These are all the servo parts configured for this character. You can select any for jaw animation.
+              </small>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Jaw Animation Configuration -->
-    <div class="row" id="jawAnimationSection" style="display: none;">
+    <!-- Super Powers Interface -->
+    <div class="row" id="jawAnimationSection" <% if (!currentCharacter) { %>style="display: none;"<% } %>>
       <div class="col-12">
         <div class="card spooky-card">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="card-title mb-0">
-                <i class="jaw-animation-icon">🦷</i>
-                Jaw Animation Super Power
-              </h5>
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="jawEnabled">
-                <label class="form-check-label" for="jawEnabled">
-                  <strong>Enable Jaw Animation</strong>
-                </label>
+            <!-- Tabbed Navigation -->
+            <nav>
+              <div class="nav nav-pills mb-3" id="superPowersTabs" role="tablist">
+                <button class="nav-link active halloween-btn me-2" id="jaw-animation-tab" 
+                        data-bs-toggle="pill" data-bs-target="#jaw-animation-pane" type="button" 
+                        role="tab" aria-controls="jaw-animation-pane" aria-selected="true">
+                  <i class="jaw-animation-icon">🦷</i> Jaw Animation
+                </button>
+                <button class="nav-link halloween-btn me-2" id="advanced-servos-tab" 
+                        data-bs-toggle="pill" data-bs-target="#advanced-servos-pane" type="button" 
+                        role="tab" aria-controls="advanced-servos-pane" aria-selected="false">
+                  <i class="bi bi-sliders"></i> Advanced Servos
+                </button>
+                <button class="nav-link halloween-btn me-2" id="audio-library-tab" 
+                        data-bs-toggle="pill" data-bs-target="#audio-library-pane" type="button" 
+                        role="tab" aria-controls="audio-library-pane" aria-selected="false">
+                  <i class="bi bi-music-note-list"></i> Audio Library
+                </button>
+                <button class="nav-link halloween-btn" id="ai-chat-tab" 
+                        data-bs-toggle="pill" data-bs-target="#ai-chat-pane" type="button" 
+                        role="tab" aria-controls="ai-chat-pane" aria-selected="false">
+                  <i class="bi bi-robot"></i> AI Chat
+                </button>
               </div>
-            </div>
-            
-            <div class="row">
-              <!-- Configuration Panel -->
-              <div class="col-lg-6">
-                <div class="config-section p-3">
-                  <h6 class="text-warning mb-3">
-                    <i class="bi bi-gear"></i> Configuration
-                  </h6>
+            </nav>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="superPowersTabContent">
+              <!-- Jaw Animation Tab -->
+              <div class="tab-pane fade show active" id="jaw-animation-pane" role="tabpanel" aria-labelledby="jaw-animation-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">
+                    <i class="jaw-animation-icon">🦷</i>
+                    Jaw Animation Super Power
+                  </h5>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="jawEnabled">
+                    <label class="form-check-label" for="jawEnabled">
+                      <strong>Enable Jaw Animation</strong>
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <!-- Configuration Panel -->
+                  <div class="col-lg-6">
+                    <div class="config-section p-3">
+                      <h6 class="text-warning mb-3">
+                        <i class="bi bi-gear"></i> Configuration
+                      </h6>
                   
                   <!-- Servo Selection -->
                   <div class="mb-3">
@@ -218,10 +280,13 @@
                   </div>
                 </div>
 
-                <!-- Save & Test Buttons -->
+                <!-- Save, Apply & Test Buttons -->
                 <div class="d-flex gap-2 mt-3">
                   <button type="button" class="btn halloween-btn flex-grow-1" id="saveConfigBtn">
                     <i class="bi bi-save"></i> Save Configuration
+                  </button>
+                  <button type="button" class="btn btn-outline-success" id="applyToPartBtn" title="Apply current settings to the selected servo part configuration">
+                    <i class="bi bi-arrow-up-right-circle"></i> Apply to Part
                   </button>
                   <button type="button" class="btn btn-outline-warning" id="testJawBtn">
                     <i class="bi bi-play-circle"></i> Test Jaw
@@ -289,15 +354,78 @@
                   </button>
                 </div>
 
-                <!-- Halloween Tips -->
-                <div class="alert alert-warning mt-3" role="alert">
-                  <h6><i class="bi bi-lightbulb"></i> Halloween Tips</h6>
-                  <ul class="mb-0 small">
-                    <li>Start with low sensitivity and increase gradually</li>
-                    <li>Higher smoothing prevents scary jittery movements</li>
-                    <li>Test your servo calibration first in Setup → Calibration</li>
-                    <li>Use the Emergency Stop if things get too spooky! 👻</li>
-                  </ul>
+                    <!-- Halloween Tips -->
+                    <div class="alert alert-warning mt-3" role="alert">
+                      <h6><i class="bi bi-lightbulb"></i> Halloween Tips</h6>
+                      <ul class="mb-0 small">
+                        <li>Start with low sensitivity and increase gradually</li>
+                        <li>Higher smoothing prevents scary jittery movements</li>
+                        <li>Test your servo calibration first in Setup → Calibration</li>
+                        <li>Use the Emergency Stop if things get too spooky! 👻</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Advanced Servos Tab -->
+              <div class="tab-pane fade" id="advanced-servos-pane" role="tabpanel" aria-labelledby="advanced-servos-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">
+                    <i class="bi bi-sliders"></i> Advanced Servo Control
+                  </h5>
+                  <div>
+                    <span class="badge bg-info" id="advancedServosCount">0 servos</span>
+                  </div>
+                </div>
+                
+                <div id="advancedServosGrid" class="row">
+                  <!-- Advanced servo controls will be populated by JavaScript -->
+                  <div class="col-12 text-center text-muted py-4" id="advancedServosLoading">
+                    <i class="bi bi-hourglass-split"></i> Loading advanced servo controls...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Audio Library Tab -->
+              <div class="tab-pane fade" id="audio-library-pane" role="tabpanel" aria-labelledby="audio-library-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">
+                    <i class="bi bi-music-note-list"></i> Audio Library Testing
+                  </h5>
+                </div>
+                
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle"></i>
+                  Select audio files to test jaw animation with different sounds and voices.
+                </div>
+                
+                <div id="audioLibraryContent">
+                  <!-- Audio library content will be populated by JavaScript -->
+                  <div class="text-center text-muted py-4" id="audioLibraryLoading">
+                    <i class="bi bi-hourglass-split"></i> Loading audio library...
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Chat Tab -->
+              <div class="tab-pane fade" id="ai-chat-pane" role="tabpanel" aria-labelledby="ai-chat-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">
+                    <i class="bi bi-robot"></i> AI Conversation Testing
+                  </h5>
+                </div>
+                
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle"></i>
+                  Test real-time character conversations with automatic jaw animation sync.
+                </div>
+                
+                <div id="aiChatContent">
+                  <!-- AI chat content will be populated by JavaScript -->
+                  <div class="text-center text-muted py-4" id="aiChatLoading">
+                    <i class="bi bi-hourglass-split"></i> Loading AI chat interface...
+                  </div>
                 </div>
               </div>
             </div>

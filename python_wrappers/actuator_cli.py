@@ -14,10 +14,7 @@ import sys
 import os
 import json
 
-# Add the ARCHIVE scripts directory to Python path
-SCRIPTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ARCHIVE/scripts'))
-sys.path.insert(0, SCRIPTS_DIR)
-
+# Import the local linear actuator control module
 try:
     from linear_actuator_control import control_actuator as _control_actuator
     CONTROL_AVAILABLE = True

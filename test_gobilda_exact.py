@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test GoBilda servo with exact ARCHIVE configuration
+Test GoBilda servo with exact configuration
 """
 
 import sys
@@ -16,8 +16,8 @@ except Exception as e:
     sys.exit(1)
 
 def test_gobilda_exact():
-    """Test GoBilda servo with exact ARCHIVE pulse widths"""
-    print("🔧 Testing GoBilda servo with ARCHIVE configuration...")
+    """Test GoBilda servo with exact pulse widths"""
+    print("🔧 Testing GoBilda servo with configuration...")
     print("   - Model: GoBilda Stingray 2 Servo")
     print("   - Mode: Feedback")
     print("   - Pulse Range: 500-2500µs")
@@ -29,7 +29,7 @@ def test_gobilda_exact():
         bus = pca9685_init(0x40)
         print("✅ PCA9685 initialized at 50Hz")
         
-        # Test exact pulse widths from ARCHIVE
+        # Test exact pulse widths from configuration
         test_values = [
             (1500, "Neutral/Center (1500µs)"),
             (500, "Min Position (500µs)"),

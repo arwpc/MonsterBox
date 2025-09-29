@@ -384,6 +384,146 @@ async function initializeForCharacter(characterId) {
   }
 }
 
+/**
+ * Test servo position for advanced servo control
+ */
+async function testServoPosition(characterId, servoPartId, position) {
+  try {
+    console.log(`🔧 Testing servo ${servoPartId} at position ${position}° for character ${characterId}`);
+    
+    // Validate parameters
+    if (!characterId || !servoPartId || position === undefined) {
+      return {
+        success: false,
+        error: 'Missing required parameters'
+      };
+    }
+    
+    // Validate position range
+    const pos = parseInt(position);
+    if (pos < 0 || pos > 180) {
+      return {
+        success: false,
+        error: 'Position must be between 0 and 180 degrees'
+      };
+    }
+    
+    // Get the servo part
+    const parts = await loadPartsFromController(characterId);
+    const servoPart = parts.find(p => p.id === parseInt(servoPartId) && p.type === 'servo');
+    
+    if (!servoPart) {
+      return {
+        success: false,
+        error: 'Servo part not found'
+      };
+    }
+    
+    // Use hardware service to move servo
+    const result = await hardwareService.moveServo(servoPart, pos);
+    
+    if (result.success) {
+      console.log(`✅ Servo ${servoPartId} successfully moved to ${pos}°`);
+      return {
+        success: true,
+        message: `Servo moved to ${pos}°`,
+        position: pos,
+        servoPartId: servoPartId
+      };
+    } else {
+      console.error(`❌ Failed to move servo ${servoPartId}:`, result.error);
+      return {
+        success: false,
+        error: result.error || 'Failed to move servo'
+      };
+    }
+    
+  } catch (error) {
+    console.error('Error testing servo position:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Test jaw animation with an audio file
+ * Combines audio playback with synchronized jaw movement
+ */
+async function testJawWithAudio(characterId, audioFile, jawConfig) {
+  try {
+    console.log(`🎵🦷 Testing jaw animation with audio "${audioFile.title}" for character ${characterId}`);
+    
+    // Validate jaw configuration
+    if (!jawConfig.enabled || !jawConfig.servoPartId) {
+      return {
+        success: false,
+        error: 'Jaw animation must be enabled with a servo selected'
+      };
+    }
+    
+    // Get the servo to make sure it exists and is calibrated
+    const servos = await getAvailableServos(characterId);
+    const jawServo = servos.find(s => s.id === jawConfig.servoPartId);
+    
+    if (!jawServo) {
+      return {
+        success: false,
+        error: 'Selected jaw servo not found'
+      };
+    }
+    
+    if (!jawServo.calibrated) {
+      return {
+        success: false,
+        error: 'Selected jaw servo must be calibrated first'
+      };
+    }
+    
+    // Initialize jaw animation for this character
+    await initializeForCharacter(characterId);
+    
+    // Start the audio playback with jaw animation
+    // This will rely on the existing audio processing pipeline
+    // that hooks into driveJawFromAmplitude during playback
+    console.log(`🎵 Starting audio playback with jaw sync for "${audioFile.title}"`);
+    
+    // Use the audio library service to play the file
+    // The audio playback will automatically trigger jaw animation
+    // through the existing audio processing hooks
+    const audioLibraryService = await import('./audioLibraryService.js');
+    const playbackResult = await audioLibraryService.playAudioWithJawSync(audioFile.id, {
+      characterId: characterId,
+      jawAnimationConfig: jawConfig,
+      volume: 80
+    });
+    
+    if (playbackResult.success) {
+      return {
+        success: true,
+        message: `Started jaw animation test with "${audioFile.title}"`,
+        audioId: audioFile.id,
+        audioTitle: audioFile.title,
+        duration: audioFile.duration,
+        characterId: characterId
+      };
+    } else {
+      return {
+        success: false,
+        error: playbackResult.error || 'Failed to start audio playback with jaw sync'
+      };
+    }
+    
+  } catch (error) {
+    console.error('Error testing jaw with audio:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 export {
   readJawConfig,
   writeJawConfig,
@@ -397,5 +537,7 @@ export {
   estimateAmplitudeFromText,
   initializeForCharacter,
   calculateJawAngle,
-  applySmoothingToAmplitude
+  applySmoothingToAmplitude,
+  testServoPosition,
+  testJawWithAudio
 };

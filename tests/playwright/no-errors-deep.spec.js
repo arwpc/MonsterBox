@@ -70,6 +70,15 @@ async function clickSomeLinks(page, max = 6) {
   }
 }
 
+async function resetServerErrors(page) {
+  await page.request.post('/__errors/reset');
+}
+async function getServerErrorCount(page) {
+  const res = await page.request.get('/__errors');
+  const json = await res.json();
+  return json.count || 0;
+}
+
 const EXTRA_PAGES = [
   '/setup/models',
   '/setup/super-powers',
@@ -85,12 +94,16 @@ const EXTRA_PAGES = [
   '/ai-settings',
   '/ai-settings/stt',
   '/ai-settings/tts',
-  '/ai-settings/agents'
+  '/ai-settings/agents',
+  // Demo and conversation deep links
+  '/demo',
+  '/conversation'
 ];
 
 for (const path of EXTRA_PAGES) {
   test(`Deep page no 400/500: ${path}`, async ({ page, baseURL }) => {
     test.setTimeout(45000);
+    await resetServerErrors(page);
     await assertNoHttpErrors(page, async () => {
       await page.goto(path);
       await page.waitForLoadState('domcontentloaded');
@@ -98,6 +111,6 @@ for (const path of EXTRA_PAGES) {
       await clickSomeLinks(page, 5);
       await page.waitForTimeout(200);
     }, { label: `visit ${baseURL}${path}` });
+    expect(await getServerErrorCount(page), `No server 5xx recorded for ${path}`).toBe(0);
   });
 }
-

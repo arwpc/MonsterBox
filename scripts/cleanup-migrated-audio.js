@@ -15,8 +15,8 @@ const rootDir = path.join(__dirname, '..');
 
 console.log('🧹 Starting Audio File Cleanup...\n');
 
-// Create archive directory
-const archiveDir = path.join(rootDir, 'ARCHIVE', 'migrated-audio-files');
+// Create cleanup archive directory in data folder structure
+const archiveDir = path.join(rootDir, 'data', 'archived-original-files', 'migrated-audio');
 await fs.mkdir(archiveDir, { recursive: true });
 
 // Define files to move (excluding the one we already uploaded manually)
@@ -62,7 +62,7 @@ for (const filePath of filesToMove) {
         
         // Move file
         await fs.rename(fullPath, finalArchivePath);
-        console.log(`✅ Moved: ${filePath} → ARCHIVE/migrated-audio-files/${path.basename(finalArchivePath)}`);
+        console.log(`✅ Moved: ${filePath} → data/archived-original-files/migrated-audio/${path.basename(finalArchivePath)}`);
         movedCount++;
         
     } catch (error) {
@@ -79,10 +79,10 @@ console.log('\n🎉 Cleanup Complete!');
 console.log(`📊 Summary:`);
 console.log(`   ✅ Moved: ${movedCount} files`);
 console.log(`   ❌ Errors: ${errorCount} files`);
-console.log(`   📁 Archive location: ARCHIVE/migrated-audio-files/`);
+console.log(`   📁 Archive location: data/archived-original-files/migrated-audio/`);
 
 if (movedCount > 0) {
-    console.log('\n📝 Note: Original audio files have been moved to the archive.');
+    console.log('\n📝 Note: Original audio files have been moved to the data archive directory.');
     console.log('   All audio files are now centrally managed in the Audio Library.');
     console.log('   Visit http://localhost:3000/audio-library to access your files.');
 }

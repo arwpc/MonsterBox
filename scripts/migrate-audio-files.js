@@ -40,9 +40,9 @@ import('../services/audioLibraryService.js').then(async ({ default: audioLibrary
             pattern: /testtalking\.mp3$/
         },
         {
-            path: 'ARCHIVE/tests/assets',
-            category: 'other',
-            description: 'Test audio files from archive'
+            path: 'data/archived-original-files/test-audio',
+            prefix: 'test-audio',
+            description: 'Test audio files from archived data'
         }
     ];
 

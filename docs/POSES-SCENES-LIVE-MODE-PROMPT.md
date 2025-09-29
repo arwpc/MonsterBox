@@ -1,4 +1,4 @@
-# 🎃 MonsterBox 4.0: Complete Poses, Scenes, Steps & Live Mode Implementation
+d# 🎃 MonsterBox 4.0: Complete Poses, Scenes, Steps & Live Mode Implementation
 
 ## 📋 CRITICAL: READ README.md FIRST
 MANDATORY: Before starting any work, thoroughly read the `README.md` file to understand MonsterBox 4.0's architecture, existing capabilities, and testing requirements. This system builds upon a sophisticated foundation that must be preserved and leveraged.
@@ -25,9 +25,9 @@ Implement a comprehensive interactive animatronic control system for MonsterBox 
   - Bootstrap 5 UI with dark theme
   - Comprehensive testing infrastructure (Playwright + Mocha)
 
-### ARCHIVE Reference Only
-- Use ARCHIVE files ONLY for reference and understanding legacy patterns
-- Do NOT copy ARCHIVE code - adapt concepts to MonsterBox 4.0 architecture
+### Legacy Code Reference
+- Legacy files should be used ONLY for reference and understanding patterns
+- Do NOT copy legacy code - adapt concepts to MonsterBox 4.0 architecture
 - MonsterBox 4.0 is single-node, simplified, and more robust
 
 ### Character Isolation

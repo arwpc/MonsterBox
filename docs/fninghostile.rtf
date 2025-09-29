@@ -1,0 +1,399 @@
+remote@groundbreaker:~/MonsterBox $ npm start
+
+> monsterbox4@4.0.0 start
+> node server.js
+
+🧹 Started periodic stream cleanup (30000ms interval)
+🔧 Loaded setup parts routes
+🔌 Mounting /setup/parts routes
+Registered routes count: 255
+Some routes: [
+  'GET /setup/parts',
+  'GET /setup/parts/api/parts',
+  'GET /setup/parts/api/parts/:id',
+  'POST /setup/parts/api/parts',
+  'PUT /setup/parts/api/parts/:id',
+  'DELETE /setup/parts/api/parts/:id',
+  'POST /setup/parts/api/parts/:id/test'
+]
+🎭 MonsterBox 4.0 server running on port 3000
+📱 Dashboard: http://localhost:3000
+⚙️  Setup: http://localhost:3000/setup
+🎬 Live Mode: http://localhost:3000/live
+📹 Checking mjpg-streamer service...
+✅ mjpg-streamer service is running on port 8090
+🎥 Webcam streaming: http://localhost:8090/?action=stream
+🌐 ElevenLabs Chat WebSocket server listening on port 8795
+🚀 Real-time AI chat: ws://localhost:8795
+🦷 Initializing jaw animation audio integration...
+🎙️ Setting up ElevenLabs jaw animation hooks...
+✅ ElevenLabs jaw animation hooks established
+🔊 Setting up PipeWire jaw animation monitoring...
+✅ PipeWire jaw animation monitoring established
+✅ Jaw animation audio integration initialized
+🦷 Jaw animation audio integration started
+TTS generation error: AxiosError: Request failed with status code 401
+    at settle (file:///home/remote/MonsterBox/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///home/remote/MonsterBox/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:529:35)
+    at endReadableNT (node:internal/streams/readable:1400:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (file:///home/remote/MonsterBox/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ElevenLabsTTSService.generateSpeech (file:///home/remote/MonsterBox/services/elevenLabsTTSService.js:98:30)
+    at async file:///home/remote/MonsterBox/routes/conversation.js:180:17 {
+  code: 'ERR_BAD_REQUEST',
+  config: {
+    transitional: {
+      silentJSONParsing: true,
+      forcedJSONParsing: true,
+      clarifyTimeoutError: false
+    },
+    adapter: [ 'xhr', 'http', 'fetch' ],
+    transformRequest: [ [Function: transformRequest] ],
+    transformResponse: [ [Function: transformResponse] ],
+    timeout: 30000,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: { FormData: [Function [FormData]], Blob: [class Blob] },
+    validateStatus: [Function: validateStatus],
+    headers: Object [AxiosHeaders] {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      'xi-api-key': 'placeholder-key-replace-with-real-elevenlabs-api-key',
+      'User-Agent': 'axios/1.12.1',
+      'Content-Length': '144',
+      'Accept-Encoding': 'gzip, compress, deflate, br'
+    },
+    responseType: 'arraybuffer',
+    method: 'post',
+    url: 'https://api.elevenlabs.io/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+    data: '{"text":"hello","model_id":"eleven_monolingual_v1","voice_settings":{"stability":0.5,"similarity_boost":0.5,"style":0,"use_speaker_boost":true}}',
+    allowAbsoluteUrls: true
+  },
+  request: <ref *1> ClientRequest {
+    _events: [Object: null prototype] {
+      abort: [Function (anonymous)],
+      aborted: [Function (anonymous)],
+      connect: [Function (anonymous)],
+      error: [Function (anonymous)],
+      socket: [Function (anonymous)],
+      timeout: [Function (anonymous)],
+      finish: [Function: requestOnFinish]
+    },
+    _eventsCount: 7,
+    _maxListeners: undefined,
+    outputData: [],
+    outputSize: 0,
+    writable: true,
+    destroyed: true,
+    _last: true,
+    chunkedEncoding: false,
+    shouldKeepAlive: false,
+    maxRequestsOnConnectionReached: false,
+    _defaultKeepAlive: true,
+    useChunkedEncodingByDefault: true,
+    sendDate: false,
+    _removedConnection: false,
+    _removedContLen: false,
+    _removedTE: false,
+    strictContentLength: false,
+    _contentLength: '144',
+    _hasBody: true,
+    _trailer: '',
+    finished: true,
+    _headerSent: true,
+    _closed: true,
+    socket: TLSSocket {
+      _tlsOptions: [Object],
+      _secureEstablished: true,
+      _securePending: false,
+      _newSessionPending: false,
+      _controlReleased: true,
+      secureConnecting: false,
+      _SNICallback: null,
+      servername: 'api.elevenlabs.io',
+      alpnProtocol: false,
+      authorized: true,
+      authorizationError: null,
+      encrypted: true,
+      _events: [Object: null prototype],
+      _eventsCount: 9,
+      connecting: false,
+      _hadError: false,
+      _parent: null,
+      _host: 'api.elevenlabs.io',
+      _closeAfterHandlingError: false,
+      _readableState: [ReadableState],
+      _maxListeners: undefined,
+      _writableState: [WritableState],
+      allowHalfOpen: false,
+      _sockname: null,
+      _pendingData: null,
+      _pendingEncoding: '',
+      server: undefined,
+      _server: null,
+      ssl: null,
+      _requestCert: true,
+      _rejectUnauthorized: true,
+      parser: null,
+      _httpMessage: [Circular *1],
+      timeout: 30000,
+      [Symbol(alpncallback)]: null,
+      [Symbol(res)]: null,
+      [Symbol(verified)]: true,
+      [Symbol(pendingSession)]: null,
+      [Symbol(async_id_symbol)]: 16203,
+      [Symbol(kHandle)]: null,
+      [Symbol(lastWriteQueueSize)]: 0,
+      [Symbol(timeout)]: Timeout {
+        _idleTimeout: -1,
+        _idlePrev: null,
+        _idleNext: null,
+        _idleStart: 61451,
+        _onTimeout: null,
+        _timerArgs: undefined,
+        _repeat: null,
+        _destroyed: true,
+        [Symbol(refed)]: false,
+        [Symbol(kHasPrimitive)]: false,
+        [Symbol(asyncId)]: 16211,
+        [Symbol(triggerId)]: 16206
+      },
+      [Symbol(kBuffer)]: null,
+      [Symbol(kBufferCb)]: null,
+      [Symbol(kBufferGen)]: null,
+      [Symbol(kCapture)]: false,
+      [Symbol(kSetNoDelay)]: false,
+      [Symbol(kSetKeepAlive)]: true,
+      [Symbol(kSetKeepAliveInitialDelay)]: 60,
+      [Symbol(kBytesRead)]: 753,
+      [Symbol(kBytesWritten)]: 479,
+      [Symbol(connect-options)]: [Object]
+    },
+    _header: 'POST /v1/text-to-speech/Tj9l48J9AJbry5yCP5eW HTTP/1.1\r\n' +
+      'Accept: application/json, text/plain, */*\r\n' +
+      'Content-Type: application/json\r\n' +
+      'xi-api-key: placeholder-key-replace-with-real-elevenlabs-api-key\r\n' +
+      'User-Agent: axios/1.12.1\r\n' +
+      'Content-Length: 144\r\n' +
+      'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+      'Host: api.elevenlabs.io\r\n' +
+      'Connection: close\r\n' +
+      '\r\n',
+    _keepAliveTimeout: 0,
+    _onPendingData: [Function: nop],
+    agent: Agent {
+      _events: [Object: null prototype],
+      _eventsCount: 2,
+      _maxListeners: undefined,
+      defaultPort: 443,
+      protocol: 'https:',
+      options: [Object: null prototype],
+      requests: [Object: null prototype] {},
+      sockets: [Object: null prototype] {},
+      freeSockets: [Object: null prototype] {},
+      keepAliveMsecs: 1000,
+      keepAlive: false,
+      maxSockets: Infinity,
+      maxFreeSockets: 256,
+      scheduling: 'lifo',
+      maxTotalSockets: Infinity,
+      totalSocketCount: 0,
+      maxCachedSessions: 100,
+      _sessionCache: [Object],
+      [Symbol(kCapture)]: false
+    },
+    socketPath: undefined,
+    method: 'POST',
+    maxHeaderSize: undefined,
+    insecureHTTPParser: undefined,
+    joinDuplicateHeaders: undefined,
+    path: '/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+    _ended: true,
+    res: IncomingMessage {
+      _readableState: [ReadableState],
+      _events: [Object: null prototype],
+      _eventsCount: 4,
+      _maxListeners: undefined,
+      socket: [TLSSocket],
+      httpVersionMajor: 1,
+      httpVersionMinor: 1,
+      httpVersion: '1.1',
+      complete: true,
+      rawHeaders: [Array],
+      rawTrailers: [],
+      joinDuplicateHeaders: undefined,
+      aborted: false,
+      upgrade: false,
+      url: '',
+      method: null,
+      statusCode: 401,
+      statusMessage: 'Unauthorized',
+      client: [TLSSocket],
+      _consuming: true,
+      _dumped: false,
+      req: [Circular *1],
+      responseUrl: 'https://api.elevenlabs.io/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+      redirects: [],
+      [Symbol(kCapture)]: false,
+      [Symbol(kHeaders)]: [Object],
+      [Symbol(kHeadersCount)]: 32,
+      [Symbol(kTrailers)]: null,
+      [Symbol(kTrailersCount)]: 0
+    },
+    aborted: false,
+    timeoutCb: null,
+    upgradeOrConnect: false,
+    parser: null,
+    maxHeadersCount: null,
+    reusedSocket: false,
+    host: 'api.elevenlabs.io',
+    protocol: 'https:',
+    _redirectable: Writable {
+      _writableState: [WritableState],
+      _events: [Object: null prototype],
+      _eventsCount: 3,
+      _maxListeners: undefined,
+      _options: [Object],
+      _ended: true,
+      _ending: true,
+      _redirectCount: 0,
+      _redirects: [],
+      _requestBodyLength: 144,
+      _requestBodyBuffers: [],
+      _onNativeResponse: [Function (anonymous)],
+      _currentRequest: [Circular *1],
+      _currentUrl: 'https://api.elevenlabs.io/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+      _timeout: null,
+      [Symbol(kCapture)]: false
+    },
+    [Symbol(kCapture)]: false,
+    [Symbol(kBytesWritten)]: 0,
+    [Symbol(kNeedDrain)]: false,
+    [Symbol(corked)]: 0,
+    [Symbol(kOutHeaders)]: [Object: null prototype] {
+      accept: [Array],
+      'content-type': [Array],
+      'xi-api-key': [Array],
+      'user-agent': [Array],
+      'content-length': [Array],
+      'accept-encoding': [Array],
+      host: [Array]
+    },
+    [Symbol(errored)]: null,
+    [Symbol(kHighWaterMark)]: 16384,
+    [Symbol(kRejectNonStandardBodyWrites)]: false,
+    [Symbol(kUniqueHeaders)]: null
+  },
+  response: {
+    status: 401,
+    statusText: 'Unauthorized',
+    headers: Object [AxiosHeaders] {
+      date: 'Mon, 29 Sep 2025 02:24:19 GMT',
+      server: 'uvicorn',
+      'content-type': 'application/json',
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': '*',
+      'access-control-allow-methods': 'POST, PATCH, OPTIONS, DELETE, GET, PUT',
+      'access-control-max-age': '600',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains',
+      'x-trace-id': 'b7842b28921663cc20836820df221589',
+      'x-region': 'us-central1',
+      vary: 'Accept-Encoding',
+      via: '1.1 google, 1.1 google',
+      'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000',
+      connection: 'close',
+      'transfer-encoding': 'chunked'
+    },
+    config: {
+      transitional: [Object],
+      adapter: [Array],
+      transformRequest: [Array],
+      transformResponse: [Array],
+      timeout: 30000,
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
+      maxContentLength: -1,
+      maxBodyLength: -1,
+      env: [Object],
+      validateStatus: [Function: validateStatus],
+      headers: [Object [AxiosHeaders]],
+      responseType: 'arraybuffer',
+      method: 'post',
+      url: 'https://api.elevenlabs.io/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+      data: '{"text":"hello","model_id":"eleven_monolingual_v1","voice_settings":{"stability":0.5,"similarity_boost":0.5,"style":0,"use_speaker_boost":true}}',
+      allowAbsoluteUrls: true
+    },
+    request: <ref *1> ClientRequest {
+      _events: [Object: null prototype],
+      _eventsCount: 7,
+      _maxListeners: undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: true,
+      chunkedEncoding: false,
+      shouldKeepAlive: false,
+      maxRequestsOnConnectionReached: false,
+      _defaultKeepAlive: true,
+      useChunkedEncodingByDefault: true,
+      sendDate: false,
+      _removedConnection: false,
+      _removedContLen: false,
+      _removedTE: false,
+      strictContentLength: false,
+      _contentLength: '144',
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: true,
+      _closed: true,
+      socket: [TLSSocket],
+      _header: 'POST /v1/text-to-speech/Tj9l48J9AJbry5yCP5eW HTTP/1.1\r\n' +
+        'Accept: application/json, text/plain, */*\r\n' +
+        'Content-Type: application/json\r\n' +
+        'xi-api-key: placeholder-key-replace-with-real-elevenlabs-api-key\r\n' +
+        'User-Agent: axios/1.12.1\r\n' +
+        'Content-Length: 144\r\n' +
+        'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+        'Host: api.elevenlabs.io\r\n' +
+        'Connection: close\r\n' +
+        '\r\n',
+      _keepAliveTimeout: 0,
+      _onPendingData: [Function: nop],
+      agent: [Agent],
+      socketPath: undefined,
+      method: 'POST',
+      maxHeaderSize: undefined,
+      insecureHTTPParser: undefined,
+      joinDuplicateHeaders: undefined,
+      path: '/v1/text-to-speech/Tj9l48J9AJbry5yCP5eW',
+      _ended: true,
+      res: [IncomingMessage],
+      aborted: false,
+      timeoutCb: null,
+      upgradeOrConnect: false,
+      parser: null,
+      maxHeadersCount: null,
+      reusedSocket: false,
+      host: 'api.elevenlabs.io',
+      protocol: 'https:',
+      _redirectable: [Writable],
+      [Symbol(kCapture)]: false,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(kNeedDrain)]: false,
+      [Symbol(corked)]: 0,
+      [Symbol(kOutHeaders)]: [Object: null prototype],
+      [Symbol(errored)]: null,
+      [Symbol(kHighWaterMark)]: 16384,
+      [Symbol(kRejectNonStandardBodyWrites)]: false,
+      [Symbol(kUniqueHeaders)]: null
+    },
+    data: <Buffer 7b 22 64 65 74 61 69 6c 22 3a 7b 22 73 74 61 74 75 73 22 3a 22 69 6e 76 61 6c 69 64 5f 61 70 69 5f 6b 65 79 22 2c 22 6d 65 73 73 61 67 65 22 3a 22 49 ... 17 more bytes>
+  },
+  status: 401
+}
