@@ -2,6 +2,9 @@
 
 **MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
+
+> Note on ports: This build defaults to port 3100. If any examples below show 3000, use 3100 instead (e.g., http://127.0.0.1:3100).
+
 ## ✅ Nightly Fixes Summary (stability + tests)
 
 - Fixed character‑aware data paths in Motion Tracking (no more ENOENT on data/parts.json)
@@ -106,6 +109,40 @@ sudo chmod 600 /etc/monsterbox/elevenlabs.key
 ```bash
 npm ci
 npm start
+
+### Post‑install validation (RPi 4B)
+
+After rebooting the Pi:
+
+1. Navigate to your MonsterBox repo and install Node deps
+   ```bash
+   cd ~/MonsterBox
+   npm ci
+   ```
+2. Run unit tests (quick smoke of APIs and hardware wrappers)
+   ```bash
+   npm run -s test:unit
+   ```
+3. Verify mjpg‑streamer
+   ```bash
+   systemctl status mjpg-streamer --no-pager
+   curl -I http://127.0.0.1:8090/?action=stream
+   ```
+4. Quick audio sanity
+   ```bash
+   wpctl status | sed -n '1,80p'  # sinks/sources list
+   pw-play --target "$(wpctl get-default-sink)" public/sounds/monster-howl-85304.mp3 || true
+   ```
+5. Start MonsterBox and open key pages (ensure no HTTP 400s in console)
+   ```bash
+   npm start
+   # Pages: http://127.0.0.1:3100/, /setup, /setup/calibration, /audio-library, /scenes
+   ```
+6. Optional: Playwright UI suite (if enabled on your Pi)
+   ```bash
+   npm run -s test:ui || true
+   ```
+
 ```
 
 4) Select Skulltalker as the active character (optional)
@@ -866,6 +903,55 @@ npm install -D @playwright/test
 npx playwright install firefox
 # Install missing system libs (may require sudo)
 sudo npx playwright install-deps firefox
+
+
+## 🎬 Scenes Queue & Queue Library (NEW)
+
+The Scene system now includes a lifecycle-aware Queue engine and a persisted Queue Library.
+
+- Queue modes: `sequential` (default) or `loop_queue`
+- Scene lifecycles per item:
+  - `run_once`
+  - `run_for_duration` { duration: seconds }
+  - `loop_until_disabled` { max_duration: seconds }
+- Hard safety cap: all looping durations are strictly ≤ 48 hours
+- Controls: pause, resume, skip, insert priority scene, emergency stop
+
+### Queue Control API
+- `POST /scenes/api/queue/start-config` { name?, mode, scenes[] }
+- `GET  /scenes/api/queue` → status { running, paused, mode, nowPlaying, items, priority }
+- `POST /scenes/api/queue/pause`
+- `POST /scenes/api/queue/resume`
+- `POST /scenes/api/queue/skip`
+- `POST /scenes/api/queue/insert` { sceneId }
+- `POST /scenes/api/queue/emergency-stop`
+
+Example start-config body:
+````json
+{
+  "name": "Halloween Night Show",
+  "mode": "sequential",
+  "scenes": [
+    { "scene_id": "castle_greeting", "lifecycle": { "mode": "run_once" } },
+    { "scene_id": "ambient_loop", "lifecycle": { "mode": "run_for_duration", "duration": 600 } },
+    { "scene_id": "orlok_finale", "lifecycle": { "mode": "loop_until_disabled", "max_duration": 1800 } }
+  ]
+}
+````
+
+### Queue Library API (persisted definitions)
+- `GET  /scenes/api/queue/library` → list
+- `POST /scenes/api/queue/library` { name, mode, scenes[] } → create
+- `GET  /scenes/api/queue/library/:id` → get
+- `PUT  /scenes/api/queue/library/:id` → update
+- `DELETE /scenes/api/queue/library/:id` → delete
+- `POST /scenes/api/queue/library/:id/export` → download JSON
+- `POST /scenes/api/queue/library/import` (multipart or raw JSON)
+
+Notes
+- Status is pollable via `GET /scenes/api/queue`; an SSE stream can be added if needed.
+- Pause/resume/skip take effect at safe transition points between steps.
+- Emergency stop cancels immediately and clears pending items and priority.
 
 # Run only the webcam test (single worker recommended on Pi)
 npx playwright test --project=firefox test/e2e/webcam-mjpeg.spec.js --reporter=line --workers=1
