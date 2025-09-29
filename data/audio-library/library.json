@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "createdAt": "2025-09-23T05:39:19.673Z",
-  "lastModified": "2025-09-29T06:51:00.436Z",
+  "lastModified": "2025-09-29T21:33:23.989Z",
   "categories": [
     "monster-sounds",
     "ambient",
@@ -14,7 +14,7 @@
     "nature",
     "other"
   ],
-  "totalSize": 12121463,
+  "totalSize": 12121491,
   "audio": [
     {
       "id": "ba5adb09-7e25-49bd-80d8-12bb9aff1f35",
@@ -492,7 +492,32 @@
       "favorite": false,
       "playCount": 0,
       "lastPlayed": null
+    },
+    {
+      "id": "63069dbc-4af2-435f-acd0-d4e4b66fecc1",
+      "title": "Test Audio",
+      "description": "Test audio file for multer 2.0",
+      "filename": "63069dbc-4af2-435f-acd0-d4e4b66fecc1.wav",
+      "originalFilename": "test-audio.wav",
+      "format": "wav",
+      "duration": null,
+      "fileSize": 28,
+      "sampleRate": null,
+      "channels": null,
+      "bitrate": null,
+      "tags": [],
+      "category": "test",
+      "artist": null,
+      "album": null,
+      "genre": null,
+      "year": null,
+      "uploadedAt": "2025-09-29T21:33:23.952Z",
+      "lastModified": "2025-09-29T21:33:23.952Z",
+      "waveformGenerated": true,
+      "favorite": false,
+      "playCount": 0,
+      "lastPlayed": null
     }
   ],
-  "totalFiles": 15
+  "totalFiles": 16
 }

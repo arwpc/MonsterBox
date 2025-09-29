@@ -89,6 +89,25 @@
       "favorite": false,
       "playCount": 0,
       "thumbnailPath": "dad5cf71-097d-42a8-b310-fa6c95fd28e1.jpg"
+    },
+    {
+      "id": "3929fd68-49cc-4349-a817-b00bc5e4c3d8",
+      "title": "Test Video",
+      "description": "Test video file for multer 2.0",
+      "category": "test",
+      "tags": [],
+      "originalName": "test-video.mp4",
+      "fileName": "3929fd68-49cc-4349-a817-b00bc5e4c3d8.mp4",
+      "format": "mp4",
+      "fileSize": 16,
+      "duration": 0,
+      "resolution": "unknown",
+      "fps": 0,
+      "bitrate": 0,
+      "uploadedAt": "2025-09-29T21:33:24.998Z",
+      "favorite": false,
+      "playCount": 0,
+      "thumbnailPath": null
     }
   ],
   "categories": [
@@ -98,5 +117,5 @@
     "other"
   ],
   "version": "1.0.0",
-  "lastUpdated": "2025-09-29T06:53:40.101Z"
+  "lastUpdated": "2025-09-29T21:33:25.000Z"
 }

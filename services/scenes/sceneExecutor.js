@@ -7,6 +7,7 @@ import hardwareService from '../hardwareService/index.js';
 import elevenLabsTTSService from '../elevenLabsTTSService.js';
 import serverPlaybackService from '../serverPlaybackService.js';
 import { getTTSConfig } from '../aiConfigStore.js';
+import goblinManagerService from '../goblinManagerService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,6 +105,68 @@ async function executeSayThisStep(step, characterId, emit) {
   return play;
 }
 
+async function executeGoblinVideoStep(step, characterId, emit) {
+  const { goblinId, videoId, options = {} } = step;
+  
+  if (!goblinId) throw new Error('goblin.step requires goblinId');
+  if (!videoId) throw new Error('goblin.step requires videoId (filename)');
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'goblin', goblinId, videoId });
+
+  try {
+    // Check if Goblin exists and is online
+    const goblin = await goblinManagerService.getGoblin(goblinId);
+    if (!goblin.success) {
+      throw new Error(`Goblin not found: ${goblinId}`);
+    }
+
+    if (goblin.goblin.status !== 'online') {
+      throw new Error(`Goblin is not online: ${goblinId}`);
+    }
+
+    // Verify character lock if required
+    if (step.requireLock && !goblin.goblin.lockedBy) {
+      throw new Error(`Goblin must be locked to use in Scene: ${goblinId}`);
+    }
+
+    if (step.requireLock && characterId && goblin.goblin.lockedBy !== `character-${characterId}`) {
+      throw new Error(`Goblin is locked by ${goblin.goblin.lockedBy}, not character-${characterId}`);
+    }
+
+    // Play video on Goblin
+    const playResult = await goblinManagerService.playVideoOnGoblin(goblinId, videoId, {
+      loop: options.loop !== false, // Default to loop
+      volume: options.volume || 80,
+      ...options
+    });
+
+    if (!playResult.success) {
+      throw new Error(`Failed to play video on Goblin: ${playResult.error}`);
+    }
+
+    emit && emit({ 
+      type: 'step', 
+      status: 'complete', 
+      stepType: 'goblin', 
+      goblinId, 
+      videoId, 
+      result: playResult 
+    });
+
+    return playResult;
+  } catch (error) {
+    emit && emit({ 
+      type: 'step', 
+      status: 'error', 
+      stepType: 'goblin', 
+      goblinId, 
+      videoId, 
+      error: error.message 
+    });
+    throw error;
+  }
+}
+
 export async function executeStep(step, characterId, emit, options) {
   const dryRun = options && options.dryRun;
   const t = (step.type || (step.poseId != null ? 'pose' : null));
@@ -129,6 +192,9 @@ export async function executeStep(step, characterId, emit, options) {
       return executeWaitStep(step, emit);
     case 'sayThis':
       return executeSayThisStep(step, characterId, emit);
+    case 'goblin':
+    case 'goblin-video':
+      return executeGoblinVideoStep(step, characterId, emit);
     default:
       throw new Error('Unknown step type: ' + t);
   }
