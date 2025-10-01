@@ -162,10 +162,10 @@ class GoblinServer {
     });
 
     // Media file management
-    this.app.get('/media', (req, res) => {
+    this.app.get('/media', async (req, res) => {
       res.json({
         success: true,
-        media: this.fileManager.getMediaList()
+        media: await this.fileManager.getMediaList()
       });
     });
 

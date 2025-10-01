@@ -1,7 +1,0 @@
-# Mocha Configuration for MonsterBox Tests
---recursive
---timeout 30000
---reporter spec
---colors
---exit
---require tests/setup.js

@@ -11,8 +11,8 @@ class FileManager {
   constructor(goblinServer) {
     this.goblin = goblinServer;
     this.mediaPaths = {
-      video: path.join(__dirname, '..', 'media', 'video'),
-      audio: path.join(__dirname, '..', 'media', 'audio')
+      video: path.join(__dirname, 'media', 'video'),
+      audio: path.join(__dirname, 'media', 'audio')
     };
     this.supportedFormats = {
       video: ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv'],
