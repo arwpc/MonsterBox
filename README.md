@@ -1,6 +1,6 @@
 # MonsterBox 5.0 - Single Node Animatronic Control System
 
-**MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
+**MonsterBox 5.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
 
 > Note on ports: This build defaults to port 3100. If any examples below show 3000, use 3100 instead (e.g., http://127.0.0.1:3100).
@@ -13,6 +13,22 @@
 - Dynamic video indexing supported: videos placed under ./videos are auto‑indexed for the library
 - SMBus compatibility: python wrappers now auto‑detect smbus2 and fall back to smbus; install.sh includes python3-smbus2
 - Added test scripts for the video indexing flow (unit + UI)
+
+
+## 🧭 Feature Index (Complete)
+
+- Core App: Single-node control system, Calibration-first workflow, Models, Parts CRUD
+- Motion & Vision: MJPEG streaming via mjpg-streamer, Motion Tracking + Head Tracking Super Power
+- Audio System: PipeWire routing, Speakers, Microphones, Audio tests and routing
+- Audio Library: Waveform player, metadata, search/filter, character playback
+- Scenes: Scene creation + Queue/Loop engine with safety caps
+- Super Powers: Jaw Animation (audio-driven), Advanced Servo Controls, AI chat integration
+- Dynamic Video Library: Auto-index videos in ./videos (kept out of git)
+- Goblin System: Distributed video/audio playback nodes with auto-discovery
+- AI & Conversational: ElevenLabs ConvAI integration (server/broswer mics, server playback)
+- Testing: Unit + Playwright UI suites (including Super Powers & Video Library)
+- Platform: Raspberry Pi 4B optimizations, install scripts, performance hardening
+- Repository: Lightweight history, ARCHIVE removed, media policy (keep large media out of git)
 
 
 
@@ -400,6 +416,22 @@ This app includes a unified GoBilda model that supports both continuous and posi
 
 ### Configure the Head Servo (Orlok)
 1) Setup → Calibration → Create Part → type=servo
+
+## 🧠 Super Powers (Jaw Animation & Advanced Servos) — NEW
+
+- Where: Setup → Super Powers → http://localhost:3000/setup/super-powers
+- Jaw Animation: drive the jaw servo from live audio (PipeWire) and ElevenLabs TTS
+  - Enable per-character; choose jaw servo; set sensitivity, smoothing, thresholds
+  - Real-time monitoring; start/stop monitoring; test movement and test-with-audio
+  - Integrations: ElevenLabs WS audio hooks, server audio monitoring (PipeWire)
+- Advanced Servos: quick per-servo position controls, calibration status, jaw candidate tagging
+- Tabs: Jaw Animation, Advanced Servos, Audio Library, AI Chat
+- APIs (examples):
+  - GET /setup/super-powers/api/jaw-animation/:characterId
+  - POST /setup/super-powers/api/jaw-animation/:characterId/drive { amplitude }
+  - POST /setup/super-powers/api/jaw-animation/:characterId/start-monitoring
+  - POST /setup/super-powers/api/jaw-animation/:characterId/stop-monitoring
+
 2) Select Model: "GoBilda 2000 Series Dual‑Mode (New Spec)"
 3) Controller: PCA9685
    - I2C Address: 0x40
@@ -696,6 +728,21 @@ Example output:
   "bytesReceived": 2365471,
   "frames": 122,
   "estimatedFPS": 24.35,
+
+## 47a Goblin System d Distributed Media Nodes
+
+- Purpose: lightweight, native Node.js media players ("Goblins") for remote displays
+- Features: auto-discovery of MonsterBox, 4K video + concurrent audio via VLC, status/health, remote control API
+- Designed for Raspberry Pi (3B+/4)
+- Quick deploy:
+  ```bash
+  cd goblin-system
+  ./deploy.sh
+  # Verify
+  curl http://localhost:3001/health
+  ```
+- Docs: see goblin-system/README.md for architecture, APIs, and media paths
+
   "avgFrameBytes": 19386,
   "avgInterFrameMs": 41,
   "boundaryFromHeader": "--boundary",
@@ -703,6 +750,21 @@ Example output:
   "streamActiveMs": 4994
 }
 ````
+
+## Goblin System — Distributed Media Nodes
+
+- Purpose: lightweight, native Node.js media players ("Goblins") for remote displays
+- Features: auto-discovery of MonsterBox, 4K video + concurrent audio via VLC, status/health, remote control API
+- Designed for Raspberry Pi (3B+/4)
+- Quick deploy:
+  ```bash
+  cd goblin-system
+  ./deploy.sh
+  # Verify
+  curl http://localhost:3001/health
+  ```
+- Docs: see goblin-system/README.md for architecture, APIs, and media paths
+
 
 
 ### ✨ Webcam Controls in Calibration (Edit tab) — NEW
