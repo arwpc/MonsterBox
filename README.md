@@ -1,9 +1,20 @@
-# MonsterBox 4.0 - Single Node Animatronic Control System
+# MonsterBox 5.0 - Single Node Animatronic Control System
 
 **MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
 
 
 > Note on ports: This build defaults to port 3100. If any examples below show 3000, use 3100 instead (e.g., http://127.0.0.1:3100).
+
+## 🚀 What’s New (October 2025)
+
+- Repository cleaned and made lightweight for Raspberry Pi pushes (fresh history)
+- Removed legacy ARCHIVE/ (MonsterBox 3.0) — no dependencies remain
+- Large media policy: keep big videos out of git; use the /videos directory (ignored by git)
+- Dynamic video indexing supported: videos placed under ./videos are auto‑indexed for the library
+- SMBus compatibility: python wrappers now auto‑detect smbus2 and fall back to smbus; install.sh includes python3-smbus2
+- Added test scripts for the video indexing flow (unit + UI)
+
+
 
 ## ✅ Nightly Fixes Summary (stability + tests)
 
@@ -220,6 +231,24 @@ sudo bash scripts/tune-mjpg.sh /dev/video0 640x480 24 80
 - **mpg123, pw-play, wpctl, pactl** (audio playback tools)
 
 ### Installation
+
+
+### Optional: Videos directory (dynamic indexing)
+
+- Create a local videos folder (ignored by git): `mkdir -p ./videos`
+- Drop .mp4/.mov/.avi files into `./videos` — they will be discovered dynamically (no uploads required)
+- The video library UI indexes this folder with a small cache to keep the UI responsive
+- Keep large media out of git history; if you need to share media, prefer external storage or Git LFS
+
+### Video Library tests (unit + UI)
+
+```bash
+# Unit tests for video indexing/caching
+npm run -s test:video-library:unit
+
+# UI tests (requires Playwright setup)
+npm run -s test:video-library:ui
+```
 
 ```bash
 # Clone and navigate to MonsterBox
