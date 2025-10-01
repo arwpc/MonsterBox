@@ -1,34 +1,8 @@
 [
   {
-    "id": "test-goblin-1759182772515-bbnnf5",
-    "endpoint": "http://localhost:3002",
-    "capabilities": {
-      "video": [
-        "mp4",
-        "avi",
-        "mov"
-      ],
-      "audio": [
-        "mp3",
-        "wav"
-      ]
-    },
-    "platform": "unknown",
-    "version": "1.0.0",
-    "status": "offline",
-    "registeredAt": "2025-09-29T21:52:52.562Z",
-    "lastSeen": "2025-09-30T01:45:45.682Z",
-    "lockedBy": null,
-    "lockedAt": null,
-    "settings": {
-      "audioEnabled": true,
-      "videoEnabled": true,
-      "volume": 80,
-      "autoLock": false
-    }
-  },
-  {
     "id": "goblin1",
+    "name": "Goblin 1",
+    "location": "Window 1",
     "endpoint": "http://192.168.8.160:3001",
     "capabilities": {
       "video": [
@@ -49,9 +23,9 @@
     },
     "platform": "raspberry-pi",
     "version": "1.0.0",
-    "status": "offline",
+    "status": "online",
     "registeredAt": "2025-10-01T18:08:51.200Z",
-    "lastSeen": "2025-10-01T18:08:51.200Z",
+    "lastSeen": "2025-10-01T21:30:00.000Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -63,6 +37,8 @@
   },
   {
     "id": "goblin2",
+    "name": "Goblin 2",
+    "location": "Window 2",
     "endpoint": "http://192.168.8.161:3001",
     "capabilities": {
       "video": [
@@ -83,9 +59,9 @@
     },
     "platform": "raspberry-pi",
     "version": "1.0.0",
-    "status": "offline",
+    "status": "online",
     "registeredAt": "2025-10-01T18:35:42.425Z",
-    "lastSeen": "2025-10-01T20:01:37.315Z",
+    "lastSeen": "2025-10-01T21:30:00.000Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {

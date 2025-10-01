@@ -245,5 +245,60 @@
       }
     ],
     "created": "2025-10-01T18:36:00.846Z"
+  },
+  {
+    "id": 7,
+    "name": "Dual Goblin Video Test - Production Ready",
+    "steps": [
+      {
+        "type": "goblin",
+        "goblinId": "goblin1",
+        "videoId": "video/Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4",
+        "duration": 10000,
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "type": "goblin",
+        "goblinId": "goblin2",
+        "videoId": "video/wraith/PHA_Wraith_FaceOfDeath_Win_H.mp4",
+        "duration": 10000,
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 10000
+      },
+      {
+        "type": "goblin",
+        "goblinId": "goblin1",
+        "videoId": "video/siren/PHA_Siren_StartleScare_Win_H.mp4",
+        "duration": 8000,
+        "options": {
+          "loop": true,
+          "volume": 85
+        }
+      },
+      {
+        "type": "goblin",
+        "goblinId": "goblin2",
+        "videoId": "video/spinster/PHA_Spinster_StartleScare_Win_H.mp4",
+        "duration": 8000,
+        "options": {
+          "loop": true,
+          "volume": 85
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 8000
+      }
+    ],
+    "created": "2025-10-01T20:30:00.000Z"
   }
 ]

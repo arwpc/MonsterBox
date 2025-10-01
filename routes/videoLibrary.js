@@ -6,7 +6,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream } from 'fs';
 import videoLibraryService from '../services/videoLibraryService.js';
 import goblinManagerService from '../services/goblinManagerService.js';
 
@@ -211,7 +211,7 @@ router.get('/api/video/:id/stream', async (req, res) => {
                 'Content-Disposition': `inline; filename="${video.originalName}"`
             });
 
-            const stream = require('fs').createReadStream(filePath, { start, end });
+            const stream = createReadStream(filePath, { start, end });
             stream.pipe(res);
         } else {
             res.writeHead(200, {
@@ -220,7 +220,7 @@ router.get('/api/video/:id/stream', async (req, res) => {
                 'Content-Disposition': `inline; filename="${video.originalName}"`
             });
 
-            const stream = require('fs').createReadStream(filePath);
+            const stream = createReadStream(filePath);
             stream.pipe(res);
         }
     } catch (error) {
@@ -266,12 +266,35 @@ router.get('/api/video/:id/thumbnail', async (req, res) => {
 
         res.setHeader('Content-Type', 'image/jpeg');
         res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-        
-        const stream = require('fs').createReadStream(result.thumbnailPath);
+
+        const stream = createReadStream(result.thumbnailPath);
         stream.pipe(res);
     } catch (error) {
         console.error('Error getting thumbnail:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /api/video/:id/play - Increment play count for video
+ */
+router.post('/api/video/:id/play', async (req, res) => {
+    try {
+        const videoResult = await videoLibraryService.getVideo(req.params.id);
+        if (!videoResult.success) {
+            return res.status(404).json(videoResult);
+        }
+
+        // Update play count
+        const updateResult = await videoLibraryService.updateVideo(req.params.id, {
+            playCount: (videoResult.video.playCount || 0) + 1,
+            lastPlayed: new Date().toISOString()
+        });
+
+        res.json(updateResult);
+    } catch (error) {
+        console.error('Error incrementing play count:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

@@ -246,7 +246,7 @@ class VideoLibrary {
 
             playerContainer.innerHTML = `
                 <video class="video-preview-player" controls autoplay>
-                    <source src="/video-library/api/stream/${videoId}" type="${video.mimeType || 'video/mp4'}">
+                    <source src="/video-library/api/video/${videoId}/stream" type="${video.mimeType || 'video/mp4'}">
                     Your browser does not support the video tag.
                 </video>
             `;
@@ -521,8 +521,8 @@ class VideoLibrary {
 
     // Goblin deployment methods
     async quickDeploy(videoId) {
-        const availableGoblins = this.goblins.filter(g => g.status === 'online' && !g.locked);
-        
+        const availableGoblins = this.goblins.filter(g => g.status === 'online' && !g.lockedBy);
+
         if (!availableGoblins.length) {
             this.showError('No available Goblins for deployment');
             return;
@@ -595,12 +595,12 @@ class VideoLibrary {
         
         goblinList.innerHTML = availableGoblins.map(goblin => `
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}" 
-                       ${goblin.locked ? 'disabled' : ''}>
+                <input class="form-check-input" type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}"
+                       ${goblin.lockedBy ? 'disabled' : ''}>
                 <label class="form-check-label small" for="deployGoblin${goblin.id}">
                     <strong>${goblin.name}</strong>
                     <span class="goblin-status ${goblin.status}">${goblin.status}</span>
-                    ${goblin.locked ? '<br><small class="text-warning">Locked</small>' : ''}
+                    ${goblin.lockedBy ? '<br><small class="text-warning">Locked by ' + goblin.lockedBy + '</small>' : ''}
                     <br><small class="text-muted">${goblin.endpoint}</small>
                 </label>
             </div>
