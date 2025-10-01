@@ -1,5 +1,5 @@
 /**
- * Parts Controller for MonsterBox 4.0
+ * Parts Controller for MonsterBox 5.0
  * Handles all 11 Part types with direct local function calls
  */
 

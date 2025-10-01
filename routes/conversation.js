@@ -51,7 +51,7 @@ async function writeJawSettings(obj) {
 // GET /conversation (page)
 router.get('/', async (req, res) => {
   res.render('conversation/index', {
-    title: 'Conversation - MonsterBox 4.0',
+    title: 'Conversation - MonsterBox 5.0',
     page: 'conversation'
   });
 });

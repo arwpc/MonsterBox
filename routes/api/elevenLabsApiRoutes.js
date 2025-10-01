@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - ElevenLabs API Routes
+ * MonsterBox 5.0 - ElevenLabs API Routes
  * RESTful API endpoints for ElevenLabs integration
  */
 
@@ -30,17 +30,12 @@ const upload = multer({
 const requireElevenLabsConfig = (req, res, next) => {
     const configured = elevenLabsConfigService.isElevenLabsConfigured();
     if (!configured) {
-        // In test mode, avoid failing with 400 so UI tests don't flag this as an error
-        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-            return res.json({
-                success: false,
-                configured: false,
-                error: 'ElevenLabs API not configured (test mode)'
-            });
-        }
-        return res.status(400).json({
+        // Return 200 with configured:false to avoid 400 errors in UI
+        // This allows the UI to gracefully handle missing API keys
+        return res.json({
             success: false,
-            error: 'ElevenLabs API not configured. Please set ELEVENLABS_API_KEY in .env file.'
+            configured: false,
+            error: 'ElevenLabs API not configured. Please set ELEVENLABS_API_KEY in .env file or /etc/monsterbox/elevenlabs.key'
         });
     }
     next();

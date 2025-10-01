@@ -1,5 +1,5 @@
 # Stepper Motor Quick Start Guide
-**MonsterBox 4.0 - Groundbreaker Character**
+**MonsterBox 5.0 - Groundbreaker Character**
 
 ---
 

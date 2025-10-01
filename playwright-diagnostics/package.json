@@ -1,7 +1,7 @@
 {
   "name": "monsterbox4",
-  "version": "4.0.0",
-  "description": "MonsterBox 4.0 - Single Node Animatronic Control System with Poses",
+  "version": "5.0.0",
+  "description": "MonsterBox 5.0 - Single Node Animatronic Control System with Poses",
   "main": "server.js",
   "type": "module",
   "scripts": {

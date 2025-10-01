@@ -1,4 +1,4 @@
-# MonsterBox 4.0 Python Dependencies
+# MonsterBox 5.0 Python Dependencies
 # Complete package list for fresh Raspberry Pi 4B installations
 
 # Core WebSocket support for hardware communication

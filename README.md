@@ -289,7 +289,7 @@ npm start
 
 ### PipeWire Audio System Setup
 
-MonsterBox 4.0 uses **PipeWire with WirePlumber** for modern, low-latency audio processing. This replaces the legacy ALSA-only approach with a more robust system supporting concurrent audio streams and real-time device switching.
+MonsterBox 5.0 uses **PipeWire with WirePlumber** for modern, low-latency audio processing. This replaces the legacy ALSA-only approach with a more robust system supporting concurrent audio streams and real-time device switching.
 
 #### Install PipeWire (Raspberry Pi OS)
 
@@ -488,7 +488,7 @@ The GoBilda dual‑mode servo internally closes the loop in positional mode (500
 
 ## 🎵 **Professional Audio Configuration Center - NEW!**
 
-MonsterBox 4.0 now includes a **centralized audio configuration interface** at `http://localhost:3000/setup/audio` providing complete control over your animatronic's PipeWire audio system.
+MonsterBox 5.0 now includes a **centralized audio configuration interface** at `http://localhost:3000/setup/audio` providing complete control over your animatronic's PipeWire audio system.
 
 ### ✨ **Key Features**
 
@@ -685,7 +685,7 @@ curl -s http://localhost:3000/setup/audio/api/active-streams | jq
 
 ## 📹 Webcam Streaming (MJPEG-only)
 
-MonsterBox 4.0 uses high-performance MJPEG streaming with **mjpg-streamer integration**.
+MonsterBox 5.0 uses high-performance MJPEG streaming with **mjpg-streamer integration**.
 
 ### 🚀 mjpg-streamer Integration
 
@@ -840,7 +840,7 @@ TODOs (short list)
 
 ## 🎯 Motion Tracking & Head Tracking
 
-MonsterBox 4.0 includes **advanced motion tracking** using OpenCV computer vision that processes frames directly from the mjpg-streamer video stream.
+MonsterBox 5.0 includes **advanced motion tracking** using OpenCV computer vision that processes frames directly from the mjpg-streamer video stream.
 
 ### 🚀 Motion Tracking Features
 
@@ -1100,7 +1100,7 @@ http://localhost:3000/setup/webcam/api/parts/42/stream?auto=1
 
 ## �👥 Characters Management
 
-MonsterBox 4.0 lets you manage multiple characters and pick which one is active. The active character is used throughout the app for parts and poses.
+MonsterBox 5.0 lets you manage multiple characters and pick which one is active. The active character is used throughout the app for parts and poses.
 
 - Manage at Setup → Characters (http://127.0.0.1:3000/setup/characters)
 - Current selection is shown in the navbar dropdown and can be changed from any page
@@ -1130,7 +1130,7 @@ Endpoints:
 
 ## 📦 Global Models (Shared Across Characters) + Migration
 
-MonsterBox 4.0 now stores hardware Models globally under `data/models/` so you can build a reusable database of servos, actuators, sensors, audio devices, etc. Parts, calibration, poses, and AI config remain character‑isolated under `data/character-<id>/`.
+MonsterBox 5.0 now stores hardware Models globally under `data/models/` so you can build a reusable database of servos, actuators, sensors, audio devices, etc. Parts, calibration, poses, and AI config remain character‑isolated under `data/character-<id>/`.
 
 - Global location: `data/models/<type>_models.json` (e.g., `servo_models.json`)
 - Applies to: servo, linear_actuator, motor, led, light, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
@@ -1753,7 +1753,7 @@ Tip: After making server-side code changes, restart the server before re-running
 
 ### 🎵 PipeWire Audio Testing
 
-MonsterBox 4.0 includes comprehensive PipeWire integration tests:
+MonsterBox 5.0 includes comprehensive PipeWire integration tests:
 
 ```bash
 # Run PipeWire-specific tests (CLI smoke tests work without server)
@@ -1852,7 +1852,7 @@ npm run test:all
 
 ## � Hardware Part Testing (Per‑Type)
 
-MonsterBox 4.0 provides CRUD for Parts and a unified test endpoint for exercising hardware functionality per part type.
+MonsterBox 5.0 provides CRUD for Parts and a unified test endpoint for exercising hardware functionality per part type.
 
 - Endpoint: `POST /setup/parts/api/parts/:id/test`
 - Pass an explicit `action` and optional `params` for per‑type testing; if omitted, a sensible default action is chosen
@@ -2002,7 +2002,7 @@ Constraints to honor
 
 ## �🔄 Migration from Legacy MonsterBox
 
-MonsterBox 4.0 is designed to run alongside the legacy system initially:
+MonsterBox 5.0 is designed to run alongside the legacy system initially:
 
 1. **Data Compatibility**: Uses existing `data/` files (parts.json, servo_calibrations.json, etc.)
 2. **Hardware Scripts**: Reuses all existing Python hardware scripts without modification
@@ -2094,7 +2094,7 @@ The head tracking system will now smoothly follow visitors as they walk across t
 
 ---
 
-**MonsterBox 4.0** - Bringing animatronics to life with clean, safe, and powerful control! 🎭🤖
+**MonsterBox 5.0** - Bringing animatronics to life with clean, safe, and powerful control! 🎭🤖
 
 ---
 

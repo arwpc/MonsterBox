@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MonsterBox 4.0 - Single Node Express Server
+ * MonsterBox 5.0 - Single Node Express Server
  * Clean, single-character application with Poses feature
  * Eliminates WebSocket complexity while preserving all functionality
  */
@@ -71,7 +71,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use((req, res, next) => {
     res.renderWithLayout = function (contentTemplate, options = {}) {
         const layoutOptions = {
-            title: options.title || 'MonsterBox 4.0',
+            title: options.title || 'MonsterBox 5.0',
             page: options.page || 'dashboard',
             config: req.app.locals.config,
             currentCharacter: res.locals.currentCharacter,
@@ -172,7 +172,7 @@ app.use('/setup/parts', setupPartsRoutes);
 import partsController from './controllers/partsController.js';
 app.get('/setup/parts', async (req, res) => {
   try {
-    res.render('setup/parts', { title: 'Setup Parts - MonsterBox 4.0', page: 'setup-parts' });
+    res.render('setup/parts', { title: 'Setup Parts - MonsterBox 5.0', page: 'setup-parts' });
   } catch (err) {
     console.error('Error rendering parts page:', err);
     res.status(500).render('error', { title: 'Error', error: 'Failed to load parts page', message: err.message });
@@ -233,7 +233,7 @@ app.use('/api/elevenlabs', elevenLabsApiRoutes);
 // Main dashboard route
 app.get('/', (req, res) => {
     res.renderWithLayout('index', {
-        title: 'MonsterBox 4.0 Dashboard',
+        title: 'MonsterBox 5.0 Dashboard',
         page: 'dashboard',
         bodyExtras: `
             <script>
@@ -302,7 +302,7 @@ app.get('/', (req, res) => {
 // Setup routes
 app.get('/setup', (req, res) => {
     res.render('setup/index', {
-        title: 'Setup - MonsterBox 4.0',
+        title: 'Setup - MonsterBox 5.0',
         page: 'setup',
         config: { theme: 'dark' },
         currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
@@ -405,7 +405,7 @@ function getLanAddresses() {
 
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🎭 MonsterBox 4.0 server running on port ${PORT}`);
+    console.log(`🎭 MonsterBox 5.0 server running on port ${PORT}`);
     
     // Get primary LAN IP for display
     const ips = getLanAddresses();

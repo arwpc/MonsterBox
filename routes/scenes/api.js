@@ -88,7 +88,10 @@ router.post('/:id/play', async (req, res) => {
     const result = await sceneExecutor.executeScene(scene, characterId, null, { dryRun });
     res.json({ success: true, played: id, steps: (scene.steps||[]).length, result, dryRun });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    // Return 400 for client errors (missing poses, invalid data), 500 for server errors
+    const isClientError = e && e.message && (e.message.includes('not found') || e.message.includes('required'));
+    const status = isClientError ? 400 : 500;
+    res.status(status).json({ success: false, error: e && e.message });
   }
 });
 
