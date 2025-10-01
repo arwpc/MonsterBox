@@ -169,6 +169,24 @@ class GoblinServer {
       });
     });
 
+    // Force rescan of media files
+    this.app.post('/media/rescan', async (req, res) => {
+      try {
+        const media = await this.fileManager.rescanMedia();
+        res.json({
+          success: true,
+          message: 'Media library rescanned',
+          media: media,
+          counts: {
+            video: media.video.length,
+            audio: media.audio.length
+          }
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
     this.app.delete('/media/:filename', async (req, res) => {
       try {
         const result = await this.fileManager.deleteFile(req.params.filename);
@@ -460,20 +478,21 @@ class GoblinServer {
    */
   async shutdown() {
     console.log(`👋 Shutting down Goblin ${this.goblinId}`);
-    
+
     this.beacon.stop();
-    
+
     if (this.monsterboxConnection) {
       this.monsterboxConnection.close();
     }
-    
+
     await this.mediaPlayer.stopAll();
     this.statusMonitor.stop();
-    
+    this.fileManager.cleanup();
+
     if (this.server) {
       this.server.close();
     }
-    
+
     console.log(`💀 Goblin ${this.goblinId} has departed`);
   }
 }

@@ -46,17 +46,18 @@ class MediaPlayer {
   async checkDependencies() {
     return new Promise((resolve, reject) => {
       const forceVlc = process.env.FORCE_VLC === '1';
-      const forceFfplay = process.env.FORCE_FFPLAY === '1';
+      const forceMpv = process.env.FORCE_MPV === '1';
 
+      // Prefer mpv for best hardware acceleration on Pi
       const searchOrder = forceVlc
         ? ['vlc']
-        : forceFfplay
-          ? ['ffplay', 'vlc']
-          : ['ffplay', 'omxplayer', 'vlc'];
+        : forceMpv
+          ? ['mpv', 'vlc']
+          : ['mpv', 'ffmpeg', 'ffplay', 'omxplayer', 'vlc'];
 
       const tryNext = (index) => {
         if (index >= searchOrder.length) {
-          reject(new Error('No supported video player found (checked ffplay, omxplayer, vlc)'));
+          reject(new Error('No supported video player found (checked mpv, ffmpeg, ffplay, omxplayer, vlc)'));
           return;
         }
 
@@ -65,6 +66,12 @@ class MediaPlayer {
           if (!err) {
             this.videoPlayer = candidate;
             switch (candidate) {
+              case 'mpv':
+                console.log('✅ mpv found; using hardware-accelerated playback (best for Pi)');
+                break;
+              case 'ffmpeg':
+                console.log('✅ ffmpeg found; using framebuffer output for HDMI (1080p)');
+                break;
               case 'ffplay':
                 console.log('✅ ffplay found; using FFmpeg playback pipeline');
                 break;
@@ -149,76 +156,97 @@ class MediaPlayer {
   async playVideo(filename, options = {}) {
     try {
       console.log(`🎬 Playing video: ${filename}`);
-      
+
       // Stop any existing video
       if (this.playbackStatus.video.playing) {
         await this.stopVideo();
       }
-      
-  const videoDir = await this.getMediaDir('video');
-  const videoPath = path.join(videoDir, filename);
-      
+
+      // Determine video path - handle both local and USB videos
+      let videoPath;
+
+      // If filename starts with 'video/', it's a USB video with relative path
+      if (filename.startsWith('video/')) {
+        // USB video - use /media/usb as base
+        const usbPath = process.env.USB_VIDEO_PATH || '/media/usb';
+        videoPath = path.join(usbPath, filename);
+      } else if (filename.startsWith('/')) {
+        // Absolute path - use as-is
+        videoPath = filename;
+      } else {
+        // Local video - use media directory
+        const videoDir = await this.getMediaDir('video');
+        videoPath = path.join(videoDir, filename);
+      }
+
+      console.log(`🎬 Resolved video path: ${videoPath}`);
+
       // Check if file exists
       try {
         await fs.access(videoPath);
       } catch {
-        throw new Error(`Video file not found: ${filename}`);
+        throw new Error(`Video file not found: ${filename} (resolved to: ${videoPath})`);
       }
       
       let playerProcess;
       let playerName;
       const selectedPlayer = (options.player || this.videoPlayer || 'vlc').toLowerCase();
 
-      if (selectedPlayer === 'ffplay') {
-        const ffplayArgs = [
-          '-fs',
-          '-loglevel', options.ffplayLogLevel || process.env.MB_FFPLAY_LOGLEVEL || 'error'
+      if (selectedPlayer === 'mpv') {
+        // mpv with hardware acceleration - best for Pi 3B+
+        const mpvArgs = [
+          '--fullscreen',                 // Fullscreen mode
+          '--no-osc',                     // No on-screen controller
+          '--no-osd-bar',                 // No OSD bar
+          '--hwdec=auto',                 // Hardware decoding (uses V4L2 M2M)
+          '--vo=gpu',                     // GPU video output (DRM/KMS)
+          '--gpu-context=drm',            // Direct rendering via DRM
+          '--drm-connector=HDMI-A-1',     // HDMI output
+          '--drm-mode=1920x1080@30',      // Force 1080p @ 30fps
+          '--video-sync=display-resample', // Smooth playback
+          '--interpolation',              // Frame interpolation for smoothness
+          '--tscale=oversample'           // Temporal scaling
         ];
 
-        // Force 1080p output to avoid Pi color bars
-        const scaleFilter = options.scaleFilter || 'scale=1920:1080';
-        if (scaleFilter) {
-          ffplayArgs.push('-vf', scaleFilter);
-        }
-
         if (options.loop) {
-          ffplayArgs.push('-loop', typeof options.loop === 'number' ? String(options.loop) : '0');
-        } else {
-          ffplayArgs.push('-autoexit');
+          mpvArgs.push('--loop=inf');
         }
 
-        if (typeof options.volume === 'number') {
-          ffplayArgs.push('-volume', Math.max(0, Math.min(100, Math.round(options.volume * 100))));
+        if (options.volume != null) {
+          mpvArgs.push(`--volume=${Math.max(0, Math.min(100, Math.round(options.volume * 100)))}`);
         }
 
-        if (typeof options.startTime === 'number') {
-          ffplayArgs.push('-ss', String(options.startTime));
-        }
+        mpvArgs.push(videoPath);
 
-        // Reduce latency by dropping initial frames if requested
-        if (options.probeSize) {
-          ffplayArgs.push('-probesize', String(options.probeSize));
-        }
+        console.log('🎬 Starting mpv with hardware acceleration');
+        console.log('🎬 Args:', mpvArgs.join(' '));
 
-        if (options.analyseDuration) {
-          ffplayArgs.push('-analyzeduration', String(options.analyseDuration));
-        }
-
-        ffplayArgs.push(videoPath);
-
-        console.log('🎬 Starting ffplay with args:', ffplayArgs);
-
-        const ffplayEnv = { ...process.env };
-        if (!ffplayEnv.DISPLAY) {
-          ffplayEnv.DISPLAY = options.display || ':0.0';
-        }
-
-        playerProcess = spawn('ffplay', ffplayArgs, {
+        playerProcess = spawn('mpv', mpvArgs, {
           detached: false,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          env: ffplayEnv
+          stdio: ['pipe', 'pipe', 'pipe']
         });
-        playerName = 'ffplay';
+        playerName = 'mpv';
+      } else if (selectedPlayer === 'ffplay' || selectedPlayer === 'ffmpeg') {
+        // Use ffmpeg with hardware-accelerated H.264 decoding and DRM output
+        // DRM can handle YUV natively without slow pixel format conversion
+        const ffmpegArgs = [
+          '-c:v', 'h264_v4l2m2m',         // Hardware H.264 decoder (GPU accelerated)
+          '-stream_loop', options.loop ? '-1' : '0',  // Loop forever if requested
+          '-i', videoPath,                // Input file
+          '-vf', 'scale=1920:1080',       // Scale to 1080p
+          '-pix_fmt', 'nv12',             // NV12 format (YUV 4:2:0, hardware friendly)
+          '-f', 'fbdev',                  // Try framebuffer first
+          '/dev/fb0'                      // HDMI output
+        ];
+
+        console.log('🎬 Starting ffmpeg with hardware H.264 decoder (V4L2 M2M)');
+        console.log('🎬 Args:', ffmpegArgs.join(' '));
+
+        playerProcess = spawn('ffmpeg', ffmpegArgs, {
+          detached: false,
+          stdio: ['pipe', 'pipe', 'pipe']
+        });
+        playerName = 'ffmpeg';
       } else if (selectedPlayer === 'omxplayer') {
         const omxArgs = [
           '--no-osd',

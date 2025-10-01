@@ -26,5 +26,73 @@
       "volume": 80,
       "autoLock": false
     }
+  },
+  {
+    "id": "goblin1",
+    "endpoint": "http://192.168.8.160:3001",
+    "capabilities": {
+      "video": [
+        "mp4",
+        "avi",
+        "mkv",
+        "mov"
+      ],
+      "audio": [
+        "mp3",
+        "wav",
+        "aac",
+        "ogg"
+      ],
+      "maxResolution": "1080p@30fps",
+      "concurrentAudio": true,
+      "hardwareAcceleration": true
+    },
+    "platform": "raspberry-pi",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-01T18:08:51.200Z",
+    "lastSeen": "2025-10-01T18:08:51.200Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
+  },
+  {
+    "id": "goblin2",
+    "endpoint": "http://192.168.8.161:3001",
+    "capabilities": {
+      "video": [
+        "mp4",
+        "avi",
+        "mkv",
+        "mov"
+      ],
+      "audio": [
+        "mp3",
+        "wav",
+        "aac",
+        "ogg"
+      ],
+      "maxResolution": "4K@60fps",
+      "concurrentAudio": true,
+      "hardwareAcceleration": true
+    },
+    "platform": "raspberry-pi",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-01T18:35:42.425Z",
+    "lastSeen": "2025-10-01T20:01:37.315Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
   }
 ]

@@ -51,5 +51,199 @@
       }
     ],
     "created": "2025-09-28T23:26:09.119Z"
+  },
+  {
+    "id": 5,
+    "name": "USB Video Test - 5 Looped Videos",
+    "steps": [
+      {
+        "id": "step-1",
+        "type": "goblin",
+        "name": "Poltergeist Amped Up",
+        "description": "Play poltergeist amped up video",
+        "duration": 15000,
+        "goblinId": "goblin1",
+        "videoId": "video/Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-2",
+        "type": "wait",
+        "duration": 15000
+      },
+      {
+        "id": "step-3",
+        "type": "goblin",
+        "name": "Fire Effect 1",
+        "description": "Play fire effect video",
+        "duration": 10000,
+        "goblinId": "goblin1",
+        "videoId": "video/fire/541_JB_HD.mov",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-4",
+        "type": "wait",
+        "duration": 10000
+      },
+      {
+        "id": "step-5",
+        "type": "goblin",
+        "name": "Ethereal Effect",
+        "description": "Play ethereal effect video",
+        "duration": 12000,
+        "goblinId": "goblin1",
+        "videoId": "video/ethereal/307_JB_HD.mov",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-6",
+        "type": "wait",
+        "duration": 12000
+      },
+      {
+        "id": "step-7",
+        "type": "goblin",
+        "name": "Wraith Scare",
+        "description": "Play wraith scare video",
+        "duration": 8000,
+        "goblinId": "goblin1",
+        "videoId": "video/wraith/PHA_Wraith_FaceOfDeath_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-8",
+        "type": "wait",
+        "duration": 8000
+      },
+      {
+        "id": "step-9",
+        "type": "goblin",
+        "name": "Siren Effect",
+        "description": "Play siren effect video",
+        "duration": 10000,
+        "goblinId": "goblin1",
+        "videoId": "video/siren/PHA_Siren_FearsAfloat_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-10",
+        "type": "wait",
+        "duration": 10000
+      }
+    ],
+    "created": "2025-10-01T18:05:02.923Z"
+  },
+  {
+    "id": 6,
+    "name": "Goblin2 Test - 5 Looped Videos",
+    "steps": [
+      {
+        "id": "step-1",
+        "type": "goblin",
+        "name": "Poltergeist Amped Up",
+        "description": "Play poltergeist amped up video",
+        "duration": 15000,
+        "goblinId": "goblin2",
+        "videoId": "video/Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-2",
+        "type": "wait",
+        "duration": 15000
+      },
+      {
+        "id": "step-3",
+        "type": "goblin",
+        "name": "Fire Effect 1",
+        "description": "Play fire effect video",
+        "duration": 10000,
+        "goblinId": "goblin2",
+        "videoId": "video/fire/541_JB_HD.mov",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-4",
+        "type": "wait",
+        "duration": 10000
+      },
+      {
+        "id": "step-5",
+        "type": "goblin",
+        "name": "Ethereal Effect",
+        "description": "Play ethereal effect video",
+        "duration": 12000,
+        "goblinId": "goblin2",
+        "videoId": "video/ethereal/307_JB_HD.mov",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-6",
+        "type": "wait",
+        "duration": 12000
+      },
+      {
+        "id": "step-7",
+        "type": "goblin",
+        "name": "Wraith Scare",
+        "description": "Play wraith scare video",
+        "duration": 8000,
+        "goblinId": "goblin2",
+        "videoId": "video/wraith/PHA_Wraith_FaceOfDeath_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-8",
+        "type": "wait",
+        "duration": 8000
+      },
+      {
+        "id": "step-9",
+        "type": "goblin",
+        "name": "Siren Effect",
+        "description": "Play siren effect video",
+        "duration": 10000,
+        "goblinId": "goblin2",
+        "videoId": "video/siren/PHA_Siren_FearsAfloat_Win_H.mp4",
+        "options": {
+          "loop": true,
+          "volume": 80
+        }
+      },
+      {
+        "id": "step-10",
+        "type": "wait",
+        "duration": 10000
+      }
+    ],
+    "created": "2025-10-01T18:36:00.846Z"
   }
 ]

@@ -4,6 +4,7 @@
  */
 
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
@@ -14,11 +15,24 @@ class FileManager {
       video: path.join(__dirname, 'media', 'video'),
       audio: path.join(__dirname, 'media', 'audio')
     };
+    // Support for USB stick videos (symlinked or mounted)
+    this.usbVideoPath = process.env.USB_VIDEO_PATH || '/media/usb';
     this.supportedFormats = {
       video: ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv'],
       audio: ['.mp3', '.wav', '.aac', '.ogg', '.flac', '.m4a']
     };
-    
+
+    // Cache for media list with timestamp
+    this.mediaCache = null;
+    this.cacheTimestamp = 0;
+    this.cacheMaxAge = 30000; // 30 seconds cache
+
+    // File watchers
+    this.watchers = [];
+
+    // Periodic scan interval
+    this.scanInterval = null;
+
     console.log(`📁 File manager initialized for Goblin ${this.goblin.goblinId}`);
   }
 
@@ -29,17 +43,97 @@ class FileManager {
     try {
       // Ensure media directories exist
       await this.ensureDirectories();
-      
-      // Scan existing media files
+
+      // Initial scan
       const mediaList = await this.scanMediaFiles();
       console.log(`📁 Found ${mediaList.video.length} video files, ${mediaList.audio.length} audio files`);
-      
-      console.log('📁 File manager ready');
-      
+
+      // Set up file watchers for automatic detection of changes
+      this.setupFileWatchers();
+
+      // Set up periodic background scan (every 5 minutes)
+      this.scanInterval = setInterval(() => {
+        this.invalidateCache();
+        console.log('📁 Background media scan triggered');
+      }, 5 * 60 * 1000);
+
+      console.log('📁 File manager ready (auto-scan enabled)');
+
     } catch (error) {
       console.error('❌ File manager initialization failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Set up file watchers for media directories
+   */
+  setupFileWatchers() {
+    try {
+      // Watch local media directories
+      for (const [type, dirPath] of Object.entries(this.mediaPaths)) {
+        try {
+          const watcher = fsSync.watch(dirPath, { recursive: false }, (eventType, filename) => {
+            if (filename && this.isSupportedFormat(filename, type)) {
+              console.log(`📁 Detected ${eventType} in ${type}: ${filename}`);
+              this.invalidateCache();
+            }
+          });
+          this.watchers.push(watcher);
+          console.log(`📁 Watching ${type} directory: ${dirPath}`);
+        } catch (error) {
+          console.warn(`⚠️ Could not watch ${type} directory:`, error.message);
+        }
+      }
+
+      // Watch USB directory if it exists
+      try {
+        fsSync.accessSync(this.usbVideoPath);
+        const usbWatcher = fsSync.watch(this.usbVideoPath, { recursive: true }, (eventType, filename) => {
+          if (filename) {
+            console.log(`📁 Detected ${eventType} on USB: ${filename}`);
+            this.invalidateCache();
+          }
+        });
+        this.watchers.push(usbWatcher);
+        console.log(`📁 Watching USB directory: ${this.usbVideoPath}`);
+      } catch (error) {
+        console.log(`📁 USB directory not available for watching: ${this.usbVideoPath}`);
+      }
+    } catch (error) {
+      console.warn('⚠️ File watcher setup failed:', error.message);
+    }
+  }
+
+  /**
+   * Invalidate media cache
+   */
+  invalidateCache() {
+    this.mediaCache = null;
+    this.cacheTimestamp = 0;
+  }
+
+  /**
+   * Clean up resources
+   */
+  cleanup() {
+    // Close all file watchers
+    for (const watcher of this.watchers) {
+      try {
+        watcher.close();
+      } catch (error) {
+        console.warn('⚠️ Error closing watcher:', error.message);
+      }
+    }
+    this.watchers = [];
+
+    // Clear scan interval
+    if (this.scanInterval) {
+      clearInterval(this.scanInterval);
+      this.scanInterval = null;
+    }
+
+    console.log('📁 File manager cleaned up');
   }
 
   /**
@@ -58,22 +152,28 @@ class FileManager {
   }
 
   /**
-   * Scan for existing media files
+   * Scan for existing media files (including USB)
    */
   async scanMediaFiles() {
     const mediaList = {
       video: [],
       audio: []
     };
-    
+
+    // Scan regular media directories
     for (const [type, dirPath] of Object.entries(this.mediaPaths)) {
       try {
         const files = await fs.readdir(dirPath);
-        
+
         for (const file of files) {
           const filePath = path.join(dirPath, file);
           const stats = await fs.stat(filePath);
-          
+
+          // Skip symlinks (we'll scan USB separately)
+          if (stats.isSymbolicLink()) {
+            continue;
+          }
+
           if (stats.isFile() && this.isSupportedFormat(file, type)) {
             const fileInfo = {
               filename: file,
@@ -81,19 +181,67 @@ class FileManager {
               size: stats.size,
               modified: stats.mtime,
               type: type,
-              extension: path.extname(file).toLowerCase()
+              extension: path.extname(file).toLowerCase(),
+              source: 'local'
             };
-            
+
             mediaList[type].push(fileInfo);
           }
         }
-        
+
       } catch (error) {
         console.warn(`⚠️ Error scanning ${type} directory:`, error.message);
       }
     }
-    
+
+    // Scan USB video directory if available
+    try {
+      await fs.access(this.usbVideoPath);
+      const usbVideos = await this.scanUSBVideos();
+      mediaList.video.push(...usbVideos);
+      console.log(`📁 Found ${usbVideos.length} videos on USB stick`);
+    } catch (error) {
+      console.log(`📁 No USB video directory found at ${this.usbVideoPath}`);
+    }
+
     return mediaList;
+  }
+
+  /**
+   * Scan USB directory for video files (recursive)
+   */
+  async scanUSBVideos(dirPath = this.usbVideoPath, prefix = '') {
+    const videos = [];
+
+    try {
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+
+        if (entry.isDirectory()) {
+          // Recursively scan subdirectories
+          const subVideos = await this.scanUSBVideos(fullPath, relativePath);
+          videos.push(...subVideos);
+        } else if (entry.isFile() && this.isSupportedFormat(entry.name, 'video')) {
+          const stats = await fs.stat(fullPath);
+          videos.push({
+            filename: relativePath,
+            path: fullPath,
+            size: stats.size,
+            modified: stats.mtime,
+            type: 'video',
+            extension: path.extname(entry.name).toLowerCase(),
+            source: 'usb'
+          });
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Error scanning USB directory ${dirPath}:`, error.message);
+    }
+
+    return videos;
   }
 
   /**
@@ -105,15 +253,36 @@ class FileManager {
   }
 
   /**
-   * Get media file list
+   * Get media file list (with caching)
    */
-  async getMediaList() {
+  async getMediaList(forceRefresh = false) {
     try {
-      return await this.scanMediaFiles();
+      const now = Date.now();
+
+      // Return cached result if still valid and not forcing refresh
+      if (!forceRefresh && this.mediaCache && (now - this.cacheTimestamp) < this.cacheMaxAge) {
+        return this.mediaCache;
+      }
+
+      // Scan and update cache
+      const mediaList = await this.scanMediaFiles();
+      this.mediaCache = mediaList;
+      this.cacheTimestamp = now;
+
+      return mediaList;
     } catch (error) {
       console.error('❌ Error getting media list:', error);
       return { video: [], audio: [] };
     }
+  }
+
+  /**
+   * Force rescan of media files
+   */
+  async rescanMedia() {
+    console.log('📁 Manual media rescan triggered');
+    this.invalidateCache();
+    return await this.getMediaList(true);
   }
 
   /**
