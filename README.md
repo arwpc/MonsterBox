@@ -85,12 +85,21 @@ Notes
 - **Bootstrap 5 UI** with dark theme support
 
 ### 🔧 **Hardware Integration**
-- **11 Part types supported**: servo, motor, linear_actuator, light, LED, sensor, microphone, speaker, webcam, head_tracking
+- **12 Part types supported**: servo, motor, stepper, linear_actuator, light, LED, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
 - **Models System**: Hardware model definitions with defaults and calibration data
 - **CRUD Operations**: Full Create, Read, Update, Delete for all part types
 - **Inline Hardware Testing**: Test each part directly from the setup interface
 - **Safety Systems**: Calibration enforcement, angle clamping, timeout protection
 - **Real Hardware Control**: Direct integration with Orlok animatronic hardware
+
+
+### 🧩 Supported Control Boards & Drivers
+- Servo PWM: PCA9685 16‑channel I2C (0x40 default) via `services/hardwareService/pca9685.js`
+- DC Motor (legacy): Direction + PWM GPIO via `python_wrappers/motor_cli.py` → `scripts/motor_control.py` (MDD10A‑style)
+- DC Motor (updated): BTS7960 dual H‑bridge (Left/Right Enable + shared PWM) via `python_wrappers/bts7960_motor_cli.py` → `scripts/bts7960_motor_control.py`
+- Stepper Drivers (STEP/DIR/EN): A4988, DRV8825, TMC2208, TMC2209 supported via `services/hardwareService/stepper.js` → `python_wrappers/stepper_cli.py`
+- GPIO backends (auto): lgpio → pigpio → RPi.GPIO (automatic fallback in wrappers)
+
 
 ### 🎯 **Motion Tracking & Computer Vision**
 - **OpenCV Integration**: Real-time motion detection and tracking using OpenCV 4.6+
@@ -1139,6 +1148,51 @@ What it does
 - Scans `data/<type>_models.json` and `data/character-*/<type>_models.json`
 - Merges into `data/models/<type>_models.json`
 - De‑duplicates by `(name + defaults)`; generates unique string ids when needed
+
+### 🧭 Stepper Motors (NEW)
+MonsterBox 5.0 adds native STEP/DIR/EN stepper control with simple, reliable wrappers.
+
+- Drivers: A4988, DRV8825, TMC2208, TMC2209 (sensorless homing supported by driver)
+- Pins: `stepPin` (STEP), `dirPin` (DIR), optional `enablePin` (EN, active‑low on many drivers)
+- Services: `services/hardwareService/stepper.js` → `python_wrappers/stepper_cli.py`
+- Backends: lgpio → pigpio → RPi.GPIO (automatic fallback, simulation in CI)
+- Models: Stepper examples live in `data/models/motor_models.json` (type `stepper`)
+
+Quick use (API via Parts Test):
+```bash
+# Move 200 microsteps CW at ~1.25kHz pulse rate
+curl -X POST http://localhost:3000/setup/parts/api/parts/<partId>/test \
+  -H "Content-Type: application/json" \
+  -d '{"action":"control","params":{"stepPin":22,"dirPin":27,"enablePin":17,"direction":"cw","steps":200,"stepDelayUs":800}}'
+
+# Rotate 0.5 rev CCW at 16x microstepping, 120 RPM
+curl -X POST http://localhost:3000/setup/parts/api/parts/<partId>/test \
+  -H "Content-Type: application/json" \
+  -d '{"action":"control","params":{"stepPin":22,"dirPin":27,"enablePin":17,"direction":"ccw","revolutions":0.5,"microstepping":16,"rpm":120}}'
+```
+
+CLI diagnostics (bypass app):
+```bash
+python3 python_wrappers/standalone_stepper_test.py --step-pin 22 --dir-pin 27 --enable-pin 17 --steps 400 --step-delay-us 800 --direction cw
+```
+
+See also: STEPPER_MOTOR_QUICK_START.md and STEPPER_MOTOR_FIX_REPORT.md
+
+### 🔄 Motors (DC) — UPDATED
+- Two control paths:
+  1) Legacy Direction+PWM (e.g., MDD10A) → `python_wrappers/motor_cli.py` → `scripts/motor_control.py`
+  2) BTS7960 Dual H‑Bridge (Left/Right Enable + shared PWM) → `python_wrappers/bts7960_motor_cli.py` → `scripts/bts7960_motor_control.py`
+- Normalized directions: aliases like `cw/ccw/fwd/rev` are mapped to forward/backward/stop
+- Safety: speed clamped 0–100%, duration defaults, outputs reset after run
+- Models: `data/models/motor_models.json` includes both DC and stepper entries
+
+Example (BTS7960 dual‑enable):
+```bash
+curl -X POST http://localhost:3000/setup/parts/api/parts/<partId>/test \
+  -H "Content-Type: application/json" \
+  -d '{"action":"control","params":{"leftEnablePin":5,"rightEnablePin":6,"pwmPin":12,"direction":"forward","speed":60,"duration":1500}}'
+```
+
 
 
 
