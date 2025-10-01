@@ -1,0 +1,8 @@
+{
+  "model": "scribe_v1",
+  "language": "en",
+  "sampleRate": "16000",
+  "microphonePartId": "7",
+  "microphoneDeviceId": "default",
+  "format": "mp3"
+}

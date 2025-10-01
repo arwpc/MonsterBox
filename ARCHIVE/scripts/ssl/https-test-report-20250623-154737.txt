@@ -1,0 +1,61 @@
+MonsterBox HTTPS Deployment Test Report
+=======================================
+Generated: Mon 23 Jun 15:47:37 CDT 2025
+Log file: /home/remote/MonsterBox/scripts/ssl/https-testing.log
+
+Test Results Summary:
+--------------------
+
+Device: skulltalker (192.168.8.130)
+  Ping:        PASS
+  Certificate: PASS
+  HTTPS:       FAIL
+  WebSocket:   FAIL
+  HTTP:        FAIL
+
+Device: pumpkinhead (192.168.8.200)
+  Ping:        NOT_TESTED
+  Certificate: NOT_TESTED
+  HTTPS:       NOT_TESTED
+  WebSocket:   NOT_TESTED
+  HTTP:        NOT_TESTED
+
+Device: coffin (192.168.8.140)
+  Ping:        NOT_TESTED
+  Certificate: NOT_TESTED
+  HTTPS:       NOT_TESTED
+  WebSocket:   NOT_TESTED
+  HTTP:        NOT_TESTED
+
+Device: orlok (192.168.8.120)
+  Ping:        NOT_TESTED
+  Certificate: NOT_TESTED
+  HTTPS:       NOT_TESTED
+  WebSocket:   NOT_TESTED
+  HTTP:        NOT_TESTED
+
+Legend:
+  PASS    - Test passed successfully
+  FAIL    - Test failed
+  PARTIAL - Test partially successful
+  SKIP    - Test skipped
+  NOT_TESTED - Test not run
+
+Detailed Log:
+-------------
+2025-06-23 15:47:33 [INFO] Starting HTTPS deployment testing
+2025-06-23 15:47:33 [INFO] 🏠 Testing local device: skulltalker (192.168.8.130)
+2025-06-23 15:47:33 [INFO] 🔍 Testing device: skulltalker (192.168.8.130)
+2025-06-23 15:47:33 [SUCCESS] Device skulltalker is reachable
+2025-06-23 15:47:33 [INFO] Testing SSL certificate for skulltalker (192.168.8.130)
+2025-06-23 15:47:33 [SUCCESS] Certificate files exist for skulltalker
+2025-06-23 15:47:33 [SUCCESS] Certificate is valid for skulltalker
+2025-06-23 15:47:33 [INFO] Testing HTTPS service for skulltalker (192.168.8.130)
+2025-06-23 15:47:33 [ERROR] HTTPS health endpoint failed for skulltalker
+2025-06-23 15:47:33 [WARNING] HTTPS main page test failed for skulltalker
+2025-06-23 15:47:33 [INFO] Testing WebSocket services for skulltalker (192.168.8.130)
+2025-06-23 15:47:36 [SUCCESS] WebSocket jaw server working for skulltalker
+2025-06-23 15:47:37 [WARNING] Secure WebSocket test failed for skulltalker
+2025-06-23 15:47:37 [INFO] Testing HTTP fallback for skulltalker (192.168.8.130)
+2025-06-23 15:47:37 [WARNING] HTTP fallback test failed for skulltalker
+2025-06-23 15:47:37 [INFO] 📊 Generating test report

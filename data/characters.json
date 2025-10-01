@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "PumpkinHead",
+    "elevenLabsAgentId": "undefined"
+  },
+  {
+    "id": 2,
+    "name": "Coffin Breaker",
+    "elevenLabsAgentId": "undefined"
+  },
+  {
+    "id": 3,
+    "name": "Orlok",
+    "elevenLabsAgentId": "undefined",
+    "sttConfig": {
+      "model": "scribe_v1",
+      "language": "en",
+      "sampleRate": "16000",
+      "microphonePartId": "7",
+      "microphoneDeviceId": "default",
+      "format": "mp3"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Skulltalker",
+    "elevenLabsAgentId": "undefined",
+    "sttConfig": {
+      "model": "scribe_v1",
+      "language": "auto",
+      "sampleRate": "16000",
+      "microphonePartId": "14",
+      "microphoneDeviceId": "default",
+      "format": "mp3"
+    }
+  },
+  {
+    "id": 5,
+    "name": "Groundbreaker"
+  }
+]

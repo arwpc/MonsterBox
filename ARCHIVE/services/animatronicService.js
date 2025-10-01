@@ -1,0 +1,223 @@
+/**
+ * MonsterBox Animatronic Service
+ * 
+ * Provides core animatronic management functionality for the web interface
+ * Extracted from the standalone animatronic-manager.js CLI tool
+ */
+
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
+const fs = require('fs').promises;
+const path = require('path');
+const logger = require('../scripts/logger');
+const sshCredentials = require('../scripts/ssh-credentials');
+
+class AnimatronicService {
+    constructor() {
+        this.configPath = path.join(process.cwd(), 'data', 'animatronics.json');
+        this.charactersPath = path.join(process.cwd(), 'data', 'characters.json');
+    }
+
+    /**
+     * Load animatronic configurations from data/animatronics.json
+     */
+    async loadAnimatronics() {
+        try {
+            const data = await fs.readFile(this.configPath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            logger.warn('Could not load animatronics.json, returning empty config:', error.message);
+            return { animatronics: {}, settings: {} };
+        }
+    }
+
+    /**
+     * Load character configurations from data/characters.json
+     */
+    async loadCharacters() {
+        try {
+            const data = await fs.readFile(this.charactersPath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            logger.warn('Could not load characters.json, returning empty array:', error.message);
+            return [];
+        }
+    }
+
+    /**
+     * Get all animatronic-enabled characters with their configurations
+     */
+    async getAnimatronicCharacters() {
+        const characters = await this.loadCharacters();
+        return characters.filter(char =>
+            char.animatronic &&
+            char.animatronic.enabled &&
+            char.animatronic.rpi_config &&
+            char.animatronic.rpi_config.host
+        );
+    }
+
+    /**
+     * Build SSH command for a character using key-based authentication only
+     */
+    buildSSHCommand(character, command) {
+        const rpiConfig = character.animatronic.rpi_config;
+
+        // Use SSH credentials manager with key-based authentication only
+        const characterKey = character.char_name.toLowerCase().replace(/\s+/g, '');
+        return sshCredentials.buildSSHCommand(characterKey, rpiConfig.host, command);
+    }
+
+    /**
+     * Test connection to a specific animatronic character
+     */
+    async testCharacterConnection(characterId) {
+        const characters = await this.loadCharacters();
+        const character = characters.find(c => c.id === parseInt(characterId));
+        
+        if (!character || !character.animatronic || !character.animatronic.enabled) {
+            throw new Error('Character not found or animatronic not enabled');
+        }
+
+        const rpiConfig = character.animatronic.rpi_config;
+        if (!rpiConfig || !rpiConfig.host) {
+            throw new Error('RPI configuration not found for character');
+        }
+
+        const result = {
+            character: character.char_name,
+            host: rpiConfig.host,
+            user: rpiConfig.user,
+            timestamp: new Date().toISOString(),
+            tests: {
+                ping: { passed: false, message: '', duration: 0 },
+                ssh: { passed: false, message: '', duration: 0 }
+            }
+        };
+
+        // Test 1: Ping connectivity
+        logger.info(`Testing ping connectivity to ${character.char_name} (${rpiConfig.host})`);
+        const pingStart = Date.now();
+
+        try {
+            // Use cross-platform ping command with shorter timeout
+            const pingCommand = process.platform === 'win32'
+                ? `ping -n 1 -w 3000 ${rpiConfig.host}`
+                : `ping -c 1 -W 3 ${rpiConfig.host}`;
+            await execAsync(pingCommand);
+            result.tests.ping.passed = true;
+            result.tests.ping.message = 'Host is reachable';
+            result.tests.ping.duration = Date.now() - pingStart;
+            logger.info(`Ping test successful for ${character.char_name}`);
+        } catch (error) {
+            result.tests.ping.message = 'Host is not reachable';
+            result.tests.ping.duration = Date.now() - pingStart;
+            logger.error(`Ping test failed for ${character.char_name}:`, error.message);
+            return result; // Skip further tests if ping fails
+        }
+
+        // Test 2: SSH connection
+        logger.info(`Testing SSH connection to ${character.char_name}`);
+        const sshStart = Date.now();
+
+        try {
+            const sshCommand = this.buildSSHCommand(character, "echo 'SSH test successful'");
+            const { stdout } = await execAsync(sshCommand);
+            
+            if (stdout.includes('SSH test successful')) {
+                result.tests.ssh.passed = true;
+                result.tests.ssh.message = 'SSH connection successful';
+                result.tests.ssh.duration = Date.now() - sshStart;
+                logger.info(`SSH test successful for ${character.char_name}`);
+            } else {
+                result.tests.ssh.message = 'SSH test command failed';
+                result.tests.ssh.duration = Date.now() - sshStart;
+                logger.error(`SSH test command failed for ${character.char_name}`);
+            }
+        } catch (error) {
+            result.tests.ssh.message = `SSH connection failed: ${error.message}`;
+            result.tests.ssh.duration = Date.now() - sshStart;
+            logger.error(`SSH connection failed for ${character.char_name}:`, error.message);
+        }
+
+        return result;
+    }
+
+
+
+    /**
+     * Setup SSH keys for a specific animatronic character
+     */
+    async setupCharacterSSH(characterId) {
+        const characters = await this.loadCharacters();
+        const character = characters.find(c => c.id === parseInt(characterId));
+        
+        if (!character || !character.animatronic || !character.animatronic.enabled) {
+            throw new Error('Character not found or animatronic not enabled');
+        }
+
+        const rpiConfig = character.animatronic.rpi_config;
+        if (!rpiConfig || !rpiConfig.host) {
+            throw new Error('RPI configuration not found for character');
+        }
+
+        return {
+            character: character.char_name,
+            host: rpiConfig.host,
+            user: rpiConfig.user,
+            instructions: [
+                `ssh-copy-id ${rpiConfig.user}@${rpiConfig.host}`,
+                `ssh ${rpiConfig.user}@${rpiConfig.host} "echo 'SSH setup successful'"`
+            ],
+            message: `SSH key setup instructions for ${character.char_name}. Run these commands in your terminal.`
+        };
+    }
+
+    /**
+     * Get system information for a specific animatronic character
+     */
+    async getCharacterSystemInfo(characterId) {
+        const characters = await this.loadCharacters();
+        const character = characters.find(c => c.id === parseInt(characterId));
+        
+        if (!character || !character.animatronic || !character.animatronic.enabled) {
+            throw new Error('Character not found or animatronic not enabled');
+        }
+
+        const rpiConfig = character.animatronic.rpi_config;
+        if (!rpiConfig || !rpiConfig.host) {
+            throw new Error('RPI configuration not found for character');
+        }
+
+        const commands = {
+            uptime: 'uptime',
+            memory: 'free -h',
+            disk: 'df -h',
+            temperature: 'vcgencmd measure_temp',
+            voltage: 'vcgencmd measure_volts'
+        };
+
+        const systemInfo = {};
+
+        for (const [key, command] of Object.entries(commands)) {
+            try {
+                const sshCommand = this.buildSSHCommand(character, command);
+                const { stdout } = await execAsync(sshCommand);
+                systemInfo[key] = stdout.trim();
+            } catch (error) {
+                systemInfo[key] = `Error: ${error.message}`;
+                logger.error(`Failed to get ${key} for ${character.char_name}:`, error.message);
+            }
+        }
+
+        return {
+            character: character.char_name,
+            host: rpiConfig.host,
+            systemInfo: systemInfo,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+module.exports = new AnimatronicService();

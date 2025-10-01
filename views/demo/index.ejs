@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animatronic Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/monsterbox4.css" rel="stylesheet">
+  <style>
+    .big-btn { font-size: 1.1rem; padding: 0.8rem 1.2rem; }
+    .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+    .status-on { background:#22c55e; }
+    .status-off { background:#ef4444; }
+    /* Speech bubble overlay */
+    #webcamWrap { position: relative; }
+    #speechBubble {
+      position: absolute; left: 12px; top: 12px; max-width: 65%;
+      background: rgba(0,0,0,0.7); color: #fff; border-radius: 12px; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.15); font-size: 1rem; line-height: 1.25rem;
+      display: none;
+    }
+    #speechBubble.show { display: block; animation: fadeIn 120ms ease-in; }
+    @keyframes fadeIn { from { opacity: .4; transform: scale(.98); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+  <%- include('../components/unified-navigation', { page: 'conversation' }) %>
+
+  <main class="container py-4">
+    <div class="text-center mb-4">
+      <h1 class="mb-1"><i class="bi bi-robot"></i> Animatronic Demo</h1>
+      <p class="text-muted mb-0">See yourself, talk to the robot, and watch the head & jaw move.</p>
+    </div>
+
+    <div class="row g-3 align-items-stretch">
+      <!-- Webcam Panel -->
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-camera-video"></i> Webcam</h5>
+            <small id="webcamHint" class="text-muted"></small>
+          </div>
+          <div class="card-body text-center">
+            <div id="webcamWrap">
+              <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 480px; background: #000;" />
+              <div id="speechBubble"></div>
+            </div>
+            <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interaction Panel -->
+      <div class="col-lg-5">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="card-title mb-0"><i class="bi bi-chat-dots"></i> Talk & Controls</h5>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <div class="mb-3">
+              <label class="form-label" for="sayInput">Say something to the robot</label>
+              <div class="input-group">
+                <input id="sayInput" type="text" class="form-control" placeholder="Hello!" />
+                <button id="sayBtn" class="btn btn-primary big-btn"><i class="bi bi-send"></i> Speak</button>
+              </div>
+              <div id="sayStatus" class="small mt-2"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="agentSelect">Agent</label>
+              <select id="agentSelect" class="form-select">
+                <option value="" selected>Not configured</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <button id="pressHoldBtn" class="btn btn-warning w-100 big-btn" disabled>
+                <i class="bi bi-record-circle"></i> Press and hold to talk (real-time)
+              </button>
+              <div class="form-text" id="pressHoldHelp">Enable ElevenLabs in AI Settings to use real-time talk.</div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label" for="micSelect">Microphone</label>
+                <select id="micSelect" class="form-select"></select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="speakerSelect">Speaker</label>
+                <select id="speakerSelect" class="form-select"></select>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="jawToggle">
+                  <label class="form-check-label" for="jawToggle"><span class="status-dot status-off" id="jawDot"></span>Jaw Animation</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="headTrackToggle">
+                  <label class="form-check-label" for="headTrackToggle"><span class="status-dot status-off" id="headDot"></span>Head Tracking</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Microphone level</label>
+              <div class="progress" role="progressbar" aria-label="Audio Level" style="height: 12px;">
+                <div id="audioLevel" class="progress-bar" style="width: 0%"></div>
+              </div>
+              <div id="micStatus" class="small text-muted mt-1">Press Start to use the mic</div>
+              <div class="mt-2 d-flex gap-2">
+                <button id="micStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start</button>
+                <button id="micStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
+              </div>
+            </div>
+
+            <div class="small text-muted">Tip: When Jaw Animation is on, your voice level will make the jaw move.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/mic-panel.js"></script>
+  <script>
+    (function(){
+      const CURRENT_CHARACTER = <%= JSON.stringify(currentCharacter || null) %>;
+      const ui = {
+        levelBar: null,
+        sayBtn: null,
+        sayInput: null,
+        sayStatus: null,
+        jawToggle: null,
+        headToggle: null,
+        jawDot: null,
+        headDot: null,
+        pressHoldBtn: null,
+        speechBubble: null,
+        pressHoldHelp: null,
+        agentSelect: null,
+        micSelect: null,
+        speakerSelect: null,
+      };
+      let ws = null;
+      let agentId = null;
+      let bubbleTimer = null;
+
+      function $(id){ return document.getElementById(id); }
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      async function init(){
+        ui.levelBar = $('audioLevel');
+        ui.sayBtn = $('sayBtn');
+        ui.sayInput = $('sayInput');
+        ui.sayStatus = $('sayStatus');
+        ui.jawToggle = $('jawToggle');
+        ui.headToggle = $('headTrackToggle');
+        ui.jawDot = $('jawDot');
+        ui.headDot = $('headDot');
+        ui.pressHoldBtn = $('pressHoldBtn');
+        ui.speechBubble = $('speechBubble');
+        ui.pressHoldHelp = $('pressHoldHelp');
+        ui.agentSelect = $('agentSelect');
+        ui.micSelect = $('micSelect');
+        ui.speakerSelect = $('speakerSelect');
+        if (ui.agentSelect) ui.agentSelect.addEventListener('change', ()=>{ agentId = ui.agentSelect.value || null; });
+
+        bind();
+        // Ensure demo preset exists for a smooth experience
+        try { await fetch('/demo/api/apply-preset', { method: 'POST' }); } catch(_){ }
+        await loadWebcam();
+        await loadJaw();
+        await loadHead();
+        await loadAudioDevices();
+        await initRealtime();
+
+        try { MicPanel.init({ levelBarId: 'audioLevel', startBtnId: 'micStart', stopBtnId: 'micStop', statusId: 'micStatus', transcriptId: null, jawToggleId: 'jawToggle', enableStt: false }); } catch(_){ }
+      }
+
+      function bind(){
+        ui.sayBtn.addEventListener('click', onSpeak);
+        ui.sayInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); onSpeak(); }});
+        ui.jawToggle.addEventListener('change', saveJaw);
+        ui.headToggle.addEventListener('change', saveHead);
+
+        // Press-and-hold events
+        const pressStart = () => startPressToTalk();
+        const pressEnd = () => stopPressToTalk();
+        ui.pressHoldBtn.addEventListener('pointerdown', pressStart);
+        ui.pressHoldBtn.addEventListener('pointerup', pressEnd);
+        ui.pressHoldBtn.addEventListener('pointerleave', pressEnd);
+        ui.pressHoldBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); pressStart(); }, { passive: false });
+        ui.pressHoldBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); pressEnd(); }, { passive: false });
+        ui.pressHoldBtn.addEventListener('mousedown', pressStart);
+        ui.pressHoldBtn.addEventListener('mouseup', pressEnd);
+        ui.pressHoldBtn.addEventListener('mouseleave', pressEnd);
+      }
+
+      async function loadAudioDevices(){
+        try {
+          const [inR, outR] = await Promise.all([
+            fetch('/setup/audio/api/inputs'),
+            fetch('/setup/audio/api/outputs')
+          ]);
+          const ins = await inR.json().catch(()=>({}));
+          const outs = await outR.json().catch(()=>({}));
+          const inList = (ins.inputs || ins.devices || ins.data || ins.items || []);
+          const outList = (outs.outputs || outs.devices || outs.data || outs.items || []);
+          if (ui.micSelect) {
+            ui.micSelect.innerHTML = inList.length ? '' : '<option value="default">default</option>';
+            inList.forEach(d=>{
+              const opt = document.createElement('option');
+              opt.value = d.id || d.name || d.deviceId || 'default';
+              opt.textContent = d.name || d.description || opt.value;
+              ui.micSelect.appendChild(opt);
+            });
+          }
+          if (ui.speakerSelect) {
+            ui.speakerSelect.innerHTML = outList.length ? '' : '<option value="default">default</option>';
+            outList.forEach(d=>{
+              const opt = document.createElement('option');
+              opt.value = d.id || d.name || d.deviceId || 'default';
+              opt.textContent = d.name || d.description || opt.value;
+              ui.speakerSelect.appendChild(opt);
+            });
+          }
+        } catch(_){
+          if (ui.micSelect && !ui.micSelect.options.length) ui.micSelect.innerHTML = '<option value="default">default</option>';
+          if (ui.speakerSelect && !ui.speakerSelect.options.length) ui.speakerSelect.innerHTML = '<option value="default">default</option>';
+        }
+      }
+
+      async function loadWebcam(){
+        const img = $('webcamImg'); const status=$('webcamStatus'); const hint=$('webcamHint');
+        try {
+          const r = await fetch('/conversation/api/webcam-stream-url');
+          const j = await r.json();
+          if (j && j.success && j.url){ img.src = j.url; status.textContent='Streaming'; hint.textContent=j.url; }
+          else { status.textContent = 'No webcam configured'; }
+        } catch { status.textContent = 'Failed to locate webcam'; }
+      }
+
+      async function loadJaw(){
+        try { const r = await fetch('/conversation/api/jaw-settings'); const j = await r.json(); if (j && j.success){ ui.jawToggle.checked=!!j.enabled; updateDot(ui.jawDot, j.enabled); } } catch {}
+      }
+      async function saveJaw(){
+        try { await fetch('/conversation/api/jaw-settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ enabled: ui.jawToggle.checked }) }); } catch {}
+        updateDot(ui.jawDot, ui.jawToggle.checked);
+      }
+
+      async function loadHead(){
+        try {
+          const r = await fetch('/conversation/api/head-tracking-status');
+          const j = await r.json();
+          const on = !!(j && j.success && j.headTracking && j.headTracking.enabled);
+          ui.headToggle.checked = on;
+          updateDot(ui.headDot, on);
+        } catch {}
+      }
+
+      async function saveHead(){
+        try { await fetch('/conversation/api/head-tracking', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ enabled: ui.headToggle.checked }) }); } catch {}
+        updateDot(ui.headDot, ui.headToggle.checked);
+      }
+
+      async function populateAgents(){
+        if (!ui.agentSelect) return;
+        try {
+          const r = await fetch('/api/elevenlabs/agents');
+          const j = await r.json();
+          const list = (j && (j.agents || j.data || j.items)) || [];
+          ui.agentSelect.innerHTML = '';
+          list.forEach(a=>{
+            const opt = document.createElement('option');
+            opt.value = a.id || a.agent_id || a.uuid || '';
+            opt.textContent = a.name || a.label || opt.value || 'agent';
+            ui.agentSelect.appendChild(opt);
+          });
+          if (list.length){ agentId = ui.agentSelect.value; }
+          else {
+            ui.agentSelect.innerHTML = '<option value="">No agents found</option>';
+            agentId = null;
+          }
+        } catch(_){
+          ui.agentSelect.innerHTML = '<option value="">Not configured</option>';
+          agentId = null;
+        }
+      }
+
+      function updateDot(el, on){ if(!el) return; el.classList.toggle('status-on', !!on); el.classList.toggle('status-off', !on); }
+
+      async function onSpeak(){
+        const text = (ui.sayInput.value||'').trim(); if(!text){ ui.sayStatus.innerHTML='<span class="text-warning">Enter text</span>'; return; }
+        ui.sayBtn.disabled=true; ui.sayBtn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
+        try{
+          const r = await fetch('/conversation/api/say', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
+          const j = await r.json();
+          if (j && j.success){ ui.sayStatus.innerHTML='<span class="text-success">Done</span>'; }
+          else { ui.sayStatus.innerHTML='<span class="text-danger">Failed</span>'; }
+        } catch { ui.sayStatus.innerHTML='<span class="text-danger">Error</span>'; }
+        finally { ui.sayBtn.disabled=false; ui.sayBtn.innerHTML='<i class="bi bi-send"></i> Speak'; }
+      }
+
+      async function initRealtime(){
+        try{
+          const r = await fetch('/api/elevenlabs/status');
+          const j = await r.json();
+          if (j && j.success && j.configured){
+            ui.pressHoldBtn.disabled = false;
+            ui.pressHoldHelp.textContent = 'Hold to speak, release to stop. Uses server microphone.';
+            // Populate agent dropdown
+            try{ await populateAgents(); } catch(_){ /* optional */ }
+          } else {
+            ui.pressHoldBtn.disabled = true;
+            ui.pressHoldHelp.textContent = 'Enable ElevenLabs in AI Settings to use real-time talk.';
+          }
+        } catch(_){ ui.pressHoldBtn.disabled = true; }
+      }
+
+      function wsUrl(){
+        const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+        return scheme + '://' + location.hostname + ':8795';
+      }
+
+      function showBubble(text){
+        if (!ui.speechBubble) return;
+        ui.speechBubble.textContent = text || '';
+        ui.speechBubble.classList.add('show');
+        if (bubbleTimer) clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(()=>{ ui.speechBubble.classList.remove('show'); }, 4000);
+      }
+
+      function startPressToTalk(){
+        if (ui.pressHoldBtn.disabled) return;
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+        try {
+          ws = new WebSocket(wsUrl());
+          ws.onopen = function(){
+            // Route output and mic via server for simplicity
+            ws.send(JSON.stringify({ type: 'set_output_mode', mode: 'server' }));
+            ws.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+            if (CURRENT_CHARACTER != null) ws.send(JSON.stringify({ type: 'set_character', characterId: CURRENT_CHARACTER }));
+            if (agentId) ws.send(JSON.stringify({ type: 'start_conversation', agentId: agentId }));
+          };
+          ws.onmessage = function(ev){
+            try{
+              const msg = JSON.parse(ev.data);
+              if (msg.type === 'agent_response' && msg.text){ showBubble(msg.text); }
+            } catch(_){ }
+          };
+          ws.onerror = function(){ /* ignore */ };
+        } catch(_){ /* ignore */ }
+      }
+
+      function stopPressToTalk(){
+        try { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ type: 'end_conversation' })); setTimeout(()=>{ try{ ws.close(); }catch(_){ } ws=null; }, 100); } } catch(_){ }
+      }
+    })();
+  </script>
+  <script src="/js/character-menu.js"></script>
+</body>
+</html>
+

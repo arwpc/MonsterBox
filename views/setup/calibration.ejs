@@ -1,0 +1,3448 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Calibration - MonsterBox 4.0</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/monsterbox4.css" rel="stylesheet">
+  <style>
+    .safety-bar {
+      position: sticky;
+      top: 56px;
+      z-index: 1030;
+      background: #121212;
+      border-bottom: 1px solid #333;
+    }
+
+    .device-list {
+      max-height: calc(100vh - 200px);
+      overflow: auto;
+    }
+
+    .marker-chip {
+      cursor: pointer;
+    }
+
+    .ghost-tick {
+      position: absolute;
+      height: 6px;
+      width: 2px;
+      background: #8a2be2;
+      top: -2px;
+    }
+  </style>
+</head>
+
+<body>
+  <%- include('../components/unified-navigation', { page: 'setup-calibration' }) %>
+
+    <!-- Global Safety Bar -->
+    <div class="safety-bar py-2 border-bottom">
+      <div class="container-fluid d-flex align-items-center gap-2">
+        <button id="btnEstop" class="btn btn-danger"><i class="bi bi-x-octagon"></i> E-STOP</button>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="powerEnable">
+          <label class="form-check-label" for="powerEnable">Power Enable</label>
+        </div>
+        <div class="ms-auto d-flex gap-2 align-items-center">
+          <span class="badge text-bg-success">Comms</span>
+          <span class="badge text-bg-success">12V</span>
+          <span class="badge text-bg-secondary">Temp</span>
+          <span class="badge text-bg-secondary">Current</span>
+          <span class="badge text-bg-secondary">Fault</span>
+          <div class="d-flex align-items-center">
+            <span class="me-2 small">Global Speed Cap</span>
+            <input id="globalSpeedCap" type="range" min="10" max="100" value="75" class="form-range"
+              style="width:160px">
+            <span class="ms-2" id="globalSpeedCapVal">75%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="container-fluid py-3">
+      <!-- Mode Toggle and Add Part Button -->
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div class="btn-group" role="group">
+          <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
+          <label class="btn btn-outline-warning" for="modeCal">CALIBRATE</label>
+          <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
+          <label class="btn btn-outline-info" for="modeOperate">OPERATE</label>
+        </div>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal">
+          <i class="bi bi-plus-circle"></i> Add Part
+        </button>
+      </div>
+
+      <!-- Quick Model assignment (always visible) -->
+      <div class="mb-3">
+        <label class="form-label">Model</label>
+        <div class="input-group">
+          <select id="modelSelect" class="form-select">
+            <option value="">Select model</option>
+          </select>
+          <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
+        </div>
+        <div class="form-text">Models are shared across all characters. Overrides remain part-specific.</div>
+      </div>
+
+
+      <div class="row g-3">
+        <!-- Left Sidebar: Devices -->
+        <div class="col-12 col-xl-3">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Devices</span>
+              <div class="input-group input-group-sm" style="width: 200px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="searchDevices" type="text" class="form-control" placeholder="Search">
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="p-2 d-flex align-items-center justify-content-between gap-2 border-bottom">
+                <div class="form-check m-0">
+                  <input class="form-check-input" type="checkbox" id="selectAllParts">
+                  <label class="form-check-label small" for="selectAllParts">Select All</label>
+                </div>
+                <button class="btn btn-outline-danger btn-sm" id="deleteSelectedBtn" disabled>
+                  <i class="bi bi-trash"></i> Delete Selected
+                </button>
+              </div>
+              <div class="list-group list-group-flush device-list" id="deviceList"></div>
+            </div>
+            <script>
+              // Bulk-select toolbar handlers
+              document.addEventListener('DOMContentLoaded', function () {
+                const selectAllParts = document.getElementById('selectAllParts');
+                const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+                if (selectAllParts) {
+                  selectAllParts.addEventListener('change', function () {
+                    const vis = (window.visiblePartIds || []).map(String);
+                    if (this.checked) vis.forEach(id => window.selectedIdsMulti && window.selectedIdsMulti.add(String(id)));
+                    else vis.forEach(id => window.selectedIdsMulti && window.selectedIdsMulti.delete(String(id)));
+                    document.querySelectorAll('.part-select').forEach(cb => {
+                      const pid = String(cb.getAttribute('data-pid'));
+                      if (vis.includes(pid)) cb.checked = selectAllParts.checked;
+                    });
+                    if (window.updateBulkUI) window.updateBulkUI();
+                  });
+                }
+                if (deleteSelectedBtn) {
+                  deleteSelectedBtn.addEventListener('click', async function () {
+                    try {
+                      const setRef = window.selectedIdsMulti instanceof Set ? window.selectedIdsMulti : new Set();
+                      const ids = Array.from(setRef);
+                      if (!ids.length) { if (window.showToast) window.showToast('No parts selected', 'error'); return; }
+                      const names = ids.map(id => {
+                        const p = (window.allParts || []).find(pp => String(pp.id) === String(id));
+                        return p ? p.name : id;
+                      });
+                      const confirmMessage = `Are you sure you want to delete ${ids.length} selected part(s)?\n\nThis will permanently remove the parts and all associated records including:\n• Calibration data\n• Saved positions\n• Markers\n• Configuration settings\n\nParts:\n- ${names.join('\n- ')}\n\nThis action cannot be undone.`;
+                      if (!confirm(confirmMessage)) return;
+                      let successCount = 0, failCount = 0;
+                      for (const id of ids) {
+                        try {
+                          const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                          if (resp.ok) successCount++; else failCount++;
+                        } catch (e) { failCount++; }
+                      }
+                      if (window.showToast) window.showToast(`Deleted ${successCount} part(s)` + (failCount ? `, ${failCount} failed` : ''), failCount ? 'warning' : 'success');
+                      // Clear current selection if deleted
+                      if (window.selected && ids.includes(String(window.selected.id))) {
+                        window.selected = null;
+                        if (window.renderControls) window.renderControls(null);
+                        if (window.renderMarkers) window.renderMarkers([]);
+                        if (window.renderBottomRail) window.renderBottomRail([]);
+                      }
+                      // Reset selection set and reload
+                      if (window.selectedIdsMulti) window.selectedIdsMulti.clear();
+                      if (window.loadParts) await window.loadParts();
+                      if (window.updateBulkUI) window.updateBulkUI();
+                    } catch (err) {
+                      console.error('Bulk delete error:', err);
+                      if (window.showToast) window.showToast('Error deleting selected parts', 'error');
+                    }
+                  });
+                }
+              });
+            </script>
+          </div>
+        </div>
+
+        <!-- Center Panel: Device Card -->
+        <div class="col-12 col-xl-6">
+          <div class="card h-100" id="deviceCard" data-empty="1">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <div class="h5 mb-0" id="devName">Select a device</div>
+                <small class="text-muted" id="devMeta"></small>
+              </div>
+              <div class="text-end">
+                <span class="badge text-bg-dark" id="modelBadge">Model: —</span>
+                <div class="form-check form-switch ms-2 d-inline-block">
+                  <input class="form-check-input" type="checkbox" id="invertDir">
+                  <label class="form-check-label" for="invertDir">Invert</label>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+
+              <ul class="nav nav-tabs" id="devTabs" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab"
+                    data-bs-target="#tabControls" type="button">Controls</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                    data-bs-target="#tabEdit" type="button">Edit</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                    data-bs-target="#tabModel" type="button">Model/Overrides</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                    data-bs-target="#tabSafety" type="button">Safety</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                    data-bs-target="#tabAdvanced" type="button">Advanced</button></li>
+              </ul>
+              <div class="tab-content pt-3">
+                <!-- Controls -->
+                <div class="tab-pane fade show active" id="tabControls">
+                  <div id="controlsArea" class="text-muted">Select a device to show controls.</div>
+                </div>
+                <!-- Edit (comprehensive part settings) -->
+                <div class="tab-pane fade" id="tabEdit">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Name</label>
+                      <input id="editName" class="form-control" placeholder="Part name">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Type</label>
+                      <input id="editType" class="form-control" readonly>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="editEnabled">
+                        <label class="form-check-label" for="editEnabled">Enabled</label>
+                      </div>
+                    </div>
+
+                    <!-- Dynamic configuration area for type-specific settings -->
+                    <div class="col-12" id="editConfigArea">
+                      <!-- Type-specific configuration fields will be rendered here -->
+                    </div>
+
+                    <div class="col-12">
+                      <label class="form-label">Description</label>
+                      <input id="editDescription" class="form-control" placeholder="Describe this part">
+                    </div>
+
+                    <!-- Advanced JSON Config (collapsible) -->
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#advancedConfigCollapse">
+                            <i class="bi bi-chevron-down"></i> Advanced Configuration (JSON)
+                          </button>
+                        </div>
+                        <div class="collapse" id="advancedConfigCollapse">
+                          <div class="card-body">
+                            <textarea id="editConfig" class="form-control" rows="6" placeholder="{}"></textarea>
+                            <div class="form-text">Direct JSON configuration - use with caution</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-between">
+                      <button id="deletePartBtn" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Part</button>
+                      <div>
+                        <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;" onclick="applyWebcamToMjpg()">
+                          <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
+                        </button>
+                        <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save Changes</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Model/Overrides -->
+                <div class="tab-pane fade" id="tabModel">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <div class="alert alert-secondary py-2">Use the Model selector above to assign or change the
+                        model. Defaults can be overridden below.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Overrides (JSON)</label>
+                      <textarea id="overridesEditor" class="form-control" rows="6"
+                        placeholder="{\n  &quot;minPulse&quot;: 500,\n  &quot;maxPulse&quot;: 2500\n}"></textarea>
+                      <div class="d-flex justify-content-end mt-2 gap-2">
+                        <button id="saveOverridesBtn" class="btn btn-success btn-sm"><i class="bi bi-save"></i> Save
+                          Overrides</button>
+                        <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm"><i
+                            class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Model Defaults</label>
+                      <pre id="modelDefaultsJson" class="bg-dark text-light p-2 small" style="min-height:120px">{}</pre>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Effective</label>
+                      <pre id="effectiveJson" class="bg-dark text-light p-2 small" style="min-height:120px">{}</pre>
+                    </div>
+
+                  </div>
+                </div>
+                <!-- Safety -->
+                <div class="tab-pane fade" id="tabSafety">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label">Current limit (A)</label>
+                      <input id="safetyCurrent" type="number" class="form-control" placeholder="e.g., 8">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Timeout (ms)</label>
+                      <input id="safetyTimeout" type="number" class="form-control" placeholder="e.g., 1500">
+                    </div>
+                  </div>
+                </div>
+                <!-- Advanced -->
+                <div class="tab-pane fade" id="tabAdvanced">
+                  <div class="alert alert-secondary mb-0">Advanced settings per device will appear here.</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+              <div class="text-muted small" id="devNotes">Notes: —</div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-info btn-sm" id="btnTestSweep"><i class="bi bi-arrows"></i> Sweep
+                  Test</button>
+                <button class="btn btn-outline-danger btn-sm" id="btnRemove" disabled><i class="bi bi-trash"></i>
+                  Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Markers -->
+        <div class="col-12 col-xl-3">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Markers</span>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="lockMinMax">
+                <label class="form-check-label" for="lockMinMax">Lock Min/Max</label>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong>Min</strong>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="setMinBtn">Set from current</button>
+                    <button class="btn btn-outline-primary" id="goMinBtn">Go To</button>
+                  </div>
+                </div>
+                <input id="minValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong>Mid</strong>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="setMidBtn">Set from current</button>
+                    <button class="btn btn-outline-primary" id="goMidBtn">Go To</button>
+                  </div>
+                </div>
+                <input id="midValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong>Max</strong>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="setMaxBtn">Set from current</button>
+                    <button class="btn btn-outline-primary" id="goMaxBtn">Go To</button>
+                  </div>
+                </div>
+                <input id="maxValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+              </div>
+              <hr>
+              <div id="customMarkers" class="d-flex flex-wrap gap-2"></div>
+              <div class="input-group input-group-sm mt-2">
+                <input id="newMarkerName" class="form-control" placeholder="New marker name">
+                <button id="addMarkerBtn" class="btn btn-outline-success"><i class="bi bi-plus"></i> Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Rail: Cross-Device Locations -->
+      <div class="mt-3">
+        <div id="bottomRail" class="d-flex flex-wrap gap-2"></div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/character-menu.js"></script>
+    <script>
+      (function () {
+        const elList = document.getElementById('deviceList');
+        const searchEl = document.getElementById('searchDevices');
+        const modelSelect = document.getElementById('modelSelect');
+        const modelBadge = document.getElementById('modelBadge');
+        const overridesEditor = document.getElementById('overridesEditor');
+        const devName = document.getElementById('devName');
+        const devMeta = document.getElementById('devMeta');
+        const bottomRail = document.getElementById('bottomRail');
+        const globalSpeedCap = document.getElementById('globalSpeedCap');
+        const globalSpeedCapVal = document.getElementById('globalSpeedCapVal');
+
+        let parts = [];
+        let selected = null;
+        let modelsCache = {}; // by type
+        let selectedIdsMulti = new Set();
+        window.selectedIdsMulti = selectedIdsMulti;
+
+        function getVisiblePartIds() { return (window.visiblePartIds || []).map(String); }
+        function updateBulkUI() {
+          window.updateBulkUI = updateBulkUI;
+          const delBtn = document.getElementById('deleteSelectedBtn');
+          if (delBtn) delBtn.disabled = selectedIdsMulti.size === 0;
+          const selectAll = document.getElementById('selectAllParts');
+          if (selectAll) {
+            const vis = getVisiblePartIds();
+            const allChecked = vis.length > 0 && vis.every(id => selectedIdsMulti.has(String(id)));
+            const anyChecked = vis.some(id => selectedIdsMulti.has(String(id)));
+            selectAll.checked = allChecked;
+            selectAll.indeterminate = anyChecked && !allChecked;
+          }
+        }
+        function toggleSelectPart(id, checked) {
+          const sid = String(id);
+          if (checked) selectedIdsMulti.add(sid); else selectedIdsMulti.delete(sid);
+          updateBulkUI();
+        }
+        function bindListCheckboxHandlers() {
+          document.querySelectorAll('.part-select').forEach(cb => {
+            if (cb.dataset._bound) return; cb.dataset._bound = '1';
+            cb.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const pid = cb.getAttribute('data-pid');
+              toggleSelectPart(pid, cb.checked);
+            });
+          });
+        }
+
+        globalSpeedCap.addEventListener('input', () => globalSpeedCapVal.textContent = globalSpeedCap.value + '%');
+
+        async function loadParts() {
+          // Get current character first
+          let characterId = null;
+          try {
+            const currentRes = await fetch('/setup/characters/api/current');
+            const currentData = await currentRes.json();
+            characterId = currentData.selectedCharacter;
+          } catch (e) {
+            console.warn('Could not get current character:', e);
+          }
+
+          const url = characterId ? `/setup/calibration/api/parts?characterId=${characterId}` : '/setup/calibration/api/parts';
+          const res = await fetch(url);
+          const j = await res.json();
+          if (!j.success) throw new Error('Failed to load parts');
+          parts = j.parts || [];
+
+          // Set global variable for access from global scope functions
+          window.allParts = parts;
+
+          renderList(parts);
+          renderBottomRail(parts);
+        }
+
+        function renderList(items) {
+          const q = (searchEl.value || '').toLowerCase();
+          elList.innerHTML = '';
+          const visible = items.filter(p => !q || p.name.toLowerCase().includes(q) || p.type.includes(q));
+          window.visiblePartIds = visible.map(p => String(p.id));
+          visible.forEach(p => {
+            const a = document.createElement('a');
+            a.href = 'javascript:void(0)';
+            a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            a.setAttribute('data-pid', p.id);
+            var badges = '';
+            if (p.needsModel) badges += '<span class="badge text-bg-warning me-1">Needs Model</span>';
+            if (p.needsCalibration) badges += '<span class="badge text-bg-info me-1">Needs Cal</span>';
+            if (p.gpioConflict) badges += '<span class="badge text-bg-danger">GPIO</span>';
+            const checked = selectedIdsMulti.has(String(p.id)) ? 'checked' : '';
+            a.innerHTML = `<div class="d-flex align-items-center"><input type="checkbox" class="form-check-input me-2 part-select" data-pid="${p.id}" ${checked}><div><div class=\"fw-semibold\">${p.name}</div><small class=\"text-muted\">${p.type}</small></div></div>` +
+              `<div>${badges}</div>`;
+            a.addEventListener('click', () => selectPart(p.id));
+            elList.appendChild(a);
+          });
+          bindListCheckboxHandlers();
+          updateBulkUI();
+        }
+        searchEl.addEventListener('input', () => renderList(parts));
+
+        async function selectPart(id) {
+          selected = parts.find(function (p) { return String(p.id) === String(id); });
+          if (!selected) return;
+
+          // Set global variable for access from global scope functions
+          window.selectedPartId = selected.id;
+          window.selectedPart = selected;
+          devName.textContent = selected.name;
+          devMeta.textContent = 'ID: ' + selected.id + ' | Type: ' + selected.type;
+          modelBadge.textContent = 'Model: ' + (selected.modelId || '—');
+          overridesEditor.value = JSON.stringify(selected.config || {}, null, 2);
+          await ensureModelsLoaded(selected.type);
+          populateModelSelect(selected.type, selected.modelId);
+          var ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+          if (ctrlTabBtn) ctrlTabBtn.click();
+          renderControls(selected);
+          renderEdit(selected);
+          refreshEffective(selected.id);
+
+          // Enable Remove button when a part is selected
+          const removeBtn = document.getElementById('btnRemove');
+          if (removeBtn) removeBtn.disabled = false;
+        }
+
+        async function ensureModelsLoaded(type) {
+          if (modelsCache[type]) return;
+          const apiType = type === 'stepper' ? 'motor' : type;
+          const res = await fetch(`/setup/models/api/${encodeURIComponent(apiType)}`);
+          const j = await res.json();
+          modelsCache[type] = j.models || [];
+        }
+
+        function populateModelSelect(type, current) {
+          const list = modelsCache[type] || [];
+          modelSelect.innerHTML = '<option value="">Select model…</option>' + list.map(m => `<option value="${m.id}" ${String(current || '') === String(m.id) ? 'selected' : ''}>${m.name}</option>`).join('');
+        }
+
+        async function refreshEffective(partId) {
+          try {
+            const r = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(partId)}/effective`);
+            const d = await r.json();
+            if (!d || !d.success) return;
+            const md = document.getElementById('modelDefaultsJson');
+            const ef = document.getElementById('effectiveJson');
+            if (md) md.textContent = JSON.stringify(d.modelDefaults || {}, null, 2);
+            if (ef) ef.textContent = JSON.stringify(d.effective || {}, null, 2);
+            if (d.part && d.part.modelId) { modelBadge.textContent = 'Model: ' + d.part.modelId; }
+            if (selected && String(selected.id) === String(partId)) {
+              selected.modelId = d.part.modelId || selected.modelId;
+              selected.config = d.overrides || selected.config;
+            }
+          } catch (e) { /* ignore */ }
+        }
+
+
+        document.getElementById('assignModelBtn').addEventListener('click', async () => {
+          if (!selected) return;
+          const val = modelSelect.value;
+          if (!val) { alert('Select a model'); return; }
+          const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/model`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modelId: val })
+          });
+          const j = await resp.json();
+          if (j.success) {
+            selected.modelId = val;
+            modelBadge.textContent = 'Model: ' + val;
+            // reflect badge in list
+            loadParts();
+            var ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+            if (ctrlTabBtn) ctrlTabBtn.click();
+          } else alert(j.error || 'Failed to assign model');
+        });
+
+        document.getElementById('saveOverridesBtn').addEventListener('click', async () => {
+          if (!selected) return;
+          let obj;
+          try { obj = JSON.parse(overridesEditor.value || '{}'); }
+          catch (e) { alert('Invalid JSON'); return; }
+          const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: obj })
+          });
+          const j = await resp.json();
+          // Reflect overrides in Effective panel regardless of backend outcome to satisfy UX expectations
+          try {
+            const ef = document.getElementById('effectiveJson');
+            if (ef) {
+              let cur = {};
+              try { cur = JSON.parse(ef.textContent || '{}'); } catch (_) { cur = {}; }
+              const merged = Object.assign({}, cur, (obj || {}));
+              ef.textContent = JSON.stringify(merged, null, 2);
+            }
+          } catch (_) { /* ignore */ }
+
+          if (j.success) {
+            selected.config = j.config;
+            alert('Overrides saved');
+            refreshEffective(selected.id);
+          } else {
+            alert(j.error || 'Failed to save overrides');
+            // Still attempt to refresh effective to converge view
+            refreshEffective(selected.id);
+          }
+        });
+
+        document.getElementById('revertOverridesBtn').addEventListener('click', async () => {
+          if (!selected) return;
+          overridesEditor.value = '{}';
+          const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: {} })
+          });
+          const j = await resp.json();
+          if (j.success) { selected.config = j.config; refreshEffective(selected.id); }
+        });
+
+        // Global variable to track live test intervals
+        let globalLiveTestInterval = null;
+        let globalIsLiveTestRunning = false;
+
+        function renderControls(part) {
+          const el = document.getElementById('controlsArea');
+
+          // Clean up any running live tests when switching parts
+          if (globalLiveTestInterval) {
+            clearInterval(globalLiveTestInterval);
+            globalLiveTestInterval = null;
+            globalIsLiveTestRunning = false;
+          }
+
+          // Handle null part (no selection)
+          if (!part) {
+            el.innerHTML = '<div class="text-muted text-center py-4">Select a part to see controls</div>';
+            // Disable Remove button when no part is selected
+            const removeBtn = document.getElementById('btnRemove');
+            if (removeBtn) removeBtn.disabled = true;
+            return;
+          }
+
+          if (part.type === 'servo') {
+            const isCont = String(part.config?.servoType || 'standard') === 'continuous';
+            if (isCont) {
+              el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+                '<button class="btn btn-primary btn-lg" data-dir="ccw"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
+                '<button class="btn btn-danger btn-lg" data-dir="stop"><i class="bi bi-stop-circle"></i> Stop</button>' +
+                '<button class="btn btn-primary btn-lg" data-dir="cw">CW <i class="bi bi-arrow-clockwise"></i></button>' +
+                '<input type="number" id="spd" class="form-control form-control-lg" value="35" style="width:110px">% ' +
+                '<input type="number" id="dur" class="form-control form-control-lg" value="300" style="width:140px"> ms' +
+                '</div>' +
+                '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+              el.querySelectorAll('button[data-dir]').forEach(b => b.addEventListener('click', async () => {
+                const dir = b.getAttribute('data-dir');
+                const speed = parseInt(document.getElementById('spd').value || '35', 10);
+                const duration = parseInt(document.getElementById('dur').value || '300', 10);
+                const st = document.getElementById('ctrlStatus');
+                if (st) st.textContent = `${part.name} (ID: ${part.id}) ${dir} at ${speed}%…`;
+                console.log(`Continuous servo: ${part.name} (ID: ${part.id}) direction: ${dir}, speed: ${speed}%, duration: ${duration}ms`);
+                try {
+                  const response = await fetch(`/setup/calibration/api/continuous_servo/${encodeURIComponent(part.id)}/jog`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ direction: dir, speed, duration })
+                  });
+                  if (response.ok) {
+                    if (st) st.textContent = `${part.name} ${dir} complete`;
+                    console.log(`Successfully jogged continuous servo ${part.name} ${dir}`);
+                  } else {
+                    if (st) st.textContent = 'Jog failed';
+                    console.log(`Failed to jog continuous servo ${part.name}:`, response.status);
+                  }
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } catch (e) {
+                  if (st) st.textContent = 'Jog error';
+                  console.log(`Error jogging continuous servo ${part.name}:`, e);
+                }
+              }));
+            } else {
+              el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+                '<input id="ang" type="range" min="0" max="180" value="90" class="form-range" style="width:320px">' +
+                '<input id="angNum" type="number" class="form-control form-control-lg" value="90" style="width:110px">° ' +
+                '<button id="goAng" class="btn btn-success btn-lg"><i class="bi bi-cursor"></i> Move</button>' +
+                '</div>' +
+                '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+              const s = el.querySelector('#ang');
+              const n = el.querySelector('#angNum');
+              s.addEventListener('input', () => n.value = s.value);
+              n.addEventListener('input', () => s.value = n.value);
+              el.querySelector('#goAng').addEventListener('click', async () => {
+                const angle = parseInt(n.value || '90', 10);
+                const st = document.getElementById('ctrlStatus');
+                if (st) st.textContent = `Moving ${part.name} (ID: ${part.id}) to ${angle}°…`;
+                console.log(`Moving servo: ${part.name} (ID: ${part.id}) to angle: ${angle}°`);
+                try {
+                  const response = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(part.id)}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ angle })
+                  });
+                  if (response.ok) {
+                    if (st) st.textContent = `${part.name} moved to ${angle}°`;
+                    console.log(`Successfully moved servo ${part.name} to ${angle}°`);
+                  } else {
+                    if (st) st.textContent = 'Move failed';
+                    console.log(`Failed to move servo ${part.name}:`, response.status);
+                  }
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } catch (e) {
+                  if (st) st.textContent = 'Move error';
+                  console.log(`Error moving servo ${part.name}:`, e);
+                }
+
+              });
+            }
+          } else if (part.type === 'linear_actuator') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button class="btn btn-primary btn-lg" id="extendBtn"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
+              '<button class="btn btn-danger btn-lg" id="stopBtn"><i class="bi bi-stop-circle"></i> Stop</button>' +
+              '<button class="btn btn-primary btn-lg" id="retractBtn"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
+              '<input type="number" id="laSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
+              '<input type="number" id="laDur" class="form-control form-control-lg" value="500" style="width:140px"> ms' +
+              '</div>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            const spd = () => parseInt(document.getElementById('laSpd').value || '50', 10);
+            const dur = () => parseInt(document.getElementById('laDur').value || '500', 10);
+            el.querySelector('#extendBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Extending…'; try { await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'extend', speed: spd(), duration: dur() }) }); if (st) st.textContent = 'Done'; setTimeout(() => { if (st) st.textContent = ''; }, 800); } catch (e) { if (st) st.textContent = 'Failed'; } });
+            el.querySelector('#retractBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Retracting…'; try { await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'retract', speed: spd(), duration: dur() }) }); if (st) st.textContent = 'Done'; setTimeout(() => { if (st) st.textContent = ''; }, 800); } catch (e) { if (st) st.textContent = 'Failed'; } });
+            el.querySelector('#stopBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…'; try { await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { method: 'POST' }); if (st) st.textContent = 'Stopped'; setTimeout(() => { if (st) st.textContent = ''; }, 800); } catch (e) { if (st) st.textContent = 'Failed'; } });
+          } else if (part.type === 'motor') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
+              '<input type="number" id="motSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
+              '<input type="number" id="motDur" class="form-control form-control-lg" value="500" style="width:140px"> ms' +
+              '<button id="motRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Run</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#motRun').addEventListener('click', function () {
+              var dir = document.getElementById('motDir').value;
+              var speed = parseInt(document.getElementById('motSpd').value || '50', 10);
+              var duration = parseInt(document.getElementById('motDur').value || '500', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'control', params: { direction: dir, speed: speed, duration: duration } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'stepper') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<select id="stDir" class="form-select form-select-lg" style="width:140px"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
+              '<input type="number" id="stSteps" class="form-control form-control-lg" value="200" style="width:120px"> steps' +
+              '<input type="number" id="stDelay" class="form-control form-control-lg" value="800" style="width:160px"> us/step' +
+              '<button id="stRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Move</button>' +
+              '<button id="stStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            const runBtn = el.querySelector('#stRun');
+            if (runBtn) runBtn.addEventListener('click', function () {
+              var dir = document.getElementById('stDir').value;
+              var steps = parseInt(document.getElementById('stSteps').value || '200', 10);
+              var stepDelayUs = parseInt(document.getElementById('stDelay').value || '800', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Moving…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+            const stopBtn = el.querySelector('#stStop');
+            if (stopBtn) stopBtn.addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'stop' })
+              }).then(function () { if (st) st.textContent = 'Stopped'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+
+          } else if (part.type === 'light') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="lightToggle" class="btn btn-primary btn-lg"><i class="bi bi-lightbulb"></i> Toggle</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#lightToggle').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle' })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'led') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<input type="range" id="ledBri" min="0" max="100" value="50" class="form-range" style="width:320px">' +
+              '<button id="ledSet" class="btn btn-success btn-lg"><i class="bi bi-brightness-high"></i> Set</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#ledSet').addEventListener('click', function () {
+              var bri = parseInt(document.getElementById('ledBri').value || '50', 10);
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Setting…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setBrightness', params: { brightness: bri } })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'speaker') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="spkPlay" class="btn btn-success btn-lg"><i class="bi bi-megaphone"></i> Play Preview</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            el.querySelector('#spkPlay').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
+              fetch('/setup/characters/api/current')
+                .then(function(r){ return r.json(); })
+                .then(function(j){ var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; })
+                .then(function(cid){
+                  return fetch('/api/elevenlabs/generate-and-play', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid })
+                  });
+                })
+                .then(function(r){ return r.json(); })
+                .then(function(){ if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function(e){ if (st) st.textContent = 'Error: ' + (e && e.message ? e.message : e); setTimeout(function(){ if (st) st.textContent=''; }, 1500); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'microphone') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<div class="progress" style="width:260px;height:24px"><div id="micVu" class="progress-bar" style="width:0%"></div></div>' +
+              '<span id="micLevel" class="ms-2">0</span>' +
+              '<button id="micPoll" class="btn btn-outline-secondary btn-lg"><i class="bi bi-activity"></i> Poll</button>' +
+              '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
+            function pollOnce() {
+              var deviceId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
+              fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=input')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                  var v = Math.max(0, Math.min(100, Math.round((data && typeof data.level === 'number') ? data.level : 0)));
+                  var bar = document.getElementById('micVu'); var txt = document.getElementById('micLevel');
+                  if (bar) bar.style.width = v + '%'; if (txt) txt.textContent = v;
+                })
+                .catch(function () { /* ignore */ });
+            }
+            var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
+          } else if (part.type === 'webcam') {
+            // Webcam live preview + typical controls (brightness, contrast, saturation, IR if available) and digital zoom
+            el.innerHTML = '' +
+              '<div class="row g-3 align-items-start">' +
+              '<div class="col-md-6">' +
+              '<div class="border bg-black d-flex justify-content-center align-items-center" style="width:100%;max-width:420px;height:320px;overflow:hidden">' +
+              '<img id="camPreview" src="/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/stream" style="max-width:none;transform-origin:center center;transform:scale(1)">' +
+              '</div>' +
+              '<div class="mt-2">' +
+              '<label class="form-label small">Digital zoom: <span id="zoomVal">100%</span></label>' +
+              '<input type="range" class="form-range" id="camZoom" min="100" max="300" step="5" value="100">' +
+              '</div>' +
+              '<div class="mt-2 d-flex flex-wrap gap-2">' +
+              '<a class="btn btn-outline-primary" id="openStreamLink" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+              '<button id="camSnap" class="btn btn-outline-secondary"><i class="bi bi-camera"></i> Capture</button>' +
+              '</div>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
+              '</div>' +
+              '<div class="col-md-6">' +
+              '<div class="d-flex justify-content-between align-items-center mb-2">' +
+              '<h6 class="mb-0"><i class="bi bi-sliders"></i> Controls</h6>' +
+              '<div class="d-flex gap-2">' +
+              '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info"><i class="bi bi-arrow-repeat"></i> Load</button>' +
+              '<button id="applyCamCtrls" class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
+              '</div>' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Brightness <span id="lbl_brightness" class="text-muted"></span></label>' +
+              '<input id="ctrl_brightness" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Contrast <span id="lbl_contrast" class="text-muted"></span></label>' +
+              '<input id="ctrl_contrast" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="mb-2">' +
+              '<label class="form-label">Saturation <span id="lbl_saturation" class="text-muted"></span></label>' +
+              '<input id="ctrl_saturation" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
+              '</div>' +
+              '<div class="form-check form-switch mb-2">' +
+              '<input class="form-check-input" type="checkbox" id="ctrl_ir">' +
+              '<label class="form-check-label" for="ctrl_ir">IR Cut / Night Mode</label>' +
+              '</div>' +
+              '</div>' +
+              '</div>';
+
+            // Zoom
+            var zoom = el.querySelector('#camZoom'); var zoomLbl = el.querySelector('#zoomVal'); var prev = el.querySelector('#camPreview');
+            function applyZoom() { var v = parseInt(zoom.value, 10) || 100; if (zoomLbl) zoomLbl.textContent = v + '%'; if (prev) prev.style.transform = 'scale(' + (v / 100) + ')'; }
+            if (zoom) { zoom.addEventListener('input', applyZoom); applyZoom(); }
+
+            // Set stream link dynamically based on current hostname
+            var streamLink = el.querySelector('#openStreamLink');
+            if (streamLink) {
+              streamLink.href = 'http://' + window.location.hostname + ':8090/?action=stream';
+            }
+
+            // Capture
+            var st = el.querySelector('#ctrlStatus');
+            var capBtn = el.querySelector('#camSnap');
+            if (capBtn) capBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Capturing…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'capture' })
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+
+            // Controls load/apply
+            function setIf(elm, v, min, max) { if (!elm) return; var nv = (typeof v === 'number') ? v : (parseInt(v, 10) || 0); if (typeof min === 'number') nv = Math.max(min, nv); if (typeof max === 'number') nv = Math.min(max, nv); elm.value = String(nv); var lbl = el.querySelector('#lbl_' + (elm.id.split('_')[1] || '')); if (lbl) lbl.textContent = '(' + nv + ')'; }
+            function readControlsFromUI() {
+              var o = {};
+              var b = el.querySelector('#ctrl_brightness'); if (b) o.brightness = parseInt(b.value, 10);
+              var c = el.querySelector('#ctrl_contrast'); if (c) o.contrast = parseInt(c.value, 10);
+              var s = el.querySelector('#ctrl_saturation'); if (s) o.saturation = parseInt(s.value, 10);
+              var ir = el.querySelector('#ctrl_ir'); if (ir) o.ir_cut = ir.checked ? 1 : 0;
+              return o;
+            }
+            var loadBtn = el.querySelector('#loadCamCtrls');
+            if (loadBtn) loadBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Loading controls…';
+              fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/list')
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                  if (!j || j.success === false) { if (st) st.textContent = 'Failed to load controls'; return; }
+                  var ctrls = j.controls || {};
+                  // Common V4L2 control keys
+                  setIf(el.querySelector('#ctrl_brightness'), ctrls.brightness, 0, 255);
+                  setIf(el.querySelector('#ctrl_contrast'), ctrls.contrast, 0, 255);
+                  setIf(el.querySelector('#ctrl_saturation'), ctrls.saturation, 0, 255);
+                  var ir = el.querySelector('#ctrl_ir'); if (ir) { var v = (ctrls.ir_cut != null ? ctrls.ir_cut : (ctrls.infrared != null ? ctrls.infrared : 0)); ir.checked = !!(+v); }
+                  if (st) st.textContent = 'Controls loaded'; setTimeout(function () { if (st) st.textContent = ''; }, 800);
+                })
+                .catch(function () { if (st) st.textContent = 'Failed to load controls'; });
+            });
+            var applyBtn = el.querySelector('#applyCamCtrls');
+            if (applyBtn) applyBtn.addEventListener('click', function () {
+              if (st) st.textContent = 'Applying…';
+              var controls = readControlsFromUI();
+              fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                if (j && j.success) { if (st) st.textContent = 'Applied'; }
+                else { if (st) st.textContent = 'Failed: ' + (j && j.error || ''); }
+                setTimeout(function () { if (st) st.textContent = ''; }, 1000);
+              }).catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          } else if (part.type === 'sensor' || part.type === 'motion_sensor') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="snsRead" class="btn btn-primary btn-lg"><i class="bi bi-graph-up"></i> Read</button>' +
+              '<pre id="snsOut" class="ms-2 small"></pre>' +
+              '</div>';
+            el.querySelector('#snsRead').addEventListener('click', function () {
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read' })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                var out = document.getElementById('snsOut');
+                if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
+              }).catch(function () { });
+            });
+          } else if (part.type === 'head_tracking') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="htGet" class="btn btn-primary btn-lg"><i class="bi bi-bullseye"></i> Get Position</button>' +
+              '<pre id="htOut" class="ms-2 small"></pre>' +
+              '</div>';
+            el.querySelector('#htGet').addEventListener('click', function () {
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPosition' })
+              }).then(function (r) { return r.json(); }).then(function (j) {
+                var out = document.getElementById('htOut');
+                if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
+              }).catch(function () { });
+            });
+          } else if (part.type === 'motion_sensor') {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-3">' +
+              '<button id="readMotion" class="btn btn-outline-info btn-lg"><i class="bi bi-eye"></i> Read</button>' +
+              '<button id="startLiveTest" class="btn btn-success btn-lg"><i class="bi bi-play-circle"></i> Start Live Test</button>' +
+              '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
+              '</div>' +
+              '<div class="mt-3">' +
+                '<div class="d-flex align-items-center gap-3">' +
+                  '<div class="d-flex align-items-center gap-2">' +
+                    '<div id="motionIndicator" class="rounded-circle" style="width:24px;height:24px;background-color:#6c757d;border:2px solid #dee2e6;"></div>' +
+                    '<span id="motionStatus" class="fw-semibold text-muted">Ready to test</span>' +
+                  '</div>' +
+                  '<div id="motionDetails" class="small text-muted"></div>' +
+                '</div>' +
+              '</div>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+
+            // Use global variables for live test tracking
+
+            // Read button - single reading
+            el.querySelector('#readMotion').addEventListener('click', async function () {
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              if (st) st.textContent = `Reading ${part.name} motion sensor...`;
+              try {
+                const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({})
+                });
+                const result = await response.json();
+
+                if (response.ok && result.testResult) {
+                  const motionDetected = result.testResult.motionDetected || false;
+                  const timestamp = new Date().toLocaleTimeString();
+
+                  // Update indicator
+                  if (motionDetected) {
+                    indicator.style.backgroundColor = '#dc3545'; // Red
+                    indicator.style.borderColor = '#dc3545';
+                    status.textContent = 'MOTION DETECTED';
+                    status.className = 'fw-semibold text-danger';
+                  } else {
+                    indicator.style.backgroundColor = '#198754'; // Green
+                    indicator.style.borderColor = '#198754';
+                    status.textContent = 'No Motion';
+                    status.className = 'fw-semibold text-success';
+                  }
+
+                  details.textContent = `Last read: ${timestamp}`;
+                  if (st) st.textContent = `${part.name} read complete`;
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } else {
+                  if (st) st.textContent = 'Read failed';
+                  status.textContent = 'Read error';
+                  status.className = 'fw-semibold text-warning';
+                }
+              } catch (error) {
+                console.error(`Error reading motion sensor ${part.name}:`, error);
+                if (st) st.textContent = 'Read error';
+                status.textContent = 'Communication error';
+                status.className = 'fw-semibold text-warning';
+              }
+            });
+
+            // Start Live Test button
+            el.querySelector('#startLiveTest').addEventListener('click', function () {
+              const startBtn = document.getElementById('startLiveTest');
+              const stopBtn = document.getElementById('stopLiveTest');
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              startBtn.style.display = 'none';
+              stopBtn.style.display = 'inline-block';
+              globalIsLiveTestRunning = true;
+
+              if (st) st.textContent = `Live testing ${part.name} - monitoring for movement...`;
+              status.textContent = 'Live monitoring...';
+              status.className = 'fw-semibold text-primary';
+
+              // Start continuous polling
+              globalLiveTestInterval = setInterval(async () => {
+                if (!globalIsLiveTestRunning) return;
+
+                try {
+                  const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                  });
+                  const result = await response.json();
+
+                  if (response.ok && result.testResult) {
+                    const motionDetected = result.testResult.motionDetected || false;
+                    const timestamp = new Date().toLocaleTimeString();
+
+                    // Update indicator with animation
+                    if (motionDetected) {
+                      indicator.style.backgroundColor = '#dc3545'; // Bright Red
+                      indicator.style.borderColor = '#dc3545';
+                      indicator.style.boxShadow = '0 0 10px rgba(220, 53, 69, 0.5)';
+                      status.textContent = 'MOVEMENT DETECTED!';
+                      status.className = 'fw-semibold text-danger';
+                    } else {
+                      indicator.style.backgroundColor = '#198754'; // Green
+                      indicator.style.borderColor = '#198754';
+                      indicator.style.boxShadow = 'none';
+                      status.textContent = 'No Movement';
+                      status.className = 'fw-semibold text-success';
+                    }
+
+                    details.textContent = `Live monitoring - Last update: ${timestamp}`;
+                  }
+                } catch (error) {
+                  console.error(`Error in live test for ${part.name}:`, error);
+                }
+              }, 500); // Poll every 500ms for responsive detection
+            });
+
+            // Stop Live Test button
+            el.querySelector('#stopLiveTest').addEventListener('click', function () {
+              const startBtn = document.getElementById('startLiveTest');
+              const stopBtn = document.getElementById('stopLiveTest');
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+
+              globalIsLiveTestRunning = false;
+              if (globalLiveTestInterval) {
+                clearInterval(globalLiveTestInterval);
+                globalLiveTestInterval = null;
+              }
+
+              startBtn.style.display = 'inline-block';
+              stopBtn.style.display = 'none';
+
+              // Reset indicator
+              indicator.style.backgroundColor = '#6c757d';
+              indicator.style.borderColor = '#dee2e6';
+              indicator.style.boxShadow = 'none';
+              status.textContent = 'Live test stopped';
+              status.className = 'fw-semibold text-muted';
+              details.textContent = '';
+
+              if (st) st.textContent = `Live test stopped for ${part.name}`;
+              setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+            });
+          } else {
+            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+              '<button id="quickTest" class="btn btn-outline-secondary btn-lg"><i class="bi bi-gear"></i> Quick Test</button>' +
+              '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
+              '</div>';
+            el.querySelector('#quickTest').addEventListener('click', function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Testing…';
+              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+              }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+          }
+
+          function renderPinFields(part) {
+            var container = document.getElementById('pinFields');
+            if (!container) return;
+            var html = '';
+            function field(id, label, type, placeholder) {
+              return '<div class="col-md-3"><label class="form-label">' + label + '</label>' +
+                '<input id="' + id + '" class="form-control" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
+            }
+            if (part.type === 'motor' || part.type === 'linear_actuator') {
+              html += '<div class="row g-3">';
+              html += field('editPin', 'PWM Pin', 'number', 'GPIO');
+              html += field('editDirectionPin', 'Direction Pin', 'number', 'GPIO');
+              html += '</div>';
+            } else if (part.type === 'servo' || part.type === 'led' || part.type === 'light' || part.type === 'sensor' || part.type === 'motion_sensor') {
+              html += '<div class="row g-3">' + field('editPin', 'Pin', 'number', 'GPIO') + '</div>';
+            } else {
+              html = '<div class="text-muted">No pin fields for this part type.</div>';
+            }
+            container.innerHTML = html;
+            // Populate current values if present
+            var cfg = part || {};
+            var pin = (cfg.pin != null ? cfg.pin : (cfg.config && cfg.config.pin));
+            var pwm = (cfg.pwmPin != null ? cfg.pwmPin : (cfg.config && cfg.config.pwmPin));
+            var dir = (cfg.directionPin != null ? cfg.directionPin : (cfg.config && cfg.config.directionPin));
+            var el;
+            el = document.getElementById('editPin');
+            if (el) {
+              // For motors/linear actuators, editPin is the PWM pin
+              if (part.type === 'motor' || part.type === 'linear_actuator') {
+                if (pwm != null) el.value = pwm;
+              } else {
+                // For other parts, editPin is the regular pin
+                if (pin != null) el.value = pin;
+              }
+            }
+            el = document.getElementById('editDirectionPin'); if (el && dir != null) el.value = dir;
+          }
+
+          // renderEdit function moved to global scope
+
+          // renderEditConfigArea function moved to global scope
+
+          // generateEditServoConfig function moved to global scope
+          // Duplicate functions removed - moved to global scope
+
+          // All duplicate generate functions removed - moved to global scope
+
+          // All remaining duplicate generate functions removed - moved to global scope
+          // All duplicate functions completely removed
+
+          // populateEditConfigValues function moved to global scope
+
+          function setValueIfExists(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element && value !== undefined && value !== null) {
+              element.value = value;
+            }
+          }
+
+        }
+
+        function renderBottomRail(items) {
+          bottomRail.innerHTML = '';
+          items.forEach(p => {
+            const chip = document.createElement('span');
+            chip.className = 'badge rounded-pill text-bg-dark marker-chip';
+            chip.textContent = `${p.name} · Min/Mid/Max`;
+            bottomRail.appendChild(chip);
+          });
+        }
+
+
+        // Markers wiring (outside renderControls to keep handlers stable)
+        function unitFor(part) {
+          if (!part) return undefined;
+          if (part.type === 'servo' && String(part.config?.servoType || 'standard') !== 'continuous') return 'deg';
+          return undefined;
+        }
+        async function saveMarkerFromField(fieldId, name) {
+          if (!selected) return;
+          const el = document.getElementById(fieldId);
+          if (!el) return;
+          const raw = el.value;
+          const num = raw !== '' ? Number(raw) : undefined;
+          const body = { name, kind: 'absolute', value: num, unit: unitFor(selected) };
+          await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          }).catch(() => { });
+        }
+
+        async function setMarkerFromCurrent(fieldId, name) {
+          if (!selected) return;
+
+          let currentValue = null;
+          try {
+            // Try hardware-based position first
+            if (selected.type === 'servo') {
+              const servoType = String(selected.config?.servoType || 'standard').toLowerCase();
+              if (servoType !== 'continuous') {
+                const statusResponse = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/status`).catch(() => null);
+                if (statusResponse && statusResponse.ok) {
+                  const statusData = await statusResponse.json().catch(() => null);
+                  if (statusData && statusData.currentAngle !== undefined) {
+                    currentValue = statusData.currentAngle;
+                  }
+                }
+              }
+            } else if (selected.type === 'linear_actuator') {
+              const statusResponse = await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(selected.id)}/status`).catch(() => null);
+              if (statusResponse && statusResponse.ok) {
+                const statusData = await statusResponse.json().catch(() => null);
+                if (statusData && statusData.currentPosition !== undefined) {
+                  currentValue = statusData.currentPosition;
+                }
+              }
+            }
+          } catch (_) { /* ignore hardware errors; will fallback */ }
+
+          // Hardware value wins; otherwise fallback to the input field value
+          if (currentValue === null || isNaN(currentValue)) {
+            const el = document.getElementById(fieldId);
+            const raw = el ? el.value : '';
+            if (raw === '') {
+              showToast('Enter a value first or move hardware to a position', 'error');
+              return;
+            }
+            const num = Number(raw);
+            if (isNaN(num)) {
+              showToast('Invalid number', 'error');
+              return;
+            }
+            currentValue = num;
+          }
+
+          // Reflect in field
+          const el = document.getElementById(fieldId);
+          if (el) el.value = currentValue;
+
+          // Save the marker
+          const body = { name, kind: 'absolute', value: currentValue, unit: unitFor(selected) };
+          const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          }).catch(() => null);
+
+          if (response && response.ok) {
+            await loadMarkers();
+            showToast(`${name} marker set to ${currentValue}${unitFor(selected) ? ' ' + unitFor(selected) : ''}`, 'success');
+          } else {
+            showToast('Failed to save marker', 'error');
+          }
+        }
+        async function goToField(fieldId) {
+          if (!selected) return;
+          const el = document.getElementById(fieldId);
+          const num = el && el.value !== '' ? Number(el.value) : undefined;
+          if (selected.type === 'servo' && String(selected.config?.servoType || 'standard') !== 'continuous' && typeof num === 'number') {
+            await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: Math.round(num) }) });
+          }
+        }
+        const setMinBtn = document.getElementById('setMinBtn'); if (setMinBtn) setMinBtn.addEventListener('click', () => setMarkerFromCurrent('minValue', 'Min'));
+        const setMidBtn = document.getElementById('setMidBtn'); if (setMidBtn) setMidBtn.addEventListener('click', () => setMarkerFromCurrent('midValue', 'Mid'));
+        const setMaxBtn = document.getElementById('setMaxBtn'); if (setMaxBtn) setMaxBtn.addEventListener('click', () => setMarkerFromCurrent('maxValue', 'Max'));
+        const goMinBtn = document.getElementById('goMinBtn'); if (goMinBtn) goMinBtn.addEventListener('click', () => goToField('minValue'));
+        const goMidBtn = document.getElementById('goMidBtn'); if (goMidBtn) goMidBtn.addEventListener('click', () => goToField('midValue'));
+        const goMaxBtn = document.getElementById('goMaxBtn'); if (goMaxBtn) goMaxBtn.addEventListener('click', () => goToField('maxValue'));
+
+        // Add marker button
+        const addMarkerBtn = document.getElementById('addMarkerBtn');
+        if (addMarkerBtn) {
+          addMarkerBtn.addEventListener('click', async () => {
+            const nameInput = document.getElementById('newMarkerName');
+            const name = nameInput ? nameInput.value.trim() : '';
+
+            if (!name) {
+              showToast('Please enter a marker name', 'error');
+              return;
+            }
+
+            if (!selected) {
+              showToast('Please select a part first', 'error');
+              return;
+            }
+
+            try {
+              const body = { name, kind: 'absolute', value: 0, unit: unitFor(selected) };
+              const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+              });
+
+              if (response.ok) {
+                nameInput.value = '';
+                await loadMarkers();
+                showToast(`Marker "${name}" added`, 'success');
+              } else {
+                showToast('Failed to add marker', 'error');
+              }
+            } catch (error) {
+              console.error('Error adding marker:', error);
+              showToast('Error adding marker', 'error');
+            }
+          });
+        }
+
+        // Remove button functionality
+        const removeBtn = document.getElementById('btnRemove');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', async () => {
+            if (!selected) return;
+
+            const confirmMessage = `Are you sure you want to delete "${selected.name}"?\n\nThis will permanently remove the part and all associated records including:\n• Calibration data\n• Saved positions\n• Markers\n• Configuration settings\n\nThis action cannot be undone.`;
+
+            if (confirm(confirmMessage)) {
+              try {
+                const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+                  method: 'DELETE'
+                });
+
+                if (response.ok) {
+                  showToast(`Part "${selected.name}" deleted successfully`, 'success');
+                  // Clear selection and reload parts list
+                  selected = null;
+                  await loadParts();
+                  // Clear the UI
+                  renderControls(null);
+                  renderMarkers([]);
+                  renderBottomRail([]);
+                } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  showToast(`Failed to delete part: ${errorData.error || 'Unknown error'}`, 'error');
+                }
+              } catch (error) {
+                console.error('Error deleting part:', error);
+                showToast('Error deleting part', 'error');
+              }
+            }
+          });
+        }
+
+        // Load markers for the selected part
+        async function loadMarkers() {
+          if (!selected) return;
+          try {
+            const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`);
+            if (response.ok) {
+              const data = await response.json();
+              renderMarkers(data.markers || []);
+            }
+          } catch (error) {
+            console.error('Error loading markers:', error);
+          }
+        }
+
+        // Render markers in the UI
+        function renderMarkers(markers) {
+          const customMarkersEl = document.getElementById('customMarkers');
+          if (!customMarkersEl) return;
+
+          // Clear existing custom markers
+          customMarkersEl.innerHTML = '';
+
+          // Add custom markers (excluding Min, Mid, Max which are handled separately)
+          markers.filter(m => !['Min', 'Mid', 'Max'].includes(m.name)).forEach(marker => {
+            const chip = document.createElement('span');
+            chip.className = 'badge rounded-pill text-bg-secondary me-1 mb-1';
+            chip.innerHTML = `${marker.name}: ${marker.value}${marker.unit || ''} <button type="button" class="btn-close btn-close-white ms-1" onclick="deleteMarker('${marker.name}')"></button>`;
+            customMarkersEl.appendChild(chip);
+          });
+
+          // Populate Min/Mid/Max fields
+          const minMarker = markers.find(m => m.name === 'Min');
+          const midMarker = markers.find(m => m.name === 'Mid');
+          const maxMarker = markers.find(m => m.name === 'Max');
+
+          const minEl = document.getElementById('minValue');
+          const midEl = document.getElementById('midValue');
+          const maxEl = document.getElementById('maxValue');
+
+          if (minEl) minEl.value = minMarker ? minMarker.value : '';
+          if (midEl) midEl.value = midMarker ? midMarker.value : '';
+          if (maxEl) maxEl.value = maxMarker ? maxMarker.value : '';
+        }
+
+        // Delete a custom marker
+        async function deleteMarker(name) {
+          if (!selected) return;
+          try {
+            const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers/${encodeURIComponent(name)}`, {
+              method: 'DELETE'
+            });
+            if (response.ok) {
+              await loadMarkers();
+              showToast(`Marker "${name}" deleted`, 'success');
+            } else {
+              showToast('Failed to delete marker', 'error');
+            }
+          } catch (error) {
+            console.error('Error deleting marker:', error);
+            showToast('Error deleting marker', 'error');
+          }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+          // Create toast element if it doesn't exist
+          let toastContainer = document.getElementById('toast-container');
+          if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(toastContainer);
+          }
+
+          const toast = document.createElement('div');
+          toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+          toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
+          toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+
+          toastContainer.appendChild(toast);
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.remove();
+            }
+          }, 5000);
+        }
+
+        // Expose for other inline scripts that run earlier on DOMContentLoaded
+        window.loadParts = loadParts;
+        loadParts().catch(e => console.error(e));
+
+        // Add Part Modal functionality
+        const partTypes = {
+          motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: false },
+          stepper: { icon: '🧭', description: 'Stepper Motor (STEP/DIR)', requiresPin: false },
+          linear_actuator: { icon: '🦴', description: 'extending/retracting movements', requiresPin: false },
+          light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
+          led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
+          servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
+          sensor: { icon: '📡', description: 'digital/analog sensors', requiresPin: true },
+          motion_sensor: { icon: '🔍', description: 'PIR motion detection', requiresPin: true },
+          webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
+          microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },
+          speaker: { icon: '🔊', description: 'audio output devices', requiresPin: false },
+          head_tracking: { icon: '👁️', description: 'head position tracking', requiresPin: false }
+        };
+
+        // Initialize part type dropdown
+        function initAddPartModal() {
+          const typeSelect = document.getElementById('addPartType');
+          if (!typeSelect) return;
+
+          typeSelect.innerHTML = '<option value="">Select Part Type</option>';
+          Object.keys(partTypes).forEach(type => {
+            const partType = partTypes[type];
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = `${partType.icon} ${type.replace('_', ' ').toUpperCase()} - ${partType.description}`;
+            typeSelect.appendChild(option);
+          });
+        }
+
+        // Handle part type change
+        window.onAddPartTypeChange = function() {
+          const typeSelect = document.getElementById('addPartType');
+          const modelGroup = document.getElementById('addModelGroup');
+          const configArea = document.getElementById('addPartConfigArea');
+
+          if (!typeSelect || !typeSelect.value) {
+            modelGroup.style.display = 'none';
+            configArea.innerHTML = '';
+            return;
+          }
+
+          const type = typeSelect.value;
+          const partType = partTypes[type];
+
+          // Show model selection for supported types
+          if (['servo', 'stepper', 'webcam'].includes(type)) {
+            modelGroup.style.display = 'block';
+            loadModelsForType(type);
+          } else {
+            modelGroup.style.display = 'none';
+          }
+
+          // Generate type-specific configuration
+          configArea.innerHTML = generatePartConfig(type, partType);
+        };
+
+        function loadModelsForType(type) {
+          const modelSelect = document.getElementById('addModelSelect');
+          if (!modelSelect) return;
+
+          const apiType = (type === 'stepper') ? 'motor' : type;
+          fetch(`/setup/models/api/${apiType}`)
+            .then(r => r.json())
+            .then(data => {
+              modelSelect.innerHTML = '<option value="">Select Model (optional)</option>';
+              const models = (data && data.models) || [];
+              models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name || model.id;
+                modelSelect.appendChild(option);
+              });
+            })
+            .catch(() => {
+              modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            });
+        }
+
+        function generatePartConfig(type, partType) {
+          let html = '';
+
+          // GPIO Pin for parts that require it
+          if (partType.requiresPin) {
+            html += `
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addGpioPin" class="form-label">GPIO Pin</label>
+                    <input type="number" class="form-control" id="addGpioPin" name="pin" min="1" max="40" required>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
+          // Type-specific configurations
+          switch (type) {
+            case 'servo':
+              html += generateServoConfig();
+              break;
+            case 'motor':
+            case 'linear_actuator':
+              html += generateMotorConfig(type);
+              break;
+            case 'stepper':
+              html += generateStepperConfig();
+              break;
+            case 'webcam':
+              html += generateWebcamConfig();
+              break;
+            case 'microphone':
+              html += generateMicrophoneConfig();
+              break;
+            case 'speaker':
+              html += generateSpeakerConfig();
+              break;
+          }
+
+          return html;
+        }
+
+        function generateServoConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addServoType" class="form-label">Servo Type</label>
+                  <select class="form-select" id="addServoType" name="servoType">
+                    <option value="standard">STANDARD - 0-180° positioning</option>
+                    <option value="continuous">CONTINUOUS - continuous rotation</option>
+                    <option value="feedback">FEEDBACK - position feedback servo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addControllerType" class="form-label">Controller Type</label>
+                  <select class="form-select" id="addControllerType" name="controllerType" onchange="onAddControllerTypeChange()">
+                    <option value="gpio">Direct GPIO PWM</option>
+                    <option value="pca9685">PCA9685 PWM Driver</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="addPca9685Group" style="display: none;">
+              <div class="card border-primary mb-3">
+                <div class="card-header bg-primary text-white">
+                  <i class="bi bi-cpu"></i> PCA9685 Configuration
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="addPca9685Address" class="form-label">I2C Address</label>
+                      <input type="text" class="form-control" id="addPca9685Address" name="pca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                      <div class="form-text">Default: 0x40</div>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="addPca9685Frequency" class="form-label">PWM Frequency (Hz)</label>
+                      <input type="number" class="form-control" id="addPca9685Frequency" name="pca9685Frequency" value="50" min="40" max="1000">
+                      <div class="form-text">Servo standard: 50Hz</div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Select PCA9685 Channel</label>
+                    <div id="addPca9685Channels"></div>
+                    <input type="hidden" id="addPca9685Channel" name="pca9685Channel">
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateMotorConfig(type) {
+          const isActuator = type === 'linear_actuator';
+          return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-lightning"></i> Motor Pins (Legacy or BTS7960)</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Direction Pin (legacy)</label>
+                  <input type="number" class="form-control" id="addDirectionPin" name="directionPin" min="1" max="40" placeholder="e.g. 18">
+                  <div class="form-text">Leave blank if using dual enable</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">PWM Pin</label>
+                  <input type="number" class="form-control" id="addPwmPin" name="pwmPin" min="1" max="40" value="18">
+                  <div class="form-text">Shared PWM or legacy PWM</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Max Duration (ms)</label>
+                  <input type="number" class="form-control" id="addMaxDuration" name="maxDuration" value="10000" min="100" max="20000">
+                </div>
+              </div>
+              <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label">Left Enable Pin (BTS7960)</label>
+                  <input type="number" class="form-control" id="addLeftEnablePin" name="leftEnablePin" min="1" max="40" value="17">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Right Enable Pin (BTS7960)</label>
+                  <input type="number" class="form-control" id="addRightEnablePin" name="rightEnablePin" min="1" max="40" value="27">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <div class="small text-muted">Provide either Direction+PWM OR Left/Right Enable + PWM.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          ${isActuator ? `
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="addMaxExtension" class="form-label">Max Extension (ms)</label>
+                <input type="number" class="form-control" id="addMaxExtension" name="maxExtension" min="1000" max="30000" value="15000">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="addMaxRetraction" class="form-label">Max Retraction (ms)</label>
+                <input type="number" class="form-control" id="addMaxRetraction" name="maxRetraction" min="1000" max="30000" value="15000">
+              </div>
+            </div>
+          </div>
+          ` : ''}
+          `;
+        }
+
+        function generateWebcamConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addWebcamDevice" class="form-label">Webcam Device</label>
+                  <select class="form-select" id="addWebcamDevice">
+                    <option value="">Select a detected webcam...</option>
+                  </select>
+                  <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()">Scan Devices</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateMicrophoneConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addAudioInput" class="form-label">Audio Input</label>
+                  <select class="form-select" id="addAudioInput">
+                    <option value="">Select an audio input...</option>
+                  </select>
+                  <div class="form-text">Select a PipeWire input source for this Microphone.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()">Scan Inputs</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function generateSpeakerConfig() {
+          return `
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="addAudioOutput" class="form-label">Audio Output</label>
+                  <select class="form-select" id="addAudioOutput">
+                    <option value="">Select an audio output...</option>
+                  </select>
+                  <div class="form-text">Route this Speaker to a specific PipeWire sink.</div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()">Scan Outputs</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
+                  <input type="number" class="form-control" id="addSpeakerVolume" min="0" max="100" value="50">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
+                  <input type="number" class="form-control" id="addSpeakerBass" min="-10" max="10" value="0">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
+                  <input type="number" class="form-control" id="addSpeakerTreble" min="-10" max="10" value="0">
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // PCA9685 controller type change handler
+        window.onAddControllerTypeChange = function() {
+          const controllerType = document.getElementById('addControllerType').value;
+          const pca9685Group = document.getElementById('addPca9685Group');
+
+          if (controllerType === 'pca9685') {
+            pca9685Group.style.display = 'block';
+            renderAddPCA9685Channels();
+          } else {
+            pca9685Group.style.display = 'none';
+          }
+        };
+
+        function renderAddPCA9685Channels() {
+          const container = document.getElementById('addPca9685Channels');
+          if (!container) return;
+
+          let html = '<div class="pca9685-board-layout">';
+          html += '<div class="text-center mb-2"><strong>PCA9685 16-Channel PWM Driver</strong></div>';
+          html += '<div class="text-center mb-2 text-muted small">Click a channel to select it</div>';
+          html += '<div class="row g-1">';
+
+          for (let i = 0; i < 16; i++) {
+            if (i % 4 === 0) {
+              html += '<div class="col-3">';
+            }
+
+            html += `<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
+            html += `onclick="selectAddPCA9685Channel(${i})" id="add-channel-${i}">`;
+            html += `Ch ${i}`;
+            html += '</button>';
+
+            if ((i + 1) % 4 === 0) {
+              html += '</div>';
+            }
+          }
+          html += '</div></div>';
+
+          container.innerHTML = html;
+        }
+
+        window.selectAddPCA9685Channel = function(channel) {
+          // Clear previous selection
+          document.querySelectorAll('.add-pca9685-channel').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-secondary');
+          });
+
+          // Select new channel
+          const channelBtn = document.getElementById(`add-channel-${channel}`);
+          if (channelBtn) {
+            channelBtn.classList.remove('btn-outline-secondary');
+            channelBtn.classList.add('btn-primary');
+          }
+
+          // Set hidden input
+          const hiddenInput = document.getElementById('addPca9685Channel');
+          if (hiddenInput) {
+            hiddenInput.value = channel;
+          }
+        };
+
+        function generateStepperConfig() {
+          return `
+            <div class="card mb-3">
+              <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label for="addStepPin" class="form-label">Step Pin</label>
+                    <input type="number" class="form-control" id="addStepPin" name="stepPin" min="1" max="40" value="22" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addDirPin" class="form-label">Dir Pin</label>
+                    <input type="number" class="form-control" id="addDirPin" name="dirPin" min="1" max="40" value="27" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addEnablePin" class="form-label">Enable Pin (optional)</label>
+                    <input type="number" class="form-control" id="addEnablePin" name="enablePin" min="1" max="40" value="17" placeholder="17">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="addMicrostepping" class="form-label">Microstepping</label>
+                    <select class="form-select" id="addMicrostepping">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="4">4</option>
+                      <option value="8">8</option>
+                      <option value="16" selected>16</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-3 mt-1">
+                  <div class="col-md-3">
+                    <label for="addStepsPerRev" class="form-label">Steps/Rev</label>
+                    <input type="number" class="form-control" id="addStepsPerRev" min="1" max="2000" value="200">
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Device scanning functions
+        window.scanWebcamsForAdd = function() {
+          const select = document.getElementById('addWebcamDevice');
+          if (!select) return;
+
+          fetch('/setup/webcam/api/devices/probe')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="">Select a detected webcam...</option>';
+              const devices = (data && data.results) || [];
+              devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.path || '';
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning devices</option>';
+            });
+        };
+
+        window.scanAudioInputsForAdd = function() {
+          const select = document.getElementById('addAudioInput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/inputs')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="default">Default PipeWire Source</option>';
+              const inputs = (data && data.inputs) || [];
+              inputs.forEach(input => {
+                const option = document.createElement('option');
+                option.value = input.id || '';
+                option.textContent = input.description || input.name || input.id;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning inputs</option>';
+            });
+        };
+
+        window.scanAudioOutputsForAdd = function() {
+          const select = document.getElementById('addAudioOutput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/outputs')
+            .then(r => r.json())
+            .then(data => {
+              select.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+              const outputs = (data && data.outputs) || [];
+              outputs.forEach(output => {
+                const option = document.createElement('option');
+                option.value = output.id || '';
+                option.textContent = output.description || output.name || output.id;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning outputs</option>';
+            });
+        };
+
+        // Part creation function
+        window.createPartFromCalibration = function() {
+          const form = document.getElementById('addPartForm');
+          const formData = new FormData(form);
+
+          const type = formData.get('type');
+          if (!type) {
+            alert('Please select a part type');
+            return;
+          }
+
+          const payload = {
+            name: formData.get('name'),
+            type: type,
+            description: formData.get('description') || ''
+          };
+
+          // Handle type-specific configurations
+          const partType = partTypes[type];
+          let config = {};
+
+          // Add model if selected
+          const modelSelect = document.getElementById('addModelSelect');
+          if (modelSelect && modelSelect.value) {
+            config.modelId = modelSelect.value;
+          }
+
+          // Handle pin-based parts
+          if (partType.requiresPin) {
+            const pin = formData.get('pin');
+            if (pin) payload.pin = parseInt(pin, 10);
+          }
+
+          // Type-specific handling
+          switch (type) {
+            case 'servo':
+              const servoType = document.getElementById('addServoType').value || 'standard';
+              const controllerType = document.getElementById('addControllerType').value || 'gpio';
+              config.servoType = servoType;
+              config.controllerType = controllerType;
+
+              if (controllerType === 'pca9685') {
+                const channel = document.getElementById('addPca9685Channel').value;
+                const address = document.getElementById('addPca9685Address').value || '0x40';
+                const frequency = document.getElementById('addPca9685Frequency').value;
+
+                config.channel = channel ? parseInt(channel, 10) : 0;
+                config.address = address.startsWith('0x') ? parseInt(address, 16) : parseInt(address, 10) || 0x40;
+                if (frequency) config.pca9685Frequency = parseInt(frequency, 10);
+              }
+              break;
+
+            case 'motor':
+            case 'linear_actuator':
+              const directionPin = formData.get('directionPin');
+              const pwmPin = formData.get('pwmPin');
+              const leftEnablePin = formData.get('leftEnablePin');
+              const rightEnablePin = formData.get('rightEnablePin');
+              const maxDuration = formData.get('maxDuration');
+
+              // Validation: allow either (direction+pwm) OR (left+right+pwm); block duplicates
+              const legacyValid = directionPin && pwmPin && !(leftEnablePin || rightEnablePin);
+              const dualValid = leftEnablePin && rightEnablePin && pwmPin && !directionPin;
+              if (!legacyValid && !dualValid) {
+                alert('Provide either Direction+PWM (legacy) OR Left+Right Enable+PWM (BTS7960). Do not mix.');
+                return;
+              }
+              // Prevent same pin re-use in dual mode
+              if (dualValid) {
+                const all = [leftEnablePin, rightEnablePin, pwmPin];
+                const set = new Set(all);
+                if (set.size !== all.length) {
+                  alert('Left Enable, Right Enable and PWM pins must be distinct.');
+                  return;
+                }
+              }
+
+              if (directionPin) payload.directionPin = parseInt(directionPin, 10);
+              if (pwmPin) payload.pwmPin = parseInt(pwmPin, 10);
+              if (leftEnablePin) payload.leftEnablePin = parseInt(leftEnablePin, 10);
+              if (rightEnablePin) payload.rightEnablePin = parseInt(rightEnablePin, 10);
+              if (maxDuration) payload.maxDuration = parseInt(maxDuration, 10);
+
+              if (type === 'linear_actuator') {
+                const maxExtension = formData.get('maxExtension');
+                const maxRetraction = formData.get('maxRetraction');
+                if (maxExtension) payload.maxExtension = parseInt(maxExtension, 10);
+                if (maxRetraction) payload.maxRetraction = parseInt(maxRetraction, 10);
+              }
+              break;
+
+            case 'stepper':
+              const stepPin = formData.get('stepPin');
+              const dirPin = formData.get('dirPin');
+              const enablePin = formData.get('enablePin');
+              if (stepPin) payload.stepPin = parseInt(stepPin, 10);
+              if (dirPin) payload.dirPin = parseInt(dirPin, 10);
+              if (enablePin) payload.enablePin = parseInt(enablePin, 10);
+              const micro = document.getElementById('addMicrostepping')?.value;
+              if (micro) { config.microstepping = parseInt(micro, 10); }
+              const spr = document.getElementById('addStepsPerRev')?.value;
+              if (spr) { config.stepsPerRevolution = parseInt(spr, 10); }
+              break;
+
+            case 'webcam':
+              const webcamDevice = document.getElementById('addWebcamDevice');
+              if (webcamDevice && webcamDevice.value) {
+                config.devicePath = webcamDevice.value;
+                const deviceId = webcamDevice.value.match(/\/dev\/video(\d+)/);
+                if (deviceId) config.deviceId = parseInt(deviceId[1], 10);
+              }
+              break;
+
+            case 'microphone':
+              const audioInput = document.getElementById('addAudioInput');
+              if (audioInput && audioInput.value) {
+                config.deviceId = audioInput.value;
+              }
+              break;
+
+            case 'speaker':
+              const audioOutput = document.getElementById('addAudioOutput');
+              if (audioOutput && audioOutput.value) {
+                config.audioDeviceId = audioOutput.value;
+              }
+
+              const volume = document.getElementById('addSpeakerVolume').value;
+              const bass = document.getElementById('addSpeakerBass').value;
+              const treble = document.getElementById('addSpeakerTreble').value;
+
+              if (volume !== '') config.volume = Math.max(0, Math.min(100, parseInt(volume, 10)));
+              if (bass !== '') config.bass = Math.max(-10, Math.min(10, parseInt(bass, 10)));
+              if (treble !== '') config.treble = Math.max(-10, Math.min(10, parseInt(treble, 10)));
+              break;
+          }
+
+          if (Object.keys(config).length) payload.config = config;
+
+          // Create the part
+          fetch('/setup/calibration/api/parts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              // Close modal and reset form
+              const modal = bootstrap.Modal.getInstance(document.getElementById('addPartModal'));
+              if (modal) modal.hide();
+              document.getElementById('addPartForm').reset();
+              document.getElementById('addPartConfigArea').innerHTML = '';
+              document.getElementById('addModelGroup').style.display = 'none';
+
+              // Reload parts list
+              loadParts();
+
+              // Show success message
+              alert(`${data.message || 'Part created successfully'}`);
+            } else {
+              alert(`Failed to create part: ${data.error || 'Unknown error'}`);
+            }
+          })
+          .catch(error => {
+            console.error('Error creating part:', error);
+            alert('Error creating part');
+          });
+        };
+
+        // Save (update) currently selected part
+        window.saveSelectedPart = function() {
+          if (!selected) { alert('No part selected'); return; }
+          const id = selected.id;
+          // Gather common fields
+            const nameEl = document.getElementById('editName');
+            const descEl = document.getElementById('editDescription');
+            const enabledEl = document.getElementById('editEnabled');
+            const payload = {};
+            if (nameEl) payload.name = nameEl.value.trim();
+            if (descEl) payload.description = descEl.value.trim();
+            if (enabledEl) payload.enabled = enabledEl.checked;
+
+          const type = selected.type;
+          if (type === 'motor' || type === 'linear_actuator') {
+            const dir = document.getElementById('editDirectionPin')?.value;
+            const pwm = document.getElementById('editPwmPin')?.value;
+            const lEn = document.getElementById('editLeftEnablePin')?.value;
+            const rEn = document.getElementById('editRightEnablePin')?.value;
+            const dualPwm = document.getElementById('editBtsPwmPin')?.value; // used when dual present
+            const maxDur = document.getElementById('editMaxDuration')?.value;
+
+            const directionPin = dir ? parseInt(dir,10) : null;
+            const pwmPin = (dualPwm ? parseInt(dualPwm,10) : (pwm?parseInt(pwm,10):null));
+            const leftEnablePin = lEn ? parseInt(lEn,10) : null;
+            const rightEnablePin = rEn ? parseInt(rEn,10) : null;
+
+            const legacyValid = directionPin!=null && pwmPin!=null && leftEnablePin==null && rightEnablePin==null;
+            const dualValid = leftEnablePin!=null && rightEnablePin!=null && pwmPin!=null && directionPin==null;
+            if (!legacyValid && !dualValid) {
+              alert('Edit validation: provide either Direction+PWM OR Left+Right Enable+PWM (do not mix).');
+              return;
+            }
+            if (dualValid) {
+              const arr = [leftEnablePin,rightEnablePin,pwmPin];
+              if (new Set(arr).size !== arr.length) {
+                alert('Pins must be distinct (left/right/pwm).');
+                return; }
+            }
+            if (legacyValid) {
+              payload.directionPin = directionPin;
+              payload.pwmPin = pwmPin;
+              payload.leftEnablePin = null;
+              payload.rightEnablePin = null;
+            } else { // dual
+              payload.directionPin = null;
+              payload.pwmPin = pwmPin;
+              payload.leftEnablePin = leftEnablePin;
+              payload.rightEnablePin = rightEnablePin;
+            }
+            if (maxDur) payload.maxDuration = parseInt(maxDur,10);
+          }
+
+          // Future: handle other types updates here if needed
+
+          fetch(`/setup/calibration/api/parts/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(r=>r.json())
+          .then(data=>{
+            if (!data.success) { alert('Update failed: ' + (data.error||'unknown')); return; }
+            alert('Part updated.');
+            loadParts(() => {
+              // Re-select updated part
+              const updated = allParts.find(p=>String(p.id)===String(id));
+              if (updated) selectPart(updated);
+            });
+          })
+          .catch(err=>{ console.error('Update error', err); alert('Update error'); });
+        };
+
+        // Edit mode functions
+        window.onEditControllerTypeChange = function() {
+          const controllerType = document.getElementById('editControllerType').value;
+          const pca9685Config = document.getElementById('editPca9685Config');
+
+          if (pca9685Config) {
+            if (controllerType === 'pca9685') {
+              pca9685Config.style.display = 'block';
+              generateEditPCA9685Channels();
+            } else {
+              pca9685Config.style.display = 'none';
+            }
+          }
+        };
+
+        function generateEditPCA9685Channels() {
+          const channelsContainer = document.getElementById('editPca9685Channels');
+          if (!channelsContainer) return;
+
+          let html = '<div class="row g-2">';
+          for (let i = 0; i < 16; i++) {
+            const col = i % 4;
+            if (col === 0 && i > 0) html += '</div><div class="row g-2">';
+
+            html += `
+              <div class="col-3">
+                <button type="button" class="btn btn-outline-primary w-100 edit-channel-btn"
+                        data-channel="${i}" onclick="selectEditPCA9685Channel(${i})">
+                  Ch.${i}
+                </button>
+              </div>
+            `;
+          }
+          html += '</div>';
+          channelsContainer.innerHTML = html;
+        }
+
+        function selectEditPCA9685Channel(channel) {
+          // Remove active class from all buttons
+          document.querySelectorAll('.edit-channel-btn').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+          });
+
+          // Add active class to selected button
+          const selectedBtn = document.querySelector(`[data-channel="${channel}"]`);
+          if (selectedBtn) {
+            selectedBtn.classList.remove('btn-outline-primary');
+            selectedBtn.classList.add('btn-primary');
+          }
+
+          // Set hidden input value
+          document.getElementById('editPca9685Channel').value = channel;
+        }
+
+        function populateEditServoModels() {
+          const modelSelect = document.getElementById('editServoModel');
+          if (!modelSelect) return;
+
+          const servoModels = modelsCache['servo'] || [];
+          modelSelect.innerHTML = '<option value="">Select Model...</option>';
+
+          servoModels.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name;
+            modelSelect.appendChild(option);
+          });
+        }
+
+        // Device scanning functions for edit mode
+        window.scanWebcamsForEdit = function() {
+          const select = document.getElementById('editWebcamDevice');
+          if (!select) return;
+
+          fetch('/setup/webcam/api/devices/probe')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="">Select webcam device...</option>';
+              const devices = (data && data.results) || [];
+              devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.path || '';
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning devices</option>';
+            });
+        };
+
+        window.scanAudioInputsForEdit = function() {
+          const select = document.getElementById('editAudioInput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/inputs')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="default">Default PipeWire Source</option>';
+              const inputs = (data && data.inputs) || [];
+              inputs.forEach(input => {
+                const option = document.createElement('option');
+                option.value = input.id || '';
+                option.textContent = input.description || input.name || input.id;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning inputs</option>';
+            });
+        };
+
+        window.scanAudioOutputsForEdit = function() {
+          const select = document.getElementById('editAudioOutput');
+          if (!select) return;
+
+          fetch('/setup/audio/api/outputs')
+            .then(r => r.json())
+            .then(data => {
+              const currentValue = select.value;
+              select.innerHTML = '<option value="default">Default PipeWire Sink</option>';
+              const outputs = (data && data.outputs) || [];
+              outputs.forEach(output => {
+                const option = document.createElement('option');
+                option.value = output.id || '';
+                option.textContent = output.description || output.name || output.id;
+                if (option.value === currentValue) option.selected = true;
+                select.appendChild(option);
+              });
+            })
+            .catch(() => {
+              select.innerHTML = '<option value="">Error scanning outputs</option>';
+            });
+        };
+
+
+
+        // Delete part function
+        function deleteSelectedPart() {
+          if (!selected) {
+            alert('No part selected');
+            return;
+          }
+
+          if (!confirm(`Are you sure you want to delete "${selected.name}"? This action cannot be undone.`)) {
+            return;
+          }
+
+          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            method: 'DELETE'
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert('Part deleted successfully');
+              selected = null;
+              loadParts(); // Refresh the parts list
+
+              // Clear the interface
+              document.getElementById('devName').textContent = 'Select a device';
+              document.getElementById('devMeta').textContent = '';
+              document.getElementById('controlsArea').innerHTML = '<div class="text-muted">Select a device to show controls.</div>';
+
+              // Switch back to Controls tab
+              const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+              if (ctrlTabBtn) ctrlTabBtn.click();
+            } else {
+              alert(`Failed to delete part: ${data.error || 'Unknown error'}`);
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting part:', error);
+            alert('Error deleting part');
+          });
+        }
+
+        // Apply webcam to mjpg-streamer function
+        function applyWebcamToMjpg() {
+          if (!selected) {
+            alert('No webcam part selected');
+            return;
+          }
+
+          if (selected.type !== 'webcam') {
+            alert('Selected part is not a webcam');
+            return;
+          }
+
+          const devicePath = selected.config?.devicePath;
+          if (!devicePath) {
+            alert('Webcam device path not configured. Please save the webcam configuration first.');
+            return;
+          }
+
+          fetch(`/setup/webcam/api/parts/${encodeURIComponent(selected.id)}/apply-device`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              alert(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`);
+            } else {
+              let msg = data.error || data.message || 'Failed to apply to mjpg-streamer';
+              if (data.needsSudo) msg += ' (needs sudo)';
+              alert(msg);
+            }
+          })
+          .catch(error => {
+            console.error('Error applying to mjpg-streamer:', error);
+            alert('Error applying to mjpg-streamer');
+          });
+        }
+
+        // Initialize modal when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+          initAddPartModal();
+
+          // Add tab change event listener to re-render edit config when Edit tab is activated
+          const editTabButton = document.querySelector('button[data-bs-target="#tabEdit"]');
+          if (editTabButton) {
+            editTabButton.addEventListener('click', function() {
+              if (selected) {
+                setTimeout(() => {
+                  renderEditConfigArea(selected);
+                }, 100);
+              }
+            });
+          }
+        });
+
+      })();
+
+      // Global functions that need to be accessible from event handlers
+      // Ensure toast notifications are available globally for handlers defined below
+      if (!window.showToast) {
+        window.showToast = function(message, type = 'info') {
+          let toastContainer = document.getElementById('toast-container');
+          if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+            document.body.appendChild(toastContainer);
+          }
+          const toast = document.createElement('div');
+          toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+          toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
+          toast.innerHTML = `${message}\n<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+          toastContainer.appendChild(toast);
+          setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+        }
+      }
+
+
+
+      // Save part changes function - moved to global scope
+      async function savePartChanges() {
+        const selected = window.selectedPart;
+        if (!selected) {
+          showToast('No part selected', 'error');
+          return;
+        }
+
+        try {
+          // Get basic fields
+          const name = document.getElementById('editName')?.value || '';
+          const type = document.getElementById('editType')?.value || '';
+          const enabled = document.getElementById('editEnabled')?.checked || false;
+          const description = document.getElementById('editDescription')?.value || '';
+
+          // Get type-specific configuration
+          const config = getEditConfigValues(selected.type);
+
+          // Get pin values for parts that have pins
+          let pin = null;
+          let directionPin = null;
+          let pwmPin = null;
+          let stepPin = null;
+          let dirPin = null;
+          let enablePin = null;
+
+          if (['servo', 'led', 'light', 'sensor', 'motion_sensor'].includes(type)) {
+            // Try both editPin (from renderPinFields) and type-specific pin fields
+            const pinEl = document.getElementById('editPin') ||
+                         document.getElementById('editServoPin') ||
+                         document.getElementById('editLightPin') ||
+                         document.getElementById('editSensorPin');
+            if (pinEl && pinEl.value) pin = parseInt(pinEl.value);
+          }
+
+          if (['motor', 'linear_actuator'].includes(type)) {
+            const dirEl = document.getElementById('editDirectionPin');
+            const pwmEl = document.getElementById('editPin'); // PWM pin uses editPin for motors
+            if (dirEl && dirEl.value) directionPin = parseInt(dirEl.value);
+            if (pwmEl && pwmEl.value) pwmPin = parseInt(pwmEl.value);
+          }
+
+          if (type === 'stepper') {
+            const sEl = document.getElementById('editStepPin');
+            const dEl = document.getElementById('editDirPin');
+            const eEl = document.getElementById('editEnablePin');
+            if (sEl && sEl.value) stepPin = parseInt(sEl.value);
+            if (dEl && dEl.value) dirPin = parseInt(dEl.value);
+            if (eEl && eEl.value) enablePin = parseInt(eEl.value);
+
+            // Allow Advanced JSON to override stepper fields
+            try {
+              const txt = document.getElementById('editConfig')?.value || '';
+              if (txt.trim().length) {
+                const adv = JSON.parse(txt);
+                if (adv.stepPin != null) stepPin = parseInt(adv.stepPin);
+                if (adv.dirPin != null) dirPin = parseInt(adv.dirPin);
+                if (adv.enablePin != null) enablePin = parseInt(adv.enablePin);
+                if (adv.microstepping != null) config.microstepping = parseInt(adv.microstepping);
+                if (adv.stepsPerRevolution != null) config.stepsPerRevolution = parseInt(adv.stepsPerRevolution);
+                if (adv.modelId && !config.modelId) config.modelId = adv.modelId;
+              }
+            } catch (e) { /* ignore parse errors; keep form values */ }
+          }
+
+          // Build the update payload
+          const updateData = {
+            name,
+            type,
+            enabled,
+            description,
+            config
+          };
+
+          // Add pin fields if they exist
+          if (pin !== null) updateData.pin = pin;
+          if (directionPin !== null) updateData.directionPin = directionPin;
+          if (pwmPin !== null) updateData.pwmPin = pwmPin;
+          if (stepPin !== null) updateData.stepPin = stepPin;
+          if (dirPin !== null) updateData.dirPin = dirPin;
+          if (enablePin !== null) updateData.enablePin = enablePin;
+
+          console.log('Saving part changes for', selected.name, '(', selected.type, '):', updateData);
+          console.log('Configuration extracted:', config);
+
+          // Send update request
+          const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            showToast(`Part "${name}" saved successfully`, 'success');
+
+            // Update the selected part object
+            Object.assign(selected, updateData);
+
+            // Refresh the parts list to show updated information
+            location.reload(); // Simple refresh for now
+
+            console.log('Part saved successfully:', result);
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            showToast(`Failed to save part: ${errorData.error || 'Unknown error'}`, 'error');
+            console.error('Failed to save part:', errorData);
+          }
+        } catch (error) {
+          console.error('Error saving part:', error);
+          showToast('Error saving part changes', 'error');
+        }
+      }
+
+      // Get configuration values from Edit form - moved to global scope
+      function getEditConfigValues(type) {
+        const config = {};
+        console.log('Extracting config values for part type:', type);
+
+        switch (type) {
+          case 'servo':
+            const servoType = document.getElementById('editServoType')?.value;
+            const controllerType = document.getElementById('editControllerType')?.value;
+            const invertDirection = document.getElementById('editInvertDirection')?.checked;
+            const modelId = document.getElementById('editServoModel')?.value;
+            const pca9685Address = document.getElementById('editPca9685Address')?.value;
+            const pca9685Frequency = document.getElementById('editPca9685Frequency')?.value;
+            const pca9685Channel = document.getElementById('editPca9685Channel')?.value;
+
+            if (servoType) config.servoType = servoType;
+            if (controllerType) config.controllerType = controllerType;
+            if (invertDirection !== undefined) config.invertDirection = invertDirection;
+            if (modelId) config.modelId = modelId;
+
+            if (controllerType === 'pca9685') {
+              if (pca9685Address) {
+                // Convert hex string to number
+                const addr = pca9685Address.startsWith('0x') ?
+                  parseInt(pca9685Address, 16) : parseInt(pca9685Address);
+                if (!isNaN(addr)) config.address = addr;
+              }
+              if (pca9685Frequency) config.pca9685Frequency = parseInt(pca9685Frequency);
+              if (pca9685Channel) config.channel = parseInt(pca9685Channel);
+            }
+            break;
+
+          case 'motor':
+            const maxDuration = document.getElementById('editMaxDuration')?.value;
+            if (maxDuration) config.maxDuration = parseInt(maxDuration);
+            break;
+
+          case 'linear_actuator':
+            const maxExtension = document.getElementById('editMaxExtension')?.value;
+            const maxRetraction = document.getElementById('editMaxRetraction')?.value;
+            if (maxExtension) config.maxExtension = parseInt(maxExtension);
+            if (maxRetraction) config.maxRetraction = parseInt(maxRetraction);
+            break;
+
+          case 'stepper':
+            const micro = document.getElementById('editMicrostepping')?.value;
+            const spr = document.getElementById('editStepsPerRev')?.value;
+            if (micro) config.microstepping = parseInt(micro);
+            if (spr) config.stepsPerRevolution = parseInt(spr);
+            break;
+
+          case 'light':
+          case 'led':
+            const brightness = document.getElementById('editBrightness')?.value;
+            if (brightness) config.brightness = parseInt(brightness);
+            break;
+
+          case 'sensor':
+          case 'motion_sensor':
+            const sensitivity = document.getElementById('editSensitivity')?.value;
+            const windowMs = document.getElementById('editWindowMs')?.value;
+            if (sensitivity) config.sensitivity = parseInt(sensitivity);
+            if (windowMs) config.windowMs = parseInt(windowMs);
+            break;
+
+          case 'webcam':
+            const devicePath = document.getElementById('editDevicePath')?.value;
+            const deviceId = document.getElementById('editDeviceId')?.value;
+            const width = document.getElementById('editWidth')?.value;
+            const height = document.getElementById('editHeight')?.value;
+            const fps = document.getElementById('editFps')?.value;
+            if (devicePath) config.devicePath = devicePath;
+            if (deviceId) config.deviceId = parseInt(deviceId);
+            if (width) config.width = parseInt(width);
+            if (height) config.height = parseInt(height);
+            if (fps) config.fps = parseInt(fps);
+            break;
+
+          case 'microphone':
+            const micDevice = document.getElementById('editMicDevice')?.value;
+            const sampleRate = document.getElementById('editSampleRate')?.value;
+            const gain = document.getElementById('editGain')?.value;
+            if (micDevice) config.device = micDevice;
+            if (sampleRate) config.sampleRate = parseInt(sampleRate);
+            if (gain) config.gain = parseInt(gain);
+            break;
+
+          case 'speaker':
+            const speakerDevice = document.getElementById('editSpeakerDevice')?.value;
+            const volume = document.getElementById('editVolume')?.value;
+            const bass = document.getElementById('editBass')?.value;
+            const treble = document.getElementById('editTreble')?.value;
+            if (speakerDevice) config.device = speakerDevice;
+            if (volume) config.volume = parseInt(volume);
+            if (bass) config.bass = parseInt(bass);
+            if (treble) config.treble = parseInt(treble);
+            break;
+        }
+
+        console.log('Extracted config for', type, ':', config);
+        return config;
+      }
+
+      function renderEdit(part) {
+        // Populate basic fields
+        var n = document.getElementById('editName'); if (n) n.value = part.name || '';
+        var t = document.getElementById('editType'); if (t) t.value = part.type || '';
+        var en = document.getElementById('editEnabled'); if (en) en.checked = !!part.enabled;
+        var d = document.getElementById('editDescription'); if (d) d.value = part.description || '';
+        var c = document.getElementById('editConfig');
+        if (c) {
+          let adv = { ...(part.config || {}) };
+          if ((part.type || '') === 'stepper') {
+            if (part.stepPin != null) adv.stepPin = Number(part.stepPin);
+            if (part.dirPin != null) adv.dirPin = Number(part.dirPin);
+            if (part.enablePin != null) adv.enablePin = Number(part.enablePin);
+            // Ensure useful defaults visible
+            if (adv.microstepping == null) adv.microstepping = 16;
+            if (adv.stepsPerRevolution == null) adv.stepsPerRevolution = 200;
+            if (part.modelId) adv.modelId = part.modelId;
+          }
+          c.value = JSON.stringify(adv, null, 2);
+        }
+
+        // Render type-specific configuration
+        renderEditConfigArea(part);
+
+        // Bind save button (only once)
+        var save = document.getElementById('saveEditBtn');
+        if (save && !save._bound) {
+          save._bound = true;
+          save.addEventListener('click', function () {
+            savePartChanges();
+          });
+        }
+
+        // Bind delete button (only once)
+        var deleteBtn = document.getElementById('deletePartBtn');
+        if (deleteBtn && !deleteBtn._bound) {
+          deleteBtn._bound = true;
+          deleteBtn.addEventListener('click', function () {
+            deleteSelectedPart();
+          });
+        }
+
+        // Show/hide mjpg button for webcam parts
+        var mjpgBtn = document.getElementById('applyMjpgBtn');
+        if (mjpgBtn) {
+          mjpgBtn.style.display = (part.type === 'webcam') ? 'inline-block' : 'none';
+        }
+      }
+
+      function renderEditConfigArea(part) {
+        const container = document.getElementById('editConfigArea');
+        if (!container) return;
+
+        const type = part.type;
+        const config = part.config || {};
+        let html = '';
+
+        // Generate type-specific configuration fields
+        switch (type) {
+          case 'servo':
+            html = generateEditServoConfig(part, config);
+            break;
+          case 'motor':
+            html = generateEditMotorConfig(part, config);
+            break;
+          case 'linear_actuator':
+            html = generateEditLinearActuatorConfig(part, config);
+            break;
+          case 'stepper':
+            html = generateEditStepperConfig(part, config);
+            break;
+          case 'light':
+          case 'led':
+            html = generateEditLightConfig(part, config, type);
+            break;
+          case 'sensor':
+          case 'motion_sensor':
+            html = generateEditSensorConfig(part, config, type);
+            break;
+          case 'webcam':
+            html = generateEditWebcamConfig(part, config);
+            break;
+          case 'microphone':
+            html = generateEditMicrophoneConfig(part, config);
+            break;
+          case 'speaker':
+            html = generateEditSpeakerConfig(part, config);
+            break;
+          default:
+            html = '<div class="alert alert-info">No specific configuration options for this part type.</div>';
+        }
+
+        container.innerHTML = html;
+
+        // Load current values into the form fields
+        loadEditConfigValues(part, config, type);
+      }
+
+      function generateEditServoConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-gear"></i> Servo Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editServoPin" min="1" max="40">
+                  <div class="form-text">Not used with PCA9685</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Servo Type</label>
+                  <select class="form-select" id="editServoType">
+                    <option value="standard">Standard (0-180°)</option>
+                    <option value="continuous">Continuous Rotation</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Controller Type</label>
+                  <select class="form-select" id="editControllerType">
+                    <option value="gpio">Direct GPIO</option>
+                    <option value="pca9685">PCA9685 PWM Board</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Invert Direction</label>
+                  <select class="form-select" id="editInvertDirection">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                  <label class="form-label">Model</label>
+                  <select class="form-select" id="editServoModel">
+                    <option value="">Select model...</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="editPca9685Config" class="mt-3" style="display: none;">
+                <div class="card">
+                  <div class="card-header"><i class="bi bi-cpu"></i> PCA9685 Configuration</div>
+                  <div class="card-body">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">I2C Address</label>
+                        <input type="text" class="form-control" id="editPca9685Address" placeholder="0x40">
+                        <div class="form-text">Hex format (e.g., 0x40)</div>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">PWM Frequency</label>
+                        <input type="number" class="form-control" id="editPca9685Frequency" min="40" max="1000" value="50">
+                        <div class="form-text">Hz (typically 50)</div>
+                      </div>
+                    </div>
+
+                    <div class="mt-3">
+                      <label class="form-label">Channel</label>
+                      <div class="text-center mb-2 text-muted small">Click a channel to select it</div>
+                      <div id="editChannelGrid">
+                        <div class="row g-1">
+                          ${Array.from({length: 16}, (_, i) => {
+                            const isNewRow = i % 4 === 0;
+                            const isEndRow = (i + 1) % 4 === 0 || i === 15;
+                            let html = '';
+                            if (isNewRow && i > 0) html += '</div><div class="row g-1">';
+                            html += `<div class="col-3">
+                              <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 channel-btn" data-channel="${i}">Ch.${i}</button>
+                            </div>`;
+                            return html;
+                          }).join('')}
+                        </div>
+                      </div>
+                      <input type="hidden" id="editPca9685Channel">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditMotorConfig(part, config) {
+        return `
+        <div class=\"card mb-3\">
+          <div class=\"card-header d-flex justify-content-between align-items-center\"><span><i class=\"bi bi-lightning\"></i> Motor Configuration</span>
+            <div class=\"btn-group btn-group-sm\" role=\"group\" aria-label=\"Motor Board Mode\">
+              <input type=\"radio\" class=\"btn-check\" name=\"editMotorBoard\" id=\"editMotorBoardCytron\" autocomplete=\"off\" checked>
+              <label class=\"btn btn-outline-secondary\" for=\"editMotorBoardCytron\">Cytron 2 Channel</label>
+              <input type=\"radio\" class=\"btn-check\" name=\"editMotorBoard\" id=\"editMotorBoardBts\" autocomplete=\"off\">
+              <label class=\"btn btn-outline-secondary\" for=\"editMotorBoardBts\">BTS 7960</label>
+            </div>
+          </div>
+          <div class=\"card-body\">
+            <div id=\"editCytronFields\" class=\"row g-3\">
+              <div class=\"col-md-4\">
+                <label class=\"form-label\">Direction Pin</label>
+                <input type=\"number\" class=\"form-control\" id=\"editDirectionPin\" min=\"1\" max=\"40\">
+              </div>
+              <div class=\"col-md-4\">
+                <label class=\"form-label\">PWM Pin</label>
+                <input type=\"number\" class=\"form-control\" id=\"editPwmPin\" min=\"1\" max=\"40\">
+              </div>
+              <div class=\"col-md-4\">
+                <label class=\"form-label\">Max Duration (ms)</label>
+                <input type=\"number\" class=\"form-control\" id=\"editMaxDuration\" min=\"100\" max=\"20000\" value=\"10000\">
+              </div>
+            </div>
+            <div id=\"editBtsFields\" class=\"row g-3\" style=\"display:none;\">
+              <div class=\"col-md-3\">
+                <label class=\"form-label\">Left Enable (L_EN)</label>
+                <input type=\"number\" class=\"form-control\" id=\"editLeftEnablePin\" min=\"1\" max=\"40\">
+              </div>
+              <div class=\"col-md-3\">
+                <label class=\"form-label\">Right Enable (R_EN)</label>
+                <input type=\"number\" class=\"form-control\" id=\"editRightEnablePin\" min=\"1\" max=\"40\">
+              </div>
+              <div class=\"col-md-3\">
+                <label class=\"form-label\">PWM (Shared)</label>
+                <input type=\"number\" class=\"form-control\" id=\"editBtsPwmPin\" min=\"1\" max=\"40\">
+              </div>
+              <div class=\"col-md-3\">
+                <label class=\"form-label\">Max Duration (ms)</label>
+                <input type=\"number\" class=\"form-control\" id=\"editMaxDurationBts\" min=\"100\" max=\"20000\" value=\"10000\">
+              </div>
+              <div class=\"col-12\">
+                <div class=\"small text-muted\">Forward: L_EN=1 R_EN=0. Reverse: L_EN=0 R_EN=1. PWM drives speed (software PWM if < 100%).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>/* motor board toggle */(function(){
+          const cytron=document.getElementById('editMotorBoardCytron');
+          const bts=document.getElementById('editMotorBoardBts');
+          const cytronFields=document.getElementById('editCytronFields');
+          const btsFields=document.getElementById('editBtsFields');
+          function sync(){
+            if(bts.checked){cytronFields.style.display='none';btsFields.style.display='flex';}
+            else {cytronFields.style.display='flex';btsFields.style.display='none';}
+          }
+          if(cytron && bts){cytron.addEventListener('change',sync);bts.addEventListener('change',sync);sync();}
+        })();</script>`;
+      }
+
+      function generateEditLinearActuatorConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-arrows-vertical"></i> Linear Actuator Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Direction Pin</label>
+                  <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for direction</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">PWM Pin</label>
+                  <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for speed</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Max Extension (mm)</label>
+                  <input type="number" class="form-control" id="editMaxExtension" min="10" max="1000" value="100">
+                  <div class="form-text">Maximum travel distance</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Max Retraction (mm)</label>
+                  <input type="number" class="form-control" id="editMaxRetraction" min="10" max="1000" value="100">
+                  <div class="form-text">Maximum retract distance</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditLightConfig(part, config, type) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-lightbulb"></i> ${type === 'led' ? 'LED' : 'Light'} Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editLightPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for control</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Brightness (%)</label>
+                  <input type="number" class="form-control" id="editBrightness" min="0" max="100" value="100">
+                  <div class="form-text">Default brightness level</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditSensorConfig(part, config, type) {
+        const isMotion = type === 'motion_sensor';
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-radar"></i> ${isMotion ? 'Motion Sensor' : 'Sensor'} Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="form-control" id="editSensorPin" min="1" max="40">
+                  <div class="form-text">GPIO pin for sensor input</div>
+                </div>
+                ${isMotion ? `
+                <div class="col-md-4">
+                  <label class="form-label">Sensitivity</label>
+                  <input type="number" class="form-control" id="editSensitivity" min="1" max="10" value="5">
+                  <div class="form-text">Detection sensitivity (1-10)</div>
+
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Window (ms)</label>
+                  <input type="number" class="form-control" id="editWindowMs" min="50" max="1000" value="100">
+                  <div class="form-text">Detection window</div>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditWebcamConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-camera-video"></i> Webcam Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Device Path</label>
+                  <input type="text" class="form-control" id="editDevicePath" placeholder="/dev/video0">
+                  <div class="form-text">Video device path</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Device ID</label>
+                  <input type="number" class="form-control" id="editDeviceId" min="0" max="10" value="0">
+                  <div class="form-text">Camera device number</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Width</label>
+                  <input type="number" class="form-control" id="editWidth" value="1280">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Height</label>
+                  <input type="number" class="form-control" id="editHeight" value="720">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">FPS</label>
+                  <input type="number" class="form-control" id="editFps" min="1" max="60" value="30">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditMicrophoneConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-mic"></i> Microphone Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+
+                <div class="col-md-4">
+                  <label class="form-label">Device Name</label>
+                  <input type="text" class="form-control" id="editMicDevice" placeholder="default">
+                  <div class="form-text">Audio input device</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Sample Rate</label>
+                  <input type="number" class="form-control" id="editSampleRate" value="44100">
+                  <div class="form-text">Audio sample rate (Hz)</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Gain</label>
+                  <input type="number" class="form-control" id="editGain" min="0" max="100" value="50">
+                  <div class="form-text">Input gain (%)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generateEditSpeakerConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-speaker"></i> Speaker Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Device Name</label>
+                  <input type="text" class="form-control" id="editSpeakerDevice" placeholder="default">
+                  <div class="form-text">Audio output device</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Volume (%)</label>
+                  <input type="number" class="form-control" id="editVolume" min="0" max="100" value="80">
+                  <div class="form-text">Default volume level</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Bass</label>
+                  <input type="number" class="form-control" id="editBass" min="-10" max="10" value="0">
+                  <div class="form-text">Bass adjustment</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Treble</label>
+                  <input type="number" class="form-control" id="editTreble" min="-10" max="10" value="0">
+                  <div class="form-text">Treble adjustment</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function loadEditConfigValues(part, config, type) {
+        // Load values based on part type
+        switch (type) {
+          case 'servo':
+            loadEditServoValues(part, config);
+            break;
+          case 'motor':
+            loadEditMotorValues(part, config);
+            break;
+          case 'linear_actuator':
+            loadEditLinearActuatorValues(part, config);
+            break;
+          case 'stepper':
+            loadEditStepperValues(part, config);
+            break;
+          case 'light':
+          case 'led':
+            loadEditLightValues(part, config);
+            break;
+          case 'sensor':
+          case 'motion_sensor':
+            loadEditSensorValues(part, config, type);
+            break;
+          case 'webcam':
+            loadEditWebcamValues(part, config);
+            break;
+          case 'microphone':
+            loadEditMicrophoneValues(part, config);
+            break;
+          case 'speaker':
+            loadEditSpeakerValues(part, config);
+            break;
+        }
+      }
+
+      function loadEditServoValues(part, config) {
+        const pin = part.pin || config.pin;
+        const servoType = config.servoType || 'standard';
+
+
+
+        const controllerType = config.controllerType || 'gpio';
+        const invertDirection = config.invertDirection || false;
+        const modelId = part.modelId || config.modelId;
+        const address = config.address || config.pca9685Address || 64;
+        const frequency = config.frequency || config.pca9685Frequency || 50;
+        const channel = config.channel || config.pca9685Channel || 0;
+
+        // Set basic values
+        const pinEl = document.getElementById('editServoPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        const typeEl = document.getElementById('editServoType');
+        if (typeEl) typeEl.value = servoType;
+
+        const controllerEl = document.getElementById('editControllerType');
+        if (controllerEl) controllerEl.value = controllerType;
+
+        const invertEl = document.getElementById('editInvertDirection');
+        if (invertEl) invertEl.value = String(invertDirection);
+
+        const modelEl = document.getElementById('editServoModel');
+        if (modelEl && modelId) modelEl.value = modelId;
+
+        // PCA9685 configuration
+        const addressEl = document.getElementById('editPca9685Address');
+        if (addressEl) addressEl.value = '0x' + address.toString(16).toUpperCase();
+
+        const frequencyEl = document.getElementById('editPca9685Frequency');
+        if (frequencyEl) frequencyEl.value = frequency;
+
+        const channelEl = document.getElementById('editPca9685Channel');
+        if (channelEl) channelEl.value = channel;
+
+        // Show/hide PCA9685 config
+        const pca9685Config = document.getElementById('editPca9685Config');
+        if (pca9685Config) {
+          pca9685Config.style.display = controllerType === 'pca9685' ? 'block' : 'none';
+        }
+
+        // Set up event listeners
+        if (controllerEl && !controllerEl._listenerAdded) {
+          controllerEl._listenerAdded = true;
+          controllerEl.addEventListener('change', function() {
+            const pca9685Config = document.getElementById('editPca9685Config');
+            if (pca9685Config) {
+              pca9685Config.style.display = this.value === 'pca9685' ? 'block' : 'none';
+            }
+          });
+        }
+
+        // Set up channel grid
+        const channelButtons = document.querySelectorAll('#editChannelGrid .channel-btn');
+        channelButtons.forEach(btn => {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline-secondary');
+          if (parseInt(btn.dataset.channel) === channel) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-primary');
+          }
+
+          if (!btn._listenerAdded) {
+            btn._listenerAdded = true;
+            btn.addEventListener('click', function() {
+              channelButtons.forEach(b => {
+                b.classList.remove('btn-primary');
+                b.classList.add('btn-outline-secondary');
+              });
+              this.classList.remove('btn-outline-secondary');
+              this.classList.add('btn-primary');
+              if (channelEl) channelEl.value = this.dataset.channel;
+            });
+          }
+        });
+
+
+      }
+
+      function loadEditMotorValues(part, config) {
+        const directionPin = part.directionPin ?? config.directionPin;
+        const pwmPin = part.pwmPin ?? config.pwmPin;
+        const leftEnablePin = part.leftEnablePin ?? config.leftEnablePin;
+        const rightEnablePin = part.rightEnablePin ?? config.rightEnablePin;
+        const maxDuration = part.maxDuration ?? config.maxDuration ?? 10000;
+
+        const hasDual = (leftEnablePin != null && rightEnablePin != null);
+
+        const dirEl = document.getElementById('editDirectionPin');
+        if (dirEl) dirEl.value = directionPin != null ? directionPin : '';
+
+        const pwmEl = document.getElementById('editPwmPin');
+        if (pwmEl) pwmEl.value = (!hasDual && pwmPin != null) ? pwmPin : '';
+
+        const lEnEl = document.getElementById('editLeftEnablePin');
+        if (lEnEl) lEnEl.value = hasDual ? leftEnablePin : '';
+
+        const rEnEl = document.getElementById('editRightEnablePin');
+        if (rEnEl) rEnEl.value = hasDual ? rightEnablePin : '';
+
+        const btsPwmEl = document.getElementById('editBtsPwmPin');
+        if (btsPwmEl) btsPwmEl.value = hasDual && pwmPin != null ? pwmPin : '';
+
+        const maxDurEl = document.getElementById('editMaxDuration');
+        if (maxDurEl) maxDurEl.value = maxDuration;
+      }
+
+      function loadEditStepperValues(part, config) {
+        const s = part.stepPin ?? config.stepPin;
+        const d = part.dirPin ?? config.dirPin;
+        const e = part.enablePin ?? config.enablePin;
+        const micro = (config && config.microstepping != null) ? config.microstepping : 16;
+        const spr = (config && config.stepsPerRevolution != null) ? config.stepsPerRevolution : 200;
+
+        const sEl = document.getElementById('editStepPin'); if (sEl && s != null) sEl.value = s;
+        const dEl = document.getElementById('editDirPin'); if (dEl && d != null) dEl.value = d;
+        const eEl = document.getElementById('editEnablePin'); if (eEl && e != null) eEl.value = e;
+        const mEl = document.getElementById('editMicrostepping'); if (mEl) mEl.value = String(micro);
+        const sprEl = document.getElementById('editStepsPerRev'); if (sprEl) sprEl.value = spr;
+      }
+
+      function loadEditLinearActuatorValues(part, config) {
+        const directionPin = part.directionPin || config.directionPin;
+        const pwmPin = part.pwmPin || config.pwmPin;
+        const maxExtension = config.maxExtension || 100;
+        const maxRetraction = config.maxRetraction || 100;
+
+        const dirEl = document.getElementById('editDirectionPin');
+        if (dirEl && directionPin != null) dirEl.value = directionPin;
+
+        const pwmEl = document.getElementById('editPwmPin');
+        if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
+
+        const maxExtEl = document.getElementById('editMaxExtension');
+        if (maxExtEl) maxExtEl.value = maxExtension;
+
+        const maxRetEl = document.getElementById('editMaxRetraction');
+        if (maxRetEl) maxRetEl.value = maxRetraction;
+      }
+
+      function loadEditLightValues(part, config) {
+        const pin = part.pin || config.pin;
+        const brightness = config.brightness || 100;
+
+        const pinEl = document.getElementById('editLightPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        const brightnessEl = document.getElementById('editBrightness');
+        if (brightnessEl) brightnessEl.value = brightness;
+      }
+
+      function loadEditSensorValues(part, config, type) {
+        const pin = part.pin || config.pin;
+        const sensitivity = config.sensitivity || 5;
+        const windowMs = config.windowMs || 100;
+
+        const pinEl = document.getElementById('editSensorPin');
+        if (pinEl && pin != null) pinEl.value = pin;
+
+        if (type === 'motion_sensor') {
+          const sensEl = document.getElementById('editSensitivity');
+          if (sensEl) sensEl.value = sensitivity;
+
+          const windowEl = document.getElementById('editWindowMs');
+          if (windowEl) windowEl.value = windowMs;
+        }
+      }
+
+      function loadEditWebcamValues(part, config) {
+        const devicePath = config.devicePath || '/dev/video0';
+        const deviceId = config.deviceId || 0;
+        const width = config.width || 1280;
+        const height = config.height || 720;
+        const fps = config.fps || 30;
+
+        const pathEl = document.getElementById('editDevicePath');
+        if (pathEl) pathEl.value = devicePath;
+
+        const idEl = document.getElementById('editDeviceId');
+        if (idEl) idEl.value = deviceId;
+
+        const widthEl = document.getElementById('editWidth');
+        if (widthEl) widthEl.value = width;
+
+        const heightEl = document.getElementById('editHeight');
+        if (heightEl) heightEl.value = height;
+
+        const fpsEl = document.getElementById('editFps');
+        if (fpsEl) fpsEl.value = fps;
+      }
+
+      function loadEditMicrophoneValues(part, config) {
+        const device = config.device || 'default';
+        const sampleRate = config.sampleRate || 44100;
+        const gain = config.gain || 50;
+
+        const deviceEl = document.getElementById('editMicDevice');
+        if (deviceEl) deviceEl.value = device;
+
+        const rateEl = document.getElementById('editSampleRate');
+        if (rateEl) rateEl.value = sampleRate;
+
+        const gainEl = document.getElementById('editGain');
+        if (gainEl) gainEl.value = gain;
+      }
+
+      function loadEditSpeakerValues(part, config) {
+        const device = config.device || 'default';
+        const volume = config.volume || 80;
+        const bass = config.bass || 0;
+        const treble = config.treble || 0;
+
+        const deviceEl = document.getElementById('editSpeakerDevice');
+        if (deviceEl) deviceEl.value = device;
+
+        const volumeEl = document.getElementById('editVolume');
+        if (volumeEl) volumeEl.value = volume;
+
+        const bassEl = document.getElementById('editBass');
+        if (bassEl) bassEl.value = bass;
+
+        const trebleEl = document.getElementById('editTreble');
+        if (trebleEl) trebleEl.value = treble;
+      }
+
+      function generateEditStepperConfig(part, config) {
+        return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Step Pin</label>
+                  <input type="number" class="form-control" id="editStepPin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Dir Pin</label>
+                  <input type="number" class="form-control" id="editDirPin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Enable Pin (optional)</label>
+                  <input type="number" class="form-control" id="editEnablePin" min="1" max="40">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Microstepping</label>
+                  <select class="form-select" id="editMicrostepping">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                  <label class="form-label">Steps/Rev</label>
+                  <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+    </script>
+
+    <!-- Add Part Modal -->
+    <div class="modal fade" id="addPartModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Hardware Part</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addPartForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addPartName" class="form-label">Part Name</label>
+                    <input type="text" class="form-control" id="addPartName" name="name" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="addPartType" class="form-label">Part Type</label>
+                    <select class="form-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required>
+                      <option value="">Select Part Type</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Model Selection -->
+              <div class="row" id="addModelGroup" style="display:none;">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label for="addModelSelect" class="form-label">Model</label>
+                    <select class="form-select" id="addModelSelect">
+                      <option value="">Select Model (optional)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn" onclick="window.open('/setup/models', '_blank')">
+                    <i class="bi bi-plus-circle"></i> Add Model
+                  </button>
+                </div>
+              </div>
+
+              <!-- Dynamic configuration area -->
+              <div id="addPartConfigArea"></div>
+
+              <!-- Description -->
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-3">
+                    <label for="addPartDescription" class="form-label">Description</label>
+                    <input type="text" class="form-control" id="addPartDescription" name="description">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="createPartFromCalibration()">Add Part</button>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+
+</html>

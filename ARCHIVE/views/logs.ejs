@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .log-container {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .log-entry {
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            padding: 8px 16px;
+            text-decoration: none;
+            border: 1px solid #444;
+            margin: 0 4px;
+            color: white;
+            background-color: #333;
+        }
+        .pagination a.active {
+            background-color: #4CAF50;
+            border: 1px solid #4CAF50;
+        }
+        .error-message {
+            background-color: #660000;
+            border: 1px solid #ff0000;
+            color: #ff9999;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .info-message {
+            background-color: #003366;
+            border: 1px solid #0099ff;
+            color: #99ccff;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .search-form {
+            margin-bottom: 20px;
+        }
+        .search-form input[type="text"] {
+            padding: 5px;
+            width: 300px;
+        }
+        .search-form button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .highlight {
+            background-color: yellow;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <%- include('components/universal-header') %>
+    <h1>System Logs</h1>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-message">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (logs.length === 1 && (logs[0].includes('No log file found') || logs[0].includes('The log file is empty'))) { %>
+        <div class="info-message">
+            <%= logs[0] %>
+        </div>
+    <% } else { %>
+        <div class="search-form">
+            <input type="text" id="searchInput" value="<%= search %>" placeholder="Search logs...">
+            <button onclick="performSearch()">Search</button>
+            <button onclick="searchNext()">Search Next</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <% logs.forEach(function(log) { %>
+                <div class="log-entry"><%= log %></div>
+            <% }); %>
+        </div>
+
+        <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="/logs?page=<%= currentPage - 1 %>&search=<%= search %>">&laquo; Previous</a>
+                <% } %>
+                
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/logs?page=<%= i %>&search=<%= search %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="/logs?page=<%= currentPage + 1 %>&search=<%= search %>">Next &raquo;</a>
+                <% } %>
+            </div>
+        <% } %>
+    <% } %>
+
+    <a href="/system-config" style="color: #4CAF50;">Back to System Config</a>
+
+    <script>
+        let currentHighlightIndex = -1;
+
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const logContainer = document.getElementById('logContainer');
+            const logEntries = logContainer.getElementsByClassName('log-entry');
+            
+            // Remove existing highlights
+            const highlights = logContainer.getElementsByClassName('highlight');
+            while (highlights.length > 0) {
+                highlights[0].outerHTML = highlights[0].innerHTML;
+            }
+
+            // Add new highlights
+            for (let i = 0; i < logEntries.length; i++) {
+                const entryText = logEntries[i].innerHTML;
+                const highlightedText = entryText.replace(new RegExp(searchTerm, 'gi'), match => `<span class="highlight">${match}</span>`);
+                logEntries[i].innerHTML = highlightedText;
+            }
+
+            currentHighlightIndex = -1;
+            searchNext();
+        }
+
+        function searchNext() {
+            const highlights = document.getElementsByClassName('highlight');
+            if (highlights.length > 0) {
+                currentHighlightIndex = (currentHighlightIndex + 1) % highlights.length;
+                highlights[currentHighlightIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+                fetch('/logs/clear', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Logs cleared successfully');
+                            window.location.reload();
+                        } else {
+                            alert('Failed to clear logs: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while clearing logs');
+                    });
+            }
+        }
+
+        // Perform initial search if there's a search term
+        if (document.getElementById('searchInput').value) {
+            performSearch();
+        }
+    </script>
+</body>
+</html>

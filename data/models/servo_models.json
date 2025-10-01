@@ -1,0 +1,369 @@
+[
+  {
+    "id": "servo_hooyij_ds3240mg",
+    "name": "Hooyij 40kg DS3240MG",
+    "manufacturer": "Hooyij",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "Waterproof high-torque digital servo. PWM 500-2500us, neutral 1500us.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "40kg·cm (7.4V)",
+      "voltage": "4.8-7.4V",
+      "speed": "~0.15s/60deg"
+    }
+  },
+  {
+    "id": "servo_miuzei_mg90s",
+    "name": "Miuzei MG90S",
+    "manufacturer": "Miuzei",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2400,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "9g micro metal gear servo. PWM 500-2400us, 180deg travel.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "~2.0-2.2kg·cm",
+      "voltage": "4.8-6.0V",
+      "speed": "~0.10s/60deg"
+    }
+  },
+  {
+    "id": "servo_fitec_fs90r",
+    "name": "FITEC FS90R",
+    "manufacturer": "FITEC",
+    "defaults": {
+      "minPulse": 1000,
+      "maxPulse": 2000,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 360,
+      "servoType": "continuous"
+    },
+    "meta": {
+      "notes": "Continuous rotation micro servo. 1500us=stop; <1500us=CW; >1500us=CCW.",
+      "controlType": [
+        "PWM"
+      ],
+      "voltage": "4.8-6.0V"
+    }
+  },
+  {
+    "id": "servo_miuzei_25kg",
+    "name": "Miuzei 25KG High Torque Servo (25T, 180deg)",
+    "manufacturer": "Miuzei",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "Waterproof 25kg·cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "25kg·cm",
+      "voltage": "4.8-7.4V"
+    }
+  },
+  {
+    "id": "1759089669448",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759089735105",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759089755664",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759089771710",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759089788004",
+    "name": "E2E Servo Model",
+    "description": "servo defaults",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759090379419",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759090395853",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759090522859",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759090554233",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091092962",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091124666",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091502688",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091534794",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091722545",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091755889",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091858408",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759091895079",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759092563941",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759092588961",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759092868535",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759092899690",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759092978680",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]

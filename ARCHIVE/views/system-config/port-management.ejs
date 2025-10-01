@@ -1,0 +1,515 @@
+<%- include('../components/universal-header') %>
+
+<%- include('../partials/header', {
+    title: 'Port Management System',
+    pageTitle: 'Port Management System',
+    pageDescription: 'Centralized management and monitoring of WebSocket services and port allocation'
+}) %>
+
+<div class="container-fluid">
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-network-wired me-2"></i>System Status
+                    </h5>
+                    <div>
+                        <span id="systemStatusBadge" class="badge bg-secondary">Loading...</span>
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="refreshSystemStatus()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="totalServices" class="text-primary">-</h4>
+                                <small class="text-muted">Total Services</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="runningServices" class="text-success">-</h4>
+                                <small class="text-muted">Running</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="allocatedPorts" class="text-info">-</h4>
+                                <small class="text-muted">Allocated Ports</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="activeConnections" class="text-warning">-</h4>
+                                <small class="text-muted">Active Connections</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="portManagementTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">
+                                <i class="fas fa-cogs me-1"></i>Services
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ports-tab" data-bs-toggle="tab" data-bs-target="#ports" type="button" role="tab">
+                                <i class="fas fa-ethernet me-1"></i>Port Allocation
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab">
+                                <i class="fas fa-chart-line me-1"></i>Monitoring
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="configuration-tab" data-bs-toggle="tab" data-bs-target="#configuration" type="button" role="tab">
+                                <i class="fas fa-sliders-h me-1"></i>Configuration
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="diagnostics-tab" data-bs-toggle="tab" data-bs-target="#diagnostics" type="button" role="tab">
+                                <i class="fas fa-stethoscope me-1"></i>Diagnostics
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="api-tab" data-bs-toggle="tab" data-bs-target="#api" type="button" role="tab">
+                                <i class="fas fa-code me-1"></i>API Testing
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="portManagementTabContent">
+                        <!-- Services Tab -->
+                        <div class="tab-pane fade show active" id="services" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Service Management</h6>
+                                <div>
+                                    <button class="btn btn-success btn-sm me-2" onclick="startAllServices()">
+                                        <i class="fas fa-play"></i> Start All
+                                    </button>
+                                    <button class="btn btn-warning btn-sm me-2" onclick="stopAllServices()">
+                                        <i class="fas fa-stop"></i> Stop All
+                                    </button>
+                                    <button class="btn btn-info btn-sm" onclick="refreshServices()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Service Filters -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="serviceTypeFilter" onchange="filterServices()">
+                                        <option value="">All Types</option>
+                                        <option value="hardware">Hardware</option>
+                                        <option value="websocket">WebSocket</option>
+                                        <option value="chatterpi">ChatterPi</option>
+                                        <option value="proxy">Proxy</option>
+                                        <option value="testing">Testing</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" id="serviceStatusFilter" onchange="filterServices()">
+                                        <option value="">All Statuses</option>
+                                        <option value="running">Running</option>
+                                        <option value="stopped">Stopped</option>
+                                        <option value="error">Error</option>
+                                        <option value="unhealthy">Unhealthy</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" id="serviceSearchFilter" placeholder="Search services..." onkeyup="filterServices()">
+                                </div>
+                            </div>
+
+                            <!-- Services Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="servicesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Service</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Port</th>
+                                            <th>Proxy Port</th>
+                                            <th>Uptime</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="servicesTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                                Loading services...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Port Allocation Tab -->
+                        <div class="tab-pane fade" id="ports" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Port Range Utilization</h6>
+                                    <div id="portRangeChart" style="height: 300px;"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Port Allocation by Type</h6>
+                                    <div id="portTypeChart" style="height: 300px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6>Port Range Details</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Range</th>
+                                                    <th>Start</th>
+                                                    <th>End</th>
+                                                    <th>Total</th>
+                                                    <th>Used</th>
+                                                    <th>Available</th>
+                                                    <th>Utilization</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="portRangesTableBody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monitoring Tab -->
+                        <div class="tab-pane fade" id="monitoring" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Real-time Health Status</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="healthStatusChart" style="height: 250px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Connection Statistics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="connectionStatsChart" style="height: 250px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">System Metrics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <div class="metric-card">
+                                                        <div class="metric-value" id="cpuUsage">-</div>
+                                                        <div class="metric-label">CPU Usage</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="metric-card">
+                                                        <div class="metric-value" id="memoryUsage">-</div>
+                                                        <div class="metric-label">Memory Usage</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="metric-card">
+                                                        <div class="metric-value" id="networkConnections">-</div>
+                                                        <div class="metric-label">Network Connections</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="metric-card">
+                                                        <div class="metric-value" id="systemUptime">-</div>
+                                                        <div class="metric-label">System Uptime</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Tab -->
+                        <div class="tab-pane fade" id="configuration" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Environment Configuration</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="environmentConfigForm">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Environment</label>
+                                                    <select class="form-select" id="environmentSelect" disabled>
+                                                        <option value="development">Development</option>
+                                                        <option value="production">Production</option>
+                                                        <option value="test">Test</option>
+                                                    </select>
+                                                    <small class="text-muted">Environment is set by NODE_ENV</small>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">Health Check Interval (ms)</label>
+                                                    <input type="number" class="form-control" id="healthCheckInterval" min="5000" max="300000" step="1000">
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label">Connection Timeout (ms)</label>
+                                                    <input type="number" class="form-control" id="connectionTimeout" min="1000" max="60000" step="1000">
+                                                </div>
+
+                                                <button type="button" class="btn btn-primary" onclick="saveConfiguration()">
+                                                    <i class="fas fa-save"></i> Save Configuration
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Service Priorities</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="servicePriorities">
+                                                <!-- Service priorities will be loaded here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Diagnostics Tab -->
+                        <div class="tab-pane fade" id="diagnostics" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">System Validation</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <button class="btn btn-primary mb-3" onclick="runSystemValidation()">
+                                                <i class="fas fa-check-circle"></i> Run Full Validation
+                                            </button>
+                                            <div id="validationResults"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Health Check</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <button class="btn btn-success mb-3" onclick="runHealthCheck()">
+                                                <i class="fas fa-heartbeat"></i> Run Health Check
+                                            </button>
+                                            <div id="healthCheckResults"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">System Logs</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-3">
+                                                <div>
+                                                    <select class="form-select form-select-sm" id="logLevelFilter" style="width: auto; display: inline-block;">
+                                                        <option value="">All Levels</option>
+                                                        <option value="error">Error</option>
+                                                        <option value="warn">Warning</option>
+                                                        <option value="info">Info</option>
+                                                        <option value="debug">Debug</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshLogs()">
+                                                        <i class="fas fa-sync-alt"></i> Refresh
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                                                        <i class="fas fa-trash"></i> Clear
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="systemLogs" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; font-family: monospace; font-size: 12px;">
+                                                <!-- Logs will be loaded here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API Testing Tab -->
+                        <div class="tab-pane fade" id="api" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">API Endpoint Testing</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Endpoint</label>
+                                                <select class="form-select" id="apiEndpointSelect">
+                                                    <option value="/api/service-management/status">System Status</option>
+                                                    <option value="/api/service-management/connections">Service Connections</option>
+                                                    <option value="/api/service-management/health">Health Check</option>
+                                                    <option value="/api/service-management/ports">Port Information</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Method</label>
+                                                <select class="form-select" id="apiMethodSelect">
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3" id="apiBodySection" style="display: none;">
+                                                <label class="form-label">Request Body (JSON)</label>
+                                                <textarea class="form-control" id="apiRequestBody" rows="4" placeholder='{"key": "value"}'></textarea>
+                                            </div>
+
+                                            <button class="btn btn-primary" onclick="testApiEndpoint()">
+                                                <i class="fas fa-play"></i> Test Endpoint
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">API Response</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="apiResponse" style="height: 400px; overflow-y: auto; background: #f8f9fa; padding: 10px; font-family: monospace; font-size: 12px;">
+                                                <div class="text-muted">API response will appear here...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service Detail Modal -->
+<div class="modal fade" id="serviceDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Service Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="serviceDetailContent">
+                <!-- Service details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.metric-card {
+    text-align: center;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #495057;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.status-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.service-actions .btn {
+    margin: 0 2px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+#systemLogs {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.log-entry {
+    margin-bottom: 2px;
+    padding: 2px 0;
+}
+
+.log-error { color: #dc3545; }
+.log-warn { color: #ffc107; }
+.log-info { color: #17a2b8; }
+.log-debug { color: #6c757d; }
+</style>
+
+<script src="/js/port-management.js"></script>
+
+<%- include('../partials/footer') %>

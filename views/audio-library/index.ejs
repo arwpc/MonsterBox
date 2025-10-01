@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %> - MonsterBox 4.0
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/monsterbox4.css" rel="stylesheet">
+    <style>
+        .audio-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .audio-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .drag-drop-zone {
+            border: 2px dashed #6c757d;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(108, 117, 125, 0.1);
+        }
+
+        .drag-drop-zone.drag-over {
+            border-color: #0d6efd;
+            background: rgba(13, 110, 253, 0.1);
+        }
+
+        .waveform-container {
+            height: 60px;
+            background: linear-gradient(90deg, #0d6efd 0%, #6610f2 100%);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waveform-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .audio-controls {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .audio-card:hover .audio-controls {
+            opacity: 1;
+        }
+
+        .tag-badge {
+            font-size: 0.7rem;
+            margin: 1px;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffc107;
+            transition: all 0.3s;
+        }
+
+        .favorite-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffc107;
+        }
+
+        .upload-progress {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Unified Navigation - Same on ALL pages -->
+    <%- include('../components/unified-navigation', { page: 'audio-library' }) %>
+
+        <main class="container-fluid py-4">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h2 mb-1">
+                                <i class="bi bi-music-note-list text-primary"></i>
+                                Audio Library
+                            </h1>
+                            <p class="text-muted mb-0">Shared audio library for all MonsterBox characters</p>
+                        </div>
+                        <div>
+                            <div class="btn-group me-2" role="group">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                    <i class="bi bi-cloud-upload"></i> Upload Audio
+                                </button>
+                                <button class="btn btn-outline-secondary" id="bulkSelectBtn"
+                                    onclick="audioLibrary.toggleBulkSelect()">
+                                    <i class="bi bi-check-square"></i> Bulk Select
+                                </button>
+                            </div>
+                            <!-- Speaker Part Selector -->
+                            <div class="d-inline-flex align-items-center">
+                                <label for="speakerSelect" class="me-2 mb-0 small text-muted"><i class="bi bi-speaker"></i> Speaker:</label>
+                                <select id="speakerSelect" class="form-select form-select-sm" style="min-width: 240px;"></select>
+                            </div>
+                            <div class="bulk-actions mt-2" id="bulkActions" style="display: none;">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-success"
+                                        onclick="audioLibrary.bulkFavorite(true)">
+                                        <i class="bi bi-heart"></i> Favorite
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning"
+                                        onclick="audioLibrary.bulkFavorite(false)">
+                                        <i class="bi bi-heart"></i> Unfavorite
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info"
+                                        onclick="audioLibrary.bulkChangeCategory()">
+                                        <i class="bi bi-tags"></i> Change Category
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="audioLibrary.bulkDelete()">
+                                        <i class="bi bi-trash"></i> Delete Selected
+                                    </button>
+                                </div>
+                                <small class="text-muted ms-2">
+                                    <span id="selectedCount">0</span> selected
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary">
+                        <div class="card-body text-center">
+                            <i class="bi bi-music-note-beamed fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="totalFiles">0</h3>
+                            <small>Total Files</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-hdd fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="totalSize">0 MB</h3>
+                            <small>Total Size</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info">
+                        <div class="card-body text-center">
+                            <i class="bi bi-tags fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="totalCategories">0</h3>
+                            <small>Categories</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-heart-fill fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="totalFavorites">0</h3>
+                            <small>Favorites</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="searchInput"
+                                            placeholder="Search audio files...">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="categoryFilter">
+                                        <option value="all">All Categories</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="formatFilter">
+                                        <option value="">All Formats</option>
+                                        <option value="mp3">MP3</option>
+                                        <option value="wav">WAV</option>
+                                        <option value="ogg">OGG</option>
+                                        <option value="m4a">M4A</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="sortBy">
+                                        <option value="uploadedAt">Newest First</option>
+                                        <option value="title">Title A-Z</option>
+                                        <option value="duration">Duration</option>
+                                        <option value="fileSize">File Size</option>
+                                        <option value="playCount">Most Played</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="favoritesOnly">
+                                        <label class="form-check-label" for="favoritesOnly">
+                                            Favorites
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#advancedSearchModal">
+                                        <i class="bi bi-funnel"></i> Advanced
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Library Grid -->
+            <div class="row" id="audioGrid">
+                <!-- Audio cards will be populated here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="row" id="emptyState" style="display: none;">
+                <div class="col text-center py-5">
+                    <i class="bi bi-music-note-list text-muted" style="font-size: 4rem;"></i>
+                    <h3 class="text-muted mt-3">No Audio Files Found</h3>
+                    <p class="text-muted">Upload some audio files to get started!</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-cloud-upload"></i> Upload Your First Audio File
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Upload Modal -->
+        <div class="modal fade" id="uploadModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-cloud-upload"></i> Upload Audio Files
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Drag and Drop Zone -->
+                        <div class="drag-drop-zone mb-4" id="dragDropZone">
+                            <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+                            <h4 class="mt-3">Drag & Drop Audio Files Here</h4>
+                            <p class="text-muted">Or click to browse files</p>
+                            <input type="file" id="audioFileInput" multiple accept="audio/*" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary"
+                                onclick="document.getElementById('audioFileInput').click()">
+                                <i class="bi bi-folder2-open"></i> Browse Files
+                            </button>
+                        </div>
+
+                        <!-- Upload Form -->
+                        <form id="uploadForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Category</label>
+                                    <select class="form-select" name="category" id="uploadCategory">
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tags (comma separated)</label>
+                                    <input type="text" class="form-control" name="tags"
+                                        placeholder="spooky, halloween, monster">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="description" rows="2"
+                                        placeholder="Optional description for the audio files"></textarea>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Upload Progress -->
+                        <div class="upload-progress mt-3">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted" id="uploadStatus">Preparing upload...</small>
+                            </div>
+                        </div>
+
+                        <!-- Selected Files List -->
+                        <div id="selectedFilesList" class="mt-3" style="display: none;">
+                            <h6>Selected Files:</h6>
+                            <div id="filesList"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="uploadBtn" disabled>
+                            <i class="bi bi-cloud-upload"></i> Upload Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Search Modal -->
+        <div class="modal fade" id="advancedSearchModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-funnel"></i> Advanced Search
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="advancedSearchForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Artist</label>
+                                    <input type="text" class="form-control" name="artist"
+                                        placeholder="Search by artist">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Genre</label>
+                                    <input type="text" class="form-control" name="genre" placeholder="Search by genre">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Min Duration (seconds)</label>
+                                    <input type="number" class="form-control" name="minDuration" min="0"
+                                        placeholder="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Max Duration (seconds)</label>
+                                    <input type="number" class="form-control" name="maxDuration" min="0"
+                                        placeholder="600">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Min File Size (MB)</label>
+                                    <input type="number" class="form-control" name="minFileSize" min="0" step="0.1"
+                                        placeholder="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Max File Size (MB)</label>
+                                    <input type="number" class="form-control" name="maxFileSize" min="0" step="0.1"
+                                        placeholder="50">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Uploaded After</label>
+                                    <input type="date" class="form-control" name="uploadedAfter">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Uploaded Before</label>
+                                    <input type="date" class="form-control" name="uploadedBefore">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Specific Tags (comma separated)</label>
+                                    <input type="text" class="form-control" name="specificTags"
+                                        placeholder="halloween, spooky, monster">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="audioLibrary.clearAdvancedSearch()">Clear All</button>
+                        <button type="button" class="btn btn-primary" onclick="audioLibrary.applyAdvancedSearch()">Apply
+                            Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Player Modal -->
+        <div class="modal fade" id="audioPlayerModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="playerTitle">
+                            <i class="bi bi-play-circle"></i> Audio Player
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Audio player will be loaded here -->
+                        <div id="audioPlayerContainer">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading audio player...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/character-menu.js"></script>
+        <script src="/js/audio-library.js"></script>
+</body>
+
+</html>

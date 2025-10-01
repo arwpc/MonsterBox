@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        #log-box {
+            border: 1px solid #00ff00;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background-color: #001100;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        #controls button {
+            margin-right: 10px;
+        }
+        .step {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #00ff00;
+        }
+        .current-step {
+            background-color: #003300;
+        }
+        .error-message {
+            color: #ff0000;
+        }
+        #progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            margin-bottom: 20px;
+        }
+        #progress {
+            width: 0%;
+            height: 30px;
+            background-color: #00ff00;
+            text-align: center;
+            line-height: 30px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <%- include('components/universal-header') %>
+    <h1><%= title %></h1>
+    <h2><%= scene.scene_name %></h2>
+    
+    <div id="progress-bar">
+        <div id="progress">0%</div>
+    </div>
+
+    <div id="scene-overview">
+        <h3>Scene Steps:</h3>
+        <% if (scene && scene.steps && scene.steps.length > 0) { %>
+            <% scene.steps.forEach((step, index) => { %>
+                <div class="step" id="step-<%= index %>">
+                    <strong>Step <%= index + 1 %>:</strong> <%= step.name %> (<%= step.type %><%= step.concurrent ? ', Concurrent' : '' %>)
+                </div>
+            <% }); %>
+        <% } else { %>
+            <p>No steps found for this scene.</p>
+        <% } %>
+    </div>
+    
+    <div id="log-box"></div>
+    
+    <div id="controls">
+        <button id="backward-btn">Backward</button>
+        <button id="run-btn">Run</button>
+        <button id="forward-btn">Forward</button>
+        <button id="stop-btn" disabled>Stop All Steps</button>
+    </div>
+    
+    <a href="/scenes?characterId=<%= characterId %>" class="button">Back to Scenes</a>
+
+    <script>
+        const sceneData = <%- JSON.stringify(scene) %>;
+        const characterId = "<%= characterId %>";
+        let currentStep = 0;
+        let isExecuting = false;
+        let eventSource = null;
+
+        function logMessage(message, isError) {
+            const logBox = document.getElementById('log-box');
+            const className = isError ? 'error-message' : '';
+            const p = document.createElement('p');
+            p.className = className;
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logBox.appendChild(p);
+            logBox.scrollTop = logBox.scrollHeight;
+            console.log(message);
+        }
+
+        function updateCurrentStep(index) {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach(step => step.classList.remove('current-step'));
+            document.getElementById('step-' + index).classList.add('current-step');
+            updateProgressBar(index);
+        }
+
+        function updateProgressBar(index) {
+            const progress = ((index + 1) / sceneData.steps.length) * 100;
+            const progressElement = document.getElementById('progress');
+            progressElement.style.width = progress + '%';
+            progressElement.textContent = Math.round(progress) + '%';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            logMessage('Scene player initialized');
+
+            document.getElementById('backward-btn').addEventListener('click', function() {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateCurrentStep(currentStep);
+                    logMessage('Moved to step ' + (currentStep + 1));
+                }
+            });
+
+            document.getElementById('forward-btn').addEventListener('click', function() {
+                if (currentStep < sceneData.steps.length - 1) {
+                    currentStep++;
+                    updateCurrentStep(currentStep);
+                    logMessage('Moved to step ' + (currentStep + 1));
+                }
+            });
+
+            document.getElementById('run-btn').addEventListener('click', function() {
+                logMessage('Starting scene execution');
+                runScene();
+            });
+
+            document.getElementById('stop-btn').addEventListener('click', function() {
+                logMessage('Stopping scene execution');
+                stopScene();
+            });
+
+            // Initial scene overview
+            logMessage('Scene Overview: "' + sceneData.scene_name + '"');
+            logMessage('Total steps: ' + sceneData.steps.length);
+            sceneData.steps.forEach(function(step, index) {
+                logMessage('Step ' + (index + 1) + ': ' + step.name + ' (Type: ' + step.type + (step.concurrent ? ', Concurrent' : '') + ')');
+            });
+        });
+
+        function runScene() {
+            if (isExecuting) {
+                logMessage('Scene is already executing', true);
+                return;
+            }
+
+            isExecuting = true;
+            document.getElementById('run-btn').disabled = true;
+            document.getElementById('backward-btn').disabled = true;
+            document.getElementById('forward-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            const url = '/scenes/' + sceneData.id + '/play?characterId=' + characterId + '&startStep=' + currentStep;
+            eventSource = new EventSource(url);
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    logMessage(data.message);
+                }
+                if (data.currentStep !== undefined) {
+                    currentStep = data.currentStep;
+                    updateCurrentStep(currentStep);
+                }
+                if (data.error) {
+                    logMessage('Error: ' + data.error, true);
+                    stopScene();
+                }
+                if (data.event === 'scene_end') {
+                    stopScene();
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                logMessage('EventSource error: ' + (error.message || 'Unknown error'), true);
+                stopScene();
+            };
+        }
+
+        function stopScene() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            axios.post('/scenes/' + sceneData.id + '/stop?characterId=' + characterId)
+                .then(function(response) {
+                    logMessage('Scene execution stopped');
+                })
+                .catch(function(error) {
+                    logMessage('Error stopping scene: ' + error.message, true);
+                })
+                .finally(function() {
+                    isExecuting = false;
+                    document.getElementById('run-btn').disabled = false;
+                    document.getElementById('backward-btn').disabled = false;
+                    document.getElementById('forward-btn').disabled = false;
+                    document.getElementById('stop-btn').disabled = true;
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+{
+  "5": {
+    "part_id": 5,
+    "part_name": "Elbow of Orlok",
+    "servo_type": "standard",
+    "channel": 4,
+    "calibrated_date": "2025-09-23T04:19:03.297Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "min": {
+        "description": "min preset",
+        "angle": 0,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:20:42.592Z"
+      },
+      "max": {
+        "description": "max preset",
+        "angle": 180,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:20:56.355Z"
+      },
+      "center": {
+        "description": "center preset",
+        "angle": 90,
+        "calibrated": true,
+        "calibrated_date": "2025-09-23T04:19:03.297Z"
+      }
+    },
+    "functionality_status": "working"
+  },
+  "6": {
+    "part_id": 6,
+    "part_name": "Forearm of Orlok",
+    "servo_type": "standard",
+    "channel": 5,
+    "calibrated_date": "2025-09-17T02:24:54.419Z",
+    "min_pulse_us": 1000,
+    "center_pulse_us": 1500,
+    "max_pulse_us": 2000,
+    "min_angle_deg": 0,
+    "center_angle_deg": 90,
+    "max_angle_deg": 180,
+    "positions": {
+      "shake_hands": {
+        "description": "shake_hands position",
+        "angle": 114,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:23:46.022Z"
+      },
+      "open_hand": {
+        "description": "open_hand position",
+        "angle": 54,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:24:33.109Z"
+      },
+      "hands_down": {
+        "description": "hands_down position",
+        "angle": 180,
+        "calibrated": true,
+        "calibrated_date": "2025-09-17T02:24:54.419Z"
+      }
+    },
+    "functionality_status": "working"
+  },
+  "29": {
+    "part_id": 29,
+    "part_name": "Orlok Head Servo",
+    "servo_type": "continuous",
+    "channel": 0,
+    "calibrated_date": "2025-09-05T16:23:33",
+    "stop_pulse_us": 1460,
+    "cw_pulse_us": 1200,
+    "ccw_pulse_us": 1800,
+    "positions": {
+      "forward": {
+        "description": "0° - Facing directly forward",
+        "calibrated": true
+      },
+      "right_90": {
+        "description": "90° - Facing right",
+        "calibrated": true
+      },
+      "left_90": {
+        "description": "-90° - Facing left",
+        "calibrated": true
+      },
+      "backward": {
+        "description": "180° - Facing backward",
+        "calibrated": true
+      },
+      "neutral": {
+        "pulse_us": 1500,
+        "description": "neutral",
+        "calibrated": true
+      },
+      "test_position": {
+        "pulse_us": 1500,
+        "description": "test_position",
+        "calibrated": true
+      }
+    },
+    "timing_data": {},
+    "functionality_status": "working"
+  },
+  "33": {
+    "part_id": 33,
+    "part_name": "Skull Talking Jaw",
+    "servo_type": "standard",
+    "positions": {
+      "min": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "min"
+      },
+      "neutral": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "neutral"
+      },
+      "max": {
+        "pulse_us": 1450,
+        "angle": null,
+        "calibrated": true,
+        "verified": false,
+        "description": "max"
+      }
+    },
+    "functionality_status": "working",
+    "calibrated_date": "2025-09-07T16:52:06"
+  },
+  "version": "2.0_backward_compatible"
+}

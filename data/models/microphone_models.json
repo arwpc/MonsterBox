@@ -1,0 +1,10 @@
+[
+  {
+    "id": "mic_generic_usb",
+    "name": "Generic USB Microphone",
+    "description": "UAC1/UAC2 compliant USB microphone",
+    "defaults": { "sampleRate": 16000, "channels": 1, "format": "s16le" },
+    "controlsSchema": {},
+    "meta": { "manufacturer": "Generic" }
+  }
+]

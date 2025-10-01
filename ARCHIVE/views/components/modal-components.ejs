@@ -1,0 +1,224 @@
+<%# MonsterBox UI Component Library - Modal & Card Components %>
+
+<%# Modal Component %>
+<% if (typeof component !== 'undefined' && component === 'modal') { %>
+<div id="<%= id %>" class="modal-monsterbox">
+  <div class="modal-content-monsterbox <%= size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-4xl' : size === 'xl' ? 'max-w-6xl' : 'max-w-2xl' %>">
+    <% if (typeof title !== 'undefined') { %>
+    <h3 class="font-bold text-lg text-primary mb-4">
+      <%= icon || '' %> <%= title %>
+    </h3>
+    <% } %>
+
+    <div class="modal-content">
+      <% if (typeof content !== 'undefined') { %>
+      <%- content %>
+      <% } else { %>
+      <p class="text-base-content">Modal content goes here...</p>
+      <% } %>
+    </div>
+
+    <div class="flex gap-2 justify-end mt-4">
+      <% if (typeof buttons !== 'undefined' && Array.isArray(buttons)) { %>
+        <% buttons.forEach(function(button) { %>
+        <button
+          class="btn <%= button.class || 'btn-primary' %>"
+          onclick="<%= button.onclick || 'closeModal(\'' + id + '\')' %>"
+          <%= button.disabled ? 'disabled' : '' %>
+        >
+          <%= button.icon || '' %> <%= button.text || 'OK' %>
+        </button>
+        <% }); %>
+      <% } else { %>
+      <button class="btn btn-primary" onclick="closeModal('<%= id %>')">OK</button>
+      <button class="btn btn-outline" onclick="closeModal('<%= id %>')">Cancel</button>
+      <% } %>
+    </div>
+  </div>
+  <div class="modal-backdrop" onclick="closeModal('<%= id %>')" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.75); z-index: 40;"></div>
+</div>
+<% } %>
+
+<%# Confirmation Modal Component %>
+<% if (typeof component !== 'undefined' && component === 'confirmModal') { %>
+<div id="<%= id %>" class="modal-monsterbox">
+  <div class="modal-content-monsterbox max-w-md">
+    <h3 class="font-bold text-lg text-warning mb-4">
+      ⚠️ <%= title || 'Confirm Action' %>
+    </h3>
+
+    <div class="modal-content">
+      <p class="text-base-content mb-4">
+        <%= message || 'Are you sure you want to proceed?' %>
+      </p>
+      <% if (typeof details !== 'undefined') { %>
+      <div class="alert alert-warning mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+        <span><%= details %></span>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="flex gap-2 justify-end mt-4">
+      <button
+        class="btn btn-error"
+        onclick="<%= onConfirm %>; closeModal('<%= id %>')"
+      >
+        <%= confirmText || 'Confirm' %>
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('<%= id %>')">
+        <%= cancelText || 'Cancel' %>
+      </button>
+    </div>
+  </div>
+  <div class="modal-backdrop" onclick="closeModal('<%= id %>')" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.75); z-index: 40;"></div>
+</div>
+<% } %>
+
+<%# Info Card Component %>
+<% if (typeof component !== 'undefined' && component === 'infoCard') { %>
+<div class="card-monsterbox">
+  <% if (typeof title !== 'undefined') { %>
+  <div class="card-header-monsterbox">
+    <h3 class="text-lg font-bold text-primary flex items-center">
+      <%= icon || '📋' %> <%= title %>
+    </h3>
+  </div>
+  <% } %>
+  <div class="card-body">
+    <% if (typeof content !== 'undefined') { %>
+    <%- content %>
+    <% } %>
+    <% if (typeof data !== 'undefined' && Array.isArray(data)) { %>
+    <div class="space-y-2">
+      <% data.forEach(function(item) { %>
+      <div class="flex justify-between">
+        <span class="text-base-content/70"><%= item.label %>:</span>
+        <span class="text-primary font-mono"><%- item.value %></span>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+    <% if (typeof actions !== 'undefined' && Array.isArray(actions)) { %>
+    <div class="card-actions justify-end mt-4">
+      <% actions.forEach(function(action) { %>
+      <button 
+        class="btn btn-sm <%= action.class || 'btn-primary' %>" 
+        onclick="<%= action.onclick %>"
+        <%= action.disabled ? 'disabled' : '' %>
+      >
+        <%= action.icon || '' %> <%= action.text %>
+      </button>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%# Status Card Component %>
+<% if (typeof component !== 'undefined' && component === 'statusCard') { %>
+<div class="card-monsterbox">
+  <div class="card-body">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-primary">
+        <%= icon || '🔧' %> <%= title %>
+      </h3>
+      <div class="badge <%= status === 'online' ? 'badge-success' : status === 'offline' ? 'badge-error' : 'badge-warning' %>">
+        <%= status === 'online' ? '🟢 Online' : status === 'offline' ? '🔴 Offline' : '⚪ Unknown' %>
+      </div>
+    </div>
+    
+    <% if (typeof details !== 'undefined') { %>
+    <p class="text-base-content/70 text-sm mb-4"><%= details %></p>
+    <% } %>
+    
+    <% if (typeof metrics !== 'undefined' && Array.isArray(metrics)) { %>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <% metrics.forEach(function(metric) { %>
+      <div class="stat bg-base-200 rounded-lg p-3">
+        <div class="stat-title text-xs"><%= metric.label %></div>
+        <div class="stat-value text-sm text-primary"><%= metric.value %></div>
+        <% if (metric.unit) { %>
+        <div class="stat-desc text-xs"><%= metric.unit %></div>
+        <% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+    
+    <% if (typeof actions !== 'undefined' && Array.isArray(actions)) { %>
+    <div class="card-actions justify-end">
+      <% actions.forEach(function(action) { %>
+      <button 
+        class="btn btn-sm <%= action.class || 'btn-primary' %>" 
+        onclick="<%= action.onclick %>"
+        <%= action.disabled ? 'disabled' : '' %>
+      >
+        <%= action.icon || '' %> <%= action.text %>
+      </button>
+      <% }); %>
+    </div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
+<%# Alert Component %>
+<% if (typeof component !== 'undefined' && component === 'alert') { %>
+<div class="alert <%= type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : type === 'warning' ? 'alert-warning' : 'alert-info' %> mb-4">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <% if (type === 'success') { %>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <% } else if (type === 'error') { %>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <% } else if (type === 'warning') { %>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+    <% } else { %>
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <% } %>
+  </svg>
+  <span><%= message %></span>
+  <% if (dismissible) { %>
+  <button class="btn btn-sm btn-circle btn-ghost ml-auto" onclick="this.parentElement.remove()">✕</button>
+  <% } %>
+</div>
+<% } %>
+
+<%# Loading Component %>
+<% if (typeof component !== 'undefined' && component === 'loading') { %>
+<div class="flex-center py-8">
+  <div class="text-center">
+    <div class="loading-spinner mx-auto mb-4"></div>
+    <p class="text-primary font-terminal">
+      <%= message || 'Loading...' %>
+    </p>
+  </div>
+</div>
+<% } %>
+
+<%# Empty State Component %>
+<% if (typeof component !== 'undefined' && component === 'emptyState') { %>
+<div class="text-center py-12">
+  <div class="text-6xl mb-4"><%= icon || '📭' %></div>
+  <h3 class="text-xl font-bold text-primary mb-2">
+    <%= title || 'No Items Found' %>
+  </h3>
+  <p class="text-base-content/70 mb-6">
+    <%= message || 'There are no items to display at this time.' %>
+  </p>
+  <% if (typeof actionUrl !== 'undefined' || typeof actionOnclick !== 'undefined') { %>
+  <% if (actionUrl) { %>
+  <a href="<%= actionUrl %>" class="btn-monsterbox">
+    <%= actionIcon || '➕' %> <%= actionText || 'Add Item' %>
+  </a>
+  <% } else { %>
+  <button class="btn-monsterbox" onclick="<%= actionOnclick %>">
+    <%= actionIcon || '➕' %> <%= actionText || 'Add Item' %>
+  </button>
+  <% } %>
+  <% } %>
+</div>
+<% } %>

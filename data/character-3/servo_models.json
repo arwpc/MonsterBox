@@ -1,0 +1,148 @@
+[
+  {
+    "id": "1758764438741",
+    "name": "SG90 Micro Servo",
+    "description": "Popular 9g micro servo, 180° rotation, 1.2kg·cm torque",
+    "defaults": {
+      "pwmFrequency": 50,
+      "minPulseWidth": 1000,
+      "maxPulseWidth": 2000,
+      "centerPulseWidth": 1500,
+      "minAngle": 0,
+      "maxAngle": 180,
+      "centerAngle": 90
+    },
+    "controlsSchema": {
+      "type": "standard",
+      "feedback": false,
+      "continuous": false
+    },
+    "meta": {
+      "notes": "Most common hobbyist servo. 4.8-6V operating voltage. 20ms PWM period (50Hz).",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "1.2kg·cm",
+      "speed": "0.1s/60°",
+      "voltage": "4.8-6V",
+      "weight": "9g"
+    }
+  },
+  {
+    "id": "1758764456514",
+    "name": "MG996R High Torque Servo",
+    "description": "Metal gear servo, 180° rotation, 9.4kg·cm torque",
+    "defaults": {
+      "pwmFrequency": 50,
+      "minPulseWidth": 1000,
+      "maxPulseWidth": 2000,
+      "centerPulseWidth": 1500,
+      "minAngle": 0,
+      "maxAngle": 180,
+      "centerAngle": 90
+    },
+    "controlsSchema": {
+      "type": "standard",
+      "feedback": false,
+      "continuous": false
+    },
+    "meta": {
+      "notes": "High torque metal gear servo for heavy-duty applications. 4.8-7.2V operating voltage.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "9.4kg·cm",
+      "speed": "0.2s/60°",
+      "voltage": "4.8-7.2V",
+      "weight": "55g"
+    }
+  },
+  {
+    "id": "1758764471264",
+    "name": "SG90 Continuous Rotation",
+    "description": "Continuous rotation version of SG90, 360° rotation",
+    "defaults": {
+      "pwmFrequency": 50,
+      "minPulseWidth": 1000,
+      "maxPulseWidth": 2000,
+      "centerPulseWidth": 1500,
+      "stopPulseWidth": 1500,
+      "minAngle": -180,
+      "maxAngle": 180,
+      "centerAngle": 0
+    },
+    "controlsSchema": {
+      "type": "continuous",
+      "feedback": false,
+      "continuous": true
+    },
+    "meta": {
+      "notes": "Continuous rotation servo. 1500μs = stop, <1500μs = CCW, >1500μs = CW",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "1.2kg·cm",
+      "speed": "0.1s/60°",
+      "voltage": "4.8-6V",
+      "weight": "9g"
+    }
+  },
+  {
+    "id": "1758764485589",
+    "name": "HS-422 Standard Servo",
+    "description": "Hitec standard servo, 180° rotation, 3.3kg·cm torque",
+    "defaults": {
+      "pwmFrequency": 50,
+      "minPulseWidth": 900,
+      "maxPulseWidth": 2100,
+      "centerPulseWidth": 1500,
+      "minAngle": 0,
+      "maxAngle": 180,
+      "centerAngle": 90
+    },
+    "controlsSchema": {
+      "type": "standard",
+      "feedback": false,
+      "continuous": false
+    },
+    "meta": {
+      "notes": "Reliable standard servo from Hitec. Slightly wider pulse range than SG90.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "3.3kg·cm",
+      "speed": "0.21s/60°",
+      "voltage": "4.8-6V",
+      "weight": "45g"
+    }
+  },
+  {
+    "id": "1758764499517",
+    "name": "DS3218MG Digital Servo",
+    "description": "High torque digital servo with metal gears, 180° rotation",
+    "defaults": {
+      "pwmFrequency": 50,
+      "minPulseWidth": 500,
+      "maxPulseWidth": 2500,
+      "centerPulseWidth": 1500,
+      "minAngle": 0,
+      "maxAngle": 180,
+      "centerAngle": 90
+    },
+    "controlsSchema": {
+      "type": "standard",
+      "feedback": false,
+      "continuous": false
+    },
+    "meta": {
+      "notes": "High-end digital servo with wide pulse range and high torque. Great for animatronics.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "20kg·cm",
+      "speed": "0.16s/60°",
+      "voltage": "4.8-6.8V",
+      "weight": "60g"
+    }
+  }
+]

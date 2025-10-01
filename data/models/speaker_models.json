@@ -1,0 +1,14 @@
+[
+  {
+    "id": "default_speaker",
+    "name": "Default Speaker Model",
+    "description": "Default output settings for character speakers",
+    "defaults": {
+      "outputDevice": "default",
+      "volume": 80,
+      "format": "mp3"
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]

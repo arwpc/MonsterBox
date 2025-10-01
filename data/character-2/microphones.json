@@ -1,0 +1,31 @@
+[
+  {
+    "id": 2,
+    "name": "Character 2 Microphone",
+    "deviceId": "default",
+    "type": "system",
+    "status": "assigned",
+    "characterId": 2,
+    "config": {
+      "enabled": true,
+      "sensitivity": 1.0,
+      "sampleRate": 16000,
+      "channels": 1,
+      "echoCancellation": true,
+      "noiseSuppression": true,
+      "autoGainControl": true,
+      "voiceActivation": false,
+      "voiceActivationThreshold": 0.1,
+      "bufferSize": 1024,
+      "format": "float32"
+    },
+    "capabilities": {
+      "sttIntegration": true,
+      "audioStreaming": true,
+      "realTimeProcessing": true,
+      "voiceActivationDetection": true
+    },
+    "created": "2025-09-23T04:46:00.000Z",
+    "lastModified": "2025-09-23T04:46:00.000Z"
+  }
+]

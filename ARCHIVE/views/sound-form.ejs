@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1 class="landing-title"><%- title %></h1>
+    </header>
+
+    <main>
+        <form action="<%- action %>" method="POST" enctype="multipart/form-data">
+            <% if (sound && sound.id) { %>
+                <input type="hidden" name="id" value="<%- sound.id %>">
+            <% } %>
+            
+            <div class="form-group">
+                <label for="characterIds">Characters:</label>
+                <select id="characterIds" name="characterIds" multiple required>
+                    <% characters.forEach(function(character) { %>
+                        <option value="<%- character.id %>" 
+                            <% if (sound && (
+                                (Array.isArray(sound.characterIds) && sound.characterIds.includes(character.id)) || 
+                                (sound.characterId !== undefined && sound.characterId === character.id)
+                            )) { %>
+                                selected
+                            <% } %>
+                        >
+                            <%- character.char_name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Sound Name:</label>
+                <input type="text" id="name" name="name" value="<%- sound ? sound.name : '' %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="sound_files">Sound File:</label>
+                <% if (sound && sound.filename) { %>
+                    <p>Current file: <%- sound.filename %></p>
+                    <div class="checkbox-label">
+                        <input type="radio" name="file_option" value="keep" checked> Keep current file
+                    </div>
+                    <div class="checkbox-label">
+                        <input type="radio" name="file_option" value="replace"> Replace file
+                    </div>
+                    <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" style="display: none;">
+                <% } else { %>
+                    <input type="file" id="sound_files" name="sound_files" accept=".mp3,.wav" required>
+                <% } %>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Sound</button>
+                <a href="/api/voice/configure?characterId=<%- characters[0].id %>" class="button primary-btn">Configure Voice</a>
+                <a href="/sounds" class="button primary-btn">Back to Sounds</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        // Show/hide file input based on radio button selection
+        const fileOptions = document.getElementsByName('file_option');
+        const fileInput = document.getElementById('sound_files');
+
+        if (fileOptions.length > 0) {
+            fileOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.value === 'replace') {
+                        fileInput.style.display = 'block';
+                        fileInput.required = true;
+                    } else {
+                        fileInput.style.display = 'none';
+                        fileInput.required = false;
+                    }
+                });
+            });
+        }
+
+        // Update Configure Voice button when character selection changes
+        const characterSelect = document.getElementById('characterIds');
+        const configureVoiceBtn = document.querySelector('a[href^="/api/voice/configure"]');
+        
+        if (characterSelect && configureVoiceBtn) {
+            characterSelect.addEventListener('change', function() {
+                if (this.selectedOptions.length > 0) {
+                    const selectedCharacterId = this.selectedOptions[0].value;
+                    configureVoiceBtn.href = `/ai-management/tts?characterId=${selectedCharacterId}`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

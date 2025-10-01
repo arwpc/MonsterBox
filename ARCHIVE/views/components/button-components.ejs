@@ -1,0 +1,225 @@
+<%# MonsterBox UI Component Library - Button & Navigation Components %>
+
+<%# Primary Button Component %>
+<% if (typeof component !== 'undefined' && component === 'primaryButton') { %>
+<% if (href) { %>
+<a href="<%= href %>" class="btn-monsterbox <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>">
+  <%= icon || '' %> <%= text %>
+</a>
+<% } else { %>
+<button 
+  class="btn-monsterbox <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>" 
+  <%= onclick ? 'onclick="' + onclick + '"' : '' %>
+  <%= disabled ? 'disabled' : '' %>
+  <%= type ? 'type="' + type + '"' : '' %>
+>
+  <%= icon || '' %> <%= text %>
+</button>
+<% } %>
+<% } %>
+
+<%# Secondary Button Component %>
+<% if (typeof component !== 'undefined' && component === 'secondaryButton') { %>
+<% if (href) { %>
+<a href="<%= href %>" class="btn-secondary-monsterbox <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>">
+  <%= icon || '' %> <%= text %>
+</a>
+<% } else { %>
+<button 
+  class="btn-secondary-monsterbox <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>" 
+  <%= onclick ? 'onclick="' + onclick + '"' : '' %>
+  <%= disabled ? 'disabled' : '' %>
+  <%= type ? 'type="' + type + '"' : '' %>
+>
+  <%= icon || '' %> <%= text %>
+</button>
+<% } %>
+<% } %>
+
+<%# Danger Button Component %>
+<% if (typeof component !== 'undefined' && component === 'dangerButton') { %>
+<% if (href) { %>
+<a href="<%= href %>" class="btn btn-error <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>">
+  <%= icon || '' %> <%= text %>
+</a>
+<% } else { %>
+<button 
+  class="btn btn-error <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>" 
+  <%= onclick ? 'onclick="' + onclick + '"' : '' %>
+  <%= disabled ? 'disabled' : '' %>
+  <%= type ? 'type="' + type + '"' : '' %>
+>
+  <%= icon || '' %> <%= text %>
+</button>
+<% } %>
+<% } %>
+
+<%# Icon Button Component %>
+<% if (typeof component !== 'undefined' && component === 'iconButton') { %>
+<% if (href) { %>
+<a
+  href="<%= href %>"
+  class="btn btn-circle <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %> <%= disabled ? 'btn-disabled' : '' %>"
+  <%= tooltip ? 'title="' + tooltip + '"' : '' %>
+  style="border-radius: 50%; background-color: transparent; border: 1px solid var(--primary);"
+>
+  <%= icon %>
+</a>
+<% } else { %>
+<button
+  class="btn btn-circle <%= size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '' %>"
+  <%= onclick ? 'onclick="' + onclick + '"' : '' %>
+  <%= disabled ? 'disabled' : '' %>
+  <%= tooltip ? 'title="' + tooltip + '"' : '' %>
+  <%= type ? 'type="' + type + '"' : '' %>
+  style="border-radius: 50%; background-color: transparent; border: 1px solid var(--primary);"
+>
+  <%= icon %>
+</button>
+<% } %>
+<% } %>
+
+<%# Button Group Component %>
+<% if (typeof component !== 'undefined' && component === 'buttonGroup') { %>
+<div class="flex gap-2 <%= alignment === 'center' ? 'justify-center' : alignment === 'end' ? 'justify-end' : '' %>">
+  <% if (typeof buttons !== 'undefined' && Array.isArray(buttons)) { %>
+    <% buttons.forEach(function(button) { %>
+    <% if (button.href) { %>
+    <a 
+      href="<%= button.href %>" 
+      class="btn <%= button.class || 'btn-primary' %> <%= button.size === 'sm' ? 'btn-sm' : button.size === 'lg' ? 'btn-lg' : '' %> <%= button.disabled ? 'btn-disabled' : '' %>"
+    >
+      <%= button.icon || '' %> <%= button.text %>
+    </a>
+    <% } else { %>
+    <button 
+      class="btn <%= button.class || 'btn-primary' %> <%= button.size === 'sm' ? 'btn-sm' : button.size === 'lg' ? 'btn-lg' : '' %>" 
+      <%= button.onclick ? 'onclick="' + button.onclick + '"' : '' %>
+      <%= button.disabled ? 'disabled' : '' %>
+      <%= button.type ? 'type="' + button.type + '"' : '' %>
+    >
+      <%= button.icon || '' %> <%= button.text %>
+    </button>
+    <% } %>
+    <% }); %>
+  <% } %>
+</div>
+<% } %>
+
+<%# Vertical Breadcrumb Component %>
+<% if (typeof component !== 'undefined' && component === 'breadcrumb') { %>
+<div class="breadcrumb-vertical mb-6">
+  <% if (typeof items !== 'undefined' && Array.isArray(items)) { %>
+    <% items.forEach(function(item, index) { %>
+    <% if (index === items.length - 1 || !item.url) { %>
+      <span class="breadcrumb-item active">
+        <% if (item.icon) { %><%= item.icon %> <% } %><%= item.name %>
+      </span>
+    <% } else { %>
+      <a href="<%= item.url %>" class="breadcrumb-item">
+        <% if (item.icon) { %><%= item.icon %> <% } %><%= item.name %>
+      </a>
+    <% } %>
+    <% }); %>
+  <% } %>
+</div>
+<% } %>
+
+<%# Tab Navigation Component %>
+<% if (typeof component !== 'undefined' && component === 'tabNav') { %>
+<div class="tabs tabs-boxed mb-4 bg-base-200 p-4">
+  <% if (typeof tabs !== 'undefined' && Array.isArray(tabs)) { %>
+    <% tabs.forEach(function(tab) { %>
+    <a
+      class="tab <%= tab.active ? 'tab-active' : '' %>"
+      onclick="showTab('<%= tab.id %>')"
+      data-tab="<%= tab.id %>"
+    >
+      <%= tab.icon || '' %> <%= tab.label %>
+    </a>
+    <% }); %>
+  <% } %>
+</div>
+<% } %>
+
+<%# Action Menu Component %>
+<% if (typeof component !== 'undefined' && component === 'actionMenu') { %>
+<div class="dropdown dropdown-end">
+  <label tabindex="0" class="btn btn-circle btn-sm" style="background-color: transparent; border: 1px solid var(--primary);">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+    </svg>
+  </label>
+  <ul tabindex="0" class="dropdown-content z-50 menu px-2 py-2 shadow-lg bg-base-200 rounded-box w-52" style="border: 1px solid var(--primary);">
+    <% if (typeof items !== 'undefined' && Array.isArray(items)) { %>
+      <% items.forEach(function(item) { %>
+      <li>
+        <% if (item.href) { %>
+        <a href="<%= item.href %>" class="<%= item.class || '' %>">
+          <%= item.icon || '' %> <%= item.text %>
+        </a>
+        <% } else { %>
+        <a onclick="<%= item.onclick %>" class="<%= item.class || '' %>">
+          <%= item.icon || '' %> <%= item.text %>
+        </a>
+        <% } %>
+      </li>
+      <% }); %>
+    <% } %>
+  </ul>
+</div>
+<% } %>
+
+<%# Floating Action Button Component %>
+<% if (typeof component !== 'undefined' && component === 'fab') { %>
+<button
+  class="btn btn-circle btn-primary fixed z-50 shadow-lg <%=
+    position === 'bottom-left' ? 'bottom-6 left-6' :
+    position === 'top-right' ? 'top-20 right-6' :
+    position === 'top-left' ? 'top-20 left-6' :
+    'bottom-6 right-6'
+  %>"
+  <%= onclick ? 'onclick="' + onclick + '"' : '' %>
+  <%= tooltip ? 'title="' + tooltip + '"' : '' %>
+>
+  <%= icon || '➕' %>
+</button>
+<% } %>
+
+<%# Toggle Switch Component %>
+<% if (typeof component !== 'undefined' && component === 'toggle') { %>
+<div class="form-control">
+  <label class="label cursor-pointer justify-start gap-3">
+    <span class="label-text text-base-content">
+      <%= label %><%= required ? ' *' : '' %>
+    </span>
+    <input
+      type="checkbox"
+      id="<%= id %>"
+      name="<%= name || id %>"
+      class="toggle toggle-primary"
+      <%= checked ? 'checked' : '' %>
+      <%= disabled ? 'disabled' : '' %>
+      <%= onchange ? 'onchange="' + onchange + '"' : '' %>
+    >
+  </label>
+  <% if (typeof helpText !== 'undefined') { %>
+  <label class="label">
+    <span class="label-text-alt text-base-content/70"><%= helpText %></span>
+  </label>
+  <% } %>
+</div>
+<% } %>
+
+<%# Badge Component %>
+<% if (typeof component !== 'undefined' && component === 'badge') { %>
+<div class="badge <%=
+  type === 'success' ? 'badge-success' :
+  type === 'error' ? 'badge-error' :
+  type === 'warning' ? 'badge-warning' :
+  type === 'info' ? 'badge-info' :
+  'badge-primary'
+%> <%= size === 'sm' ? 'badge-sm' : size === 'lg' ? 'badge-lg' : '' %>">
+  <%= icon || '' %> <%= text %>
+</div>
+<% } %>

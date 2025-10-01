@@ -1,0 +1,524 @@
+/* Import Google Fonts for MonsterBox themes */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap');
+
+/* MonsterBox CSS Variables */
+:root {
+  --primary: #00ff00;
+  --primary-content: #000000;
+  --secondary: #ff00ff;
+  --secondary-content: #000000;
+  --accent: #00ffff;
+  --accent-content: #000000;
+  --base-100: #000000;
+  --base-200: #111111;
+  --base-300: #222222;
+  --base-content: #00ff00;
+  --error: #ff0040;
+  --error-content: #000000;
+  --success: #00ff00;
+  --success-content: #000000;
+  --warning: #ff8000;
+  --warning-content: #000000;
+  --info: #00ffff;
+  --info-content: #000000;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'VT323', 'Courier New', monospace;
+  background-color: var(--base-100);
+  color: var(--base-content);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Font Classes */
+.font-terminal {
+  font-family: 'VT323', 'Courier New', monospace;
+}
+
+.font-retro {
+  font-family: 'Press Start 2P', monospace;
+}
+
+.font-creepster {
+  font-family: 'Creepster', cursive;
+}
+
+/* Navigation Components */
+.nav-button-monsterbox {
+  display: inline-block;
+  padding: 12px 16px;
+  margin: 8px;
+  border: 1px solid var(--primary);
+  background-color: var(--base-100);
+  color: var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.nav-button-monsterbox:hover {
+  background-color: var(--primary);
+  color: var(--primary-content);
+  box-shadow: 0 4px 8px rgba(0, 255, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.nav-button-chatterpi {
+  background: linear-gradient(135deg, #4c1d95, #6b21a8);
+  border-color: var(--secondary);
+  color: var(--secondary);
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-button-chatterpi:hover {
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+  color: white;
+}
+
+.nav-button-ai {
+  background: linear-gradient(135deg, #1e3a8a, #1e40af);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav-button-ai:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+/* Form Components */
+.form-input-monsterbox {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--base-200);
+  border: 1px solid var(--primary);
+  color: var(--base-content);
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.form-input-monsterbox:focus {
+  box-shadow: 0 0 0 2px var(--primary);
+  border-color: transparent;
+}
+
+.form-select-monsterbox {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--base-200);
+  border: 1px solid var(--primary);
+  color: var(--base-content);
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.form-textarea-monsterbox {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--base-200);
+  border: 1px solid var(--primary);
+  color: var(--base-content);
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+}
+
+/* Button Components */
+.btn-monsterbox {
+  padding: 8px 16px;
+  background-color: var(--primary);
+  color: var(--primary-content);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-monsterbox:hover {
+  background-color: #00cc00;
+  box-shadow: 0 4px 8px rgba(0, 255, 0, 0.3);
+}
+
+.btn-monsterbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary-monsterbox {
+  background-color: var(--secondary);
+  color: var(--secondary-content);
+  border-color: var(--secondary);
+}
+
+.btn-secondary-monsterbox:hover {
+  background-color: #cc00cc;
+}
+
+.btn-accent-monsterbox {
+  background-color: var(--accent);
+  color: var(--accent-content);
+  border-color: var(--accent);
+}
+
+.btn-accent-monsterbox:hover {
+  background-color: #00cccc;
+}
+
+.btn-danger-monsterbox {
+  background-color: var(--error);
+  color: var(--error-content);
+  border-color: var(--error);
+}
+
+.btn-danger-monsterbox:hover {
+  background-color: #cc0033;
+}
+
+/* Card Components */
+.card-monsterbox {
+  background-color: var(--base-200);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card-monsterbox:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+}
+
+.card-header-monsterbox {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--primary);
+  padding-bottom: 8px;
+}
+
+/* Modal Components */
+.modal-monsterbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-content-monsterbox {
+  background-color: var(--base-100);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 672px;
+  width: 100%;
+  margin: 16px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Table Components */
+.table-monsterbox {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--primary);
+}
+
+.table-monsterbox th {
+  background-color: var(--primary);
+  color: var(--primary-content);
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  font-weight: bold;
+  text-align: left;
+}
+
+.table-monsterbox td {
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  color: var(--base-content);
+}
+
+.table-monsterbox tr:nth-child(even) {
+  background-color: var(--base-200);
+}
+
+.table-monsterbox tr:hover {
+  background-color: var(--base-300);
+}
+
+/* Status Components */
+.status-success {
+  background-color: var(--success);
+  color: var(--success-content);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-warning {
+  background-color: var(--warning);
+  color: var(--warning-content);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-error {
+  background-color: var(--error);
+  color: var(--error-content);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-info {
+  background-color: var(--info);
+  color: var(--info-content);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Loading Components */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 32px;
+  width: 32px;
+  border-bottom: 2px solid var(--primary);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Terminal Effects */
+.terminal-text {
+  font-family: 'VT323', 'Courier New', monospace;
+  color: var(--primary);
+}
+
+.retro-text {
+  font-family: 'Press Start 2P', monospace;
+  color: var(--primary);
+}
+
+.creepster-text {
+  font-family: 'Creepster', cursive;
+  color: var(--primary);
+}
+
+/* Utility Classes */
+.text-shadow-glow {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.bg-terminal {
+  background-color: #000000;
+  color: #00ff00;
+}
+
+.border-glow {
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Layout Components */
+.container-monsterbox {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .container-monsterbox {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-monsterbox {
+    padding: 0 32px;
+  }
+}
+
+.grid-monsterbox {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .grid-monsterbox {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-monsterbox {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Responsive Navigation */
+.nav-mobile {
+  display: block;
+}
+
+.nav-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .nav-mobile {
+    display: none;
+  }
+
+  .nav-desktop {
+    display: flex;
+  }
+}
+
+/* Scrollbar Styling */
+.scrollbar-monsterbox {
+  scrollbar-width: thin;
+  scrollbar-color: #00ff00 #000000;
+}
+
+.scrollbar-monsterbox::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-monsterbox::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+.scrollbar-monsterbox::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border-radius: 4px;
+}
+
+.scrollbar-monsterbox::-webkit-scrollbar-thumb:hover {
+  background: #00cc00;
+}
+
+/* Custom Animations */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 10px currentColor; }
+  50% { text-shadow: 0 0 20px currentColor; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-flicker {
+  animation: flicker 2s infinite;
+}
+
+.animate-glow {
+  animation: glow 2s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite;
+}
+
+/* Glow Effects */
+.glow-text {
+  text-shadow: 0 0 10px currentColor;
+  animation: glow 2s infinite;
+}
+
+.glow-border {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Shadow Effects */
+.shadow-glow-sm {
+  box-shadow: 0 0 5px currentColor;
+}
+
+.shadow-glow-md {
+  box-shadow: 0 0 10px currentColor;
+}
+
+.shadow-glow-lg {
+  box-shadow: 0 0 15px currentColor;
+}
+
+.shadow-neon-purple {
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+}
+
+.shadow-neon-blue {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-terminal {
+  background: linear-gradient(135deg, #000000 0%, #001100 50%, #000000 100%);
+}
+
+.bg-gradient-neon {
+  background: linear-gradient(135deg, #004400 0%, #00ff00 50%, #004400 100%);
+}
+
+/* Text Glow Utilities */
+.text-glow {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.text-glow-sm {
+  text-shadow: 0 0 5px currentColor;
+}
+
+.text-glow-lg {
+  text-shadow: 0 0 15px currentColor;
+}

@@ -1,0 +1,193 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-09-08T23:12:57.294Z",
+  "characters": {
+    "1": {
+      "characterId": 1,
+      "created": "2025-06-21T17:04:23.217Z",
+      "microphone": {
+        "enabled": true,
+        "assignedMicrophoneId": 1,
+        "sensitivity": 1.5,
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
+      },
+      "lastModified": "2025-09-06T03:48:34.259Z",
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.7,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.5,
+        "silenceDuration": 700,
+        "prefixPadding": 300
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
+      "speaker": {
+        "defaultSpeakerId": null,
+        "outputDevice": "default",
+        "volume": 85,
+        "enabled": true
+      },
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "microphoneSTTConfigs": {}
+    },
+    "2": {
+      "characterId": 2,
+      "created": "2025-08-30T20:24:02.101Z",
+      "microphone": {
+        "enabled": true,
+        "sensitivity": 1,
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
+      },
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.4,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.8,
+        "silenceDuration": 450,
+        "prefixPadding": 250
+      },
+      "microphoneSTTConfigs": {},
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
+      "lastModified": "2025-09-06T00:43:31.688Z",
+      "speaker": {
+        "defaultSpeakerId": null,
+        "outputDevice": "default",
+        "volume": 80,
+        "enabled": true
+      }
+    },
+    "4": {
+      "characterId": 4,
+      "created": "2025-08-27T20:00:48.527Z",
+      "microphone": {
+        "enabled": true,
+        "sensitivity": 1,
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "voiceActivation": false,
+        "voiceActivationThreshold": 0.1
+      },
+      "stt": {
+        "enabled": true,
+        "language": "en",
+        "confidenceThreshold": 0.7,
+        "realTimeProcessing": true,
+        "provider": "elevenlabs",
+        "vadThreshold": 0.5,
+        "silenceDuration": 700,
+        "prefixPadding": 300
+      },
+      "microphoneSTTConfigs": {
+        "24": {
+          "language": "en",
+          "confidenceThreshold": 0.7,
+          "realTimeProcessing": true,
+          "vadThreshold": 0.5,
+          "silenceDuration": 200,
+          "prefixPadding": 300,
+          "provider": "elevenlabs",
+          "lastModified": "2025-08-27T20:00:48.527Z"
+        },
+        "33": {
+          "language": "en",
+          "confidenceThreshold": 0.6,
+          "realTimeProcessing": true,
+          "vadThreshold": 0.5,
+          "silenceDuration": 300,
+          "prefixPadding": 300,
+          "provider": "elevenlabs",
+          "lastModified": "2025-09-02T23:40:16.933Z"
+        }
+      },
+      "jawAnimation": {
+        "enabled": true,
+        "sensitivity": 1.2,
+        "responseCurve": "exponential",
+        "attackTime": 0.03,
+        "releaseTime": 0.1,
+        "minPosition": 45,
+        "maxPosition": 10,
+        "volumeThreshold": 0.005,
+        "smoothingFactor": 0.7
+      },
+      "audioProcessing": {
+        "sampleRate": 16000,
+        "channels": 1,
+        "bufferSize": 1024,
+        "processingDelay": 100,
+        "enableRealTimeEffects": false
+      },
+      "characterSpecific": {
+        "voiceProfile": "default",
+        "emotionalResponse": true,
+        "contextAwareness": true,
+        "personalityAdjustments": true
+      },
+      "lastModified": "2025-09-08T23:12:57.293Z",
+      "speaker": {
+        "defaultSpeakerId": "66",
+        "outputDevice": "default",
+        "volume": 80,
+        "enabled": true
+      }
+    }
+  }
+}

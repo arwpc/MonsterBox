@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'MonsterBox Control Panel' %></title>
+
+    <!-- Google Fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap">
+
+    <!-- Original MonsterBox CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/main.css">
+
+    <!-- External JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+
+<body>
+    <!-- Universal MonsterBox Header -->
+    <%- include('components/universal-header') %>
+
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="header">
+            <p style="text-align: center; margin: 30px 0; font-size: 1.2em; color: #cccccc;">
+                🎃 Welcome to the MonsterBox Control System 🎃<br>
+                <span style="color: #00ff00;">Choose a character above and navigate to get started!</span>
+            </p>
+        </div>
+
+
+
+        <!-- Navigation Grid -->
+        <div class="nav-grid">
+            <!-- Character Management -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🎭 Character Management</h3>
+                <p>Create, edit, and manage your animatronic characters.</p>
+                <div class="button-group">
+                    <a href="/characters" class="button">Manage Characters</a>
+                </div>
+            </div>
+
+            <!-- Hardware Control -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🔧 Hardware Control</h3>
+                <p>Monitor and control your hardware components.</p>
+                <div class="button-group">
+                    <a href="/parts" class="button">Hardware Parts</a>
+                </div>
+            </div>
+
+            <!-- Security & Keys -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🔐 Security & Keys</h3>
+                <p>Manage SSH keys and secure connections to animatronics.</p>
+                <div class="button-group">
+                    <a href="/key-management" class="button">🔑 Key Management</a>
+                </div>
+            </div>
+
+            <!-- AI Systems -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🧠 AI Systems</h3>
+                <p>Configure and manage AI-powered interactions.</p>
+                <div class="button-group">
+                    <a href="/ai-management/enhanced-test-chat" class="button">Enhanced Voice Chat</a>
+                    <a href="/ai-management" class="button">AI Management</a>
+                </div>
+            </div>
+
+            <!-- Super Powers -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🧬 Super Powers</h3>
+                <p>High-level capabilities like Jaw Animation built on existing parts.</p>
+                <div class="button-group">
+                    <a href="/super-powers" class="button">Open Super Powers</a>
+                </div>
+            </div>
+
+            <!-- Media & Content -->
+            <div class="nav-section">
+                <h3 class="font-creepster">🎬 Media & Content</h3>
+                <p>Manage sounds, videos, and scenes for your shows.</p>
+                <div class="button-group">
+                    <a href="/sounds" class="button">Sounds</a>
+                    <a href="/camera" class="button">Video</a>
+                </div>
+            </div>
+
+            <!-- Live Animatronics -->
+            <div class="nav-section">
+                <h3 class="font-creepster">⚡ Live Animatronics</h3>
+                <p>Live performance control and scene management.</p>
+                <div class="button-group">
+                    <a href="/active-mode" class="button">Active Mode</a>
+                    <a href="/scenes" class="button" onclick="return openScenes()">Scenes</a>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="nav-section">
+                <h3 class="font-creepster">⚙️ Configuration</h3>
+                <p>System settings and personalization options.</p>
+                <div class="button-group">
+                    <a href="/configuration/services-monitor" class="button">📊 Services</a>
+                    <a href="/configuration" class="button">RPi Configuration</a>
+                    <a href="/ai-config" class="button">AI Configuration</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="status-section">
+            <h3 class="font-creepster">📊 System Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <strong>Characters:</strong> <%= characters ? characters.length : 0 %>
+                </div>
+                <div class="status-item">
+                    <strong>System:</strong> Online
+                </div>
+                <div class="status-item">
+                    <strong>Theme:</strong> MonsterBox
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to open scenes with current character from universal header
+        function openScenes() {
+            const selectedCharacter = sessionStorage.getItem('selectedCharacterId') ||
+                                    localStorage.getItem('selectedCharacterId');
+
+            if (selectedCharacter) {
+                window.location.href = `/scenes?characterId=${selectedCharacter}`;
+                return false;
+            } else {
+                alert('Please select a character from the header first before viewing scenes.');
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "pir_generic",
+    "name": "Generic PIR Motion Sensor",
+    "description": "Passive infrared motion sensor",
+    "defaults": { "sensitivity": 50, "retriggerMs": 5000 },
+    "controlsSchema": {},
+    "meta": { "manufacturer": "Generic" }
+  }
+]

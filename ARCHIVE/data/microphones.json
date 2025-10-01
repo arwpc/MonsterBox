@@ -1,0 +1,89 @@
+[
+  {
+    "id": 1,
+    "name": "Default System Microphone",
+    "deviceId": "default",
+    "type": "system",
+    "status": "assigned",
+    "characterId": 1,
+    "config": {
+      "enabled": true,
+      "sensitivity": 1.5,
+      "sampleRate": 16000,
+      "channels": 1,
+      "echoCancellation": true,
+      "noiseSuppression": true,
+      "autoGainControl": true,
+      "voiceActivation": false,
+      "voiceActivationThreshold": 0.1,
+      "bufferSize": 1024,
+      "format": "float32"
+    },
+    "capabilities": {
+      "sttIntegration": true,
+      "audioStreaming": true,
+      "realTimeProcessing": true,
+      "voiceActivationDetection": true
+    },
+    "created": "2025-06-21T00:00:00.000Z",
+    "lastModified": "2025-06-21T17:19:29.516Z"
+  },
+  {
+    "id": 2,
+    "name": "Test Microphone",
+    "deviceId": "test_device",
+    "type": "usb",
+    "status": "available",
+    "characterId": null,
+    "config": {
+      "enabled": true,
+      "sensitivity": 1,
+      "sampleRate": 16000,
+      "channels": 1,
+      "echoCancellation": true,
+      "noiseSuppression": true,
+      "autoGainControl": true,
+      "voiceActivation": false,
+      "voiceActivationThreshold": 0.1,
+      "bufferSize": 1024,
+      "format": "float32"
+    },
+    "capabilities": {
+      "sttIntegration": true,
+      "audioStreaming": true,
+      "realTimeProcessing": true,
+      "voiceActivationDetection": true
+    },
+    "created": "2025-06-21T17:04:23.132Z",
+    "lastModified": "2025-06-21T17:04:23.132Z"
+  },
+  {
+    "id": 3,
+    "name": "Test Microphone",
+    "deviceId": "test_device",
+    "type": "usb",
+    "status": "available",
+    "characterId": null,
+    "config": {
+      "enabled": true,
+      "sensitivity": 1,
+      "sampleRate": 16000,
+      "channels": 1,
+      "echoCancellation": true,
+      "noiseSuppression": true,
+      "autoGainControl": true,
+      "voiceActivation": false,
+      "voiceActivationThreshold": 0.1,
+      "bufferSize": 1024,
+      "format": "float32"
+    },
+    "capabilities": {
+      "sttIntegration": true,
+      "audioStreaming": true,
+      "realTimeProcessing": true,
+      "voiceActivationDetection": true
+    },
+    "created": "2025-06-21T17:19:29.413Z",
+    "lastModified": "2025-06-21T17:19:29.413Z"
+  }
+]

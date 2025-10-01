@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "name": "Groundbreaker Full Scare",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "audio",
+        "audioId": "ba5adb09-7e25-49bd-80d8-12bb9aff1f35"
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      }
+    ],
+    "created": "2025-09-28T02:21:45.821Z",
+    "updated": "2025-09-28T02:22:42.392Z"
+  },
+  {
+    "id": 2,
+    "name": "Groundbreaker Quick Scare",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "pose",
+        "poseId": 3,
+        "concurrent": true
+      },
+      {
+        "type": "audio",
+        "file": "data/audio-library/files/cc4b53ba-cf66-4f86-9a48-1e2a88454a77.mp3"
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      }
+    ],
+    "created": "2025-09-28T02:21:54.194Z"
+  },
+  {
+    "id": 3,
+    "name": "Adv Scene 1",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-09-28T23:26:09.093Z"
+  },
+  {
+    "id": 4,
+    "name": "Adv Scene 2",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-09-28T23:26:09.119Z"
+  }
+]

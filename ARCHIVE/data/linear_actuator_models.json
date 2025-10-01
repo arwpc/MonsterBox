@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1757818992065",
+    "name": "Actuator X",
+    "description": "Generic LA",
+    "defaults": {
+      "maxExtension": 100,
+      "maxRetraction": 0,
+      "speedDefault": 50
+    },
+    "controlsSchema": {},
+    "meta": {}
+  }
+]

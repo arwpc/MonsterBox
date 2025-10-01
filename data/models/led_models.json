@@ -1,0 +1,25 @@
+[
+  {
+    "id": "led_standard_5mm",
+    "name": "Standard 5mm LED",
+    "description": "Common 5mm LED, various colors, 20mA max current",
+    "defaults": {
+      "brightness": 50,
+      "pwmFrequency": 1000,
+      "maxCurrentMa": 20,
+      "forwardVoltageV": 2
+    },
+    "controlsSchema": {
+      "type": "pwm",
+      "dimmable": true
+    },
+    "meta": {
+      "manufacturer": "Generic",
+      "notes": "Use series resistor for current limiting.",
+      "controlType": [
+        "PWM",
+        "Digital"
+      ]
+    }
+  }
+]

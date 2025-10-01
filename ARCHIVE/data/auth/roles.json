@@ -1,0 +1,198 @@
+{
+  "roles": {
+    "admin": {
+      "id": "admin",
+      "name": "Administrator",
+      "description": "Full system access with administrative privileges",
+      "permissions": [
+        "view",
+        "control",
+        "configure",
+        "ssh",
+        "admin",
+        "user_management",
+        "system_management",
+        "audit_access",
+        "security_management"
+      ],
+      "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
+      "inherits": [],
+      "priority": 100
+    },
+    "operator": {
+      "id": "operator",
+      "name": "System Operator",
+      "description": "Standard operational access to animatronic systems",
+      "permissions": [
+        "view",
+        "control",
+        "configure"
+      ],
+      "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
+      "inherits": [],
+      "priority": 50
+    },
+    "maintenance": {
+      "id": "maintenance",
+      "name": "Maintenance Technician",
+      "description": "Maintenance and diagnostic access with SSH capabilities",
+      "permissions": [
+        "view",
+        "control",
+        "configure",
+        "ssh",
+        "diagnostics",
+        "maintenance"
+      ],
+      "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
+      "inherits": [],
+      "priority": 60
+    },
+    "viewer": {
+      "id": "viewer",
+      "name": "System Viewer",
+      "description": "Read-only access to system status and monitoring",
+      "permissions": [
+        "view"
+      ],
+      "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
+      "inherits": [],
+      "priority": 10
+    },
+    "orlok_operator": {
+      "id": "orlok_operator",
+      "name": "Orlok Operator",
+      "description": "Operational access limited to Orlok animatronic",
+      "permissions": [
+        "view",
+        "control",
+        "configure"
+      ],
+      "animatronicAccess": ["orlok"],
+      "inherits": [],
+      "priority": 30
+    },
+    "coffin_operator": {
+      "id": "coffin_operator",
+      "name": "Coffin Operator",
+      "description": "Operational access limited to Coffin animatronic",
+      "permissions": [
+        "view",
+        "control",
+        "configure"
+      ],
+      "animatronicAccess": ["coffin"],
+      "inherits": [],
+      "priority": 30
+    },
+    "pumpkinhead_operator": {
+      "id": "pumpkinhead_operator",
+      "name": "Pumpkinhead Operator",
+      "description": "Operational access limited to Pumpkinhead animatronic",
+      "permissions": [
+        "view",
+        "control",
+        "configure"
+      ],
+      "animatronicAccess": ["pumpkinhead"],
+      "inherits": [],
+      "priority": 30
+    }
+  },
+  "permissions": {
+    "view": {
+      "id": "view",
+      "name": "View Access",
+      "description": "Read-only access to system status and information",
+      "category": "basic"
+    },
+    "control": {
+      "id": "control",
+      "name": "Control Access",
+      "description": "Ability to control animatronic movements and actions",
+      "category": "operational"
+    },
+    "configure": {
+      "id": "configure",
+      "name": "Configuration Access",
+      "description": "Ability to modify system configurations and settings",
+      "category": "operational"
+    },
+    "ssh": {
+      "id": "ssh",
+      "name": "SSH Access",
+      "description": "Remote shell access to animatronic systems",
+      "category": "technical"
+    },
+    "admin": {
+      "id": "admin",
+      "name": "Administrative Access",
+      "description": "Full administrative privileges",
+      "category": "administrative"
+    },
+    "user_management": {
+      "id": "user_management",
+      "name": "User Management",
+      "description": "Ability to create, modify, and delete user accounts",
+      "category": "administrative"
+    },
+    "system_management": {
+      "id": "system_management",
+      "name": "System Management",
+      "description": "Ability to manage system-wide settings and configurations",
+      "category": "administrative"
+    },
+    "audit_access": {
+      "id": "audit_access",
+      "name": "Audit Log Access",
+      "description": "Access to security audit logs and reports",
+      "category": "security"
+    },
+    "security_management": {
+      "id": "security_management",
+      "name": "Security Management",
+      "description": "Ability to manage security settings and policies",
+      "category": "security"
+    },
+    "diagnostics": {
+      "id": "diagnostics",
+      "name": "Diagnostic Access",
+      "description": "Access to system diagnostics and troubleshooting tools",
+      "category": "technical"
+    },
+    "maintenance": {
+      "id": "maintenance",
+      "name": "Maintenance Access",
+      "description": "Access to maintenance functions and system updates",
+      "category": "technical"
+    }
+  },
+  "animatronics": {
+    "orlok": {
+      "id": "orlok",
+      "name": "Orlok",
+      "host": "192.168.8.120",
+      "description": "Orlok animatronic system",
+      "status": "operational"
+    },
+    "coffin": {
+      "id": "coffin",
+      "name": "Coffin",
+      "host": "192.168.8.140",
+      "description": "Coffin animatronic system",
+      "status": "operational"
+    },
+    "pumpkinhead": {
+      "id": "pumpkinhead",
+      "name": "Pumpkinhead",
+      "host": "192.168.1.101",
+      "description": "Pumpkinhead animatronic system",
+      "status": "maintenance"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-01-06T20:58:00.000Z",
+    "description": "Role-Based Access Control configuration for MonsterBox Secure Remote Access System"
+  }
+}

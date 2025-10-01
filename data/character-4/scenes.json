@@ -1,0 +1,132 @@
+[
+  {
+    "id": 1,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-23T22:59:48.472Z"
+  },
+  {
+    "id": 2,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-23T23:11:33.612Z"
+  },
+  {
+    "id": 3,
+    "name": "Queueable Scene",
+    "steps": [],
+    "created": "2025-09-23T23:25:49.997Z"
+  },
+  {
+    "id": 4,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-23T23:35:21.049Z"
+  },
+  {
+    "id": 5,
+    "name": "Queueable Scene",
+    "steps": [],
+    "created": "2025-09-23T23:35:21.100Z"
+  },
+  {
+    "id": 6,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-23T23:47:07.627Z"
+  },
+  {
+    "id": 7,
+    "name": "Queueable Scene",
+    "steps": [],
+    "created": "2025-09-23T23:47:07.677Z"
+  },
+  {
+    "id": 8,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 10
+      }
+    ],
+    "created": "2025-09-23T23:47:07.753Z"
+  },
+  {
+    "id": 9,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "Hello from dry run"
+      }
+    ],
+    "created": "2025-09-23T23:47:07.785Z"
+  },
+  {
+    "id": 10,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "sample.wav",
+        "volume": 50
+      }
+    ],
+    "created": "2025-09-23T23:47:07.806Z"
+  },
+  {
+    "id": 11,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "part",
+        "partId": "servo-1",
+        "action": "move",
+        "params": {
+          "position": 120
+        }
+      }
+    ],
+    "created": "2025-09-23T23:47:07.831Z"
+  },
+  {
+    "id": 12,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 5,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 5
+      }
+    ],
+    "created": "2025-09-23T23:47:07.856Z"
+  },
+  {
+    "id": 13,
+    "name": "UI Test Scene A",
+    "steps": [],
+    "created": "2025-09-24T00:19:19.308Z"
+  },
+  {
+    "id": 14,
+    "name": "UI Test Scene B",
+    "steps": [],
+    "created": "2025-09-24T00:19:19.391Z"
+  },
+  {
+    "id": 15,
+    "name": "UI Test Stream",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      }
+    ],
+    "created": "2025-09-24T00:19:19.445Z"
+  }
+]

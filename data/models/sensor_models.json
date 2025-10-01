@@ -1,0 +1,10 @@
+[
+  {
+    "id": "sensor_generic_digital",
+    "name": "Generic Digital Sensor",
+    "description": "Simple GPIO digital sensor",
+    "defaults": { "pollingMs": 200 },
+    "controlsSchema": {},
+    "meta": { "manufacturer": "Generic" }
+  }
+]

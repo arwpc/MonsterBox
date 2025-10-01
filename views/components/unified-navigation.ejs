@@ -1,0 +1,135 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-robot"></i> MonsterBox 4.0
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link <%= page === 'dashboard' ? 'active' : '' %>" href="/">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' || page === 'video-library' || page === 'goblin-management' ? 'active' : '' %>"
+                        href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear"></i> Setup
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <h6 class="dropdown-header">Hardware</h6>
+                        </li>
+
+                        <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration
+                                Mgmt</a></li>
+                        <li><a class="dropdown-item" href="/setup/webcam"><i class="bi bi-camera-video"></i> Webcam</a>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/models"><i class="bi bi-gear-wide-connected"></i>
+                                Models</a></li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">Media</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio
+                                Configuration</a></li>
+                        <li><a class="dropdown-item" href="/audio-library"><i class="bi bi-music-note-list"></i> Audio
+                                Library</a></li>
+                        <li><a class="dropdown-item" href="/video-library"><i class="bi bi-camera-video"></i> Video
+                                Library</a></li>
+                        <li><a class="dropdown-item" href="/goblin-management"><i class="bi bi-cpu"></i> Goblin
+                                Management</a></li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">AI Settings</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/ai-settings"><i class="bi bi-robot"></i> Overview</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/stt"><i class="bi bi-mic"></i>
+                                Speech-to-Text</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/agents"><i class="bi bi-people"></i> AI
+                                Agents</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/tts"><i class="bi bi-volume-up"></i>
+                                Text-to-Speech</a></li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">Character Management</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i>
+                                Characters</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/character-assignment"><i
+                                    class="bi bi-person-gear"></i> Character AI Assignment</a></li>
+                        <li><a class="dropdown-item" href="/setup/super-powers"><i class="bi bi-lightning"></i> Super
+                                Powers</a></li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <h6 class="dropdown-header">System</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle <%= page === 'conversation' || page === 'live' || page === 'poses' || page === 'scenes' ? 'active' : '' %>"
+                        href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-play-circle"></i> Activities
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/conversation"><i class="bi bi-chat-dots"></i> Conversation</a></li>
+                        <li><a class="dropdown-item" href="/live"><i class="bi bi-broadcast"></i> Live Mode</a></li>
+                        <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a>
+                        </li>
+                        <li><a class="dropdown-item" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter :
+                            ((typeof config !=='undefined' && config && config.selectedCharacter) ?
+                            config.selectedCharacter : null); %>
+                            <% var __curName=(typeof currentCharacterName !=='undefined' && currentCharacterName) ?
+                                currentCharacterName : null; %>
+                                <span id="charLabel" data-char-id="<%= __cur || '' %>">
+                                    <% if (__curName) { %>
+                                        <%= __curName %>
+                                            <% } else if (__cur) { %>Character <%= __cur %>
+                                                    <% } else { %>No Character<% } %>
+                                </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" id="charMenu">
+                        <li>
+                            <h6 class="dropdown-header">Character Selection</h6>
+                        </li>
+                        <li class="px-3 py-2 text-muted" id="charLoading">Loading...</li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Manage
+                                Characters</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

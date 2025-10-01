@@ -1,0 +1,15 @@
+[
+  {
+    "id": "1",
+    "name": "Default Wiper Motor",
+    "type": "motor",
+    "leftEnablePin": 17,
+    "rightEnablePin": 27,
+    "pwmPin": 18,
+    "description": "BTS7960-driven 12V wiper motor",
+    "config": { "modelId": "default_wiper_motor_bts7960" },
+    "created": "2025-09-30T00:00:00.000Z",
+    "enabled": true,
+    "maxDuration": 10000
+  }
+]

@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Monitor - MonsterBox</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+    <style>
+        .fleet-monitor {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .fleet-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .fleet-stat-card {
+            background: linear-gradient(135deg, #001100, #002200);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .fleet-stat-card h3 {
+            color: #00ff00;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            text-transform: uppercase;
+        }
+
+        .fleet-stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 10px 0;
+        }
+
+        .fleet-stat-label {
+            color: #cccccc;
+            font-size: 0.9em;
+        }
+        .info-section {
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h2 {
+            margin: 0 0 10px 0;
+            color: #00ff00;
+            font-size: 1.3em;
+        }
+
+        .info-section p {
+            margin: 0;
+            color: #cccccc;
+            line-height: 1.4;
+        }
+
+        .animatronics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .animatronic-card {
+            background: linear-gradient(135deg, #000800, #001800);
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .animatronic-card:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .animatronic-card.online {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .animatronic-card.offline {
+            border-color: #ff4444;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+            opacity: 0.7;
+        }
+
+        .animatronic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .animatronic-name {
+            color: #00ff00;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .animatronic-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-online {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+        .status-offline {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+        }
+
+        .animatronic-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .info-label {
+            color: #cccccc;
+            font-size: 0.9em;
+        }
+
+        .service-status-bar {
+            background: #001100;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .service-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .service-count {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .service-indicators {
+            display: flex;
+            gap: 4px;
+        }
+
+        .service-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .service-dot.active {
+            background: #00ff00;
+            box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+        }
+
+        .service-dot.error {
+            background: #ff4444;
+            box-shadow: 0 0 4px rgba(255, 68, 68, 0.6);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #00ff00;
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #001100, #002200);
+            margin: 5% auto;
+            padding: 0;
+            border: 2px solid #00ff00;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #00ff00;
+        }
+
+        .modal-header h2 {
+            color: #00ff00;
+            margin: 0;
+        }
+
+        .close {
+            color: #ff4444;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ff6666;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .detail-section h3 {
+            color: #00ff00;
+            margin: 0 0 15px 0;
+            font-size: 1.2em;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: rgba(0, 255, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+        }
+
+        .clickable-part {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clickable-part:hover {
+            background: rgba(0, 255, 0, 0.15);
+            border-color: rgba(0, 255, 0, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.2);
+        }
+
+        .edit-icon {
+            float: right;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .clickable-part:hover .edit-icon {
+            opacity: 1;
+        }
+
+        .detail-label {
+            color: #cccccc;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .character-card:hover {
+            background: #002200;
+            border-color: #00ff88;
+            transform: translateY(-2px);
+        }
+
+        .character-card.active {
+            background: #003300;
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .character-name {
+            color: #00ff00;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .character-status {
+            color: #888888;
+            font-size: 0.9em;
+        }
+
+        .services-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .services-section.active {
+            display: block;
+        }
+
+        .service-card {
+            background: #001100;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            background: #002200;
+            border-color: #00ff88;
+        }
+
+        .service-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .service-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .service-name {
+            color: #00ff00;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .status-online {
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .status-offline {
+            background: #ff0000;
+            box-shadow: 0 0 8px #ff0000;
+        }
+
+        .status-unknown {
+            background: #888888;
+            box-shadow: 0 0 8px #888888;
+        }
+
+        .status-checking {
+            background: #ffff00;
+            box-shadow: 0 0 8px #ffff00;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .service-details {
+            color: #888888;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+
+        .activity-log {
+            margin-top: 30px;
+            background: #000800;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .log-container {
+            background: #000000;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-info { color: #00ff00; }
+        .log-warning { color: #ffff00; }
+        .log-error { color: #ff0000; }
+        .log-success { color: #00ff88; }
+
+        .info-section {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .info-section h2 {
+            color: #00ff00;
+            font-family: 'Creepster', cursive;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .info-section p {
+            color: #cccccc;
+            font-size: 1.1em;
+            margin: 0;
+        }
+
+        .character-selector {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .character-selector h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .back-button {
+            background: #001100;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+        }
+
+        .back-button:hover {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .connection-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            background: #000800;
+            border: 1px solid #00aa00;
+            border-radius: 8px;
+        }
+
+        .connection-btn {
+            background: #001100;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+            min-width: 120px;
+        }
+
+        .connection-btn:hover {
+            background: #00ff00;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+        }
+
+        .connection-btn:disabled {
+            background: #333333;
+            border-color: #666666;
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .connect-btn {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .disconnect-btn {
+            border-color: #ff6666;
+            color: #ff6666;
+        }
+
+        .disconnect-btn:hover {
+            background: #ff6666;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(255, 102, 102, 0.4);
+        }
+
+        .connection-status {
+            flex: 1;
+            text-align: right;
+            color: #cccccc;
+            font-family: 'VT323', monospace;
+            font-size: 1.1em;
+        }
+
+        h1, h2, h3 {
+            color: #00ff00;
+        }
+
+        h1 {
+            font-family: 'Creepster', cursive;
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px #00ff00;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .monitor-container {
+                padding: 10px;
+            }
+
+            .character-grid, .services-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-section h2 {
+                font-size: 1.5em;
+            }
+
+            .log-container {
+                height: 200px;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 255, 0, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ff00;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Compact Header Styles */
+        .compact-header {
+            background: #000000;
+            border-bottom: 2px solid #00ff00;
+            padding: 15px 20px;
+            margin: -20px -20px 20px -20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-family: 'Creepster', cursive;
+            font-size: 2em;
+            margin: 0;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .breadcrumb-vertical {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .breadcrumb-item {
+            color: #00ffff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .breadcrumb-item:hover {
+            color: #ffffff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .breadcrumb-item.active {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .breadcrumb-item:not(.active):after {
+            content: ' - ';
+            color: #666666;
+            margin-left: 4px;
+        }
+
+        /* Info Section Styling */
+        .info-section {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .info-section h2 {
+            color: #00ff00;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .info-section p {
+            color: #cccccc;
+            margin: 0;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <%- include('components/universal-header') %>
+    <header class="compact-header">
+        <div class="header-content">
+            <h1 class="page-title">🎭 Fleet Monitor</h1>
+            <div class="breadcrumb-vertical">
+                <a href="/" class="breadcrumb-item">🏠 Home</a>
+                <span class="breadcrumb-item active">⚙️ Configuration</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="fleet-monitor">
+        <div class="info-section">
+            <h2>🎭 Fleet Monitor</h2>
+            <p>Real-time monitoring of all MonsterBox animatronic systems across the network</p>
+        </div>
+
+        <!-- Fleet Overview Stats -->
+        <div class="fleet-overview">
+            <div class="fleet-stat-card">
+                <h3>🎭 Total Animatronics</h3>
+                <div class="fleet-stat-value" id="totalAnimatronics">-</div>
+                <div class="fleet-stat-label">Managed Characters</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>✅ Online</h3>
+                <div class="fleet-stat-value" id="onlineCount">-</div>
+                <div class="fleet-stat-label">Active Systems</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>🔧 Total Services</h3>
+                <div class="fleet-stat-value" id="totalServices">-</div>
+                <div class="fleet-stat-label">Running Services</div>
+            </div>
+            <div class="fleet-stat-card">
+                <h3>⚡ System Health</h3>
+                <div class="fleet-stat-value" id="systemHealth">-</div>
+                <div class="fleet-stat-label">Overall Status</div>
+            </div>
+        </div>
+
+        <!-- Animatronics Grid -->
+        <div class="section-header">
+            <h2>🎭 Animatronic Fleet Status</h2>
+            <button id="refreshAllBtn" class="connection-btn">🔄 Refresh All</button>
+        </div>
+
+        <div class="animatronics-grid" id="animatronicsGrid">
+            <!-- Animatronic cards will be loaded here -->
+        </div>
+
+        <!-- Character Detail Modal -->
+        <div id="characterModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalCharacterName">Character Details</h2>
+                    <span class="close" id="closeModal">&times;</span>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Character details will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-log">
+            <h3>📊 Fleet Activity Log</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">Fleet monitor initialized...</div>
+            </div>
+        </div>
+
+        <a href="/configuration" class="back-button">← Back to Configuration</a>
+    </main>
+
+    <script>
+        // Cache buster: <%= Date.now() %>
+        class FleetMonitor {
+            constructor() {
+                this.animatronics = [];
+                this.fleetStats = {
+                    total: 0,
+                    online: 0,
+                    totalServices: 0,
+                    systemHealth: 'Unknown'
+                };
+                this.maxLogEntries = 100;
+                this.pollingInterval = null;
+                this.selectedCharacter = null;
+                this.isConnected = false;
+
+                this.init().catch(error => {
+                    console.error('Failed to initialize fleet monitor:', error);
+                    this.log(`Initialization error: ${error.message}`, 'error');
+                });
+            }
+
+            async init() {
+                this.log('Fleet monitor initialized...', 'info');
+                await this.loadAnimatronics();
+                this.setupEventListeners();
+                this.startFleetMonitoring();
+
+                // Initial status update
+                setTimeout(() => {
+                    this.updateFleetStats();
+                }, 1000);
+            }
+
+            startFleetMonitoring() {
+                // Refresh fleet status every 15 seconds
+                this.pollingInterval = setInterval(async () => {
+                    try {
+                        await this.refreshFleetStatus();
+                    } catch (error) {
+                        console.error('Error refreshing fleet status:', error);
+                    }
+                }, 15000);
+
+                this.log('Started fleet monitoring (every 15 seconds)', 'info');
+            }
+
+            async loadAnimatronics() {
+                try {
+                    this.log('Loading animatronic fleet data...', 'info');
+
+                    // Load characters from API
+                    const response = await fetch('/api/characters');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const characters = await response.json();
+                    this.log(`Found ${characters.length} characters in database`, 'info');
+
+                    // Create animatronic objects with network info
+                    this.animatronics = characters.map(character => {
+                        const animatronic = {
+                            id: character.id,
+                            name: character.char_name || character.name, // Use char_name from character data
+                            rpi_config: character.animatronic?.rpi_config || null,
+                            status: 'checking',
+                            services: [],
+                            parts: character.animatronic?.animatronic_parts || character.parts || [],
+                            lastSeen: null,
+                            responseTime: null,
+                            isCurrentMachine: this.isCurrentMachine(character.char_name || character.name),
+                            characterData: character // Store full character data for reference
+                        };
+
+                        console.log(`🎭 Loading character: ${animatronic.name}`, {
+                            hasRpiConfig: !!animatronic.rpi_config,
+                            rpiHost: animatronic.rpi_config?.host,
+                            animatronicEnabled: character.animatronic?.enabled
+                        });
+
+                        // Set hostname and baseUrl after the object is created
+                        animatronic.hostname = this.getHostnameForCharacter(animatronic.name, character);
+                        animatronic.baseUrl = this.getBaseUrlForCharacter(animatronic.name, character);
+
+                        // Initialize parts from character data
+                        animatronic.parts = this.getCharacterParts(animatronic);
+
+                        return animatronic;
+                    });
+
+                    // Start checking status for each animatronic
+                    await this.refreshFleetStatus();
+                    this.renderAnimatronicsGrid();
+
+                } catch (error) {
+                    this.log(`Failed to load animatronics: ${error.message}`, 'error');
+                    this.animatronics = [];
+                }
+            }
+
+            getHostnameForCharacter(characterName, characterData = null) {
+                // Check if this is the current machine
+                const currentHostname = window.location.hostname;
+
+                if (characterName === 'Skulltalker' && (currentHostname.includes('skulltalker') || currentHostname === 'localhost')) {
+                    return currentHostname; // Use current hostname
+                }
+
+                // Use provided character data or find it
+                const character = characterData || this.animatronics.find(a => a.name === characterName);
+                if (character && character.rpi_config && character.rpi_config.host) {
+                    console.log(`🔍 Using rpi_config.host for ${characterName}: ${character.rpi_config.host}`);
+                    return character.rpi_config.host;
+                }
+
+                // Fallback to IP addresses from character data, not domain names
+                // These should match the character data in characters.json
+                const ipMappings = {
+                    'Orlok': '192.168.8.120',
+                    'Coffin Breaker': '192.168.8.140',
+                    'PumpkinHead': '192.168.8.150',
+                    'Skulltalker': currentHostname
+                };
+
+                const fallbackHost = ipMappings[characterName] || currentHostname;
+                console.log(`⚠️ Using fallback host for ${characterName}: ${fallbackHost} (no rpi_config found)`);
+                return fallbackHost;
+            }
+
+            getBaseUrlForCharacter(characterName, characterData = null) {
+                const hostname = this.getHostnameForCharacter(characterName, characterData);
+
+                // If this is the current machine, use relative URL
+                if (hostname === window.location.hostname || hostname === 'localhost') {
+                    return `${window.location.protocol}//${window.location.host}`;
+                }
+
+                return `https://${hostname}:8080`;
+            }
+
+            isCurrentMachine(characterName) {
+                const currentHostname = window.location.hostname;
+                return (characterName === 'Skulltalker' &&
+                       (currentHostname.includes('skulltalker') || currentHostname === 'localhost'));
+            }
+
+            getCharacterParts(animatronic) {
+                // Get parts from the original character data
+                const parts = [];
+
+                if (animatronic.parts && Array.isArray(animatronic.parts) && animatronic.parts.length > 0) {
+                    return animatronic.parts;
+                }
+
+                if (animatronic.parts && typeof animatronic.parts === 'object') {
+                    // Convert parts object to array
+                    const partsArray = Object.entries(animatronic.parts).map(([key, part]) => ({
+                        id: key,
+                        name: part.name || key,
+                        type: part.type || 'unknown',
+                        ...part
+                    }));
+                    if (partsArray.length > 0) return partsArray;
+                }
+
+                // Fallback: extract from capabilities
+                if (animatronic.capabilities && Array.isArray(animatronic.capabilities)) {
+                    return animatronic.capabilities.map(cap => ({
+                        id: cap,
+                        name: cap.charAt(0).toUpperCase() + cap.slice(1),
+                        type: cap
+                    }));
+                }
+
+                // Default parts based on character name and expected capabilities
+                const defaultParts = {
+                    'Skulltalker': [
+                        { id: 'webcam', name: 'Webcam', type: 'webcam' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' },
+                        { id: 'servo', name: 'Jaw Servo', type: 'servo' }
+                    ],
+                    'Orlok': [
+                        { id: 'motor', name: 'Head Motor', type: 'motor' },
+                        { id: 'light', name: 'LED Eyes', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ],
+                    'Coffin Breaker': [
+                        { id: 'actuator', name: 'Coffin Actuator', type: 'linear-actuator' },
+                        { id: 'light', name: 'LED Strip', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ],
+                    'PumpkinHead': [
+                        { id: 'motor', name: 'Head Motor', type: 'motor' },
+                        { id: 'light', name: 'LED Eyes', type: 'light' },
+                        { id: 'sensor', name: 'Motion Sensor', type: 'sensor' }
+                    ]
+                };
+
+                return defaultParts[animatronic.name] || [];
+            }
+
+            async refreshFleetStatus() {
+                this.log('Refreshing fleet status...', 'info');
+
+                const statusPromises = this.animatronics.map(async (animatronic) => {
+                    const startTime = Date.now();
+                    console.log(`🔍 Checking ${animatronic.name} at ${animatronic.baseUrl}`);
+
+                    try {
+                        // Check if animatronic is online with timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                        const healthResponse = await fetch(`${animatronic.baseUrl}/api/hub/status`, {
+                            method: 'GET',
+                            signal: controller.signal,
+                            mode: 'cors',
+                            credentials: 'omit'
+                        });
+
+                        clearTimeout(timeoutId);
+
+                        const responseTime = Date.now() - startTime;
+                        console.log(`✅ ${animatronic.name} responded in ${responseTime}ms`);
+
+                        if (healthResponse.ok) {
+                            const statusData = await healthResponse.json();
+                            console.log(`📦 ${animatronic.name} status data:`, statusData);
+
+                            // Extract services from the hub status response
+                            let services = [];
+                            if (statusData.services && typeof statusData.services === 'object') {
+                                // Convert services object to array
+                                services = Object.entries(statusData.services).map(([name, service]) => ({
+                                    name: name,
+                                    port: service.port,
+                                    type: service.type,
+                                    icon: service.icon,
+                                    status: service.status === 'online' ? 'active' : 'inactive',
+                                    details: service.details,
+                                    responseTime: service.responseTime
+                                }));
+                                console.log(`🔧 ${animatronic.name} services processed:`, services);
+                                console.log(`✅ ${animatronic.name} connection successful:`, {
+                                    url: `${animatronic.baseUrl}/api/hub/status`,
+                                    hostname: animatronic.hostname,
+                                    serviceCount: services.length,
+                                    onlineServices: services.filter(s => s.status === 'active').length,
+                                    responseTime: responseTime
+                                });
+                            } else {
+                                console.log(`⚠️ ${animatronic.name} no services found in status data`);
+                                console.log(`⚠️ ${animatronic.name} raw status data structure:`, {
+                                    hasServices: !!statusData.services,
+                                    servicesType: typeof statusData.services,
+                                    keys: statusData.services ? Object.keys(statusData.services) : 'N/A'
+                                });
+                            }
+
+                            animatronic.status = 'online';
+                            animatronic.services = services;
+                            animatronic.lastSeen = new Date();
+                            animatronic.responseTime = responseTime;
+                            animatronic.hubStatus = statusData;
+
+                            // Ensure parts are always available
+                            if (!animatronic.parts || animatronic.parts.length === 0) {
+                                animatronic.parts = this.getCharacterParts(animatronic);
+                            }
+
+                            console.log(`✅ ${animatronic.name} final state:`, {
+                                status: animatronic.status,
+                                serviceCount: animatronic.services.length,
+                                services: animatronic.services.map(s => `${s.name}:${s.status}`)
+                            });
+
+                            this.log(`${animatronic.name}: Online (${services.length} services, ${responseTime}ms)`, 'success');
+
+                        } else {
+                            throw new Error(`HTTP ${healthResponse.status}`);
+                        }
+
+                    } catch (error) {
+                        animatronic.status = 'offline';
+                        animatronic.services = [];
+                        animatronic.responseTime = Date.now() - startTime;
+                        animatronic.hubStatus = null;
+
+                        // Still show parts even when offline
+                        if (!animatronic.parts || animatronic.parts.length === 0) {
+                            animatronic.parts = this.getCharacterParts(animatronic);
+                        }
+
+                        // Enhanced error logging for debugging
+                        console.error(`❌ ${animatronic.name} connection failed:`, {
+                            url: `${animatronic.baseUrl}/api/hub/status`,
+                            error: error.message,
+                            hostname: animatronic.hostname,
+                            baseUrl: animatronic.baseUrl,
+                            responseTime: animatronic.responseTime
+                        });
+
+                        this.log(`${animatronic.name}: Offline (${error.message})`, 'warning');
+                    }
+                });
+
+                await Promise.all(statusPromises);
+                this.updateFleetStats();
+                this.renderAnimatronicsGrid();
+            }
+
+            updateFleetStats() {
+                const online = this.animatronics.filter(a => a.status === 'online');
+                const totalServices = online.reduce((sum, a) => {
+                    const serviceCount = a.services ? a.services.length : 0;
+                    console.log(`📊 ${a.name}: ${serviceCount} services`);
+                    return sum + serviceCount;
+                }, 0);
+
+                console.log(`📈 Fleet Stats: ${online.length}/${this.animatronics.length} online, ${totalServices} total services`);
+
+                this.fleetStats = {
+                    total: this.animatronics.length,
+                    online: online.length,
+                    totalServices: totalServices,
+                    systemHealth: online.length === this.animatronics.length ? '100%' :
+                                 online.length > 0 ? `${Math.round((online.length / this.animatronics.length) * 100)}%` : '0%'
+                };
+
+                // Update UI
+                document.getElementById('totalAnimatronics').textContent = this.fleetStats.total;
+                document.getElementById('onlineCount').textContent = this.fleetStats.online;
+                document.getElementById('totalServices').textContent = this.fleetStats.totalServices;
+                document.getElementById('systemHealth').textContent = this.fleetStats.systemHealth;
+
+                this.log(`Fleet Status: ${this.fleetStats.online}/${this.fleetStats.total} online, ${this.fleetStats.totalServices} services`, 'info');
+            }
+
+            renderAnimatronicsGrid() {
+                const grid = document.getElementById('animatronicsGrid');
+                if (!grid) return;
+
+                grid.innerHTML = '';
+
+                this.animatronics.forEach(animatronic => {
+                    const card = document.createElement('div');
+                    card.className = `animatronic-card ${animatronic.status}`;
+                    card.onclick = () => this.showCharacterDetails(animatronic);
+
+                    const serviceCount = animatronic.services ? animatronic.services.length : 0;
+                    const activeServices = animatronic.services ? animatronic.services.filter(s => s.status === 'active').length : 0;
+                    const lastSeenText = animatronic.lastSeen ?
+                        `Last seen: ${animatronic.lastSeen.toLocaleTimeString()}` :
+                        'Never contacted';
+
+                    // Create service indicator dots
+                    const maxDots = 12; // Expected max services
+                    const serviceDots = Array.from({length: maxDots}, (_, i) => {
+                        if (i < activeServices) {
+                            return '<div class="service-dot active"></div>';
+                        } else if (i < serviceCount) {
+                            return '<div class="service-dot error"></div>';
+                        } else {
+                            return '<div class="service-dot"></div>';
+                        }
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div class="animatronic-header">
+                            <h3 class="animatronic-name">${animatronic.name}</h3>
+                            <div class="animatronic-status status-${animatronic.status}">
+                                ${animatronic.status.toUpperCase()}
+                            </div>
+                        </div>
+
+                        <div class="animatronic-info">
+                            <div class="info-item">
+                                <div class="info-value">${serviceCount}</div>
+                                <div class="info-label">Services</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-value">${(animatronic.parts && animatronic.parts.length) || (animatronic.animatronic_parts && animatronic.animatronic_parts.length) || 0}</div>
+                                <div class="info-label">Parts</div>
+                            </div>
+                        </div>
+
+                        <div class="service-status-bar">
+                            <div class="service-status-header">
+                                <span class="service-count">${activeServices}/${serviceCount} Active</span>
+                                <span style="color: #cccccc; font-size: 0.8em;">
+                                    ${animatronic.responseTime ? `${animatronic.responseTime}ms` : 'N/A'}
+                                </span>
+                            </div>
+                            <div class="service-indicators">
+                                ${serviceDots}
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 10px; font-size: 0.8em; color: #999;">
+                            ${lastSeenText}
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                if (this.animatronics.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">No animatronics found</div>';
+                }
+            }
+
+            showCharacterDetails(animatronic) {
+                this.selectedCharacter = animatronic;
+                const modal = document.getElementById('characterModal');
+                const modalName = document.getElementById('modalCharacterName');
+                const modalBody = document.getElementById('modalBody');
+
+                modalName.textContent = `${animatronic.name} Details`;
+
+                // Build detailed information
+                const servicesHtml = animatronic.services.map(service => `
+                    <div class="detail-item">
+                        <div class="detail-label">${service.name || service.type}</div>
+                        <div class="detail-value">
+                            ${service.status === 'active' ? '✅' : '❌'}
+                            Port ${service.port || 'N/A'}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Handle different parts data structures
+                let partsArray = [];
+                if (animatronic.parts && Array.isArray(animatronic.parts)) {
+                    partsArray = animatronic.parts;
+                } else if (animatronic.animatronic_parts && Array.isArray(animatronic.animatronic_parts)) {
+                    partsArray = animatronic.animatronic_parts;
+                }
+
+                const partsHtml = partsArray.length > 0 ? partsArray.map(part => {
+                    // Handle both object and string parts
+                    if (typeof part === 'string') {
+                        return `
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${part}', 'string')">
+                                <div class="detail-label">${part}</div>
+                                <div class="detail-value">Hardware Component <span class="edit-icon">✏️</span></div>
+                            </div>
+                        `;
+                    } else if (typeof part === 'object' && part.name) {
+                        const partType = part.type || 'hardware';
+                        const partId = part.id || part.name;
+                        return `
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${partId}', '${partType}', '${part.name}')">
+                                <div class="detail-label">${part.name}</div>
+                                <div class="detail-value">${part.type || 'Hardware'} - ${part.status || 'Unknown'} <span class="edit-icon">✏️</span></div>
+                            </div>
+                        `;
+                    } else {
+                        const partIndex = partsArray.indexOf(part) + 1;
+                        return `
+                            <div class="detail-item clickable-part" onclick="fleetMonitor.openPartEditor('${animatronic.baseUrl}', '${partIndex}', 'unknown')">
+                                <div class="detail-label">Part ${partIndex}</div>
+                                <div class="detail-value">Hardware Component <span class="edit-icon">✏️</span></div>
+                            </div>
+                        `;
+                    }
+                }).join('') : '';
+
+                modalBody.innerHTML = `
+                    <div class="detail-section">
+                        <h3>🌐 Connection Info</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Hostname</div>
+                                <div class="detail-value">${animatronic.hostname}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value">
+                                    ${animatronic.status === 'online' ? '✅ Online' : '❌ Offline'}
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Response Time</div>
+                                <div class="detail-value">${animatronic.responseTime || 'N/A'}ms</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Last Seen</div>
+                                <div class="detail-value">
+                                    ${animatronic.lastSeen ? animatronic.lastSeen.toLocaleString() : 'Never'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🔧 Services (${animatronic.services.length})</h3>
+                        <div class="detail-grid">
+                            ${servicesHtml || '<div class="detail-item"><div class="detail-value">No services detected</div></div>'}
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🔩 Hardware Parts (${partsArray.length})</h3>
+                        <div class="detail-grid">
+                            ${partsHtml || '<div class="detail-item"><div class="detail-value">No parts configured</div></div>'}
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3>🎛️ Actions</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button onclick="window.open('${animatronic.baseUrl}', '_blank')" class="connection-btn">
+                                🌐 Open Web Interface
+                            </button>
+                            <button onclick="fleetMonitor.refreshAnimatronic('${animatronic.id}')" class="connection-btn">
+                                🔄 Refresh Status
+                            </button>
+                            <button onclick="window.open('${animatronic.baseUrl}/configuration/services-monitor', '_blank')" class="connection-btn">
+                                🔧 Service Monitor
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                modal.style.display = 'block';
+                this.log(`Opened details for ${animatronic.name}`, 'info');
+            }
+
+            async refreshAnimatronic(animatronicId) {
+                const animatronic = this.animatronics.find(a => a.id === animatronicId);
+                if (!animatronic) return;
+
+                this.log(`Refreshing ${animatronic.name}...`, 'info');
+
+                const startTime = Date.now();
+                try {
+                    const response = await fetch(`${animatronic.baseUrl}/api/hub/status`);
+                    const responseTime = Date.now() - startTime;
+
+                    if (response.ok) {
+                        const statusData = await response.json();
+                        animatronic.status = 'online';
+                        animatronic.lastSeen = new Date();
+                        animatronic.responseTime = responseTime;
+                        animatronic.hubStatus = statusData;
+
+                        // Refresh services
+                        const servicesResponse = await fetch(`${animatronic.baseUrl}/api/hub/services`);
+                        if (servicesResponse.ok) {
+                            const servicesData = await servicesResponse.json();
+                            if (servicesData.services && typeof servicesData.services === 'object') {
+                                animatronic.services = Object.entries(servicesData.services).map(([name, service]) => ({
+                                    name: name,
+                                    port: service.port,
+                                    type: service.type,
+                                    icon: service.icon,
+                                    status: service.status === 'online' ? 'active' : 'inactive',
+                                    details: service.details,
+                                    responseTime: service.responseTime
+                                }));
+                            } else {
+                                animatronic.services = [];
+                            }
+                        }
+
+                        this.log(`${animatronic.name} refreshed successfully`, 'success');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    animatronic.status = 'offline';
+                    animatronic.responseTime = Date.now() - startTime;
+                    this.log(`${animatronic.name} refresh failed: ${error.message}`, 'error');
+                }
+
+                this.updateFleetStats();
+                this.renderAnimatronicsGrid();
+
+                // Update modal if it's open for this character
+                if (this.selectedCharacter && this.selectedCharacter.id === animatronicId) {
+                    this.showCharacterDetails(animatronic);
+                }
+            }
+
+            renderCharacterGrid() {
+                const grid = document.getElementById('characterGrid');
+                grid.innerHTML = '';
+
+                this.characters.forEach(character => {
+                    const card = document.createElement('div');
+                    card.className = 'character-card';
+                    card.dataset.characterId = character.id;
+
+                    // Count expected services (Phase 1-3 services)
+                    const expectedServiceCount = 12; // Hub, Hardware, Motor, Light, Sensor, Webcam, Motion, Head Tracking, Registry, AI, Microphone, Audio
+
+                    card.innerHTML = `
+                        <div class="character-name">${character.char_name || character.name}</div>
+                        <div class="character-status">${expectedServiceCount} services</div>
+                    `;
+
+                    card.addEventListener('click', () => this.selectCharacter(character));
+                    grid.appendChild(card);
+                });
+            }
+
+            selectCharacter(character) {
+                // Update UI to show selected character
+                document.querySelectorAll('.character-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+
+                const selectedCard = document.querySelector(`[data-character-id="${character.id}"]`);
+                if (selectedCard) {
+                    selectedCard.classList.add('active');
+                }
+
+                this.selectedCharacter = character;
+                console.log('Character selected:', character);
+                console.log('Character host:', character.animatronic?.rpi_config?.host);
+
+                this.showConnectionControls();
+                this.updateConnectionStatus();
+                this.loadCharacterServices(character);
+                this.log(`Selected character: ${character.char_name || character.name}`, 'info');
+            }
+
+            async loadCharacterServices(character) {
+                const servicesSection = document.getElementById('servicesSection');
+                servicesSection.classList.add('active');
+
+                // Get expected services based on character configuration
+                const expectedServices = this.getExpectedServicesForCharacter(character);
+
+                // Show placeholder message - user needs to click Connect to start monitoring
+                const grid = document.getElementById('servicesGrid');
+                if (grid) {
+                    const characterName = character.char_name || character.name;
+                    grid.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">Ready to monitor services for ${characterName}<br>Click Connect to begin</div>`;
+                }
+            }
+
+
+
+            async loadServiceConnections() {
+                try {
+                    // Determine which host to query for service connections
+                    let apiUrl = '/api/service-management/connections';
+
+                    // If connected to a remote character, query their services directly
+                    if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                        this.selectedCharacter.animatronic.rpi_config &&
+                        this.selectedCharacter.animatronic.rpi_config.host) {
+
+                        const characterHost = this.selectedCharacter.animatronic.rpi_config.host;
+                        const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+
+                        // For remote characters, log the connection and use legacy service checking
+                        this.log(`Connecting to ${characterName} at ${characterHost}...`, 'info');
+
+                        // Still call the API to log the remote connection
+                        try {
+                            await fetch(apiUrl);
+                        } catch (error) {
+                            console.log('API call for logging failed, continuing with remote service check:', error.message);
+                        }
+
+                        // Use legacy service checking for remote characters
+                        this.log(`Checking services on remote character ${characterName} (${characterHost})`, 'info');
+                        await this.renderLegacyServices();
+                        return;
+                    }
+
+                    const response = await fetch(apiUrl);
+
+                    if (response.status === 503) {
+                        const errorData = await response.json();
+                        if (errorData.legacy) {
+                            this.handleLegacyFallback();
+                            return;
+                        }
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const connections = await response.json();
+
+                    // Debounce updates - only render if connections have changed
+                    const connectionsSnapshot = JSON.stringify(connections);
+                    if (this.lastConnectionsSnapshot !== connectionsSnapshot) {
+                        await this.renderServicesFromConnections(connections);
+                        this.lastConnectionsSnapshot = connectionsSnapshot;
+                        this.log('Service connections updated from centralized API', 'info');
+                    }
+
+                } catch (error) {
+                    console.error('Error loading service connections:', error);
+                    this.log(`Failed to load service connections: ${error.message}`, 'error');
+                    this.handleLegacyFallback();
+                }
+            }
+
+            async renderServicesFromConnections(connections) {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                // Check if centralized system has services
+                const hasServices = Object.keys(connections).length > 0;
+
+                if (!hasServices) {
+                    // Show legacy services that are actually running
+                    await this.renderLegacyServices();
+                    return;
+                }
+
+                // Define service display order and icons for centralized services
+                const serviceOrder = [
+                    { key: 'hardwareRegistry', name: 'Main Hardware Server', icon: '🔧', type: 'hardware' },
+                    { key: 'motorService', name: 'Motor Service', icon: '🔄', type: 'motor' },
+                    { key: 'lightService', name: 'Light Service', icon: '💡', type: 'light' },
+                    { key: 'sensorService', name: 'Sensor Service', icon: '📡', type: 'sensor' },
+                    { key: 'webcamService', name: 'Webcam Service', icon: '📹', type: 'webcam' },
+                    { key: 'motionSensorService', name: 'Motion Sensor Service', icon: '🔍', type: 'motion' },
+                    { key: 'headTrackingService', name: 'Head Tracking Service', icon: '🎯', type: 'tracking' },
+                    { key: 'serviceRegistry', name: 'Service Registry', icon: '📋', type: 'registry' }
+                ];
+
+                serviceOrder.forEach(serviceConfig => {
+                    const connection = connections[serviceConfig.key];
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.dataset.serviceType = serviceConfig.type;
+
+                    let status = 'offline';
+                    let statusText = 'Offline';
+                    let details = 'Service not found';
+                    let port = 'N/A';
+
+                    if (connection) {
+                        status = connection.status === 'running' ? 'online' : 'offline';
+                        statusText = connection.status === 'running' ? 'Online' : 'Offline';
+                        port = connection.port || connection.proxyPort || 'N/A';
+                        details = connection.description || `${connection.type} service`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div class="service-icon">${serviceConfig.icon}</div>
+                            <div class="service-name">${serviceConfig.name}</div>
+                            <div class="status-indicator status-${status}" id="status-${serviceConfig.type}"></div>
+                        </div>
+                        <div class="service-details" id="details-${serviceConfig.type}">
+                            <div>Port: ${port}</div>
+                            <div id="status-text-${serviceConfig.type}">${statusText}</div>
+                            <div>${details}</div>
+                            <div>Last updated: ${new Date().toLocaleTimeString()}</div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                // Update overall system status
+                this.updateOverallStatus();
+            }
+
+            handleLegacyFallback() {
+                // Show fallback banner
+                const systemStatus = document.getElementById('systemStatus');
+                if (systemStatus) {
+                    systemStatus.innerHTML = `
+                        <div style="background: #331100; border: 1px solid #ff6600; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                            <strong style="color: #ff6600;">⚠️ Centralized service integration not available</strong><br>
+                            <span style="color: #cccccc; font-size: 0.9em;">Showing expected services with unknown status. Direct service monitoring is disabled.</span>
+                        </div>
+                        <strong>System Status:</strong> <span id="overallStatus">Integration unavailable</span>
+                    `;
+                }
+
+                // Use the same dynamic service detection logic
+                const character = this.animatronics.find(a => a.name === characterName);
+                const expectedServices = this.getExpectedServicesForCharacter(character);
+
+                this.renderFallbackServices(expectedServices);
+                this.log('Using legacy fallback mode - centralized integration unavailable', 'warning');
+
+                // Update system status for fallback mode
+                const statusElement = document.getElementById('overallStatus');
+                if (statusElement) {
+                    statusElement.textContent = 'All services offline - Hardware services not running. Services will show as online when hardware processes are started.';
+                    statusElement.style.color = '#ff6b6b';
+                }
+            }
+
+            async renderLegacyServices() {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                // Get the currently selected character
+                const selectedCharacter = this.selectedCharacter;
+                const characterName = selectedCharacter ? (selectedCharacter.char_name || selectedCharacter.name) : 'Unknown';
+
+                // Get expected services for this character
+                const character = this.animatronics.find(a => a.name === characterName || a.char_name === characterName);
+                const allServices = this.getExpectedServicesForCharacter(character);
+
+                // First render services with "checking" status
+                this.renderServicesWithStatus(allServices, 'checking', characterName);
+
+                // Then check each service status
+                const serviceStatuses = await this.checkServiceStatuses(allServices, characterName);
+
+                // Re-render with actual statuses
+                this.renderServicesWithStatus(serviceStatuses, null, characterName);
+            }
+
+            async checkServiceStatuses(services, characterName) {
+                // Use unified hub endpoint for consolidated status checking
+                try {
+                    const hubUrl = this.getHubUrl(characterName);
+                    console.log(`🎯 Hub status check: ${characterName} -> ${hubUrl}`);
+
+                    const response = await fetch(`${hubUrl}/api/hub/status`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        signal: AbortSignal.timeout(5000) // 5 second timeout
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Hub status request failed: ${response.status}`);
+                    }
+
+                    const hubData = await response.json();
+                    console.log(`✅ Hub data received for ${characterName}:`, hubData.summary);
+
+                    // Convert hub response to expected format
+                    return this.convertHubStatusToServiceList(hubData.services, services);
+
+                } catch (error) {
+                    console.log(`❌ Hub status check failed for ${characterName}: ${error.message}`);
+                    this.log(`Hub status check failed for ${characterName}: ${error.message}`, 'warning');
+
+                    // Fallback to individual service checks
+                    return this.checkServiceStatusesIndividually(services, characterName);
+                }
+            }
+
+            /**
+             * Get expected services for a character based on configuration
+             */
+            getExpectedServicesForCharacter(character) {
+                const baseServices = [
+                    { name: 'ElevenLabs Conversational AI', port: 8771, icon: '🤖', type: 'elevenlabs' },
+                    { name: 'ElevenLabs Live STT', port: 8778, icon: '🎤', type: 'stt' },
+                    { name: 'Microphone Service', port: 8776, icon: '🎙️', type: 'microphone' },
+                    { name: 'ElevenLabs SSL Proxy', port: 8872, icon: '🔐', type: 'proxy-ssl' },
+                    { name: 'STT SSL Proxy', port: 8873, icon: '🔐', type: 'proxy-stt' }
+                ];
+
+                if (!character) return baseServices;
+
+                const characterName = character.name || character.char_name;
+                const configuredServices = character.animatronic?.services || [];
+
+                // Get parts from our enhanced parts detection
+                const parts = this.getCharacterParts(character);
+                const hasHardwareParts = parts.length > 0;
+
+                let expectedServices = [...baseServices];
+
+                // Always add core hardware services for characters with GPIO control or hardware parts
+                if (hasHardwareParts || configuredServices.includes('gpio-control')) {
+                    expectedServices.push(
+                        { name: 'Service Registry', port: 8770, icon: '📋', type: 'registry' },
+                        { name: 'Main Hardware Server', port: 8780, icon: '🔧', type: 'hardware' }
+                    );
+                }
+
+                // Add specific hardware services based on parts
+                const partTypes = parts.map(p => p.type);
+
+                if (partTypes.includes('motor')) {
+                    expectedServices.push({ name: 'Motor Service', port: 8772, icon: '🔄', type: 'motor' });
+                }
+                if (partTypes.includes('light') || partTypes.includes('led')) {
+                    expectedServices.push({ name: 'Light Service', port: 8772, icon: '💡', type: 'light' });
+                }
+                if (partTypes.includes('sensor')) {
+                    expectedServices.push({ name: 'Sensor Service', port: 8400, icon: '📡', type: 'sensor' });
+                }
+                if (partTypes.includes('webcam')) {
+                    expectedServices.push({ name: 'Webcam Service', port: 8401, icon: '📹', type: 'webcam' });
+                }
+                if (partTypes.includes('servo')) {
+                    expectedServices.push({ name: 'Servo Service', port: 8773, icon: '🦾', type: 'servo' });
+                }
+                if (partTypes.includes('linear-actuator')) {
+                    expectedServices.push({ name: 'Actuator Service', port: 8775, icon: '🔧', type: 'actuator' });
+                }
+
+                return expectedServices;
+            }
+
+            /**
+             * Get hub URL for character
+             */
+            getHubUrl(characterName) {
+                // For local character, use localhost
+                if (characterName === 'Local' || !characterName) {
+                    return 'http://localhost:3000';
+                }
+
+                // Find character data and use rpi_config.host if available
+                const character = this.animatronics.find(a => a.name === characterName);
+                if (character && character.rpi_config && character.rpi_config.host) {
+                    return `https://${character.rpi_config.host}:8080`;
+                }
+
+                // Try exact match first, then lowercase
+                const hubUrl = characterIPs[characterName] || characterIPs[characterName.toLowerCase()];
+
+                // If we're on Skulltalker (localhost), return localhost for local testing
+                if (!hubUrl && window.location.hostname === 'localhost') {
+                    return 'http://localhost:3000';
+                }
+
+                return hubUrl || 'http://localhost:3000';
+            }
+
+            /**
+             * Convert hub status response to service list format
+             */
+            convertHubStatusToServiceList(hubServices, originalServices) {
+                const convertedServices = [];
+
+                for (const originalService of originalServices) {
+                    const hubService = hubServices[originalService.name];
+
+                    if (hubService) {
+                        convertedServices.push({
+                            ...originalService,
+                            status: hubService.status,
+                            lastChecked: hubService.lastChecked,
+                            details: hubService.details,
+                            responseTime: hubService.responseTime
+                        });
+                    } else {
+                        // Service not found in hub response
+                        convertedServices.push({
+                            ...originalService,
+                            status: 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: 'Service not found in hub response'
+                        });
+                    }
+                }
+
+                return convertedServices;
+            }
+
+            /**
+             * Fallback to individual service checks (original method)
+             */
+            async checkServiceStatusesIndividually(services, characterName) {
+                const promises = services.map(service => {
+                    return this.checkServiceStatus(service, characterName)
+                        .then(status => ({
+                            ...service,
+                            status: status.online ? 'online' : 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: status.details
+                        }))
+                        .catch(error => ({
+                            ...service,
+                            status: 'offline',
+                            lastChecked: new Date().toLocaleTimeString(),
+                            details: `Error: ${error.message}`
+                        }));
+                });
+
+                return Promise.all(promises);
+            }
+
+            checkServiceStatus(service, characterName) {
+                // Check services for all characters - services may be available depending on configuration
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                    // Try WebSocket connection for WebSocket services
+                    if (['elevenlabs', 'stt', 'microphone', 'hardware', 'registry', 'light'].includes(service.type)) {
+                        return this.checkWebSocketService(service.port, controller.signal);
+                    }
+
+                    // Try HTTPS connection for SSL proxy services
+                    if (service.type.includes('proxy')) {
+                        return this.checkHttpsService(service.port, controller.signal);
+                    }
+
+                    clearTimeout(timeoutId);
+                    return Promise.resolve({ online: false, details: 'Unknown service type' });
+
+                } catch (error) {
+                    return Promise.resolve({ online: false, details: error.message });
+                }
+            }
+
+            async checkWebSocketService(port, signal) {
+                return new Promise((resolve) => {
+                    try {
+                        // Use the selected character's host if available, otherwise use current host
+                        let hostname = window.location.hostname;
+                        let isRemoteCharacter = false;
+
+                        if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                            this.selectedCharacter.animatronic.rpi_config &&
+                            this.selectedCharacter.animatronic.rpi_config.host) {
+
+                            const characterHost = this.selectedCharacter.animatronic.rpi_config.host;
+                            const currentHostname = window.location.hostname;
+
+                            // Check if this is actually the local system
+                            // Compare with current hostname and common local addresses
+                            const isLocalSystem = (
+                                characterHost === currentHostname ||
+                                characterHost === 'localhost' ||
+                                characterHost === '127.0.0.1' ||
+                                (currentHostname === 'skulltalker' && characterHost === '192.168.8.130') ||
+                                (currentHostname === 'orlok' && characterHost === '192.168.8.140') ||
+                                (currentHostname === 'pumpkinhead' && characterHost === '192.168.1.200')
+                            );
+
+                            if (!isLocalSystem) {
+                                hostname = characterHost;
+                                isRemoteCharacter = true;
+                            }
+                            // If it's the local system, keep hostname as window.location.hostname
+                        }
+
+                        console.log(`Checking WebSocket service on ${hostname}:${port} (isRemote: ${isRemoteCharacter})`);
+
+                        // Determine protocols based on page security and character type
+                        let protocols = [];
+                        const isSecurePage = window.location.protocol === 'https:';
+
+                        if (isSecurePage) {
+                            // For HTTPS pages, only use WSS to avoid mixed content issues
+                            protocols = [`wss://${hostname}:${port}`];
+                        } else {
+                            // For HTTP pages, try WSS first, then WS for remote characters
+                            protocols = isRemoteCharacter ? [`wss://${hostname}:${port}`, `ws://${hostname}:${port}`] : [`wss://${hostname}:${port}`];
+                        }
+
+                        let attemptIndex = 0;
+
+                        const tryConnection = () => {
+                            if (attemptIndex >= protocols.length) {
+                                resolve({ online: false, details: `All WebSocket connection attempts failed to ${hostname}:${port}` });
+                                return;
+                            }
+
+                            const wsUrl = protocols[attemptIndex];
+                            const ws = new WebSocket(wsUrl);
+
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                attemptIndex++;
+                                tryConnection();
+                            }, 2000);
+
+                            ws.onopen = () => {
+                                clearTimeout(timeout);
+                                ws.close();
+                                resolve({ online: true, details: `WebSocket connection successful to ${hostname}:${port}` });
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                attemptIndex++;
+                                tryConnection();
+                            };
+
+                            if (signal.aborted) {
+                                clearTimeout(timeout);
+                                ws.close();
+                                resolve({ online: false, details: 'Request aborted' });
+                            }
+                        };
+
+                        tryConnection();
+
+                    } catch (error) {
+                        resolve({ online: false, details: `WebSocket error: ${error.message}` });
+                    }
+                });
+            }
+
+            async checkHttpsService(port, signal) {
+                // Use the selected character's host if available, otherwise use current host
+                let hostname = window.location.hostname;
+
+                if (this.selectedCharacter && this.selectedCharacter.animatronic &&
+                    this.selectedCharacter.animatronic.rpi_config &&
+                    this.selectedCharacter.animatronic.rpi_config.host) {
+                    hostname = this.selectedCharacter.animatronic.rpi_config.host;
+                }
+
+                try {
+                    const response = await fetch(`https://${hostname}:${port}`, {
+                        method: 'GET',
+                        signal: signal,
+                        timeout: 2000
+                    });
+
+                    return {
+                        online: true,
+                        details: `HTTPS proxy responding from ${hostname}:${port} (${response.status})`
+                    };
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        return { online: false, details: 'Request timeout' };
+                    }
+                    return {
+                        online: false,
+                        details: `HTTPS connection failed to ${hostname}:${port} - ${error.message}`
+                    };
+                }
+            }
+
+            renderServicesWithStatus(services, defaultStatus, characterName) {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                services.forEach(service => {
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.dataset.serviceType = service.type;
+                    card.dataset.servicePort = service.port;
+
+                    let statusClass, statusText, statusDetail;
+
+                    if (defaultStatus === 'checking') {
+                        statusClass = 'status-unknown';
+                        statusText = 'Checking...';
+                        statusDetail = 'Testing connection';
+                    } else {
+                        statusClass = service.status === 'online' ? 'status-online' : 'status-offline';
+                        statusText = service.status === 'online' ? 'Online' : 'Offline';
+                        statusDetail = service.details || (service.status === 'online' ? 'Service running' : 'Service not found');
+                    }
+
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div class="service-icon">${service.icon}</div>
+                            <div class="service-name">${service.name}</div>
+                            <div class="status-indicator ${statusClass}" id="status-${service.type}"></div>
+                        </div>
+                        <div class="service-details" id="details-${service.type}">
+                            <div>Port: ${service.port}</div>
+                            <div id="status-text-${service.type}">${statusText}</div>
+                            <div>${statusDetail}</div>
+                            <div>Last checked: ${service.lastChecked || 'N/A'}</div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+
+                // Update system status (only if not checking)
+                if (defaultStatus !== 'checking') {
+                    const onlineCount = services.filter(s => s.status === 'online').length;
+                    const totalCount = services.length;
+                    const statusElement = document.getElementById('overallStatus');
+                    if (statusElement) {
+                        if (onlineCount > 0) {
+                            statusElement.textContent = `${onlineCount}/${totalCount} services online for ${characterName}`;
+                            statusElement.style.color = '#00ff00';
+                        } else {
+                            statusElement.textContent = `All services offline for ${characterName}`;
+                            statusElement.style.color = '#ff6b6b';
+                        }
+                    }
+
+                    this.log(`Found ${onlineCount} online services for ${characterName}`, 'info');
+                }
+            }
+
+            renderFallbackServices(services) {
+                const grid = document.getElementById('servicesGrid');
+                grid.innerHTML = '';
+
+                services.forEach(service => {
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.dataset.serviceType = service.type;
+                    card.dataset.servicePort = service.port;
+
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div class="service-icon">${service.icon}</div>
+                            <div class="service-name">${service.name}</div>
+                            <div class="status-indicator status-unknown" id="status-${service.type}"></div>
+                        </div>
+                        <div class="service-details" id="details-${service.type}">
+                            <div>Port: ${service.port}</div>
+                            <div id="status-text-${service.type}">Unknown</div>
+                            <div>Status monitoring unavailable</div>
+                            <div>Last checked: N/A</div>
+                        </div>
+                    `;
+
+                    grid.appendChild(card);
+                });
+            }
+
+            startPolling() {
+                // Clear any existing polling interval
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
+                }
+
+                // Only start polling if connected to a character
+                if (!this.isConnected || !this.selectedCharacter) {
+                    this.log('Not starting polling - no character connected', 'info');
+                    return;
+                }
+
+                // Initial load
+                this.loadServiceConnections();
+
+                // Poll every 10 seconds
+                this.pollingInterval = setInterval(() => {
+                    this.loadServiceConnections();
+                }, 10000);
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                this.log(`Started polling service connections for ${characterName} every 10 seconds`, 'info');
+            }
+
+            stopPolling() {
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = null;
+                    this.log('Stopped polling service connections', 'info');
+                }
+            }
+
+            updateServiceStatus(service, status, message) {
+                const statusIndicator = document.getElementById(`status-${service.type}`);
+                const statusText = document.getElementById(`status-text-${service.type}`);
+                const details = document.getElementById(`details-${service.type}`);
+
+                if (statusIndicator && statusText && details) {
+                    statusIndicator.className = `status-indicator status-${status}`;
+                    statusText.textContent = status === 'online' ? 'Online' : 'Offline';
+
+                    const timestamp = new Date().toLocaleTimeString();
+                    details.innerHTML = `
+                        <div>Port: ${service.port}</div>
+                        <div>${message}</div>
+                        <div>Last checked: ${timestamp}</div>
+                    `;
+
+                    // Only log status changes, not repeated failures
+                    if (!service.lastStatus || service.lastStatus !== status) {
+                        this.log(`${service.name}: ${status} - ${message}`, status === 'online' ? 'info' : 'warning');
+                        service.lastStatus = status;
+                    }
+                }
+
+                // Update overall system status
+                this.updateOverallStatus();
+            }
+
+            updateOverallStatus() {
+                const statusElements = document.querySelectorAll('.status-indicator');
+                let onlineCount = 0;
+                let totalCount = statusElements.length;
+
+                statusElements.forEach(element => {
+                    if (element.classList.contains('status-online')) {
+                        onlineCount++;
+                    }
+                });
+
+                const overallStatusElement = document.getElementById('overallStatus');
+                if (overallStatusElement) {
+                    if (onlineCount === 0) {
+                        overallStatusElement.innerHTML = '<span style="color: #ff6666;">All services offline</span> - <span style="color: #888;">Hardware services not running. Services will show as online when hardware processes are started.</span>';
+                    } else if (onlineCount === totalCount) {
+                        overallStatusElement.innerHTML = '<span style="color: #00ff00;">All services online</span> - <span style="color: #888;">Hardware services are running normally.</span>';
+                    } else {
+                        overallStatusElement.innerHTML = `<span style="color: #ffff00;">${onlineCount}/${totalCount} services online</span> - <span style="color: #888;">Some services may be starting up or unavailable.</span>`;
+                    }
+                }
+            }
+
+            setupEventListeners() {
+                // Refresh all button
+                const refreshAllBtn = document.getElementById('refreshAllBtn');
+                if (refreshAllBtn) {
+                    refreshAllBtn.addEventListener('click', () => this.refreshFleetStatus());
+                }
+
+                // Modal close button
+                const closeModal = document.getElementById('closeModal');
+                if (closeModal) {
+                    closeModal.addEventListener('click', () => this.closeModal());
+                }
+
+                // Close modal when clicking outside
+                const modal = document.getElementById('characterModal');
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            this.closeModal();
+                        }
+                    });
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeModal();
+                    }
+                    if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                        e.preventDefault();
+                        this.refreshFleetStatus();
+                    }
+                });
+            }
+
+            closeModal() {
+                const modal = document.getElementById('characterModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                this.selectedCharacter = null;
+            }
+
+            openPartEditor(baseUrl, partId, partType, partName = null) {
+                // Construct the appropriate URL based on part type and available information
+                let editUrl = '';
+
+                if (partType === 'string') {
+                    // For string parts, try to guess the type and create a generic URL
+                    const lowerPart = partId.toLowerCase();
+                    if (lowerPart.includes('motor')) {
+                        editUrl = `${baseUrl}/parts/motor/1/edit`;
+                    } else if (lowerPart.includes('light') || lowerPart.includes('led')) {
+                        editUrl = `${baseUrl}/parts/light/1/edit`;
+                    } else if (lowerPart.includes('servo')) {
+                        editUrl = `${baseUrl}/parts/servo/1/edit`;
+                    } else if (lowerPart.includes('sensor')) {
+                        editUrl = `${baseUrl}/parts/sensor/1/edit`;
+                    } else if (lowerPart.includes('linear') || lowerPart.includes('actuator')) {
+                        editUrl = `${baseUrl}/parts/linear-actuator/1/edit`;
+                    } else {
+                        // Default to parts management page
+                        editUrl = `${baseUrl}/parts`;
+                    }
+                } else if (partType && partId) {
+                    // For object parts with type and ID
+                    const typeMap = {
+                        'motor': 'motor',
+                        'light': 'light',
+                        'led': 'light',
+                        'servo': 'servo',
+                        'sensor': 'sensor',
+                        'linear-actuator': 'linear-actuator',
+                        'actuator': 'linear-actuator',
+                        'hardware': 'hardware'
+                    };
+
+                    const mappedType = typeMap[partType.toLowerCase()] || partType.toLowerCase();
+                    // Use ID 1 as default if partId is not numeric
+                    const numericId = isNaN(partId) ? '1' : partId;
+                    editUrl = `${baseUrl}/parts/${mappedType}/${numericId}/edit`;
+                } else {
+                    // Fallback to parts management page
+                    editUrl = `${baseUrl}/parts`;
+                }
+
+                console.log(`🔧 Opening part editor: ${editUrl}`);
+                window.open(editUrl, '_blank');
+            }
+
+            showConnectionControls() {
+                const connectionControls = document.getElementById('connectionControls');
+                if (connectionControls) {
+                    connectionControls.style.display = 'flex';
+                }
+            }
+
+            hideConnectionControls() {
+                const connectionControls = document.getElementById('connectionControls');
+                if (connectionControls) {
+                    connectionControls.style.display = 'none';
+                }
+            }
+
+            updateConnectionStatus() {
+                const statusText = document.getElementById('connectionStatusText');
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+
+                if (!this.selectedCharacter) {
+                    if (statusText) statusText.textContent = 'No character selected';
+                    if (connectBtn) connectBtn.disabled = true;
+                    if (disconnectBtn) disconnectBtn.disabled = true;
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+
+                if (this.isConnected) {
+                    if (statusText) statusText.textContent = `Connected to ${characterName}`;
+                    if (connectBtn) connectBtn.disabled = true;
+                    if (disconnectBtn) disconnectBtn.disabled = false;
+                } else {
+                    if (statusText) statusText.textContent = `Ready to connect to ${characterName}`;
+                    if (connectBtn) connectBtn.disabled = false;
+                    if (disconnectBtn) disconnectBtn.disabled = true;
+                }
+            }
+
+            async connectToCharacter() {
+                if (!this.selectedCharacter) {
+                    this.log('No character selected for connection', 'error');
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                const characterHost = this.selectedCharacter.animatronic &&
+                                    this.selectedCharacter.animatronic.rpi_config &&
+                                    this.selectedCharacter.animatronic.rpi_config.host
+                                    ? this.selectedCharacter.animatronic.rpi_config.host
+                                    : 'localhost';
+
+                this.log(`Connecting to ${characterName} at ${characterHost}...`, 'info');
+                console.log('Selected character data:', this.selectedCharacter);
+
+                try {
+                    // Reset connections and point to the selected character
+                    this.stopPolling();
+                    this.serviceConnections = {};
+                    this.lastConnectionsSnapshot = null;
+
+                    // Mark as connected
+                    this.isConnected = true;
+                    this.updateConnectionStatus();
+
+                    // Restart service monitoring for the selected character
+                    this.startPolling();
+
+                    this.log(`Successfully connected to ${characterName} at ${characterHost}`, 'success');
+
+                } catch (error) {
+                    this.log(`Failed to connect to ${characterName}: ${error.message}`, 'error');
+                    this.isConnected = false;
+                    this.updateConnectionStatus();
+                }
+            }
+
+            async disconnectFromCharacter() {
+                if (!this.selectedCharacter) {
+                    this.log('No character selected for disconnection', 'error');
+                    return;
+                }
+
+                const characterName = this.selectedCharacter.char_name || this.selectedCharacter.name;
+                this.log(`Disconnecting from ${characterName}...`, 'info');
+
+                try {
+                    // Stop polling and clear connections
+                    this.stopPolling();
+                    this.serviceConnections = {};
+                    this.lastConnectionsSnapshot = null;
+
+                    // Clear services display
+                    const grid = document.getElementById('servicesGrid');
+                    if (grid) {
+                        grid.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Disconnected - Click Connect to monitor services</div>';
+                    }
+
+                    // Mark as disconnected
+                    this.isConnected = false;
+                    this.updateConnectionStatus();
+
+                    this.log(`Successfully disconnected from ${characterName}`, 'info');
+
+                } catch (error) {
+                    this.log(`Error during disconnection: ${error.message}`, 'error');
+                }
+            }
+
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const timestamp = new Date().toLocaleTimeString();
+
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `[${timestamp}] ${message}`;
+
+                logContainer.appendChild(logEntry);
+
+                // Remove old entries if we have too many
+                const entries = logContainer.querySelectorAll('.log-entry');
+                if (entries.length > this.maxLogEntries) {
+                    entries[0].remove();
+                }
+
+                // Auto-scroll to bottom
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+
+        // Initialize the Fleet Monitor when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            window.fleetMonitor = new FleetMonitor();
+        });
+    </script>
+</body>
+</html>

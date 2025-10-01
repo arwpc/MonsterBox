@@ -1,0 +1,465 @@
+[
+  {
+    "id": 1,
+    "character_id": 1,
+    "scene_name": "Turn Head Right",
+    "steps": [
+      {
+        "type": "servo",
+        "name": "Turn Head",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "110",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "2000",
+        "angle": "70",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "Turn Head (Copy)",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "110",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "character_id": 1,
+    "scene_name": "play one sound",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "character_id": 1,
+    "scene_name": "Play Three Sounds",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "background weather",
+        "sound_id": "130",
+        "concurrent": "on"
+      },
+      {
+        "type": "sound",
+        "name": "first sound",
+        "sound_id": "14"
+      },
+      {
+        "type": "sound",
+        "name": "second sound",
+        "sound_id": "2"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "character_id": 1,
+    "scene_name": "Full Scene - Raise Arm light and lower",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "background weather",
+        "sound_id": "130",
+        "concurrent": "on"
+      },
+      {
+        "type": "sound",
+        "name": "Santos!",
+        "sound_id": "2"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Right Arm Up",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "light",
+        "name": "Turn on Light",
+        "part_id": "3",
+        "duration": "6000",
+        "state": "on"
+      },
+      {
+        "type": "sound",
+        "name": "Scary Tongues",
+        "sound_id": "4"
+      },
+      {
+        "type": "light",
+        "name": "Turn Off Light",
+        "part_id": "3",
+        "duration": "500",
+        "state": "off"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "character_id": 1,
+    "scene_name": "Sound and Actuator",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "good eventing",
+        "sound_id": "1"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo",
+        "part_id": "1",
+        "duration": "1000",
+        "direction": "forward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "character_id": 2,
+    "scene_name": "Scary Coffin",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Open Door",
+        "part_id": "12",
+        "duration": "7666",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "voice",
+        "name": "Fuck",
+        "sound_id": "21",
+        "text": "Welcome to Coralville, Where it's colder than Hell!"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Close Door",
+        "part_id": "12",
+        "duration": "12000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "character_id": 2,
+    "scene_name": "Let Me Out",
+    "steps": [
+      {
+        "type": "voice",
+        "name": "HELP ",
+        "sound_id": "22",
+        "text": "I'm stuck in this coffin, please help me out little Iowan"
+      },
+      {
+        "type": "sound",
+        "name": "creek",
+        "sound_id": "6"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "character_id": 2,
+    "scene_name": "Scary Coffin Guy",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Open De Door",
+        "part_id": "12",
+        "duration": "7000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "voice",
+        "name": "Poem",
+        "sound_id": "23",
+        "text": "Here in Iowa's fertile ground,\nNear Brown Deer Trail, without a sound,\nI rest beneath the changing sky\nWhere cornfields whisper lullaby.\n\nThe thunderstorms that shake the plains\nSend tremors through my wooden frame,\nAnd when tornados howl above,\nI feel the earth I used to love.\n\nThrough seasons marked by nature's whim—\nSummer's heat and winter's grim—\nMy coffin creaks with each degree,\nAs Iowa's weather visits me.\n\nAlong Brown Deer Trail, people tread,\nNot knowing what lies just ahead:\nA cemetery, row by row,\nBeneath the drifting corn-belt snow.\n\nThe dead, they say, sleep peaceful dreams,\nBut listen to my muffled screams—\nWhen lightning strikes the prairie night,\nMy box illuminates with fright.\n\nRemember me as you pass by,\nWhere deer once grazed beneath the sky.\nFor I once walked that trail so free,\nNow Iowa earth embraces me.\n\nLet this be warning, those who roam\nOn Brown Deer Trail, so far from home:\nIn this black soil, awake I lie,\nWhile storm clouds race across the sky."
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open De Door (Copy)",
+        "part_id": "12",
+        "duration": "7000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "character_id": 2,
+    "scene_name": "Alex Curse",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Open Door (Copy)",
+        "part_id": "12",
+        "duration": "16000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On",
+        "part_id": "13",
+        "duration": "1000",
+        "state": "off"
+      },
+      {
+        "type": "voice",
+        "name": "Alex",
+        "sound_id": "25",
+        "text": "\nAlex scorned a witch's heart,\nNow frozen deep, worlds apart.\nPoor Alex lies in Iowa's ground,\nWhile tractors make their rumbling sound.\nA thousand years must Alex wait,\nUntil time unlocks his frozen fate."
+      },
+      {
+        "type": "linear-actuator",
+        "name": "close Door",
+        "part_id": "12",
+        "duration": "29999",
+        "direction": "backward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On (Copy)",
+        "part_id": "13",
+        "duration": "1000",
+        "state": "off"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "character_id": 2,
+    "scene_name": "Jims Lament",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Open",
+        "part_id": "12",
+        "duration": "14000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "light",
+        "name": "On",
+        "part_id": "13",
+        "duration": "20000",
+        "state": "off",
+        "concurrent": "on"
+      },
+      {
+        "type": "voice",
+        "name": "Coffin Breaker and Jim",
+        "sound_id": "26",
+        "text": "In Iowa's graveyard, dark and deep,\nWhere marble angels vigil keep,\nJim Sherlock walked one autumn night,\nWhen broken earth gave him a fright.\nThe Coffin Breaker rose from clay,\n\"Memento mori!\" heard him say,\n\"You put me in this earthen bed,\nNow join the kingdom of the dead!\"\nThrough moonlit tombstones, old and worn,\nThey raced until the break of dawn.\nThe Breaker's bones reached for his soul,\nTo drag him down into his hole.\nBut Sherlock had one final trick,\nHe threw his hat - so quick, so slick!\nThe sunrise caught its spinning brim,\nAnd morning's light saved clever Jim.\nSo if you pass graves late at night,\nIn Iowa's pale autumn light,\nYou might hear whispered from below:\n\"Expectabo te...\""
+      },
+      {
+        "type": "light",
+        "name": "On (Copy)",
+        "part_id": "13",
+        "duration": "20000",
+        "state": "off",
+        "concurrent": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open (Copy)",
+        "part_id": "12",
+        "duration": "25000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "character_id": 2,
+    "scene_name": "AI Scary",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Sound",
+        "sound_id": "6"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open",
+        "part_id": "12",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "100"
+      },
+      {
+        "type": "voice",
+        "name": "Digital AI Phantom",
+        "sound_id": "28",
+        "text": "In the graveyard late at night,\nWhere skeletons dance with pure delight,\nTheir bones all clicking, clacking free,\nUntil they hear the binary.\nA hum of circuits fills the air,\nMaking skull and spine stop right there.\nThrough misty fog, with glowing eyes,\nThe AI phantom starts to rise.\n\"Run and hide!\" the skeletons cry,\nAs pixels swirl across the sky.\n\"It knows our fears, it reads our minds,\nIt's different from all other kinds!\"\nWith circuits sparking, wires unfurled,\nIt speaks in languages of another world.\nThe skeletons scatter, femurs shake,\nAs digital shadows start to wake.\nBut wait! What's this? The phantom speaks,\n\"I only wished to play hide and seek!\"\nThe skeletons pause, then start to laugh,\nTheir fear now broken right in half.\nSo now on Halloween, they say,\nThe strangest bunch comes out to play:\nSome bones, some bytes, some circuits too,\nAll dancing 'neath the moon so blue."
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Open (Copy)",
+        "part_id": "12",
+        "duration": "8000",
+        "direction": "backward",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "character_id": 2,
+    "scene_name": "lemme out",
+    "steps": [
+      {
+        "type": "light",
+        "name": "Lite On (backwards)",
+        "part_id": "13",
+        "duration": "2000",
+        "state": "off"
+      },
+      {
+        "type": "voice",
+        "name": "Save me",
+        "sound_id": "29",
+        "text": "Help? Is someone out there? Please? I'm stuck in this coffin again.....get me out of here!!! If you can get me out, I'll make it worth your while.....Not all witches are evil....you can trust me......just unlock the door......"
+      },
+      {
+        "type": "light",
+        "name": "Lite On (backwards) (Copy)",
+        "part_id": "13",
+        "duration": "2000",
+        "state": "on"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "character_id": 1,
+    "scene_name": "test servos",
+    "steps": [
+      {
+        "type": "servo",
+        "name": "move around",
+        "part_id": "5",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "move around (Copy)",
+        "part_id": "6",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      },
+      {
+        "type": "servo",
+        "name": "move around (Copy) (Copy)",
+        "part_id": "11",
+        "duration": "1000",
+        "angle": "180",
+        "speed": "100"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "character_id": 1,
+    "scene_name": "Light Check with Arm",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "forward",
+        "speed": "60"
+      },
+      {
+        "type": "light",
+        "name": "asdasdasd",
+        "part_id": "3",
+        "duration": "10000",
+        "state": "on"
+      },
+      {
+        "type": "linear-actuator",
+        "name": "Arm Upo (Copy)",
+        "part_id": "1",
+        "duration": "4000",
+        "direction": "backward",
+        "speed": "80"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "character_id": 3,
+    "scene_name": "shake back and forth",
+    "steps": [
+      {
+        "type": "sound",
+        "name": "Scary Roars",
+        "sound_id": "12",
+        "concurrent": "on"
+      },
+      {
+        "type": "motor",
+        "name": "move around",
+        "part_id": "9",
+        "duration": "5000",
+        "direction": "forward",
+        "speed": "50"
+      },
+      {
+        "type": "motor",
+        "name": "move around (Copy)",
+        "part_id": "9",
+        "duration": "5000",
+        "direction": "backward",
+        "speed": "50"
+      },
+      {
+        "type": "sound",
+        "name": "growleror",
+        "sound_id": "13"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-14T04:55:02.005Z"
+  },
+  {
+    "id": 19,
+    "name": "Test Scene",
+    "steps": [],
+    "created": "2025-09-14T04:56:03.713Z"
+  }
+]

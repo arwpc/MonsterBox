@@ -1,0 +1,11 @@
+# MonsterBox Authorized Keys Template
+# Copy this content to ~/.ssh/authorized_keys on target Raspberry Pi
+
+# Development key (full access)
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIESeumTvB64KQ9b0X5Y+7svkg9N6vKolK8h0r5EKr8uS monsterbox-development-20250616
+
+# Deployment key (restricted access)
+command="/usr/local/bin/monsterbox-deploy-wrapper.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJz/4vpZF326CfqltgIE9t5GUksVD+Tyn2Ro1YLVA060 monsterbox-deployment-20250616
+
+# Add additional developer keys below this line
+# Format: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... user@hostname

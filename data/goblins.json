@@ -1,0 +1,30 @@
+[
+  {
+    "id": "test-goblin-1759182772515-bbnnf5",
+    "endpoint": "http://localhost:3002",
+    "capabilities": {
+      "video": [
+        "mp4",
+        "avi",
+        "mov"
+      ],
+      "audio": [
+        "mp3",
+        "wav"
+      ]
+    },
+    "platform": "unknown",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-09-29T21:52:52.562Z",
+    "lastSeen": "2025-09-30T01:45:45.682Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
+  }
+]

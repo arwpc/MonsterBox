@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Models - MonsterBox 4.0</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/monsterbox4.css" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- Unified Navigation - Same on ALL pages -->
+  <%- include('../components/unified-navigation', { page: 'setup-models' }) %>
+    <div class="container py-4">
+      <div class="d-flex align-items-center mb-3">
+        <h3 class="me-3 mb-0">Models</h3>
+        <a class="btn btn-outline-secondary btn-sm" href="/setup/parts">Back to Parts</a>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Select Type</div>
+            <div class="card-body">
+              <select id="typeSelect" class="form-select">
+                <option value="servo">Servo</option>
+                <option value="linear_actuator">Linear Actuator</option>
+                <option value="motor">Motor</option>
+                <option value="stepper">Stepper Motor</option>
+                <option value="led">LED</option>
+                <option value="light">Light</option>
+                <option value="sensor">Sensor</option>
+                <option value="motion_sensor">Motion Sensor</option>
+                <option value="microphone">Microphone</option>
+                <option value="speaker">Speaker</option>
+                <option value="webcam">WebCam</option>
+                <option value="head_tracking">Head Tracking</option>
+              </select>
+              <div class="mt-3">
+                <button class="btn btn-primary w-100" id="btnLoad">Load Models</button>
+              </div>
+              <hr />
+              <h6>Create / Update</h6>
+              <div class="mb-2">
+                <label class="form-label">ID (leave blank to create)</label>
+                <input id="modelId" class="form-control" placeholder="" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Name</label>
+                <input id="modelName" class="form-control" placeholder="e.g., MG90S" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Description</label>
+                <input id="modelDesc" class="form-control" placeholder="optional" />
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Defaults (JSON)</label>
+                <textarea id="modelDefaults" rows="6" class="form-control"
+                  placeholder='{"minPulse":500,"maxPulse":2500}'></textarea>
+              </div>
+              <div class="d-grid gap-2">
+                <button class="btn btn-success" id="btnSaveModel">Save</button>
+                <button class="btn btn-danger" id="btnDeleteModel">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Models List</span>
+              <div>
+                <button class="btn btn-sm btn-outline-secondary" id="btnRefresh">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm" id="modelsTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Defaults</th>
+                      <th>Apply</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="5" class="text-center text-muted">No data</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <hr />
+              <div>
+                <h6>Apply Selected Model to Parts</h6>
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-5">
+                    <label class="form-label">Parts of this type</label>
+                    <select multiple id="partsSelect" class="form-select" size="6"></select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Selected Model</label>
+                    <input id="applyModelId" class="form-control" placeholder="Model ID" readonly />
+                  </div>
+                  <div class="col-md-3 d-grid">
+                    <button id="btnApplyModel" class="btn btn-primary">Apply to Selected</button>
+                    <button id="btnPushDefaults" class="btn btn-outline-primary mt-2"
+                      title="Merge model defaults into each part's config JSON">Push defaults into config</button>
+                  </div>
+                </div>
+                <div id="applyStatus" class="mt-2 small text-muted"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var typeSelect = document.getElementById('typeSelect');
+        var btnLoad = document.getElementById('btnLoad');
+        var btnRefresh = document.getElementById('btnRefresh');
+        var tableBody = document.querySelector('#modelsTable tbody');
+        var partsSelect = document.getElementById('partsSelect');
+        var applyModelId = document.getElementById('applyModelId');
+
+        function loadModels() {
+          var type = typeSelect.value;
+          fetch('/setup/models/api/' + encodeURIComponent(type))
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              var models = (d && d.models) || [];
+              var html = '';
+              if (models.length === 0) {
+                html = '<tr><td colspan="5" class="text-center text-muted">No models</td></tr>';
+              } else {
+                models.forEach(function (m) {
+                  html += '<tr>' +
+                    '<td><a href="#" class="link-secondary" data-fill-id="' + m.id + '">' + m.id + '</a></td>' +
+                    '<td>' + (m.name || '') + '</td>' +
+                    '<td>' + (m.description || '') + '</td>' +
+                    '<td><code class="small">' + (m.defaults ? JSON.stringify(m.defaults) : '{}') + '</code></td>' +
+                    '<td><button class="btn btn-sm btn-outline-primary" data-choose-apply="' + m.id + '">Choose</button></td>' +
+                    '</tr>';
+                });
+              }
+              tableBody.innerHTML = html;
+              wireModelRowHandlers();
+              loadPartsOfType();
+            })
+            .catch(function () { tableBody.innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load</td></tr>'; });
+        }
+
+        function wireModelRowHandlers() {
+          document.querySelectorAll('[data-fill-id]').forEach(function (a) {
+            a.onclick = function (ev) { ev.preventDefault(); fillFormFromId(a.getAttribute('data-fill-id')); };
+          });
+          document.querySelectorAll('[data-choose-apply]').forEach(function (btn) {
+            btn.onclick = function () { applyModelId.value = btn.getAttribute('data-choose-apply'); };
+          });
+        }
+
+        function fillFormFromId(id) {
+          var type = typeSelect.value;
+          fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(id))
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (!d || !d.success || !d.model) return;
+              document.getElementById('modelId').value = d.model.id;
+              document.getElementById('modelName').value = d.model.name || '';
+              document.getElementById('modelDesc').value = d.model.description || '';
+              document.getElementById('modelDefaults').value = JSON.stringify(d.model.defaults || {}, null, 2);
+            });
+        }
+
+        function loadPartsOfType() {
+          var type = typeSelect.value;
+          partsSelect.innerHTML = '';
+          fetch('/setup/parts/api/parts')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              var parts = (d && d.parts) || [];
+              parts.filter(function (p) { return ((p.type || '').replace(/\-/g, '_') === type); })
+                .forEach(function (p) {
+                  var opt = document.createElement('option');
+                  opt.value = p.id;
+                  opt.textContent = '#' + p.id + ' — ' + (p.name || '') + (p.config && p.config.modelId ? ' (model ' + p.config.modelId + ')' : '');
+                  partsSelect.appendChild(opt);
+                });
+            });
+        }
+
+        document.getElementById('btnSaveModel').onclick = function () {
+          var type = typeSelect.value;
+          var id = document.getElementById('modelId').value.trim();
+          var name = document.getElementById('modelName').value.trim();
+          var description = document.getElementById('modelDesc').value.trim();
+          var defaultsText = document.getElementById('modelDefaults').value;
+          var defaults;
+          try { defaults = defaultsText ? JSON.parse(defaultsText) : {}; } catch (e) {
+            alert('Defaults JSON invalid: ' + e.message); return;
+          }
+          var payload = { name: name, description: description, defaults: defaults };
+          var url = '/setup/models/api/' + encodeURIComponent(type) + (id ? '/' + encodeURIComponent(id) : '');
+          var method = id ? 'PUT' : 'POST';
+          fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(function (r) { return r.json(); })
+            .then(function () { loadModels(); });
+        };
+
+        document.getElementById('btnDeleteModel').onclick = function () {
+          var type = typeSelect.value;
+          var id = document.getElementById('modelId').value.trim();
+          if (!id) { alert('Enter ID to delete'); return; }
+          if (!confirm('Delete model ' + id + '?')) return;
+          fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(id), { method: 'DELETE' })
+            .then(function (r) { return r.json(); })
+            .then(function () { loadModels(); });
+        };
+
+        document.getElementById('btnApplyModel').onclick = function () {
+          var id = applyModelId.value.trim();
+          if (!id) { alert('Choose a model to apply'); return; }
+          var selected = Array.from(partsSelect.selectedOptions).map(function (o) { return o.value; });
+          if (selected.length === 0) { alert('Select one or more parts'); return; }
+          var ok = 0, fail = 0; var status = document.getElementById('applyStatus');
+          status.textContent = 'Applying model ' + id + ' to ' + selected.length + ' parts...';
+          Promise.all(selected.map(function (pid) {
+            return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid), {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: { modelId: id } })
+            }).then(function (r) { return r.json(); })
+              .then(function (resp) { if (resp && resp.success) ok++; else fail++; })
+              .catch(function () { fail++; });
+          })).then(function () {
+            status.textContent = 'Done. Applied to ' + ok + ' parts, failed: ' + fail + '.';
+            loadPartsOfType();
+          });
+        };
+
+        document.getElementById('btnPushDefaults').onclick = function () {
+          var id = applyModelId.value.trim();
+          if (!id) { alert('Choose a model to apply'); return; }
+          var selected = Array.from(partsSelect.selectedOptions).map(function (o) { return o.value; });
+          if (selected.length === 0) { alert('Select one or more parts'); return; }
+          var status = document.getElementById('applyStatus');
+          var type = typeSelect.value;
+          status.textContent = 'Pushing defaults from model ' + id + ' into ' + selected.length + ' parts...';
+          // Load model defaults first
+          fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(id))
+            .then(function (r) { return r.json(); })
+            .then(function (md) {
+              if (!md || !md.success || !md.model) { throw new Error('Model not found'); }
+              var defaults = md.model.defaults || {};
+              return Promise.all(selected.map(function (pid) {
+                // Load the part then merge
+                return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid))
+                  .then(function (r) { return r.json(); })
+                  .then(function (pd) {
+                    if (!pd || !pd.success || !pd.part) throw new Error('Part ' + pid + ' not found');
+                    var cfg = pd.part.config || {};
+                    // Merge: defaults fill missing keys, keep existing values
+                    var merged = {}; Object.keys(defaults).forEach(function (k) { merged[k] = defaults[k]; });
+                    Object.keys(cfg).forEach(function (k) { merged[k] = cfg[k]; });
+                    merged.modelId = id;
+                    return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid), {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: merged })
+                    }).then(function (r) { return r.json(); });
+                  });
+              }));
+            })
+            .then(function (results) {
+              var ok = 0, fail = 0; (results || []).forEach(function (res) { if (res && res.success) ok++; else fail++; });
+              status.textContent = 'Done. Pushed defaults to ' + ok + ' parts, failed: ' + fail + '.';
+              loadPartsOfType();
+            })
+            .catch(function (err) { status.textContent = 'Failed: ' + (err && err.message ? err.message : 'Unknown error'); });
+        };
+
+        btnLoad.onclick = loadModels;
+        btnRefresh.onclick = loadModels;
+        loadModels();
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/character-menu.js"></script>
+</body>
+
+</html>

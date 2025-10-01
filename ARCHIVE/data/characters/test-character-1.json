@@ -1,0 +1,15 @@
+{
+  "id": "test-character-1",
+  "char_name": "Test Monster",
+  "char_description": "A test monster for automated testing",
+  "char_personality": "Friendly and helpful test character",
+  "char_backstory": "Created specifically for testing purposes",
+  "char_appearance": "Green with glowing eyes",
+  "char_abilities": "Can run automated tests",
+  "char_weaknesses": "Vulnerable to bugs",
+  "char_goals": "To ensure all tests pass",
+  "char_fears": "Test failures",
+  "char_secrets": "Knows all the test data",
+  "created_at": "2025-06-23T21:16:58.854Z",
+  "updated_at": "2025-06-23T21:16:58.854Z"
+}

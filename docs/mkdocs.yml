@@ -1,0 +1,88 @@
+site_name: MonsterBox Documentation
+site_dir: site
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: deep orange
+  features:
+    - navigation.instant
+    - navigation.sections
+    - toc.integrate
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Character Sheets:
+      - Orlok: character_orlok.md
+      - Coffin Breaker: character_coffin_breaker.md
+      - PumpkinHead: character_pumpkinhead.md
+  - Installation: install.md
+  - Usage Guide: usage.md
+  - Configuration: config.md
+  - Directory Structure: structure.md
+  - FAQ / Troubleshooting: faq.md
+  - License: license.md
+  - Networking: networking.md
+
+  - Setup Guides:
+      - Animatronic Setup: setup/ANIMATRONIC-SETUP-GUIDE.md
+      - SSH Setup: setup/ANIMATRONIC-SSH-SETUP.md
+      - MCP Log Collection: setup/MCP-LOG-COLLECTION-SETUP.md
+
+  - Integration:
+      - ElevenLabs TTS: integration/elevenlabs.md
+
+  - Hardware:
+      - GPIO Assignments: hardware/gpio_assignments.md
+      - Hardware Schedule: hardware/hardware_schedule.md
+
+  - API Documentation:
+      - API Testing Summary: api/API-TESTING-SUMMARY.md
+
+  - Development:
+      - Task Management: development/task-management.md
+      - Task Workflows: development/task-workflows.md
+      - Development Process: development/development-process.md
+      - Task Master Guide: development/taskmaster-guide.md
+      - TaskMaster Integration: development/taskmaster-integration.md
+      - Task Status: development/task-status.md
+
+  - Security:
+      - MCP Setup Notes: security/MCP-SETUP-NOTES.md
+      - Authentication: security/authentication.md
+      - Authorization: security/authorization.md
+      - Remote Access: security/remote-access.md
+
+  - Testing:
+      - Overview: testing/index.md
+      - Test Organization: testing/organization.md
+      - API Testing: testing/api-testing.md
+      - Integration Testing: testing/integration.md
+      - Security Testing: testing/security.md
+      - Hardware Testing: testing/hardware.md
+      - Conversation Testing: testing/conversation.md
+      - Test Reports: testing/reports.md
+
+  - Animatronics Workshop:
+      - Overview: animatronics/index.md
+      - Familiarization: animatronics/familiarization.md
+      - Simple Steps: animatronics/simple_steps.md
+      - Hands-On Activities: animatronics/hands_on.md
+      - Final Presentation: animatronics/presentation.md

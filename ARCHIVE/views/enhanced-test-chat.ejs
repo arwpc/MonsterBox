@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-content {
+            margin-top: 80px; /* Account for universal header */
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: calc(100vh - 120px);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #00ff41;
+            padding: 15px 20px;
+            text-align: center;
+            position: relative;
+            border-bottom: 2px solid #00ff41;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .chat-header .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            color: #00ccff;
+        }
+        
+        /* Performance Metrics */
+        .performance-metrics {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            font-size: 10px;
+            color: #888;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 6px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 3px;
+            border: 1px solid #444;
+            min-width: 50px;
+        }
+
+        .metric-label {
+            font-weight: bold;
+            margin-bottom: 1px;
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            color: #00ff41;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        /* Character Selection Section */
+        .character-selection {
+            padding: 15px 20px;
+            background: rgba(0, 20, 40, 0.8);
+            border-bottom: 1px solid #00ff41;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .selection-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .selection-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #00ccff;
+            text-transform: uppercase;
+        }
+        
+        .character-select, .assistant-display {
+            padding: 8px 12px;
+            border: 1px solid #00ff41;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .character-select:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
+        }
+        
+        .assistant-display {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #666;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Voice Controls */
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .voice-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 2px solid #666;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .voice-toggle.active {
+            border-color: #00ff41;
+            background: rgba(0, 255, 65, 0.1);
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        
+        .voice-toggle.listening {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Live Mode specific styling */
+        .live-mode-toggle.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .live-mode-toggle.active.listening {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .live-mode-toggle.active.speaking {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            color: #4ecdc4;
+            animation: wave 2s infinite;
+        }
+
+        .live-mode-toggle.active.processing {
+            border-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.1);
+            color: #ffd93d;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.02); }
+            75% { transform: scale(0.98); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .voice-icon {
+            font-size: 16px;
+        }
+        
+        .voice-status {
+            font-size: 10px;
+            margin-left: 5px;
+            opacity: 0.8;
+        }
+        
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.8);
+            scrollbar-width: thin;
+            scrollbar-color: #00ff41 rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.bot {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            border: 1px solid;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+            border-color: #00ff41;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.bot .message-content {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff41;
+            border-color: #00ff41;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 5px;
+            color: #666;
+        }
+        
+        .message-performance {
+            font-size: 9px;
+            opacity: 0.5;
+            margin-top: 3px;
+            color: #888;
+        }
+        
+        /* Chat Input Area */
+        .chat-input-container {
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border-top: 2px solid #00ff41;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 50px;
+            max-height: 120px;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.3);
+        }
+        
+        .chat-input::placeholder {
+            color: #666;
+            opacity: 0.8;
+        }
+        
+        .send-button {
+            padding: 12px 20px;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .status-connected {
+            background: #00ff41;
+            color: #000;
+        }
+        
+        .status-disconnected {
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .status-processing {
+            background: #ffaa00;
+            color: #000;
+            animation: pulse 1s infinite;
+        }
+        
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                margin: 10px;
+            }
+
+            .character-selection {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .voice-controls {
+                justify-content: center;
+            }
+
+            .performance-metrics {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .chat-header h1 {
+                font-size: 22px;
+            }
+
+            .selection-group {
+                width: 100%;
+            }
+
+            .character-select, .assistant-display {
+                width: 100%;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            margin: 5% auto;
+            padding: 0;
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            color: #00ff41;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 2px solid #00ff41;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .close {
+            color: #00ff41;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ff0040;
+            text-shadow: 0 0 10px rgba(255, 0, 64, 0.5);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 2px solid #00ff41;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .form-section h4 {
+            margin-bottom: 15px;
+            color: #00ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #00ff41;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-control:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .small-btn {
+            padding: 6px 12px !important;
+            font-size: 12px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #00ff41 0%, #00ccff 100%);
+            color: #000;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: #00ff41;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: calc(100vh - 100px);
+                border-radius: 10px;
+            }
+
+            .chat-header {
+                padding: 10px 15px;
+            }
+
+            .chat-header h1 {
+                font-size: 20px;
+            }
+
+            .performance-metrics {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
+                gap: 8px;
+            }
+
+            .character-selection {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px 15px;
+            }
+
+            .voice-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metric {
+                min-width: 40px;
+                padding: 3px 5px;
+            }
+
+            .metric-label {
+                font-size: 8px;
+            }
+
+            .metric-value {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%- include('components/universal-header') %>
+    <div class="main-content">
+        <div class="chat-container">
+        <!-- Header with Performance Metrics -->
+        <div class="chat-header">
+            <div class="performance-metrics">
+                <div class="metric">
+                    <div class="metric-label">Voice Input</div>
+                    <div class="metric-value" id="voiceInputTime">--</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Agent</div>
+                    <div class="metric-value" id="agentTime">--</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Voice Output</div>
+                    <div class="metric-value" id="voiceOutputTime">--</div>
+                </div>
+            </div>
+
+            <h1><%= pageTitle %></h1>
+            <div class="subtitle">ElevenLabs Conversational AI Interface</div>
+
+            <div class="status-indicator" id="connectionStatus">Initializing...</div>
+
+
+        </div>
+
+        <!-- Character Selection and Voice Controls -->
+        <div class="character-selection">
+            <div class="selection-group">
+                <label for="characterSelect">Character</label>
+                <select id="characterSelect" class="character-select">
+                    <option value="">Select Character...</option>
+                    <% if (characters && characters.length > 0) { %>
+                        <% characters.forEach(character => { %>
+                            <option value="<%= character.id %>"
+                                    data-assistant="<%= character.openaiAssistantId || '' %>"
+                                    data-elevenlabs-agent="<%= character.elevenLabsAgentId || '' %>"
+                                    data-name="<%= character.char_name %>"
+                                    data-has-ai="<%= character.hasAI ? 'true' : 'false' %>"
+                                    data-has-voice="<%= character.hasVoice ? 'true' : 'false' %>"
+                                    data-has-elevenlabs="<%= character.hasElevenLabs ? 'true' : 'false' %>"
+                                    data-has-openai="<%= character.hasOpenAI ? 'true' : 'false' %>">
+                                <%= character.char_name %><%
+                                    let capabilities = [];
+                                    if (character.hasElevenLabs) capabilities.push('ElevenLabs');
+                                    if (character.hasOpenAI) capabilities.push('OpenAI');
+                                    if (character.hasVoice && !character.hasAI) capabilities.push('Voice Only');
+                                    if (capabilities.length > 0) { %> (<%= capabilities.join(' + ') %>)<% } %>
+                            </option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="selection-group">
+                <label for="assistantDisplay">ElevenLabs Agent</label>
+                <input type="text" id="assistantDisplay" class="assistant-display"
+                       placeholder="Select character first..." readonly>
+            </div>
+
+            <div class="voice-controls">
+                <div class="voice-toggle" id="elevenLabsToggle">
+                    <span class="voice-icon">🤖</span>
+                    <span>ElevenLabs Voice</span>
+                    <span class="voice-status" id="sttStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle" id="ttsToggle">
+                    <span class="voice-icon">🔊</span>
+                    <span>Text to Speech</span>
+                    <span class="voice-status" id="ttsStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle live-mode-toggle" id="liveModeToggle">
+                    <span class="voice-icon">🎙️</span>
+                    <span>Live Mode</span>
+                    <span class="voice-status" id="liveModeStatus">OFF</span>
+                </div>
+
+                <div class="voice-toggle" id="jawToggle" title="Enable/disable jaw animation for this character">
+                    <span class="voice-icon">🦷</span>
+                    <span>Jaw Animation</span>
+                    <span class="voice-status" id="jawStatus">OFF</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    Welcome to the Enhanced Test Chat Interface! Select a character above to begin your conversation.
+                    <div class="message-time" id="welcomeTime"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inline STT Settings (per character) -->
+        <div class="character-selection" style="border-top:1px solid rgba(0,255,65,0.15); margin-top:6px; padding-top:8px;">
+            <div class="selection-group" style="min-width:260px;">
+                <label for="sttLanguageInline">STT Language</label>
+                <select id="sttLanguageInline" class="character-select">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ja">Japanese</option>
+                </select>
+            </div>
+            <div class="selection-group">
+                <label for="confidenceThresholdInline" title="Minimum transcript confidence. Higher = filters out uncertain transcriptions. Lower = accepts more but may include mistakes.">Confidence</label>
+                <input type="range" id="confidenceThresholdInline" min="0" max="1" step="0.05" value="0.7"/>
+            </div>
+            <div class="selection-group">
+                <label for="vadThresholdInline" title="Voice Activity Detection sensitivity. Higher = requires louder/clearer speech. Lower = more sensitive to quiet or background noise.">VAD Threshold</label>
+                <input type="range" id="vadThresholdInline" min="0" max="1" step="0.05" value="0.5"/>
+            </div>
+            <div class="selection-group">
+                <label for="silenceDurationInline" title="Milliseconds of silence to consider speech ended. Higher = waits longer after you stop speaking. Lower = cuts off sooner.">Silence ms</label>
+                <input type="number" id="silenceDurationInline" min="100" max="2000" step="50" value="700"/>
+            </div>
+            <div class="selection-group">
+                <label for="prefixPaddingInline" title="Milliseconds of audio to include before detected speech starts. Higher = captures more lead-in. Lower = tighter start.">Prefix ms</label>
+                <input type="number" id="prefixPaddingInline" min="0" max="1000" step="50" value="300"/>
+            </div>
+            <div class="selection-group">
+                <button id="saveInlineSTT" class="send-button" style="padding:6px 12px;">Save STT</button>
+                <a href="https://skulltalker:8080/ai-management/microphone-stt" target="_blank" class="send-button" style="padding:6px 12px;">STT Config</a>
+                <button id="openTTSConfig" class="send-button" style="padding:6px 12px;">TTS Config</button>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea class="chat-input" id="chatInput"
+                          placeholder="Type your message here or enable Speech to Text..."
+                          rows="2"></textarea>
+                <button class="send-button" id="sendButton" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TTS Configuration Modal -->
+    <div id="ttsConfigModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔊 TTS Configuration</h3>
+                <span class="close" id="closeTTSModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <h4>Speaker Selection</h4>
+                    <div class="form-group">
+                        <label for="ttsDefaultSpeaker">Default Speaker:</label>
+                        <select id="ttsDefaultSpeaker" class="form-control">
+                            <option value="">Select Speaker...</option>
+                        </select>
+                        <small class="help-text">Choose which speaker part to use for all audio output</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="ttsOutputDevice">Audio Output Device:</label>
+                        <select id="ttsOutputDevice" class="form-control">
+                            <option value="default">System Default</option>
+                        </select>
+                        <button type="button" class="button small-btn" id="refreshTTSDevices">🔄 Refresh</button>
+                        <small class="help-text">Fallback audio device if no speaker part is selected</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Voice Settings</h4>
+                    <div class="form-group">
+                        <label for="ttsVolume">Volume:</label>
+                        <input type="range" id="ttsVolume" min="0" max="100" value="80" class="form-control">
+                        <span id="ttsVolumeValue">80%</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="ttsEnabled">
+                            <input type="checkbox" id="ttsEnabled" checked> Enable TTS Audio Output
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>Test Audio</h4>
+                    <div class="button-group">
+                        <button type="button" class="button" id="testTTSSpeaker">🔊 Test Speaker</button>
+                        <button type="button" class="button secondary-btn" id="testTTSVoice">🎤 Test Voice</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="button secondary-btn" id="cancelTTSConfig">Cancel</button>
+                <button type="button" class="button primary-btn" id="saveTTSConfig">Save Configuration</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Test Chat JavaScript must be loaded first -->
+    <script src="/js/enhanced-test-chat.js"></script>
+
+    <script>
+        // Initialize the Enhanced Test Chat Interface
+        document.addEventListener('DOMContentLoaded', function() {
+            const testChat = new EnhancedTestChat({
+                characterId: <%= characterId || 'null' %>,
+                agentId: '<%= agentId || '' %>',
+                selectedAgent: <%- JSON.stringify(selectedAgent || null) %>,
+                characters: <%- JSON.stringify(characters || []) %>,
+                assistants: <%- JSON.stringify(assistants || {}) %>
+            });
+        });
+    </script>
+</body>
+</html>

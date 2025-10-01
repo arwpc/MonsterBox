@@ -1,0 +1,216 @@
+[
+  {
+    "id": "1",
+    "name": "PunkinCam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-09-23T04:45:19.434Z",
+    "enabled": true
+  },
+  {
+    "id": "2",
+    "name": "PunkinShake",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-23T04:47:28.499Z",
+    "enabled": true,
+    "directionPin": 6,
+    "pwmPin": 13,
+    "maxDuration": 10000
+  },
+  {
+    "id": "16",
+    "name": "asdasd",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "1758746880246",
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-09-25T21:41:10.737Z",
+    "enabled": true
+  },
+  {
+    "id": "17",
+    "name": "Servo-Std-Coffin_Breaker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-09-28T20:02:33.396Z",
+    "enabled": true,
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-09-28T20:02:40.733Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "18",
+    "name": "Servo-Cont-Coffin_Breaker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-09-28T20:02:33.470Z",
+    "enabled": true
+  },
+  {
+    "id": "19",
+    "name": "Servo-Fb-Coffin_Breaker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-09-28T20:02:33.527Z",
+    "enabled": true
+  },
+  {
+    "id": "20",
+    "name": "LinearAct-Coffin_Breaker",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-09-28T20:02:33.582Z",
+    "enabled": true,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "21",
+    "name": "Motor-Coffin_Breaker",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-09-28T20:02:33.634Z",
+    "enabled": true,
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "22",
+    "name": "LED-Coffin_Breaker",
+    "type": "led",
+    "pin": 18,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-09-28T20:02:33.701Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "Light-Coffin_Breaker",
+    "type": "light",
+    "pin": 19,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-09-28T20:02:33.754Z",
+    "enabled": true
+  },
+  {
+    "id": "24",
+    "name": "Sensor-Coffin_Breaker",
+    "type": "sensor",
+    "pin": 20,
+    "description": "digital/analog sensors",
+    "config": {},
+    "created": "2025-09-28T20:02:33.802Z",
+    "enabled": true
+  },
+  {
+    "id": "25",
+    "name": "Motion-Coffin_Breaker",
+    "type": "motion_sensor",
+    "pin": 21,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-09-28T20:02:33.847Z",
+    "enabled": true
+  },
+  {
+    "id": "26",
+    "name": "Webcam-Coffin_Breaker",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-09-28T20:02:33.894Z",
+    "enabled": true
+  },
+  {
+    "id": "27",
+    "name": "Microphone-Coffin_Breaker",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-09-28T20:02:33.949Z",
+    "enabled": true
+  },
+  {
+    "id": "28",
+    "name": "Speaker-Coffin_Breaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-09-28T20:02:33.997Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "29",
+    "name": "HeadTrack-Coffin_Breaker",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-09-28T20:02:34.043Z",
+    "enabled": true
+  }
+]

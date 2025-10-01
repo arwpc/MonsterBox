@@ -1,0 +1,126 @@
+[
+  {
+    "id": 1,
+    "name": "Midnight Terror",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "baec5665-a303-49fc-a4c2-48dfd0135a58",
+        "volume": 80,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 2,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 2000,
+        "concurrent": false
+      },
+      {
+        "type": "part",
+        "partId": 9,
+        "partType": "light",
+        "action": "turnOn",
+        "params": {
+          "duration": 500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "audio",
+        "audioId": "75e5ff4a-cadc-4ce0-b914-9b6f698b481f",
+        "volume": 90,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 3000,
+        "concurrent": false
+      },
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": true
+      },
+      {
+        "type": "part",
+        "partId": 9,
+        "partType": "light",
+        "action": "turnOff",
+        "params": {},
+        "concurrent": false
+      },
+      {
+        "type": "pose",
+        "poseId": 2,
+        "concurrent": false
+      }
+    ],
+    "created": "2025-09-25T01:46:24.597Z"
+  },
+  {
+    "id": 2,
+    "name": "The Awakening",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4",
+        "volume": 60,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "audio",
+        "audioId": "54ef9d8c-3c05-4394-b670-c1808774654c",
+        "volume": 70,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 2,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 3000,
+        "concurrent": false
+      },
+      {
+        "type": "part",
+        "partId": 4,
+        "partType": "servo",
+        "action": "continuous",
+        "params": {
+          "direction": "random",
+          "durationMs": 2000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "audio",
+        "audioId": "05194fac-2536-4935-a334-e0aba22f2a3f",
+        "volume": 75,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "concurrent": false
+      }
+    ],
+    "created": "2025-09-25T01:46:41.673Z"
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "name": "Orlok",
+    "description": "Count Orlok - Vampire animatronic with moving arms and glowing eyes",
+    "created": "2025-09-14T09:57:00.000Z",
+    "enabled": true,
+    "sttConfig": {
+      "model": "scribe_english_v1",
+      "language": "en",
+      "sampleRate": "16000",
+      "microphonePartId": "9",
+      "microphoneDeviceId": "sysdefault",
+      "format": "mp3"
+    }
+  }
+]

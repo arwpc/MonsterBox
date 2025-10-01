@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonsterBox Stream Test - Direct MJPEG</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            margin-bottom: 30px;
+        }
+        
+        .stream-container {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .stream-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background: #000;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background: #ff5252;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status.info {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .info {
+            background: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 MonsterBox Stream Test - Orlok Camera</h1>
+        
+        <div class="info">
+            <h3>📋 Test Instructions:</h3>
+            <ol>
+                <li>Click "Start Stream" to begin streaming from Orlok's camera</li>
+                <li>The video should appear below once streaming starts</li>
+                <li>Click "Stop Stream" to end the stream</li>
+                <li>Use "Refresh Stream" if the video stops updating</li>
+            </ol>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startStream()">Start Stream</button>
+            <button id="stopBtn" onclick="stopStream()" disabled>Stop Stream</button>
+            <button id="refreshBtn" onclick="refreshStream()">Refresh Stream</button>
+            <button onclick="checkStatus()">Check Status</button>
+        </div>
+        
+        <div id="status" class="status info">Ready to start streaming...</div>
+        
+        <div class="stream-container">
+            <h3>📹 Live Stream from Orlok (Character ID: 1)</h3>
+            <img id="streamImage" class="stream-image" alt="Stream will appear here..." style="display: none;">
+            <div id="placeholder" style="padding: 100px; background: #222; border-radius: 5px;">
+                <p>🎬 Stream not active</p>
+                <p>Click "Start Stream" to begin</p>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>🔧 Technical Details:</h3>
+            <ul>
+                <li><strong>Character:</strong> Orlok (ID: 1)</li>
+                <li><strong>Camera:</strong> /dev/video0 on 192.168.8.120</li>
+                <li><strong>Format:</strong> MJPEG Stream</li>
+                <li><strong>Resolution:</strong> 640x480 @ 30fps</li>
+                <li><strong>Stream URL:</strong> /api/streaming/stream/1</li>
+            </ul>
+        </div>
+        
+        <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <script>
+        let streamActive = false;
+        let streamImage = document.getElementById('streamImage');
+        let placeholder = document.getElementById('placeholder');
+        let status = document.getElementById('status');
+        let startBtn = document.getElementById('startBtn');
+        let stopBtn = document.getElementById('stopBtn');
+        
+        // Update timestamp
+        function updateTimestamp() {
+            document.getElementById('timestamp').textContent = 'Last updated: ' + new Date().toLocaleString();
+        }
+        
+        // Update status display
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = 'status ' + type;
+            updateTimestamp();
+        }
+        
+        // Start streaming
+        async function startStream() {
+            try {
+                updateStatus('Starting stream...', 'info');
+                startBtn.disabled = true;
+                
+                // Call start stream API
+                const response = await fetch('/api/streaming/start/1', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus('Stream started successfully!', 'success');
+                    
+                    // Show stream image
+                    streamImage.src = '/api/streaming/stream/1?t=' + Date.now();
+                    streamImage.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    
+                    streamActive = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    // Set up error handling for image
+                    streamImage.onerror = function() {
+                        updateStatus('Stream connection lost. Try refreshing.', 'error');
+                    };
+                    
+                    streamImage.onload = function() {
+                        if (streamActive) {
+                            updateStatus('Stream active and receiving video', 'success');
+                        }
+                    };
+                    
+                } else {
+                    updateStatus('Failed to start stream: ' + result.error, 'error');
+                    startBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                updateStatus('Error starting stream: ' + error.message, 'error');
+                startBtn.disabled = false;
+            }
+        }
+        
+        // Stop streaming
+        async function stopStream() {
+            try {
+                updateStatus('Stopping stream...', 'info');
+                stopBtn.disabled = true;
+                
+                // Call stop stream API
+                const response = await fetch('/api/streaming/stop/1', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus('Stream stopped successfully', 'info');
+                } else {
+                    updateStatus('Failed to stop stream: ' + result.error, 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('Error stopping stream: ' + error.message, 'error');
+            } finally {
+                // Hide stream image
+                streamImage.style.display = 'none';
+                placeholder.style.display = 'block';
+                streamImage.src = '';
+                
+                streamActive = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        // Refresh stream
+        function refreshStream() {
+            if (streamActive) {
+                updateStatus('Refreshing stream...', 'info');
+                streamImage.src = '/api/streaming/stream/1?t=' + Date.now();
+            } else {
+                updateStatus('No active stream to refresh', 'error');
+            }
+        }
+        
+        // Check stream status
+        async function checkStatus() {
+            try {
+                updateStatus('Checking stream status...', 'info');
+                
+                const response = await fetch('/api/streaming/health/1');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const health = result.health;
+                    if (health.streamActive) {
+                        updateStatus('Stream is active and healthy', 'success');
+                    } else {
+                        updateStatus('Stream is not active', 'info');
+                    }
+                } else {
+                    updateStatus('Failed to check status: ' + result.message, 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('Error checking status: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize
+        updateTimestamp();
+        
+        // Auto-refresh timestamp every 30 seconds
+        setInterval(updateTimestamp, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "id": "test-character-2",
+  "char_name": "Validation Beast",
+  "char_description": "A character for testing form validation",
+  "char_personality": "Strict and precise",
+  "char_backstory": "Born from the need for data validation",
+  "char_appearance": "Blue with sharp edges",
+  "char_abilities": "Form validation and error detection",
+  "char_weaknesses": "Invalid input data",
+  "char_goals": "Perfect data integrity",
+  "char_fears": "Malformed JSON",
+  "char_secrets": "The secret to perfect validation",
+  "created_at": "2025-06-23T21:16:58.854Z",
+  "updated_at": "2025-06-23T21:16:58.854Z"
+}

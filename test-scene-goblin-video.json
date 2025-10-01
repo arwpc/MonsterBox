@@ -1,0 +1,82 @@
+{
+  "scenes": [
+    {
+      "id": "test-scene-goblin-video",
+      "name": "Test Scene with Goblin Video Step",
+      "characterId": "character-1",
+      "description": "Testing Scene execution with Poses and Goblin video playback",
+      "version": "1.0",
+      "created": "2025-09-29T21:55:00.000Z",
+      "steps": [
+        {
+          "id": "step-1-pose",
+          "type": "pose",
+          "name": "Initial Pose",
+          "description": "Set character to neutral pose",
+          "duration": 2000,
+          "poseId": "neutral",
+          "settings": {
+            "speed": "normal",
+            "smooth": true
+          }
+        },
+        {
+          "id": "step-2-poltergeist-video",
+          "type": "goblin",
+          "name": "Play Poltergeist Startle Scare",
+          "description": "Play poltergeist startle scare effect on goblin",
+          "duration": 8000,
+          "goblinId": "test-goblin-1759182772515-bbnnf5",
+          "videoId": "e14461ec-8349-45f3-a301-097a34903790",
+          "options": {
+            "loop": false,
+            "volume": 80
+          }
+        },
+        {
+          "id": "step-3-fire-video",
+          "type": "goblin",
+          "name": "Play Fire Test Video",
+          "description": "Play fire test video on goblin",
+          "duration": 6000,
+          "goblinId": "test-goblin-1759182772515-bbnnf5",
+          "videoId": "da542d7d-7b9c-415a-adb7-cc1b3c725b66",
+          "options": {
+            "loop": false,
+            "volume": 80
+          }
+        },
+        {
+          "id": "step-4-water-video",
+          "type": "goblin",
+          "name": "Play Water Test Video",
+          "description": "Play water test video on goblin",
+          "duration": 7000,
+          "goblinId": "test-goblin-1759182772515-bbnnf5",
+          "videoId": "dad5cf71-097d-42a8-b310-fa6c95fd28e1",
+          "options": {
+            "loop": false,
+            "volume": 80
+          }
+        },
+        {
+          "id": "step-3-pose",
+          "type": "pose", 
+          "name": "Final Pose",
+          "description": "Set character to idle pose",
+          "duration": 1000,
+          "poseId": "idle",
+          "settings": {
+            "speed": "slow",
+            "smooth": true
+          }
+        }
+      ],
+      "executionMode": "serial",
+      "metadata": {
+        "tags": ["test", "goblin", "video"],
+        "category": "testing"
+      }
+    }
+  ]
+}

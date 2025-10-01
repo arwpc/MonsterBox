@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <%- include('components/universal-header') %>
+
+    <main>
+        <div class="info-section">
+            <h3>🦾 Hardware Parts Overview</h3>
+            <p>Manage all physical hardware components independently of characters. Configure GPIO pins, calibration
+                settings, and safety limits. Parts can then be assigned to characters in the Characters menu.</p>
+        </div>
+
+
+
+        <div class="button-group">
+            <a href="/parts/new/motor" class="button">🔄 Add Motor</a>
+            <a href="/parts/linear-actuator/new" class="button">🦴 Add Linear Actuator</a>
+            <a href="/parts/new/light" class="button">💡 Add Light</a>
+            <a href="/parts/new/led" class="button">🔆 Add LED</a>
+            <a href="/parts/servo/new" class="button">🦷 Add Servo</a>
+            <a href="/parts/new/sensor" class="button">📡 Add Sensor</a>
+            <a href="/parts/new/motion-sensor" class="button">🔍 Add Motion Sensor</a>
+            <a href="/parts/webcam/new" class="button">📹 Add Webcam</a>
+            <a href="/parts/head-tracking/new" class="button">🎯 Add Head Tracking</a>
+            <a href="/parts/microphone/new" class="button">🎤 Add Microphone</a>
+            <a href="/parts/speaker/new" class="button">🔊 Add Speaker</a>
+        </div>
+
+
+
+        <div id="partsContainer">
+            <% if (parts.length===0) { %>
+                <div class="empty-state">
+                    <h3>🔧 No Hardware Parts Found</h3>
+                    <p>Start by adding your first hardware component using the buttons above.</p>
+                </div>
+                <% } else { %>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>GPIO/Config</th>
+                                    <th>Assigned Characters</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% parts.forEach(function(part) { %>
+                                    <tr>
+                                        <td>
+                                            <% let editUrl = '/parts/' + part.id + '/edit'; %>
+                                            <% if (part.type==='linear-actuator') { editUrl = '/parts/linear-actuator/' + part.id + '/edit'; }
+                                               else if (part.type==='servo') { editUrl = '/parts/servo/' + part.id + '/edit'; }
+                                               else if (part.type==='light') { editUrl = '/parts/light/' + part.id + '/edit'; }
+                                               else if (part.type==='webcam') { editUrl = '/parts/webcam/' + part.id + '/edit'; }
+                                               else if (part.type==='microphone') { editUrl = '/parts/microphone/' + part.id + '/edit'; }
+                                               else if (part.type==='speaker') { editUrl = '/parts/speaker/' + part.id + '/edit'; }
+                                               else if (part.type==='motion-sensor') { editUrl = '/parts/motion-sensor/' + part.id + '/edit'; } %>
+                                            <a href="<%= editUrl %>"><strong><%= part.name %></strong></a>
+                                            <% if (part.description) { %>
+                                                <br><small><%= part.description %></small>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <span class="part-type-badge <%= part.type %>">
+                                                <%= part.type==='linear-actuator' ? '🦴' : part.type==='servo' ? '🦷' :
+                                                    part.type==='motor' ? '🔄' : part.type==='light' ? '💡' :
+                                                    part.type==='led' ? '🔆' : part.type==='sensor' ? '📡' :
+                                                    part.type==='motion-sensor' ? '🔍' : part.type==='webcam' ? '📹' :
+                                                    part.type==='microphone' ? '🎤' : part.type==='speaker' ? '🔊' : '🔧' %>
+                                                    <%= part.type %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (part.pin !==undefined) { %>
+                                                <code>GPIO <%= part.pin %></code>
+                                                <% } %>
+                                                    <% if (part.details) { %>
+                                                        <br><small>
+                                                            <%= part.details %>
+                                                        </small>
+                                                        <% } %>
+                                        </td>
+                                        <td>
+                                            <div class="assigned-characters" id="assigned-<%= part.id %>">
+                                                <small>Loading...</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="button-group">
+                                                <% if (part.type==='linear-actuator' ) { %>
+                                                    <a href="/parts/linear-actuator/<%= part.id %>/edit"
+                                                        class="button small-btn">✏️ Edit</a>
+                                                    <% } else if (part.type==='servo' ) { %>
+                                                        <a href="/parts/servo/<%= part.id %>/edit"
+                                                            class="button small-btn">✏️ Edit</a>
+                                                        <% } else if (part.type==='light' ) { %>
+                                                            <a href="/parts/light/<%= part.id %>/edit"
+                                                                class="button small-btn">✏️ Edit</a>
+                                                            <% } else if (part.type==='webcam' ) { %>
+                                                                <a href="/parts/webcam/<%= part.id %>/edit"
+                                                                    class="button small-btn">✏️ Edit</a>
+                                                                <% } else if (part.type==='microphone' ) { %>
+                                                                    <a href="/parts/microphone/<%= part.id %>/edit"
+                                                                        class="button small-btn">✏️ Edit</a>
+                                                                    <% } else if (part.type==='motion-sensor' ) { %>
+                                                                        <a href="/parts/motion-sensor/<%= part.id %>/edit"
+                                                                            class="button small-btn">✏️ Edit</a>
+                                                                        <% } else { %>
+                                                                            <a href="/parts/<%= part.id %>/edit"
+                                                                                class="button small-btn">✏️ Edit</a>
+                                                                            <% } %>
+                                                                                <button
+                                                                                    class="button small-btn delete-btn delete-part"
+                                                                                    data-id="<%= part.id %>">🗑️
+                                                                                    Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } %>
+        </div>
+
+        <div class="button-group">
+            <a href="/" class="button secondary-btn">Back to Main Menu</a>
+        </div>
+    </main>
+
+    <style>
+        .info-section {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info-section h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+
+
+
+
+        .part-type-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+
+
+        .assigned-characters {
+            font-size: 11px;
+            max-width: 150px;
+        }
+
+        .small-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            margin: 2px;
+            min-width: auto;
+        }
+
+
+
+        .delete-btn {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed rgba(0, 255, 0, 0.3);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .empty-state h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            // Load character assignments for each part
+            loadCharacterAssignments();
+
+            $('.delete-part').on('click', function () {
+                const id = $(this).data('id');
+                if (confirm('Are you sure you want to delete this hardware part? This will remove it from all character assignments.')) {
+                    $.post('/parts/' + id + '/delete')
+                        .done(function () {
+                            location.reload();
+                        })
+                        .fail(function (xhr, status, error) {
+                            console.error('Error details:', xhr.responseText);
+                            alert('Error deleting part: ' + xhr.status + ' ' + xhr.statusText);
+                        });
+                }
+            });
+        });
+
+
+
+
+
+        function loadCharacterAssignments() {
+            // Load character assignments for each part
+            $.get('/api/characters')
+                .done(function (characters) {
+                    // For each part, check which characters use it
+                    <% if (parts.length > 0) { %>
+                        <% parts.forEach(function (part) { %>
+                    loadPartAssignments('<%= part.id %>', characters);
+                        <% }); %>
+                    <% } %>
+                })
+                .fail(function () {
+                    console.error('Failed to load character assignments');
+                });
+        }
+
+        function loadPartAssignments(partId, characters) {
+            // Find the part data from the server-side rendered data
+            const partData = <% if (parts.length > 0) { %>
+                [<% parts.forEach(function(part, index) { %>
+                    {id: <%= part.id %>, characterId: <%= part.characterId || 'null' %>}<%= index < parts.length - 1 ? ',' : '' %>
+                <% }); %>]
+            <% } else { %>[]<% } %>;
+
+            const part = partData.find(p => p.id == partId);
+            const assignedDiv = document.getElementById(`assigned-${partId}`);
+
+            if (assignedDiv && part) {
+                if (part.characterId) {
+                    const assignedCharacter = characters.find(c => c.id === part.characterId);
+                    if (assignedCharacter) {
+                        assignedDiv.innerHTML = `<strong>${assignedCharacter.char_name || assignedCharacter.name}</strong>`;
+                    } else {
+                        assignedDiv.innerHTML = '<small style="color: #ffaa00;">Unknown Character</small>';
+                    }
+                } else {
+                    assignedDiv.innerHTML = '<small style="color: #888;">Unassigned</small>';
+                }
+            }
+        }
+
+        // Character filtering is now automatic based on selected character
+        // No manual filter functions needed
+
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1",
+    "name": "Groundbreaker Cam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0,
+      "width": 640,
+      "height": 480,
+      "fps": 30
+    },
+    "created": "2025-09-28T02:48:01.673Z",
+    "enabled": true,
+    "updated": "2025-09-28T02:50:53.815Z"
+  },
+  {
+    "id": "3",
+    "name": "Groundbreaker Sound System",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "modelId": "motor_stepperonline_nema17_59ncm",
+      "audioDeviceId": "default",
+      "volume": 100,
+      "bass": 5,
+      "treble": 0
+    },
+    "created": "2025-09-28T17:47:44.063Z",
+    "enabled": true,
+    "modelId": "default_speaker",
+    "updated": "2025-09-28T17:48:07.960Z"
+  },
+  {
+    "id": "4",
+    "name": "default motor",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 10000
+    },
+    "created": "2025-09-30T21:43:04.428Z",
+    "enabled": true,
+    "leftEnablePin": 17,
+    "rightEnablePin": 27,
+    "pwmPin": 18,
+    "maxDuration": 10000,
+    "directionPin": 18,
+    "updated": "2025-09-30T21:50:16.131Z",
+    "modelId": "default_wiper_motor_bts7960"
+  }
+]

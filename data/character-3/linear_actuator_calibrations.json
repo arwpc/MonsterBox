@@ -1,0 +1,36 @@
+{
+  "1": {
+    "part_id": "1",
+    "part_name": "Left Arm",
+    "calibrated_date": "2025-09-25T01:01:22.708Z",
+    "positions": {
+      "min": {
+        "description": "Fully retracted position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:00:40.720Z"
+      },
+      "max": {
+        "description": "Fully extended position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:01:22.708Z"
+      }
+    }
+  },
+  "3": {
+    "part_id": "3",
+    "part_name": "Right Arm of Satan",
+    "calibrated_date": "2025-09-25T01:03:49.363Z",
+    "positions": {
+      "min": {
+        "description": "Fully retracted position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:03:18.949Z"
+      },
+      "max": {
+        "description": "Fully extended position",
+        "calibrated": true,
+        "calibrated_date": "2025-09-25T01:03:49.363Z"
+      }
+    }
+  }
+}

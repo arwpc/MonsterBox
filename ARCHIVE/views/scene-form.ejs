@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <%- include('components/universal-header') %>
+    <header>
+        <h1 class="landing-title"><%= title %></h1>
+    </header>
+
+    <main>
+        <form id="sceneForm" action="<%= action %>" method="POST">
+            <input type="hidden" name="character_id" value="<%= character.id %>">
+            
+            <div class="form-group">
+                <label for="scene_name">Scene Name:</label>
+                <input type="text" id="scene_name" name="scene_name" value="<%= scene.scene_name || '' %>" required>
+            </div>
+
+            <div class="config-section">
+                <h2>Steps</h2>
+                <div id="steps" class="sortable">
+                    <% (scene.steps || []).forEach(function(step, index) { %>
+                        <%- include('partials/step', { step, index, parts, sounds }) %>
+                    <% }); %>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" onclick="addStep('motor')" class="button">Add Motor</button>
+                    <button type="button" onclick="addStep('linear-actuator')" class="button">Add Linear Actuator</button>
+                    <button type="button" onclick="addStep('servo')" class="button">Add Servo</button>
+                    <button type="button" onclick="addStep('led')" class="button">Add LED</button>
+                    <button type="button" onclick="addStep('light')" class="button">Add Light</button>
+                    <button type="button" onclick="addStep('sensor')" class="button">Add Sensor</button>
+                    <button type="button" onclick="addStep('sound')" class="button">Add Sound</button>
+                    <button type="button" onclick="addStep('voice')" class="button">Add My Words</button>
+                    <button type="button" onclick="addStep('pause')" class="button">Add Pause</button>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="button primary-btn">Save Scene</button>
+                <a href="/scenes?characterId=<%= character.id %>" class="button secondary-btn">Back to Scenes</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        const characterId = '<%= character.id %>';
+
+        $(document).ready(function() {
+            $(".sortable").sortable({
+                update: function(event, ui) {
+                    updateStepNumbers();
+                }
+            });
+
+            // Event delegation for remove and copy buttons
+            $('#steps').on('click', '.remove-step', function() {
+                removeStep($(this).data('index'));
+            });
+
+            $('#steps').on('click', '.copy-step', function() {
+                copyStep($(this).data('index'));
+            });
+
+            // Event delegation for voice preview and config buttons
+            $('#steps').on('click', '.preview-voice', async function() {
+                const index = $(this).data('index');
+                const text = $(`#words_${index}`).val();
+                const statusDiv = $(`#voice-preview-status-${index}`);
+                const audio = $(`#voice-audio-${index}`)[0];
+                
+                if (!text) {
+                    statusDiv.html('Please enter text to generate');
+                    return;
+                }
+
+                statusDiv.html('Generating voice...');
+
+                try {
+                    const response = await axios.post('/api/voice/generate-for-scene', {
+                        text: text,
+                        characterId: characterId
+                    });
+
+                    if (response.data.success) {
+                        statusDiv.html('Voice generated successfully!');
+                        // Set the sound ID for the step
+                        $(`input[name="steps[${index}][sound_id]"]`).val(response.data.soundId);
+                        // Set up audio player and play immediately
+                        audio.src = response.data.path;
+                        audio.play();
+                    } else {
+                        statusDiv.html('Failed to generate voice: ' + response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Error generating voice:', error);
+                    statusDiv.html('Error generating voice. Please try again.');
+                }
+            });
+
+            // Voice Config button handler
+            $('#steps').on('click', '.voice-config', function() {
+                window.location.href = `/api/voice/configure?characterId=${characterId}`;
+            });
+        });
+
+        function addStep(type) {
+            const steps = document.getElementById('steps');
+            const stepCount = steps.children.length;
+            
+            $.get('/scenes/step-template', { type: type, index: stepCount, characterId: characterId }, function(html) {
+                const newStep = document.createElement('div');
+                newStep.innerHTML = html;
+                steps.appendChild(newStep.firstChild);
+                updateStepNumbers();
+            });
+        }
+
+        function removeStep(index) {
+            const steps = document.getElementById('steps');
+            steps.removeChild(steps.children[index]);
+            updateStepNumbers();
+        }
+
+        function copyStep(index) {
+            const steps = document.getElementById('steps');
+            const originalStep = steps.children[index];
+            const newStep = originalStep.cloneNode(true);
+            const newIndex = steps.children.length;
+
+            // Update the step number and type
+            const stepType = newStep.querySelector('input[name$="[type]"]').value;
+            newStep.querySelector('h3').textContent = `Step ${newIndex + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
+
+            // Update the data-index attribute
+            newStep.dataset.index = newIndex;
+
+            // Update the name attribute of all inputs and selects
+            newStep.querySelectorAll('input, select, textarea').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(/steps\[\d+\]/, `steps[${newIndex}]`);
+                }
+                if (element.id && element.id.startsWith('words_')) {
+                    element.id = `words_${newIndex}`;
+                }
+            });
+
+            // Update preview status div id
+            const previewStatus = newStep.querySelector('.preview-status');
+            if (previewStatus) {
+                previewStatus.id = `voice-preview-status-${newIndex}`;
+            }
+
+            // Update audio element id
+            const audioElement = newStep.querySelector('audio');
+            if (audioElement) {
+                audioElement.id = `voice-audio-${newIndex}`;
+            }
+
+            // Update the data-index attribute of the buttons
+            newStep.querySelector('.remove-step').dataset.index = newIndex;
+            newStep.querySelector('.copy-step').dataset.index = newIndex;
+            const previewButton = newStep.querySelector('.preview-voice');
+            if (previewButton) {
+                previewButton.dataset.index = newIndex;
+            }
+            const configButton = newStep.querySelector('.voice-config');
+            if (configButton) {
+                configButton.dataset.index = newIndex;
+            }
+
+            // Append the new step to the steps container
+            steps.appendChild(newStep);
+
+            // Update the step name to indicate it's a copy
+            const nameInput = newStep.querySelector('input[name$="[name]"]');
+            if (nameInput) {
+                nameInput.value = nameInput.value + ' (Copy)';
+            }
+
+            updateStepNumbers();
+        }
+
+        function updateStepNumbers() {
+            const steps = document.getElementById('steps').children;
+            for (let i = 0; i < steps.length; i++) {
+                const stepType = steps[i].querySelector('input[name$="[type]"]').value;
+                steps[i].querySelector('h3').textContent = `Step ${i + 1}: ${stepType.charAt(0).toUpperCase() + stepType.slice(1)}`;
+                steps[i].dataset.index = i;
+                updateStepInputNames(steps[i], i);
+                steps[i].querySelector('.remove-step').dataset.index = i;
+                steps[i].querySelector('.copy-step').dataset.index = i;
+                const previewButton = steps[i].querySelector('.preview-voice');
+                if (previewButton) {
+                    previewButton.dataset.index = i;
+                }
+                const configButton = steps[i].querySelector('.voice-config');
+                if (configButton) {
+                    configButton.dataset.index = i;
+                }
+            }
+        }		
+
+        function updateStepInputNames(stepElement, newIndex) {
+            const inputs = stepElement.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    input.setAttribute('name', name.replace(/steps\[\d+\]/, `steps[${newIndex}]`));
+                }
+                if (input.id && input.id.startsWith('words_')) {
+                    input.id = `words_${newIndex}`;
+                }
+            });
+        }
+
+        // Form submission using Axios
+        document.getElementById('sceneForm').onsubmit = function(event) {
+            event.preventDefault();
+            updateStepNumbers();
+
+            // Serialize form data
+            const formData = new FormData(this);
+
+            // Convert FormData to plain object
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            console.log('Scene Name:', data.scene_name);
+
+            axios.post(`${this.action}?characterId=${characterId}`, data)
+                .then(response => {
+                    console.log('Scene saved successfully:', response.data);
+                    window.location.href = `/scenes?characterId=${characterId}`;
+                })
+                .catch(error => {
+                    console.error('Error saving scene:', error);
+                    alert('Failed to save scene. Please check the console for more details.');
+                });
+
+            return false;
+        };
+    </script>
+</body>
+</html>

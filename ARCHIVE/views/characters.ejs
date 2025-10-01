@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <%- include('components/universal-header') %>
+
+    <main>
+        <div class="info-section">
+            <h3>🎭 Character Overview</h3>
+            <p>Manage animatronic characters and their configurations. Assign hardware parts and AI instances to create complete character experiences.</p>
+        </div>
+
+        <div class="button-group">
+            <a href="/characters/new" class="button">🎭 Add New Character</a>
+            <a href="/parts" class="button secondary-btn">🔧 Manage Hardware Parts</a>
+            <a href="/" class="button secondary-btn">🏠 Back to Main Menu</a>
+        </div>
+
+        <% if (characters.length === 0) { %>
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">🎭</div>
+            <h3>No Characters Found</h3>
+            <p>Start by creating your first animatronic character to begin building your MonsterBox experience.</p>
+            <a href="/characters/new" class="button">🎭 Add New Character</a>
+        </div>
+        <% } else { %>
+
+        <!-- Characters Table -->
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Hardware Parts</th>
+                        <th>AI Instances</th>
+                        <th>Sounds</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% characters.forEach(function(character) { %>
+                    <%
+                    // Process parts assignment
+                    let displayParts = [];
+                    parts.forEach(function(part) {
+                        if (part.characterId === character.id) {
+                            displayParts.push(part);
+                        }
+                    });
+                    if (character.parts && character.parts.length > 0) {
+                        parts.forEach(function(part) {
+                            if (character.parts.includes(part.id) && !displayParts.find(p => p.id === part.id)) {
+                                displayParts.push(part);
+                            }
+                        });
+                    }
+
+                    // Process sounds assignment
+                    let displaySounds = [];
+                    sounds.forEach(function(sound) {
+                        if (sound.characterIds && sound.characterIds.includes(character.id)) {
+                            displaySounds.push(sound);
+                        }
+                    });
+                    if (character.sounds && character.sounds.length > 0) {
+                        sounds.forEach(function(sound) {
+                            if (character.sounds.includes(sound.id) && !displaySounds.find(s => s.id === sound.id)) {
+                                displaySounds.push(sound);
+                            }
+                        });
+                    }
+                    %>
+                    <tr>
+                        <td>
+                            <% if (character.image) { %>
+                            <img src="/images/characters/<%= character.image %>" alt="<%= character.char_name %>" class="character-image">
+                            <% } else { %>
+                            <div class="character-placeholder">🎭</div>
+                            <% } %>
+                        </td>
+                        <td><strong><%= character.char_name %></strong></td>
+                        <td><%= character.char_description || 'No description' %></td>
+                        <td>
+                            <% if (displayParts.length > 0) { %>
+                                <% displayParts.forEach(function(part) { %>
+                                <span class="badge success"><%= part.name %></span>
+                                <% }); %>
+                            <% } else { %>
+                                <span class="text-muted">No parts assigned</span>
+                            <% } %>
+                            <br><a href="/characters/<%= character.id %>/parts" class="button small">🔧 Manage Parts</a>
+                        </td>
+                        <td>
+                            <% if (character.openaiAssistantId) { %>
+                                <span class="badge info">🧠 Assistant: <%= character.openaiAssistantId %></span>
+                                <br><a href="/ai-management/assistants" class="button small">🔄 Change Assistant</a>
+                                <button onclick="removeAI(<%= character.id %>)" class="button small danger">❌ Unassign</button>
+                            <% } else { %>
+                                <span class="text-muted">No Assistant assigned</span>
+                                <br><a href="/ai-management/assistants" class="button small">🧠 Assign Assistant</a>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (displaySounds.length > 0) { %>
+                                <% displaySounds.forEach(function(sound) { %>
+                                <span class="badge warning">🔊 <%= sound.name %></span>
+                                <% }); %>
+                            <% } else { %>
+                                <span class="text-muted">No sounds assigned</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <a href="/characters/<%= character.id %>/edit" class="button small">✏️ Edit</a>
+                            <button onclick="deleteCharacter(<%= character.id %>)" class="button small danger">🗑️ Delete</button>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+
+        <% } %>
+
+        <!-- Simple Confirmation Modal -->
+        <div id="deleteModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>Delete Character</h3>
+                <p>Are you sure you want to delete this character? This action cannot be undone.</p>
+                <div class="modal-actions">
+                    <button onclick="confirmDelete()" class="button danger">Delete Character</button>
+                    <button onclick="closeModal('deleteModal')" class="button secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Modal -->
+        <div id="resultModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>Operation Result</h3>
+                <div class="modal-body"></div>
+                <div class="modal-actions">
+                    <button onclick="closeModal('resultModal')" class="button">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Global variables for modal management
+            let currentDeleteId = null;
+
+            // Modal management functions
+            function showModal(id) {
+                document.getElementById(id).style.display = 'block';
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).style.display = 'none';
+                if (id === 'deleteModal') {
+                    currentDeleteId = null;
+                }
+            }
+
+            // Remove AI function
+            function removeAI(characterId) {
+                if (confirm('Are you sure you want to remove all AI assignments from this character?')) {
+                    fetch(`/characters/${characterId}/ai/remove-all`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('AI assignments removed successfully');
+                            location.reload();
+                        } else {
+                            alert('Failed to remove AI: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error.message);
+                    });
+                }
+            }
+
+            // Delete character function
+            function deleteCharacter(id) {
+                currentDeleteId = id;
+                showModal('deleteModal');
+            }
+
+            // Confirm delete function
+            function confirmDelete() {
+                if (!currentDeleteId) return;
+
+                fetch('/characters/' + currentDeleteId + '/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Character deleted successfully');
+                        location.reload();
+                    } else {
+                        alert('Failed to delete character');
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                });
+
+                closeModal('deleteModal');
+            }
+        </script>
+    </main>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('components/universal-header') %>
+  <div class="container">
+    <h1 class="landing-title">🧬 Super Powers</h1>
+    <p class="subtitle">High-level capabilities built on top of existing parts and services.</p>
+
+    <div class="form-group">
+      <label for="characterId">Character</label>
+      <select id="characterId" onchange="onCharacterChange(this.value)">
+        <option value="">Choose a character...</option>
+        <% (characters || []).forEach(function(c){ %>
+          <option value="<%= c.id %>"><%= c.char_name || c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="nav-grid">
+      <div class="nav-section">
+        <h3 class="font-creepster">🦷 Jaw Animation</h3>
+        <p>Animate the jaw servo using audio amplitude from ElevenLabs.</p>
+        <div class="button-group">
+          <a id="jawLink" class="button" href="/super-powers/jaw-animation">Configure</a>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <h3 class="font-creepster">🧠 AI System</h3>
+        <p>Manage conversational AI agents and behaviors.</p>
+        <div class="button-group">
+          <a class="button" href="/ai-management">Manage AI</a>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <h3 class="font-creepster">🎯 Head Tracking</h3>
+        <p>Control and tune head tracking (coming soon).</p>
+        <div class="button-group">
+          <a class="button secondary-btn" href="#" onclick="alert('Coming soon')">Soon</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function onCharacterChange(id){
+      const link = document.getElementById('jawLink');
+      const url = new URL(link.href, window.location.origin);
+      if(id){ url.searchParams.set('characterId', id); }
+      else { url.searchParams.delete('characterId'); }
+      link.href = url.toString();
+    }
+
+    (function init(){
+      const savedCharacter = localStorage.getItem('selectedCharacter');
+      if(savedCharacter){
+        const select = document.getElementById('characterId');
+        select.value = savedCharacter;
+        onCharacterChange(savedCharacter);
+      }
+    })();
+  </script>
+</body>
+</html>
+

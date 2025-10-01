@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - MonsterBox</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+    <style>
+        .agent-config {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .agent-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .agent-title {
+            color: #00ff88;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .agent-id {
+            color: #888;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .agent-description {
+            color: #ccc;
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .config-section {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .config-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .config-icon {
+            color: #00ff88;
+            font-size: 1.5em;
+            margin-right: 12px;
+        }
+
+        .config-header h3 {
+            color: #00ff88;
+            margin: 0;
+            font-size: 1.4em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #00ff88;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a2e;
+            border: 2px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+            outline: none;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .character-assignment {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .character-info {
+            flex: 1;
+        }
+
+        .character-name {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .character-details {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .assignment-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-assigned {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+
+        .status-unassigned {
+            background: rgba(255, 102, 0, 0.2);
+            color: #ff6600;
+            border: 1px solid #ff6600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00cc6a 0%, #00aa55 100%);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #555 0%, #777 100%);
+        }
+
+        .btn-test {
+            background: linear-gradient(135deg, #ff6600 0%, #cc5200 100%);
+            color: #fff;
+        }
+
+        .btn-test:hover {
+            background: linear-gradient(135deg, #cc5200 0%, #aa4400 100%);
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.4);
+        }
+
+        .instructions-preview {
+            background: #0f0f23;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .voice-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #16213e;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+
+        .voice-name {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .voice-details {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .no-voice {
+            color: #ff6600;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚙️ <%= title %></h1>
+        <div class="breadcrumb-vertical mb-6">
+            <a href="/" class="breadcrumb-item">🏠 Home</a>
+            <a href="/ai-management" class="breadcrumb-item">🤖 Conversational AI</a>
+            <a href="/ai-management/agents" class="breadcrumb-item">🎭 Agents</a>
+            <span class="breadcrumb-item active">⚙️ Configure</span>
+        </div>
+    </header>
+
+    <main class="agent-config">
+        <!-- Agent Information -->
+        <div class="agent-header">
+            <div class="agent-title"><%= agent.name || 'Unnamed Agent' %></div>
+            <div class="agent-id">Agent ID: <%= agent.agentId %></div>
+            <% if (agent.description) { %>
+                <div class="agent-description"><%= agent.description %></div>
+            <% } %>
+        </div>
+
+        <!-- Agent Instructions -->
+        <div class="config-section">
+            <div class="config-header">
+                <i class="fas fa-scroll config-icon"></i>
+                <h3>Agent Instructions</h3>
+            </div>
+            <% if (agent.instructions) { %>
+                <div class="instructions-preview"><%= agent.instructions %></div>
+            <% } else { %>
+                <div class="instructions-preview">No instructions configured for this agent.</div>
+            <% } %>
+        </div>
+
+        <!-- Voice Configuration -->
+        <div class="config-section">
+            <div class="config-header">
+                <i class="fas fa-microphone config-icon"></i>
+                <h3>Voice Configuration</h3>
+            </div>
+            <% if (agent.voiceId) { %>
+                <div class="voice-info">
+                    <i class="fas fa-volume-up" style="color: #00ff88;"></i>
+                    <div>
+                        <div class="voice-name">Voice ID: <%= agent.voiceId %></div>
+                        <div class="voice-details">ElevenLabs Voice</div>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="voice-info">
+                    <i class="fas fa-exclamation-triangle" style="color: #ff6600;"></i>
+                    <div class="no-voice">No voice configured for this agent</div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Character Assignments -->
+        <div class="config-section">
+            <div class="config-header">
+                <i class="fas fa-users config-icon"></i>
+                <h3>Character Assignments</h3>
+            </div>
+            <% if (characters && characters.length > 0) { %>
+                <% characters.forEach(function(character) { %>
+                    <% const isAssigned = character.elevenLabsAgentId === agent.agentId; %>
+                    <div class="character-assignment">
+                        <div class="character-info">
+                            <div class="character-name"><%= character.char_name || character.name %></div>
+                            <div class="character-details">ID: <%= character.id %> | Type: <%= character.type || 'Standard' %></div>
+                        </div>
+                        <div class="assignment-status <%= isAssigned ? 'status-assigned' : 'status-unassigned' %>">
+                            <%= isAssigned ? 'Assigned' : 'Not Assigned' %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="character-assignment">
+                    <div class="character-info">
+                        <div class="character-name">No Characters Available</div>
+                        <div class="character-details">No characters found in the system</div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+            <button class="btn btn-test" onclick="testAgent('<%= agent.agentId %>', '<%= agent.name %>')">
+                <i class="fas fa-play"></i>
+                Test Agent
+            </button>
+            <a href="/ai-management/agents" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Agents
+            </a>
+        </div>
+    </main>
+
+    <script>
+        function testAgent(agentId, agentName) {
+            // Open test chat with this agent
+            window.open(`/ai-management/enhanced-test-chat?agentId=${agentId}`, '_blank');
+        }
+    </script>
+</body>
+</html>

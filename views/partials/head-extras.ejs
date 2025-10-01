@@ -1,0 +1,13 @@
+<% if (typeof styles !== 'undefined' && styles) { %>
+    <% if (Array.isArray(styles)) { %>
+        <% styles.forEach(function(style){ %>
+            <link href="<%= style %>" rel="stylesheet">
+        <% }); %>
+    <% } else { %>
+        <link href="<%= styles %>" rel="stylesheet">
+    <% } %>
+<% } %>
+
+<% if (typeof headExtras !== 'undefined' && headExtras) { %>
+    <%- headExtras %>
+<% } %>

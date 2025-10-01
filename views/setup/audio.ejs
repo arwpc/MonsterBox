@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Audio - MonsterBox 4.0</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/monsterbox4.css" rel="stylesheet">
+
+  <style>
+    /* VU Meter Styles */
+    .vu-meter-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+
+    .vu-meter {
+      flex: 1;
+      height: 20px;
+      background: linear-gradient(to right, #333, #444);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #555;
+    }
+
+    .vu-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right,
+          #00ff00 0%,
+          #ffff00 70%,
+          #ff6600 85%,
+          #ff0000 100%);
+      border-radius: 10px;
+      transition: width 0.1s ease-out;
+      position: relative;
+    }
+
+    .vu-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom,
+          rgba(255, 255, 255, 0.3) 0%,
+          rgba(255, 255, 255, 0.1) 50%,
+          rgba(0, 0, 0, 0.1) 100%);
+      border-radius: 10px;
+    }
+
+    .vu-label {
+      min-width: 50px;
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      color: #ccc;
+    }
+
+    .vu-meter.active .vu-bar {
+      animation: pulse 0.5s ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+      }
+    }
+
+    .stream-item {
+      padding: 8px 12px;
+      margin: 4px 0;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      border-left: 3px solid #28a745;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stream-controls {
+      display: flex;
+      gap: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Unified Navigation - Same on ALL pages -->
+  <%- include('../components/unified-navigation', { page: 'setup-audio' }) %>
+
+    <main class="container-fluid py-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-volume-up"></i> PipeWire Audio Configuration</h1>
+        <div>
+          <button class="btn btn-outline-info btn-sm me-2" onclick="refreshSystemStatus()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+          <button class="btn btn-success btn-sm" onclick="saveConfiguration()">
+            <i class="bi bi-check-lg"></i> Save Configuration
+          </button>
+        </div>
+      </div>
+
+      <!-- System Status Card -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-info-circle"></i> PipeWire System Status</h5>
+            </div>
+            <div class="card-body">
+              <div id="system-status" class="row">
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <div id="pipewire-status" class="badge bg-secondary mb-2">Checking...</div>
+                    <div class="small text-muted">PipeWire</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <div id="wireplumber-status" class="badge bg-secondary mb-2">Checking...</div>
+                    <div class="small text-muted">WirePlumber</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <div id="sinks-count" class="badge bg-secondary mb-2">0</div>
+                    <div class="small text-muted">Audio Outputs</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <div id="sources-count" class="badge bg-secondary mb-2">0</div>
+                    <div class="small text-muted">Audio Inputs</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration Cards -->
+      <div class="row">
+        <!-- Default Audio Output -->
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-speaker"></i> Default Audio Output (Speakers)</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="default-sink" class="form-label">System Default Sink</label>
+                <select class="form-select" id="default-sink">
+                  <option value="auto">Auto (Let PipeWire decide)</option>
+                </select>
+                <div class="form-text">This sets the system-wide default audio output device</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Current Sink Details</label>
+                <div id="current-sink-info" class="p-3 bg-dark rounded">
+                  <div class="text-muted">Loading...</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Output Level</label>
+                <div class="vu-meter-container">
+                  <div class="vu-meter" id="output-vu-meter">
+                    <div class="vu-bar"></div>
+                  </div>
+                  <div class="vu-label">
+                    <span id="output-level-text">0%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary" onclick="testAudioOutput()">
+                  <i class="bi bi-play-circle"></i> Test Audio Output
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleOutputVUMeter()">
+                  <i class="bi bi-bar-chart"></i> <span id="output-vu-toggle">Start</span> Output Monitoring
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Default Audio Input -->
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-mic"></i> Default Audio Input (Microphones)</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="default-source" class="form-label">System Default Source</label>
+                <select class="form-select" id="default-source">
+                  <option value="auto">Auto (Let PipeWire decide)</option>
+                </select>
+                <div class="form-text">This sets the system-wide default audio input device</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Current Source Details</label>
+                <div id="current-source-info" class="p-3 bg-dark rounded">
+                  <div class="text-muted">Loading...</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Input Level</label>
+                <div class="vu-meter-container">
+                  <div class="vu-meter" id="input-vu-meter">
+                    <div class="vu-bar"></div>
+                  </div>
+                  <div class="vu-label">
+                    <span id="input-level-text">0%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary" onclick="testAudioInput()">
+                  <i class="bi bi-mic"></i> Test Audio Input
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleInputVUMeter()">
+                  <i class="bi bi-bar-chart"></i> <span id="input-vu-toggle">Start</span> Input Monitoring
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Microphone Parts Controls -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-mic"></i> Microphone Parts Controls</h5>
+              <button class="btn btn-outline-secondary btn-sm" onclick="refreshMicParts()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div class="card-body" id="mic-parts-controls">
+              <div id="mic-parts-list" class="list-group">
+                <div class="list-group-item text-muted">Loading microphone parts…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Settings -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-sliders"></i> Advanced Audio Settings</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Available Audio Outputs (Sinks)</h6>
+                  <div id="available-sinks" class="list-group mb-3">
+                    <div class="list-group-item">Loading...</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <h6>Available Audio Inputs (Sources)</h6>
+                  <div id="available-sources" class="list-group mb-3">
+                    <div class="list-group-item">Loading...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Streams -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-broadcast"></i> Active Audio Streams</h5>
+              <button class="btn btn-outline-secondary btn-sm" onclick="refreshStreams()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="active-streams">
+                <div class="text-muted">Loading active streams...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Results -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Test Results</h5>
+            </div>
+            <div class="card-body">
+              <div id="test-results" class="bg-dark p-3 rounded"
+                style="min-height: 100px; font-family: monospace; white-space: pre-wrap;">
+                Ready to run audio tests...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="notification-toast" class="toast" role="alert">
+        <div class="toast-header">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong class="me-auto">Audio Configuration</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Global state
+      let currentConfig = null;
+      let toastInstance = null;
+
+      // Initialize page
+      document.addEventListener('DOMContentLoaded', function () {
+        toastInstance = new bootstrap.Toast(document.getElementById('notification-toast'));
+        console.log('🎵 PipeWire Audio Configuration page loaded');
+        loadSystemConfiguration();
+
+        // Auto-refresh streams every 5 seconds
+        setInterval(refreshStreams, 5000);
+
+        // Initial stream load
+        setTimeout(refreshStreams, 1000);
+      });
+
+      // Show notification
+      function showNotification(message, type = 'info') {
+        const toast = document.getElementById('notification-toast');
+        const toastBody = toast.querySelector('.toast-body');
+        const toastHeader = toast.querySelector('.toast-header');
+
+        // Update icon based on type
+        const icon = toastHeader.querySelector('i');
+        icon.className = type === 'success' ? 'bi bi-check-circle me-2' :
+          type === 'error' ? 'bi bi-exclamation-triangle me-2' :
+            'bi bi-info-circle me-2';
+
+        toastBody.textContent = message;
+        toastInstance.show();
+      }
+
+      // Load system configuration
+      async function loadSystemConfiguration() {
+        try {
+          console.log('🔧 Loading system configuration...');
+          const [configResponse, hardwareResponse, partsResponse] = await Promise.all([
+            fetch('/setup/audio/api/system-config'),
+            fetch('/setup/audio/api/hardware-devices'),
+            fetch('/setup/calibration/api/parts?type=microphone')
+          ]);
+
+          const configData = await configResponse.json();
+          const hardwareData = await hardwareResponse.json();
+          const partsData = await partsResponse.json();
+
+          if (configData.success && hardwareData.success && partsData.success) {
+            currentConfig = configData.config;
+            currentConfig.hardwareDevices = hardwareData.devices;
+            currentConfig.microphoneParts = partsData.parts || [];
+            updateUI();
+          } else {
+            showNotification('Failed to load system configuration', 'error');
+          }
+        } catch (error) {
+          console.error('Error loading system config:', error);
+          showNotification('Error loading system configuration', 'error');
+        }
+      }
+
+      // Update UI with current configuration
+      function updateUI() {
+        if (!currentConfig) return;
+
+        // Update system status
+        updateSystemStatus();
+
+        // Update device selectors
+        updateDeviceSelectors();
+
+        // Update device lists
+        updateDeviceLists();
+
+        // Update current device info
+        updateCurrentDeviceInfo();
+
+        // Update microphone parts controls
+        updateMicPartsUI();
+      }
+
+      // Update system status indicators
+
+      // Update microphone parts controls UI
+      function updateMicPartsUI() {
+        const container = document.getElementById('mic-parts-list');
+        if (!container) return;
+        const parts = (currentConfig && currentConfig.microphoneParts) || [];
+        if (parts.length === 0) {
+          container.innerHTML = '<div class="list-group-item text-muted">No microphone parts found</div>';
+          return;
+        }
+        let html = '';
+        parts.forEach(function (part) {
+          const devId = (part.config && part.config.deviceId) || 'default';
+          const sens = (part.config && part.config.sensitivity != null) ? part.config.sensitivity : 1;
+          const gainPct = (part.config && part.config.inputGainPercent != null) ? part.config.inputGainPercent : 100;
+          html += '<div class="list-group-item">';
+          html += '  <div class="d-flex justify-content-between align-items-center">';
+          html += '    <div>';
+          html += '      <strong>' + part.name + '</strong><br>';
+          html += '      <small class="text-muted">Device: ' + devId + ' | Part ID: ' + part.id + '</small>';
+          html += '    </div>';
+          html += '    <div class="text-end" style="min-width: 180px;">';
+          html += '      <div class="vu-meter-container" style="padding:4px 8px;">';
+          html += '        <div class="vu-meter" id="mic-vu-' + part.id + '"><div class="vu-bar"></div></div>';
+          html += '        <div class="vu-label"><span id="mic-vu-' + part.id + '-level-text">0%</span></div>';
+          html += '      </div>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '  <div class="row mt-2">';
+          html += '    <div class="col-md-6">';
+          html += '      <label class="form-label">Sensitivity</label>';
+          html += '      <div class="input-group">';
+          html += '        <input type="range" min="0.1" max="3.0" step="any" class="form-range" id="mic-sens-' + part.id + '" value="' + sens + '" />';
+          html += '        <span class="ms-2 small" id="mic-sens-' + part.id + '-val">' + sens + '</span>';
+          html += '      </div>';
+          html += '    </div>';
+          html += '    <div class="col-md-6">';
+          html += '      <label class="form-label">Input Level (Gain)</label>';
+          html += '      <div class="input-group">';
+          html += '        <input type="range" min="0" max="200" step="1" class="form-range" id="mic-gain-' + part.id + '" value="' + gainPct + '" />';
+          html += '        <span class="ms-2 small" id="mic-gain-' + part.id + '-val">' + gainPct + '%</span>';
+          html += '      </div>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '</div>';
+        });
+        container.innerHTML = html;
+
+        // Bind handlers and start VU monitoring per part
+        parts.forEach(function (part) {
+          const devId = (part.config && part.config.deviceId) || 'default';
+          // VU meter start
+          startVUMeterMonitoring(devId, 'input', 'mic-vu-' + part.id);
+          // Sensitivity change
+          const sensEl = document.getElementById('mic-sens-' + part.id);
+          const sensValEl = document.getElementById('mic-sens-' + part.id + '-val');
+          if (sensEl && sensValEl) {
+            sensEl.addEventListener('input', function () {
+              sensValEl.textContent = sensEl.value;
+            });
+            sensEl.addEventListener('change', function () {
+              saveMicSensitivity(part.id, parseFloat(sensEl.value));
+            });
+          }
+          // Gain change
+          const gainEl = document.getElementById('mic-gain-' + part.id);
+          const gainValEl = document.getElementById('mic-gain-' + part.id + '-val');
+          if (gainEl && gainValEl) {
+            gainEl.addEventListener('input', function () {
+              gainValEl.textContent = gainEl.value + '%';
+            });
+            gainEl.addEventListener('change', function () {
+              applyMicGain(part.id, devId, parseInt(gainEl.value, 10));
+            });
+          }
+        });
+      }
+
+      async function refreshMicParts() {
+        try {
+          const res = await fetch('/setup/calibration/api/parts?type=microphone');
+          const data = await res.json();
+          if (data.success) {
+            currentConfig.microphoneParts = data.parts || [];
+            updateMicPartsUI();
+            showNotification('Microphone parts refreshed', 'success');
+          } else {
+            showNotification('Failed to load microphone parts', 'error');
+          }
+        } catch (e) {
+          showNotification('Error refreshing microphone parts', 'error');
+        }
+      }
+
+      async function saveMicSensitivity(partId, sensitivity) {
+        try {
+          // Load current part, then update config.sensitivity
+          const res = await fetch('/setup/calibration/api/parts/' + partId);
+          const data = await res.json();
+          if (!data.success) throw new Error('Part load failed');
+          const part = data.part;
+          const newConfig = Object.assign({}, part.config || {}, { sensitivity: sensitivity, inputGainPercent: part.config && part.config.inputGainPercent });
+          const putRes = await fetch('/setup/calibration/api/parts/' + partId, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ config: newConfig })
+          });
+          const putData = await putRes.json();
+          if (putData.success) {
+            showNotification('Sensitivity saved for ' + part.name, 'success');
+          } else {
+            showNotification('Failed to save sensitivity: ' + (putData.error || ''), 'error');
+          }
+        } catch (e) {
+          console.error(e);
+          showNotification('Error saving sensitivity', 'error');
+        }
+      }
+
+      async function applyMicGain(partId, deviceId, gainPercent) {
+        try {
+          // Apply immediately via PipeWire
+          const res = await fetch('/setup/audio/api/set-input-gain', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceId: deviceId, gainPercent: gainPercent })
+          });
+          const data = await res.json();
+          if (data.success) {
+            // Persist to part config for visibility
+            const partRes = await fetch('/setup/calibration/api/parts/' + partId);
+            const partData = await partRes.json();
+            if (partData.success) {
+              const part = partData.part;
+              const newConfig = Object.assign({}, part.config || {}, { inputGainPercent: gainPercent });
+              await fetch('/setup/calibration/api/parts/' + partId, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: newConfig })
+              });
+            }
+            showNotification('Input gain applied to ' + deviceId + ' (' + gainPercent + '%)', 'success');
+          } else {
+            showNotification('Failed to apply input gain: ' + (data.error || ''), 'error');
+          }
+        } catch (e) {
+          console.error(e);
+          showNotification('Error applying input gain', 'error');
+        }
+      }
+
+      function updateSystemStatus() {
+        const status = currentConfig.pipewireStatus;
+
+        // PipeWire status
+        const pipewireEl = document.getElementById('pipewire-status');
+        pipewireEl.textContent = status.wpctl ? 'Available' : 'Not Available';
+        pipewireEl.className = 'badge mb-2 ' + (status.wpctl ? 'bg-success' : 'bg-danger');
+
+        // WirePlumber status (assume available if pactl works)
+        const wireplumberEl = document.getElementById('wireplumber-status');
+        wireplumberEl.textContent = status.pactl ? 'Available' : 'Not Available';
+        wireplumberEl.className = 'badge mb-2 ' + (status.pactl ? 'bg-success' : 'bg-warning');
+
+        // Counts
+        document.getElementById('sinks-count').textContent = currentConfig.availableSinks.length;
+        document.getElementById('sources-count').textContent = currentConfig.availableSources.length;
+      }
+
+      // Update device selector dropdowns
+      function updateDeviceSelectors() {
+        // Update hardware outputs dropdown
+        const sinkSelect = document.getElementById('default-sink');
+        sinkSelect.innerHTML = '<option value="auto">Auto (Let PipeWire decide)</option>';
+
+        if (currentConfig.hardwareDevices && currentConfig.hardwareDevices.outputs) {
+          currentConfig.hardwareDevices.outputs.forEach(function (device) {
+            const option = document.createElement('option');
+            option.value = device.id;
+            option.textContent = device.description || device.name;
+            option.setAttribute('data-type', device.type);
+            const selSink = (window._forceSelectedSink || currentConfig.defaultSink);
+            const isSelected = (device.id === selSink || device.name === selSink || (device.description && device.description.indexOf(selSink) !== -1));
+            if (isSelected) {
+              option.selected = true;
+            }
+            sinkSelect.appendChild(option);
+          });
+        }
+
+        // Update hardware inputs dropdown
+        const sourceSelect = document.getElementById('default-source');
+        sourceSelect.innerHTML = '<option value="auto">Auto (Let PipeWire decide)</option>';
+
+        if (currentConfig.hardwareDevices && currentConfig.hardwareDevices.inputs) {
+          currentConfig.hardwareDevices.inputs.forEach(function (device) {
+            const option = document.createElement('option');
+            option.value = device.id;
+            option.textContent = device.description || device.name;
+            option.setAttribute('data-type', device.type);
+            const selSource = (window._forceSelectedSource || currentConfig.defaultSource);
+            const isSelected = (device.id === selSource || device.name === selSource || (device.description && device.description.indexOf(selSource) !== -1));
+            if (isSelected) {
+              option.selected = true;
+            }
+            sourceSelect.appendChild(option);
+          });
+        }
+
+        // If we have a locally remembered selection, prefer it when present
+        try {
+          var lsSink = localStorage.getItem('setupAudio.defaultSink');
+          if (!window._forceSelectedSink && lsSink && sinkSelect.querySelector('option[value="' + lsSink + '"]')) {
+            sinkSelect.value = lsSink;
+          }
+          var lsSource = localStorage.getItem('setupAudio.defaultSource');
+          if (!window._forceSelectedSource && lsSource && sourceSelect.querySelector('option[value="' + lsSource + '"]')) {
+            sourceSelect.value = lsSource;
+          }
+        } catch (e) { }
+      }
+
+      // Update device lists
+      function updateDeviceLists() {
+        // Update available sinks
+        const sinksContainer = document.getElementById('available-sinks');
+        sinksContainer.innerHTML = '';
+
+        if (currentConfig.availableSinks.length === 0) {
+          sinksContainer.innerHTML = '<div class="list-group-item text-muted">No audio outputs found</div>';
+        } else {
+          currentConfig.availableSinks.forEach(function (sink) {
+            const item = document.createElement('div');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            const isDefault = sink.id === currentConfig.defaultSink;
+            item.innerHTML =
+              '<div>' +
+              '<strong>' + (sink.description || sink.name) + '</strong>' +
+              (isDefault ? ' <span class="badge bg-primary">Default</span>' : '') +
+              '<br><small class="text-muted">ID: ' + sink.id + '</small>' +
+              '</div>' +
+              '<button class="btn btn-outline-primary btn-sm" onclick="testSpecificSink(\'' + sink.id + '\')">' +
+              '<i class="bi bi-play-circle"></i>' +
+              '</button>';
+
+            sinksContainer.appendChild(item);
+          });
+        }
+
+        // Update available sources
+        const sourcesContainer = document.getElementById('available-sources');
+        sourcesContainer.innerHTML = '';
+
+        if (currentConfig.availableSources.length === 0) {
+          sourcesContainer.innerHTML = '<div class="list-group-item text-muted">No audio inputs found</div>';
+        } else {
+          currentConfig.availableSources.forEach(function (source) {
+            const item = document.createElement('div');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            const isDefault = source.id === currentConfig.defaultSource;
+            item.innerHTML =
+              '<div>' +
+              '<strong>' + (source.description || source.name) + '</strong>' +
+              (isDefault ? ' <span class="badge bg-primary">Default</span>' : '') +
+              '<br><small class="text-muted">ID: ' + source.id + '</small>' +
+              '</div>' +
+              '<button class="btn btn-outline-primary btn-sm" onclick="testSpecificSource(\'' + source.id + '\')">' +
+              '<i class="bi bi-mic"></i>' +
+              '</button>';
+
+            sourcesContainer.appendChild(item);
+          });
+        }
+      }
+
+      // Update current device info
+      function updateCurrentDeviceInfo() {
+        // Update current sink info
+        const selSink = currentConfig.defaultSink;
+        const currentSink = currentConfig.availableSinks.find(function (s) {
+          return s.id === selSink || s.name === selSink || (s.description && s.description.indexOf(selSink) !== -1);
+        });
+
+        const sinkInfo = document.getElementById('current-sink-info');
+
+        if (currentSink) {
+          sinkInfo.innerHTML =
+            '<strong>' + (currentSink.description || currentSink.name) + '</strong><br>' +
+            '<small>ID: ' + currentSink.id + '</small>';
+        } else {
+          sinkInfo.innerHTML = '<div class="text-muted">Auto-selected by PipeWire</div>';
+        }
+
+        // Update current source info
+        const selSource = currentConfig.defaultSource;
+        const currentSource = currentConfig.availableSources.find(function (s) {
+          return s.id === selSource || s.name === selSource || (s.description && s.description.indexOf(selSource) !== -1);
+        });
+
+        const sourceInfo = document.getElementById('current-source-info');
+        if (currentSource) {
+          sourceInfo.innerHTML =
+            '<strong>' + (currentSource.description || currentSource.name) + '</strong><br>' +
+            '<small>ID: ' + currentSource.id + '</small>';
+        } else {
+          sourceInfo.innerHTML = '<div class="text-muted">Auto-selected by PipeWire</div>';
+        }
+      }
+
+      // Refresh system status
+      async function refreshSystemStatus() {
+        showNotification('Refreshing system status...', 'info');
+        await loadSystemConfiguration();
+        showNotification('System status refreshed', 'success');
+      }
+
+      // Save configuration
+      async function saveConfiguration() {
+        try {
+          const defaultSink = document.getElementById('default-sink').value;
+          const defaultSource = document.getElementById('default-source').value;
+
+          console.log('💾 Saving configuration:', { defaultSink, defaultSource });
+
+          // Persist user choice locally and force-select immediately so the UI reflects the user's choice
+          try { localStorage.setItem('setupAudio.defaultSink', defaultSink); } catch (e) { }
+          try { localStorage.setItem('setupAudio.defaultSource', defaultSource); } catch (e) { }
+          window._forceSelectedSink = defaultSink;
+          window._forceSelectedSource = defaultSource;
+          const sinkSelectEl = document.getElementById('default-sink');
+          const sourceSelectEl = document.getElementById('default-source');
+          if (sinkSelectEl && sinkSelectEl.querySelector('option[value="' + defaultSink + '"]')) sinkSelectEl.value = defaultSink;
+          if (sourceSelectEl && sourceSelectEl.querySelector('option[value="' + defaultSource + '"]')) sourceSelectEl.value = defaultSource;
+
+          const response = await fetch('/setup/audio/api/system-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ defaultSink, defaultSource })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showNotification('Configuration saved successfully!', 'success');
+            await loadSystemConfiguration(); // Refresh to show changes
+          } else {
+            showNotification('Failed to save configuration: ' + data.error, 'error');
+          }
+          // Clear force after a short delay to allow UI to stabilize
+          setTimeout(function () {
+            window._forceSelectedSink = null;
+            window._forceSelectedSource = null;
+          }, 800);
+        } catch (error) {
+          console.error('Error saving configuration:', error);
+          showNotification('Error saving configuration', 'error');
+        }
+      }
+
+      // Test audio output
+      async function testAudioOutput() {
+        const deviceId = document.getElementById('default-sink').value;
+
+        // Start VU meter monitoring for output
+        startVUMeterMonitoring(deviceId, 'output', 'output-vu-meter');
+
+        await runAudioTest('speaker', deviceId);
+
+        // Stop VU meter monitoring after test
+        setTimeout(function () {
+          stopVUMeterMonitoring('output-vu-meter');
+        }, 3000);
+      }
+
+      // Test audio input
+      async function testAudioInput() {
+        const deviceId = document.getElementById('default-source').value;
+
+        // Start VU meter monitoring for input
+        startVUMeterMonitoring(deviceId, 'input', 'input-vu-meter');
+
+        await runAudioTest('microphone', deviceId);
+
+        // Stop VU meter monitoring after test
+        setTimeout(function () {
+          stopVUMeterMonitoring('input-vu-meter');
+        }, 5000); // Keep input monitoring longer to see levels
+      }
+
+      // Test specific sink
+      async function testSpecificSink(sinkId) {
+        await runAudioTest('speaker', sinkId);
+      }
+
+      // Test specific source
+      async function testSpecificSource(sourceId) {
+        await runAudioTest('microphone', sourceId);
+      }
+
+      // Run audio test
+      async function runAudioTest(testType, deviceId) {
+        try {
+          const testResults = document.getElementById('test-results');
+          testResults.textContent = 'Running ' + testType + ' test on device: ' + deviceId + '...\n';
+
+          const response = await fetch('/setup/audio/api/test-system', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ testType, deviceId })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            testResults.textContent += 'Test completed successfully!\n';
+            testResults.textContent += 'Result: ' + data.result + '\n';
+            showNotification(testType + ' test completed', 'success');
+          } else {
+            testResults.textContent += 'Test failed: ' + data.error + '\n';
+            showNotification(testType + ' test failed', 'error');
+          }
+        } catch (error) {
+          console.error('Error running test:', error);
+          const testResults = document.getElementById('test-results');
+          testResults.textContent += 'Error running test: ' + error.message + '\n';
+          showNotification('Test error', 'error');
+        }
+      }
+
+      // VU Meter Management
+      let vuMeterIntervals = {};
+
+      function updateVUMeter(meterId, level) {
+        const meter = document.getElementById(meterId);
+        const bar = meter.querySelector('.vu-bar');
+        const label = document.getElementById(meterId.replace('-vu-meter', '-level-text'));
+
+        const percentage = Math.min(Math.max(level * 100, 0), 100);
+        bar.style.width = percentage + '%';
+        label.textContent = Math.round(percentage) + '%';
+
+        if (percentage > 5) {
+          meter.classList.add('active');
+        } else {
+          meter.classList.remove('active');
+        }
+      }
+
+      const vuMeterBusy = {};
+      function startVUMeterMonitoring(deviceId, deviceType, meterId) {
+        // Stop existing monitoring for this meter
+        if (vuMeterIntervals[meterId]) {
+          clearInterval(vuMeterIntervals[meterId]);
+        }
+
+        // Start new monitoring with throttle and no console spam
+        if (window.MONSTERBOX_DEBUG_AUDIO) console.log('🎵 Starting VU meter monitoring for', deviceId, deviceType);
+        vuMeterBusy[meterId] = false;
+
+        vuMeterIntervals[meterId] = setInterval(async function () {
+          if (vuMeterBusy[meterId]) return; // prevent overlapping fetches
+          vuMeterBusy[meterId] = true;
+          try {
+            const response = await fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=' + deviceType);
+            const data = await response.json();
+
+            if (data && data.success) {
+              var level = (typeof data.level === 'number') ? data.level : 0;
+              updateVUMeter(meterId, level);
+              if (window.MONSTERBOX_DEBUG_AUDIO && level > 0.01) {
+                console.log('🎵 VU level detected:', level, 'for', deviceId);
+              }
+            }
+          } catch (error) {
+            if (window.MONSTERBOX_DEBUG_AUDIO) console.warn('VU meter update failed:', error);
+          } finally {
+            vuMeterBusy[meterId] = false;
+          }
+        }, 100); // 100ms: snappier VU without overlapping fetches
+      }
+
+      function stopVUMeterMonitoring(meterId) {
+        if (vuMeterIntervals[meterId]) {
+          clearInterval(vuMeterIntervals[meterId]);
+          delete vuMeterIntervals[meterId];
+          updateVUMeter(meterId, 0); // Reset to zero
+          console.log('🎵 Stopped VU meter monitoring for', meterId);
+        }
+      }
+
+      // Manual VU meter toggle functions
+      function toggleOutputVUMeter() {
+        const meterId = 'output-vu-meter';
+        const toggleSpan = document.getElementById('output-vu-toggle');
+
+        if (vuMeterIntervals[meterId]) {
+          stopVUMeterMonitoring(meterId);
+          toggleSpan.textContent = 'Start';
+        } else {
+          const deviceId = document.getElementById('default-sink').value;
+          startVUMeterMonitoring(deviceId, 'output', meterId);
+          toggleSpan.textContent = 'Stop';
+        }
+      }
+
+      function toggleInputVUMeter() {
+        const meterId = 'input-vu-meter';
+        const toggleSpan = document.getElementById('input-vu-toggle');
+
+        if (vuMeterIntervals[meterId]) {
+          stopVUMeterMonitoring(meterId);
+          toggleSpan.textContent = 'Start';
+        } else {
+          const deviceId = document.getElementById('default-source').value;
+          startVUMeterMonitoring(deviceId, 'input', meterId);
+          toggleSpan.textContent = 'Stop';
+        }
+      }
+
+      // Stream Management
+      async function refreshStreams() {
+        try {
+          const response = await fetch('/setup/audio/api/active-streams');
+          const data = await response.json();
+
+          const streamsContainer = document.getElementById('active-streams');
+
+          if (data.success && data.streams.length > 0) {
+            let html = '';
+            data.streams.forEach(function (stream) {
+              html += '<div class="stream-item">';
+              html += '<div>';
+              html += '<strong>' + stream.name + '</strong>';
+              html += '<br><small class="text-muted">ID: ' + stream.id + ' | State: ' + stream.state + '</small>';
+              html += '</div>';
+              html += '<div class="stream-controls">';
+              html += '<button class="btn btn-sm btn-outline-primary" onclick="moveStreamToSink(' + stream.id + ')">Move</button>';
+              html += '</div>';
+              html += '</div>';
+            });
+            streamsContainer.innerHTML = html;
+          } else {
+            streamsContainer.innerHTML = '<div class="text-muted">No active audio streams</div>';
+          }
+
+          showNotification('Streams refreshed: ' + (data.streams ? data.streams.length : 0) + ' active', 'success');
+        } catch (error) {
+          console.error('Error refreshing streams:', error);
+          const streamsContainer = document.getElementById('active-streams');
+          streamsContainer.innerHTML = '<div class="text-danger">Error loading streams</div>';
+          showNotification('Failed to refresh streams', 'error');
+        }
+      }
+
+      async function moveStreamToSink(streamId) {
+        const sinkId = document.getElementById('default-sink').value;
+        if (!sinkId || sinkId === 'auto') {
+          showNotification('Please select a specific sink first', 'warning');
+          return;
+        }
+
+        try {
+          const response = await fetch('/setup/audio/api/move-stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ streamId: streamId, sinkId: sinkId })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showNotification('Stream moved successfully', 'success');
+            await refreshStreams(); // Refresh to show changes
+          } else {
+            showNotification('Failed to move stream: ' + data.error, 'error');
+          }
+        } catch (error) {
+          console.error('Error moving stream:', error);
+          showNotification('Error moving stream', 'error');
+        }
+      }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/character-menu.js"></script>
+</body>
+
+</html>
