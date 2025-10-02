@@ -393,6 +393,12 @@
         const devName = document.getElementById('devName');
         const devMeta = document.getElementById('devMeta');
         const bottomRail = document.getElementById('bottomRail');
+
+        // Safety check: ensure critical elements exist
+        if (!elList) {
+          console.error('Critical element #deviceList not found');
+          return;
+        }
         const globalSpeedCap = document.getElementById('globalSpeedCap');
         const globalSpeedCapVal = document.getElementById('globalSpeedCapVal');
 

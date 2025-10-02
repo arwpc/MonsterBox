@@ -12,7 +12,7 @@ import path from 'path';
 //
 // Assumptions:
 // - MB_TEST_MODE=1 (stubs hardware/external services where applicable)
-// - Playwright config starts the web server and uses 127.0.0.1:3000
+// - Playwright config starts the web server and uses 127.0.0.1:3100
 
 const CHARACTERS = [
   { id: 1, name: 'PumpkinHead' },

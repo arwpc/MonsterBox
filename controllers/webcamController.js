@@ -84,6 +84,10 @@ function scanVideoUsage() {
 
 export const devicesInUse = async (req, res) => {
   try {
+    // Test mode: return empty usage
+    if (process.env.MB_TEST_MODE === '1') {
+      return res.json({ success: true, usage: [] });
+    }
     const usage = scanVideoUsage();
     res.json({ success: true, usage: usage });
   } catch (err) {
@@ -165,6 +169,16 @@ async function chooseFirstWorkingDevice(timeoutMs) {
 
 export const listDevices = async (req, res) => {
   try {
+    // Test mode: return mock devices
+    if (process.env.MB_TEST_MODE === '1') {
+      return res.json({
+        success: true,
+        devices: [
+          { path: '/dev/video0', name: 'Test Webcam 0' },
+          { path: '/dev/video1', name: 'Test Webcam 1' }
+        ]
+      });
+    }
     const devices = await listVideoDevices();
     const items = [];
     for (let i = 0; i < devices.length; i++) {
@@ -179,6 +193,16 @@ export const listDevices = async (req, res) => {
 
 export const probeDevices = async (req, res) => {
   try {
+    // Test mode: return mock probe results
+    if (process.env.MB_TEST_MODE === '1') {
+      return res.json({
+        success: true,
+        results: [
+          { path: '/dev/video0', name: 'Test Webcam 0', ok: true, info: 'Available' },
+          { path: '/dev/video1', name: 'Test Webcam 1', ok: true, info: 'Available' }
+        ]
+      });
+    }
     const timeoutMs = parseInt(req.query.timeoutMs || '1500', 10);
     const devices = await listVideoDevices();
     const results = [];
@@ -271,6 +295,19 @@ async function checkMjpgStreamerHealth() {
 export const streamMJPEG = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Test mode: return a minimal MJPEG stream stub
+    if (process.env.MB_TEST_MODE === '1') {
+      res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=--myboundary');
+      res.setHeader('Cache-Control', 'no-cache');
+      // Send a minimal valid MJPEG frame header then close
+      res.write('--myboundary\r\n');
+      res.write('Content-Type: image/jpeg\r\n');
+      res.write('Content-Length: 0\r\n\r\n');
+      res.end();
+      return;
+    }
+
     const parts = await loadParts();
     const part = parts.find(p => String(p.id) === String(id));
     if (!part) return res.status(404).json({ success: false, error: 'Part not found' });

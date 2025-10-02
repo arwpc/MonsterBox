@@ -91,7 +91,7 @@ async function verifyNavbarTogglerAccessible(page) {
 test.describe('Navigation and Character persistence across pages', () => {
   test('nav present, links exist, character selection persists across all pages', async ({ page }) => {
     // Start on dashboard
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await verifyNavigationShell(page);
 
     // Capture initial label
@@ -118,7 +118,7 @@ test.describe('Navigation and Character persistence across pages', () => {
 
     // Visit each page and verify navigation shell + character label persists
     for (const url of PAGES) {
-      await page.goto(url);
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
       // Some URLs return JSON (e.g., if misused); skip shell assertions in that case
       const ct = (await page.evaluate(() => document.contentType || document.querySelector('html')?.getAttribute('xmlns'))) || '';
       // Best-effort: if there is no <nav>, skip shell assertions

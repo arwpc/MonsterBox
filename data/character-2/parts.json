@@ -107,5 +107,53 @@
     },
     "created": "2025-10-02T16:50:29.600Z",
     "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "UI Servo 1759433913869",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T19:38:33.979Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "UI Servo 1759437712165",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T20:41:52.332Z",
+    "enabled": true
+  },
+  {
+    "id": "24",
+    "name": "UI Servo 1759440456420",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T21:27:36.543Z",
+    "enabled": true
+  },
+  {
+    "id": "25",
+    "name": "UI Servo 1759441369357",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T21:42:49.543Z",
+    "enabled": true
   }
 ]

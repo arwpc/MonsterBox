@@ -1,7 +1,7 @@
 // Playwright tests for Conversation and Live unified components
 import { test, expect } from '../test.setup';
 
-const BASE = 'http://127.0.0.1:3000';
+const BASE = 'http://127.0.0.1:3100';
 
 function expectStatusEventually(locator, timeout = 3000) {
   return Promise.race([
@@ -12,7 +12,7 @@ function expectStatusEventually(locator, timeout = 3000) {
 
 test.describe('Conversation/Live unified components', () => {
   test('Conversation: speaker selector and webcam status present', async ({ page }) => {
-    await page.goto(BASE + '/conversation');
+    await page.goto(BASE + '/conversation', { waitUntil: 'domcontentloaded' });
     const sel = page.locator('#convSpeakerSelect');
     await expect(sel).toBeVisible();
     // At least one option or default option
@@ -24,7 +24,7 @@ test.describe('Conversation/Live unified components', () => {
   });
 
   test('Conversation: mic start/stop UI and jaw toggle persistence', async ({ page }) => {
-    await page.goto(BASE + '/conversation');
+    await page.goto(BASE + '/conversation', { waitUntil: 'domcontentloaded' });
     const status = page.locator('#micStatus');
     const start = page.locator('#micStart');
     const stop = page.locator('#micStop');
@@ -54,7 +54,7 @@ test.describe('Conversation/Live unified components', () => {
   });
 
   test('Live: speaker selector, webcam status, and mic start/stop UI', async ({ page }) => {
-    await page.goto(BASE + '/live');
+    await page.goto(BASE + '/live', { waitUntil: 'domcontentloaded' });
     const sel = page.locator('#liveSpeakerSelect');
     await expect(sel).toBeVisible();
     const webcamStatus = page.locator('#webcamStatus');
