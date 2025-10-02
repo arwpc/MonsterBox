@@ -561,6 +561,32 @@
                             <input type="text" class="form-control" id="editGoblinVersion" name="version"
                                    placeholder="e.g., 1.0.0">
                         </div>
+
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-film"></i> Video Settings</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video Directory Path</label>
+                            <input type="text" class="form-control" id="editVideoDirectory" name="videoDirectory"
+                                   placeholder="/home/remote/goblin/media/video">
+                            <small class="form-text text-muted">Absolute path to video directory on Goblin</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video Frame Rate (fps)</label>
+                            <select class="form-select" id="editFramerate" name="framerate">
+                                <option value="30">30 fps</option>
+                                <option value="60" selected>60 fps</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video Resolution</label>
+                            <select class="form-select" id="editResolution" name="resolution">
+                                <option value="1280x720" selected>1280x720 (720p)</option>
+                                <option value="1920x1080">1920x1080 (1080p)</option>
+                            </select>
+                        </div>
                     </form>
 
                     <div class="alert alert-info mt-3" id="editStatus" style="display: none;">
@@ -569,6 +595,9 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" id="applyVideoSettingsBtn" onclick="goblinManager.applyVideoSettings()">
+                        <i class="bi bi-play-circle"></i> Apply & Replay Video
+                    </button>
                     <button type="button" class="btn btn-primary" id="saveGoblinBtn" onclick="goblinManager.saveGoblinSettings()">
                         <i class="bi bi-save"></i> Save Changes
                     </button>

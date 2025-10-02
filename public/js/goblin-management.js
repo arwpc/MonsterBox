@@ -687,6 +687,12 @@ class GoblinManager {
         document.getElementById('editCap3').checked = capabilities.includes('screen-effects');
         document.getElementById('editCap4').checked = capabilities.includes('hardware-control');
 
+        // Set video settings
+        const videoSettings = goblin.videoSettings || {};
+        document.getElementById('editVideoDirectory').value = videoSettings.directory || '/home/remote/goblin/media/video';
+        document.getElementById('editFramerate').value = videoSettings.framerate || 60;
+        document.getElementById('editResolution').value = videoSettings.resolution || '1280x720';
+
         // Show edit modal
         const editModal = new bootstrap.Modal(document.getElementById('editGoblinModal'));
         editModal.show();
@@ -712,7 +718,12 @@ class GoblinManager {
             description: formData.get('description'),
             platform: formData.get('platform'),
             version: formData.get('version'),
-            capabilities: capabilities
+            capabilities: capabilities,
+            videoSettings: {
+                directory: formData.get('videoDirectory') || '/home/remote/goblin/media/video',
+                framerate: parseInt(formData.get('framerate')) || 60,
+                resolution: formData.get('resolution') || '1280x720'
+            }
         };
 
         try {
@@ -761,6 +772,67 @@ class GoblinManager {
             this.logActivity(`❌ Error updating ${goblinId}: ${error.message}`, 'error');
         } finally {
             saveBtn.disabled = false;
+        }
+    }
+
+    async applyVideoSettings() {
+        const form = document.getElementById('editGoblinForm');
+        const formData = new FormData(form);
+        const statusDiv = document.getElementById('editStatus');
+        const statusMessage = document.getElementById('editStatusMessage');
+        const applyBtn = document.getElementById('applyVideoSettingsBtn');
+
+        const goblinId = document.getElementById('editGoblinId').value;
+        const goblin = this.goblins.find(g => g.id === goblinId);
+
+        if (!goblin) {
+            this.showError('Could not find goblin');
+            return;
+        }
+
+        const videoSettings = {
+            directory: formData.get('videoDirectory') || '/home/remote/goblin/media/video',
+            framerate: parseInt(formData.get('framerate')) || 60,
+            resolution: formData.get('resolution') || '1280x720'
+        };
+
+        try {
+            applyBtn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'alert alert-info mt-3';
+            statusMessage.textContent = 'Applying video settings and restarting video...';
+
+            // First save settings to database
+            await this.saveGoblinSettings();
+
+            // Then apply settings to goblin
+            const response = await fetch(`${goblin.endpoint}/settings/apply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(videoSettings)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                statusDiv.className = 'alert alert-success mt-3';
+                statusMessage.textContent = 'Video settings applied! Video restarted with new settings.';
+                this.showSuccess('Video settings applied successfully');
+                this.logActivity(`✅ Applied video settings to ${goblin.name}`, 'success');
+            } else {
+                statusDiv.className = 'alert alert-warning mt-3';
+                statusMessage.textContent = result.message || 'Settings saved but could not apply to goblin';
+                this.showWarning('Settings saved but could not apply to goblin');
+            }
+        } catch (error) {
+            console.error('Error applying video settings:', error);
+            statusDiv.className = 'alert alert-warning mt-3';
+            statusMessage.textContent = 'Settings saved but could not connect to goblin';
+            this.showWarning('Settings saved but could not connect to goblin');
+        } finally {
+            applyBtn.disabled = false;
         }
     }
 
