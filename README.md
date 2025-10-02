@@ -1047,6 +1047,7 @@ Example start-config body:
 - `DELETE /scenes/api/queue/library/:id` → delete
 - `POST /scenes/api/queue/library/:id/export` → download JSON
 - `POST /scenes/api/queue/library/import` (multipart or raw JSON)
+### Just Checking ### 
 
 Notes
 - Status is pollable via `GET /scenes/api/queue`; an SSE stream can be added if needed.
