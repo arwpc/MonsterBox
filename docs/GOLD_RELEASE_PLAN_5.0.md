@@ -13,8 +13,9 @@ This document is the single source of truth for producing a "Gold" release of Mo
 ---
 
 ## 2) Scope
-- Subsystems: Video Library (dynamic indexing), Audio (PipeWire), AI (STT/TTS/Agents), Motion (Linear Actuators), DC Motors (legacy + BTS7960), Steppers (STEP/DIR/EN), Servos (incl. PCA9685), Parts & Models CRUD, Super Powers (Jaw Animation, Head Tracking), Conversation.
+- Subsystems: Video Library (dynamic indexing), **Goblin Video Playback (optimized for smooth looping)**, Audio (PipeWire), AI (STT/TTS/Agents), Motion (Linear Actuators), DC Motors (legacy + BTS7960), Steppers (STEP/DIR/EN), Servos (incl. PCA9685), Parts & Models CRUD, Super Powers (Jaw Animation, Head Tracking), Conversation.
 - Platforms: RPi4b + GitHub Actions Linux (Node 18/20/22; Chromium/Firefox where applicable).
+- **Goblin Nodes**: Raspberry Pi 3B+ media playback nodes with auto-discovery, remote control, and optimized video playback.
 
 ---
 
@@ -84,6 +85,7 @@ Prerequisites
 - Playwright Firefox installed on Pi (if UI tests run on device): `npm run playwright:browsers:firefox`.
 - MJPG‑streamer running (for webcam profiler): `systemctl status mjpg-streamer`, `curl -I http://127.0.0.1:8090/?action=stream`.
 - Audio sinks/sources ready: `wpctl status`, sample playback via `pw-play`.
+- **Goblin nodes online**: At least one Goblin RPi3B+ with USB videos mounted at `/media/usb/video`.
 
 Steps
 1) Unit/CLI tests
@@ -104,13 +106,24 @@ Steps
    - Start server; open `/conversation` and `/ai-settings`; do a simple chat; verify TTS and jaw animation sync
 7) Demo Functionality
    - Start server; open `/demo` and `/ai-settings`; do a simple voice chat with audio files for speech; verify TTS and STT and jaw animation sync
-8) Calibration 
+8) Calibration
    - All Parts are in a safe position within 20/30% of facing "forward" or "Center"
    - Start server; run calibration for groundbreaker Parts (physically attached)
+9) **Goblin Video Playback (GOLD CRITICAL)**
+   - Open Video Library page: `/video-library`
+   - Verify Goblin selector shows online goblins with video counts
+   - Click "Play Now" on any video → should stop current video, fade to black (1s), play new video
+   - Verify video loops forever (no manual restart needed)
+   - Verify NO text visible on HDMI console (all output redirected to log file)
+   - Verify smooth playback (720p60 for performance)
+   - Check Activity Log panel shows events (not console)
+   - Test scene integration: Create scene with goblin video steps, verify playback
+   - **Auto-play test**: Restart goblin, verify first video plays automatically on boot
 
 Acceptance for this step:
 - No exceptions in server logs; UI responsive; expected physical motion/audio output observed (where hardware connected).
 - No 400/500s reported by “no-errors-deep” suite.
+- **Goblin videos play smoothly, loop forever, no console text visible, auto-play on boot works.**
 
 ---
 

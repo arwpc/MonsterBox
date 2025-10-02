@@ -25,7 +25,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-01T18:08:51.200Z",
-    "lastSeen": "2025-10-02T03:24:46.162Z",
+    "lastSeen": "2025-10-02T04:01:28.605Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -34,8 +34,8 @@
       "volume": 80,
       "autoLock": false
     },
-    "memory": 18,
-    "uptime": 2852.601741971
+    "memory": 13,
+    "uptime": 34.254636289
   },
   {
     "id": "goblin2",
@@ -61,9 +61,9 @@
     },
     "platform": "raspberry-pi",
     "version": "1.0.0",
-    "status": "online",
+    "status": "offline",
     "registeredAt": "2025-10-01T18:35:42.425Z",
-    "lastSeen": "2025-10-02T03:24:47.521Z",
+    "lastSeen": "2025-10-02T04:01:47.336Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -72,7 +72,7 @@
       "volume": 80,
       "autoLock": false
     },
-    "memory": 13,
-    "uptime": 6211.763585611
+    "memory": 14,
+    "uptime": 330.377421222
   }
 ]

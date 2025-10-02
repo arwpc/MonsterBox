@@ -571,6 +571,9 @@ class GoblinManager {
         const goblin = this.goblins.find(g => g.id === goblinId);
         if (!goblin) return;
 
+        // Store current goblin ID for edit button
+        this.currentGoblinId = goblinId;
+
         // Get live status
         let liveData = null;
         try {
@@ -654,10 +657,8 @@ class GoblinManager {
     }
 
     editGoblinSettings() {
-        // Get the currently displayed goblin from the details modal
-        const detailsContent = document.getElementById('goblinDetailsContent');
-        const goblinName = detailsContent.querySelector('td:nth-child(2)').textContent;
-        const goblin = this.goblins.find(g => g.name === goblinName);
+        // Get the currently displayed goblin using stored ID
+        const goblin = this.goblins.find(g => g.id === this.currentGoblinId);
 
         if (!goblin) {
             this.showError('Could not find goblin to edit');
