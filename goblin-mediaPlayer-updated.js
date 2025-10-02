@@ -320,8 +320,11 @@ class MediaPlayer {
         });
         playerName = 'vlc';
       }
-      
+
       // Handle process events
+      if (!playerProcess || typeof playerProcess.on !== 'function') {
+        throw new Error(`Failed to start ${playerName || selectedPlayer} for ${filename} (spawn returned ${playerProcess})`);
+      }
       playerProcess.on('spawn', () => {
         console.log(`🎬 Video playback started via ${playerName}: ${filename}`);
         this.playbackStatus.video = {

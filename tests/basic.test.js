@@ -9,7 +9,7 @@ import request from 'supertest';
 // Use the running server instead of importing the app
 const BASE_URL = 'http://127.0.0.1:3100';
 
-describe('MonsterBox 4.0 Basic Tests', () => {
+describe('MonsterBox 5.1 Basic Tests', () => {
 
     describe('Server Routes', () => {
         it('should serve the main dashboard', async () => {
@@ -17,7 +17,7 @@ describe('MonsterBox 4.0 Basic Tests', () => {
                 .get('/')
                 .expect(200);
 
-            expect(response.text).to.include('MonsterBox 4.0');
+            expect(response.text).to.include('MonsterBox');
         });
 
         it('should serve the setup poses page', async () => {

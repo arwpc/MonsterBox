@@ -5,20 +5,20 @@
 
 import { test, expect } from '../test.setup';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
-test.describe('MonsterBox 4.0 Web Interface', () => {
+test.describe('MonsterBox 5.1 Web Interface', () => {
 
     test.beforeAll(async () => {
         // Ensure server is running before tests
-        console.log('Testing MonsterBox 4.0 web interface at:', BASE_URL);
+        console.log('Testing MonsterBox 5.1 web interface at:', BASE_URL);
     });
 
     test('Main Dashboard loads correctly', async ({ page }) => {
         await page.goto(BASE_URL);
 
         // Check page title
-        await expect(page).toHaveTitle(/MonsterBox 4.0/);
+        await expect(page).toHaveTitle(/MonsterBox 5\.1/);
 
         // Check main heading
         await expect(page.locator('h1')).toContainText('Dashboard');
@@ -28,7 +28,7 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
 
         // Check navigation is present
         await expect(page.locator('.navbar')).toBeVisible();
-        await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 4.0');
+        await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 5.1');
     });
 
     test('Setup → Poses page loads and functions', async ({ page }) => {

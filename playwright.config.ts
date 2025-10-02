@@ -18,7 +18,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: 'http://127.0.0.1:3000', // match server port from config/app-config.json during tests
+    baseURL: 'http://127.0.0.1:3100', // dev/test standard
     headless: true,                       // safe for Pi/CI
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -44,8 +44,8 @@ export default defineConfig({
   globalSetup: 'tests/playwright/global-setup.js',
   webServer: {
     // Ensure test server launches on the expected port
-    command: 'MB_TEST_MODE=1 NODE_ENV=test PORT=3000 node server.js',
-    url: 'http://127.0.0.1:3000',
+    command: 'MB_TEST_MODE=1 NODE_ENV=test PORT=3100 node server.js',
+    url: 'http://127.0.0.1:3100',
     reuseExistingServer: process.env.PW_CLEAN_SERVER !== '1',
     timeout: 180000
   },

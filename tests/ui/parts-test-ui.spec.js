@@ -5,7 +5,7 @@
 
 import { test, expect } from '../test.setup';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 async function createServoViaAPI(request, name) {
   const res = await request.post(`${BASE_URL}/setup/parts/api/parts`, {

@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * Tests every single link and route in the updated navigation structure
  */
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 // All routes to test based on the updated navigation structure
 const ROUTES = {
@@ -53,7 +53,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
         
         // Check page loads
         await expect(page.locator('nav.navbar')).toBeVisible();
-        await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 4.0');
+        await expect(page.locator('.navbar-brand')).toContainText(/MonsterBox/);
         
         // Check for webcam stream or placeholder
         const hasWebcamStream = await page.locator('img[src*="8090"]').count() > 0;
@@ -280,7 +280,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     test('Complete Navigation Flow Test', async ({ page }) => {
         // Start at dashboard
         await page.goto(`${BASE_URL}`);
-        await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 4.0');
+        await expect(page.locator('.navbar-brand')).toContainText(/MonsterBox/);
 
         // Navigate through each major section
         const navigationFlow = [

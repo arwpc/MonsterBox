@@ -14,13 +14,32 @@
       "notes": "Use leftEnablePin/rightEnablePin for direction; only one enable HIGH at a time with shared PWM."
     },
     "controlsSchema": {
-      "controlType": ["DUAL_ENABLE_PWM"],
+      "controlType": [
+        "DUAL_ENABLE_PWM"
+      ],
       "inputs": [
-        { "name": "leftEnablePin", "type": "number" },
-        { "name": "rightEnablePin", "type": "number" },
-        { "name": "pwmPin", "type": "number" },
-        { "name": "speed", "type": "number", "optional": true },
-        { "name": "duration", "type": "number", "optional": true }
+        {
+          "name": "leftEnablePin",
+          "type": "number"
+        },
+        {
+          "name": "rightEnablePin",
+          "type": "number"
+        },
+        {
+          "name": "pwmPin",
+          "type": "number"
+        },
+        {
+          "name": "speed",
+          "type": "number",
+          "optional": true
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "optional": true
+        }
       ]
     },
     "meta": {
@@ -622,6 +641,86 @@
   },
   {
     "id": "1759092982921",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759384978491",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759385019507",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759419469692",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759419511276",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759421484924",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759421529111",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759423269468",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759423320092",
     "name": "Test Motor Model",
     "description": "motor defaults for tests",
     "defaults": {

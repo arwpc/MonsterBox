@@ -422,7 +422,7 @@ router.get('/api/ai-chat-status/:characterId', async (req, res) => {
     
     // Check if ElevenLabs WebSocket service is available
     const elevenLabsService = await import('../../services/elevenLabsWebSocketService.js');
-    const isServiceAvailable = await elevenLabsService.checkServiceHealth();
+    const isServiceAvailable = await elevenLabsService.default.checkServiceHealth();
     
     if (!isServiceAvailable) {
       return res.json({
@@ -433,8 +433,8 @@ router.get('/api/ai-chat-status/:characterId', async (req, res) => {
     }
     
     // Get character information for AI context
-    const charactersController = await import('../../controllers/charactersController.js');
-    const character = await charactersController.getCharacter(characterId);
+    const characterService = await import('../../services/characterService.js');
+    const character = await characterService.getCharacterById(characterId);
     
     if (!character) {
       return res.status(404).json({
@@ -490,7 +490,7 @@ router.post('/api/ai-chat-connect/:characterId', async (req, res) => {
     
     // Initialize ElevenLabs WebSocket connection
     const elevenLabsService = await import('../../services/elevenLabsWebSocketService.js');
-    const connectionResult = await elevenLabsService.initializeForCharacter(characterId, {
+    const connectionResult = await elevenLabsService.default.initializeForCharacter(characterId, {
       jawAnimationSync: jawAnimationSync || true,
       volume: volume || 80,
       character: character
@@ -528,7 +528,7 @@ router.post('/api/ai-chat-disconnect/:characterId', async (req, res) => {
     console.log(`🔌 Disconnecting AI chat for character ${characterId}`);
     
     const elevenLabsService = await import('../../services/elevenLabsWebSocketService.js');
-    const disconnectResult = await elevenLabsService.disconnectCharacter(characterId);
+    const disconnectResult = await elevenLabsService.default.disconnectCharacter(characterId);
     
     res.json({
       success: true,
@@ -561,7 +561,7 @@ router.post('/api/ai-chat-send/:characterId', async (req, res) => {
     console.log(`📤 Sending message to AI for character ${characterId}:`, message.substring(0, 50) + '...');
     
     const elevenLabsService = await import('../../services/elevenLabsWebSocketService.js');
-    const sendResult = await elevenLabsService.sendMessage(characterId, message, {
+    const sendResult = await elevenLabsService.default.sendMessage(characterId, message, {
       jawAnimationSync: jawAnimationSync || true
     });
     

@@ -35,6 +35,17 @@ class GoblinServer {
       resolution: '1280x720'
     };
 
+    // Load persisted settings if available
+    try {
+      const settingsPath = path.join('/home/remote/goblin', 'config', 'settings.json');
+      const raw = require('fs').readFileSync(settingsPath, 'utf8');
+      const persisted = JSON.parse(raw);
+      this.settings = { ...this.settings, ...persisted };
+      console.log('⚙️ Loaded persisted settings from', settingsPath, this.settings);
+    } catch (e) {
+      // No persisted settings yet; safe to continue with defaults
+    }
+
     // Initialize components
     this.app = express();
     this.beacon = new BeaconService(this);

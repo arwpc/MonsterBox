@@ -6,7 +6,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://127.0.0.1:3100';
 
 test.describe('Goblin Management Page - Critical Tests', () => {
     

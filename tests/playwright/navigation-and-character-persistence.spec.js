@@ -49,7 +49,7 @@ const PAGES = [
 async function verifyNavigationShell(page) {
   // Navbar exists
   await expect(page.locator('nav.navbar')).toBeVisible();
-  await expect(page.locator('a.navbar-brand', { hasText: 'MonsterBox 4.0' })).toBeVisible();
+  await expect(page.locator('a.navbar-brand', { hasText: 'MonsterBox 5.1' })).toBeVisible();
   // Setup and Activities dropdown triggers exist
   await expect(page.locator('a.nav-link.dropdown-toggle', { hasText: 'Setup' })).toBeVisible();
   await expect(page.locator('a.nav-link.dropdown-toggle', { hasText: 'Activities' })).toBeVisible();

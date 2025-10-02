@@ -63,7 +63,8 @@ export async function saveCharacters(characters) {
 
 export async function getCharacterById(id) {
   const characters = await loadCharacters();
-  return characters.find(function (c) { return c.id === id; }) || null;
+  const nid = typeof id === 'number' ? id : parseInt(id, 10);
+  return characters.find(function (c) { return Number(c.id) === Number(nid); }) || null;
 }
 
 export async function createCharacter(data) {

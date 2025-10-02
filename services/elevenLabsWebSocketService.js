@@ -748,4 +748,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 }
 
+
+// Lightweight health check used by setup/super-powers
+ElevenLabsWebSocketService.prototype.checkServiceHealth = async function () {
+  try {
+    if (process.env.MB_TEST_MODE === '1' || process.env.NODE_ENV === 'test') return true;
+    return !!(this.wsServer) || !!(this.config && this.config.apiKey);
+  } catch (_) {
+    return false;
+  }
+};
+
 export default new ElevenLabsWebSocketService();

@@ -603,5 +603,93 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1759384973959",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759385015215",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759419466206",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759419507436",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759421481261",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759421525222",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759423265765",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759423315029",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

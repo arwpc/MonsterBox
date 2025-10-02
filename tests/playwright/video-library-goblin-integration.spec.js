@@ -10,7 +10,7 @@ test.describe('Video Library Goblin Integration', () => {
     
     test.beforeEach(async ({ page }) => {
         // Navigate to video library
-        await page.goto('http://localhost:3000/video-library');
+        await page.goto('http://127.0.0.1:3100/video-library');
         await page.waitForLoadState('networkidle', { timeout: 10000 });
     });
 
@@ -55,7 +55,7 @@ test.describe('Video Library Goblin Integration', () => {
         
         // Check that the stream endpoint exists
         const streamResponse = await page.request.get(
-            `http://localhost:3000/video-library/api/video/${firstVideoId}/stream`
+            `http://127.0.0.1:3100/video-library/api/video/${firstVideoId}/stream`
         );
 
         // Should not be 404
@@ -83,7 +83,7 @@ test.describe('Video Library Goblin Integration', () => {
         
         // Check that the play endpoint exists (POST)
         const playResponse = await page.request.post(
-            `http://localhost:3000/video-library/api/video/${firstVideoId}/play`
+            `http://127.0.0.1:3100/video-library/api/video/${firstVideoId}/play`
         );
 
         // Should not be 404
@@ -94,7 +94,7 @@ test.describe('Video Library Goblin Integration', () => {
 
     test('should correctly check goblin availability for deployment', async ({ page }) => {
         // Load goblins data
-        const goblinsResponse = await page.request.get('http://localhost:3000/goblin-management/api/goblins');
+        const goblinsResponse = await page.request.get('http://127.0.0.1:3100/goblin-management/api/goblins');
         const goblinsData = await goblinsResponse.json();
 
         if (!goblinsData.success || goblinsData.goblins.length === 0) {
@@ -152,7 +152,7 @@ test.describe('Video Library Goblin Integration', () => {
 
     test('should show goblin names correctly (not undefined)', async ({ page }) => {
         // Navigate to goblin management
-        await page.goto('http://localhost:3000/goblin-management');
+        await page.goto('http://127.0.0.1:3100/goblin-management');
         await page.waitForLoadState('networkidle', { timeout: 10000 });
 
         // Check for goblin cards
@@ -178,7 +178,7 @@ test.describe('Video Library Goblin Integration', () => {
     });
 
     test('should have correct goblin endpoint URLs', async ({ page }) => {
-        const goblinsResponse = await page.request.get('http://localhost:3000/goblin-management/api/goblins');
+        const goblinsResponse = await page.request.get('http://127.0.0.1:3100/goblin-management/api/goblins');
         const goblinsData = await goblinsResponse.json();
 
         if (!goblinsData.success || goblinsData.goblins.length === 0) {
@@ -210,7 +210,7 @@ test.describe('Video Library Goblin Integration', () => {
             }
         });
 
-        await page.goto('http://localhost:3000/goblin-management');
+        await page.goto('http://127.0.0.1:3100/goblin-management');
         await page.waitForLoadState('networkidle', { timeout: 10000 });
         await page.waitForTimeout(2000);
 

@@ -1,0 +1,56 @@
+You are the next agent responsible for finishing and shipping MonsterBox 5.1 Gold Edition for Halloween (Friday).
+
+Follow these operating rules:
+- Use docs/TASKS_5.1.md as your single source of tasks. Use docs/HANDOFF_README_5.1.md for context and environment.
+- Maintain dev/test server at http://127.0.0.1:3100 (port 3100).
+- Validate progress with Playwright. Fix tests in small batches and re-run.
+- Avoid HTTP 400/500 regressions (policy: 0 tolerated on core pages).
+- Prefer test-mode stubs over system shell-outs in tests.
+- Safe-by-default runs: tests/linters/builds OK; do not install packages or deploy without explicit approval.
+
+Key context:
+- Most Goblin and port-alignment work is done. A focused set of Playwright suites are failing/flaky.
+- The README provides context; the tasks file lists failing specs and the likely root causes by area.
+- ElevenLabs health and Super Powers status are fixed; Audio Setup APIs have MB_TEST_MODE fallbacks (GET and POST) to avoid pactl errors.
+- Parts page now exposes minimal UI to satisfy tests (Create Part button + per-part Test drawer).
+
+Your high-level mission:
+1) Work through the Remaining Work  Task Checklist in docs/HANDOFF_README_5.1.md (sections AF).
+2) After each cluster of changes, run: npm run test:ui:firefox
+3) Keep server on port 3100. Do not spawn duplicate servers in tests.
+4) Ensure no HTTP 400/500 errors on core pages in MB_TEST_MODE.
+5) Ensure Stepper Motor Add/Edit parity (STEP/DIR/EN) and persistence between add and edit.
+6) Verify Scenes lifecycle/queueing and that video playback can be used as a Scene step.
+7) Prepare release notes and deployment steps when all tests pass.
+
+Useful commands:
+- Start server manually: MB_TEST_MODE=1 NODE_ENV=test PORT=3100 node server.js
+- Run Playwright suite: npm run test:ui:firefox
+
+Important paths:
+- README tasks: docs/HANDOFF_README_5.1.md
+- Playwright config: playwright.config.ts (webServer is already configured for port 3100)
+- Parts UI: views/setup/parts.ejs
+- Audio Setup routes: routes/setup/audio.js
+- Unified navigation: views/components/unified-navigation.ejs (brand should display MonsterBox 5.1)
+- Test harness strictness: tests/test.setup.ts (console errors fail; warnings are tolerated)
+
+Goblins (on-prem):
+- 192.168.8.160:3001 and 192.168.8.161:3001
+- SSH (must use sshpass): sshpass -p 'klrklr89!' ssh remote@192.168.8.160 (or .161)
+
+Acceptance criteria for Gold:
+- All Playwright UI tests pass on Firefox.
+- No HTTP 400/500 on core pages under MB_TEST_MODE.
+- Branding shows MonsterBox 5.1 in nav and page titles.
+- Goblin Management controls work; settings Apply & Replay functional.
+- Stepper Motor Add/Edit parity achieved, with settings persisting across add/edit.
+- Scenes lifecycle and queue modes verified; video steps target goblins successfully.
+
+Deliverables:
+- Code changes with passing Playwright runs.
+- Updated tests where expectations must change (e.g., 4.0 -> 5.1 branding).
+- Release notes + deployment checklist.
+
+Start by opening docs/TASKS_5.1.md and proceed top-to-bottom. Keep docs/HANDOFF_README_5.1.md open for context.
+

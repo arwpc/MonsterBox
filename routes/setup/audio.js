@@ -262,6 +262,9 @@ router.get('/api/system-config', async (req, res) => {
 // Save system audio configuration
 router.post('/api/system-config', async (req, res) => {
     try {
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, message: 'System audio configuration saved (skipped in test mode)', results: [] });
+        }
         const { defaultSink, defaultSource } = req.body;
         console.log(`🔧 Saving system config: sink=${defaultSink}, source=${defaultSource}`);
 
