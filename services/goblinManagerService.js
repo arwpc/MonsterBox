@@ -418,7 +418,7 @@ class GoblinManagerService {
 
     getStats() {
         const goblins = Array.from(this.goblins.values());
-        
+
         return {
             total: goblins.length,
             online: goblins.filter(g => g.status === 'online').length,
@@ -430,6 +430,62 @@ class GoblinManagerService {
                 audio: goblins.filter(g => g.capabilities && g.capabilities.audio && g.capabilities.audio.length > 0).length
             }
         };
+    }
+
+    async restartGoblin(goblinId) {
+        try {
+            const goblin = this.goblins.get(goblinId);
+
+            if (!goblin) {
+                return { success: false, error: 'Goblin not found' };
+            }
+
+            // Extract IP from endpoint (e.g., "http://192.168.8.160:3001" -> "192.168.8.160")
+            const ipMatch = goblin.endpoint.match(/\/\/([^:]+)/);
+            if (!ipMatch) {
+                return { success: false, error: 'Invalid goblin endpoint format' };
+            }
+
+            const goblinIP = ipMatch[1];
+
+            // Use sshpass to restart the goblin service
+            const { exec } = await import('child_process');
+            const { promisify } = await import('util');
+            const execAsync = promisify(exec);
+
+            console.log(`🔄 Restarting goblin service on ${goblinIP}...`);
+
+            try {
+                const { stdout, stderr } = await execAsync(
+                    `sshpass -p 'klrklr89!' ssh -o StrictHostKeyChecking=no remote@${goblinIP} "sudo systemctl restart goblin"`
+                );
+
+                // Mark goblin as offline temporarily (it will come back online via heartbeat)
+                goblin.status = 'offline';
+                goblin.lastSeen = new Date().toISOString();
+                await this.saveGoblins();
+
+                console.log(`✅ Goblin ${goblinId} restart command sent successfully`);
+
+                return {
+                    success: true,
+                    message: `Goblin ${goblinId} restart initiated. Service will be back online shortly.`,
+                    goblin: goblin
+                };
+            } catch (sshError) {
+                console.error(`❌ SSH error restarting goblin ${goblinId}:`, sshError.message);
+                return {
+                    success: false,
+                    error: `Failed to restart goblin: ${sshError.message}`
+                };
+            }
+        } catch (error) {
+            console.error('Error in restartGoblin:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
     }
 }
 

@@ -99,6 +99,30 @@
             background-color: #6c757d;
         }
 
+        /* Goblin Avatar Styles */
+        .goblin-avatar {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border: 3px solid #28a745;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .goblin-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5);
+        }
+
+        .goblin-card.offline .goblin-avatar {
+            border-color: #6c757d;
+            opacity: 0.6;
+        }
+
+        .goblin-card.locked .goblin-avatar {
+            border-color: #dc3545;
+        }
+
         @keyframes heartbeat {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.8; transform: scale(1.1); }
@@ -195,46 +219,6 @@
                                 <i class="bi bi-stop-fill"></i> Stop All
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Dashboard -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <i class="bi bi-cpu fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="totalGoblins">0</h3>
-                        <small>Total Goblins</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success">
-                    <div class="card-body text-center">
-                        <i class="bi bi-check-circle fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="onlineGoblins">0</h3>
-                        <small>Online</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-danger">
-                    <div class="card-body text-center">
-                        <i class="bi bi-lock fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="lockedGoblins">0</h3>
-                        <small>Locked</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark">
-                    <div class="card-body text-center">
-                        <i class="bi bi-exclamation-triangle fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="offlineGoblins">0</h3>
-                        <small>Offline</small>
                     </div>
                 </div>
             </div>
@@ -342,6 +326,46 @@
                                 <div class="text-muted">Waiting for activity...</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard (MOVED TO BOTTOM, SMALLER) -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center py-2">
+                        <i class="bi bi-cpu fs-4"></i>
+                        <h5 class="mt-1 mb-0" id="totalGoblins">0</h5>
+                        <small>Total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success">
+                    <div class="card-body text-center py-2">
+                        <i class="bi bi-check-circle fs-4"></i>
+                        <h5 class="mt-1 mb-0" id="onlineGoblins">0</h5>
+                        <small>Online</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger">
+                    <div class="card-body text-center py-2">
+                        <i class="bi bi-lock fs-4"></i>
+                        <h5 class="mt-1 mb-0" id="lockedGoblins">0</h5>
+                        <small>Locked</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center py-2">
+                        <i class="bi bi-exclamation-triangle fs-4"></i>
+                        <h5 class="mt-1 mb-0" id="offlineGoblins">0</h5>
+                        <small>Offline</small>
                     </div>
                 </div>
             </div>
@@ -456,6 +480,97 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="editGoblinBtn">
                         <i class="bi bi-pencil"></i> Edit Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Goblin Settings Modal -->
+    <div class="modal fade" id="editGoblinModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil"></i> Edit Goblin Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editGoblinForm">
+                        <input type="hidden" id="editGoblinId" name="goblinId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Goblin Name *</label>
+                            <input type="text" class="form-control" id="editGoblinName" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Endpoint *</label>
+                            <input type="text" class="form-control" id="editGoblinEndpoint" name="endpoint" required
+                                   placeholder="e.g., http://192.168.1.100:3001">
+                            <small class="form-text text-muted">Full URL including protocol and port</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Capabilities</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="capabilities" value="video-playback" id="editCap1">
+                                        <label class="form-check-label" for="editCap1">Video Playback</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="capabilities" value="audio-playback" id="editCap2">
+                                        <label class="form-check-label" for="editCap2">Audio Playback</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="capabilities" value="screen-effects" id="editCap3">
+                                        <label class="form-check-label" for="editCap3">Screen Effects</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="capabilities" value="hardware-control" id="editCap4">
+                                        <label class="form-check-label" for="editCap4">Hardware Control</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="editGoblinLocation" name="location"
+                                   placeholder="e.g., Living Room, Front Porch, Basement">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="editGoblinDescription" name="description" rows="2"
+                                      placeholder="Optional description of this Goblin's purpose"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Platform</label>
+                            <input type="text" class="form-control" id="editGoblinPlatform" name="platform"
+                                   placeholder="e.g., Raspberry Pi 3B+">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Version</label>
+                            <input type="text" class="form-control" id="editGoblinVersion" name="version"
+                                   placeholder="e.g., 1.0.0">
+                        </div>
+                    </form>
+
+                    <div class="alert alert-info mt-3" id="editStatus" style="display: none;">
+                        <i class="bi bi-info-circle"></i> <span id="editStatusMessage"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveGoblinBtn" onclick="goblinManager.saveGoblinSettings()">
+                        <i class="bi bi-save"></i> Save Changes
                     </button>
                 </div>
             </div>

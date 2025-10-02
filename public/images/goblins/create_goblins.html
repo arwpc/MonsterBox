@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="canvas" width="256" height="256"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const goblins = ['👹', '👺', '🧟', '🧌', '👻'];
+goblins.forEach((emoji, i) => {
+  ctx.clearRect(0, 0, 256, 256);
+  ctx.fillStyle = '#2d3748';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.font = '128px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 128, 128);
+  console.log(`goblin${i+1}.png created`);
+});
+</script>
+</body>
+</html>

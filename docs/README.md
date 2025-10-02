@@ -4,6 +4,19 @@ MonsterBox is a next-generation platform for building, programming, and running 
 
 ## 📁 Documentation Structure
 
+> **📋 IMPORTANT**: All documentation must be stored in `/docs` or subdirectories. See [DOCUMENTATION_RULES.md](./DOCUMENTATION_RULES.md) for details.
+
+### 🎃 Goblin System
+- **[Goblin Documentation](goblin/)** - Distributed video playback system
+  - Production guides and deployment checklists
+  - Quick reference and troubleshooting
+  - Validation and testing reports
+
+### 🎉 Releases
+- **[Release Documentation](releases/)** - Release notes and validation
+  - Gold 5.0 release documentation
+  - Progress reports and verification
+
 ### 🔧 Setup & Installation
 - **[Animatronic SSH Setup](setup/ANIMATRONIC-SSH-SETUP.md)** - Configure secure SSH access for individual animatronic RPIs
 - **[Animatronic Setup Guide](setup/ANIMATRONIC-SETUP-GUIDE.md)** - Complete setup guide for new animatronics
@@ -11,9 +24,16 @@ MonsterBox is a next-generation platform for building, programming, and running 
 
 ### 🛡️ Security
 - **[MCP Setup Notes](security/MCP-SETUP-NOTES.md)** - Security guidelines for MCP configuration and API key management
+- **[Security Reports](security/)** - Security fixes and completion reports
 
 ### 🔌 API Documentation
 - **[API Testing Summary](api/API-TESTING-SUMMARY.md)** - Comprehensive API testing results and validation
+
+### 🔩 Hardware
+- **[Hardware Documentation](hardware/)** - Hardware setup and configuration
+  - GPIO assignments
+  - Stepper motor guides
+  - Head tracking setup
 
 ### 📖 Core Documentation
 - **[Installation Guide](install.md)** - Basic installation instructions

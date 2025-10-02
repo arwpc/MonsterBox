@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#2d3748"/>
+  <circle cx="128" cy="100" r="40" fill="#48bb78"/>
+  <circle cx="115" cy="95" r="8" fill="#1a202c"/>
+  <circle cx="141" cy="95" r="8" fill="#1a202c"/>
+  <path d="M 110 115 Q 128 125 146 115" stroke="#1a202c" stroke-width="3" fill="none"/>
+  <text x="128" y="200" font-family="Arial, sans-serif" font-size="24" fill="#a0aec0" text-anchor="middle">GOBLIN</text>
+</svg>
+

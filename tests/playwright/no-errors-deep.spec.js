@@ -105,6 +105,8 @@ const EXTRA_PAGES = [
   // Add non-setup dialog-heavy pages for deeper modal coverage
   '/scenes',
   '/audio-library',
+  '/video-library',
+  '/goblin-management',
   '/live',
   '/ai-settings',
   '/ai-settings/stt',

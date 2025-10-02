@@ -67,6 +67,8 @@ const PAGES = [
   '/setup/audio',
   '/setup/webcam',
   '/audio-library',
+  '/video-library',
+  '/goblin-management',
   '/live',
   '/scenes',
   '/ai-settings',

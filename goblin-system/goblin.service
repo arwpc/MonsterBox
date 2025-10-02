@@ -1,0 +1,30 @@
+[Unit]
+Description=MonsterBox Goblin Media Player
+After=network.target
+
+[Service]
+Type=simple
+User=remote
+WorkingDirectory=/home/remote/MonsterBox/goblin-system
+Environment="NODE_ENV=production"
+Environment="GOBLIN_PORT=3001"
+
+# Redirect all console output to log file (not HDMI console)
+StandardOutput=append:/var/log/goblin.log
+StandardError=append:/var/log/goblin.log
+
+# Start the goblin server
+ExecStart=/usr/bin/node src/server.js
+
+# Restart on failure
+Restart=always
+RestartSec=10
+
+# Kill all child processes (video players) when service stops
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
+

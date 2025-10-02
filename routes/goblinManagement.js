@@ -187,7 +187,7 @@ router.post('/api/goblin/:id/heartbeat', async (req, res) => {
 router.post('/api/goblin/:id/deploy-video', async (req, res) => {
     try {
         const result = await goblinManagerService.deployVideoToGoblin(req.params.id, req.body);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -195,6 +195,24 @@ router.post('/api/goblin/:id/deploy-video', async (req, res) => {
         }
     } catch (error) {
         console.error('Error deploying video to Goblin:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /api/goblin/:id/restart - Restart Goblin service
+ */
+router.post('/api/goblin/:id/restart', async (req, res) => {
+    try {
+        const result = await goblinManagerService.restartGoblin(req.params.id);
+
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        console.error('Error restarting Goblin:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });

@@ -25,7 +25,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-01T18:08:51.200Z",
-    "lastSeen": "2025-10-01T21:30:00.000Z",
+    "lastSeen": "2025-10-02T03:24:46.162Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -33,7 +33,9 @@
       "videoEnabled": true,
       "volume": 80,
       "autoLock": false
-    }
+    },
+    "memory": 18,
+    "uptime": 2852.601741971
   },
   {
     "id": "goblin2",
@@ -61,7 +63,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-01T18:35:42.425Z",
-    "lastSeen": "2025-10-01T21:30:00.000Z",
+    "lastSeen": "2025-10-02T03:24:47.521Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -69,6 +71,8 @@
       "videoEnabled": true,
       "volume": 80,
       "autoLock": false
-    }
+    },
+    "memory": 13,
+    "uptime": 6211.763585611
   }
 ]

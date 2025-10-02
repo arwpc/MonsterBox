@@ -6,6 +6,7 @@
 class VideoLibrary {
     constructor() {
         this.videoFiles = [];
+        this.allVideoFiles = []; // Store all videos before filtering
         this.goblins = [];
         this.categories = [];
         this.selectedFiles = [];
@@ -15,6 +16,8 @@ class VideoLibrary {
         this.selectedVideoIds = new Set();
         this.currentPlayer = null;
         this.deploymentInProgress = false;
+        this.selectedGoblinId = null; // Currently selected goblin for filtering
+        this.activityLog = []; // Activity log
 
         this.init();
     }
@@ -22,8 +25,9 @@ class VideoLibrary {
     async init() {
         this.setupEventListeners();
         this.setupDragAndDrop();
+        await this.loadGoblins(); // Load goblins first
         await this.loadVideoLibrary();
-        await this.loadGoblins();
+        this.renderGoblinSelector(); // Add goblin selector
         this.populateCategoryFilters();
         this.updateStats();
         this.startGoblinStatusPolling();
@@ -109,18 +113,69 @@ class VideoLibrary {
 
     async loadVideoLibrary() {
         try {
-            const response = await fetch('/video-library/api/library');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.videoFiles = data.videos;
-                this.categories = data.categories || [];
+            // Load videos from ALL goblins' local libraries
+            const goblinsResponse = await fetch('/goblin-management/api/goblins');
+            const goblinsData = await goblinsResponse.json();
+
+            if (!goblinsData.success) {
+                this.showError('Failed to load goblins');
+                return;
+            }
+
+            const onlineGoblins = goblinsData.goblins.filter(g => g.status === 'online');
+
+            if (onlineGoblins.length === 0) {
+                this.videoFiles = [];
+                this.categories = [];
+                this.showWarning('No goblins online - no videos available');
                 this.renderVideoGrid();
                 this.updateStats();
-            } else {
-                console.error('Failed to load video library:', data.error);
-                this.showError('Failed to load video library');
+                return;
             }
+
+            // Fetch videos from each online goblin
+            const videoPromises = onlineGoblins.map(async (goblin) => {
+                try {
+                    const response = await fetch(`${goblin.endpoint}/video-library/api/videos`);
+                    const data = await response.json();
+
+                    if (data.success && data.videos) {
+                        // Add goblin info to each video
+                        return data.videos.map(video => ({
+                            ...video,
+                            goblinId: goblin.id,
+                            goblinName: goblin.name,
+                            goblinEndpoint: goblin.endpoint,
+                            // Create unique ID combining goblin and video path
+                            id: `${goblin.id}:${video.path}`,
+                            // Store original path for playback
+                            filename: video.path,
+                            title: video.name
+                        }));
+                    }
+                    return [];
+                } catch (error) {
+                    console.error(`Error loading videos from ${goblin.name}:`, error);
+                    return [];
+                }
+            });
+
+            const videoArrays = await Promise.all(videoPromises);
+            this.allVideoFiles = videoArrays.flat(); // Store all videos
+            this.videoFiles = this.allVideoFiles; // Initially show all
+
+            // Extract unique categories
+            const categorySet = new Set();
+            this.videoFiles.forEach(v => {
+                if (v.category) categorySet.add(v.category);
+            });
+            this.categories = Array.from(categorySet);
+
+            console.log(`📹 Loaded ${this.videoFiles.length} videos from ${onlineGoblins.length} goblin(s)`);
+            this.applyGoblinFilter(); // Apply goblin filter if one is selected
+            this.renderVideoGrid();
+            this.updateStats();
+
         } catch (error) {
             console.error('Error loading video library:', error);
             this.showError('Network error loading video library');
@@ -131,14 +186,101 @@ class VideoLibrary {
         try {
             const response = await fetch('/goblin-management/api/goblins');
             const data = await response.json();
-            
+
             if (data.success) {
-                this.goblins = data.goblins;
+                // Check for status changes
+                const oldGoblins = this.goblins || [];
+                const newGoblins = data.goblins;
+
+                newGoblins.forEach(newGoblin => {
+                    const oldGoblin = oldGoblins.find(g => g.id === newGoblin.id);
+                    if (oldGoblin && oldGoblin.status !== newGoblin.status) {
+                        if (newGoblin.status === 'online') {
+                            this.logActivity(`${newGoblin.name} is now online`, 'success');
+                        } else {
+                            this.logActivity(`${newGoblin.name} went offline`, 'warning');
+                        }
+                    }
+                });
+
+                this.goblins = newGoblins;
                 this.updateGoblinStatus();
+                this.renderGoblinSelector(); // Update selector when goblins change
             }
         } catch (error) {
             console.error('Error loading Goblins:', error);
         }
+    }
+
+    renderGoblinSelector() {
+        const container = document.getElementById('goblinSelector');
+        if (!container) return;
+
+        const onlineGoblins = this.goblins.filter(g => g.status === 'online');
+
+        if (onlineGoblins.length === 0) {
+            container.innerHTML = '<div class="alert alert-warning mb-0">No goblins online</div>';
+            return;
+        }
+
+        // Add "All Goblins" button
+        let html = `
+            <button class="btn ${!this.selectedGoblinId ? 'btn-primary' : 'btn-outline-primary'} goblin-selector-btn"
+                    onclick="videoLibrary.selectGoblin(null)">
+                <i class="bi bi-grid-3x3"></i> All Goblins
+                <br><small class="text-muted">${this.allVideoFiles.length} videos</small>
+            </button>
+        `;
+
+        // Add button for each goblin
+        onlineGoblins.forEach(goblin => {
+            const videoCount = this.allVideoFiles.filter(v => v.goblinId === goblin.id).length;
+            const isSelected = this.selectedGoblinId === goblin.id;
+
+            html += `
+                <button class="btn ${isSelected ? 'btn-success' : 'btn-outline-success'} goblin-selector-btn"
+                        onclick="videoLibrary.selectGoblin('${goblin.id}')"
+                        ondblclick="videoLibrary.openGoblinQueue('${goblin.id}')">
+                    <i class="bi bi-cpu"></i> ${goblin.name}
+                    <br><small class="text-muted">${videoCount} videos</small>
+                </button>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    selectGoblin(goblinId) {
+        this.selectedGoblinId = goblinId;
+        this.renderGoblinSelector(); // Update button states
+        this.applyGoblinFilter();
+        this.renderVideoGrid();
+        this.updateStats();
+
+        if (goblinId) {
+            const goblin = this.goblins.find(g => g.id === goblinId);
+            this.showSuccess(`Showing videos from ${goblin.name}`);
+        } else {
+            this.showSuccess('Showing videos from all goblins');
+        }
+    }
+
+    applyGoblinFilter() {
+        if (this.selectedGoblinId) {
+            // Filter to only show videos from selected goblin
+            this.videoFiles = this.allVideoFiles.filter(v => v.goblinId === this.selectedGoblinId);
+        } else {
+            // Show all videos
+            this.videoFiles = this.allVideoFiles;
+        }
+    }
+
+    openGoblinQueue(goblinId) {
+        // TODO: Open queue control for this goblin
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        this.showInfo(`Queue control for ${goblin.name} - Coming soon!`);
+        // For now, just navigate to goblin management
+        // window.location.href = `/goblin-management?goblin=${goblinId}`;
     }
 
     populateCategoryFilters() {
@@ -169,8 +311,8 @@ class VideoLibrary {
         emptyState.style.display = 'none';
 
         grid.innerHTML = this.videoFiles.map(video => `
-            <div class="col-12 mb-2">
-                <div class="video-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="video-card card position-relative h-100" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
                     ${this.bulkSelectMode ? `
                         <div class="position-absolute top-0 start-0 p-2" style="z-index: 20;">
                             <input type="checkbox" class="form-check-input video-select-checkbox" 
@@ -180,10 +322,10 @@ class VideoLibrary {
                     ` : ''}
                     
                     <div class="position-relative">
-                        ${video.thumbnail ? `
-                            <img src="/video-library/api/thumbnail/${video.id}" class="video-thumbnail" alt="${video.title}">
+                        ${video.thumbnail && !video.goblinId ? `
+                            <img src="/video-library/api/video/${video.id}/thumbnail" class="video-thumbnail" alt="${video.title}">
                         ` : `
-                            <div class="video-thumbnail d-flex align-items-center justify-content-center">
+                            <div class="video-thumbnail d-flex align-items-center justify-content-center bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                                 <i class="bi bi-camera-video fs-1 text-white"></i>
                             </div>
                         `}
@@ -217,11 +359,18 @@ class VideoLibrary {
                                 ${video.tags.length > 2 ? `<span class="badge bg-secondary tag-badge">+${video.tags.length - 2}</span>` : ''}
                             </div>
                         ` : ''}
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center gap-1">
                             <small class="text-muted">${this.timeAgo(video.uploadedAt)}</small>
-                            <button class="btn btn-sm btn-outline-success" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
-                                <i class="bi bi-broadcast"></i>
-                            </button>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success" onclick="event.stopPropagation(); videoLibrary.playNow('${video.id}')"
+                                        title="Play Now (stops current video)">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="event.stopPropagation(); videoLibrary.addToQueue('${video.id}')"
+                                        title="Add to Queue">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -273,9 +422,13 @@ class VideoLibrary {
             // Update play count
             this.incrementPlayCount(videoId);
 
+            // Log activity
+            this.logActivity(`Playing "${video.title}"`, 'info');
+
         } catch (error) {
             console.error('Error playing video:', error);
             this.showError('Error playing video');
+            this.logActivity(`Error playing video: ${error.message}`, 'error');
         }
     }
 
@@ -519,29 +672,44 @@ class VideoLibrary {
         this.videoFiles = originalFiles;
     }
 
-    // Goblin deployment methods
-    async quickDeploy(videoId) {
-        const availableGoblins = this.goblins.filter(g => g.status === 'online' && !g.lockedBy);
+    // Goblin playback methods
+    async playNow(videoId) {
+        const video = this.videoFiles.find(v => v.id === videoId);
 
-        if (!availableGoblins.length) {
-            this.showError('No available Goblins for deployment');
+        if (!video) {
+            this.showError('Video not found');
             return;
         }
 
-        // If only one Goblin, deploy directly
-        if (availableGoblins.length === 1) {
-            await this.deployToGoblin(videoId, availableGoblins[0].id);
+        // If a goblin is selected and the video is on that goblin, play directly
+        if (this.selectedGoblinId && video.goblinId === this.selectedGoblinId) {
+            await this.playOnGoblin(videoId, this.selectedGoblinId, true);
             return;
         }
 
-        // Show Goblin selection
-        const goblin = await this.selectGoblin(availableGoblins);
-        if (goblin) {
-            await this.deployToGoblin(videoId, goblin.id);
-        }
+        // Otherwise, play on the goblin that has the video
+        await this.playOnGoblin(videoId, video.goblinId, true);
     }
 
-    async deployToGoblin(videoId, goblinId) {
+    async addToQueue(videoId) {
+        const video = this.videoFiles.find(v => v.id === videoId);
+
+        if (!video) {
+            this.showError('Video not found');
+            return;
+        }
+
+        // If a goblin is selected and the video is on that goblin, add to queue
+        if (this.selectedGoblinId && video.goblinId === this.selectedGoblinId) {
+            await this.addToGoblinQueue(videoId, this.selectedGoblinId);
+            return;
+        }
+
+        // Otherwise, add to the goblin that has the video
+        await this.addToGoblinQueue(videoId, video.goblinId);
+    }
+
+    async playOnGoblin(videoId, goblinId, stopCurrent = false) {
         const video = this.videoFiles.find(v => v.id === videoId);
         const goblin = this.goblins.find(g => g.id === goblinId);
 
@@ -551,29 +719,106 @@ class VideoLibrary {
         }
 
         try {
-            this.showSuccess(`Deploying "${video.title}" to ${goblin.name}...`);
+            // Check if video is on this goblin
+            if (video.goblinId !== goblinId) {
+                this.showError(`Video "${video.title}" is not available on ${goblin.name}. It's on ${video.goblinName}.`);
+                return;
+            }
 
-            const response = await fetch('/video-library/api/deploy', {
+            // Stop current video if requested (with fade to black)
+            if (stopCurrent) {
+                try {
+                    await fetch(`${goblin.endpoint}/stop-all`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    // Wait for fade to black (1 second)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    console.error('Error stopping video:', error);
+                    // Continue anyway - not critical
+                }
+            }
+
+            this.logActivity(`Playing "${video.title}" on ${goblin.name}...`, 'info');
+
+            // Play the video directly on the goblin (it's already there locally!)
+            const response = await fetch(`${goblin.endpoint}/play-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    videoId: videoId,
-                    goblinId: goblinId
+                    filename: video.filename,
+                    loop: false
                 })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                this.showSuccess(`Successfully deployed to ${goblin.name}`);
+                this.showSuccess(`Now playing "${video.title}" on ${goblin.name}!`);
+                this.logActivity(`Now playing "${video.title}" on ${goblin.name}`, 'success');
             } else {
-                this.showError(`Deployment failed: ${result.error}`);
+                this.showError(`Playback failed: ${result.error || 'Unknown error'}`);
+                this.logActivity(`Playback failed on ${goblin.name}: ${result.error}`, 'error');
             }
 
         } catch (error) {
-            console.error('Deployment error:', error);
-            this.showError('Deployment failed due to network error');
+            console.error('Playback error:', error);
+            this.showError('Playback failed due to network error');
+            this.logActivity(`Playback failed on ${goblin.name}: ${error.message}`, 'error');
         }
+    }
+
+    async addToGoblinQueue(videoId, goblinId) {
+        const video = this.videoFiles.find(v => v.id === videoId);
+        const goblin = this.goblins.find(g => g.id === goblinId);
+
+        if (!video || !goblin) {
+            this.showError('Video or Goblin not found');
+            return;
+        }
+
+        // TODO: Queue management coming soon!
+        this.showError('Queue management coming soon! For now, use "Play Now" to play videos immediately.');
+        this.logActivity(`Queue feature for ${goblin.name} - Coming soon!`, 'info');
+        return;
+
+        /* FUTURE IMPLEMENTATION:
+        try {
+            // Check if video is on this goblin
+            if (video.goblinId !== goblinId) {
+                this.showError(`Video "${video.title}" is not available on ${goblin.name}. It's on ${video.goblinName}.`);
+                return;
+            }
+
+            this.logActivity(`Adding "${video.title}" to ${goblin.name} queue...`, 'info');
+
+            // Add to queue
+            const response = await fetch(`${goblin.endpoint}/add-to-queue`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: video.filename
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(`Added "${video.title}" to ${goblin.name} queue!`);
+                this.logActivity(`Added "${video.title}" to ${goblin.name} queue`, 'success');
+            } else {
+                this.showError(`Failed to add to queue: ${result.error || 'Unknown error'}`);
+                this.logActivity(`Failed to add to ${goblin.name} queue: ${result.error}`, 'error');
+            }
+
+        } catch (error) {
+            console.error('Queue error:', error);
+            this.showError('Failed to add to queue due to network error');
+            this.logActivity(`Failed to add to ${goblin.name} queue: ${error.message}`, 'error');
+        }
+        */
     }
 
     populateDeploymentModal() {
@@ -644,8 +889,10 @@ class VideoLibrary {
 
                         if (result.success) {
                             statusElement.innerHTML = statusElement.innerHTML.replace('In Progress', '<span class="text-success">Success</span>');
+                            this.logActivity(`Deployed "${video.title}" to ${goblin.name}`, 'success');
                         } else {
                             statusElement.innerHTML = statusElement.innerHTML.replace('In Progress', `<span class="text-danger">Failed: ${result.error}</span>`);
+                            this.logActivity(`Failed to deploy "${video.title}" to ${goblin.name}: ${result.error}`, 'error');
                         }
                     } catch (error) {
                         const statusElement = statusContainer.lastElementChild;
@@ -730,7 +977,212 @@ class VideoLibrary {
 
     deployCurrentVideo() {
         if (this.currentVideo) {
-            this.quickDeploy(this.currentVideo.id);
+            this.playNow(this.currentVideo.id);
+        }
+    }
+
+    // Queue Management
+    async openGoblinQueue(goblinId) {
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        if (!goblin) {
+            this.showError('Goblin not found');
+            return;
+        }
+
+        // TODO: Queue management coming soon!
+        this.showError('Queue management coming soon! For now, use "Play Now" to play videos immediately.');
+        this.logActivity(`Queue management for ${goblin.name} - Coming soon!`, 'info');
+        return;
+
+        /* FUTURE IMPLEMENTATION:
+        this.currentQueueGoblinId = goblinId;
+        document.getElementById('queueGoblinName').textContent = goblin.name;
+
+        // Open modal
+        const modal = new bootstrap.Modal(document.getElementById('queueManagementModal'));
+        modal.show();
+
+        // Load queue
+        await this.refreshQueue();
+        */
+    }
+
+    async refreshQueue() {
+        if (!this.currentQueueGoblinId) return;
+
+        const goblin = this.goblins.find(g => g.id === this.currentQueueGoblinId);
+        if (!goblin) return;
+
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue`);
+            const result = await response.json();
+
+            if (result.success) {
+                this.renderQueue(result.queue || []);
+                document.getElementById('queueCount').textContent = `${result.queue?.length || 0} items`;
+                document.getElementById('queueStatus').textContent = result.status || 'Idle';
+            } else {
+                this.showError('Failed to load queue');
+            }
+        } catch (error) {
+            console.error('Queue error:', error);
+            this.showError('Failed to load queue');
+        }
+    }
+
+    renderQueue(queue) {
+        const container = document.getElementById('queueItems');
+
+        if (!queue || queue.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mt-2">Queue is empty</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = queue.map((item, index) => `
+            <div class="card mb-2 queue-item" data-index="${index}">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary">${index + 1}</span>
+                            <div>
+                                <strong>${item.filename || item.title || 'Unknown'}</strong>
+                                ${item.status ? `<br><small class="text-muted">${item.status}</small>` : ''}
+                            </div>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            ${index > 0 ? `
+                                <button class="btn btn-outline-primary" onclick="videoLibrary.moveQueueItem(${index}, ${index - 1})" title="Move Up">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                            ` : ''}
+                            ${index < queue.length - 1 ? `
+                                <button class="btn btn-outline-primary" onclick="videoLibrary.moveQueueItem(${index}, ${index + 1})" title="Move Down">
+                                    <i class="bi bi-arrow-down"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-outline-danger" onclick="videoLibrary.removeQueueItem(${index})" title="Remove">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async moveQueueItem(fromIndex, toIndex) {
+        if (!this.currentQueueGoblinId) return;
+
+        const goblin = this.goblins.find(g => g.id === this.currentQueueGoblinId);
+        if (!goblin) return;
+
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fromIndex, toIndex })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await this.refreshQueue();
+                this.logActivity(`Moved queue item on ${goblin.name}`, 'success');
+            } else {
+                this.showError('Failed to move item');
+            }
+        } catch (error) {
+            console.error('Move error:', error);
+            this.showError('Failed to move item');
+        }
+    }
+
+    async removeQueueItem(index) {
+        if (!this.currentQueueGoblinId) return;
+
+        const goblin = this.goblins.find(g => g.id === this.currentQueueGoblinId);
+        if (!goblin) return;
+
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue/remove`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await this.refreshQueue();
+                this.showSuccess('Removed from queue');
+                this.logActivity(`Removed item from ${goblin.name} queue`, 'success');
+            } else {
+                this.showError('Failed to remove item');
+            }
+        } catch (error) {
+            console.error('Remove error:', error);
+            this.showError('Failed to remove item');
+        }
+    }
+
+    async pauseQueue() {
+        if (!this.currentQueueGoblinId) return;
+
+        const goblin = this.goblins.find(g => g.id === this.currentQueueGoblinId);
+        if (!goblin) return;
+
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue/pause`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Queue paused');
+                this.logActivity(`Paused ${goblin.name} queue`, 'info');
+                await this.refreshQueue();
+            } else {
+                this.showError('Failed to pause queue');
+            }
+        } catch (error) {
+            console.error('Pause error:', error);
+            this.showError('Failed to pause queue');
+        }
+    }
+
+    async clearQueue() {
+        if (!this.currentQueueGoblinId) return;
+
+        const goblin = this.goblins.find(g => g.id === this.currentQueueGoblinId);
+        if (!goblin) return;
+
+        if (!confirm(`Clear all items from ${goblin.name} queue?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue/clear`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Queue cleared');
+                this.logActivity(`Cleared ${goblin.name} queue`, 'warning');
+                await this.refreshQueue();
+            } else {
+                this.showError('Failed to clear queue');
+            }
+        } catch (error) {
+            console.error('Clear error:', error);
+            this.showError('Failed to clear queue');
         }
     }
 
@@ -791,14 +1243,56 @@ class VideoLibrary {
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         `;
-        
+
         document.body.appendChild(toast);
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
-        
+
         toast.addEventListener('hidden.bs.toast', () => {
             document.body.removeChild(toast);
         });
+    }
+
+    logActivity(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const entry = { message, type, timestamp };
+        this.activityLog.unshift(entry);
+
+        // Keep only last 50 entries
+        if (this.activityLog.length > 50) {
+            this.activityLog = this.activityLog.slice(0, 50);
+        }
+
+        this.updateActivityLog();
+    }
+
+    updateActivityLog() {
+        const logContainer = document.getElementById('activityLog');
+        if (!logContainer) return;
+
+        if (this.activityLog.length === 0) {
+            logContainer.innerHTML = '<small class="text-muted">No recent activity</small>';
+            return;
+        }
+
+        logContainer.innerHTML = this.activityLog.map(entry => {
+            const iconClass = {
+                'success': 'bi-check-circle text-success',
+                'error': 'bi-x-circle text-danger',
+                'warning': 'bi-exclamation-triangle text-warning',
+                'info': 'bi-info-circle text-info'
+            }[entry.type] || 'bi-info-circle text-info';
+
+            return `
+                <div class="d-flex align-items-start mb-2 small">
+                    <i class="bi ${iconClass} me-2 mt-1"></i>
+                    <div class="flex-grow-1">
+                        <div>${entry.message}</div>
+                        <small class="text-muted">${entry.timestamp}</small>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 }
 

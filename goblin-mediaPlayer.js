@@ -193,29 +193,34 @@ class MediaPlayer {
       const selectedPlayer = (options.player || this.videoPlayer || 'vlc').toLowerCase();
 
       if (selectedPlayer === 'mpv') {
-        // mpv with hardware acceleration - best for Pi 3B+
-        // OPTIMIZED FOR SMOOTH PLAYBACK - Lower resolution for better performance
+        // mpv with hardware acceleration - optimized for Pi 3B+ @ 1080p
+        // HDMI0 on Pi board = HDMI-A-1 in DRM
+        const hdmiPort = process.env.HDMI_PORT || 'HDMI-A-1';
+
         const mpvArgs = [
-          '--fullscreen',                 // Fullscreen mode
-          '--no-osc',                     // No on-screen controller
-          '--no-osd-bar',                 // No OSD bar
-          '--no-terminal',                // No terminal output
-          '--really-quiet',               // Suppress all console output
-          '--hwdec=auto',                 // Hardware decoding (uses V4L2 M2M)
-          '--vo=gpu',                     // GPU video output (DRM/KMS)
-          '--gpu-context=drm',            // Direct rendering via DRM
-          '--drm-connector=HDMI-A-1',     // HDMI output
-          '--drm-mode=1280x720@60',       // 720p @ 60fps for smoother playback
-          '--vf=scale=1280:720',          // Scale to 720p
-          '--video-sync=display-resample', // Smooth playback
-          '--interpolation',              // Frame interpolation for smoothness
-          '--tscale=oversample',          // Temporal scaling
-          '--cache=yes',                  // Enable cache
-          '--cache-secs=10'               // 10 second cache
+          '--fullscreen',                   // Fullscreen mode
+          '--no-osc',                       // No on-screen controller
+          '--no-osd-bar',                   // No OSD bar
+          '--no-terminal',                  // Hide terminal output (no console flash!)
+          '--no-input-default-bindings',    // Disable keyboard controls
+          '--hwdec=auto',                   // Hardware decoding (V4L2 M2M)
+          '--vo=gpu',                       // GPU video output (DRM/KMS)
+          '--gpu-context=drm',              // Direct rendering via DRM
+          `--drm-connector=${hdmiPort}`,    // Auto-detected HDMI output
+          '--drm-mode=1920x1080@60',        // Force 1080p @ 60fps
+          '--video-sync=display-resample',  // Smooth playback
+          '--cache=yes',                    // Enable cache
+          '--cache-secs=10',                // 10 second cache
+          '--demuxer-max-bytes=50M',        // Larger demuxer buffer
+          '--demuxer-max-back-bytes=20M',   // Larger backward buffer
+          '--vd-lavc-threads=4',            // Use 4 threads for decoding
+          '--scale=bilinear',               // Fast scaling
+          '--cscale=bilinear',              // Fast chroma scaling
+          '--dscale=bilinear',              // Fast downscaling
+          '--vf=fade=in:0:15,fade=out:st=0:d=1'  // Fade in (15 frames) and fade out (1 sec)
         ];
 
-        // ALWAYS LOOP unless explicitly disabled
-        if (options.loop !== false) {
+        if (options.loop) {
           mpvArgs.push('--loop=inf');
         }
 
@@ -225,43 +230,42 @@ class MediaPlayer {
 
         mpvArgs.push(videoPath);
 
-        console.log('🎬 Starting mpv with hardware acceleration (720p60 for smooth playback)');
+        console.log(`🎬 Starting mpv with hardware acceleration on ${hdmiPort} @ 1080p`);
+        console.log('🎬 Video path:', videoPath);
 
         playerProcess = spawn('mpv', mpvArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore'] // Suppress all output
+          stdio: ['pipe', 'pipe', 'pipe']
         });
         playerName = 'mpv';
       } else if (selectedPlayer === 'ffplay' || selectedPlayer === 'ffmpeg') {
         // Use ffmpeg with hardware-accelerated H.264 decoding and DRM output
-        // OPTIMIZED FOR SMOOTH PLAYBACK - Lower resolution for better performance
+        // DRM can handle YUV natively without slow pixel format conversion
         const ffmpegArgs = [
-          '-loglevel', 'quiet',           // Suppress console output
           '-c:v', 'h264_v4l2m2m',         // Hardware H.264 decoder (GPU accelerated)
-          '-stream_loop', (options.loop !== false) ? '-1' : '0',  // Loop forever by default
+          '-stream_loop', options.loop ? '-1' : '0',  // Loop forever if requested
           '-i', videoPath,                // Input file
-          '-vf', 'scale=1280:720',        // Scale to 720p for smoother playback
+          '-vf', 'scale=1920:1080',       // Scale to 1080p
           '-pix_fmt', 'nv12',             // NV12 format (YUV 4:2:0, hardware friendly)
-          '-f', 'fbdev',                  // Framebuffer output
+          '-f', 'fbdev',                  // Try framebuffer first
           '/dev/fb0'                      // HDMI output
         ];
 
-        console.log('🎬 Starting ffmpeg with hardware H.264 decoder (720p for smooth playback)');
+        console.log('🎬 Starting ffmpeg with hardware H.264 decoder (V4L2 M2M)');
+        console.log('🎬 Args:', ffmpegArgs.join(' '));
 
         playerProcess = spawn('ffmpeg', ffmpegArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore'] // Suppress all output
+          stdio: ['pipe', 'pipe', 'pipe']
         });
         playerName = 'ffmpeg';
       } else if (selectedPlayer === 'omxplayer') {
         const omxArgs = [
           '--no-osd',
-          '--display', options.display || 'hdmi',
-          '--blank'                       // Blank other screens
+          '--display', options.display || 'hdmi'
         ];
 
-        // ALWAYS LOOP unless explicitly disabled
-        if (options.loop !== false) {
+        if (options.loop) {
           omxArgs.push('--loop');
         }
 
@@ -271,11 +275,11 @@ class MediaPlayer {
 
         omxArgs.push(videoPath);
 
-        console.log('🎬 Starting omxplayer (looping by default)');
+        console.log('🎬 Starting omxplayer with args:', omxArgs);
 
         playerProcess = spawn('omxplayer', omxArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore'] // Suppress all output
+          stdio: ['pipe', 'pipe', 'pipe']
         });
         playerName = 'omxplayer';
       } else {
@@ -284,14 +288,14 @@ class MediaPlayer {
           '--no-video-title-show',     // Don't show title
           '--fullscreen',              // Fullscreen mode
           '--no-osd',                  // No on-screen display
-          '--quiet',                   // Suppress console output
           videoPath
         ];
 
-        // ALWAYS LOOP unless explicitly disabled
-        if (options.loop !== false) {
+        if (options.loop) {
           vlcArgs.push('--loop');
-        } else {
+        }
+
+        if (!options.loop) {
           vlcArgs.push('--play-and-exit');
         }
 
@@ -299,11 +303,11 @@ class MediaPlayer {
           vlcArgs.push(`--volume=${Math.max(0, Math.min(512, Math.round(options.volume * 256)))}`);
         }
 
-        console.log('🎬 Starting VLC (looping by default)');
+        console.log('🎬 Starting VLC with args:', vlcArgs);
 
         playerProcess = spawn('vlc', vlcArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore'] // Suppress all output
+          stdio: ['pipe', 'pipe', 'pipe']
         });
         playerName = 'vlc';
       }

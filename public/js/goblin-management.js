@@ -54,6 +54,11 @@ class GoblinManager {
         document.getElementById('registerGoblinForm').addEventListener('input', () => {
             this.validateRegistrationForm();
         });
+
+        // Edit Settings button
+        document.getElementById('editGoblinBtn').addEventListener('click', () => {
+            this.editGoblinSettings();
+        });
     }
 
     async loadGoblins() {
@@ -112,19 +117,29 @@ class GoblinManager {
 
         grid.innerHTML = filteredGoblins.map(goblin => {
             const lockTimeRemaining = this.getLockTimeRemaining(goblin);
-            const heartbeatAge = goblin.lastHeartbeat ? 
+            const heartbeatAge = goblin.lastHeartbeat ?
                 Math.floor((Date.now() - new Date(goblin.lastHeartbeat).getTime()) / 1000) : null;
+
+            // Get goblin avatar (use default if not set)
+            const avatarUrl = goblin.avatar || `/images/goblins/goblin${(parseInt(goblin.id.replace('goblin', '')) % 5) + 1}.svg`;
+
+            // Ensure location is displayed
+            const locationText = goblin.location || 'No location set';
 
             return `
                 <div class="col-lg-6 col-xl-4">
                     <div class="card goblin-card ${goblin.status}" data-goblin-id="${goblin.id}">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
-                            <div>
-                                <h6 class="mb-0 d-flex align-items-center">
-                                    <div class="heartbeat-indicator ${heartbeatAge < 60 ? 'active' : 'inactive'}"></div>
-                                    ${goblin.name}
-                                </h6>
-                                <small class="text-muted">${goblin.location || goblin.endpoint}</small>
+                            <div class="d-flex align-items-center">
+                                <img src="${avatarUrl}" class="goblin-avatar rounded-circle me-2"
+                                     alt="${goblin.name}" onerror="this.src='/images/goblins/default.svg'">
+                                <div>
+                                    <h6 class="mb-0 d-flex align-items-center">
+                                        <div class="heartbeat-indicator ${heartbeatAge < 60 ? 'active' : 'inactive'}"></div>
+                                        ${goblin.name}
+                                    </h6>
+                                    <small class="text-muted">${locationText}</small>
+                                </div>
                             </div>
                             <div>
                                 <span class="status-badge ${goblin.status}">${goblin.status}</span>
@@ -193,39 +208,57 @@ class GoblinManager {
                         
                         <div class="card-footer py-2">
                             <div class="goblin-controls d-flex flex-wrap justify-content-center">
-                                <button class="btn btn-sm btn-outline-info" onclick="goblinManager.showGoblinDetails('${goblin.id}')">
+                                <button class="btn btn-sm btn-outline-info" onclick="goblinManager.showGoblinDetails('${goblin.id}')"
+                                        title="View Details & Edit Settings" data-bs-toggle="tooltip">
                                     <i class="bi bi-info-circle"></i>
                                 </button>
-                                
+
                                 ${goblin.status === 'online' ? `
-                                    <button class="btn btn-sm btn-outline-success" onclick="goblinManager.testConnection('${goblin.id}')">
+                                    <button class="btn btn-sm btn-outline-success" onclick="goblinManager.testConnection('${goblin.id}')"
+                                            title="Test Connection" data-bs-toggle="tooltip">
                                         <i class="bi bi-wifi"></i>
                                     </button>
-                                    
+
                                     ${goblin.locked ? `
-                                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.unlockGoblin('${goblin.id}')">
+                                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.unlockGoblin('${goblin.id}')"
+                                                title="Unlock Goblin" data-bs-toggle="tooltip">
                                             <i class="bi bi-unlock"></i>
                                         </button>
                                     ` : `
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')"
+                                                title="Lock Goblin" data-bs-toggle="tooltip">
                                             <i class="bi bi-lock"></i>
                                         </button>
                                     `}
-                                    
-                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.deployToGoblin('${goblin.id}')">
+
+                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.deployToGoblin('${goblin.id}')"
+                                            title="Deploy Video" data-bs-toggle="tooltip">
                                         <i class="bi bi-broadcast"></i>
                                     </button>
-                                    
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')">
+
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')"
+                                            title="Stop Playback" data-bs-toggle="tooltip">
                                         <i class="bi bi-stop-fill"></i>
                                     </button>
+
+                                    <button class="btn btn-sm btn-outline-info" onclick="goblinManager.restartGoblin('${goblin.id}')"
+                                            title="Restart Goblin Service" data-bs-toggle="tooltip">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
                                 ` : `
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.testConnection('${goblin.id}')">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.testConnection('${goblin.id}')"
+                                            title="Reconnect" data-bs-toggle="tooltip">
                                         <i class="bi bi-arrow-clockwise"></i> Reconnect
                                     </button>
+
+                                    <button class="btn btn-sm btn-outline-info" onclick="goblinManager.restartGoblin('${goblin.id}')"
+                                            title="Restart Goblin Service" data-bs-toggle="tooltip">
+                                        <i class="bi bi-arrow-repeat"></i> Restart
+                                    </button>
                                 `}
-                                
-                                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')">
+
+                                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')"
+                                        title="Unregister Goblin" data-bs-toggle="tooltip">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -234,6 +267,12 @@ class GoblinManager {
                 </div>
             `;
         }).join('');
+
+        // Initialize Bootstrap tooltips after rendering
+        setTimeout(() => {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }, 100);
     }
 
     async registerGoblin() {
@@ -614,6 +653,116 @@ class GoblinManager {
         modal.show();
     }
 
+    editGoblinSettings() {
+        // Get the currently displayed goblin from the details modal
+        const detailsContent = document.getElementById('goblinDetailsContent');
+        const goblinName = detailsContent.querySelector('td:nth-child(2)').textContent;
+        const goblin = this.goblins.find(g => g.name === goblinName);
+
+        if (!goblin) {
+            this.showError('Could not find goblin to edit');
+            return;
+        }
+
+        // Close details modal
+        const detailsModal = bootstrap.Modal.getInstance(document.getElementById('goblinDetailsModal'));
+        if (detailsModal) {
+            detailsModal.hide();
+        }
+
+        // Populate edit form
+        document.getElementById('editGoblinId').value = goblin.id;
+        document.getElementById('editGoblinName').value = goblin.name || '';
+        document.getElementById('editGoblinEndpoint').value = goblin.endpoint || '';
+        document.getElementById('editGoblinLocation').value = goblin.location || '';
+        document.getElementById('editGoblinDescription').value = goblin.description || '';
+        document.getElementById('editGoblinPlatform').value = goblin.platform || '';
+        document.getElementById('editGoblinVersion').value = goblin.version || '';
+
+        // Set capabilities checkboxes
+        const capabilities = goblin.capabilities || [];
+        document.getElementById('editCap1').checked = capabilities.includes('video-playback');
+        document.getElementById('editCap2').checked = capabilities.includes('audio-playback');
+        document.getElementById('editCap3').checked = capabilities.includes('screen-effects');
+        document.getElementById('editCap4').checked = capabilities.includes('hardware-control');
+
+        // Show edit modal
+        const editModal = new bootstrap.Modal(document.getElementById('editGoblinModal'));
+        editModal.show();
+    }
+
+    async saveGoblinSettings() {
+        const form = document.getElementById('editGoblinForm');
+        const formData = new FormData(form);
+        const statusDiv = document.getElementById('editStatus');
+        const statusMessage = document.getElementById('editStatusMessage');
+        const saveBtn = document.getElementById('saveGoblinBtn');
+
+        const goblinId = document.getElementById('editGoblinId').value;
+
+        // Collect capabilities
+        const capabilities = Array.from(form.querySelectorAll('input[name="capabilities"]:checked'))
+            .map(cb => cb.value);
+
+        const updateData = {
+            name: formData.get('name'),
+            endpoint: formData.get('endpoint'),
+            location: formData.get('location'),
+            description: formData.get('description'),
+            platform: formData.get('platform'),
+            version: formData.get('version'),
+            capabilities: capabilities
+        };
+
+        try {
+            saveBtn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'alert alert-info mt-3';
+            statusMessage.textContent = 'Saving changes...';
+
+            const response = await fetch(`/goblin-management/api/goblin/${goblinId}/settings`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                statusDiv.className = 'alert alert-success mt-3';
+                statusMessage.textContent = 'Settings saved successfully!';
+                this.showSuccess('Goblin settings updated');
+                this.logActivity(`✅ Updated settings for ${goblinId}`, 'success');
+
+                // Reload goblins
+                await this.loadGoblins();
+
+                // Close modal after short delay
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editGoblinModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                }, 1500);
+            } else {
+                statusDiv.className = 'alert alert-danger mt-3';
+                statusMessage.textContent = result.error || 'Failed to save settings';
+                this.showError(result.error || 'Failed to save settings');
+                this.logActivity(`❌ Failed to update ${goblinId}: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving goblin settings:', error);
+            statusDiv.className = 'alert alert-danger mt-3';
+            statusMessage.textContent = 'Network error saving settings';
+            this.showError('Network error saving settings');
+            this.logActivity(`❌ Error updating ${goblinId}: ${error.message}`, 'error');
+        } finally {
+            saveBtn.disabled = false;
+        }
+    }
+
     deployToGoblin(goblinId) {
         // Open Video Library with Goblin pre-selected
         window.open(`/video-library?goblin=${goblinId}`, '_blank');
@@ -792,17 +941,53 @@ Success Rate: ${stats.successRate}%`);
         }
     }
 
+    async restartGoblin(goblinId) {
+        if (!confirm(`Are you sure you want to restart ${goblinId}? This will temporarily interrupt any running playback.`)) {
+            return;
+        }
+
+        try {
+            this.logActivity(`Restarting ${goblinId}...`, 'info');
+
+            const response = await fetch(`/goblin-management/api/goblin/${goblinId}/restart`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(result.message || `${goblinId} restart initiated`);
+                this.logActivity(`✅ ${goblinId} restart successful`, 'success');
+
+                // Reload goblins after a short delay to show updated status
+                setTimeout(() => {
+                    this.loadGoblins();
+                }, 2000);
+            } else {
+                this.showError(result.error || 'Failed to restart Goblin');
+                this.logActivity(`❌ ${goblinId} restart failed: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error restarting Goblin:', error);
+            this.showError('Network error restarting Goblin');
+            this.logActivity(`❌ ${goblinId} restart error: ${error.message}`, 'error');
+        }
+    }
+
     logActivity(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
         const logEntry = { timestamp, message, type };
-        
+
         this.activityLog.unshift(logEntry);
-        
+
         // Keep only last 50 entries
         if (this.activityLog.length > 50) {
             this.activityLog = this.activityLog.slice(0, 50);
         }
-        
+
         this.updateActivityLog();
     }
 

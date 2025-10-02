@@ -24,7 +24,7 @@
 - Scenes: Scene creation + Queue/Loop engine with safety caps
 - Super Powers: Jaw Animation (audio-driven), Advanced Servo Controls, AI chat integration
 - Dynamic Video Library: Auto-index videos in ./videos (kept out of git)
-- Goblin System: Distributed video/audio playback nodes with auto-discovery
+- Goblin System: Distributed video/audio playback nodes with 1080p@60fps, fade transitions, thumbnails, and avatars (see [docs/goblin/GOBLIN_SYSTEM_COMPLETE.md](docs/goblin/GOBLIN_SYSTEM_COMPLETE.md))
 - AI & Conversational: ElevenLabs ConvAI integration (server/broswer mics, server playback)
 - Testing: Unit + Playwright UI suites (including Super Powers & Video Library)
 - Platform: Raspberry Pi 4B optimizations, install scripts, performance hardening
