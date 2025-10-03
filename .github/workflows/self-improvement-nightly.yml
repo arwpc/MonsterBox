@@ -1,0 +1,29 @@
+name: Self-Improvement Nightly
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci || npm install
+      - name: Run harvester
+        run: npm run -s self:harvest
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-improvement-issues
+          path: |
+            tests/self_improvement/common-issues.json
+            tests/self_improvement/ISSUES_SUMMARY.md
+

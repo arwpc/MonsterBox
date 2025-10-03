@@ -57,21 +57,21 @@ async function getVideoDeviceName(devPath) {
 function scanVideoUsage() {
   try {
     const procDir = '/proc';
-    const pids = require('fs').readdirSync(procDir).filter(function (d) { return /^\d+$/.test(d); });
+    const pids = fsSync.readdirSync(procDir).filter(function (d) { return /^\d+$/.test(d); });
     const results = [];
     for (let i = 0; i < pids.length; i++) {
       const pid = pids[i];
       const fdDir = path.join(procDir, pid, 'fd');
       let fds;
-      try { fds = require('fs').readdirSync(fdDir); } catch (_) { continue; }
+      try { fds = fsSync.readdirSync(fdDir); } catch (_) { continue; }
       for (let j = 0; j < fds.length; j++) {
         const fd = fds[j];
         const linkPath = path.join(fdDir, fd);
         let target;
-        try { target = require('fs').readlinkSync(linkPath); } catch (_) { continue; }
+        try { target = fsSync.readlinkSync(linkPath); } catch (_) { continue; }
         if (/^\/dev\/video\d+$/.test(target)) {
           let cmd = '';
-          try { cmd = require('fs').readFileSync(path.join(procDir, pid, 'cmdline'), 'utf8').replace(/\0/g, ' ').trim(); } catch (_) { }
+          try { cmd = fsSync.readFileSync(path.join(procDir, pid, 'cmdline'), 'utf8').replace(/\0/g, ' ').trim(); } catch (_) { }
           results.push({ device: target, pid: parseInt(pid, 10), cmd: cmd });
         }
       }

@@ -245,7 +245,7 @@ router.get('/api/video/:id/download', async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="${video.originalName}"`);
         res.setHeader('Content-Type', `video/${video.format}`);
         
-        const stream = require('fs').createReadStream(filePath);
+        const stream = createReadStream(filePath);
         stream.pipe(res);
     } catch (error) {
         console.error('Error downloading video:', error);
