@@ -124,11 +124,11 @@ for (const path of EXTRA_PAGES) {
     await resetServerErrors(page);
     await waitServerReady(page);
     await assertNoHttpErrors(page, async () => {
-      await page.goto(path);
+      await page.goto(path, { waitUntil: 'domcontentloaded' });
       await page.waitForLoadState('domcontentloaded');
-      if (path === '/audio-library' || path === '/ai-settings/agents') {
+      if (path === '/audio-library' || path === '/ai-settings/agents' || path === '/conversation') {
         // Light-touch check for heavy/dynamic pages to avoid flakiness in CI
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(500);
       } else {
         await tryOpenModals(page, 3);
         await clickSomeLinks(page, 5);

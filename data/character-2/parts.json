@@ -155,5 +155,89 @@
     },
     "created": "2025-10-02T21:42:49.543Z",
     "enabled": true
+  },
+  {
+    "id": "26",
+    "name": "UI Servo 1759444388404",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T22:33:08.588Z",
+    "enabled": true
+  },
+  {
+    "id": "27",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T22:58:59.501Z",
+    "enabled": true
+  },
+  {
+    "id": "28",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T23:05:06.993Z",
+    "enabled": true
+  },
+  {
+    "id": "29",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T23:09:02.444Z",
+    "enabled": true
+  },
+  {
+    "id": "30",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T23:13:40.595Z",
+    "enabled": true
+  },
+  {
+    "id": "31",
+    "name": "UI Servo 1759446938344",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T23:15:38.461Z",
+    "enabled": true
   }
 ]

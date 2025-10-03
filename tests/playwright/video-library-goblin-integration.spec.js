@@ -10,8 +10,8 @@ test.describe('Video Library Goblin Integration', () => {
     
     test.beforeEach(async ({ page }) => {
         // Navigate to video library
-        await page.goto('http://127.0.0.1:3100/video-library');
-        await page.waitForLoadState('networkidle', { timeout: 10000 });
+        await page.goto('http://127.0.0.1:3100/video-library', { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('domcontentloaded');
     });
 
     test('should not have 404 errors on video library page', async ({ page }) => {

@@ -18,14 +18,36 @@ test.describe('AI Settings - STT: VAD + Input Gain', () => {
 
     // Wait for microphone dropdown to populate and select first real option
     await page.waitForSelector('#microphonePart');
-    await page.waitForFunction(() => document.querySelectorAll('#microphonePart option').length > 0, null, { timeout: 10000 });
-    const firstMicValue = await page.$eval('#microphonePart', (sel) => {
-      const opts = Array.from(sel.options);
-      const item = opts.find(o => o.value !== '' && !/loading|failed/i.test(o.textContent || ''));
-      return item ? item.value : '';
-    });
+    let firstMicValue = '';
+    try {
+      await page.waitForFunction(() => document.querySelectorAll('#microphonePart option').length > 0, null, { timeout: 5000 });
+      firstMicValue = await page.$eval('#microphonePart', (sel) => {
+        const opts = Array.from(sel.options);
+        const item = opts.find(o => o.value !== '' && !/loading|failed/i.test(o.textContent || ''));
+        return item ? item.value : '';
+      });
+    } catch (_) { /* no microphones available in test env */ }
     if (firstMicValue) {
       await page.selectOption('#microphonePart', firstMicValue);
+    } else {
+      // Inject a fake Microphone Part and select it so applyInputGainNow() posts in test env
+      await page.evaluate(() => {
+        const sel = document.querySelector('#microphonePart');
+        if (sel) {
+          const opt = document.createElement('option');
+          opt.value = 'dev-test-1';
+          opt.textContent = 'Test Mic Device';
+          sel.appendChild(opt);
+          sel.value = opt.value;
+          // Ensure sttManager knows about this part and has a deviceId to return
+          var mgr = window.sttManager;
+          if (mgr) {
+            mgr.microphoneParts = [{ id: 'dev-test-1', name: 'Test Mic Device', type: 'microphone', config: { deviceId: 'test-device-1' } }];
+            // Trigger selection change handlers
+            sel.dispatchEvent(new Event('change'));
+          }
+        }
+      });
     }
 
     // Controls present

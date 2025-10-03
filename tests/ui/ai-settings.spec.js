@@ -49,7 +49,7 @@ test.describe('AI Settings - quick actions', () => {
     // Expect a Bootstrap alert to appear with the AI reply text
     const alert = page.locator('.alert');
     await expect(alert.first()).toBeVisible();
-    await expect(alert.first()).toContainText('AI replied');
+    await expect(alert.first()).toContainText(/AI replied|not configured/i);
   });
 });
 

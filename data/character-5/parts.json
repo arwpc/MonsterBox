@@ -82,5 +82,101 @@
     "created": "2025-10-01T15:34:07.993Z",
     "enabled": true,
     "characterId": 5
+  },
+  {
+    "id": "7",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T22:46:55.611Z",
+    "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T23:33:22.917Z",
+    "enabled": true
+  },
+  {
+    "id": "9",
+    "name": "UI Servo 1759448062378",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T23:34:22.437Z",
+    "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-02T23:52:48.908Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "UI Servo 1759449240733",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-02T23:54:00.798Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-03T00:05:08.040Z",
+    "enabled": true
+  },
+  {
+    "id": "13",
+    "name": "UI Servo 1759449972913",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-03T00:06:12.975Z",
+    "enabled": true
   }
 ]

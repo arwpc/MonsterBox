@@ -59,7 +59,7 @@ test.describe('Goblin Management Page - Critical Tests', () => {
         await page.waitForLoadState('networkidle');
 
         // Check for main action buttons
-        const registerButton = page.locator('button:has-text("Register Goblin")');
+        const registerButton = page.locator('button:has-text("Register Goblin")').first();
         await expect(registerButton).toBeVisible();
 
         const refreshButton = page.locator('button:has-text("Refresh All")');
