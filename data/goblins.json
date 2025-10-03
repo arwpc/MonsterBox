@@ -1,0 +1,23 @@
+[
+  {
+    "id": "goblin1",
+    "endpoint": "http://192.168.8.160:3001",
+    "capabilities": [
+      "video",
+      "audio"
+    ],
+    "platform": "raspberry-pi",
+    "version": "1.0.0",
+    "status": "online",
+    "registeredAt": "2025-10-03T00:49:00.473Z",
+    "lastSeen": "2025-10-03T00:49:00.473Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
+  }
+]

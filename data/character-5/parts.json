@@ -178,5 +178,32 @@
     },
     "created": "2025-10-03T00:06:12.975Z",
     "enabled": true
+  },
+  {
+    "id": "14",
+    "name": "E2E Test Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-03T00:37:37.931Z",
+    "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "UI Servo 1759451915868",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-03T00:38:35.943Z",
+    "enabled": true
   }
 ]
