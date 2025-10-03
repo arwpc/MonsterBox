@@ -10,6 +10,7 @@
     "playwright:browsers": "npx playwright install --with-deps chromium",
     "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
     "test:unit": "mocha tests/**/*.test.js --timeout 15000",
+    "self:harvest": "node scripts/self-improvement/harvest-and-merge.js",
     "test:self-improvement": "mocha tests/self_improvement/**/*.test.js --timeout 15000",
     "test:ui": "playwright test -c playwright.config.ts",
     "test:ui:live": "playwright test -c playwright.config.ts --headed",
@@ -33,7 +34,8 @@
     "check": "bash scripts/system-check.sh",
     "install:python": "python3 -m pip install --user -r utils/requirements.txt",
     "postinstall": "node scripts/post-install.js",
-    "migrate:models": "node scripts/migrate-models.js"
+    "migrate:models": "node scripts/migrate-models.js",
+    "talkbox:start-goblin-videos": "node scripts/start-goblin-videos.js"
   },
   "keywords": [
     "animatronic",
