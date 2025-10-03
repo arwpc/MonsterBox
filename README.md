@@ -143,6 +143,42 @@ What it does per device:
 
 Review per-host lines in output: HOME/WEBCAM/MJPG/GOBLINS/WS.
 
+## 🗣️ Multi‑Animatronic Conversation (5.1)
+The following helpers enable auto‑start on boot for all devices, verify after reboot, then configure microphones and start a room‑wide real‑time conversation using the built‑in ElevenLabs integration.
+
+Prereqs
+- Your LAN machine can SSH to animatronics by hostname (coffin/orlok/skulltalker/pumpkinhead) and to Goblins by IP (192.168.8.160/161)
+- All devices use: user remote / password klrklr89!
+- ElevenLabs API key configured on each animatronic (either .env ELEVENLABS_API_KEY or /etc/monsterbox/elevenlabs.key)
+
+1) Enable auto‑start, reboot, and verify services
+````bash
+export MB_REMOTE_PASSWORD='klrklr89!'
+bash scripts/auto-boot-verify.sh
+````
+Outputs per device (example):
+- HOST=coffin SERVICE=active HTTP=200 MJPG_HTTP=200 WS=LISTENING
+- GOBLIN=192.168.8.160 SERVICE=active HEALTH_HTTP=200
+
+2) Start a room conversation (uses existing 5.1 features; no new code)
+````bash
+# Optional overrides:
+#   HOSTS="coffin,orlok,skulltalker,pumpkinhead" LANGUAGE=en GAIN=140 AGENT_ID=xxxx
+bash scripts/start-conversation-all.sh
+````
+What it does per host:
+- Selects a Character automatically (first available)
+- Sets default microphone source and input gain via /setup/audio APIs
+- Saves STT config (scribe_v1, language=en, 16k/mono) for server‑side mic
+- Enables Jaw Animation for the selected Character
+- Connects to ws://<host>:8795, sets output=server, mic=server, starts conversation with the first Agent (or AGENT_ID if provided), and seeds a short greeting so they begin talking to each other
+
+Tips
+- To increase mic sensitivity if the room is quiet: GAIN=160 (or higher). To reduce feedback: GAIN=110..130.
+- You can run the script multiple times; it is idempotent and will reuse existing Agents/Character selections.
+- Stop with Ctrl+C to close WS connections; services keep running.
+
+
 - **Scene Integration**: Audio files can be selected and used in scenes, poses, and character interactions
 - **🔧 Recent Fixes**: All JavaScript errors resolved, "Play on Character" button fully functional, WaveSurfer container issues fixed
 
