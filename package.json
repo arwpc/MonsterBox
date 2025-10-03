@@ -10,6 +10,7 @@
     "playwright:browsers": "npx playwright install --with-deps chromium",
     "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
     "test:unit": "mocha tests/**/*.test.js --timeout 15000",
+    "test:self-improvement": "mocha tests/self_improvement/**/*.test.js --timeout 15000",
     "test:ui": "playwright test -c playwright.config.ts",
     "test:ui:live": "playwright test -c playwright.config.ts --headed",
     "test:ui:headed": "playwright test -c playwright.config.ts --headed",
