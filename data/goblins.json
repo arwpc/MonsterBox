@@ -9,9 +9,9 @@
     ],
     "platform": "raspberry-pi",
     "version": "1.0.0",
-    "status": "online",
+    "status": "offline",
     "registeredAt": "2025-10-03T00:49:00.473Z",
-    "lastSeen": "2025-10-03T00:49:00.473Z",
+    "lastSeen": "2025-10-03T07:34:37.101Z",
     "lockedBy": null,
     "lockedAt": null,
     "settings": {
@@ -19,6 +19,8 @@
       "videoEnabled": true,
       "volume": 80,
       "autoLock": false
-    }
+    },
+    "memory": 21,
+    "uptime": 32908.889968055
   }
 ]

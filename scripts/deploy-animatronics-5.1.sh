@@ -23,6 +23,13 @@ HOSTS=(
   "192.168.8.150:pumpkinhead"
 )
 
+# Optional: override HOSTS list with space-separated "ip:label" pairs via ONLY env
+# Example: ONLY="192.168.8.130:skulltalker 192.168.8.150:pumpkinhead"
+if [ -n "${ONLY:-}" ]; then
+  HOSTS=( ${ONLY} )
+fi
+
+
 # Goblins
 GOBLIN1_ENDPOINT="http://192.168.8.160:3001"
 GOBLIN2_ENDPOINT="http://192.168.8.161:3001"
@@ -46,6 +53,28 @@ if ! systemctl cat monsterbox >/dev/null 2>&1; then
   echo "MonsterBox service missing; running setup-monsterbox.sh to create it"
   bash setup-monsterbox.sh || true
 fi
+# Fallback: create service file with sudo if still missing (password provided)
+if ! systemctl cat monsterbox >/dev/null 2>&1; then
+  echo "Creating monsterbox.service via fallback"
+  echo "__PASS__" | sudo -S tee /etc/systemd/system/monsterbox.service > /dev/null << EOFUNIT
+[Unit]
+Description=MonsterBox 4.0 Animatronic Control System
+After=network.target mjpg-streamer.service
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/MonsterBox
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOFUNIT
+fi
+
 # Webcam setup (idempotent)
 bash scripts/setup-webcam.sh || true
 # Ensure and restart MonsterBox service
@@ -76,6 +105,8 @@ for entry in "${HOSTS[@]}"; do
   # Replace goblin endpoints in the script for this run
   RSCRIPT="${REMOTE_SCRIPT/__GOBLIN1__/${GOBLIN1_ENDPOINT}}"
   RSCRIPT="${RSCRIPT/__GOBLIN2__/${GOBLIN2_ENDPOINT}}"
+  RSCRIPT="${RSCRIPT/__PASS__/${PASS_WORD}}"
+
   if ! sshpass -e ssh -o StrictHostKeyChecking=no "${USER_NAME}@${HOST}" "bash -lc '$RSCRIPT'"; then
     echo "WARN: deployment failed on $LABEL ($HOST)" >&2
   fi

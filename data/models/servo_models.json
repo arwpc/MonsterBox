@@ -1119,5 +1119,18 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1759471188523",
+    "name": "PW Servo Model 1759471186952",
+    "description": "Servo defaults created by Playwright",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]
