@@ -39,6 +39,11 @@ class GoblinManagerService {
             
             // Load saved goblins into memory map
             savedGoblins.forEach(goblin => {
+                // Ensure friendly name
+                if (!goblin.name) {
+                    const num = (goblin.id && String(goblin.id).match(/\d+/))?.[0];
+                    goblin.name = num ? `Goblin ${num}` : `Goblin ${goblin.id}`;
+                }
                 // Mark all loaded goblins as offline initially
                 goblin.status = 'offline';
                 goblin.lastSeen = goblin.lastSeen || new Date().toISOString();
@@ -69,6 +74,7 @@ class GoblinManagerService {
             const {
                 goblinId,
                 endpoint,
+                name: providedName,
                 capabilities = ['video', 'audio'],
                 platform = 'unknown',
                 version = '1.0.0'
@@ -78,15 +84,21 @@ class GoblinManagerService {
                 return { success: false, error: 'Missing required fields: goblinId and endpoint' };
             }
 
+            // Determine friendly name
+            const existing = this.goblins.get(goblinId);
+            const fallbackNum = (goblinId && String(goblinId).match(/\d+/))?.[0];
+            const friendlyName = providedName || existing?.name || (fallbackNum ? `Goblin ${fallbackNum}` : `Goblin ${goblinId}`);
+
             const goblin = {
                 id: goblinId,
+                name: friendlyName,
                 endpoint,
                 capabilities,
                 platform,
                 version,
                 status: 'online',
-                registeredAt: this.goblins.has(goblinId) ? 
-                    this.goblins.get(goblinId).registeredAt : 
+                registeredAt: this.goblins.has(goblinId) ?
+                    this.goblins.get(goblinId).registeredAt :
                     new Date().toISOString(),
                 lastSeen: new Date().toISOString(),
                 lockedBy: null,
@@ -143,6 +155,15 @@ class GoblinManagerService {
             if (options.available) {
                 goblins = goblins.filter(g => g.status === 'online' && !g.lockedBy);
             }
+
+            // Ensure friendly names present in response
+            goblins = goblins.map(g => {
+                if (g && !g.name) {
+                    const num = (g.id && String(g.id).match(/\d+/))?.[0];
+                    return { ...g, name: num ? `Goblin ${num}` : `Goblin ${g.id}` };
+                }
+                return g;
+            });
 
             // Sort by last seen (most recent first)
             goblins.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
