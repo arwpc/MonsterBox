@@ -61,8 +61,8 @@ echo -n "PARTS:"; curl -sS http://127.0.0.1:3000/setup/calibration/api/parts    
 if sudo systemctl is-active --quiet mjpg-streamer; then echo "MJPG:active"; else echo "MJPG:inactive"; fi
 echo -n "MJPG_HTTP:"; curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8090 || echo 000; echo
 # Register goblins on this MonsterBox
-curl -sS -X POST http://127.0.0.1:3000/goblin-management/api/register -H "Content-Type: application/json" -d "{\"goblinId\":\"goblin1\",\"endpoint\":\"__GOBLIN1__\",\"platform\":\"raspberry-pi\",\"version\":\"1.0.0\",\"capabilities\":[\"video\",\"audio\"]}" >/dev/null 2>&1 || true
-curl -sS -X POST http://127.0.0.1:3000/goblin-management/api/register -H "Content-Type: application/json" -d "{\"goblinId\":\"goblin2\",\"endpoint\":\"__GOBLIN2__\",\"platform\":\"raspberry-pi\",\"version\":\"1.0.0\",\"capabilities\":[\"video\",\"audio\"]}" >/dev/null 2>&1 || true
+curl -sS -X POST http://127.0.0.1:3000/goblin-management/api/register -H "Content-Type: application/json" -d "{\"goblinId\":\"goblin1\",\"name\":\"Goblin 1\",\"endpoint\":\"__GOBLIN1__\",\"platform\":\"raspberry-pi\",\"version\":\"1.0.0\",\"capabilities\":[\"video\",\"audio\"]}" >/dev/null 2>&1 || true
+curl -sS -X POST http://127.0.0.1:3000/goblin-management/api/register -H "Content-Type: application/json" -d "{\"goblinId\":\"goblin2\",\"name\":\"Goblin 2\",\"endpoint\":\"__GOBLIN2__\",\"platform\":\"raspberry-pi\",\"version\":\"1.0.0\",\"capabilities\":[\"video\",\"audio\"]}" >/dev/null 2>&1 || true
 echo -n "GOBLINS:"; curl -sS http://127.0.0.1:3000/goblin-management/api/goblins | head -c 500 || true; echo
 # Conversation WS listener (port 8795)
 (ss -tulpn 2>/dev/null | grep 8795 >/dev/null && echo "WS:LISTENING") || echo "WS:UNKNOWN"'
