@@ -118,6 +118,31 @@ Notes
 - **Character-Specific Playback**: Integration with character speaker systems for hardware audio output ✅ **FIXED**
 - **Audio Management Features**: Favorites, tagging, categorization, bulk operations (favorite, delete, change category)
 - **Format Support**: MP3, WAV, OGG, M4A, AAC, FLAC with automatic format detection
+
+## 🎃 Gold 5.1 Animatronics Deployment (Coffin, Orlok, Skulltalker, Pumpkinhead)
+
+Use the multi-device helper to deploy MonsterBox 5.1 to all animatronics over SSH. Idempotent and safe to re-run.
+
+````bash
+# From your LAN machine (e.g., groundbreaker) with network access to the Pis
+export MB_REMOTE_PASSWORD='klrklr89!'
+bash scripts/deploy-animatronics-5.1.sh  # defaults to user 'remote'
+````
+
+What it does per device:
+- Updates repo to origin/main (v5.1.0)
+- Installs node deps (`npm ci --omit=dev`)
+- Ensures MonsterBox systemd service (auto-creates via setup-monsterbox if missing)
+- Runs webcam setup (mjpg-streamer; low-latency defaults)
+- Restarts MonsterBox and verifies:
+  - HOME and Webcam pages (HTTP 200)
+  - Webcam devices and Calibration APIs
+  - mjpg-streamer service + HTTP (8090)
+  - Conversation WebSocket port 8795 listening
+- Registers Goblins (192.168.8.160, 192.168.8.161) with the device’s Goblin Manager
+
+Review per-host lines in output: HOME/WEBCAM/MJPG/GOBLINS/WS.
+
 - **Scene Integration**: Audio files can be selected and used in scenes, poses, and character interactions
 - **🔧 Recent Fixes**: All JavaScript errors resolved, "Play on Character" button fully functional, WaveSurfer container issues fixed
 
@@ -1047,7 +1072,7 @@ Example start-config body:
 - `DELETE /scenes/api/queue/library/:id` → delete
 - `POST /scenes/api/queue/library/:id/export` → download JSON
 - `POST /scenes/api/queue/library/import` (multipart or raw JSON)
-### Just Checking ### 
+### Just Checking ###
 
 Notes
 - Status is pollable via `GET /scenes/api/queue`; an SSE stream can be added if needed.
