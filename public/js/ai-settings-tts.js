@@ -300,6 +300,8 @@ TTSManager.prototype.generateSpeech = function () {
         }
     };
 
+    console.log('TTS Request Data:', requestData);
+
     fetch('/api/elevenlabs/tts/generate', {
         method: 'POST',
         headers: {
@@ -311,7 +313,12 @@ TTSManager.prototype.generateSpeech = function () {
             if (response.ok) {
                 return response.blob();
             } else {
-                throw new Error('Failed to generate speech');
+                // Try to get error details from response
+                return response.json().then(function(errorData) {
+                    throw new Error(errorData.error || 'Failed to generate speech');
+                }).catch(function() {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                });
             }
         })
         .then(function (audioBlob) {
@@ -320,7 +327,7 @@ TTSManager.prototype.generateSpeech = function () {
         })
         .catch(function (error) {
             console.error('Speech generation error:', error);
-            self.showAlert('Failed to generate speech', 'danger');
+            self.showAlert(`Failed to generate speech: ${error.message}`, 'danger');
         })
         .finally(function () {
             generateBtn.innerHTML = originalText;

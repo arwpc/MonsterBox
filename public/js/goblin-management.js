@@ -586,8 +586,23 @@ class GoblinManager {
             console.warn('Could not fetch live data for Goblin:', error);
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('goblinDetailsModal'));
+        const modalElement = document.getElementById('goblinDetailsModal');
+        const modal = new bootstrap.Modal(modalElement);
         const content = document.getElementById('goblinDetailsContent');
+
+        // Add proper focus management to prevent aria-hidden issues
+        modalElement.addEventListener('shown.bs.modal', function () {
+            // Remove aria-hidden when modal is shown
+            modalElement.removeAttribute('aria-hidden');
+            // Focus the close button to ensure proper focus management
+            const closeBtn = modalElement.querySelector('.btn-close');
+            if (closeBtn) closeBtn.focus();
+        });
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            // Restore aria-hidden when modal is hidden
+            modalElement.setAttribute('aria-hidden', 'true');
+        });
 
         content.innerHTML = `
             <div class="row">

@@ -336,24 +336,43 @@ router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
         const { text, voice_id, model, voice_settings } = req.body;
 
+        // Validate required fields
+        if (!text || !text.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Text is required'
+            });
+        }
+
+        if (!voice_id || !voice_id.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Voice ID is required'
+            });
+        }
+
+        console.log(`🎤 TTS Request: text="${text.substring(0, 50)}...", voice_id="${voice_id}", model="${model}"`);
+
         // Convert frontend format to service format
         const options = {
-            model: model,
-            stability: voice_settings?.stability,
-            similarity_boost: voice_settings?.similarity_boost,
-            style: voice_settings?.style,
-            use_speaker_boost: voice_settings?.use_speaker_boost
+            model: model || 'eleven_monolingual_v1',
+            stability: voice_settings?.stability ?? 0.5,
+            similarity_boost: voice_settings?.similarity_boost ?? 0.5,
+            style: voice_settings?.style ?? 0.0,
+            use_speaker_boost: voice_settings?.use_speaker_boost ?? true
         };
 
         const result = await elevenLabsTTSService.generateSpeech(text, voice_id, options);
 
         if (result.success) {
+            console.log(`✅ TTS Success: Generated ${result.audioBuffer.length} bytes`);
             res.set({
                 'Content-Type': result.contentType,
                 'Content-Length': result.audioBuffer.length
             });
             res.send(result.audioBuffer);
         } else {
+            console.log(`❌ TTS Failed: ${result.error}`);
             res.status(400).json(result);
         }
     } catch (error) {

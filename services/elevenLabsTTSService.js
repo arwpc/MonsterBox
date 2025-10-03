@@ -14,9 +14,11 @@ class ElevenLabsTTSService {
     }
 
     /**
-     * Get all available voices
+     * Get all available voices with retry logic
      */
-    async getVoices() {
+    async getVoices(retryCount = 0) {
+        const maxRetries = 2;
+
         try {
             const response = await axios.get(
                 `${this.config.baseUrl}/voices`,
@@ -33,7 +35,20 @@ class ElevenLabsTTSService {
                 voices: response.data.voices || []
             };
         } catch (error) {
-            console.error('Error fetching voices:', error);
+            console.error(`Error fetching voices (attempt ${retryCount + 1}/${maxRetries + 1}):`, error.message);
+
+            // Retry on timeout or network errors
+            if (retryCount < maxRetries && (
+                error.code === 'ECONNABORTED' ||
+                error.code === 'ETIMEDOUT' ||
+                error.code === 'ENOTFOUND' ||
+                error.code === 'ECONNRESET'
+            )) {
+                console.log(`Retrying voice fetch in ${(retryCount + 1) * 2} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 2000));
+                return this.getVoices(retryCount + 1);
+            }
+
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message,

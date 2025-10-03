@@ -22,5 +22,27 @@
     },
     "memory": 21,
     "uptime": 32908.889968055
+  },
+  {
+    "id": "goblin2",
+    "name": "Goblin 2",
+    "endpoint": "http://192.168.8.161:3001",
+    "capabilities": [
+      "video",
+      "audio"
+    ],
+    "platform": "raspberry-pi",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-03T18:04:36.154Z",
+    "lastSeen": "2025-10-03T18:04:36.154Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
   }
 ]

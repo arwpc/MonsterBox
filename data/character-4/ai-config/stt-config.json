@@ -4,5 +4,6 @@
   "sampleRate": "16000",
   "microphonePartId": "14",
   "microphoneDeviceId": "default",
-  "format": "mp3"
+  "format": "mp3",
+  "vadEnabled": true
 }
