@@ -45,6 +45,9 @@ Goblin 2:    Goblin2         → 192.168.8.161:3001 (Video Display)
 ```
 
 ### Goblin Video Displays
+
+**Important:** Goblin displays are **lightweight devices** that only run video display code. They do NOT need the full MonsterBox installation - only the goblin video player application and local video storage.
+
 Goblin displays store videos locally at `/home/remote/goblin/media/video/` (copied from USB sticks).
 Videos are organized in subdirectories (e.g., `Poltergeist/`, `fire/`, `ethereal/`).
 
@@ -63,6 +66,8 @@ curl http://192.168.8.161:3001/status | jq '.'
 ```
 
 **Note:** Use relative paths from `/home/remote/goblin/media/video/` (e.g., `"Poltergeist/video.mp4"`, not absolute paths).
+
+**Deployment:** Goblins do NOT need `git pull` or MonsterBox updates - they only need their video player code and video files.
 
 ---
 
