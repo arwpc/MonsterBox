@@ -87,13 +87,16 @@
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle <%= page === 'conversation' || page === 'live' || page === 'poses' || page === 'scenes' ? 'active' : '' %>"
+                    <a class="nav-link dropdown-toggle <%= page === 'conversation' || page === 'live' || page === 'poses' || page === 'scenes' || page === 'orchestration' ? 'active' : '' %>"
                         href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-play-circle"></i> Activities
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/conversation"><i class="bi bi-chat-dots"></i> Conversation</a></li>
+                        <li><a class="dropdown-item" href="/conversation"><i class="bi bi-chat-dots"></i>
+                                Conversation</a></li>
                         <li><a class="dropdown-item" href="/live"><i class="bi bi-broadcast"></i> Live Mode</a></li>
+                        <li><a class="dropdown-item" href="/orchestration"><i class="bi bi-diagram-3"></i>
+                                Orchestration</a></li>
                         <li><a class="dropdown-item" href="/setup/poses"><i class="bi bi-person-arms-up"></i> Poses</a>
                         </li>
                         <li><a class="dropdown-item" href="/scenes"><i class="bi bi-film"></i> Scenes</a></li>
