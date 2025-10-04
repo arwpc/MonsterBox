@@ -603,9 +603,10 @@ router.post('/generate-and-play', async (req, res) => {
 
 // Generate speech using AI Agent and play (personality-infused speech)
 // This endpoint processes text through the character's AI agent for personality
+// Falls back to simple TTS if agent API is slow or unavailable
 router.post('/agent-speak', async (req, res) => {
     try {
-        const { text, characterId } = req.body;
+        const { text, characterId, fallbackToTTS = true } = req.body;
 
         if (!text || !characterId) {
             return res.status(400).json({
@@ -619,30 +620,45 @@ router.post('/agent-speak', async (req, res) => {
         const character = await characterService.getCharacterById(characterId);
 
         if (!character || !character.elevenLabsAgentId) {
-            return res.status(400).json({
-                success: false,
-                error: `Character ${characterId} does not have an AI agent assigned`
-            });
+            console.log(`⚠️  Character ${characterId} has no AI agent, using simple TTS`);
+            // Fall back to simple TTS if no agent assigned
+            if (fallbackToTTS) {
+                return await generateAndPlaySimpleTTS(text, characterId, res);
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    error: `Character ${characterId} does not have an AI agent assigned`
+                });
+            }
         }
 
         console.log(`🎭 Agent-speak for ${character.name}: Processing "${text}" through agent ${character.elevenLabsAgentId}`);
 
-        // Process text through AI agent to get personality-infused response
-        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
-        const agentResult = await elevenLabsAgentService.chatWithAgent(character.elevenLabsAgentId, text);
+        // Try to process text through AI agent with timeout
+        let personalityText = text;
+        let usedAgent = false;
 
-        if (!agentResult.success) {
-            return res.status(500).json({
-                success: false,
-                error: 'AI agent processing failed',
-                details: agentResult.error
-            });
+        try {
+            const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+            const agentResult = await elevenLabsAgentService.chatWithAgent(character.elevenLabsAgentId, text);
+
+            if (agentResult.success && agentResult.replyText) {
+                personalityText = agentResult.replyText;
+                usedAgent = true;
+                console.log(`🎭 Agent response: "${personalityText}"`);
+            } else {
+                console.log(`⚠️  Agent processing failed, using original text`);
+            }
+        } catch (agentError) {
+            console.log(`⚠️  Agent API error (${agentError.message}), falling back to simple TTS`);
+            if (fallbackToTTS) {
+                return await generateAndPlaySimpleTTS(text, characterId, res);
+            } else {
+                throw agentError;
+            }
         }
 
-        const personalityText = agentResult.replyText;
-        console.log(`🎭 Agent response: "${personalityText}"`);
-
-        // Generate TTS from personality-infused text
+        // Generate TTS from personality-infused text (or original if agent failed)
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
         const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
         const ttsConfig = await getTTSConfigForCharacter(characterId);
@@ -676,9 +692,12 @@ router.post('/agent-speak', async (req, res) => {
                 success: true,
                 played: true,
                 device: playResult.deviceId || 'default',
-                message: `AI agent speech played on character ${characterId} speaker`,
+                message: usedAgent ?
+                    `AI agent speech played on character ${characterId} speaker` :
+                    `TTS played on character ${characterId} speaker (agent unavailable)`,
                 originalText: text,
                 personalityText: personalityText,
+                usedAgent: usedAgent,
                 agentId: character.elevenLabsAgentId,
                 voiceId: ttsConfig.voice_id
             });
@@ -699,6 +718,62 @@ router.post('/agent-speak', async (req, res) => {
         });
     }
 });
+
+// Helper function for simple TTS fallback
+async function generateAndPlaySimpleTTS(text, characterId, res) {
+    try {
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
+        const ttsConfig = await getTTSConfigForCharacter(characterId);
+
+        const ttsResult = await elevenLabsTTSService.generateSpeech(text, ttsConfig.voice_id, ttsConfig);
+
+        if (!ttsResult.success) {
+            return res.status(500).json({
+                success: false,
+                error: 'TTS generation failed',
+                details: ttsResult.error
+            });
+        }
+
+        const { default: randomPoseService } = await import('../../services/randomPoseService.js');
+        randomPoseService.triggerDuringTTS(characterId, text.length).catch(err => {
+            console.log('ℹ️  Random pose skipped:', err.message || 'disabled');
+        });
+
+        const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
+        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
+            characterId: characterId,
+            contentType: 'audio/mpeg',
+            volume: 80
+        });
+
+        if (playResult.success) {
+            return res.json({
+                success: true,
+                played: true,
+                device: playResult.deviceId || 'default',
+                message: `TTS played on character ${characterId} speaker (fallback mode)`,
+                originalText: text,
+                personalityText: text,
+                usedAgent: false,
+                voiceId: ttsConfig.voice_id
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to play TTS audio',
+                details: playResult.error
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: 'Fallback TTS failed',
+            message: error.message
+        });
+    }
+}
 
 
 export default router;
