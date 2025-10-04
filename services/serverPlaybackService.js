@@ -78,6 +78,73 @@ async function writeTempAudio(buffer, contentType) {
 }
 
 class ServerPlaybackService {
+  constructor() {
+    // Streaming players keyed by characterId
+    this._streams = new Map();
+  }
+
+  async _resolveDeviceId(opts = {}) {
+    const characterId = opts.characterId || null;
+    if (opts.deviceId) return opts.deviceId;
+    if (opts.speakerPartId) return await getSpeakerDeviceForPartId(opts.speakerPartId);
+    if (characterId) return await getSpeakerDeviceForCharacter(characterId);
+    return 'default';
+  }
+
+  _calcMpg123Scale(volume) {
+    const vol = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : 80;
+    return Math.max(0, Math.min(32768, Math.round(32768 * (vol / 100))));
+  }
+
+  async _ensureMp3Stream(opts = {}) {
+    const key = String(opts.characterId || 'default');
+    let rec = this._streams.get(key);
+    if (rec && rec.proc && !rec.proc.killed) {
+      return rec;
+    }
+
+    const deviceId = await this._resolveDeviceId(opts);
+    const volume = typeof opts.volume === 'number' ? opts.volume : 80;
+
+    const env = { ...process.env };
+    if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
+
+    const { spawn } = await import('child_process');
+    const args = ['--quiet', '-'];
+    const scale = this._calcMpg123Scale(volume);
+    if (scale > 0) args.splice(0, 0, '-f', String(scale));
+    const proc = spawn('mpg123', args, { env });
+
+    proc.on('exit', () => {
+      const cur = this._streams.get(key);
+      if (cur && cur.proc === proc) this._streams.delete(key);
+    });
+
+    rec = { proc, deviceId, contentType: 'audio/mpeg', writerBusy: false };
+    this._streams.set(key, rec);
+    return rec;
+  }
+
+  async writeMp3Stream(buffer, opts = {}) {
+    if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    const rec = await this._ensureMp3Stream(opts);
+    return new Promise((resolve) => {
+      const ok = rec.proc.stdin.write(buffer);
+      if (ok) return resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
+      rec.proc.stdin.once('drain', () => resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId }));
+    });
+  }
+
+  async stopStream(opts = {}) {
+    const key = String(opts.characterId || 'default');
+    const rec = this._streams.get(key);
+    if (!rec) return { success: true };
+    try { rec.proc.stdin.end(); } catch (_) {}
+    try { rec.proc.kill('SIGTERM'); } catch (_) {}
+    this._streams.delete(key);
+    return { success: true };
+  }
+
   async playBufferOnCharacterSpeaker(buffer, opts = {}) {
     try {
       if (!buffer || !buffer.length) {
@@ -87,15 +154,15 @@ class ServerPlaybackService {
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : 80;
 
-      // Determine output device priority: explicit deviceId > speakerPartId > character speaker > default
-      let deviceId = 'default';
-      if (opts.deviceId) {
-        deviceId = opts.deviceId;
-      } else if (opts.speakerPartId) {
-        deviceId = await getSpeakerDeviceForPartId(opts.speakerPartId);
-      } else if (characterId) {
-        deviceId = await getSpeakerDeviceForCharacter(characterId);
+      // Streaming fast-path for MP3 chunks
+      if ((contentType || '').toLowerCase().includes('mpeg') || (contentType || '').toLowerCase().includes('mp3')) {
+        const res = await this.writeMp3Stream(buffer, { characterId, volume, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
+        if (res && res.success) return { success: true, streamed: buffer.length, deviceId: res.deviceId, player: 'mpg123' };
+        // if streaming failed, fall through to file-based
       }
+
+      // Determine output device priority: explicit deviceId > speakerPartId > character speaker > default
+      const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
       const tmpFile = await writeTempAudio(buffer, contentType);
 
@@ -120,6 +187,9 @@ class ServerPlaybackService {
 
   async stopForCharacter(characterId, opts = {}) {
     try {
+      // Stop managed stream first
+      try { await this.stopStream({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId }); } catch (_) {}
+
       // Determine device for stopping: explicit deviceId > speakerPartId > character speaker > default
       let deviceId = 'default';
       if (opts.deviceId) {
@@ -140,6 +210,12 @@ class ServerPlaybackService {
 
   async stopAll() {
     try {
+      // Stop all managed streams
+      for (const [key, rec] of this._streams) {
+        try { rec.proc.stdin.end(); } catch (_) {}
+        try { rec.proc.kill('SIGTERM'); } catch (_) {}
+      }
+      this._streams.clear();
       try {
         await runWrapper('speaker_cli.py', ['stop'], { enableLogging: false, timeoutMs: 5000 });
       } catch (_) { /* best-effort */ }
