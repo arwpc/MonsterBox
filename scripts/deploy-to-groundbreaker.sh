@@ -2,6 +2,9 @@
 
 # Deploy latest code to Groundbreaker
 # Usage: ./scripts/deploy-to-groundbreaker.sh
+#
+# NOTE: This script pushes to GitHub and then triggers Groundbreaker to pull.
+# Groundbreaker must have SSH keys configured for GitHub access.
 
 echo "🚨 DEPLOYING TO GROUNDBREAKER 🚨"
 echo "================================="
@@ -24,15 +27,23 @@ echo ""
 
 echo "Step 2: Pushing latest code to GitHub..."
 git push origin main
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to push to GitHub"
+  exit 1
+fi
 echo "✅ Pushed to GitHub"
 echo ""
 
-echo "Step 3: Connecting to Groundbreaker..."
+echo "Step 3: Triggering Groundbreaker to pull from GitHub..."
 echo "Host: $USER@$HOST"
 echo ""
+echo "⚠️  NOTE: If this fails, manually run on Groundbreaker:"
+echo "   ssh $USER@$HOST"
+echo "   cd ~/MonsterBox && git pull origin main && pkill -f 'node.*server.js' && nohup npm start > /tmp/monsterbox.log 2>&1 &"
+echo ""
 
-# Deploy via SSH
-ssh -o StrictHostKeyChecking=no $USER@$HOST << 'ENDSSH'
+# Try to deploy via SSH (may fail if SSH keys not set up between devices)
+ssh -o ConnectTimeout=10 -o BatchMode=yes $USER@$HOST << 'ENDSSH'
 cd ~/MonsterBox
 
 echo "Current commit:"
