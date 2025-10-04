@@ -239,7 +239,8 @@
                     <div class="col-12">
                       <div class="card">
                         <div class="card-header">
-                          <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#advancedConfigCollapse">
+                          <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#advancedConfigCollapse">
                             <i class="bi bi-chevron-down"></i> Advanced Configuration (JSON)
                           </button>
                         </div>
@@ -255,10 +256,12 @@
                     <div class="col-12 d-flex justify-content-between">
                       <button id="deletePartBtn" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Part</button>
                       <div>
-                        <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;" onclick="applyWebcamToMjpg()">
+                        <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;"
+                          onclick="applyWebcamToMjpg()">
                           <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
                         </button>
-                        <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save Changes</button>
+                        <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save
+                          Changes</button>
                       </div>
                     </div>
                   </div>
@@ -787,16 +790,16 @@
             el.querySelector('#spkPlay').addEventListener('click', function () {
               var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
               fetch('/setup/characters/api/current')
-                .then(function(r){ return r.json(); })
-                .then(function(j){ var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; })
-                .then(function(cid){
+                .then(function (r) { return r.json(); })
+                .then(function (j) { var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; })
+                .then(function (cid) {
                   return fetch('/api/elevenlabs/generate-and-play', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid })
                   });
                 })
-                .then(function(r){ return r.json(); })
-                .then(function(){ if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
-                .catch(function(e){ if (st) st.textContent = 'Error: ' + (e && e.message ? e.message : e); setTimeout(function(){ if (st) st.textContent=''; }, 1500); })
+                .then(function (r) { return r.json(); })
+                .then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+                .catch(function (e) { if (st) st.textContent = 'Error: ' + (e && e.message ? e.message : e); setTimeout(function () { if (st) st.textContent = ''; }, 1500); })
                 .catch(function () { if (st) st.textContent = 'Failed'; });
             });
           } else if (part.type === 'microphone') {
@@ -950,13 +953,13 @@
               '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
               '</div>' +
               '<div class="mt-3">' +
-                '<div class="d-flex align-items-center gap-3">' +
-                  '<div class="d-flex align-items-center gap-2">' +
-                    '<div id="motionIndicator" class="rounded-circle" style="width:24px;height:24px;background-color:#6c757d;border:2px solid #dee2e6;"></div>' +
-                    '<span id="motionStatus" class="fw-semibold text-muted">Ready to test</span>' +
-                  '</div>' +
-                  '<div id="motionDetails" class="small text-muted"></div>' +
-                '</div>' +
+              '<div class="d-flex align-items-center gap-3">' +
+              '<div class="d-flex align-items-center gap-2">' +
+              '<div id="motionIndicator" class="rounded-circle" style="width:24px;height:24px;background-color:#6c757d;border:2px solid #dee2e6;"></div>' +
+              '<span id="motionStatus" class="fw-semibold text-muted">Ready to test</span>' +
+              '</div>' +
+              '<div id="motionDetails" class="small text-muted"></div>' +
+              '</div>' +
               '</div>' +
               '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
 
@@ -1478,7 +1481,7 @@
         }
 
         // Handle part type change
-        window.onAddPartTypeChange = function() {
+        window.onAddPartTypeChange = function () {
           const typeSelect = document.getElementById('addPartType');
           const modelGroup = document.getElementById('addModelGroup');
           const configArea = document.getElementById('addPartConfigArea');
@@ -1739,7 +1742,7 @@
         }
 
         // PCA9685 controller type change handler
-        window.onAddControllerTypeChange = function() {
+        window.onAddControllerTypeChange = function () {
           const controllerType = document.getElementById('addControllerType').value;
           const pca9685Group = document.getElementById('addPca9685Group');
 
@@ -1779,7 +1782,7 @@
           container.innerHTML = html;
         }
 
-        window.selectAddPCA9685Channel = function(channel) {
+        window.selectAddPCA9685Channel = function (channel) {
           // Clear previous selection
           document.querySelectorAll('.add-pca9685-channel').forEach(btn => {
             btn.classList.remove('btn-primary');
@@ -1794,8 +1797,8 @@
           }
 
 
-        function generateStepperConfig() {
-          return `
+          function generateStepperConfig() {
+            return `
             <div class="card mb-3">
               <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
               <div class="card-body">
@@ -1832,7 +1835,7 @@
               </div>
             </div>
           `;
-        }
+          }
 
           // Set hidden input
           const hiddenInput = document.getElementById('addPca9685Channel');
@@ -1842,7 +1845,7 @@
         };
 
         // Device scanning functions
-        window.scanWebcamsForAdd = function() {
+        window.scanWebcamsForAdd = function () {
           const select = document.getElementById('addWebcamDevice');
           if (!select) return;
 
@@ -1863,7 +1866,7 @@
             });
         };
 
-        window.scanAudioInputsForAdd = function() {
+        window.scanAudioInputsForAdd = function () {
           const select = document.getElementById('addAudioInput');
           if (!select) return;
 
@@ -1884,7 +1887,7 @@
             });
         };
 
-        window.scanAudioOutputsForAdd = function() {
+        window.scanAudioOutputsForAdd = function () {
           const select = document.getElementById('addAudioOutput');
           if (!select) return;
 
@@ -1906,7 +1909,7 @@
         };
 
         // Part creation function
-        window.createPartFromCalibration = function() {
+        window.createPartFromCalibration = function () {
           const form = document.getElementById('addPartForm');
           const formData = new FormData(form);
 
@@ -2028,33 +2031,33 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           })
-          .then(r => r.json())
-          .then(data => {
-            if (data.success) {
-              // Close modal and reset form
-              const modal = bootstrap.Modal.getInstance(document.getElementById('addPartModal'));
-              if (modal) modal.hide();
-              document.getElementById('addPartForm').reset();
-              document.getElementById('addPartConfigArea').innerHTML = '';
-              document.getElementById('addModelGroup').style.display = 'none';
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                // Close modal and reset form
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addPartModal'));
+                if (modal) modal.hide();
+                document.getElementById('addPartForm').reset();
+                document.getElementById('addPartConfigArea').innerHTML = '';
+                document.getElementById('addModelGroup').style.display = 'none';
 
-              // Reload parts list
-              loadParts();
+                // Reload parts list
+                loadParts();
 
-              // Show success message
-              alert(`${data.message || 'Part created successfully'}`);
-            } else {
-              alert(`Failed to create part: ${data.error || 'Unknown error'}`);
-            }
-          })
-          .catch(error => {
-            console.error('Error creating part:', error);
-            alert('Error creating part');
-          });
+                // Show success message
+                alert(`${data.message || 'Part created successfully'}`);
+              } else {
+                alert(`Failed to create part: ${data.error || 'Unknown error'}`);
+              }
+            })
+            .catch(error => {
+              console.error('Error creating part:', error);
+              alert('Error creating part');
+            });
         };
 
         // Edit mode functions
-        window.onEditControllerTypeChange = function() {
+        window.onEditControllerTypeChange = function () {
           const controllerType = document.getElementById('editControllerType').value;
           const pca9685Config = document.getElementById('editPca9685Config');
 
@@ -2124,7 +2127,7 @@
         }
 
         // Device scanning functions for edit mode
-        window.scanWebcamsForEdit = function() {
+        window.scanWebcamsForEdit = function () {
           const select = document.getElementById('editWebcamDevice');
           if (!select) return;
 
@@ -2147,7 +2150,7 @@
             });
         };
 
-        window.scanAudioInputsForEdit = function() {
+        window.scanAudioInputsForEdit = function () {
           const select = document.getElementById('editAudioInput');
           if (!select) return;
 
@@ -2170,7 +2173,7 @@
             });
         };
 
-        window.scanAudioOutputsForEdit = function() {
+        window.scanAudioOutputsForEdit = function () {
           const select = document.getElementById('editAudioOutput');
           if (!select) return;
 
@@ -2209,29 +2212,29 @@
           fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
             method: 'DELETE'
           })
-          .then(r => r.json())
-          .then(data => {
-            if (data.success) {
-              alert('Part deleted successfully');
-              selected = null;
-              loadParts(); // Refresh the parts list
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                alert('Part deleted successfully');
+                selected = null;
+                loadParts(); // Refresh the parts list
 
-              // Clear the interface
-              document.getElementById('devName').textContent = 'Select a device';
-              document.getElementById('devMeta').textContent = '';
-              document.getElementById('controlsArea').innerHTML = '<div class="text-muted">Select a device to show controls.</div>';
+                // Clear the interface
+                document.getElementById('devName').textContent = 'Select a device';
+                document.getElementById('devMeta').textContent = '';
+                document.getElementById('controlsArea').innerHTML = '<div class="text-muted">Select a device to show controls.</div>';
 
-              // Switch back to Controls tab
-              const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
-              if (ctrlTabBtn) ctrlTabBtn.click();
-            } else {
-              alert(`Failed to delete part: ${data.error || 'Unknown error'}`);
-            }
-          })
-          .catch(error => {
-            console.error('Error deleting part:', error);
-            alert('Error deleting part');
-          });
+                // Switch back to Controls tab
+                const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
+                if (ctrlTabBtn) ctrlTabBtn.click();
+              } else {
+                alert(`Failed to delete part: ${data.error || 'Unknown error'}`);
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting part:', error);
+              alert('Error deleting part');
+            });
         }
 
         // Apply webcam to mjpg-streamer function
@@ -2257,30 +2260,30 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
           })
-          .then(r => r.json())
-          .then(data => {
-            if (data.success) {
-              alert(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`);
-            } else {
-              let msg = data.error || data.message || 'Failed to apply to mjpg-streamer';
-              if (data.needsSudo) msg += ' (needs sudo)';
-              alert(msg);
-            }
-          })
-          .catch(error => {
-            console.error('Error applying to mjpg-streamer:', error);
-            alert('Error applying to mjpg-streamer');
-          });
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                alert(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`);
+              } else {
+                let msg = data.error || data.message || 'Failed to apply to mjpg-streamer';
+                if (data.needsSudo) msg += ' (needs sudo)';
+                alert(msg);
+              }
+            })
+            .catch(error => {
+              console.error('Error applying to mjpg-streamer:', error);
+              alert('Error applying to mjpg-streamer');
+            });
         }
 
         // Initialize modal when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
           initAddPartModal();
 
           // Add tab change event listener to re-render edit config when Edit tab is activated
           const editTabButton = document.querySelector('button[data-bs-target="#tabEdit"]');
           if (editTabButton) {
-            editTabButton.addEventListener('click', function() {
+            editTabButton.addEventListener('click', function () {
               if (selected) {
                 setTimeout(() => {
                   renderEditConfigArea(selected);
@@ -2295,7 +2298,7 @@
       // Global functions that need to be accessible from event handlers
       // Ensure toast notifications are available globally for handlers defined below
       if (!window.showToast) {
-        window.showToast = function(message, type = 'info') {
+        window.showToast = function (message, type = 'info') {
           let toastContainer = document.getElementById('toast-container');
           if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -2343,9 +2346,9 @@
           if (['servo', 'led', 'light', 'sensor', 'motion_sensor'].includes(type)) {
             // Try both editPin (from renderPinFields) and type-specific pin fields
             const pinEl = document.getElementById('editPin') ||
-                         document.getElementById('editServoPin') ||
-                         document.getElementById('editLightPin') ||
-                         document.getElementById('editSensorPin');
+              document.getElementById('editServoPin') ||
+              document.getElementById('editLightPin') ||
+              document.getElementById('editSensorPin');
             if (pinEl && pinEl.value) pin = parseInt(pinEl.value);
           }
 
@@ -2694,16 +2697,16 @@
                       <div class="text-center mb-2 text-muted small">Click a channel to select it</div>
                       <div id="editChannelGrid">
                         <div class="row g-1">
-                          ${Array.from({length: 16}, (_, i) => {
-                            const isNewRow = i % 4 === 0;
-                            const isEndRow = (i + 1) % 4 === 0 || i === 15;
-                            let html = '';
-                            if (isNewRow && i > 0) html += '</div><div class="row g-1">';
-                            html += `<div class="col-3">
+                          ${Array.from({ length: 16 }, (_, i) => {
+          const isNewRow = i % 4 === 0;
+          const isEndRow = (i + 1) % 4 === 0 || i === 15;
+          let html = '';
+          if (isNewRow && i > 0) html += '</div><div class="row g-1">';
+          html += `<div class="col-3">
                               <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 channel-btn" data-channel="${i}">Ch.${i}</button>
                             </div>`;
-                            return html;
-                          }).join('')}
+          return html;
+        }).join('')}
                         </div>
                       </div>
                       <input type="hidden" id="editPca9685Channel">
@@ -3006,7 +3009,7 @@
         // Set up event listeners
         if (controllerEl && !controllerEl._listenerAdded) {
           controllerEl._listenerAdded = true;
-          controllerEl.addEventListener('change', function() {
+          controllerEl.addEventListener('change', function () {
             const pca9685Config = document.getElementById('editPca9685Config');
             if (pca9685Config) {
               pca9685Config.style.display = this.value === 'pca9685' ? 'block' : 'none';
@@ -3026,7 +3029,7 @@
 
           if (!btn._listenerAdded) {
             btn._listenerAdded = true;
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
               channelButtons.forEach(b => {
                 b.classList.remove('btn-primary');
                 b.classList.add('btn-outline-secondary');
@@ -3037,9 +3040,7 @@
             });
           }
         });
-
-
-      }
+      } // End loadEditServoValues - Fixed: Removed extra blank line that caused syntax error on some browsers
 
       function loadEditMotorValues(part, config) {
         const directionPin = part.directionPin || config.directionPin;
@@ -3254,7 +3255,8 @@
                   </div>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                  <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn" onclick="window.open('/setup/models', '_blank')">
+                  <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn"
+                    onclick="window.open('/setup/models', '_blank')">
                     <i class="bi bi-plus-circle"></i> Add Model
                   </button>
                 </div>
