@@ -5,6 +5,44 @@
 
 > Note on ports: This build defaults to port 3100. If any examples below show 3000, use 3100 instead (e.g., http://127.0.0.1:3100).
 
+## 🚀 Orlok Deployment & Multi-Animatronic Roll-Out
+
+**NEW**: Complete deployment system for Orlok and all animatronics with ElevenLabs TTS and ConvAI streaming.
+
+### Quick Start - Deploy to Orlok
+```bash
+# Deploy code to Orlok (Character 3, 192.168.8.120)
+./scripts/deploy-to-animatronic.sh 3 192.168.8.120
+
+# SSH and run comprehensive test
+ssh remote@192.168.8.120
+cd ~/MonsterBox && ./scripts/orlok-bringup-test.sh
+```
+
+### Key Features
+- **Per-Character TTS Configuration**: Each character loads voice settings from `data/character-{id}/ai-config/tts-config.json`
+- **File-First API Key**: ElevenLabs key read from `/etc/monsterbox/elevenlabs.key` (source of truth)
+- **PipeWire Audio Routing**: Automatic speaker selection per character
+- **Gapless ConvAI Streaming**: Real-time audio via WebSocket (port 8795)
+
+### Documentation
+- **[Orlok Deployment Guide](docs/ORLOK_DEPLOYMENT.md)**: Complete step-by-step deployment
+- **[Quick Reference](docs/QUICK_REFERENCE.md)**: Commands, endpoints, troubleshooting
+- **Scripts**:
+  - `scripts/deploy-to-animatronic.sh`: Deploy to any animatronic
+  - `scripts/orlok-bringup-test.sh`: Comprehensive on-device testing
+  - `scripts/test-all-animatronics.sh`: Test all 4 animatronics at once
+
+### Character Network Map
+```
+Character 1: PumpkinHead     → 192.168.8.150
+Character 2: Coffin Breaker  → 192.168.8.140
+Character 3: Orlok           → 192.168.8.120 (Primary)
+Character 4: Skulltalker     → 192.168.8.130
+```
+
+---
+
 ## ✅ Nightly Fixes Summary (stability + tests)
 
 - Fixed character‑aware data paths in Motion Tracking (no more ENOENT on data/parts.json)

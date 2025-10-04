@@ -95,6 +95,8 @@ class ElevenLabsTTSService {
                 }
             };
 
+            console.log('🎙️ TTS Request:', JSON.stringify({ voiceId, model: requestData.model_id, settings: requestData.voice_settings }, null, 2));
+
             const response = await axios.post(
                 `${this.config.baseUrl}/text-to-speech/${voiceId}`,
                 requestData,

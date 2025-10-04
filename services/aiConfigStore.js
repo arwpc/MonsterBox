@@ -74,5 +74,38 @@ export async function saveTTSConfig(cfg) {
   return writeJson('tts-config.json', cfg);
 }
 
-export default { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig };
+/**
+ * Get TTS config for a specific character
+ * Tries data/character-{id}/ai-config/tts-config.json first, falls back to global
+ */
+export async function getTTSConfigForCharacter(characterId) {
+  if (!characterId) {
+    return getTTSConfig();
+  }
+
+  try {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..');
+    const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+    const charConfigPath = path.resolve(appRoot, dataDir, `character-${characterId}`, 'ai-config', 'tts-config.json');
+
+    const txt = await fs.readFile(charConfigPath, 'utf8');
+    const parsed = JSON.parse(txt);
+
+    // Merge with defaults to ensure all required fields exist
+    return {
+      voice_id: parsed.voice_id || 'Tj9l48J9AJbry5yCP5eW',
+      model: parsed.model || 'eleven_monolingual_v1',
+      stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
+      similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,
+      style: typeof parsed.style === 'number' ? parsed.style : 0.0,
+      use_speaker_boost: typeof parsed.use_speaker_boost === 'boolean' ? parsed.use_speaker_boost : true,
+    };
+  } catch (e) {
+    // Fall back to global config if character-specific config doesn't exist
+    return getTTSConfig();
+  }
+}
+
+export default { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig, getTTSConfigForCharacter };
 

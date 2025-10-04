@@ -61,24 +61,33 @@ class ElevenLabsConfigService {
 
     /**
      * Get ElevenLabs API configuration
+     * Prefers /etc/monsterbox/elevenlabs.key (source of truth), falls back to env
      */
     getElevenLabsConfig() {
-        let apiKey = this.config.ELEVENLABS_API_KEY;
+        let apiKey = null;
 
-        // Secure file-based fallback: /etc/monsterbox/elevenlabs.key (chmod 600)
-        if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-            try {
-                const keyPath = '/etc/monsterbox/elevenlabs.key';
-                if (fs.existsSync(keyPath)) {
-                    const raw = fs.readFileSync(keyPath, 'utf8');
-                    const k = (raw || '').trim();
-                    if (k) apiKey = k;
+        // Try file first (source of truth)
+        try {
+            const keyPath = '/etc/monsterbox/elevenlabs.key';
+            if (fs.existsSync(keyPath)) {
+                const raw = fs.readFileSync(keyPath, 'utf8');
+                const k = (raw || '').trim();
+                if (k && k !== 'your_elevenlabs_api_key_here') {
+                    apiKey = k;
                 }
-            } catch (_) { /* ignore */ }
+            }
+        } catch (_) { /* ignore */ }
+
+        // Fall back to environment variable if file not found or empty
+        if (!apiKey) {
+            const envKey = this.config.ELEVENLABS_API_KEY;
+            if (envKey && envKey !== 'your_elevenlabs_api_key_here') {
+                apiKey = envKey;
+            }
         }
 
-        if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-            throw new Error('ElevenLabs API key not configured. Set ELEVENLABS_API_KEY or provide /etc/monsterbox/elevenlabs.key (600).');
+        if (!apiKey) {
+            throw new Error('ElevenLabs API key not configured. Provide /etc/monsterbox/elevenlabs.key (600) or set ELEVENLABS_API_KEY.');
         }
 
         return {
