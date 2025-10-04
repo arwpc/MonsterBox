@@ -36,7 +36,7 @@ class OrchestrationService {
      */
     async broadcastToAnimatronics(command, params = {}) {
         console.log(`📡 Broadcasting to all animatronics: ${command}`);
-        
+
         const results = await Promise.allSettled(
             this.animatronics.map(async (animatronic) => {
                 try {
@@ -72,28 +72,28 @@ class OrchestrationService {
         switch (command) {
             case 'reboot':
                 return await this.rebootDevice(ip);
-            
+
             case 'restart-service':
                 return await this.restartService(ip);
-            
+
             case 'health-check':
                 return await this.healthCheck(ip, port);
-            
+
             case 'say':
                 return await this.sayText(ip, port, params.text, params.characterId);
-            
+
             case 'enable-random-poses':
                 return await this.enableRandomPoses(ip, port, params.characterId, params.options);
-            
+
             case 'disable-random-poses':
                 return await this.disableRandomPoses(ip, port);
-            
+
             case 'update-config':
                 return await this.updateConfig(ip, params.config);
-            
+
             case 'deploy-code':
                 return await this.deployCode(ip);
-            
+
             default:
                 throw new Error(`Unknown command: ${command}`);
         }
@@ -130,31 +130,32 @@ class OrchestrationService {
     async healthCheck(ip, port) {
         try {
             const response = await axios.get(`http://${ip}:${port}/`, { timeout: 5000 });
-            return { 
-                success: true, 
+            return {
+                success: true,
                 online: response.status === 200,
-                status: response.status 
+                status: response.status
             };
         } catch (error) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 online: false,
-                error: error.message 
+                error: error.message
             };
         }
     }
 
     /**
-     * Make an animatronic say text
+     * Make an animatronic say text using AI agent (personality-infused speech)
+     * This processes text through the character's AI agent for authentic personality
      */
     async sayText(ip, port, text, characterId) {
         try {
             const response = await axios.post(
-                `http://${ip}:${port}/api/elevenlabs/generate-and-play`,
+                `http://${ip}:${port}/api/elevenlabs/agent-speak`,
                 { text, characterId },
-                { 
+                {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000 
+                    timeout: 30000
                 }
             );
             return { success: true, data: response.data };
@@ -171,9 +172,9 @@ class OrchestrationService {
             const response = await axios.post(
                 `http://${ip}:${port}/api/random-poses/enable`,
                 { characterId, ...options },
-                { 
+                {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000 
+                    timeout: 5000
                 }
             );
             return { success: true, data: response.data };
@@ -190,9 +191,9 @@ class OrchestrationService {
             const response = await axios.post(
                 `http://${ip}:${port}/api/random-poses/disable`,
                 {},
-                { 
+                {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000 
+                    timeout: 5000
                 }
             );
             return { success: true, data: response.data };
@@ -222,11 +223,11 @@ class OrchestrationService {
         try {
             const cmd = `./scripts/deploy-to-animatronic.sh ${ip}`;
             const { stdout, stderr } = await execAsync(cmd);
-            return { 
-                success: true, 
+            return {
+                success: true,
                 message: 'Code deployed',
                 output: stdout,
-                errors: stderr 
+                errors: stderr
             };
         } catch (error) {
             throw new Error(`Code deployment failed: ${error.message}`);
@@ -267,7 +268,7 @@ class OrchestrationService {
      */
     async broadcastToGoblins(command, params = {}) {
         console.log(`📡 Broadcasting to all Goblins: ${command}`);
-        
+
         const results = await Promise.allSettled(
             this.goblins.map(async (goblin) => {
                 try {
@@ -303,13 +304,13 @@ class OrchestrationService {
         switch (command) {
             case 'play-video':
                 return await this.playGoblinVideo(ip, port, params.filename);
-            
+
             case 'stop-video':
                 return await this.stopGoblinVideo(ip, port);
-            
+
             case 'health-check':
                 return await this.healthCheck(ip, port);
-            
+
             default:
                 throw new Error(`Unknown Goblin command: ${command}`);
         }
@@ -323,9 +324,9 @@ class OrchestrationService {
             const response = await axios.post(
                 `http://${ip}:${port}/play-video`,
                 { filename, loop: true },
-                { 
+                {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000 
+                    timeout: 5000
                 }
             );
             return { success: true, data: response.data };

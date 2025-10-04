@@ -601,5 +601,104 @@ router.post('/generate-and-play', async (req, res) => {
     }
 });
 
+// Generate speech using AI Agent and play (personality-infused speech)
+// This endpoint processes text through the character's AI agent for personality
+router.post('/agent-speak', async (req, res) => {
+    try {
+        const { text, characterId } = req.body;
+
+        if (!text || !characterId) {
+            return res.status(400).json({
+                success: false,
+                error: 'text and characterId are required'
+            });
+        }
+
+        // Get character's AI agent ID
+        const { default: characterService } = await import('../../services/characterService.js');
+        const character = await characterService.getCharacterById(characterId);
+
+        if (!character || !character.elevenLabsAgentId) {
+            return res.status(400).json({
+                success: false,
+                error: `Character ${characterId} does not have an AI agent assigned`
+            });
+        }
+
+        console.log(`🎭 Agent-speak for ${character.name}: Processing "${text}" through agent ${character.elevenLabsAgentId}`);
+
+        // Process text through AI agent to get personality-infused response
+        const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
+        const agentResult = await elevenLabsAgentService.chatWithAgent(character.elevenLabsAgentId, text);
+
+        if (!agentResult.success) {
+            return res.status(500).json({
+                success: false,
+                error: 'AI agent processing failed',
+                details: agentResult.error
+            });
+        }
+
+        const personalityText = agentResult.replyText;
+        console.log(`🎭 Agent response: "${personalityText}"`);
+
+        // Generate TTS from personality-infused text
+        const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
+        const ttsConfig = await getTTSConfigForCharacter(characterId);
+
+        const ttsResult = await elevenLabsTTSService.generateSpeech(personalityText, ttsConfig.voice_id, ttsConfig);
+
+        if (!ttsResult.success) {
+            return res.status(500).json({
+                success: false,
+                error: 'TTS generation failed',
+                details: ttsResult.error
+            });
+        }
+
+        // Trigger random pose during TTS (if enabled)
+        const { default: randomPoseService } = await import('../../services/randomPoseService.js');
+        randomPoseService.triggerDuringTTS(characterId, personalityText.length).catch(err => {
+            console.log('ℹ️  Random pose skipped:', err.message || 'disabled');
+        });
+
+        // Play the generated audio through character's speaker
+        const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
+        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
+            characterId: characterId,
+            contentType: 'audio/mpeg',
+            volume: 80
+        });
+
+        if (playResult.success) {
+            return res.json({
+                success: true,
+                played: true,
+                device: playResult.deviceId || 'default',
+                message: `AI agent speech played on character ${characterId} speaker`,
+                originalText: text,
+                personalityText: personalityText,
+                agentId: character.elevenLabsAgentId,
+                voiceId: ttsConfig.voice_id
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to play TTS audio',
+                details: playResult.error
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Agent-speak error:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to generate and play agent speech',
+            message: error.message
+        });
+    }
+});
+
 
 export default router;
