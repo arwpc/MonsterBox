@@ -13,9 +13,27 @@ async function getAIConfigDir() {
   return path.resolve(appRoot, dataDir, 'ai-config');
 }
 
+async function getCharacterAIConfigDir(characterId) {
+  const cfg = await readConfig();
+  const appRoot = path.resolve(__dirname, '..');
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+  const nid = Number(characterId);
+  return path.resolve(appRoot, dataDir, `character-${nid}`, 'ai-config');
+}
+
 async function ensureDir() {
   const baseDir = await getAIConfigDir();
   await fs.mkdir(baseDir, { recursive: true });
+}
+
+async function readJsonAtDir(dir, file) {
+  try {
+    const full = path.join(dir, file);
+    const txt = await fs.readFile(full, 'utf8');
+    return JSON.parse(txt);
+  } catch (e) {
+    return null;
+  }
 }
 
 async function readJson(file) {
@@ -74,5 +92,25 @@ export async function saveTTSConfig(cfg) {
   return writeJson('tts-config.json', cfg);
 }
 
-export default { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig };
+export async function getCharacterTTSConfig(characterId) {
+  if (!characterId && characterId !== 0) return getTTSConfig();
+  try {
+    const dir = await getCharacterAIConfigDir(characterId);
+    const d = await readJsonAtDir(dir, 'tts-config.json');
+    if (d && d.voice_id) return d;
+  } catch (_) {
+    // fall back below
+  }
+  return getTTSConfig();
+}
+
+export async function saveCharacterTTSConfig(characterId, cfg) {
+  const dir = await getCharacterAIConfigDir(characterId);
+  await fs.mkdir(dir, { recursive: true });
+  const full = path.join(dir, 'tts-config.json');
+  await fs.writeFile(full, JSON.stringify(cfg, null, 2), 'utf8');
+  return cfg;
+}
+
+export default { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig, getCharacterTTSConfig, saveCharacterTTSConfig };
 

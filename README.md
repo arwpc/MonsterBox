@@ -140,6 +140,13 @@ sudo chown "$USER":"$USER" /etc/monsterbox/elevenlabs.key
 sudo chmod 600 /etc/monsterbox/elevenlabs.key
 ```
 
+### ElevenLabs key policy (shared across animatronics)
+- All animatronics (PumpkinHead, Coffin Breaker, Orlok, Skulltalker) use the SAME ElevenLabs API key.
+- Store the key at /etc/monsterbox/elevenlabs.key with mode 600 on every device.
+- Keep these files in sync across Pis. Our deployment scripts and runbooks assume a shared key.
+- To resync from a known-good unit (e.g., PumpkinHead): scp the file to the others and set 600 permissions.
+
+
 3) Install node packages and start
 
 ```bash
@@ -1047,7 +1054,7 @@ Example start-config body:
 - `DELETE /scenes/api/queue/library/:id` → delete
 - `POST /scenes/api/queue/library/:id/export` → download JSON
 - `POST /scenes/api/queue/library/import` (multipart or raw JSON)
-### Just Checking ### 
+### Just Checking ###
 
 Notes
 - Status is pollable via `GET /scenes/api/queue`; an SSE stream can be added if needed.

@@ -540,16 +540,20 @@ router.post('/generate-and-play', async (req, res) => {
 
         // Use ElevenLabs TTS service to generate speech
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
+        const { getCharacterTTSConfig, getTTSConfig } = await import('../../services/aiConfigStore.js');
 
-        // Get character's voice settings (if available)
-        let voiceId = 'Tj9l48J9AJbry5yCP5eW'; // Default voice: Matthew Schmitz - Nosferatu Ancient Vampire Lord
-        // TODO: Get character's configured voice ID from database/config
+        // Resolve per-character TTS config first, fallback to global
+        const ttsCfg = await getCharacterTTSConfig(characterId).catch(async () => await getTTSConfig());
+        const voiceId = ttsCfg.voice_id || 'Tj9l48J9AJbry5yCP5eW';
+        const ttsOptions = {
+            model: ttsCfg.model || 'eleven_multilingual_v2',
+            stability: ttsCfg.stability,
+            similarity_boost: ttsCfg.similarity_boost,
+            style: ttsCfg.style,
+            use_speaker_boost: ttsCfg.use_speaker_boost
+        };
 
-        const ttsResult = await elevenLabsTTSService.generateSpeech(text, voiceId, {
-            model: 'eleven_multilingual_v2',
-            stability: 0.5,
-            similarity_boost: 0.75
-        });
+        const ttsResult = await elevenLabsTTSService.generateSpeech(text, voiceId, ttsOptions);
 
         if (!ttsResult.success) {
             return res.status(500).json({

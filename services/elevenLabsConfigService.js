@@ -63,22 +63,24 @@ class ElevenLabsConfigService {
      * Get ElevenLabs API configuration
      */
     getElevenLabsConfig() {
-        let apiKey = this.config.ELEVENLABS_API_KEY;
+        // File is the source of truth across all animatronics
+        let apiKey = null;
+        try {
+            const keyPath = '/etc/monsterbox/elevenlabs.key';
+            if (fs.existsSync(keyPath)) {
+                const raw = fs.readFileSync(keyPath, 'utf8');
+                const k = (raw || '').trim();
+                if (k) apiKey = k;
+            }
+        } catch (_) { /* ignore */ }
 
-        // Secure file-based fallback: /etc/monsterbox/elevenlabs.key (chmod 600)
-        if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-            try {
-                const keyPath = '/etc/monsterbox/elevenlabs.key';
-                if (fs.existsSync(keyPath)) {
-                    const raw = fs.readFileSync(keyPath, 'utf8');
-                    const k = (raw || '').trim();
-                    if (k) apiKey = k;
-                }
-            } catch (_) { /* ignore */ }
+        // Fallback to env/.env only if file not present
+        if (!apiKey) {
+            apiKey = this.config.ELEVENLABS_API_KEY;
         }
 
         if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-            throw new Error('ElevenLabs API key not configured. Set ELEVENLABS_API_KEY or provide /etc/monsterbox/elevenlabs.key (600).');
+            throw new Error('ElevenLabs API key not configured. Provide /etc/monsterbox/elevenlabs.key (mode 600) or set ELEVENLABS_API_KEY.');
         }
 
         return {
