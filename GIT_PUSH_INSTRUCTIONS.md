@@ -4,12 +4,22 @@
 ✅ All changes have been committed to the local git repository on Orlok (192.168.8.120)
 ❌ Push to GitHub remote failed due to SSH key authentication
 
-## Commit Information
+## Current Situation
 
-**Commit Hash**: `4228ac6e`
-**Commit Message**: "Phase 1: Orlok Bring-Up - Per-Character TTS and Deployment System"
+**Local Orlok has TWO commits ahead of GitHub:**
 
-**Files Changed**: 19 files, 1979 insertions, 31 deletions
+1. **Commit Hash**: `4228ac6e`
+   **Commit Message**: "Phase 1: Orlok Bring-Up - Per-Character TTS and Deployment System"
+   **Files Changed**: 19 files, 1979 insertions, 31 deletions
+   **Author**: AI Agent
+
+2. **Commit Hash**: `8ea38a35` (HEAD)
+   **Commit Message**: "Final Push - fixes and all bots talking"
+   **Author**: You (arwpc)
+
+**GitHub is at**: `c345b99b` - "Security Checking Fixes"
+
+So Orlok's main branch is 2 commits ahead of GitHub's main branch.
 
 ## What's in the Commit
 
@@ -42,48 +52,75 @@
 
 ## How to Push to GitHub
 
-### Option 1: From Your Development Machine
-If you have the MonsterBox repo cloned on your development machine with GitHub access:
+### RECOMMENDED: Option 1 - Force Push from Orlok Terminal
+Since you're already on Orlok and have made commits, the simplest way is to force push:
+
+```bash
+# On Orlok (you're already here)
+cd ~/MonsterBox
+
+# Force push to overwrite GitHub with your local commits
+git push -f origin main
+```
+
+**Note**: This requires setting up authentication first. See options below.
+
+### Option 2: Set up GitHub SSH Key on Orlok (One-time setup)
+
+```bash
+# On Orlok
+ssh-keygen -t ed25519 -C "orlok@monsterbox" -f ~/.ssh/id_ed25519_github -N ""
+cat ~/.ssh/id_ed25519_github.pub
+```
+
+Then:
+1. Copy the public key output
+2. Go to https://github.com/settings/keys
+3. Click "New SSH key"
+4. Paste the key and save
+
+Then configure git to use it:
+```bash
+# On Orlok
+cat >> ~/.ssh/config << 'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_github
+EOF
+
+# Test connection
+ssh -T git@github.com
+
+# Set remote to SSH
+git remote set-url origin git@github.com:arwpc/MonsterBox.git
+
+# Force push
+git push -f origin main
+```
+
+### Option 3: Use GitHub Personal Access Token
+
+```bash
+# On Orlok
+# Create a token at: https://github.com/settings/tokens
+# Then:
+git remote set-url origin https://YOUR_TOKEN@github.com/arwpc/MonsterBox.git
+git push -f origin main
+```
+
+### Option 4: From Your Development Machine
+
+If you have the repo cloned elsewhere with GitHub access:
 
 ```bash
 # Pull the latest from Orlok
 git remote add orlok ssh://remote@192.168.8.120/home/remote/MonsterBox/.git
 git fetch orlok
-git merge orlok/main
+git reset --hard orlok/main
 
-# Push to GitHub
-git push origin main
-```
-
-### Option 2: From Orlok with GitHub Token
-If you want to push directly from Orlok:
-
-```bash
-# On Orlok
-cd ~/MonsterBox
-
-# Set up GitHub personal access token
-git remote set-url origin https://<YOUR_GITHUB_TOKEN>@github.com/arwpc/MonsterBox.git
-
-# Push
-git push origin main
-```
-
-### Option 3: From Orlok with SSH Key
-If you want to set up SSH keys for GitHub on Orlok:
-
-```bash
-# On Orlok
-ssh-keygen -t ed25519 -C "orlok@monsterbox"
-cat ~/.ssh/id_ed25519.pub
-# Copy the public key and add it to GitHub: https://github.com/settings/keys
-
-# Test connection
-ssh -T git@github.com
-
-# Push
-git remote set-url origin git@github.com:arwpc/MonsterBox.git
-git push origin main
+# Force push to GitHub
+git push -f origin main
 ```
 
 ## Verification
