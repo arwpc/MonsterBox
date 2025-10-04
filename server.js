@@ -40,6 +40,7 @@ import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js
 import pipewireService from './services/pipewireService.js';
 import conversationRoutes from './routes/conversation.js';
 import demoRoutes from './routes/demo.js';
+import orchestrationWebRoutes from './routes/orchestration.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -194,6 +195,7 @@ app.use('/video-library', videoLibraryRoutes);
 app.use('/goblin-management', goblinManagementRoutes);
 app.use('/conversation', conversationRoutes);
 app.use('/demo', demoRoutes);
+app.use('/orchestration', orchestrationWebRoutes);
 app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
