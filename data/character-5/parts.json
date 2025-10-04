@@ -627,5 +627,23 @@
     "stepPin": 23,
     "dirPin": 24,
     "enablePin": 25
+  },
+  {
+    "id": "52",
+    "name": "Wiper Motor",
+    "type": "motor",
+    "pin": 5,
+    "description": "MDD10A Control Board - Jeep Wagoneer wiper motor for jaw/head movement",
+    "config": {
+      "direction": "forward",
+      "speed": 255,
+      "controlBoard": "MDD10A",
+      "motorType": "wiper"
+    },
+    "created": "2025-10-04T18:00:00.000Z",
+    "enabled": true,
+    "directionPin": 5,
+    "pwmPin": 13,
+    "maxDuration": 10000
   }
 ]
