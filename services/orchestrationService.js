@@ -25,7 +25,8 @@ class OrchestrationService {
 
         // Goblin network map
         this.goblins = [
-            { id: 'chestwound', name: 'Chestwound Goblin', ip: '192.168.8.160', port: 3001 }
+            { id: 'chestwound', name: 'Chestwound Goblin', ip: '192.168.8.160', port: 3001 },
+            { id: 'goblin2', name: 'Goblin2', ip: '192.168.8.161', port: 3001 }
         ];
 
         this.sshUser = 'remote';

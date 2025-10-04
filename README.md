@@ -37,9 +37,32 @@ cd ~/MonsterBox && ./scripts/orlok-bringup-test.sh
 ```
 Character 1: PumpkinHead     → 192.168.8.150
 Character 2: Coffin Breaker  → 192.168.8.140
-Character 3: Orlok           → 192.168.8.120 (Primary)
+Character 3: Orlok           → 192.168.8.120 (Primary/Control Node)
 Character 4: Skulltalker     → 192.168.8.130
+Character 5: Groundbreaker   → 192.168.8.200
+Goblin 1:    Chestwound      → 192.168.8.160:3001 (Video Display)
+Goblin 2:    Goblin2         → 192.168.8.161:3001 (Video Display)
 ```
+
+### Goblin Video Displays
+Goblin displays store videos locally at `/home/remote/goblin/media/video/` (copied from USB sticks).
+Videos are organized in subdirectories (e.g., `Poltergeist/`, `fire/`, `ethereal/`).
+
+**Play video on Goblin:**
+```bash
+# Play a video with looping
+curl -X POST http://192.168.8.161:3001/play-video \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4","loop":true}'
+
+# Stop video
+curl -X POST http://192.168.8.161:3001/stop-video
+
+# Check status
+curl http://192.168.8.161:3001/status | jq '.'
+```
+
+**Note:** Use relative paths from `/home/remote/goblin/media/video/` (e.g., `"Poltergeist/video.mp4"`, not absolute paths).
 
 ---
 
