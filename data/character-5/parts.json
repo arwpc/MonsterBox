@@ -630,20 +630,29 @@
   },
   {
     "id": "52",
-    "name": "Wiper Motor",
-    "type": "motor",
-    "pin": 5,
-    "description": "MDD10A Control Board - Jeep Wagoneer wiper motor for jaw/head movement",
+    "name": "Wiper Motor Stepper",
+    "type": "stepper",
+    "description": "MDD10A Control Board - Stepper motor for jaw/head movement (Board pins 11,13,15 = GPIO 17,27,22)",
     "config": {
-      "direction": "forward",
-      "speed": 255,
       "controlBoard": "MDD10A",
-      "motorType": "wiper"
+      "motorType": "stepper",
+      "boardPins": {
+        "11": "EN (Brown wire)",
+        "13": "DIR (Red wire)",
+        "15": "STEP (Orange wire)"
+      },
+      "motorWiring": {
+        "blue": "1A",
+        "red": "1B",
+        "green": "2A",
+        "black": "2B"
+      },
+      "notes": "Can jumper EN to GND on driver to keep always enabled"
     },
     "created": "2025-10-04T18:00:00.000Z",
     "enabled": true,
-    "directionPin": 5,
-    "pwmPin": 13,
-    "maxDuration": 10000
+    "enablePin": 17,
+    "dirPin": 27,
+    "stepPin": 22
   }
 ]
