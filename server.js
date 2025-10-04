@@ -35,6 +35,7 @@ import scenesApiRoutes from './routes/scenes/api.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
+import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import pipewireService from './services/pipewireService.js';
 import conversationRoutes from './routes/conversation.js';
@@ -231,6 +232,7 @@ printRoutes();
 
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
+app.use('/api/orchestration', orchestrationRoutes);
 
 // Main dashboard route
 app.get('/', (req, res) => {
