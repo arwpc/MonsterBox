@@ -34,6 +34,7 @@ import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
+import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import pipewireService from './services/pipewireService.js';
 import conversationRoutes from './routes/conversation.js';
@@ -171,12 +172,12 @@ app.use('/setup/parts', setupPartsRoutes);
 // Fallback inline Parts routes (ensure tests pass even if router import fails)
 import partsController from './controllers/partsController.js';
 app.get('/setup/parts', async (req, res) => {
-  try {
-    res.render('setup/parts', { title: 'Setup Parts - MonsterBox 4.0', page: 'setup-parts' });
-  } catch (err) {
-    console.error('Error rendering parts page:', err);
-    res.status(500).render('error', { title: 'Error', error: 'Failed to load parts page', message: err.message });
-  }
+    try {
+        res.render('setup/parts', { title: 'Setup Parts - MonsterBox 4.0', page: 'setup-parts' });
+    } catch (err) {
+        console.error('Error rendering parts page:', err);
+        res.status(500).render('error', { title: 'Error', error: 'Failed to load parts page', message: err.message });
+    }
 });
 app.get('/setup/parts/api/parts', partsController.getAllParts);
 app.get('/setup/parts/api/parts/:id', partsController.getPartById);
@@ -199,36 +200,37 @@ app.use('/poses', posesRoutes);
 app.use('/ai-settings', aiSettingsRoutes);
 // Debug: list registered routes once on startup
 function printRoutes() {
-  const routes = [];
-// Dev-only helper to terminate a running server (used by tests to reset)
-app.get('/__kill', (req, res) => {
-  res.status(200).send('Shutting down');
-  setTimeout(() => process.exit(0), 50);
-});
+    const routes = [];
+    // Dev-only helper to terminate a running server (used by tests to reset)
+    app.get('/__kill', (req, res) => {
+        res.status(200).send('Shutting down');
+        setTimeout(() => process.exit(0), 50);
+    });
 
-  function walk(path, layer) {
-    if (layer.route) {
-      const routePath = path + layer.route.path;
-      layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
-    } else if (layer.name === 'router' && layer.handle.stack) {
-      layer.handle.stack.forEach(l => walk(path + (layer.regexp?.fast_star ? '' : layer.regexp?.fast_slash ? '/' : ''), l));
+    function walk(path, layer) {
+        if (layer.route) {
+            const routePath = path + layer.route.path;
+            layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
+        } else if (layer.name === 'router' && layer.handle.stack) {
+            layer.handle.stack.forEach(l => walk(path + (layer.regexp?.fast_star ? '' : layer.regexp?.fast_slash ? '/' : ''), l));
+        }
     }
-  }
-  app._router.stack.forEach((layer) => {
-    if (layer.name === 'router' && layer.handle.stack) {
-      walk('', layer);
-    } else if (layer.route) {
-      const routePath = layer.route.path;
-      layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
-    }
-  });
-  console.log('Registered routes count:', routes.length);
-  const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
-  console.log('Some routes:', interesting.slice(0, 25));
+    app._router.stack.forEach((layer) => {
+        if (layer.name === 'router' && layer.handle.stack) {
+            walk('', layer);
+        } else if (layer.route) {
+            const routePath = layer.route.path;
+            layer.route.stack.forEach(r => routes.push(`${(r.method || 'all').toUpperCase()} ${routePath}`));
+        }
+    });
+    console.log('Registered routes count:', routes.length);
+    const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
+    console.log('Some routes:', interesting.slice(0, 25));
 }
 printRoutes();
 
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
+app.use('/api/random-poses', randomPoseRoutes);
 
 // Main dashboard route
 app.get('/', (req, res) => {
@@ -311,30 +313,30 @@ app.get('/setup', (req, res) => {
 
 // MB_TEST_MODE: Convert unexpected 5xx into benign responses to enforce UI stability during tests
 if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-  app.use((err, req, res, next) => {
-    try {
-      // Record server error for structured monitoring
-      recordServerError(err, req);
-      // Respect explicit statuses < 500 or JSON bodies that already indicate success/failure
-      const wantsJSON = (req.get('accept') || '').includes('application/json') || req.path.startsWith('/api/') || req.path.includes('/scenes/api');
-      const payload = wantsJSON
-        ? { success: false, testMode: true, downgraded: true, error: (err && err.message) || 'Internal error (test mode)' }
-        : null;
-      if (wantsJSON) return res.status(200).json(payload);
-      // For HTML pages, render a minimal placeholder with 200 status to avoid 5xx during navigation
-      res.status(200).render('error', { title: 'Test Mode Placeholder', error: 'Test mode placeholder', message: (err && err.message) || 'Internal error (test mode)' });
-    } catch (e) {
-      // If rendering fails, last resort: plain text 200
-      res.status(200).send('OK (test mode)');
-    }
-  });
+    app.use((err, req, res, next) => {
+        try {
+            // Record server error for structured monitoring
+            recordServerError(err, req);
+            // Respect explicit statuses < 500 or JSON bodies that already indicate success/failure
+            const wantsJSON = (req.get('accept') || '').includes('application/json') || req.path.startsWith('/api/') || req.path.includes('/scenes/api');
+            const payload = wantsJSON
+                ? { success: false, testMode: true, downgraded: true, error: (err && err.message) || 'Internal error (test mode)' }
+                : null;
+            if (wantsJSON) return res.status(200).json(payload);
+            // For HTML pages, render a minimal placeholder with 200 status to avoid 5xx during navigation
+            res.status(200).render('error', { title: 'Test Mode Placeholder', error: 'Test mode placeholder', message: (err && err.message) || 'Internal error (test mode)' });
+        } catch (e) {
+            // If rendering fails, last resort: plain text 200
+            res.status(200).send('OK (test mode)');
+        }
+    });
 }
 
 // Error handling
 app.use((err, req, res, next) => {
     console.error('Error:', err);
     // Record for structured monitoring
-    try { recordServerError(err, req); } catch {}
+    try { recordServerError(err, req); } catch { }
     res.status(500).json({
         error: 'Internal server error',
         message: err.message
@@ -391,14 +393,14 @@ async function checkMjpgStreamerHealth() {
 
 
 function getLanAddresses() {
-  const ifaces = os.networkInterfaces();
-  const addrs = [];
-  for (const name of Object.keys(ifaces)) {
-    for (const i of ifaces[name] || []) {
-      if (i && i.family === 'IPv4' && !i.internal) addrs.push(i.address);
+    const ifaces = os.networkInterfaces();
+    const addrs = [];
+    for (const name of Object.keys(ifaces)) {
+        for (const i of ifaces[name] || []) {
+            if (i && i.family === 'IPv4' && !i.internal) addrs.push(i.address);
+        }
     }
-  }
-  return addrs;
+    return addrs;
 }
 
 
@@ -458,14 +460,14 @@ app.listen(PORT, '0.0.0.0', async () => {
         let lastVideoCheck = Date.now();
         setInterval(async () => {
             const load1 = (os.loadavg?.()[0] || 0).toFixed(2);
-            const rssMb = (process.memoryUsage().rss / (1024*1024)).toFixed(0);
+            const rssMb = (process.memoryUsage().rss / (1024 * 1024)).toFixed(0);
             let audioStreams = 0;
-            try { const streams = await pipewireService.listActiveStreams(); audioStreams = streams.length; } catch {}
+            try { const streams = await pipewireService.listActiveStreams(); audioStreams = streams.length; } catch { }
             const wsClients = (typeof elevenLabsWebSocketService.getActiveConnectionsCount === 'function') ? elevenLabsWebSocketService.getActiveConnectionsCount() : 0;
-            if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch {} lastVideoCheck = Date.now(); }
+            if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch { } lastVideoCheck = Date.now(); }
             console.log(`Perf | CPU(load1): ${load1} | Mem(RSS): ${rssMb}MB | Audio streams: ${audioStreams} | WS clients: ${wsClients} | Webcam: ${lastVideoOk ? 'OK' : 'NO'}`);
         }, 5000);
-    } catch {}
+    } catch { }
 
 });
 

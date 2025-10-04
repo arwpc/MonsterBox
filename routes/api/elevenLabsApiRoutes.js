@@ -560,6 +560,12 @@ router.post('/generate-and-play', async (req, res) => {
             });
         }
 
+        // Trigger random pose during TTS (if enabled)
+        const { default: randomPoseService } = await import('../../services/randomPoseService.js');
+        randomPoseService.triggerDuringTTS(characterId, text.length).catch(err => {
+            console.log('ℹ️  Random pose skipped:', err.message || 'disabled');
+        });
+
         // Play the generated audio through character's speaker
         const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
         const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
