@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,48 +13,66 @@
             color: #e0e0e0;
             min-height: 100vh;
         }
+
         .card {
             background: rgba(30, 30, 46, 0.95);
             border: 1px solid #ff6b35;
             box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
         }
+
         .card-header {
             background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             color: white;
             font-weight: bold;
         }
+
         .animatronic-card {
             transition: all 0.3s ease;
             cursor: pointer;
         }
+
         .animatronic-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 30px rgba(255, 107, 53, 0.5);
         }
+
         .status-online {
             color: #00ff00;
             animation: pulse 2s infinite;
         }
+
         .status-offline {
             color: #ff0000;
         }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
+
         .btn-halloween {
             background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
             border: none;
             color: white;
             font-weight: bold;
         }
+
         .btn-halloween:hover {
             background: linear-gradient(135deg, #f7931e 0%, #ff6b35 100%);
             color: white;
         }
+
         .control-section {
             margin-bottom: 2rem;
         }
+
         .log-output {
             background: #000;
             color: #0f0;
@@ -65,297 +84,299 @@
         }
     </style>
 </head>
+
 <body>
-    <%- include('../components/unified-navigation') %>
+    <%- include('../components/unified-navigation', { page: 'orchestration' }) %>
 
-    <div class="container-fluid mt-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="text-center">
-                    <i class="bi bi-broadcast"></i> Orchestration Control Center
-                </h1>
-                <p class="text-center text-muted">Centralized control for all MonsterBox animatronics</p>
+        <div class="container-fluid mt-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="text-center">
+                        <i class="bi bi-broadcast"></i> Orchestration Control Center
+                    </h1>
+                    <p class="text-center text-muted">Centralized control for all MonsterBox animatronics</p>
+                </div>
             </div>
-        </div>
 
-        <!-- System Status -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-activity"></i> System Status
-                        <button class="btn btn-sm btn-halloween float-end" onclick="refreshStatus()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="row" id="animatronicsStatus">
-                            <div class="col-12 text-center">
-                                <div class="spinner-border text-warning" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+            <!-- System Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-activity"></i> System Status
+                            <button class="btn btn-sm btn-halloween float-end" onclick="refreshStatus()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="animatronicsStatus">
+                                <div class="col-12 text-center">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Broadcast Controls -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card control-section">
-                    <div class="card-header">
-                        <i class="bi bi-megaphone"></i> Broadcast Speech
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Message to All Animatronics:</label>
-                            <textarea class="form-control" id="broadcastText" rows="3" placeholder="Enter message...">Happy Halloween! The monsters are ready!</textarea>
+            <!-- Broadcast Controls -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card control-section">
+                        <div class="card-header">
+                            <i class="bi bi-megaphone"></i> Broadcast Speech
                         </div>
-                        <button class="btn btn-halloween w-100" onclick="sayAll()">
-                            <i class="bi bi-volume-up"></i> Say to All
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="card control-section">
-                    <div class="card-header">
-                        <i class="bi bi-person-arms-up"></i> Random Poses
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Cooldown (ms):</label>
-                            <input type="number" class="form-control" id="poseCooldown" value="3000">
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <button class="btn btn-success w-100" onclick="enableRandomPoses()">
-                                    <i class="bi bi-play-circle"></i> Enable All
-                                </button>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Message to All Animatronics:</label>
+                                <textarea class="form-control" id="broadcastText" rows="3"
+                                    placeholder="Enter message...">Happy Halloween! The monsters are ready!</textarea>
                             </div>
-                            <div class="col-6">
-                                <button class="btn btn-danger w-100" onclick="disableRandomPoses()">
-                                    <i class="bi bi-stop-circle"></i> Disable All
-                                </button>
-                            </div>
+                            <button class="btn btn-halloween w-100" onclick="sayAll()">
+                                <i class="bi bi-volume-up"></i> Say to All
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- System Commands -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-gear"></i> System Commands
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <button class="btn btn-warning w-100" onclick="restartServices()">
-                                    <i class="bi bi-arrow-clockwise"></i> Restart All Services
-                                </button>
+                <div class="col-md-6">
+                    <div class="card control-section">
+                        <div class="card-header">
+                            <i class="bi bi-person-arms-up"></i> Random Poses
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Cooldown (ms):</label>
+                                <input type="number" class="form-control" id="poseCooldown" value="3000">
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <button class="btn btn-info w-100" onclick="healthCheck()">
-                                    <i class="bi bi-heart-pulse"></i> Health Check
-                                </button>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <button class="btn btn-danger w-100" onclick="rebootAll()" disabled>
-                                    <i class="bi bi-power"></i> Reboot All (Disabled)
-                                </button>
+                            <div class="row">
+                                <div class="col-6">
+                                    <button class="btn btn-success w-100" onclick="enableRandomPoses()">
+                                        <i class="bi bi-play-circle"></i> Enable All
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-danger w-100" onclick="disableRandomPoses()">
+                                        <i class="bi bi-stop-circle"></i> Disable All
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Command Log -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-terminal"></i> Command Log
-                        <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
-                            <i class="bi bi-trash"></i> Clear
-                        </button>
+            <!-- System Commands -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-gear"></i> System Commands
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-warning w-100" onclick="restartServices()">
+                                        <i class="bi bi-arrow-clockwise"></i> Restart All Services
+                                    </button>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-info w-100" onclick="healthCheck()">
+                                        <i class="bi bi-heart-pulse"></i> Health Check
+                                    </button>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-danger w-100" onclick="rebootAll()" disabled>
+                                        <i class="bi bi-power"></i> Reboot All (Disabled)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="log-output" id="commandLog">
-                            <div>🎃 Orchestration Control Center initialized...</div>
+                </div>
+            </div>
+
+            <!-- Command Log -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-terminal"></i> Command Log
+                            <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
+                                <i class="bi bi-trash"></i> Clear
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="log-output" id="commandLog">
+                                <div>🎃 Orchestration Control Center initialized...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function log(message, type = 'info') {
-            var logDiv = document.getElementById('commandLog');
-            var timestamp = new Date().toLocaleTimeString();
-            var icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-            logDiv.innerHTML += '<div>' + icon + ' [' + timestamp + '] ' + message + '</div>';
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
-
-        function clearLog() {
-            document.getElementById('commandLog').innerHTML = '<div>🎃 Log cleared...</div>';
-        }
-
-        function refreshStatus() {
-            log('Refreshing system status...');
-            fetch('/api/orchestration/status')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        displayAnimatronics(data.animatronics);
-                        log('Status refreshed successfully', 'success');
-                    } else {
-                        log('Failed to refresh status', 'error');
-                    }
-                })
-                .catch(function(error) {
-                    log('Error: ' + error.message, 'error');
-                });
-        }
-
-        function displayAnimatronics(animatronics) {
-            var html = '';
-            animatronics.forEach(function(anim) {
-                var statusClass = anim.online ? 'status-online' : 'status-offline';
-                var statusText = anim.online ? 'ONLINE' : 'OFFLINE';
-                html += '<div class="col-md-3 mb-3">';
-                html += '  <div class="card animatronic-card">';
-                html += '    <div class="card-body text-center">';
-                html += '      <h5>' + anim.name + '</h5>';
-                html += '      <p class="' + statusClass + '">';
-                html += '        <i class="bi bi-circle-fill"></i> ' + statusText;
-                html += '      </p>';
-                html += '      <small class="text-muted">' + anim.ip + ':' + anim.port + '</small>';
-                html += '    </div>';
-                html += '  </div>';
-                html += '</div>';
-            });
-            document.getElementById('animatronicsStatus').innerHTML = html;
-        }
-
-        function sayAll() {
-            var text = document.getElementById('broadcastText').value;
-            if (!text) {
-                log('Please enter a message', 'error');
-                return;
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            function log(message, type = 'info') {
+                var logDiv = document.getElementById('commandLog');
+                var timestamp = new Date().toLocaleTimeString();
+                var icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+                logDiv.innerHTML += '<div>' + icon + ' [' + timestamp + '] ' + message + '</div>';
+                logDiv.scrollTop = logDiv.scrollHeight;
             }
-            log('Broadcasting message to all animatronics...');
-            fetch('/api/orchestration/say-all', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    log('Message broadcast successfully to ' + data.results.length + ' animatronics', 'success');
-                } else {
-                    log('Broadcast failed', 'error');
-                }
-            })
-            .catch(function(error) {
-                log('Error: ' + error.message, 'error');
-            });
-        }
 
-        function enableRandomPoses() {
-            var cooldown = document.getElementById('poseCooldown').value;
-            log('Enabling random poses on all animatronics...');
-            fetch('/api/orchestration/enable-random-poses', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cooldownMs: parseInt(cooldown) })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    log('Random poses enabled on all animatronics', 'success');
-                } else {
-                    log('Failed to enable random poses', 'error');
-                }
-            })
-            .catch(function(error) {
-                log('Error: ' + error.message, 'error');
-            });
-        }
+            function clearLog() {
+                document.getElementById('commandLog').innerHTML = '<div>🎃 Log cleared...</div>';
+            }
 
-        function disableRandomPoses() {
-            log('Disabling random poses on all animatronics...');
-            fetch('/api/orchestration/disable-random-poses', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    log('Random poses disabled on all animatronics', 'success');
-                } else {
-                    log('Failed to disable random poses', 'error');
-                }
-            })
-            .catch(function(error) {
-                log('Error: ' + error.message, 'error');
-            });
-        }
+            function refreshStatus() {
+                log('Refreshing system status...');
+                fetch('/api/orchestration/status')
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            displayAnimatronics(data.animatronics);
+                            log('Status refreshed successfully', 'success');
+                        } else {
+                            log('Failed to refresh status', 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Error: ' + error.message, 'error');
+                    });
+            }
 
-        function restartServices() {
-            if (!confirm('Restart all animatronic services? This will take about 30 seconds.')) return;
-            log('Restarting all services...');
-            fetch('/api/orchestration/restart-services', {
-                method: 'POST'
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    log('All services restarted successfully', 'success');
-                    setTimeout(refreshStatus, 5000);
-                } else {
-                    log('Service restart failed', 'error');
-                }
-            })
-            .catch(function(error) {
-                log('Error: ' + error.message, 'error');
-            });
-        }
-
-        function healthCheck() {
-            log('Running health check on all animatronics...');
-            fetch('/api/orchestration/status')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        var online = data.animatronics.filter(function(a) { return a.online; }).length;
-                        var total = data.animatronics.length;
-                        log('Health check complete: ' + online + '/' + total + ' animatronics online', 'success');
-                    }
-                })
-                .catch(function(error) {
-                    log('Health check failed: ' + error.message, 'error');
+            function displayAnimatronics(animatronics) {
+                var html = '';
+                animatronics.forEach(function (anim) {
+                    var statusClass = anim.online ? 'status-online' : 'status-offline';
+                    var statusText = anim.online ? 'ONLINE' : 'OFFLINE';
+                    html += '<div class="col-md-3 mb-3">';
+                    html += '  <div class="card animatronic-card">';
+                    html += '    <div class="card-body text-center">';
+                    html += '      <h5>' + anim.name + '</h5>';
+                    html += '      <p class="' + statusClass + '">';
+                    html += '        <i class="bi bi-circle-fill"></i> ' + statusText;
+                    html += '      </p>';
+                    html += '      <small class="text-muted">' + anim.ip + ':' + anim.port + '</small>';
+                    html += '    </div>';
+                    html += '  </div>';
+                    html += '</div>';
                 });
-        }
+                document.getElementById('animatronicsStatus').innerHTML = html;
+            }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            refreshStatus();
-            // Auto-refresh every 30 seconds
-            setInterval(refreshStatus, 30000);
-        });
-    </script>
+            function sayAll() {
+                var text = document.getElementById('broadcastText').value;
+                if (!text) {
+                    log('Please enter a message', 'error');
+                    return;
+                }
+                log('Broadcasting message to all animatronics...');
+                fetch('/api/orchestration/say-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('Message broadcast successfully to ' + data.results.length + ' animatronics', 'success');
+                        } else {
+                            log('Broadcast failed', 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Error: ' + error.message, 'error');
+                    });
+            }
+
+            function enableRandomPoses() {
+                var cooldown = document.getElementById('poseCooldown').value;
+                log('Enabling random poses on all animatronics...');
+                fetch('/api/orchestration/enable-random-poses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cooldownMs: parseInt(cooldown) })
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('Random poses enabled on all animatronics', 'success');
+                        } else {
+                            log('Failed to enable random poses', 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Error: ' + error.message, 'error');
+                    });
+            }
+
+            function disableRandomPoses() {
+                log('Disabling random poses on all animatronics...');
+                fetch('/api/orchestration/disable-random-poses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('Random poses disabled on all animatronics', 'success');
+                        } else {
+                            log('Failed to disable random poses', 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Error: ' + error.message, 'error');
+                    });
+            }
+
+            function restartServices() {
+                if (!confirm('Restart all animatronic services? This will take about 30 seconds.')) return;
+                log('Restarting all services...');
+                fetch('/api/orchestration/restart-services', {
+                    method: 'POST'
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('All services restarted successfully', 'success');
+                            setTimeout(refreshStatus, 5000);
+                        } else {
+                            log('Service restart failed', 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Error: ' + error.message, 'error');
+                    });
+            }
+
+            function healthCheck() {
+                log('Running health check on all animatronics...');
+                fetch('/api/orchestration/status')
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            var online = data.animatronics.filter(function (a) { return a.online; }).length;
+                            var total = data.animatronics.length;
+                            log('Health check complete: ' + online + '/' + total + ' animatronics online', 'success');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('Health check failed: ' + error.message, 'error');
+                    });
+            }
+
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                refreshStatus();
+                // Auto-refresh every 30 seconds
+                setInterval(refreshStatus, 30000);
+            });
+        </script>
 </body>
-</html>
 
+</html>
