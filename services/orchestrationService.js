@@ -19,7 +19,8 @@ class OrchestrationService {
             { id: 1, name: 'PumpkinHead', ip: '192.168.8.150', port: 3000 },
             { id: 2, name: 'Coffin Breaker', ip: '192.168.8.140', port: 3000 },
             { id: 3, name: 'Orlok', ip: '192.168.8.120', port: 3000 },
-            { id: 4, name: 'Skulltalker', ip: '192.168.8.130', port: 3000 }
+            { id: 4, name: 'Skulltalker', ip: '192.168.8.130', port: 3000 },
+            { id: 5, name: 'Groundbreaker', ip: '192.168.8.200', port: 3000 }
         ];
 
         // Goblin network map
