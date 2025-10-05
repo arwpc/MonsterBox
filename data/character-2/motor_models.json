@@ -1,62 +1,39 @@
 [
   {
-    "id": "1758746883545",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
+    "id": "motor_dc_12v_generic",
+    "name": "Generic 12V DC Motor",
+    "description": "Generic 12V DC motor with typical specifications",
     "defaults": {
-      "maxDutyPct": 100
+      "maxDutyPct": 100,
+      "maxDuration": 10000,
+      "voltage": 12
     },
-    "controlsSchema": {},
-    "meta": {}
+    "controlsSchema": {
+      "type": "bidirectional",
+      "pwm": true
+    },
+    "meta": {
+      "notes": "Generic DC motor model. Adjust max duration based on thermal limits.",
+      "voltage": "12V"
+    }
   },
   {
-    "id": "1758746979515",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
+    "id": "motor_dc_6v_generic",
+    "name": "Generic 6V DC Motor",
+    "description": "Generic 6V DC motor with typical specifications",
     "defaults": {
-      "maxDutyPct": 100
+      "maxDutyPct": 100,
+      "maxDuration": 10000,
+      "voltage": 6
     },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758750688709",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
-    "defaults": {
-      "maxDutyPct": 100
+    "controlsSchema": {
+      "type": "bidirectional",
+      "pwm": true
     },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758750784007",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
-    "defaults": {
-      "maxDutyPct": 100
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758751205099",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
-    "defaults": {
-      "maxDutyPct": 100
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758751423846",
-    "name": "E2E Motor Model",
-    "description": "motor defaults",
-    "defaults": {
-      "maxDutyPct": 100
-    },
-    "controlsSchema": {},
-    "meta": {}
+    "meta": {
+      "notes": "Generic 6V DC motor model. Common for smaller animatronic movements.",
+      "voltage": "6V"
+    }
   }
 ]
+

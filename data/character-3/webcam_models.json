@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "id": "webcam_generic_usb",
+        "name": "Generic USB Webcam",
+        "description": "Generic USB webcam with MJPEG streaming support",
+        "defaults": {
+            "resolution": "640x480",
+            "fps": 30,
+            "format": "MJPEG"
+        },
+        "controlsSchema": {
+            "type": "usb",
+            "streaming": true
+        },
+        "meta": {
+            "notes": "Generic USB webcam model. Works with mjpg-streamer on port 8090.",
+            "interface": "USB 2.0/3.0"
+        }
+    }
+]

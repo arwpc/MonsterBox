@@ -1,279 +1,74 @@
 [
-  {
-    "id": "1757818992065",
-    "name": "Actuator X",
-    "description": "Generic LA",
-    "defaults": {
-      "maxExtension": 100,
-      "maxRetraction": 0,
-      "speedDefault": 50
+    {
+        "id": "linear_actuator_gobilda_117mm",
+        "name": "goBILDA Linear Actuator 117mm",
+        "description": "goBILDA 117mm stroke linear actuator, 12V, 225N force",
+        "defaults": {
+            "maxExtension": 15000,
+            "maxRetraction": 15000,
+            "speedDefault": 50,
+            "strokeMm": 117,
+            "forceN": 225,
+            "voltage": 12
+        },
+        "controlsSchema": {
+            "type": "bidirectional",
+            "feedback": false
+        },
+        "meta": {
+            "notes": "goBILDA 117mm stroke linear actuator. 12V DC, 225N max force, 15mm/s no-load speed.",
+            "manufacturer": "goBILDA",
+            "partNumber": "2000-0001-0117",
+            "stroke": "117mm",
+            "force": "225N",
+            "speed": "15mm/s",
+            "voltage": "12V",
+            "current": "2A max"
+        }
     },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758565654155",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758597221358",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758599791008",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758600082875",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758600732149",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758677448777",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758678885100",
-    "name": "Model for linear_actuator",
-    "description": "",
-    "defaults": {},
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758745768914",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
+    {
+        "id": "linear_actuator_gobilda_217mm",
+        "name": "goBILDA Linear Actuator 217mm",
+        "description": "goBILDA 217mm stroke linear actuator, 12V, 225N force",
+        "defaults": {
+            "maxExtension": 20000,
+            "maxRetraction": 20000,
+            "speedDefault": 50,
+            "strokeMm": 217,
+            "forceN": 225,
+            "voltage": 12
+        },
+        "controlsSchema": {
+            "type": "bidirectional",
+            "feedback": false
+        },
+        "meta": {
+            "notes": "goBILDA 217mm stroke linear actuator. 12V DC, 225N max force, 15mm/s no-load speed.",
+            "manufacturer": "goBILDA",
+            "partNumber": "2000-0001-0217",
+            "stroke": "217mm",
+            "force": "225N",
+            "speed": "15mm/s",
+            "voltage": "12V",
+            "current": "2A max"
+        }
     },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758745983934",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758746255668",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758746416669",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758751124852",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758751344451",
-    "name": "E2E LA Model",
-    "description": "linear_actuator defaults",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758816992950",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758817223524",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758819658454",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758819701164",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758822232410",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758822271904",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758825975324",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758826012465",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758826408007",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758826654889",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758828108624",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758828716271",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1758829949491",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  }
+    {
+        "id": "linear_actuator_generic_12v",
+        "name": "Generic 12V Linear Actuator",
+        "description": "Generic 12V linear actuator with typical specifications",
+        "defaults": {
+            "maxExtension": 15000,
+            "maxRetraction": 15000,
+            "speedDefault": 50
+        },
+        "controlsSchema": {
+            "type": "bidirectional",
+            "feedback": false
+        },
+        "meta": {
+            "notes": "Generic linear actuator model. Adjust timing based on actual stroke length and speed.",
+            "voltage": "12V"
+        }
+    }
 ]
