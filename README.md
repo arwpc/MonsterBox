@@ -38,16 +38,43 @@ cd ~/MonsterBox && ./scripts/orlok-bringup-test.sh
   - `scripts/deploy-to-animatronic.sh`: Deploy to any animatronic
   - `scripts/orlok-bringup-test.sh`: Comprehensive on-device testing
   - `scripts/test-all-animatronics.sh`: Test all 4 animatronics at once
+  - `scripts/force-pull-all-animatronics.sh`: Force pull latest code to all animatronics
+  - `scripts/start-all-animatronics.sh`: Start MonsterBox on all animatronics
+  - `scripts/stop-all-animatronics.sh`: Stop MonsterBox on all animatronics
+
+### Force Pull & Deployment
+```bash
+# Force pull latest code to all animatronics (overwrites local changes)
+./scripts/force-pull-all-animatronics.sh
+
+# Start MonsterBox on all animatronics
+./scripts/start-all-animatronics.sh
+
+# Stop MonsterBox on all animatronics
+./scripts/stop-all-animatronics.sh
+
+# Check status of all animatronics
+./scripts/check-all-animatronics.sh
+```
+
+**Note**: Force pull will kill running MonsterBox instances, reset to latest Git commit, and verify npm dependencies. Use with caution as it overwrites any local changes on the animatronics.
 
 ### Character Network Map
 ```
 Character 1: PumpkinHead     → 192.168.8.150
-Character 2: Coffin Breaker  → 192.168.8.140
+Character 2: Coffin          → 192.168.8.140
 Character 3: Orlok           → 192.168.8.120 (Primary/Control Node)
 Character 4: Skulltalker     → 192.168.8.130
 Character 5: Groundbreaker   → 192.168.8.200
 Goblin 1:    Chestwound      → 192.168.8.160:3001 (Video Display)
 Goblin 2:    Goblin2         → 192.168.8.161:3001 (Video Display)
+```
+
+### SSH Credentials (All Animatronics)
+```
+Login:    remote
+Password: klrklr89!
+Sudo:     Available
 ```
 
 ### Goblin Video Displays
@@ -130,12 +157,14 @@ Notes
 - **Bootstrap 5 UI** with dark theme support
 
 ### 🔧 **Hardware Integration**
-- **11 Part types supported**: servo, motor, linear_actuator, light, LED, sensor, microphone, speaker, webcam, head_tracking
+- **11 Part types supported**: servo, motor, linear_actuator, light, LED, sensor, microphone, speaker, webcam, head_tracking, stepper
 - **Models System**: Hardware model definitions with defaults and calibration data
 - **CRUD Operations**: Full Create, Read, Update, Delete for all part types
 - **Inline Hardware Testing**: Test each part directly from the setup interface
 - **Safety Systems**: Calibration enforcement, angle clamping, timeout protection
 - **Real Hardware Control**: Direct integration with Orlok animatronic hardware
+- **Motor Driver Support**: MDD10A (Cytron) and BTS7960 control boards for motors and linear actuators
+- **Standard Parts Template**: All characters include baseline parts from Orlok for consistent starting configuration
 
 ### 🎯 **Motion Tracking & Computer Vision**
 - **OpenCV Integration**: Real-time motion detection and tracking using OpenCV 4.6+
@@ -348,31 +377,113 @@ The application will be available at:
 - **Live Mode**: http://127.0.0.1:3000/live
 - **Audio Library**: http://127.0.0.1:3000/audio-library  ← **✅ FULLY OPERATIONAL: Centralized audio management**
 
-## 🦴 **Linear Actuator Configuration**
+## 🦴 **Motor & Linear Actuator Configuration**
 
-Linear actuators require specific configuration for safe operation:
+Motors and linear actuators support two control board types: **MDD10A (Cytron)** and **BTS7960**.
 
-### **Required Pins:**
-- **Direction Pin** - Controls extend/retract direction (e.g., GPIO 18)
-- **PWM Pin** - Controls speed via PWM signal (e.g., GPIO 13)
+### **Control Board Types:**
+
+#### **MDD10A / Cytron (DIR + PWM)**
+- **Direction Pin** - Controls direction (e.g., GPIO 18, 23, 27)
+- **PWM Pin** - Controls speed via PWM signal (e.g., GPIO 12, 13, 22)
 - **Hardware PWM recommended** - GPIO 12, 13, 18, 19 for best performance
+- **Logic**: DIR=LOW forward, DIR=HIGH reverse
+- **Example**: Orlok's Right Arm (GPIO 23=DIR, 12=PWM)
+
+#### **BTS7960 (RPWM/LPWM + R_EN/L_EN)**
+- **RPWM Pin** - Right PWM for forward motion (e.g., GPIO 19)
+- **LPWM Pin** - Left PWM for reverse motion (e.g., GPIO 21)
+- **R_EN Pin** - Right Enable (e.g., GPIO 5)
+- **L_EN Pin** - Left Enable (e.g., GPIO 22)
+- **Logic**: Forward = R_EN=HIGH + RPWM=Speed%, Reverse = L_EN=HIGH + LPWM=Speed%
+- **Example**: Orlok's Bow At The Waist (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)
 
 ### **Safety Limits:**
 - **Max Extension** - Maximum extension time in milliseconds (prevents over-extension)
 - **Max Retraction** - Maximum retraction time in milliseconds (prevents over-retraction)
-- **Default values**: 10,000ms (10 seconds) for both directions
+- **Max Duration** - For motors: 10,000ms (10 seconds) safety limit
+- **Default values**: 15,000ms (15 seconds) for linear actuators
 
-### **Example Configuration:**
+### **Example Configurations:**
+
+**MDD10A Linear Actuator:**
 ```json
 {
-  "name": "Left Arm of Manipulation",
+  "name": "Left Arm",
   "type": "linear_actuator",
+  "controlBoard": "MDD10A",
   "directionPin": 18,
   "pwmPin": 13,
   "maxExtension": 15000,
-  "maxRetraction": 15000
+  "maxRetraction": 15000,
+  "modelId": "1759010196402"
 }
 ```
+
+**BTS7960 Linear Actuator:**
+```json
+{
+  "name": "Bow At The Waist",
+  "type": "linear_actuator",
+  "controlBoard": "BTS7960",
+  "rpwmPin": 19,
+  "lpwmPin": 21,
+  "renPin": 5,
+  "lenPin": 22,
+  "maxExtension": 15000,
+  "maxRetraction": 15000,
+  "modelId": "1759010288921"
+}
+```
+
+**MDD10A Motor (Wiper Motor):**
+```json
+{
+  "name": "Wiper Motor",
+  "type": "motor",
+  "controlBoard": "MDD10A",
+  "directionPin": 27,
+  "pwmPin": 22,
+  "maxDuration": 10000,
+  "modelId": "motor_jeep_wagoneer_wiper"
+}
+```
+
+## 🎯 **Standard Parts Configuration**
+
+All characters now include a **standard baseline parts template** copied from Orlok (Character 3) for consistent starting configuration:
+
+### **Standard Parts Included:**
+
+1. **Right Arm** - Linear actuator (MDD10A, GPIO 23=DIR, 12=PWM)
+2. **Left Arm** - Linear actuator (MDD10A, GPIO 18=DIR, 13=PWM)
+3. **Bow At The Waist** - Linear actuator (BTS7960, GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)
+4. **Forearm** - Servo (PCA9685, Channel 4, Miuzei 25kg)
+5. **Elbow** - Servo (PCA9685, Channel 5, Miuzei 25kg)
+6. **Speaker** - Default audio output device
+7. **Microphone** - Default audio input device
+
+### **Character-Specific Parts:**
+
+**Character 4 (Skulltalker)** - Additional parts:
+- Head on Swivel (continuous servo)
+- Jaw Servo (standard servo)
+- Webcam
+
+**Character 5 (Groundbreaker)** - Additional parts:
+- Wiper Motor (Jeep Wagoneer 12V DC motor, MDD10A)
+- Webcam
+- Speaker
+- Microphone
+
+### **Customization:**
+Each character can be customized by:
+1. Disabling unused standard parts
+2. Modifying GPIO pins for actual hardware
+3. Adding character-specific parts
+4. Adjusting calibration values
+
+All parts are accessible via **Setup → Calibration** for configuration and testing.
 
 ### **🎚️ Linear Actuator Calibration**
 
@@ -1102,11 +1213,29 @@ Endpoints:
 
 ## 📦 Global Models (Shared Across Characters) + Migration
 
-MonsterBox 4.0 now stores hardware Models globally under `data/models/` so you can build a reusable database of servos, actuators, sensors, audio devices, etc. Parts, calibration, poses, and AI config remain character‑isolated under `data/character-<id>/`.
+MonsterBox 5.2 now stores hardware Models globally under `data/models/` so you can build a reusable database of servos, actuators, sensors, audio devices, etc. Parts, calibration, poses, and AI config remain character‑isolated under `data/character-<id>/`.
 
-- Global location: `data/models/<type>_models.json` (e.g., `servo_models.json`)
-- Applies to: servo, linear_actuator, motor, led, light, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
+- Global location: `data/models/<type>_models.json` (e.g., `servo_models.json`, `motor_models.json`)
+- Applies to: servo, linear_actuator, motor, stepper, led, light, sensor, motion_sensor, microphone, speaker, webcam, head_tracking
 - Backward compatible: the app auto‑reads legacy files if present and seeds empty sets when needed
+
+### **Motor Models Available:**
+
+**Jeep Wagoneer Wiper Motor** (`motor_jeep_wagoneer_wiper`)
+- 12V DC motor with high torque for animatronic jaw/head movements
+- Supports MDD10A (DIR+PWM) and BTS7960 (RPWM/LPWM+R_EN/L_EN) control
+- Used in Groundbreaker character for jaw movement
+- Amazon ASIN: B00WSN98DC (for MDD10A driver)
+
+**STEPPERONLINE Nema 17 Stepper** (`motor_stepperonline_nema17_59ncm`)
+- NEMA 17 stepper motor, 59Ncm (84 oz-in) holding torque
+- 1.8° step angle, 200 steps/revolution
+- 2A/phase, 4-lead configuration
+- Requires stepper driver (A4988, DRV8825, TMC2208, TMC2209)
+
+### **Linear Actuator Models Available:**
+
+Multiple linear actuator models are available in `data/models/linear_actuator_models.json` with various stroke lengths, forces, and voltage ratings. All support both MDD10A and BTS7960 control boards.
 
 ### One‑time migration (non‑destructive)
 

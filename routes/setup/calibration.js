@@ -521,15 +521,28 @@ router.post('/api/linear_actuator/:id/jog', express.json(), async (req, res) => 
         }
 
         // Execute jog command
-        const result = await actuatorService.controlActuator({
-            directionPin: part.directionPin,
-            pwmPin: part.pwmPin,
+        const controlBoard = part.controlBoard || 'MDD10A';
+        const actuatorParams = {
+            controlBoard: controlBoard,
             direction: direction,
             speed: speed,
             duration: duration,
             maxExtension: part.maxExtension || 15000,
             maxRetraction: part.maxRetraction || 15000
-        });
+        };
+
+        // Add pins based on control board type
+        if (controlBoard === 'BTS7960') {
+            actuatorParams.rpwmPin = part.rpwmPin;
+            actuatorParams.lpwmPin = part.lpwmPin;
+            actuatorParams.renPin = part.renPin;
+            actuatorParams.lenPin = part.lenPin;
+        } else {
+            actuatorParams.directionPin = part.directionPin;
+            actuatorParams.pwmPin = part.pwmPin;
+        }
+
+        const result = await actuatorService.controlActuator(actuatorParams);
 
         res.json({
             success: true,
@@ -565,10 +578,23 @@ router.post('/api/linear_actuator/:id/stop', express.json(), async (req, res) =>
         }
 
         // Execute stop command
-        const result = await actuatorService.stopActuator({
-            directionPin: part.directionPin,
-            pwmPin: part.pwmPin
-        });
+        const controlBoard = part.controlBoard || 'MDD10A';
+        const stopParams = {
+            controlBoard: controlBoard
+        };
+
+        // Add pins based on control board type
+        if (controlBoard === 'BTS7960') {
+            stopParams.rpwmPin = part.rpwmPin;
+            stopParams.lpwmPin = part.lpwmPin;
+            stopParams.renPin = part.renPin;
+            stopParams.lenPin = part.lenPin;
+        } else {
+            stopParams.directionPin = part.directionPin;
+            stopParams.pwmPin = part.pwmPin;
+        }
+
+        const result = await actuatorService.stopActuator(stopParams);
 
         res.json({
             success: true,

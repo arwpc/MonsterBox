@@ -1821,9 +1821,9 @@
               html += '<div class="col-3">';
             }
 
-            html += `< button type = "button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
-            html += `onclick = "selectAddPCA9685Channel(${i})" id = "add-channel-${i}" > `;
-            html += `Ch ${i} `;
+            html += `<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
+            html += `onclick="selectAddPCA9685Channel(${i})" id="add-channel-${i}">`;
+            html += `Ch.${i}`;
             html += '</button>';
 
             if ((i + 1) % 4 === 0) {
@@ -1843,7 +1843,7 @@
           });
 
           // Select new channel
-          const channelBtn = document.getElementById(`add - channel - ${channel} `);
+          const channelBtn = document.getElementById(`add-channel-${channel}`);
           if (channelBtn) {
             channelBtn.classList.remove('btn-outline-secondary');
             channelBtn.classList.add('btn-primary');
@@ -2151,12 +2151,12 @@
             if (col === 0 && i > 0) html += '</div><div class="row g-2">';
 
             html += `
-          < div class="col-3" >
+          <div class="col-3">
             <button type="button" class="btn btn-outline-primary w-100 edit-channel-btn"
               data-channel="${i}" onclick="selectEditPCA9685Channel(${i})">
               Ch.${i}
             </button>
-              </div >
+          </div>
           `;
           }
           html += '</div>';
@@ -2171,7 +2171,7 @@
           });
 
           // Add active class to selected button
-          const selectedBtn = document.querySelector(`[data - channel="${channel}"]`);
+          const selectedBtn = document.querySelector(`[data-channel="${channel}"]`);
           if (selectedBtn) {
             selectedBtn.classList.remove('btn-outline-primary');
             selectedBtn.classList.add('btn-primary');
@@ -2422,37 +2422,44 @@
             if (pinEl && pinEl.value) pin = parseInt(pinEl.value);
           }
 
+          // Declare variables for BTS7960 pins
+          let rpwmPin = null;
+          let lpwmPin = null;
+          let renPin = null;
+          let lenPin = null;
+          let controlBoard = null;
+
           if (['motor', 'linear_actuator'].includes(type)) {
             // Control board and pins
             var cbEl = document.getElementById('editControlBoard');
-            var controlBoard = cbEl ? cbEl.value : null;
+            controlBoard = cbEl ? cbEl.value : null;
             if (controlBoard) {
               config.controlBoard = controlBoard; // also propagate into config for completeness
-              updateData.controlBoard = controlBoard; // persist at top-level as used by hardware service
             }
 
-            if (type === 'linear_actuator' && controlBoard === 'BTS7960') {
+            // Both motor and linear_actuator can use BTS7960
+            if (controlBoard === 'BTS7960') {
               var rp = document.getElementById('editRpwmPin');
               var lp = document.getElementById('editLpwmPin');
               var re = document.getElementById('editRenPin');
               var le = document.getElementById('editLenPin');
-              if (rp && rp.value) updateData.rpwmPin = parseInt(rp.value);
-              if (lp && lp.value) updateData.lpwmPin = parseInt(lp.value);
-              if (re && re.value) updateData.renPin = parseInt(re.value);
-              if (le && le.value) updateData.lenPin = parseInt(le.value);
+              if (rp && rp.value) rpwmPin = parseInt(rp.value);
+              if (lp && lp.value) lpwmPin = parseInt(lp.value);
+              if (re && re.value) renPin = parseInt(re.value);
+              if (le && le.value) lenPin = parseInt(le.value);
               // To avoid ambiguity, clear DIR/PWM if switching to BTS7960
-              updateData.directionPin = null;
-              updateData.pwmPin = null;
+              directionPin = null;
+              pwmPin = null;
             } else {
               const dirEl = document.getElementById('editDirectionPin');
               const pwmEl = document.getElementById('editPwmPin');
               if (dirEl && dirEl.value) directionPin = parseInt(dirEl.value);
               if (pwmEl && pwmEl.value) pwmPin = parseInt(pwmEl.value);
               // Clear BTS pins if using MDD10A
-              updateData.rpwmPin = null;
-              updateData.lpwmPin = null;
-              updateData.renPin = null;
-              updateData.lenPin = null;
+              rpwmPin = null;
+              lpwmPin = null;
+              renPin = null;
+              lenPin = null;
             }
           }
 
@@ -2495,6 +2502,13 @@
           if (stepPin !== null) updateData.stepPin = stepPin;
           if (dirPin !== null) updateData.dirPin = dirPin;
           if (enablePin !== null) updateData.enablePin = enablePin;
+
+          // Add control board and BTS7960 pins if they exist
+          if (controlBoard !== null) updateData.controlBoard = controlBoard;
+          if (rpwmPin !== null) updateData.rpwmPin = rpwmPin;
+          if (lpwmPin !== null) updateData.lpwmPin = lpwmPin;
+          if (renPin !== null) updateData.renPin = renPin;
+          if (lenPin !== null) updateData.lenPin = lenPin;
 
           console.log('Saving part changes for', selected.name, '(', selected.type, '):', updateData);
           console.log('Configuration extracted:', config);
@@ -2821,19 +2835,54 @@
           <div class="card mb-3">
             <div class="card-header"><i class="bi bi-lightning"></i> Motor Configuration</div>
             <div class="card-body">
-              <div class="row g-3">
+              <div class="row g-3 mb-2">
                 <div class="col-md-4">
-                  <label class="form-label">Direction Pin</label>
-                  <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
-                  <div class="form-text">GPIO pin for direction control</div>
+                  <label class="form-label">Control Board</label>
+                  <select class="form-select" id="editControlBoard" name="controlBoard">
+                    <option value="MDD10A">MDD10A / Cytron (DIR + PWM)</option>
+                    <option value="BTS7960">BTS7960 (RPWM/LPWM + R_EN/L_EN)</option>
+                  </select>
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label">PWM Pin</label>
-                  <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
-                  <div class="form-text">GPIO pin for speed control</div>
-                </div>
-                <div class="col-md-4">
+              </div>
 
+              <div id="editMddGroup">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Direction Pin</label>
+                    <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                    <div class="form-text">GPIO pin for direction control</div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">PWM Pin</label>
+                    <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                    <div class="form-text">GPIO pin for speed control</div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="editBtsGroup" style="display:none;">
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">RPWM Pin</label>
+                    <input type="number" class="form-control" id="editRpwmPin" min="1" max="40">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">LPWM Pin</label>
+                    <input type="number" class="form-control" id="editLpwmPin" min="1" max="40">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">R_EN Pin</label>
+                    <input type="number" class="form-control" id="editRenPin" min="1" max="40">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label">L_EN Pin</label>
+                    <input type="number" class="form-control" id="editLenPin" min="1" max="40">
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-4">
                   <label class="form-label">Max Duration (ms)</label>
                   <input type="number" class="form-control" id="editMaxDuration" min="100" max="10000" value="5000">
                   <div class="form-text">Safety timeout</div>
@@ -3174,18 +3223,43 @@
       } // End loadEditServoValues - Fixed: Removed extra blank line that caused syntax error on some browsers
 
       function loadEditMotorValues(part, config) {
+        // Decide control board
+        var controlBoard = part.controlBoard || config.controlBoard;
+        if (!controlBoard) {
+          controlBoard = (part.rpwmPin != null || part.lpwmPin != null) ? 'BTS7960' : 'MDD10A';
+        }
+        var cbEl = document.getElementById('editControlBoard');
+        if (cbEl) {
+          cbEl.value = controlBoard;
+          cbEl.addEventListener('change', function () {
+            var v = this.value;
+            document.getElementById('editMddGroup').style.display = (v === 'MDD10A') ? 'block' : 'none';
+            document.getElementById('editBtsGroup').style.display = (v === 'BTS7960') ? 'block' : 'none';
+          });
+        }
+        // Toggle groups initially
+        if (document.getElementById('editMddGroup') && document.getElementById('editBtsGroup')) {
+          document.getElementById('editMddGroup').style.display = (controlBoard === 'MDD10A') ? 'block' : 'none';
+          document.getElementById('editBtsGroup').style.display = (controlBoard === 'BTS7960') ? 'block' : 'none';
+        }
+
+        // Populate pins
         const directionPin = part.directionPin || config.directionPin;
         const pwmPin = part.pwmPin || config.pwmPin;
-        const maxDuration = config.maxDuration || 5000;
+        const rpwmPin = (part.rpwmPin != null ? part.rpwmPin : config.rpwmPin);
+        const lpwmPin = (part.lpwmPin != null ? part.lpwmPin : config.lpwmPin);
+        const renPin = (part.renPin != null ? part.renPin : config.renPin);
+        const lenPin = (part.lenPin != null ? part.lenPin : config.lenPin);
+        const maxDuration = config.maxDuration || part.maxDuration || 5000;
 
-        const dirEl = document.getElementById('editDirectionPin');
-        if (dirEl && directionPin != null) dirEl.value = directionPin;
+        var dirEl = document.getElementById('editDirectionPin'); if (dirEl && directionPin != null) dirEl.value = directionPin;
+        var pwmEl = document.getElementById('editPwmPin'); if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
+        var rpEl = document.getElementById('editRpwmPin'); if (rpEl && rpwmPin != null) rpEl.value = rpwmPin;
+        var lpEl = document.getElementById('editLpwmPin'); if (lpEl && lpwmPin != null) lpEl.value = lpwmPin;
+        var reEl = document.getElementById('editRenPin'); if (reEl && renPin != null) reEl.value = renPin;
+        var leEl = document.getElementById('editLenPin'); if (leEl && lenPin != null) leEl.value = lenPin;
 
-        const pwmEl = document.getElementById('editPwmPin');
-        if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
-
-        const maxDurEl = document.getElementById('editMaxDuration');
-        if (maxDurEl) maxDurEl.value = maxDuration;
+        var maxDurEl = document.getElementById('editMaxDuration'); if (maxDurEl) maxDurEl.value = maxDuration;
       }
 
       function loadEditStepperValues(part, config) {

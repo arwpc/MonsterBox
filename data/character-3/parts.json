@@ -46,13 +46,9 @@
     "pin": null,
     "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)",
     "config": {
-      "controlBoard": "BTS7960",
-      "controlLogic": {
-        "forward": "R_EN=HIGH, RPWM=Speed%, L_EN=LOW, LPWM=0%",
-        "reverse": "L_EN=HIGH, LPWM=Speed%, R_EN=LOW, RPWM=0%",
-        "stop": "Both EN=LOW or both PWM=0%"
-      },
-      "notes": "BTS7960 dual PWM control - NOT MDD10A. See docs/hardware/ORLOK_BTS7960_WIRING.md"
+      "maxExtension": 15000,
+      "maxRetraction": 15000,
+      "controlBoard": "BTS7960"
     },
     "created": "2025-10-05T18:11:24.393Z",
     "enabled": true,
@@ -63,8 +59,8 @@
     "lenPin": 22,
     "maxExtension": 15000,
     "maxRetraction": 15000,
-    "modelId": "1759010288921",
-    "updated": "2025-10-05T18:12:58.843Z"
+    "modelId": "1759010196402",
+    "updated": "2025-10-05T22:48:50.944Z"
   },
   {
     "id": "4",
