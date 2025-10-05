@@ -4,8 +4,11 @@
     "name": "Right Arm of Orlok",
     "type": "linear_actuator",
     "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
+    "description": "MDD10A Control Board - Right arm linear actuator (GPIO 23=DIR, 12=PWM)",
+    "config": {
+      "controlBoard": "MDD10A",
+      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse"
+    },
     "created": "2025-10-05T18:10:45.178Z",
     "enabled": true,
     "controlBoard": "MDD10A",
@@ -21,8 +24,11 @@
     "name": "Left Arm of Manipulation",
     "type": "linear_actuator",
     "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
+    "description": "MDD10A Control Board - Left arm linear actuator (GPIO 18=DIR, 13=PWM)",
+    "config": {
+      "controlBoard": "MDD10A",
+      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse"
+    },
     "created": "2025-10-05T18:11:05.207Z",
     "enabled": true,
     "controlBoard": "MDD10A",
@@ -38,8 +44,16 @@
     "name": "Bow At The Waist",
     "type": "linear_actuator",
     "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
+    "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)",
+    "config": {
+      "controlBoard": "BTS7960",
+      "controlLogic": {
+        "forward": "R_EN=HIGH, RPWM=Speed%, L_EN=LOW, LPWM=0%",
+        "reverse": "L_EN=HIGH, LPWM=Speed%, R_EN=LOW, RPWM=0%",
+        "stop": "Both EN=LOW or both PWM=0%"
+      },
+      "notes": "BTS7960 dual PWM control - NOT MDD10A. See docs/hardware/ORLOK_BTS7960_WIRING.md"
+    },
     "created": "2025-10-05T18:11:24.393Z",
     "enabled": true,
     "controlBoard": "BTS7960",
