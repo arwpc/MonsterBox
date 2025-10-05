@@ -1,5 +1,70 @@
 [
   {
+    "id": "motor_jeep_wagoneer_wiper",
+    "name": "Jeep Wagoneer Wiper Motor",
+    "manufacturer": "OEM",
+    "description": "12V DC wiper motor from Jeep Wagoneer, high torque for animatronic jaw/head movement",
+    "defaults": {
+      "motorType": "dc",
+      "voltage": 12,
+      "maxDutyPct": 100,
+      "recommendedDriver": [
+        "MDD10A",
+        "BTS7960",
+        "L298N"
+      ]
+    },
+    "controlsSchema": {
+      "requiresDriver": true,
+      "controlType": [
+        "DIR_PWM",
+        "DUAL_PWM"
+      ],
+      "inputs": [
+        {
+          "name": "directionPin",
+          "type": "number",
+          "description": "GPIO pin for direction control (MDD10A)"
+        },
+        {
+          "name": "pwmPin",
+          "type": "number",
+          "description": "GPIO pin for PWM speed control (MDD10A)"
+        },
+        {
+          "name": "rpwmPin",
+          "type": "number",
+          "optional": true,
+          "description": "Right PWM pin (BTS7960)"
+        },
+        {
+          "name": "lpwmPin",
+          "type": "number",
+          "optional": true,
+          "description": "Left PWM pin (BTS7960)"
+        },
+        {
+          "name": "renPin",
+          "type": "number",
+          "optional": true,
+          "description": "Right Enable pin (BTS7960)"
+        },
+        {
+          "name": "lenPin",
+          "type": "number",
+          "optional": true,
+          "description": "Left Enable pin (BTS7960)"
+        }
+      ]
+    },
+    "meta": {
+      "voltage": "12V DC",
+      "source": "Jeep Wagoneer wiper motor",
+      "notes": "High torque DC motor suitable for animatronic jaw and head movements. Can be driven by MDD10A (Cytron) or BTS7960 motor drivers.",
+      "amazonASIN": "B00WSN98DC (for MDD10A driver)"
+    }
+  },
+  {
     "id": "motor_stepperonline_nema17_59ncm",
     "name": "STEPPERONLINE Nema 17 Stepper (59Ncm, 2A, 48mm, 4-lead)",
     "manufacturer": "STEPPERONLINE",

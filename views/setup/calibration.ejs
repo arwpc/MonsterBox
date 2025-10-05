@@ -1627,8 +1627,8 @@
         function generateMotorConfig(type) {
           const isActuator = type === 'linear_actuator';
           // Support both MDD10A (DIR/PWM) and BTS7960 (Full Control: RPWM/LPWM and R_EN/L_EN)
+          // Both motors and linear actuators can use either board type
           return `
-            ${isActuator ? `
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
@@ -1643,9 +1643,9 @@
                   </select>
                 </div>
               </div>
-            </div>` : ''}
+            </div>
 
-            <div id="addMddGroup" style="${isActuator ? '' : ''}">
+            <div id="addMddGroup" style="">
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
@@ -1664,7 +1664,6 @@
               </div>
             </div>
 
-            ${isActuator ? `
             <div id="addBtsGroup" style="display:none;">
               <div class="row">
                 <div class="col-md-3">
@@ -1697,6 +1696,7 @@
                 </div>
               </div>
             </div>
+            ${isActuator ? `
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
@@ -1719,7 +1719,7 @@
 
         function generateWebcamConfig() {
           return `
-            <div class="row">
+          < div class="row" >
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addWebcamDevice" class="form-label">Webcam Device</label>
@@ -1732,13 +1732,13 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()">Scan Devices</button>
               </div>
-            </div>
+            </div >
           `;
         }
 
         function generateMicrophoneConfig() {
           return `
-            <div class="row">
+          < div class="row" >
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioInput" class="form-label">Audio Input</label>
@@ -1751,13 +1751,13 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()">Scan Inputs</button>
               </div>
-            </div>
+            </div >
           `;
         }
 
         function generateSpeakerConfig() {
           return `
-            <div class="row">
+          < div class="row" >
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioOutput" class="form-label">Audio Output</label>
@@ -1770,28 +1770,28 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()">Scan Outputs</button>
               </div>
-            </div>
-            <div class="row">
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
-                  <input type="number" class="form-control" id="addSpeakerVolume" min="0" max="100" value="50">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
-                  <input type="number" class="form-control" id="addSpeakerBass" min="-10" max="10" value="0">
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
-                  <input type="number" class="form-control" id="addSpeakerTreble" min="-10" max="10" value="0">
-                </div>
+            </div >
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
+                <input type="number" class="form-control" id="addSpeakerVolume" min="0" max="100" value="50">
               </div>
             </div>
-          `;
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
+                <input type="number" class="form-control" id="addSpeakerBass" min="-10" max="10" value="0">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
+                <input type="number" class="form-control" id="addSpeakerTreble" min="-10" max="10" value="0">
+              </div>
+            </div>
+          </div>
+        `;
         }
 
         // PCA9685 controller type change handler
@@ -1821,9 +1821,9 @@
               html += '<div class="col-3">';
             }
 
-            html += `<button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
-            html += `onclick="selectAddPCA9685Channel(${i})" id="add-channel-${i}">`;
-            html += `Ch ${i}`;
+            html += `< button type = "button" class="btn btn-outline-secondary btn-sm w-100 mb-1 add-pca9685-channel" `;
+            html += `onclick = "selectAddPCA9685Channel(${i})" id = "add-channel-${i}" > `;
+            html += `Ch ${i} `;
             html += '</button>';
 
             if ((i + 1) % 4 === 0) {
@@ -1843,7 +1843,7 @@
           });
 
           // Select new channel
-          const channelBtn = document.getElementById(`add-channel-${channel}`);
+          const channelBtn = document.getElementById(`add - channel - ${channel} `);
           if (channelBtn) {
             channelBtn.classList.remove('btn-outline-secondary');
             channelBtn.classList.add('btn-primary');
@@ -1852,7 +1852,7 @@
 
           function generateStepperConfig() {
             return `
-            <div class="card mb-3">
+          < div class="card mb-3" >
               <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
               <div class="card-body">
                 <div class="row g-3">
@@ -1886,7 +1886,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div >
           `;
           }
 
@@ -1910,7 +1910,7 @@
               devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.path || '';
-                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''} `;
                 select.appendChild(option);
               });
             })
@@ -2015,14 +2015,14 @@
 
             case 'motor':
             case 'linear_actuator':
-              // Control board detection for linear_actuator
+              // Control board detection for both motor and linear_actuator
               var controlBoardEl = document.getElementById('addControlBoard');
               var controlBoard = controlBoardEl ? controlBoardEl.value : null;
-              if (type === 'linear_actuator' && controlBoard) {
+              if (controlBoard) {
                 payload.controlBoard = controlBoard;
               }
 
-              if (type === 'linear_actuator' && controlBoard === 'BTS7960') {
+              if (controlBoard === 'BTS7960') {
                 var rpwmPin = formData.get('rpwmPin');
                 var lpwmPin = formData.get('lpwmPin');
                 var renPin = formData.get('renPin');
@@ -2115,9 +2115,9 @@
                 loadParts();
 
                 // Show success message
-                alert(`${data.message || 'Part created successfully'}`);
+                alert(`${data.message || 'Part created successfully'} `);
               } else {
-                alert(`Failed to create part: ${data.error || 'Unknown error'}`);
+                alert(`Failed to create part: ${data.error || 'Unknown error'} `);
               }
             })
             .catch(error => {
@@ -2151,13 +2151,13 @@
             if (col === 0 && i > 0) html += '</div><div class="row g-2">';
 
             html += `
-              <div class="col-3">
-                <button type="button" class="btn btn-outline-primary w-100 edit-channel-btn"
-                        data-channel="${i}" onclick="selectEditPCA9685Channel(${i})">
-                  Ch.${i}
-                </button>
-              </div>
-            `;
+          < div class="col-3" >
+            <button type="button" class="btn btn-outline-primary w-100 edit-channel-btn"
+              data-channel="${i}" onclick="selectEditPCA9685Channel(${i})">
+              Ch.${i}
+            </button>
+              </div >
+          `;
           }
           html += '</div>';
           channelsContainer.innerHTML = html;
@@ -2171,7 +2171,7 @@
           });
 
           // Add active class to selected button
-          const selectedBtn = document.querySelector(`[data-channel="${channel}"]`);
+          const selectedBtn = document.querySelector(`[data - channel="${channel}"]`);
           if (selectedBtn) {
             selectedBtn.classList.remove('btn-outline-primary');
             selectedBtn.classList.add('btn-primary');
@@ -2210,7 +2210,7 @@
               devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.path || '';
-                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''}`;
+                option.textContent = `${device.name || device.path || ''} ${device.info ? '- ' + device.info : ''} `;
                 if (option.value === currentValue) option.selected = true;
                 select.appendChild(option);
               });
@@ -2275,11 +2275,11 @@
             return;
           }
 
-          if (!confirm(`Are you sure you want to delete "${selected.name}"? This action cannot be undone.`)) {
+          if (!confirm(`Are you sure you want to delete "${selected.name}" ? This action cannot be undone.`)) {
             return;
           }
 
-          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+          fetch(`/ setup / calibration / api / parts / ${encodeURIComponent(selected.id)} `, {
             method: 'DELETE'
           })
             .then(r => r.json())
@@ -2298,7 +2298,7 @@
                 const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
                 if (ctrlTabBtn) ctrlTabBtn.click();
               } else {
-                alert(`Failed to delete part: ${data.error || 'Unknown error'}`);
+                alert(`Failed to delete part: ${data.error || 'Unknown error'} `);
               }
             })
             .catch(error => {
@@ -2325,7 +2325,7 @@
             return;
           }
 
-          fetch(`/setup/webcam/api/parts/${encodeURIComponent(selected.id)}/apply-device`, {
+          fetch(`/ setup / webcam / api / parts / ${encodeURIComponent(selected.id)}/apply-device`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
