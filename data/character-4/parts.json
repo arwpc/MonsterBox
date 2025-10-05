@@ -83,5 +83,133 @@
     "enabled": true,
     "updated": "2025-09-28T01:42:56.890Z",
     "modelId": "default-uvc-1"
+  },
+  {
+    "id": "10",
+    "name": "Right Arm",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "MDD10A Control Board - Right arm linear actuator (GPIO 23=DIR, 12=PWM)",
+    "config": {
+      "controlBoard": "MDD10A",
+      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse"
+    },
+    "created": "2025-10-05T18:10:45.178Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010288921"
+  },
+  {
+    "id": "11",
+    "name": "Left Arm",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "MDD10A Control Board - Left arm linear actuator (GPIO 18=DIR, 13=PWM)",
+    "config": {
+      "controlBoard": "MDD10A",
+      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse"
+    },
+    "created": "2025-10-05T18:11:05.207Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010196402"
+  },
+  {
+    "id": "12",
+    "name": "Bow At The Waist",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)",
+    "config": {
+      "controlBoard": "BTS7960",
+      "controlLogic": {
+        "forward": "R_EN=HIGH, RPWM=Speed%, L_EN=LOW, LPWM=0%",
+        "reverse": "L_EN=HIGH, LPWM=Speed%, R_EN=LOW, RPWM=0%",
+        "stop": "Both EN=LOW or both PWM=0%"
+      },
+      "notes": "BTS7960 dual PWM control - NOT MDD10A."
+    },
+    "created": "2025-10-05T18:11:24.393Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010288921"
+  },
+  {
+    "id": "13",
+    "name": "Forearm",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "servo_miuzei_25kg",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-05T18:12:14.762Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_25kg"
+  },
+  {
+    "id": "14",
+    "name": "Elbow",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "servo_miuzei_25kg",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 5,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-05T18:12:32.839Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_25kg"
+  },
+  {
+    "id": "15",
+    "name": "Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 75,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-10-05T18:13:31.695Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "16",
+    "name": "Microphone",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-05T18:13:53.101Z",
+    "enabled": true
   }
 ]
