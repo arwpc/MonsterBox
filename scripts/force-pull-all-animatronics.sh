@@ -39,12 +39,13 @@ print_header() {
 SSH_USER="remote"
 SSH_PASS="klrklr89!"
 
-# Animatronic hosts
+# Animatronic hosts (from documentation)
 declare -A ANIMATRONICS=(
     ["Orlok"]="192.168.8.120"
-    ["PumpkinHead"]="192.168.8.121"
-    ["CoffinBreaker"]="192.168.8.122"
-    ["Groundbreaker"]="192.168.8.123"
+    ["PumpkinHead"]="192.168.8.150"
+    ["Coffin"]="192.168.8.140"
+    ["Skulltalker"]="192.168.8.130"
+    ["Groundbreaker"]="192.168.8.200"
 )
 
 # MonsterBox directory
