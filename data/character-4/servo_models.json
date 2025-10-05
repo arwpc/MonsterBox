@@ -117,6 +117,37 @@
         }
     },
     {
+        "id": "servo_gobilda_stingray2",
+        "name": "goBILDA Stingray-2 Servo Gearbox",
+        "description": "goBILDA Stingray-2 with 5-Turn Torque Servo, 900° rotation, 700 oz-in torque",
+        "defaults": {
+            "pwmFrequency": 50,
+            "minPulseWidth": 500,
+            "maxPulseWidth": 2500,
+            "centerPulseWidth": 1500,
+            "minAngle": 0,
+            "maxAngle": 900,
+            "centerAngle": 450
+        },
+        "controlsSchema": {
+            "type": "multi-turn",
+            "feedback": false,
+            "continuous": false
+        },
+        "meta": {
+            "notes": "goBILDA Stingray-2 Servo Gearbox with 2:1 gear ratio. 900° rotation (2.5 turns). Used for 'Head on a Swivel' and similar applications.",
+            "manufacturer": "goBILDA",
+            "controlType": [
+                "PWM"
+            ],
+            "torque": "700 oz-in (49 kg·cm)",
+            "speed": "0.33s/60° @ 6V (30 RPM)",
+            "voltage": "4.8-6V",
+            "rotation": "900°",
+            "gearRatio": "2:1"
+        }
+    },
+    {
         "id": "servo_generic_standard",
         "name": "Generic Standard Servo",
         "description": "Generic 180° standard servo with typical specifications",
