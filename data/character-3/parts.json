@@ -127,5 +127,15 @@
     },
     "created": "2025-10-05T18:13:53.101Z",
     "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "Hand of Azura",
+    "type": "light",
+    "pin": 26,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-10-05T22:59:52.554Z",
+    "enabled": true
   }
 ]

@@ -47,7 +47,7 @@ export async function controlActuator({
 
         // Build JSON config for linear_actuator_control_v2.py
         const config = {
-            boardType: 'BTS7960',
+            controlBoard: 'BTS7960',
             rpwmPin: Number(rpwmPin),
             lpwmPin: Number(lpwmPin),
             direction: direction,
@@ -106,7 +106,7 @@ export async function stopActuator({
 
         // Build JSON config for linear_actuator_control_v2.py with 0 duration to stop
         const config = {
-            boardType: 'BTS7960',
+            controlBoard: 'BTS7960',
             rpwmPin: Number(rpwmPin),
             lpwmPin: Number(lpwmPin),
             direction: 'forward',
