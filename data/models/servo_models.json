@@ -365,5 +365,57 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1759612906344",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759612932985",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759613990473",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1759622004271",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

@@ -42,7 +42,7 @@ async function ensureDefaultSpeakerModelExists() {
         const modelsFile = path.resolve(appRoot, 'data', 'models', 'speaker_models.json');
         await fs.mkdir(path.dirname(modelsFile), { recursive: true });
         let raw = '[]';
-        try { raw = await fs.readFile(modelsFile, 'utf8'); } catch (_) {}
+        try { raw = await fs.readFile(modelsFile, 'utf8'); } catch (_) { }
         let arr = [];
         try { arr = JSON.parse(raw) || []; } catch (_) { arr = []; }
         const defaultId = 'default_speaker';
@@ -203,17 +203,31 @@ export const createPart = async (req, res) => {
 
         // Validate pin requirements (be permissive to match tests)
         if (type === 'linear_actuator') {
-            // Accept either explicit direction/pwm pins OR a single base pin (dir=pin, pwm=pin+1)
-            if ((!directionPin || !pwmPin)) {
-                if (typeof pin === 'number' || (typeof pin === 'string' && pin !== '')) {
-                    // Derive pins from base pin
-                    req.body.directionPin = typeof pin === 'number' ? pin : parseInt(pin, 10);
-                    req.body.pwmPin = (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
-                } else {
+            const controlBoard = (req.body && req.body.controlBoard) || null;
+            const rpwmPin = req.body && req.body.rpwmPin;
+            const lpwmPin = req.body && req.body.lpwmPin;
+
+            if (controlBoard === 'BTS7960' || (rpwmPin != null && lpwmPin != null)) {
+                // BTS7960 path: require RPWM/LPWM; R_EN/L_EN optional
+                if (!(rpwmPin != null && lpwmPin != null)) {
                     return res.status(400).json({
                         success: false,
-                        error: 'Provide either (directionPin and pwmPin) or a base pin for linear actuator parts'
+                        error: 'For BTS7960 actuators, provide rpwmPin and lpwmPin (renPin/lenPin optional)'
                     });
+                }
+            } else {
+                // MDD10A path: accept either explicit direction/pwm or a base pin
+                if ((!directionPin || !pwmPin)) {
+                    if (typeof pin === 'number' || (typeof pin === 'string' && pin !== '')) {
+                        // Derive pins from base pin
+                        req.body.directionPin = typeof pin === 'number' ? pin : parseInt(pin, 10);
+                        req.body.pwmPin = (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+                    } else {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Provide either (directionPin and pwmPin) or a base pin for linear actuator parts'
+                        });
+                    }
                 }
             }
         } else if (type === 'motor') {
@@ -269,10 +283,25 @@ export const createPart = async (req, res) => {
 
         // Add linear actuator specific fields
         if (type === 'linear_actuator') {
-            const dirPin = (req.body && req.body.directionPin != null) ? req.body.directionPin : directionPin;
-            const pwmP = (req.body && req.body.pwmPin != null) ? req.body.pwmPin : pwmPin;
-            newPart.directionPin = parseInt(dirPin, 10);
-            newPart.pwmPin = parseInt(pwmP, 10);
+            const controlBoard = (req.body && req.body.controlBoard) || null;
+            const rpwm = req.body && req.body.rpwmPin;
+            const lpwm = req.body && req.body.lpwmPin;
+            const ren = req.body && req.body.renPin;
+            const len = req.body && req.body.lenPin;
+
+            if (controlBoard === 'BTS7960' || (rpwm != null && lpwm != null)) {
+                newPart.controlBoard = 'BTS7960';
+                newPart.rpwmPin = parseInt(rpwm, 10);
+                newPart.lpwmPin = parseInt(lpwm, 10);
+                if (ren != null) newPart.renPin = parseInt(ren, 10);
+                if (len != null) newPart.lenPin = parseInt(len, 10);
+            } else {
+                const dirPin = (req.body && req.body.directionPin != null) ? req.body.directionPin : directionPin;
+                const pwmP = (req.body && req.body.pwmPin != null) ? req.body.pwmPin : pwmPin;
+                newPart.controlBoard = 'MDD10A';
+                newPart.directionPin = parseInt(dirPin, 10);
+                newPart.pwmPin = parseInt(pwmP, 10);
+            }
             newPart.maxExtension = parseInt(maxExtension, 10) || 15000;
             newPart.maxRetraction = parseInt(maxRetraction, 10) || 15000;
         }

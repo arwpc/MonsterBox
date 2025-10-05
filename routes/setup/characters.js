@@ -38,5 +38,18 @@ router.post('/api/select', charactersController.setSelected);
 router.get('/api/character-assignments', charactersController.getAssignments);
 router.post('/api/character-assignments', charactersController.updateAssignment);
 
+// Lightweight image manager page
+router.get('/images', async function (req, res) {
+  try {
+    res.render('setup/character-images', {
+      title: 'Character Images - MonsterBox 5.2',
+      page: 'setup-characters',
+      config: { theme: 'dark' }
+    });
+  } catch (err) {
+    res.status(500).render('error', { title: 'Error', error: 'Failed to load images page', message: err.message });
+  }
+});
+
 export default router;
 

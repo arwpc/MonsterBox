@@ -33,11 +33,12 @@ describe('Server boot', function () {
   });
 
   after(async () => {
-    // By default, keep the server running for the remainder of the test process
-    // Only kill it if explicitly requested via env (useful for local runs)
+    // Defer server shutdown to the very end of the entire test process to avoid
+    // breaking other test files that rely on the running server.
     if (process.env.KILL_SERVER_AFTER_TESTS === '1' && child) {
-      try { child.kill('SIGTERM'); } catch (_) { /* ignore */ }
-      child = null;
+      process.once('exit', () => {
+        try { child.kill('SIGTERM'); } catch (_) { /* ignore */ }
+      });
     }
   });
 

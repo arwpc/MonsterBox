@@ -9,16 +9,32 @@ const { spawn } = require('child_process');
 
 class RemoteConnectivityDiagnostic {
     constructor() {
-        this.animatronics = {
-            'Orlok': '192.168.8.120',
-            'CoffinBreaker': '192.168.8.140',
-            'PumpkinHead': '192.168.8.150'
-        };
+        // Load animatronic addresses from config/animatronics.json (no hardcoded IPs)
+        try {
+            const cfg = require('../config/animatronics.json');
+            // Map pretty names to IPs (fallback to hostnames if ip missing)
+            this.animatronics = {
+                'Orlok': (cfg.orlok && (cfg.orlok.ip || cfg.orlok.host)) || 'orlok',
+                'CoffinBreaker': (cfg.coffin && (cfg.coffin.ip || cfg.coffin.host)) || 'coffin',
+                'PumpkinHead': (cfg.pumpkinhead && (cfg.pumpkinhead.ip || cfg.pumpkinhead.host)) || 'pumpkinhead',
+                'Skulltalker': (cfg.skulltalker && (cfg.skulltalker.ip || cfg.skulltalker.host)) || 'skulltalker',
+                'Groundbreaker': (cfg.groundbreaker && (cfg.groundbreaker.ip || cfg.groundbreaker.host)) || 'groundbreaker'
+            };
+        } catch (e) {
+            // Safe fallback to hostnames if config not present
+            this.animatronics = {
+                'Orlok': 'orlok',
+                'CoffinBreaker': 'coffin',
+                'PumpkinHead': 'pumpkinhead',
+                'Skulltalker': 'skulltalker',
+                'Groundbreaker': 'groundbreaker'
+            };
+        }
     }
 
     async runDiagnostics() {
         console.log('🔍 Remote Animatronic Connectivity Diagnostics');
-        console.log('=' .repeat(60));
+        console.log('='.repeat(60));
         console.log('Checking network connectivity and service availability...\n');
 
         for (const [name, ip] of Object.entries(this.animatronics)) {
@@ -26,7 +42,7 @@ class RemoteConnectivityDiagnostic {
         }
 
         console.log('\n📋 Diagnostic Summary and Recommendations');
-        console.log('=' .repeat(50));
+        console.log('='.repeat(50));
         this.printRecommendations();
     }
 
@@ -73,7 +89,7 @@ class RemoteConnectivityDiagnostic {
     async testPing(ip) {
         return new Promise((resolve) => {
             const ping = spawn('ping', ['-c', '1', '-W', '3', ip]);
-            
+
             ping.on('close', (code) => {
                 resolve(code === 0);
             });
@@ -94,7 +110,7 @@ class RemoteConnectivityDiagnostic {
         return new Promise((resolve) => {
             const client = protocol === 'https' ? https : http;
             const url = `${protocol}://${ip}:${port}/`;
-            
+
             const options = {
                 timeout: 5000,
                 rejectUnauthorized: false
@@ -143,9 +159,9 @@ class RemoteConnectivityDiagnostic {
 
     async testHubEndpoints(name, baseUrl) {
         console.log(`   🎯 Hub Endpoints:`);
-        
+
         const endpoints = ['/api/hub/status', '/api/hub/health', '/api/hub/info'];
-        
+
         for (const endpoint of endpoints) {
             try {
                 const result = await this.makeRequest(baseUrl + endpoint);
@@ -162,7 +178,7 @@ class RemoteConnectivityDiagnostic {
 
     async checkLegacyPorts(name, ip) {
         console.log(`   🔍 Legacy Service Ports:`);
-        
+
         const legacyPorts = [
             { port: 8771, name: 'ElevenLabs AI' },
             { port: 8778, name: 'ElevenLabs STT' },
@@ -172,7 +188,7 @@ class RemoteConnectivityDiagnostic {
         ];
 
         let onlinePorts = 0;
-        
+
         for (const { port, name: serviceName } of legacyPorts) {
             const result = await this.testPort(ip, port, 'http');
             if (result.success) {
@@ -192,7 +208,7 @@ class RemoteConnectivityDiagnostic {
         return new Promise((resolve, reject) => {
             const isHttps = url.startsWith('https');
             const client = isHttps ? https : http;
-            
+
             const options = {
                 timeout: 5000,
                 rejectUnauthorized: false
@@ -200,11 +216,11 @@ class RemoteConnectivityDiagnostic {
 
             const req = client.get(url, options, (res) => {
                 let body = '';
-                
+
                 res.on('data', (chunk) => {
                     body += chunk;
                 });
-                
+
                 res.on('end', () => {
                     resolve({
                         success: res.statusCode >= 200 && res.statusCode < 300,
@@ -264,7 +280,7 @@ class RemoteConnectivityDiagnostic {
 // Run diagnostics if this file is executed directly
 if (require.main === module) {
     const diagnostic = new RemoteConnectivityDiagnostic();
-    
+
     diagnostic.runDiagnostics()
         .then(() => {
             console.log('\n✅ Diagnostic completed');

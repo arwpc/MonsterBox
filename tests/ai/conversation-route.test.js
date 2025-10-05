@@ -33,8 +33,10 @@ describe('Conversation API (integration-lite)', function () {
 
   after(async () => {
     if (process.env.KILL_SERVER_AFTER_TESTS === '1' && child) {
-      try { child.kill('SIGTERM'); } catch (_) {}
-      child = null;
+      // Defer termination until the entire test process exits
+      process.once('exit', () => {
+        try { child.kill('SIGTERM'); } catch (_) { }
+      });
     }
   });
 

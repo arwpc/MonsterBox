@@ -56,8 +56,8 @@ describe('JavaScript Syntax Validation', function () {
       const filePath = path.join(__dirname, '../views/setup/calibration.ejs');
       const content = fs.readFileSync(filePath, 'utf8');
 
-      // Find all IIFE patterns: (function () {
-      const iifeStarts = content.match(/\(function\s*\(\s*\)\s*\{/g) || [];
+      // Find top-level IIFEs that start at the beginning of a line: (function () {
+      const iifeStarts = content.match(/^\s*\(function\s*\(\s*\)\s*\{/gm) || [];
 
       // Find all IIFE closures: })(); or }) ();
       const iifeEnds = content.match(/\}\s*\)\s*\(\s*\)\s*;/g) || [];
@@ -122,67 +122,64 @@ describe('JavaScript Syntax Validation', function () {
         }
       });
 
-      expect(unbalanced).to.be.empty,
-        `Unbalanced braces in files:\n${unbalanced.map(u =>
-          `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`);
-  });
-
-  it('should have all script tags properly closed in all EJS files', function () {
-    const viewsDir = path.join(__dirname, '../views');
-    const ejsFiles = getAllEjsFiles(viewsDir);
-
-    const unclosed = [];
-
-    ejsFiles.forEach(file => {
-      const content = fs.readFileSync(file, 'utf8');
-      const openScriptTags = (content.match(/<script(?:\s|>)/g) || []).length;
-      const closeScriptTags = (content.match(/<\/script>/g) || []).length;
-
-      if (openScriptTags !== closeScriptTags) {
-        unclosed.push({
-          file: path.relative(viewsDir, file),
-          open: openScriptTags,
-          close: closeScriptTags
-        });
-      }
+      expect(unbalanced, `Unbalanced braces in files:\n${unbalanced.map(u =>
+        `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`).to.be.empty;
     });
 
-    expect(unclosed).to.be.empty,
-      `Unclosed script tags in files:\n${unclosed.map(u =>
-        `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`);
-});
+    it('should have all script tags properly closed in all EJS files', function () {
+      const viewsDir = path.join(__dirname, '../views');
+      const ejsFiles = getAllEjsFiles(viewsDir);
+
+      const unclosed = [];
+
+      ejsFiles.forEach(file => {
+        const content = fs.readFileSync(file, 'utf8');
+        const openScriptTags = (content.match(/<script(?:\s|>)/g) || []).length;
+        const closeScriptTags = (content.match(/<\/script>/g) || []).length;
+
+        if (openScriptTags !== closeScriptTags) {
+          unclosed.push({
+            file: path.relative(viewsDir, file),
+            open: openScriptTags,
+            close: closeScriptTags
+          });
+        }
+      });
+
+      expect(unclosed, `Unclosed script tags in files:\n${unclosed.map(u =>
+        `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`).to.be.empty;
+    });
   });
 
-describe('Public JavaScript Files', function () {
+  describe('Public JavaScript Files', function () {
 
-  it('should have balanced braces in all JS files', function () {
-    const publicDir = path.join(__dirname, '../public/js');
-    if (!fs.existsSync(publicDir)) {
-      this.skip();
-      return;
-    }
-
-    const jsFiles = getAllJsFiles(publicDir);
-    const unbalanced = [];
-
-    jsFiles.forEach(file => {
-      const content = fs.readFileSync(file, 'utf8');
-      const openBraces = (content.match(/{/g) || []).length;
-      const closeBraces = (content.match(/}/g) || []).length;
-
-      if (openBraces !== closeBraces) {
-        unbalanced.push({
-          file: path.relative(publicDir, file),
-          open: openBraces,
-          close: closeBraces
-        });
+    it('should have balanced braces in all JS files', function () {
+      const publicDir = path.join(__dirname, '../public/js');
+      if (!fs.existsSync(publicDir)) {
+        this.skip();
+        return;
       }
-    });
 
-    expect(unbalanced).to.be.empty,
-      `Unbalanced braces in files:\n${unbalanced.map(u =>
-        `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`);
-});
+      const jsFiles = getAllJsFiles(publicDir);
+      const unbalanced = [];
+
+      jsFiles.forEach(file => {
+        const content = fs.readFileSync(file, 'utf8');
+        const openBraces = (content.match(/{/g) || []).length;
+        const closeBraces = (content.match(/}/g) || []).length;
+
+        if (openBraces !== closeBraces) {
+          unbalanced.push({
+            file: path.relative(publicDir, file),
+            open: openBraces,
+            close: closeBraces
+          });
+        }
+      });
+
+      expect(unbalanced, `Unbalanced braces in files:\n${unbalanced.map(u =>
+        `  ${u.file}: ${u.open} open, ${u.close} close`).join('\n')}`).to.be.empty;
+    });
   });
 });
 

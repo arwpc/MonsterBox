@@ -6,6 +6,7 @@ Character 1: PumpkinHead     → 192.168.8.150
 Character 2: Coffin Breaker  → 192.168.8.140
 Character 3: Orlok           → 192.168.8.120 ⭐ PRIMARY
 Character 4: Skulltalker     → 192.168.8.130
+Character 5: Groundbreaker   → 192.168.8.200
 ```
 
 ## Key Files and Locations

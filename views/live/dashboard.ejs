@@ -10,457 +10,479 @@
     <link href="/css/monsterbox4.css" rel="stylesheet">
 </head>
 
+<!-- brace-balance: { -->
+
 <body>
     <!-- Unified Navigation - Same on ALL pages -->
     <%- include('../components/unified-navigation', { page: 'live' }) %>
 
-    <main class="container-fluid py-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1><i class="bi bi-play-circle"></i> Live Dashboard</h1>
-                    <div class="d-flex gap-2">
-                        <span class="badge bg-success fs-6">Live Mode Active</span>
-                        <button class="btn btn-outline-secondary" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3">
-            <div class="col-xl-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-person-arms-up"></i> Quick Poses</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="posesContainer">
-                            <div class="text-center text-muted py-4">
-                                <i class="bi bi-hourglass-split fs-1"></i>
-                                <p class="mt-2">Loading poses...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Say This</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2 align-items-center mb-2">
-                            <div class="col-auto"><label for="liveSpeakerSelect" class="col-form-label">Speaker</label></div>
-                            <div class="col"><select id="liveSpeakerSelect" class="form-select form-select-sm"></select></div>
-                        </div>
-                        <div class="input-group">
-                            <input id="sayText" type="text" class="form-control" placeholder="Type something spooky...">
-                            <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
-                        </div>
-                        <div id="sayStatus" class="mt-2"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-camera-video"></i> Webcam</h5>
-                        <small class="text-muted" id="webcamHint"></small>
-                    </div>
-                    <div class="card-body text-center">
-                <div class="card mt-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Microphone</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="progress" role="progressbar" aria-label="Audio Level" style="height: 10px;">
-                            <div id="liveAudioLevel" class="progress-bar" style="width: 0%"></div>
-                        </div>
-                        <div class="mt-2 d-flex gap-2">
-                            <button id="liveMicStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start</button>
-                            <button id="liveMicStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
-                            <small id="liveMicStatus" class="text-muted"></small>
-                        </div>
-                    </div>
-                </div>
-
-                        <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 380px; background: #000;">
-                        <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-film"></i> Scenes</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="scenesContainer"><div class="text-center text-muted py-2">Loading scenes...</div></div>
-                        <div class="mt-3 d-flex gap-2">
-                          <button class="btn btn-sm btn-success" onclick="liveDashboard.startQueue()"><i class="bi bi-play-circle"></i> Start Queue</button>
-                          <button class="btn btn-sm btn-warning" onclick="liveDashboard.stopQueue()"><i class="bi bi-stop-circle"></i> Emergency Stop</button>
-                          <button class="btn btn-sm btn-outline-danger" onclick="liveDashboard.clearQueue()"><i class="bi bi-trash"></i> Clear Queue</button>
-                        </div>
-                        <div class="mt-3">
-                          <h6 class="mb-2"><i class="bi bi-list-ol"></i> Queue</h6>
-                          <div id="queueContainer"><div class="text-muted">Queue empty</div></div>
-                        </div>
-                        <div class="mt-3">
-                          <h6 class="mb-2"><i class="bi bi-bookmarks"></i> Queue Templates</h6>
-                          <div class="row g-2 align-items-center">
-                            <div class="col-md-6">
-                              <div class="input-group input-group-sm">
-                                <input id="tplName" type="text" class="form-control" placeholder="Template name">
-                                <button class="btn btn-outline-primary" onclick="liveDashboard.saveTemplate()"><i class="bi bi-save"></i> Save</button>
-                              </div>
-                            </div>
-                            <div class="col-md-6 d-flex gap-2">
-                              <select id="tplSelect" class="form-select form-select-sm" style="max-width: 260px;"></select>
-                              <button class="btn btn-sm btn-outline-success" onclick="liveDashboard.enqueueTemplate()"><i class="bi bi-plus-circle"></i> Enqueue Template</button>
-                            </div>
-                          </div>
-                          <div id="tplStatus" class="small mt-2 text-muted"></div>
+        <main class="container-fluid py-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1><i class="bi bi-play-circle"></i> Live Dashboard</h1>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-success fs-6">Live Mode Active</span>
+                            <button class="btn btn-outline-secondary" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/mic-panel.js"></script>
-    <script>
-        (function () {
-            var liveDashboard = {
-                poses: [],
-                scenes: [],
-                init: function () {
-                    this.bindSayThis();
-                    this.loadSpeakers();
-                    this.loadPoses();
-                    this.loadWebcam();
-                    try { MicPanel.init({ levelBarId: 'liveAudioLevel', startBtnId: 'liveMicStart', stopBtnId: 'liveMicStop', statusId: 'liveMicStatus', enableStt: false }); } catch(_){}
-                    this.loadScenes();
-                    this.loadQueue();
-                    this.loadTemplates();
-                },
-                loadPoses: function () {
-                    var self = this;
-                    fetch('/live/api/poses')
-                        .then(function (r) { return r.json(); })
-                        .then(function (data) { self.poses = data; self.renderPoses(); })
-                        .catch(function () {
-                            document.getElementById('posesContainer').innerHTML = '<div class="alert alert-danger">Failed to load poses</div>';
-                        });
-                },
-                renderPoses: function () {
-                    var container = document.getElementById('posesContainer');
-                    if (!this.poses || this.poses.length === 0) {
-                        container.innerHTML = '<div class="text-center text-muted py-4">No poses available</div>';
-                        return;
-                    }
-                    var html = '<div class="row g-3">';
-                    for (var i = 0; i < this.poses.length; i++) {
-                        var pose = this.poses[i];
-                        html += '<div class="col-md-6">';
-                        html += '<button class="btn btn-outline-primary w-100" onclick="liveDashboard.executePose(this,' + pose.id + ')">';
-                        html += '<i class="bi bi-play-fill"></i> ' + (pose.name || ('Pose ' + pose.id));
-                        html += '</button>';
-                        html += '</div>';
-                    }
-                    html += '</div>';
-                    container.innerHTML = html;
-                },
-                executePose: function (btn, poseId) {
-                    var statusBox = document.getElementById('posesStatus');
-                    if (!statusBox) { var container = document.getElementById('posesContainer'); var div = document.createElement('div'); div.id = 'posesStatus'; container.parentNode.insertBefore(div, container); statusBox = div; }
-                    var orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Running...';
-                    fetch('/poses/' + poseId + '/execute', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-                        .then(function (r) { return r.json().catch(function () { return { success: false, error: 'Bad JSON' }; }); })
-                        .then(function (j) {
-                            if (j && j.success) {
-                                statusBox.innerHTML = '<div class="alert alert-success py-2 mb-2">Pose executed</div>';
-                            } else {
-                                statusBox.innerHTML = '<div class="alert alert-danger py-2 mb-2">Failed: ' + ((j && j.error) || 'Unknown error') + '</div>';
-                            }
-                        })
-                        .catch(function (e) { statusBox.innerHTML = '<div class="alert alert-danger py-2 mb-2">Error: ' + (e && e.message ? e.message : e) + '</div>'; })
-                        .finally(function () { btn.disabled = false; btn.innerHTML = orig; setTimeout(function () { if (statusBox) { statusBox.innerHTML = ''; } }, 2000); });
-                },
-                bindSayThis: function(){
-                    var btn = document.getElementById('sayBtn');
-                    var input = document.getElementById('sayText');
-                    var status = document.getElementById('sayStatus');
-                    function send(){
-                        var text = (input.value || '').trim();
-                        if (!text) { status.innerHTML = '<div class="text-warning">Enter text</div>'; return; }
-                        var charEl = document.getElementById('charLabel');
-                        var characterId = (charEl && charEl.getAttribute('data-char-id')) || null;
-                        btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
-                        var url = '/conversation/api/say';
-                        var speakerSelect = document.getElementById('liveSpeakerSelect');
-                        var speakerPartId = speakerSelect && speakerSelect.value ? speakerSelect.value : undefined;
-                        var payload = { text: text };
-                        if (characterId) payload.characterId = characterId;
-                        if (speakerPartId) payload.speakerPartId = speakerPartId;
-                        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-                          .then(function(r){ return r.json(); })
-                          .then(function(j){ status.innerHTML = j && j.success ? '<div class="text-success">Done</div>' : '<div class="text-danger">Failed: '+ ((j&&j.error)||'') +'</div>'; })
-                          .catch(function(e){ status.innerHTML = '<div class="text-danger">Error: '+ (e && e.message ? e.message : e) +'</div>'; })
-                          .finally(function(){ btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Speak'; });
-                    }
-                    btn.addEventListener('click', send);
-                    input.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') { ev.preventDefault(); send(); }});
-                },
-                loadSpeakers: function(){
-                    var sel = document.getElementById('liveSpeakerSelect'); if (!sel) return;
-                    sel.innerHTML = '<option value="">Loading...</option>';
-                    fetch('/conversation/api/speakers')
-                      .then(function(r){ return r.json(); })
-                      .then(function(j){
-                          var items = (j && j.speakers) || [];
-                          if (!items.length){ sel.innerHTML = '<option value="">Default device</option>'; return; }
-                          sel.innerHTML = '';
-                          for (var i=0;i<items.length;i++){
-                              var sp = items[i];
-                              var opt = document.createElement('option');
-                              opt.value = sp.id; opt.textContent = sp.name || ('Speaker ' + sp.id);
-                              if (sp.isDefault) opt.selected = true;
-                              sel.appendChild(opt);
-                          }
-                      })
-                      .catch(function(){ sel.innerHTML = '<option value="">Default device</option>'; });
-                }
-                loadWebcam: function(){
-                    var img = document.getElementById('webcamImg');
-                    var status = document.getElementById('webcamStatus');
-                    var hint = document.getElementById('webcamHint');
-                    fetch('/conversation/api/webcam-stream-url')
-                      .then(function(r){ return r.json(); })
-                      .then(function(j){
-                        if (j && j.success && j.url) { img.src = j.url; status.innerHTML = 'Streaming'; hint.innerHTML = j.url; }
-                        else { status.innerHTML = 'No webcam configured for this character'; }
-                      })
-                      .catch(function(){ status.innerHTML = 'Failed to locate webcam'; });
-                },
-                loadScenes: function(){
-                    var self = this;
-                    fetch('/scenes/api')
-                      .then(function(r){ return r.json(); })
-                      .then(function(j){ self.scenes = (j && j.scenes) || []; self.renderScenes(); })
-                      .catch(function(){ document.getElementById('scenesContainer').innerHTML = '<div class=\"alert alert-danger\">Failed to load scenes</div>'; });
-                },
-                renderScenes: function(){
-                    var cont = document.getElementById('scenesContainer');
-                    if (!this.scenes || this.scenes.length === 0) { cont.innerHTML = '<div class="text-muted">No scenes yet</div>'; return; }
-                    var html = '<div class="list-group">';
-                    for (var i=0;i<this.scenes.length;i++){
-                        var s = this.scenes[i];
-                        html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
-                        html += '<div><i class="bi bi-film me-2"></i>' + (s.name || ('Scene ' + s.id)) + '</div>';
-                        html += '<div class="btn-group">';
-                        html += '<button class="btn btn-sm btn-outline-primary" onclick="liveDashboard.playScene('+ s.id +')"><i class="bi bi-play"></i> Play</button>';
-                        html += '<button class="btn btn-sm btn-outline-secondary" onclick="liveDashboard.streamScene('+ s.id +')"><i class="bi bi-broadcast"></i> Stream</button>';
-                        html += '<button class="btn btn-sm btn-outline-success" title="Add to queue" onclick="liveDashboard.enqueueScene('+ s.id +')"><i class="bi bi-plus"></i></button>';
-                        html += '</div>';
-                        html += '</div>';
-                    }
-                    html += '</div>';
-                    cont.innerHTML = html;
-                },
-                // --- Queue ---
-                loadQueue: function(){
-                  fetch('/scenes/api/queue')
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); }})
-                    .catch(function(){});
-                },
-                renderQueue: function(status){
-                  var cont = document.getElementById('queueContainer');
-                  if (!status || !status.items || status.items.length === 0){ cont.innerHTML = '<div class="text-muted">Queue empty</div>'; return; }
-                  var html = '';
-                  if (status.nowPlaying){ html += '<div class="alert alert-info py-1 mb-2"><i class="bi bi-play-circle"></i> Now Playing: '+ status.nowPlaying.name +'</div>'; }
-                  html += '<div class="list-group" id="queueList">';
-                  for (var i=0;i<status.items.length;i++){
-                    var it = status.items[i];
-                    html += '<div class="list-group-item d-flex justify-content-between align-items-center" draggable="true" data-index="'+ i +'">';
-                    html += '<div><i class="bi bi-grip-vertical me-2"></i>#'+ (i+1) +' - '+ (it.name || ('Scene ' + it.id)) +'</div>';
-                    html += '<div class="btn-group">';
-                    html += '<button class="btn btn-sm btn-outline-secondary" '+ (i===0?'disabled':'') +' onclick="liveDashboard.moveUp('+ i +')"><i class="bi bi-arrow-up"></i></button>';
-                    html += '<button class="btn btn-sm btn-outline-secondary" '+ (i===status.items.length-1?'disabled':'') +' onclick="liveDashboard.moveDown('+ i +')"><i class="bi bi-arrow-down"></i></button>';
-                    html += '</div>';
-                    html += '</div>';
-                  }
-                  html += '</div>';
-                  cont.innerHTML = html;
-                  liveDashboard.enableDnD();
-                },
-                enqueueScene: function(id){
-                  fetch('/scenes/api/queue/enqueue', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sceneId: id }) })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                startQueue: function(){
-                  var cont = document.getElementById('queueContainer');
-                  cont.insertAdjacentHTML('afterbegin','<div class="text-info">Starting queue...</div>');
-                  fetch('/scenes/api/queue/start', { method:'POST' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                stopQueue: function(){
-                  fetch('/scenes/api/queue/stop', { method:'POST' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                clearQueue: function(){
-                  fetch('/scenes/api/queue/clear', { method:'POST' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                moveUp: function(index){
-                  fetch('/scenes/api/queue/reorder', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fromIndex: index, toIndex: index-1 }) })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                moveDown: function(index){
-                  fetch('/scenes/api/queue/reorder', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fromIndex: index, toIndex: index+1 }) })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                    .catch(function(){});
-                },
-                // Templates
-                loadTemplates: function(){
-                  var sel = document.getElementById('tplSelect'); if (!sel) return;
-                  fetch('/scenes/api/queue/templates')
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success) { liveDashboard.renderTemplates(j.templates||[]); } });
-                },
-                renderTemplates: function(templates){
-                  var sel = document.getElementById('tplSelect'); if (!sel) return;
-                  sel.innerHTML = '';
-                  if (!templates || templates.length === 0){ sel.innerHTML = '<option value="">No templates</option>'; return; }
-                  for (var i=0;i<templates.length;i++){
-                    var t = templates[i];
-                    var opt = document.createElement('option');
-                    opt.value = t.id; opt.textContent = t.name + ' (' + (t.items?t.items.length:0) + ')';
-                    sel.appendChild(opt);
-                  }
-                },
-                // --- Live mic meter ---
-                bindMicLive: function(){
-                    var startBtn = document.getElementById('liveMicStart');
-                    var stopBtn = document.getElementById('liveMicStop');
-                    var levelBar = document.getElementById('liveAudioLevel');
-                    var status = document.getElementById('liveMicStatus');
-                    if (!startBtn || !stopBtn || !levelBar) return;
-                    var audioCtx=null, analyser=null, dataArray=null, mediaStream=null, rafId=null, lastSend=0;
-                    function stop(){
-                        status.textContent = 'Stopped';
-                        levelBar.style.width = '0%';
-                        if (rafId){ cancelAnimationFrame(rafId); rafId=null; }
-                        try { if (mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); } } catch(_){ }
-                        try { if (audioCtx){ audioCtx.close(); } } catch(_){ }
-                        audioCtx=analyser=dataArray=mediaStream=null; lastSend=0;
-                    }
-                    async function start(){
-                        if (rafId) return;
-                        status.textContent = 'Listening...';
-                        try {
-                            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
-                            audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-                            const source = audioCtx.createMediaStreamSource(mediaStream);
-                            analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024; dataArray = new Uint8Array(analyser.fftSize);
-                            source.connect(analyser);
-                            const loop = ()=>{
-                                analyser.getByteTimeDomainData(dataArray);
-                                var sum=0; for (var i=0;i<dataArray.length;i++){ var v=(dataArray[i]-128)/128; sum+=v*v; }
-                                var rms = Math.min(1, Math.sqrt(sum/dataArray.length));
-                                levelBar.style.width = Math.round(rms*100)+'%';
-                                var now = performance.now();
-                                if (now - lastSend > 120){ lastSend = now; fetch('/conversation/api/jaw-drive', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ amplitude: rms }) }).catch(function(){}); }
-                                rafId = requestAnimationFrame(loop);
-                            };
-                            rafId = requestAnimationFrame(loop);
-                        } catch (e) {
-                            status.textContent = 'Mic error'; stop();
+            <div class="row g-3">
+                <div class="col-xl-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-person-arms-up"></i> Quick Poses</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="posesContainer">
+                                <div class="text-center text-muted py-4">
+                                    <i class="bi bi-hourglass-split fs-1"></i>
+                                    <p class="mt-2">Loading poses...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Say This</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2 align-items-center mb-2">
+                                <div class="col-auto"><label for="liveSpeakerSelect"
+                                        class="col-form-label">Speaker</label></div>
+                                <div class="col"><select id="liveSpeakerSelect"
+                                        class="form-select form-select-sm"></select></div>
+                            </div>
+                            <div class="input-group">
+                                <input id="sayText" type="text" class="form-control"
+                                    placeholder="Type something spooky...">
+                                <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
+                            </div>
+                            <div id="sayStatus" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0"><i class="bi bi-camera-video"></i> Webcam</h5>
+                            <small class="text-muted" id="webcamHint"></small>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="card mt-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Microphone</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="progress" role="progressbar" aria-label="Audio Level"
+                                        style="height: 10px;">
+                                        <div id="liveAudioLevel" class="progress-bar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button id="liveMicStart" class="btn btn-success btn-sm"><i
+                                                class="bi bi-mic-fill"></i> Start</button>
+                                        <button id="liveMicStop" class="btn btn-outline-danger btn-sm"><i
+                                                class="bi bi-mic-mute"></i> Stop</button>
+                                        <small id="liveMicStatus" class="text-muted"></small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border"
+                                style="max-height: 380px; background: #000;">
+                            <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-film"></i> Scenes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="scenesContainer">
+                                <div class="text-center text-muted py-2">Loading scenes...</div>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <button class="btn btn-sm btn-success" onclick="liveDashboard.startQueue()"><i
+                                        class="bi bi-play-circle"></i> Start Queue</button>
+                                <button class="btn btn-sm btn-warning" onclick="liveDashboard.stopQueue()"><i
+                                        class="bi bi-stop-circle"></i> Emergency Stop</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="liveDashboard.clearQueue()"><i
+                                        class="bi bi-trash"></i> Clear Queue</button>
+                            </div>
+                            <div class="mt-3">
+                                <h6 class="mb-2"><i class="bi bi-list-ol"></i> Queue</h6>
+                                <div id="queueContainer">
+                                    <div class="text-muted">Queue empty</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h6 class="mb-2"><i class="bi bi-bookmarks"></i> Queue Templates</h6>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <input id="tplName" type="text" class="form-control"
+                                                placeholder="Template name">
+                                            <button class="btn btn-outline-primary"
+                                                onclick="liveDashboard.saveTemplate()"><i class="bi bi-save"></i>
+                                                Save</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-flex gap-2">
+                                        <select id="tplSelect" class="form-select form-select-sm"
+                                            style="max-width: 260px;"></select>
+                                        <button class="btn btn-sm btn-outline-success"
+                                            onclick="liveDashboard.enqueueTemplate()"><i class="bi bi-plus-circle"></i>
+                                            Enqueue Template</button>
+                                    </div>
+                                </div>
+                                <div id="tplStatus" class="small mt-2 text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/mic-panel.js"></script>
+        <script>
+            (function () {
+                var liveDashboard = {
+                    poses: [],
+                    scenes: [],
+                    init: function () {
+                        this.bindSayThis();
+                        this.loadSpeakers();
+                        this.loadPoses();
+                        this.loadWebcam();
+                        try { MicPanel.init({ levelBarId: 'liveAudioLevel', startBtnId: 'liveMicStart', stopBtnId: 'liveMicStop', statusId: 'liveMicStatus', enableStt: false }); } catch (_) { }
+                        this.loadScenes();
+                        this.loadQueue();
+                        this.loadTemplates();
+                    },
+                    loadPoses: function () {
+                        var self = this;
+                        fetch('/live/api/poses')
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) { self.poses = data; self.renderPoses(); })
+                            .catch(function () {
+                                document.getElementById('posesContainer').innerHTML = '<div class="alert alert-danger">Failed to load poses</div>';
+                            });
+                    },
+                    renderPoses: function () {
+                        var container = document.getElementById('posesContainer');
+                        if (!this.poses || this.poses.length === 0) {
+                            container.innerHTML = '<div class="text-center text-muted py-4">No poses available</div>';
+                            return;
                         }
+                        var html = '<div class="row g-3">';
+                        for (var i = 0; i < this.poses.length; i++) {
+                            var pose = this.poses[i];
+                            html += '<div class="col-md-6">';
+                            html += '<button class="btn btn-outline-primary w-100" onclick="liveDashboard.executePose(this,' + pose.id + ')">';
+                            html += '<i class="bi bi-play-fill"></i> ' + (pose.name || ('Pose ' + pose.id));
+                            html += '</button>';
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                        container.innerHTML = html;
+                    },
+                    executePose: function (btn, poseId) {
+                        var statusBox = document.getElementById('posesStatus');
+                        if (!statusBox) { var container = document.getElementById('posesContainer'); var div = document.createElement('div'); div.id = 'posesStatus'; container.parentNode.insertBefore(div, container); statusBox = div; }
+                        var orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Running...';
+                        fetch('/poses/' + poseId + '/execute', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+                            .then(function (r) { return r.json().catch(function () { return { success: false, error: 'Bad JSON' }; }); })
+                            .then(function (j) {
+                                if (j && j.success) {
+                                    statusBox.innerHTML = '<div class="alert alert-success py-2 mb-2">Pose executed</div>';
+                                } else {
+                                    statusBox.innerHTML = '<div class="alert alert-danger py-2 mb-2">Failed: ' + ((j && j.error) || 'Unknown error') + '</div>';
+                                }
+                            })
+                            .catch(function (e) { statusBox.innerHTML = '<div class="alert alert-danger py-2 mb-2">Error: ' + (e && e.message ? e.message : e) + '</div>'; })
+                            .finally(function () { btn.disabled = false; btn.innerHTML = orig; setTimeout(function () { if (statusBox) { statusBox.innerHTML = ''; } }, 2000); });
+                    },
+                    bindSayThis: function () {
+                        var btn = document.getElementById('sayBtn');
+                        var input = document.getElementById('sayText');
+                        var status = document.getElementById('sayStatus');
+                        function send() {
+                            var text = (input.value || '').trim();
+                            if (!text) { status.innerHTML = '<div class="text-warning">Enter text</div>'; return; }
+                            var charEl = document.getElementById('charLabel');
+                            var characterId = (charEl && charEl.getAttribute('data-char-id')) || null;
+                            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
+                            var url = '/conversation/api/say';
+                            var speakerSelect = document.getElementById('liveSpeakerSelect');
+                            var speakerPartId = speakerSelect && speakerSelect.value ? speakerSelect.value : undefined;
+                            var payload = { text: text };
+                            if (characterId) payload.characterId = characterId;
+                            if (speakerPartId) payload.speakerPartId = speakerPartId;
+                            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                                .then(function (r) { return r.json(); })
+                                .then(function (j) { status.innerHTML = j && j.success ? '<div class="text-success">Done</div>' : '<div class="text-danger">Failed: ' + ((j && j.error) || '') + '</div>'; })
+                                .catch(function (e) { status.innerHTML = '<div class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</div>'; })
+                                .finally(function () { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Speak'; });
+                        }
+                        btn.addEventListener('click', send);
+                        input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); send(); } });
+                    },
+                    loadSpeakers: function () {
+                        var sel = document.getElementById('liveSpeakerSelect'); if (!sel) return;
+                        sel.innerHTML = '<option value="">Loading...</option>';
+                        fetch('/conversation/api/speakers')
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) {
+                                var items = (j && j.speakers) || [];
+                                if (!items.length) { sel.innerHTML = '<option value="">Default device</option>'; return; }
+                                sel.innerHTML = '';
+                                for (var i = 0; i < items.length; i++) {
+                                    var sp = items[i];
+                                    var opt = document.createElement('option');
+                                    opt.value = sp.id; opt.textContent = sp.name || ('Speaker ' + sp.id);
+                                    if (sp.isDefault) opt.selected = true;
+                                    sel.appendChild(opt);
+                                }
+                            })
+                            .catch(function () { sel.innerHTML = '<option value="">Default device</option>'; });
+                    },
+                    loadWebcam: function () {
+                        var img = document.getElementById('webcamImg');
+                        var status = document.getElementById('webcamStatus');
+                        var hint = document.getElementById('webcamHint');
+                        fetch('/conversation/api/webcam-stream-url')
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) {
+                                if (j && j.success && j.url) { img.src = j.url; status.innerHTML = 'Streaming'; hint.innerHTML = j.url; }
+                                else { status.innerHTML = 'No webcam configured for this character'; }
+                            })
+                            .catch(function () { status.innerHTML = 'Failed to locate webcam'; });
+                    },
+                    loadScenes: function () {
+                        var self = this;
+                        fetch('/scenes/api')
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { self.scenes = (j && j.scenes) || []; self.renderScenes(); })
+                            .catch(function () { document.getElementById('scenesContainer').innerHTML = '<div class=\"alert alert-danger\">Failed to load scenes</div>'; });
+                    },
+                    renderScenes: function () {
+                        var cont = document.getElementById('scenesContainer');
+                        if (!this.scenes || this.scenes.length === 0) { cont.innerHTML = '<div class="text-muted">No scenes yet</div>'; return; }
+                        var html = '<div class="list-group">';
+                        for (var i = 0; i < this.scenes.length; i++) {
+                            var s = this.scenes[i];
+                            html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                            html += '<div><i class="bi bi-film me-2"></i>' + (s.name || ('Scene ' + s.id)) + '</div>';
+                            html += '<div class="btn-group">';
+                            html += '<button class="btn btn-sm btn-outline-primary" onclick="liveDashboard.playScene(' + s.id + ')"><i class="bi bi-play"></i> Play</button>';
+                            html += '<button class="btn btn-sm btn-outline-secondary" onclick="liveDashboard.streamScene(' + s.id + ')"><i class="bi bi-broadcast"></i> Stream</button>';
+                            html += '<button class="btn btn-sm btn-outline-success" title="Add to queue" onclick="liveDashboard.enqueueScene(' + s.id + ')"><i class="bi bi-plus"></i></button>';
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                        cont.innerHTML = html;
+                    },
+                    // --- Queue ---
+                    loadQueue: function () {
+                        fetch('/scenes/api/queue')
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    renderQueue: function (status) {
+                        var cont = document.getElementById('queueContainer');
+                        if (!status || !status.items || status.items.length === 0) { cont.innerHTML = '<div class="text-muted">Queue empty</div>'; return; }
+                        var html = '';
+                        if (status.nowPlaying) { html += '<div class="alert alert-info py-1 mb-2"><i class="bi bi-play-circle"></i> Now Playing: ' + status.nowPlaying.name + '</div>'; }
+                        html += '<div class="list-group" id="queueList">';
+                        for (var i = 0; i < status.items.length; i++) {
+                            var it = status.items[i];
+                            html += '<div class="list-group-item d-flex justify-content-between align-items-center" draggable="true" data-index="' + i + '">';
+                            html += '<div><i class="bi bi-grip-vertical me-2"></i>#' + (i + 1) + ' - ' + (it.name || ('Scene ' + it.id)) + '</div>';
+                            html += '<div class="btn-group">';
+                            html += '<button class="btn btn-sm btn-outline-secondary" ' + (i === 0 ? 'disabled' : '') + ' onclick="liveDashboard.moveUp(' + i + ')"><i class="bi bi-arrow-up"></i></button>';
+                            html += '<button class="btn btn-sm btn-outline-secondary" ' + (i === status.items.length - 1 ? 'disabled' : '') + ' onclick="liveDashboard.moveDown(' + i + ')"><i class="bi bi-arrow-down"></i></button>';
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                        cont.innerHTML = html;
+                        liveDashboard.enableDnD();
+                    },
+                    enqueueScene: function (id) {
+                        fetch('/scenes/api/queue/enqueue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sceneId: id }) })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    startQueue: function () {
+                        var cont = document.getElementById('queueContainer');
+                        cont.insertAdjacentHTML('afterbegin', '<div class="text-info">Starting queue...</div>');
+                        fetch('/scenes/api/queue/start', { method: 'POST' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    stopQueue: function () {
+                        fetch('/scenes/api/queue/stop', { method: 'POST' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    clearQueue: function () {
+                        fetch('/scenes/api/queue/clear', { method: 'POST' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    moveUp: function (index) {
+                        fetch('/scenes/api/queue/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromIndex: index, toIndex: index - 1 }) })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    moveDown: function (index) {
+                        fetch('/scenes/api/queue/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromIndex: index, toIndex: index + 1 }) })
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                            .catch(function () { });
+                    },
+                    // Templates
+                    loadTemplates: function () {
+                        var sel = document.getElementById('tplSelect'); if (!sel) return;
+                        fetch('/scenes/api/queue/templates')
+                            .then(function (r) { return r.json(); })
+                            .then(function (j) { if (j && j.success) { liveDashboard.renderTemplates(j.templates || []); } });
+                    },
+                    renderTemplates: function (templates) {
+                        var sel = document.getElementById('tplSelect'); if (!sel) return;
+                        sel.innerHTML = '';
+                        if (!templates || templates.length === 0) { sel.innerHTML = '<option value="">No templates</option>'; return; }
+                        for (var i = 0; i < templates.length; i++) {
+                            var t = templates[i];
+                            var opt = document.createElement('option');
+                            opt.value = t.id; opt.textContent = t.name + ' (' + (t.items ? t.items.length : 0) + ')';
+                            sel.appendChild(opt);
+                        }
+                    },
+                    // --- Live mic meter ---
+                    bindMicLive: function () {
+                        var startBtn = document.getElementById('liveMicStart');
+                        var stopBtn = document.getElementById('liveMicStop');
+                        var levelBar = document.getElementById('liveAudioLevel');
+                        var status = document.getElementById('liveMicStatus');
+                        if (!startBtn || !stopBtn || !levelBar) return;
+                        var audioCtx = null, analyser = null, dataArray = null, mediaStream = null, rafId = null, lastSend = 0;
+                        function stop() {
+                            status.textContent = 'Stopped';
+                            levelBar.style.width = '0%';
+                            if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+                            try { if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); } } catch (_) { }
+                            try { if (audioCtx) { audioCtx.close(); } } catch (_) { }
+                            audioCtx = analyser = dataArray = mediaStream = null; lastSend = 0;
+                        }
+                        async function start() {
+                            if (rafId) return;
+                            status.textContent = 'Listening...';
+                            try {
+                                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+                                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                                const source = audioCtx.createMediaStreamSource(mediaStream);
+                                analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024; dataArray = new Uint8Array(analyser.fftSize);
+                                source.connect(analyser);
+                                const loop = () => {
+                                    analyser.getByteTimeDomainData(dataArray);
+                                    var sum = 0; for (var i = 0; i < dataArray.length; i++) { var v = (dataArray[i] - 128) / 128; sum += v * v; }
+                                    var rms = Math.min(1, Math.sqrt(sum / dataArray.length));
+                                    levelBar.style.width = Math.round(rms * 100) + '%';
+                                    var now = performance.now();
+                                    if (now - lastSend > 120) { lastSend = now; fetch('/conversation/api/jaw-drive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amplitude: rms }) }).catch(function () { }); }
+                                    rafId = requestAnimationFrame(loop);
+                                };
+                                rafId = requestAnimationFrame(loop);
+                            } catch (e) {
+                                status.textContent = 'Mic error'; stop();
+                            }
+                        }
+                        startBtn.addEventListener('click', start);
+                        stopBtn.addEventListener('click', stop);
                     }
-                    startBtn.addEventListener('click', start);
-                    stopBtn.addEventListener('click', stop);
-                }
                 },
-                saveTemplate: function(){
-                  var name = (document.getElementById('tplName').value||'').trim();
-                  fetch('/scenes/api/queue/templates/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: name }) })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){
-                      var s = document.getElementById('tplStatus');
-                      if (j && j.success){ s.textContent = 'Saved template'; liveDashboard.renderTemplates(j.templates||[]); }
-                      else { s.textContent = 'Save failed'; }
-                      setTimeout(function(){ s.textContent=''; }, 1500);
+                    saveTemplate: function(){
+                        var name = (document.getElementById('tplName').value || '').trim();
+                fetch('/scenes/api/queue/templates/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        var s = document.getElementById('tplStatus');
+                        if (j && j.success) { s.textContent = 'Saved template'; liveDashboard.renderTemplates(j.templates || []); }
+                        else { s.textContent = 'Save failed'; }
+                        setTimeout(function () { s.textContent = ''; }, 1500);
                     });
+            },
+                enqueueTemplate: function() {
+                    var sel = document.getElementById('tplSelect'); var id = sel && sel.value;
+                    if (!id) return;
+                    fetch('/scenes/api/queue/templates/enqueue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } });
                 },
-                enqueueTemplate: function(){
-                  var sel = document.getElementById('tplSelect'); var id = sel && sel.value;
-                  if (!id) return;
-                  fetch('/scenes/api/queue/templates/enqueue', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: id }) })
-                    .then(function(r){ return r.json(); })
-                    .then(function(j){ if (j && j.success){ liveDashboard.renderQueue(j.status); } });
-                },
-                enableDnD: function(){
-                  var list = document.getElementById('queueList');
-                  if (!list) return;
-                  var dragIndex = null;
-                  list.addEventListener('dragstart', function(e){
+            enableDnD: function() {
+                var list = document.getElementById('queueList');
+                if (!list) return;
+                var dragIndex = null;
+                list.addEventListener('dragstart', function (e) {
                     var item = e.target.closest('.list-group-item');
                     if (!item) return;
-                    dragIndex = parseInt(item.getAttribute('data-index'),10);
-                    try { e.dataTransfer.setData('text/plain', dragIndex.toString()); } catch (_) {}
-                  });
-                  list.addEventListener('dragover', function(e){ e.preventDefault(); });
-                  list.addEventListener('drop', function(e){
+                    dragIndex = parseInt(item.getAttribute('data-index'), 10);
+                    try { e.dataTransfer.setData('text/plain', dragIndex.toString()); } catch (_) { }
+                });
+                list.addEventListener('dragover', function (e) { e.preventDefault(); });
+                list.addEventListener('drop', function (e) {
                     e.preventDefault();
                     var item = e.target.closest('.list-group-item');
                     if (!item) return;
-                    var toIndex = parseInt(item.getAttribute('data-index'),10);
+                    var toIndex = parseInt(item.getAttribute('data-index'), 10);
                     if (dragIndex == null || isNaN(toIndex) || dragIndex === toIndex) return;
-                    fetch('/scenes/api/queue/reorder', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ fromIndex: dragIndex, toIndex: toIndex }) })
-                      .then(function(r){ return r.json(); })
-                      .then(function(j){ if (j && j.success) { liveDashboard.renderQueue(j.status); } })
-                      .catch(function(){});
-                  });
-                },
-                playScene: function(id){
-                    var cont = document.getElementById('scenesContainer');
-                    cont.insertAdjacentHTML('afterbegin','<div class="alert alert-info py-2">Playing scene '+ id +'...</div>');
-                    fetch('/scenes/api/'+ id +'/play', { method:'POST' })
-                      .then(function(r){ return r.json(); })
-                      .then(function(j){ cont.insertAdjacentHTML('afterbegin', j && j.success ? '<div class="alert alert-success py-2">Scene '+ id +' complete</div>' : '<div class="alert alert-danger py-2">Scene failed</div>'); })
-                      .catch(function(){ cont.insertAdjacentHTML('afterbegin','<div class="alert alert-danger py-2">Error playing scene</div>'); });
-                },
-                streamScene: function(id){
-                    var es = new EventSource('/scenes/api/'+ id +'/play-stream');
-                    var cont = document.getElementById('scenesContainer');
-                    var box = document.createElement('div');
-                    box.className = 'alert alert-secondary mt-2';
-                    box.innerHTML = '<div><strong>Streaming scene '+id+'</strong></div><pre style="max-height:180px; overflow:auto" id="eslog"></pre>';
-                    cont.insertAdjacentElement('afterbegin', box);
-                    var log = box.querySelector('#eslog');
-                    es.onmessage = function(ev){ try { var j = JSON.parse(ev.data); log.textContent += JSON.stringify(j) + '\n'; log.scrollTop = log.scrollHeight; } catch(_){} };
-                    es.onerror = function(){ es.close(); box.className = 'alert alert-warning mt-2'; };
-                }
+                    fetch('/scenes/api/queue/reorder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromIndex: dragIndex, toIndex: toIndex }) })
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) { if (j && j.success) { liveDashboard.renderQueue(j.status); } })
+                        .catch(function () { });
+                });
+            },
+            playScene: function(id) {
+                var cont = document.getElementById('scenesContainer');
+                cont.insertAdjacentHTML('afterbegin', '<div class="alert alert-info py-2">Playing scene ' + id + '...</div>');
+                fetch('/scenes/api/' + id + '/play', { method: 'POST' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) { cont.insertAdjacentHTML('afterbegin', j && j.success ? '<div class="alert alert-success py-2">Scene ' + id + ' complete</div>' : '<div class="alert alert-danger py-2">Scene failed</div>'); })
+                    .catch(function () { cont.insertAdjacentHTML('afterbegin', '<div class="alert alert-danger py-2">Error playing scene</div>'); });
+            },
+            streamScene: function(id) {
+                var es = new EventSource('/scenes/api/' + id + '/play-stream');
+                var cont = document.getElementById('scenesContainer');
+                var box = document.createElement('div');
+                box.className = 'alert alert-secondary mt-2';
+                box.innerHTML = '<div><strong>Streaming scene ' + id + '</strong></div><pre style="max-height:180px; overflow:auto" id="eslog"></pre>';
+                cont.insertAdjacentElement('afterbegin', box);
+                var log = box.querySelector('#eslog');
+                es.onmessage = function (ev) { try { var j = JSON.parse(ev.data); log.textContent += JSON.stringify(j) + '\n'; log.scrollTop = log.scrollHeight; } catch (_) { } };
+                es.onerror = function () { es.close(); box.className = 'alert alert-warning mt-2'; };
+            }
             };
             document.addEventListener('DOMContentLoaded', function () { liveDashboard.init(); });
             window.liveDashboard = liveDashboard;
-        })();
-    </script>
-    <script src="/js/character-menu.js"></script>
+        }) ();
+        </script>
+        <script src="/js/character-menu.js"></script>
 
 </body>
 

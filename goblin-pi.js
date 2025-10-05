@@ -55,19 +55,19 @@ class PiGoblin {
 
   async start() {
     console.log('🎬 Initializing Pi Goblin...');
-    
+
     // Create media directories
     await this.createDirectories();
-    
+
     // Setup optimized VLC
     await this.setupMediaPlayer();
-    
+
     // Start API server
     await this.startAPI();
-    
+
     // Start discovery
     this.startDiscovery();
-    
+
     console.log(`✅ Pi Goblin ready on port ${this.port}!`);
   }
 
@@ -76,7 +76,7 @@ class PiGoblin {
       path.join(this.mediaPath, 'video'),
       path.join(this.mediaPath, 'audio')
     ];
-    
+
     for (const dir of dirs) {
       await fs.mkdir(dir, { recursive: true });
     }
@@ -139,10 +139,10 @@ class PiGoblin {
 
     app.post('/audio/toggle', async (req, res) => {
       this.audioEnabled = !this.audioEnabled;
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         audioEnabled: this.audioEnabled,
-        message: `Audio ${this.audioEnabled ? 'enabled' : 'disabled'}` 
+        message: `Audio ${this.audioEnabled ? 'enabled' : 'disabled'}`
       });
     });
 
@@ -152,11 +152,11 @@ class PiGoblin {
         if (volume >= 0 && volume <= 100) {
           this.audioVolume = volume;
           // Apply volume change immediately
-          exec(`amixer set Master ${volume}% 2>/dev/null`, () => {});
-          res.json({ 
-            success: true, 
+          exec(`amixer set Master ${volume}% 2>/dev/null`, () => { });
+          res.json({
+            success: true,
             volume: this.audioVolume,
-            message: `Volume set to ${volume}%` 
+            message: `Volume set to ${volume}%`
           });
         } else {
           res.status(400).json({ success: false, error: 'Volume must be between 0-100' });
@@ -178,7 +178,7 @@ class PiGoblin {
       try {
         const videoFiles = await fs.readdir(path.join(this.mediaPath, 'video')).catch(() => []);
         const audioFiles = await fs.readdir(path.join(this.mediaPath, 'audio')).catch(() => []);
-        
+
         res.json({
           success: true,
           video: videoFiles.filter(f => f.endsWith('.mp4') || f.endsWith('.avi')),
@@ -199,14 +199,14 @@ class PiGoblin {
 
   async playVideo(filename, options = {}) {
     console.log(`🎬 Playing video: ${filename}`);
-    
+
     // Stop existing video
     if (this.activeVideo) {
       this.activeVideo.kill('SIGTERM');
     }
 
     const videoPath = path.join(this.mediaPath, 'video', filename);
-    
+
     try {
       await fs.access(videoPath);
     } catch {
@@ -221,14 +221,14 @@ class PiGoblin {
       '-loglevel', 'quiet',
       '-vf', 'scale=1920:1080',  // Scale to 1080p
     ];
-    
+
     // Add audio settings based on current state
     if (this.audioEnabled) {
       args.push('-volume', this.audioVolume.toString());
     } else {
       args.push('-an');  // Disable audio
     }
-    
+
     args.push(videoPath);
 
     // If explicit looping requested, remove play-and-exit
@@ -237,20 +237,20 @@ class PiGoblin {
       if (exitIndex > -1) args.splice(exitIndex, 1);
     }
 
-    this.activeVideo = spawn('ffplay', args, { 
+    this.activeVideo = spawn('ffplay', args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, DISPLAY: ':0.0' }
     });
-    
+
     // Log ffplay output for debugging
     this.activeVideo.stdout.on('data', (data) => {
       console.log(`ffplay stdout: ${data.toString().trim()}`);
     });
-    
+
     this.activeVideo.stderr.on('data', (data) => {
       console.log(`ffplay stderr: ${data.toString().trim()}`);
     });
-    
+
     this.activeVideo.on('exit', (code, signal) => {
       this.activeVideo = null;
       console.log(`🎬 Video finished: ${filename} (exit code: ${code}, signal: ${signal})`);
@@ -271,9 +271,9 @@ class PiGoblin {
 
   async playAudio(filename) {
     console.log(`🔊 Playing audio: ${filename}`);
-    
+
     const audioPath = path.join(this.mediaPath, 'audio', filename);
-    
+
     try {
       await fs.access(audioPath);
     } catch {
@@ -291,7 +291,7 @@ class PiGoblin {
 
     const process = spawn('vlc', args, { stdio: 'ignore' });
     this.activeAudio.set(audioId, process);
-    
+
     process.on('exit', () => {
       this.activeAudio.delete(audioId);
     });
@@ -306,12 +306,12 @@ class PiGoblin {
 
   async stopAll() {
     console.log('⏹️ Stopping all playback');
-    
+
     if (this.activeVideo) {
       this.activeVideo.kill('SIGTERM');
       this.activeVideo = null;
     }
-    
+
     for (const [id, process] of this.activeAudio) {
       process.kill('SIGTERM');
     }
@@ -320,28 +320,34 @@ class PiGoblin {
 
   startDiscovery() {
     console.log('🔍 Starting MonsterBox discovery...');
-    
+
     const discoverMonsterBox = async () => {
       if (this.isConnected) return;
-      
+
       try {
         const axios = require('axios');
-        
-        // Try common addresses
-        const addresses = [
-          '192.168.1.100', '192.168.1.150', '192.168.1.200',
-          '192.168.8.100', '192.168.8.150', '192.168.8.200'
-        ];
-        
+
+        // Discover MonsterBox address from config (no hardcoded IPs)
+        let addresses = [];
+        try {
+          const cfg = require('./config/animatronics.json');
+          addresses = Object.values(cfg)
+            .map(x => (x && (x.ip || x.host)))
+            .filter(Boolean);
+        } catch (e) {
+          // Fallback: try local hostname
+          addresses = ['orlok', 'coffin', 'pumpkinhead', 'skulltalker', 'groundbreaker', 'localhost'];
+        }
+
         for (const addr of addresses) {
           try {
             const response = await axios.get(`http://${addr}:3000/api/system/info`, {
               timeout: 1000
             });
-            
+
             if (response.data && response.data.system) {
               console.log(`🎃 Found MonsterBox at ${addr}:3000!`);
-              
+
               // Register with MonsterBox
               await axios.post(`http://${addr}:3000/api/goblins/register`, {
                 goblinId: this.goblinId,
@@ -349,7 +355,7 @@ class PiGoblin {
                 capabilities: ['video', 'audio'],
                 platform: 'pi3b'
               }, { timeout: 3000 });
-              
+
               this.isConnected = true;
               console.log('✅ Registered with MonsterBox!');
               return;
@@ -365,7 +371,7 @@ class PiGoblin {
 
     // Initial discovery
     discoverMonsterBox();
-    
+
     // Periodic discovery
     setInterval(discoverMonsterBox, 15000);
   }
@@ -412,14 +418,14 @@ async function main() {
   try {
     global.goblin = new PiGoblin();
     await global.goblin.start();
-    
+
     const elapsed = Date.now() - startTime;
     const mem = process.memoryUsage();
-    
+
     console.log(`🚀 Goblin startup completed in ${elapsed}ms`);
     console.log(`🧠 Memory usage: ${Math.round(mem.rss / 1024 / 1024)}MB`);
     console.log(`👹 Ready to haunt windows! 🎃`);
-    
+
   } catch (error) {
     console.error('❌ Failed to start Goblin:', error);
     process.exit(1);

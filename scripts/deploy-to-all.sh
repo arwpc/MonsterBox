@@ -9,13 +9,26 @@ echo "🎃 DEPLOYING TO ALL ANIMATRONICS 🎃"
 echo "===================================="
 echo ""
 
-# Animatronic configurations
+# Animatronic configurations (prefer config/animatronics.json, fallback to defaults)
 declare -A ANIMATRONICS
-ANIMATRONICS[groundbreaker]="192.168.8.200"
-ANIMATRONICS[pumpkinhead]="192.168.8.150"
-ANIMATRONICS[coffin]="192.168.8.140"
-ANIMATRONICS[orlok]="192.168.8.120"
-ANIMATRONICS[skulltalker]="192.168.8.130"
+
+CONFIG_FILE="$(dirname "$0")/../config/animatronics.json"
+if command -v jq >/dev/null 2>&1 && [ -f "$CONFIG_FILE" ]; then
+  echo "Using config from $CONFIG_FILE"
+  for key in $(jq -r 'keys[]' "$CONFIG_FILE"); do
+    ip=$(jq -r --arg k "$key" '.[$k].ip // .[$k].host' "$CONFIG_FILE")
+    if [ -n "$ip" ] && [ "$ip" != "null" ]; then
+      ANIMATRONICS[$key]="$ip"
+    fi
+  done
+else
+  echo "Using built-in defaults (config/animatronics.json missing or jq not installed)"
+  ANIMATRONICS[groundbreaker]="192.168.8.200"
+  ANIMATRONICS[pumpkinhead]="192.168.8.150"
+  ANIMATRONICS[coffin]="192.168.8.140"
+  ANIMATRONICS[orlok]="192.168.8.120"
+  ANIMATRONICS[skulltalker]="192.168.8.130"
+fi
 
 USER="remote"
 REMOTE_PATH="~/MonsterBox"

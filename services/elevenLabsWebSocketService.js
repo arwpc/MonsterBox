@@ -10,6 +10,7 @@ import elevenLabsConfigService from './elevenLabsConfigService.js';
 import serverSTTListener from './serverSTTListener.js';
 import serverPlaybackService from './serverPlaybackService.js';
 import elevenLabsSTTService from './elevenLabsSTTService.js';
+import randomPoseService from './randomPoseService.js';
 import { getSTTConfig } from './aiConfigStore.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -82,6 +83,34 @@ async function resolvePartsPath() {
         return path.resolve(appRoot, 'data', 'parts.json');
     }
 }
+
+async function resolveCharactersPath() {
+    try {
+        const cfg = await readConfig();
+        const appRoot = path.resolve(__dirname, '..');
+        if (cfg && cfg.dataPath) {
+            return path.resolve(appRoot, cfg.dataPath, 'characters.json');
+        }
+        return path.resolve(appRoot, 'data', 'characters.json');
+    } catch (e) {
+        const appRoot = path.resolve(__dirname, '..');
+        return path.resolve(appRoot, 'data', 'characters.json');
+    }
+}
+
+async function getAgentIdForCharacter(characterId) {
+    try {
+        const file = await resolveCharactersPath();
+        const content = await fs.readFile(file, 'utf8');
+        const list = JSON.parse(content);
+        if (Array.isArray(list)) {
+            const c = list.find(ch => Number(ch.id) === Number(characterId));
+            if (c && c.elevenLabsAgentId) return String(c.elevenLabsAgentId);
+        }
+    } catch (_) { /* noop */ }
+    return null;
+}
+
 
 async function getMicrophoneDeviceForCharacter(characterId) {
     try {
@@ -292,6 +321,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
         if (!connection) return;
 
         try {
+            // If no agentId provided, try to resolve from character mapping (characters.json)
+            if ((!agentId || agentId === 'null' || agentId === 'undefined') && connection.characterId != null) {
+                try {
+                    const resolved = await getAgentIdForCharacter(connection.characterId);
+                    if (resolved) {
+                        agentId = resolved;
+                        console.log(`🧠 Resolved agentId ${agentId} for character ${connection.characterId}`);
+                    }
+                } catch (_) { /* noop */ }
+            }
             console.log(`🚀 Starting real-time conversation with agent: ${agentId}`);
 
             // Close any existing ElevenLabs connection
@@ -463,6 +502,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             timestamp: Date.now(),
                             realTime: true
                         });
+                        // Trigger a safe random pose during speech if enabled
+                        try {
+                            const c = this.activeConnections.get(sessionId);
+                            if (c && c.characterId != null) {
+                                randomPoseService.triggerDuringTTS(c.characterId, (responseText || '').length);
+                            }
+                        } catch (_) { /* noop */ }
                     }
                     break;
 

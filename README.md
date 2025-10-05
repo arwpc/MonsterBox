@@ -1,9 +1,15 @@
-# MonsterBox 4.0 - Single Node Animatronic Control System
+# MonsterBox 5.2 - Single Node Animatronic Control System
 
-**MonsterBox 4.0** is now the primary animatronic control system, restructured from the legacy distributed architecture. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters like Orlok.
+**MonsterBox 5.2** is the production-ready animatronic control system for Halloween 2025. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters.
 
+**Latest Release:** MonsterBox 5.2 (October 2025)
+- ✅ All 63 unit tests passing
+- ✅ BTS7960 motor driver full support
+- ✅ Random poses during conversation
+- ✅ Goblin video display integration
+- ✅ ElevenLabs AI agent per character
 
-> Note on ports: This build defaults to port 3100. If any examples below show 3000, use 3100 instead (e.g., http://127.0.0.1:3100).
+> Note on ports: Production uses port 3000, test server uses port 3100.
 
 ## 🚀 Orlok Deployment & Multi-Animatronic Roll-Out
 

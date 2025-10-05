@@ -95,10 +95,10 @@ A Spanish lady trapped in a coffin for a thousand years, now breaking out with d
 ---
 
 ### 3. PumpkinHead (Character ID: 3)
-**Classification:** Pumpkinhead Demon  
-**Operational Status:** Running  
-**Network Address:** 192.168.1.200  
-**User Account:** remote  
+**Classification:** Pumpkinhead Demon
+**Operational Status:** Running
+**Network Address:** 192.168.8.150
+**User Account:** remote
 **Password:** klrklr89!
 
 #### Character Background
@@ -239,7 +239,7 @@ The system includes **17 pre-programmed interactive scenes** distributed across 
 |-----------|------------|--------|----------|
 | Count Orlok | 192.168.8.120 | Running | Full Suite |
 | Coffin Breaker | 192.168.8.140 | Running | Actuator/Sound |
-| PumpkinHead | 192.168.1.200 | Running | Basic Control |
+| PumpkinHead | 192.168.8.150 | Running | Basic Control |
 | Skulltalker | 192.168.8.130 | Running | AI Integration |
 
 ### Common System Services

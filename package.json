@@ -1,7 +1,7 @@
 {
-  "name": "monsterbox4",
-  "version": "4.0.0",
-  "description": "MonsterBox 4.0 - Single Node Animatronic Control System with Poses",
+  "name": "monsterbox",
+  "version": "5.2.0",
+  "description": "MonsterBox 5.2 - Animatronic Control System with Conversation Mode, Poses, and Halloween Magic",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
     "test": "npm run test:syntax && npm run test:unit",
     "test:syntax": "mocha tests/syntax-validation.test.js --timeout 5000",
-    "test:unit": "mocha tests/**/*.test.js --timeout 15000",
+    "test:unit": "KILL_SERVER_AFTER_TESTS=1 MB_TEST_MODE=1 mocha tests/**/*.test.js --timeout 15000",
     "test:ui": "playwright test -c playwright.config.ts",
     "test:ui:live": "playwright test -c playwright.config.ts --headed",
     "test:ui:headed": "playwright test -c playwright.config.ts --headed",

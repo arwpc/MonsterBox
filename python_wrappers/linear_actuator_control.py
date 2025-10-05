@@ -17,6 +17,12 @@ def log_debug(message):
 def log_warning(message):
     print(json.dumps({"level": "warning", "message": message}), file=sys.stderr, flush=True)
 
+# Board type constants
+BOARD_MDD10A = "MDD10A"
+BOARD_CYTRON = "CYTRON"
+BOARD_BTS7960 = "BTS7960"
+BOARD_BTS7960_SIMPLE = "BTS7960_SIMPLE"
+
 def validate_gpio_pins(dir_pin, pwm_pin):
     """Validate GPIO pin numbers are within valid range and check for hardware PWM pins.
     

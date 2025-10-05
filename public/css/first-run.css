@@ -1,0 +1,9 @@
+/* Skull-themed first-run page */
+.first-run .neon { color: #00ffcc; text-shadow: 0 0 8px #00ffcc; font-weight: 700; }
+.skull-card { background:#0b0b0b; border:1px solid #1f1f1f; box-shadow: 0 0 12px rgba(0,255,200,0.15); cursor:pointer; transition: transform .1s ease; }
+.skull-card:hover { transform: translateY(-2px); }
+.skull-card.selected { outline:2px solid #00ffcc; box-shadow: 0 0 12px rgba(0,255,200,0.4); }
+.skull.thumb { height: 140px; font-size: 72px; background:#111; border-bottom:1px solid #222; }
+.skull-emoji { filter: drop-shadow(0 0 6px #00ffcc); }
+.btn-select { margin-top: 6px; }
+

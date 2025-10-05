@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
-            <i class="bi bi-robot"></i> MonsterBox 4.0
+            <i class="bi bi-robot"></i> MonsterBox 5.2
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -106,19 +106,25 @@
 
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i>
-                        <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter :
-                            ((typeof config !=='undefined' && config && config.selectedCharacter) ?
-                            config.selectedCharacter : null); %>
-                            <% var __curName=(typeof currentCharacterName !=='undefined' && currentCharacterName) ?
-                                currentCharacterName : null; %>
-                                <span id="charLabel" data-char-id="<%= __cur || '' %>">
-                                    <% if (__curName) { %>
-                                        <%= __curName %>
-                                            <% } else if (__cur) { %>Character <%= __cur %>
-                                                    <% } else { %>No Character<% } %>
-                                </span>
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
+                        data-bs-toggle="dropdown">
+                        <% if (typeof currentCharacterImage !=='undefined' && currentCharacterImage) { %>
+                            <img src="<%= currentCharacterImage %>" alt="char"
+                                style="width:24px;height:24px;object-fit:cover;border-radius:3px;">
+                            <% } else { %>
+                                <i class="bi bi-person-circle"></i>
+                                <% } %>
+                                    <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ?
+                                        currentCharacter : ((typeof config !=='undefined' && config &&
+                                        config.selectedCharacter) ? config.selectedCharacter : null); %>
+                                        <% var __curName=(typeof currentCharacterName !=='undefined' &&
+                                            currentCharacterName) ? currentCharacterName : null; %>
+                                            <span id="charLabel" data-char-id="<%= __cur || '' %>">
+                                                <% if (__curName) { %>
+                                                    <%= __curName %>
+                                                        <% } else if (__cur) { %>Character <%= __cur %>
+                                                                <% } else { %>No Character<% } %>
+                                            </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" id="charMenu">
                         <li>

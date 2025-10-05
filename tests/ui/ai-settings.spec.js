@@ -11,7 +11,7 @@ async function waitForServer(timeoutMs = 10000) {
     try {
       const res = await axios.get(BASE_URL);
       if (res && res.status >= 200 && res.status < 500) return true;
-    } catch (_) {}
+    } catch (_) { }
     await new Promise(r => setTimeout(r, 200));
   }
   return false;
@@ -28,8 +28,9 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   if (process.env.KILL_SERVER_AFTER_TESTS === '1' && child) {
-    try { child.kill('SIGTERM'); } catch (_) {}
-    child = null;
+    process.once('exit', () => {
+      try { child.kill('SIGTERM'); } catch (_) { }
+    });
   }
 });
 

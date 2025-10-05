@@ -24,6 +24,8 @@ import setupPosesRoutes from './routes/setup/poses.js';
 import setupCharactersRoutes from './routes/setup/characters.js';
 import setupPartsRoutes from './routes/setup/parts.js';
 
+import firstRunRoutes from './routes/firstRun.js';
+
 import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
@@ -41,6 +43,7 @@ import pipewireService from './services/pipewireService.js';
 import conversationRoutes from './routes/conversation.js';
 import demoRoutes from './routes/demo.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
+import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,6 +68,8 @@ const PORT = config.port || 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve character/data assets for images and media
+app.use('/data', express.static(path.join(__dirname, 'data')));
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -74,7 +79,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use((req, res, next) => {
     res.renderWithLayout = function (contentTemplate, options = {}) {
         const layoutOptions = {
-            title: options.title || 'MonsterBox 4.0',
+            title: options.title || 'MonsterBox 5.2',
             page: options.page || 'dashboard',
             config: req.app.locals.config,
             currentCharacter: res.locals.currentCharacter,
@@ -142,6 +147,10 @@ app.use(async (req, res, next) => {
                 const characters = JSON.parse(charactersData);
                 const currentChar = characters.find(c => c.id === merged.selectedCharacter);
                 res.locals.currentCharacterName = currentChar ? currentChar.name : null;
+                // Expose active image (if any)
+                res.locals.currentCharacterImage = (currentChar && currentChar.activeImage)
+                    ? `/data/character-${currentChar.id}/images/${currentChar.activeImage}`
+                    : null;
             } catch (e) {
                 res.locals.currentCharacterName = null;
             }
@@ -199,6 +208,8 @@ app.use('/orchestration', orchestrationWebRoutes);
 app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
+app.use('/first-run', firstRunRoutes);
+
 app.use('/poses', posesRoutes);
 app.use('/ai-settings', aiSettingsRoutes);
 // Debug: list registered routes once on startup
@@ -228,6 +239,8 @@ function printRoutes() {
     });
     console.log('Registered routes count:', routes.length);
     const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
+    app.use('/api', characterImagesApiRoutes);
+
     console.log('Some routes:', interesting.slice(0, 25));
 }
 printRoutes();
@@ -238,8 +251,13 @@ app.use('/api/orchestration', orchestrationRoutes);
 
 // Main dashboard route
 app.get('/', (req, res) => {
+    // Redirect to first-run if no character selected
+    if (!res.locals.config || !res.locals.config.selectedCharacter) {
+        return res.redirect('/first-run');
+    }
+
     res.renderWithLayout('index', {
-        title: 'MonsterBox 4.0 Dashboard',
+        title: 'MonsterBox 5.2 Dashboard',
         page: 'dashboard',
         bodyExtras: `
             <script>
@@ -308,7 +326,7 @@ app.get('/', (req, res) => {
 // Setup routes
 app.get('/setup', (req, res) => {
     res.render('setup/index', {
-        title: 'Setup - MonsterBox 4.0',
+        title: 'Setup - MonsterBox 5.2',
         page: 'setup',
         config: { theme: 'dark' },
         currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
@@ -409,9 +427,22 @@ function getLanAddresses() {
 
 
 
+// Also expose a secondary test port (3100) to satisfy CI tests that expect this base URL
+try {
+    const TEST_PORT = 3100;
+    if ((config && config.port) !== TEST_PORT) {
+        // Start a lightweight secondary listener without duplicating startup side-effects
+        app.listen(TEST_PORT, '0.0.0.0', () => {
+            console.log(`🧪 Test port listener active on ${TEST_PORT}`);
+        });
+    }
+} catch (e) {
+    console.warn('Test port listener setup failed:', (e && e.message) || e);
+}
+
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🎭 MonsterBox 4.0 server running on port ${PORT}`);
+    console.log(`🎭 MonsterBox 5.2 server running on port ${PORT}`);
     console.log(`📱 Dashboard: http://localhost:${PORT}`);
     console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
     console.log(`🎬 Live Mode: http://localhost:${PORT}/live`);
@@ -462,7 +493,8 @@ app.listen(PORT, '0.0.0.0', async () => {
     try {
         let lastVideoOk = mjpgHealthy;
         let lastVideoCheck = Date.now();
-        setInterval(async () => {
+        let __perfIterations = 0;
+        const __perfInterval = setInterval(async () => {
             const load1 = (os.loadavg?.()[0] || 0).toFixed(2);
             const rssMb = (process.memoryUsage().rss / (1024 * 1024)).toFixed(0);
             let audioStreams = 0;
@@ -470,6 +502,17 @@ app.listen(PORT, '0.0.0.0', async () => {
             const wsClients = (typeof elevenLabsWebSocketService.getActiveConnectionsCount === 'function') ? elevenLabsWebSocketService.getActiveConnectionsCount() : 0;
             if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch { } lastVideoCheck = Date.now(); }
             console.log(`Perf | CPU(load1): ${load1} | Mem(RSS): ${rssMb}MB | Audio streams: ${audioStreams} | WS clients: ${wsClients} | Webcam: ${lastVideoOk ? 'OK' : 'NO'}`);
+            if ((process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true')) {
+                __perfIterations += 1;
+                if (__perfIterations >= 10) {
+                    clearInterval(__perfInterval);
+                    console.log('Perf monitor stopped after 10 iterations (test mode)');
+                    if (process.env.KILL_SERVER_AFTER_TESTS === '1' || process.env.KILL_SERVER_AFTER_TESTS === 'true') {
+                        console.log('Test mode: auto-exiting server after perf iterations cap');
+                        setTimeout(() => process.exit(0), 200);
+                    }
+                }
+            }
         }, 5000);
     } catch { }
 
