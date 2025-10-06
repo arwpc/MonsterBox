@@ -13,6 +13,7 @@ import * as servoService from '../../services/hardwareService/servo.js';
 import * as continuousServoCalibration from '../../services/continuousServoCalibrationService.js';
 import hardwareService from '../../services/hardwareService/index.js';
 import * as standardServoCalibration from '../../services/standardServoCalibrationService.js';
+import * as simpleCal from '../../services/simpleCalibrationService.js';
 
 import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
@@ -435,6 +436,64 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
         res.json({ success: true, markers });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to rename marker' });
+    }
+});
+
+// ===== Unified Simple Calibration (servo standard, motor, linear_actuator) =====
+router.get('/api/simple/:id', async (req, res) => {
+    try {
+        const data = await simpleCal.getForPart(req.params.id);
+        res.json({ success: true, calibration: data });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Failed to load simple calibration', message: e.message });
+    }
+});
+
+router.post('/api/simple/:id/set-safe', express.json(), async (req, res) => {
+    try {
+        const { which, value } = req.body || {};
+        const data = await simpleCal.setSafe(req.params.id, which, value);
+        res.json({ success: true, calibration: data });
+    } catch (e) {
+        res.status(400).json({ success: false, error: 'Failed to set safe point', message: e.message });
+    }
+});
+
+router.post('/api/simple/:id/points', express.json(), async (req, res) => {
+    try {
+        const { name, value, description } = req.body || {};
+        const data = await simpleCal.upsertPoint(req.params.id, name, value, description);
+        res.json({ success: true, calibration: data });
+    } catch (e) {
+        res.status(400).json({ success: false, error: 'Failed to save point', message: e.message });
+    }
+});
+
+router.delete('/api/simple/:id/points/:name', async (req, res) => {
+    try {
+        const data = await simpleCal.deletePoint(req.params.id, req.params.name);
+        res.json({ success: true, calibration: data });
+    } catch (e) {
+        res.status(400).json({ success: false, error: 'Failed to delete point', message: e.message });
+    }
+});
+
+router.post('/api/simple/:id/points/:oldName/rename', express.json(), async (req, res) => {
+    try {
+        const { newName } = req.body || {};
+        const data = await simpleCal.renamePoint(req.params.id, req.params.oldName, newName);
+        res.json({ success: true, calibration: data });
+    } catch (e) {
+        res.status(400).json({ success: false, error: 'Failed to rename point', message: e.message });
+    }
+});
+
+router.post('/api/simple/:id/reset', async (req, res) => {
+    try {
+        await simpleCal.reset(req.params.id);
+        res.json({ success: true, message: 'Simple calibration reset' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: 'Failed to reset simple calibration', message: e.message });
     }
 });
 

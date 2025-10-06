@@ -253,6 +253,35 @@
                       </div>
                     </div>
 
+                    <!-- Simple Calibration (Unified) -->
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header"><i class="bi bi-bullseye"></i> Simple Calibration</div>
+                        <div class="card-body">
+                          <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                              <button type="button" class="btn btn-outline-primary w-100"
+                                onclick="window.sc_set('min')">Set Minimum</button>
+                              <div class="small text-muted mt-1">Min: <span id="scMinVal">Not Set</span></div>
+                            </div>
+                            <div class="col-md-4">
+                              <button type="button" class="btn btn-outline-primary w-100"
+                                onclick="window.sc_set('max')">Set Maximum</button>
+                              <div class="small text-muted mt-1">Max: <span id="scMaxVal">Not Set</span></div>
+                            </div>
+                            <div class="col-md-4">
+                              <button type="button" class="btn btn-success w-100" onclick="window.sc_add()"><i
+                                  class="bi bi-plus-circle"></i> Add Named Position</button>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <ul id="scList" class="list-group"></ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+
                     <div class="col-12 d-flex justify-content-between">
                       <button id="deletePartBtn" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Part</button>
                       <div>
@@ -1449,6 +1478,86 @@
         window.loadParts = loadParts;
         loadParts().catch(e => console.error(e));
 
+        // Simple Calibration helpers (Unified) - define if not already defined
+        if (typeof window.sc_refresh === 'undefined') {
+          function sc_currentValue() {
+            var part = window.selectedPart || {}; var t = String(part.type || '');
+            if (t === 'servo') {
+              var n = document.getElementById('angNum'); if (n) { var v = parseInt(n.value || '0', 10); if (!isNaN(v)) return v; }
+              var v2 = prompt('Enter angle (0-180)'); var pv = parseInt(v2, 10); return isNaN(pv) ? 90 : pv;
+            } else if (t === 'motor') {
+              var d = document.getElementById('motDur'); if (d) { var v3 = parseInt(d.value || '500', 10); if (!isNaN(v3)) return v3; }
+              var v4 = prompt('Enter duration (ms)'); var pv2 = parseInt(v4, 10); return isNaN(pv2) ? 500 : pv2;
+            } else if (t === 'linear_actuator') {
+              var d2 = document.getElementById('laDur'); if (d2) { var v5 = parseInt(d2.value || '500', 10); if (!isNaN(v5)) return v5; }
+              var v6 = prompt('Enter duration (ms)'); var pv3 = parseInt(v6, 10); return isNaN(pv3) ? 500 : pv3;
+            }
+            var fallback = prompt('Enter value'); var pf = parseInt(fallback, 10); return isNaN(pf) ? 0 : pf;
+          }
+          async function sc_refresh() {
+            try {
+              var pid = window.selectedPartId; if (!pid) return;
+              const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}`);
+              const j = await r.json(); if (!j || j.success === false) return;
+              var d = j.calibration || {};
+              var minEl = document.getElementById('scMinVal'); var maxEl = document.getElementById('scMaxVal');
+              if (minEl) minEl.textContent = (typeof d.safeMin === 'number') ? String(d.safeMin) : 'Not Set';
+              if (maxEl) maxEl.textContent = (typeof d.safeMax === 'number') ? String(d.safeMax) : 'Not Set';
+              var list = document.getElementById('scList'); if (list) {
+                list.innerHTML = '';
+                (d.points || []).forEach(function (p) {
+                  var li = document.createElement('li'); li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                  var left = document.createElement('div');
+                  var strong = document.createElement('strong'); strong.textContent = p.name; left.appendChild(strong);
+                  var sub = document.createElement('div'); sub.className = 'small text-muted'; sub.textContent = String(p.value); left.appendChild(sub);
+                  var btns = document.createElement('div'); btns.className = 'btn-group btn-group-sm';
+                  var del = document.createElement('button'); del.className = 'btn btn-outline-danger'; del.innerHTML = '<i class="bi bi-trash"></i>';
+                  del.addEventListener('click', function () { window.sc_del(p.name); });
+                  btns.appendChild(del);
+                  li.appendChild(left); li.appendChild(btns);
+                  list.appendChild(li);
+                });
+              }
+            } catch (_) { }
+          }
+          async function sc_set(which) {
+            try {
+              var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+              var val = sc_currentValue();
+              const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/set-safe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: which, value: val }) });
+              const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+              sc_refresh();
+            } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+          }
+          async function sc_add() {
+            try {
+              var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+              var name = prompt('Position name'); if (!name) return;
+              var val = sc_currentValue();
+              const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, value: val }) });
+              const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+              sc_refresh();
+            } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+          }
+          async function sc_del(name) {
+            try {
+              var pid = window.selectedPartId; if (!pid) return;
+              if (!confirm('Delete "' + name + '"?')) return;
+              const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points/${encodeURIComponent(name)}`, { method: 'DELETE' });
+              const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+              sc_refresh();
+            } catch (e) { }
+          }
+          window.sc_refresh = sc_refresh;
+          window.sc_set = sc_set;
+          window.sc_add = sc_add;
+          window.sc_del = sc_del;
+          document.addEventListener('click', function (ev) {
+            var t = ev.target; if (!t) return;
+            if (t.matches && t.matches('[data-bs-target="#tabEdit"]')) { setTimeout(sc_refresh, 200); }
+          });
+        }
+
         // Add Part Modal functionality
         const partTypes = {
           motor: { icon: '🔄', description: 'DC motors for movement', requiresPin: false },
@@ -2104,12 +2213,18 @@
             .then(r => r.json())
             .then(data => {
               if (data.success) {
-                // Close modal and reset form
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addPartModal'));
-                if (modal) modal.hide();
-                document.getElementById('addPartForm').reset();
-                document.getElementById('addPartConfigArea').innerHTML = '';
-                document.getElementById('addModelGroup').style.display = 'none';
+                // Close modal and reset form (robust: get or create instance before hide)
+                (function () {
+                  var el = document.getElementById('addPartModal');
+                  var modal = (window.bootstrap && bootstrap.Modal && (bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance && bootstrap.Modal.getOrCreateInstance(el))) || null;
+                  if (!modal && window.bootstrap && bootstrap.Modal) {
+                    try { modal = new bootstrap.Modal(el); } catch (e) { /* no-op */ }
+                  }
+                  if (modal && modal.hide) { modal.hide(); }
+                })();
+                var f = document.getElementById('addPartForm'); if (f && f.reset) f.reset();
+                var cfgArea = document.getElementById('addPartConfigArea'); if (cfgArea) cfgArea.innerHTML = '';
+                var modelGroup = document.getElementById('addModelGroup'); if (modelGroup) modelGroup.style.display = 'none';
 
                 // Reload parts list
                 loadParts();
@@ -3411,6 +3526,95 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Step Pin</label>
+
+      // ===== Simple Calibration helpers (Unified) =====
+      async function sc_refresh() {
+        try {
+          var pid = window.selectedPartId; if (!pid) return;
+          const r = await fetch(`/ setup / calibration / api / simple / ${ encodeURIComponent(pid) } `);
+          const j = await r.json(); if (!j || j.success === false) return;
+          var d = j.calibration || {};
+          var minEl = document.getElementById('scMinVal'); var maxEl = document.getElementById('scMaxVal');
+          if (minEl) minEl.textContent = (typeof d.safeMin === 'number') ? String(d.safeMin) : 'Not Set';
+          if (maxEl) maxEl.textContent = (typeof d.safeMax === 'number') ? String(d.safeMax) : 'Not Set';
+          var list = document.getElementById('scList'); if (list) {
+            list.innerHTML = '';
+            (d.points || []).forEach(function (p) {
+              var li = document.createElement('li'); li.className = 'list-group-item d-flex justify-content-between align-items-center';
+              var left = document.createElement('div');
+left.appendChild((() => { var s=document.createElement('strong'); s.textContent=p.name; return s; })());
+var sub = document.createElement('div'); sub.className='small text-muted'; sub.textContent=String(p.value); left.appendChild(sub);
+var btns = document.createElement('div'); btns.className='btn-group btn-group-sm';
+var del = document.createElement('button'); del.className='btn btn-outline-danger'; del.innerHTML='<i class="bi bi-trash"></i>';
+del.addEventListener('click', function(){ window.sc_del(p.name); });
+btns.appendChild(del);
+li.appendChild(left); li.appendChild(btns);
+        list.appendChild(li);
+      });
+          }
+        } catch (_) { /* ignore */ }
+      }
+      window.sc_refresh = sc_refresh;
+
+      function sc_currentValue() {
+        var part = window.selectedPart || {}; var t = String(part.type || '');
+        if (t === 'servo') {
+          var n = document.getElementById('angNum'); if (n) { var v = parseInt(n.value || '0', 10); if (!isNaN(v)) return v; }
+          var v2 = prompt('Enter angle (0-180)'); var pv = parseInt(v2, 10); return isNaN(pv) ? 90 : pv;
+        } else if (t === 'motor') {
+          var d = document.getElementById('motDur'); if (d) { var v3 = parseInt(d.value || '500', 10); if (!isNaN(v3)) return v3; }
+          var v4 = prompt('Enter duration (ms)'); var pv2 = parseInt(v4, 10); return isNaN(pv2) ? 500 : pv2;
+        } else if (t === 'linear_actuator') {
+          var d2 = document.getElementById('laDur'); if (d2) { var v5 = parseInt(d2.value || '500', 10); if (!isNaN(v5)) return v5; }
+          var v6 = prompt('Enter duration (ms)'); var pv3 = parseInt(v6, 10); return isNaN(pv3) ? 500 : pv3;
+        }
+        var fallback = prompt('Enter value'); var pf = parseInt(fallback, 10); return isNaN(pf) ? 0 : pf;
+      }
+
+      async function sc_set(which) {
+        try {
+          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+          var val = sc_currentValue();
+          const r = await fetch(`/ setup / calibration / api / simple / ${ encodeURIComponent(pid) } /set-safe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: which, value: val }) });
+        const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+        sc_refresh();
+      } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+      }
+      window.sc_set = sc_set;
+
+      async function sc_add() {
+        try {
+          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+          var name = prompt('Position name'); if (!name) return;
+          var val = sc_currentValue();
+          const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, value: val }) });
+          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+          sc_refresh();
+        } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+      }
+      window.sc_add = sc_add;
+
+      async function sc_del(name) {
+        try {
+          var pid = window.selectedPartId; if (!pid) return;
+          if (!confirm('Delete "' + name + '"?')) return;
+          const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points/${encodeURIComponent(name)}`, { method: 'DELETE' });
+          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+          sc_refresh();
+        } catch (e) { /* ignore */ }
+      }
+      window.sc_del = sc_del;
+
+      // Refresh panel when switching to Edit tab or selecting part
+      document.addEventListener('click', function (ev) {
+        var t = ev.target; if (!t) return;
+        if (t.matches && t.matches('[data-bs-target="#tabEdit"]')) { setTimeout(sc_refresh, 200); }
+      });
+      // Also refresh on selection changes
+      const _origSelectPart = window.selectPart;
+      // If selectPart is not globally exposed, fallback to periodic light refresh on selection
+      setInterval(function () { if (window.selectedPartId) sc_refresh(); }, 5000);
+
                   <input type="number" class="form-control" id="editStepPin" min="1" max="40">
                 </div>
                 <div class="col-md-3">
@@ -3431,15 +3635,15 @@
                     <option value="16">16</option>
                   </select>
                 </div>
-              </div>
-              <div class="row g-3 mt-1">
-                <div class="col-md-3">
-                  <label class="form-label">Steps/Rev</label>
-                  <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
-                </div>
-              </div>
-            </div>
+              </div >
+        <div class="row g-3 mt-1">
+          <div class="col-md-3">
+            <label class="form-label">Steps/Rev</label>
+            <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
           </div>
+        </div>
+            </div >
+          </div >
         `;
       }
 

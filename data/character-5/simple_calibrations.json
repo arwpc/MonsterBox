@@ -1,0 +1,13 @@
+{
+  "2": {
+    "safeMin": 200,
+    "safeMax": 1200,
+    "points": [
+      {
+        "name": "Hand Up",
+        "value": 120,
+        "description": ""
+      }
+    ]
+  }
+}
