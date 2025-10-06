@@ -103,7 +103,8 @@ class ElevenLabsTTSService {
                 {
                     headers: {
                         'xi-api-key': this.config.apiKey,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'audio/wav'
                     },
                     responseType: 'arraybuffer',
                     timeout: this.config.timeout
@@ -113,7 +114,7 @@ class ElevenLabsTTSService {
             return {
                 success: true,
                 audioBuffer: Buffer.from(response.data),
-                contentType: response.headers['content-type'] || 'audio/mpeg'
+                contentType: response.headers['content-type'] || 'audio/wav'
             };
         } catch (error) {
             console.error('TTS generation error:', error);
@@ -146,7 +147,8 @@ class ElevenLabsTTSService {
                 {
                     headers: {
                         'xi-api-key': this.config.apiKey,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'audio/wav'
                     },
                     responseType: 'stream',
                     timeout: this.config.timeout
@@ -156,7 +158,7 @@ class ElevenLabsTTSService {
             return {
                 success: true,
                 stream: response.data,
-                contentType: response.headers['content-type'] || 'audio/mpeg'
+                contentType: response.headers['content-type'] || 'audio/wav'
             };
         } catch (error) {
             console.error('TTS streaming error:', error);
