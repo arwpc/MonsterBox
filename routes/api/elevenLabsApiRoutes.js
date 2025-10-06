@@ -339,7 +339,31 @@ router.get('/voices/:id', requireElevenLabsConfig, async (req, res) => {
 router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
     try {
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
-        const { text, voice_id, model, voice_settings } = req.body;
+        const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
+        const { readConfig } = await import('../../services/configService.js');
+
+        const { text } = req.body || {};
+        let { voice_id, model, voice_settings, characterId } = req.body || {};
+
+        // Resolve a safe default voice_id when missing or blank
+        try {
+            if (!voice_id || String(voice_id).trim() === '') {
+                // Prefer the provided characterId, otherwise use currently selected character
+                if (!characterId) {
+                    try {
+                        const cfg = await readConfig();
+                        characterId = cfg && cfg.selectedCharacter ? cfg.selectedCharacter : null;
+                    } catch (_) { /* ignore */ }
+                }
+                const resolved = await getTTSConfigForCharacter(characterId);
+                voice_id = resolved && resolved.voice_id ? resolved.voice_id : voice_id;
+            }
+        } catch (_) { /* best-effort fallback */ }
+
+        // If still no voice_id, fail fast with a clear message rather than hitting ElevenLabs 404
+        if (!voice_id || String(voice_id).trim() === '') {
+            return res.status(400).json({ success: false, error: 'voice_id is required (resolved none). Configure TTS voice in AI Settings.' });
+        }
 
         // Convert frontend format to service format
         const options = {

@@ -51,6 +51,10 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     await expect(alert).toBeVisible();
     await expect(alert).toHaveClass(/alert-success|alert-danger/);
     await expect(alert).toContainText(/Test|Action/);
+
+    // Cleanup: remove the created test part immediately
+    const del = await request.delete(`${BASE_URL}/setup/parts/api/parts/${partId}`);
+    expect(del.ok()).toBeTruthy();
   });
 });
 

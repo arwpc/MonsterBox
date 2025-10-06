@@ -8,6 +8,9 @@ import request from 'supertest';
 
 const BASE_URL = 'http://127.0.0.1:3100';
 
+// Track created part ids for guaranteed cleanup
+const __createdIds = [];
+
 
 const HW_AVAILABLE = process.env.MONSTERBOX_HARDWARE_AVAILABLE === 'true';
 function expectHwAware(res) {
@@ -32,8 +35,18 @@ async function createPart(type, overrides = {}) {
   const body = { ...(defaultsByType[type] || {}), ...overrides };
   const res = await request(BASE_URL).post('/setup/parts/api/parts').send(body).expect(201);
   expect(res.body).to.have.property('success', true);
-  return res.body.part;
+  const part = res.body.part;
+  if (part && part.id) __createdIds.push(String(part.id));
+  return part;
 }
+
+// Ensure we always delete any parts created by these tests
+afterEach(async () => {
+  while (__createdIds.length) {
+    const id = __createdIds.pop();
+    try { await request(BASE_URL).delete(`/setup/parts/api/parts/${id}`).expect(200); } catch (_) { /* ignore */ }
+  }
+});
 
 function defaultActionPayload(part) {
   switch (part.type) {

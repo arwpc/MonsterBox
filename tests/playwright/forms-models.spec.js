@@ -18,6 +18,16 @@ test.describe('Form Workflow - Setup/Models', () => {
     await page.click('#btnSaveModel');
     await expect(page.locator('#modelsTable tbody')).toBeVisible();
     await expect(page.locator('#modelsTable')).toContainText(name);
+
+    // Cleanup: delete the created model via API
+    const list = await page.request.get('/setup/models/api/servo');
+    expect(list.ok()).toBeTruthy();
+    const body = await list.json();
+    const created = (body && body.models || body || []).find((m) => m && m.name === name);
+    if (created && created.id) {
+      const del = await page.request.delete(`/setup/models/api/servo/${created.id}`);
+      expect(del.ok()).toBeTruthy();
+    }
   });
 });
 

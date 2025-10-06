@@ -80,30 +80,35 @@ class LinearActuatorController:
             log_error(f"Failed to setup BTS7960 pins: {str(e)}")
             return False
     
-    def control_mdd10a(self, direction, speed, duration):
+    def control_mdd10a(self, direction, speed, duration, pwm_hz=100):
         """Control actuator using MDD10A/Cytron board."""
         try:
             dir_pin = self.pins['dir']
             pwm_pin = self.pins['pwm']
-            
+
             # Stop motor first
             lgpio.gpio_write(self.h, pwm_pin, 0)
             time.sleep(0.05)
-            
+
+            # Normalize direction
+            if direction in ('extend', 'forward'):
+                dir_norm = 'forward'
+            else:
+                dir_norm = 'reverse'
             # Set direction (0=forward, 1=backward)
-            dir_value = 0 if direction == 'forward' else 1
+            dir_value = 0 if dir_norm == 'forward' else 1
             lgpio.gpio_write(self.h, dir_pin, dir_value)
-            log_info(f"Direction set to {direction} (pin {dir_pin} = {dir_value})")
-            
+            log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value})")
+
             # Calculate duty cycle
             duty_cycle = int((speed / 100.0) * 255)
-            log_info(f"Speed: {speed}%, Duty cycle: {duty_cycle}/255")
-            
+            log_info(f"Speed: {speed}%, Duty cycle: {duty_cycle}/255, PWM: {pwm_hz} Hz")
+
             # Software PWM
-            cycle_time = 0.01  # 10ms = 100Hz
+            cycle_time = max(1.0/float(pwm_hz or 100), 0.0002)
             start_time = time.time()
             end_time = start_time + (duration / 1000.0)
-            
+
             while time.time() < end_time:
                 if duty_cycle > 0:
                     on_time = cycle_time * (duty_cycle / 255.0)
@@ -114,43 +119,58 @@ class LinearActuatorController:
                     time.sleep(off_time)
                 else:
                     time.sleep(cycle_time)
-            
+
             # Stop motor
             lgpio.gpio_write(self.h, pwm_pin, 0)
             log_info("Motor stopped")
             return True
-            
+
         except Exception as e:
             log_error(f"Error controlling MDD10A: {str(e)}")
             return False
     
-    def control_bts7960(self, direction, speed, duration):
+    def control_bts7960(self, direction, speed, duration, pwm_hz=2000):
         """Control actuator using BTS7960 board."""
         try:
             rpwm_pin = self.pins['rpwm']
             lpwm_pin = self.pins['lpwm']
-            
+
+            # Ensure enable pins HIGH if present
+            try:
+                if 'ren' in self.pins:
+                    lgpio.gpio_write(self.h, self.pins['ren'], 1)
+                if 'len' in self.pins:
+                    lgpio.gpio_write(self.h, self.pins['len'], 1)
+            except Exception:
+                pass
+
             # Stop motor first
             lgpio.gpio_write(self.h, rpwm_pin, 0)
             lgpio.gpio_write(self.h, lpwm_pin, 0)
-            time.sleep(0.05)
-            
+            time.sleep(0.02)
+
+            # Normalize direction
+            if direction in ('extend', 'forward'):
+                dir_norm = 'forward'
+            else:
+                dir_norm = 'reverse'
+
             # Calculate duty cycle
             duty_cycle = int((speed / 100.0) * 255)
-            log_info(f"BTS7960 control - Direction: {direction}, Speed: {speed}%, Duty: {duty_cycle}/255")
-            
+            log_info(f"BTS7960 control - Direction: {dir_norm}, Speed: {speed}%, Duty: {duty_cycle}/255, PWM: {pwm_hz} Hz")
+
             # Determine which PWM pin to use
-            active_pin = rpwm_pin if direction == 'forward' else lpwm_pin
-            inactive_pin = lpwm_pin if direction == 'forward' else rpwm_pin
-            
+            active_pin = rpwm_pin if dir_norm == 'forward' else lpwm_pin
+            inactive_pin = lpwm_pin if dir_norm == 'forward' else rpwm_pin
+
             # Ensure inactive pin is LOW
             lgpio.gpio_write(self.h, inactive_pin, 0)
-            
+
             # Software PWM on active pin
-            cycle_time = 0.01  # 10ms = 100Hz
+            cycle_time = max(1.0/float(pwm_hz or 2000), 0.0002)
             start_time = time.time()
             end_time = start_time + (duration / 1000.0)
-            
+
             while time.time() < end_time:
                 if duty_cycle > 0:
                     on_time = cycle_time * (duty_cycle / 255.0)
@@ -161,13 +181,13 @@ class LinearActuatorController:
                     time.sleep(off_time)
                 else:
                     time.sleep(cycle_time)
-            
+
             # Stop motor
             lgpio.gpio_write(self.h, rpwm_pin, 0)
             lgpio.gpio_write(self.h, lpwm_pin, 0)
             log_info("BTS7960 motor stopped")
             return True
-            
+
         except Exception as e:
             log_error(f"Error controlling BTS7960: {str(e)}")
             return False
@@ -200,8 +220,9 @@ def main():
         direction = config.get('direction', 'forward')
         speed = float(config.get('speed', 50))
         duration = int(config.get('duration', 1000))
-        
-        log_info(f"Configuration: board={board_type}, direction={direction}, speed={speed}, duration={duration}")
+        pwm_hz = int(config.get('pwmFrequency', 2000 if board_type == BOARD_BTS7960 else 100))
+
+        log_info(f"Configuration: board={board_type}, direction={direction}, speed={speed}, duration={duration}, pwm={pwm_hz}Hz")
         
         # Create controller
         controller = LinearActuatorController(board_type)
@@ -217,8 +238,8 @@ def main():
             if not controller.setup_mdd10a_pins(dir_pin, pwm_pin):
                 print(json.dumps({"success": False, "error": "Pin setup failed"}))
                 sys.exit(1)
-            success = controller.control_mdd10a(direction, speed, duration)
-            
+            success = controller.control_mdd10a(direction, speed, duration, pwm_hz)
+
         elif board_type == BOARD_BTS7960:
             rpwm_pin = int(config.get('rpwmPin'))
             lpwm_pin = int(config.get('lpwmPin'))
@@ -226,11 +247,11 @@ def main():
             len_pin = config.get('lenPin')
             if ren_pin: ren_pin = int(ren_pin)
             if len_pin: len_pin = int(len_pin)
-            
+
             if not controller.setup_bts7960_pins(rpwm_pin, lpwm_pin, ren_pin, len_pin):
                 print(json.dumps({"success": False, "error": "Pin setup failed"}))
                 sys.exit(1)
-            success = controller.control_bts7960(direction, speed, duration)
+            success = controller.control_bts7960(direction, speed, duration, pwm_hz)
         else:
             log_error(f"Unsupported board type: {board_type}")
             print(json.dumps({"success": False, "error": f"Unsupported board type: {board_type}"}))

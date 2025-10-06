@@ -75,6 +75,12 @@ describe('Hardware Parts Integration', () => {
             expect(response.body).to.have.property('part');
             expect(response.body.part).to.have.property('type', 'motor');
             expect(response.body.part).to.have.property('name', 'Test Motor');
+
+            // Cleanup immediately
+            const createdId = response.body.part.id;
+            if (createdId) {
+                await request(BASE_URL).delete(`/setup/parts/api/parts/${createdId}`).expect(200);
+            }
         });
 
         it('should create a new servo part', async () => {
@@ -100,6 +106,12 @@ describe('Hardware Parts Integration', () => {
             expect(response.body).to.have.property('success', true);
             expect(response.body.part).to.have.property('type', 'servo');
             expect(response.body.part.config).to.have.property('servoType', 'standard');
+
+            // Cleanup immediately
+            const createdId = response.body.part.id;
+            if (createdId) {
+                await request(BASE_URL).delete(`/setup/parts/api/parts/${createdId}`).expect(200);
+            }
         });
 
         it('should create a new LED part', async () => {
@@ -123,6 +135,12 @@ describe('Hardware Parts Integration', () => {
             expect(response.body).to.have.property('success', true);
             expect(response.body.part).to.have.property('type', 'led');
             expect(response.body.part.config).to.have.property('brightness', 128);
+
+            // Cleanup immediately
+            const createdId = response.body.part.id;
+            if (createdId) {
+                await request(BASE_URL).delete(`/setup/parts/api/parts/${createdId}`).expect(200);
+            }
         });
 
         it('should create a new sensor part', async () => {
@@ -146,6 +164,12 @@ describe('Hardware Parts Integration', () => {
             expect(response.body).to.have.property('success', true);
             expect(response.body.part).to.have.property('type', 'sensor');
             expect(response.body.part.config).to.have.property('sensorType', 'digital');
+
+            // Cleanup immediately
+            const createdId = response.body.part.id;
+            if (createdId) {
+                await request(BASE_URL).delete(`/setup/parts/api/parts/${createdId}`).expect(200);
+            }
         });
     });
 

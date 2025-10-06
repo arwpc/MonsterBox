@@ -126,7 +126,9 @@
       "deviceId": "default"
     },
     "created": "2025-10-05T18:13:53.101Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "mic_generic_usb",
+    "updated": "2025-10-06T02:11:40.479Z"
   },
   {
     "id": "8",
@@ -134,8 +136,107 @@
     "type": "light",
     "pin": 26,
     "description": "basic on/off lighting",
-    "config": {},
+    "config": {
+      "brightness": 100
+    },
     "created": "2025-10-05T22:59:52.554Z",
+    "enabled": true,
+    "modelId": "light_generic_12v",
+    "updated": "2025-10-06T02:12:04.445Z"
+  },
+  {
+    "id": "9",
+    "name": "Eye of Orlok",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "modelId": "default-uvc-1"
+    },
+    "created": "2025-10-06T02:14:37.260Z",
+    "enabled": true
+  },
+  {
+    "id": "10",
+    "name": "Jaw of Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "servo_miuzei_25kg",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 8,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-06T02:21:04.041Z",
+    "enabled": true,
+    "markers": [
+      {
+        "name": "Mid",
+        "kind": "absolute",
+        "locked": false,
+        "value": 83,
+        "unit": "deg"
+      },
+      {
+        "name": "Max",
+        "kind": "absolute",
+        "locked": false,
+        "value": 93,
+        "unit": "deg"
+      },
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 70,
+        "unit": "deg"
+      }
+    ],
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2025-10-06T02:23:46.073Z"
+  },
+  {
+    "id": "11",
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 0
+    },
+    "created": "2025-10-06T02:24:37.393Z",
+    "enabled": true,
+    "updated": "2025-10-06T02:27:05.846Z"
+  },
+  {
+    "id": "12",
+    "name": "UI Servo 1759718211367",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-06T02:36:51.817Z",
+    "enabled": true
+  },
+  {
+    "id": "13",
+    "name": "UI Servo 1759718227424",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-06T02:37:07.885Z",
     "enabled": true
   }
 ]

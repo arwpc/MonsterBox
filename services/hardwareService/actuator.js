@@ -35,7 +35,8 @@ export async function controlActuator({
     speed = 75,
     duration = 1000,
     maxExtension = 15000,
-    maxRetraction = 15000
+    maxRetraction = 15000,
+    pwmFrequency
 }) {
     if (!['extend', 'retract', 'forward', 'reverse'].includes(direction)) {
         throw new Error(`Invalid direction: ${direction}. Must be 'extend', 'retract', 'forward', or 'reverse'`);
@@ -54,6 +55,8 @@ export async function controlActuator({
             speed: Number(speed),
             duration: Number(duration)
         };
+
+        if (pwmFrequency != null) config.pwmFrequency = Number(pwmFrequency);
 
         if (renPin != null) config.renPin = Number(renPin);
         if (lenPin != null) config.lenPin = Number(lenPin);
