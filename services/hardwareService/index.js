@@ -76,7 +76,7 @@ async function getModelDefaultsForPart(part) {
 const HARDWARE_CONTROLLERS = {
     // 🔄 Motor - DC motors for movement
     motor: {
-        async control({ directionPin, pwmPin, direction = 'forward', speed = 50, duration = 1000 }) {
+        async control({ directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, pwmFrequency, direction = 'forward', speed = 50, duration = 1000 }) {
             try {
                 // Normalize direction naming (map cw/ccw -> forward/backward)
                 const dirRaw = String(direction || '').toLowerCase();
@@ -84,44 +84,80 @@ const HARDWARE_CONTROLLERS = {
                     : (dirRaw === 'ccw' || dirRaw === 'rev' || dirRaw === 'reverse' || dirRaw === 'back' || dirRaw === 'backward') ? 'backward'
                         : (dirRaw === 'stop' ? 'stop' : dirRaw);
 
-                // Pass both direction and PWM pins directly to motor_cli.py
-                const out = await runWrapper('motor_cli.py', [String(normDir), String(speed), String(duration), String(directionPin), String(pwmPin)]);
+                let out;
+                if (String(controlBoard || '').toUpperCase() === 'BTS7960' && rpwmPin != null && lpwmPin != null) {
+                    // Use generic BTS7960 controller (same as linear actuator)
+                    const btsDir = (normDir === 'backward') ? 'reverse' : (normDir === 'forward' ? 'forward' : 'forward');
+                    const cfg = {
+                        controlBoard: 'BTS7960',
+                        rpwmPin: Number(rpwmPin),
+                        lpwmPin: Number(lpwmPin),
+                        direction: btsDir,
+                        speed: Number(normDir === 'stop' ? 0 : speed),
+                        duration: Number(normDir === 'stop' ? 0 : duration)
+                    };
+                    if (renPin != null) cfg.renPin = Number(renPin);
+                    if (lenPin != null) cfg.lenPin = Number(lenPin);
+                    if (pwmFrequency != null) cfg.pwmFrequency = Number(pwmFrequency);
+                    out = await runWrapper('linear_actuator_control_v2.py', [JSON.stringify(cfg)]);
+                } else {
+                    // Legacy path: MDD10A/Cytron via motor_cli.py with dir+pwm pins
+                    out = await runWrapper('motor_cli.py', [String(normDir), String(speed), String(duration), String(directionPin), String(pwmPin)]);
+                }
+
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
                 return {
                     success,
                     partType: 'motor',
                     directionPin: directionPin,
                     pwmPin: pwmPin,
+                    rpwmPin: rpwmPin,
+                    lpwmPin: lpwmPin,
+                    controlBoard: controlBoard,
                     direction: normDir,
                     speed: speed,
                     duration: duration,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) ${normDir} at ${speed}%` : 'Motor command failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor ${normDir} at ${speed}%` : 'Motor command failed')
                 };
             } catch (error) {
-                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, error: error.message };
+                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, rpwmPin, lpwmPin, error: error.message };
             }
         },
 
-        async stop({ directionPin, pwmPin }) {
+        async stop({ directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard }) {
             try {
-                // Pass both direction and PWM pins directly to motor_cli.py
-                const out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(directionPin), String(pwmPin)]);
+                let out;
+                if (String(controlBoard || '').toUpperCase() === 'BTS7960' && rpwmPin != null && lpwmPin != null) {
+                    const cfg = {
+                        controlBoard: 'BTS7960',
+                        rpwmPin: Number(rpwmPin),
+                        lpwmPin: Number(lpwmPin),
+                        direction: 'forward',
+                        speed: 0,
+                        duration: 0
+                    };
+                    if (renPin != null) cfg.renPin = Number(renPin);
+                    if (lenPin != null) cfg.lenPin = Number(lenPin);
+                    out = await runWrapper('linear_actuator_control_v2.py', [JSON.stringify(cfg)]);
+                } else {
+                    out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(directionPin), String(pwmPin)]);
+                }
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
                 return {
                     success,
                     partType: 'motor',
                     directionPin: directionPin,
                     pwmPin: pwmPin,
-
-
+                    rpwmPin: rpwmPin,
+                    lpwmPin: lpwmPin,
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Motor (dir:${directionPin}, pwm:${pwmPin}) stopped` : 'Motor stop failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motor stopped` : 'Motor stop failed')
                 };
             } catch (error) {
-                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, error: error.message };
+                return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, rpwmPin, lpwmPin, error: error.message };
             }
         }
     },

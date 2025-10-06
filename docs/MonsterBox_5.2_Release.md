@@ -12,7 +12,7 @@ This document is the authoritative checklist and handoff plan for releasing Mons
 - Passwordless deploy: scripts/deploy-to-animatronic.sh runs without interactive prompts
 - First‑run Skull-themed Character selection page
 - Confirm full functionality of all servos and Parts using PCA9685 and Direct GPIO. Confirm PCA9685:
-        * PCA9685 PWM Driver Service 
+        * PCA9685 PWM Driver Service
       * Direct local function calls for PCA9685 servo control
 - Character Images: CRUD + round thumbnail in navbar + presence in selection/manage forms + home tile
 - Attention to detail: no stray 4.0 labels; proper DOCTYPE on all pages; Playwright green
@@ -55,6 +55,55 @@ Implementation notes:
 - UI: Show controlBoard selector (MDD10A/BTS7960). If BTS7960, show rpwmPin, lpwmPin, renPin, lenPin. If MDD10A, show directionPin, pwmPin.
 - Create/Edit handlers: include these fields in payload; PUT/POST persists to character parts.json.
 - Hardware service already supports BTS7960 via linear_actuator_control_v2.py.
+
+
+### BTS7960 pin semantics and reuse
+- Direction mapping used in MonsterBox: Forward = RPWM high, Reverse = LPWM high (inactive PWM pin held LOW). If your wiring behaves opposite, swap the RPWM/LPWM assignments in the part config.
+- R_EN/L_EN should be driven HIGH (enabled) when present.
+
+#### Generic per‑part config (data/character-X/parts.json)
+Add or edit a Linear Actuator part and set `controlBoard` to `BTS7960` with all four pins:
+
+```json
+{
+  "id": "<next-id>",
+  "name": "Loom Over (BTS7960)",
+  "type": "linear_actuator",
+  "controlBoard": "BTS7960",
+  "rpwmPin": 19,
+  "lpwmPin": 21,
+  "renPin": 5,
+  "lenPin": 22,
+  "description": "12V linear actuator via BTS7960",
+  "speedDefault": 60,
+  "durationDefault": 2000
+}
+```
+
+This same configuration pattern applies to any other BTS7960‑driven DC actuator, including Groundbreaker’s Head. Create additional Linear Actuator parts with their respective GPIOs.
+
+#### Quick verification (no UI)
+Use the existing wrapper that the Hardware Service calls (lgpio‑based):
+
+```bash
+python3 python_wrappers/linear_actuator_control_v2.py '{
+  "controlBoard": "BTS7960",
+  "rpwmPin": 19,
+  "lpwmPin": 21,
+  "renPin": 5,
+  "lenPin": 22,
+  "direction": "forward",
+  "speed": 60,
+  "duration": 2000,
+  "pwmFrequency": 2000
+}'
+```
+Then reverse direction by setting `"direction": "reverse"`.
+
+#### UI integration notes (reuse across parts)
+- Add/Edit Part forms must surface these BTS7960 fields when `type = linear_actuator` and `controlBoard = BTS7960` (rpwmPin, lpwmPin, renPin, lenPin) and persist to the character’s parts.json.
+- Motor parts also support BTS7960: set `controlBoard = BTS7960` and provide `rpwmPin`/`lpwmPin` and optional `renPin`/`lenPin`; directions `forward`/`backward` map to BTS7960 `forward`/`reverse`.
+- Standardize on lgpio for GPIO access. pigpio may be installed for compatibility but is not required for 5.2.
 
 ## Deploy Plan (per device)
 1) Verify passwordless SSH from build host to device
