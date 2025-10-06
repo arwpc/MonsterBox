@@ -1,1 +1,90 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "UI Servo 1759723327796",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-06T04:02:08.327Z",
+    "enabled": true
+  },
+  {
+    "id": "2",
+    "name": "UI Servo 1759723344419",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-06T04:02:25.039Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-06T04:02:51.632Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "4",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-06T04:03:25.422Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "5",
+    "name": "Demo Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "resolution": "640x480"
+    },
+    "created": "2025-10-06T04:03:53.732Z",
+    "enabled": true,
+    "characterId": 1
+  },
+  {
+    "id": "6",
+    "name": "Head Pan",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-10-06T04:03:53.734Z",
+    "enabled": true,
+    "characterId": 1
+  }
+]
