@@ -44,7 +44,7 @@
     "name": "Bow At The Waist",
     "type": "linear_actuator",
     "pin": null,
-    "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)",
+    "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 21=RPWM, 19=LPWM, 5=REN, 22=LEN) - CORRECTED WIRING",
     "config": {
       "maxExtension": 15000,
       "maxRetraction": 15000,
@@ -60,7 +60,7 @@
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2025-10-05T22:48:50.944Z"
+    "updated": "2025-10-06T00:24:32.586Z"
   },
   {
     "id": "4",
