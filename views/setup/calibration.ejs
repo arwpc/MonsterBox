@@ -2576,6 +2576,28 @@
               renPin = null;
               lenPin = null;
             }
+
+            // Allow Advanced JSON to override motor/linear_actuator fields
+            try {
+              const txt = document.getElementById('editConfig')?.value || '';
+              if (txt.trim().length) {
+                const adv = JSON.parse(txt);
+                if (adv.controlBoard != null) controlBoard = adv.controlBoard;
+                // MDD10A/Cytron pins
+                if (adv.directionPin != null) directionPin = parseInt(adv.directionPin);
+                if (adv.pwmPin != null) pwmPin = parseInt(adv.pwmPin);
+                // BTS7960 pins
+                if (adv.rpwmPin != null) rpwmPin = parseInt(adv.rpwmPin);
+                if (adv.lpwmPin != null) lpwmPin = parseInt(adv.lpwmPin);
+                if (adv.renPin != null) renPin = parseInt(adv.renPin);
+                if (adv.lenPin != null) lenPin = parseInt(adv.lenPin);
+                // Limits
+                if (adv.maxDuration != null) config.maxDuration = parseInt(adv.maxDuration);
+                if (adv.maxExtension != null) config.maxExtension = parseInt(adv.maxExtension);
+                if (adv.maxRetraction != null) config.maxRetraction = parseInt(adv.maxRetraction);
+                if (adv.modelId && !config.modelId) config.modelId = adv.modelId;
+              }
+            } catch (e) { /* ignore parse errors; keep form values */ }
           }
 
           if (type === 'stepper') {
@@ -2776,6 +2798,23 @@
             // Ensure useful defaults visible
             if (adv.microstepping == null) adv.microstepping = 16;
             if (adv.stepsPerRevolution == null) adv.stepsPerRevolution = 200;
+            if (part.modelId) adv.modelId = part.modelId;
+          }
+          // Include motor/linear_actuator pins in Advanced JSON
+          if ((part.type || '') === 'motor' || (part.type || '') === 'linear_actuator') {
+            if (part.controlBoard != null) adv.controlBoard = part.controlBoard;
+            // MDD10A/Cytron pins
+            if (part.directionPin != null) adv.directionPin = Number(part.directionPin);
+            if (part.pwmPin != null) adv.pwmPin = Number(part.pwmPin);
+            // BTS7960 pins
+            if (part.rpwmPin != null) adv.rpwmPin = Number(part.rpwmPin);
+            if (part.lpwmPin != null) adv.lpwmPin = Number(part.lpwmPin);
+            if (part.renPin != null) adv.renPin = Number(part.renPin);
+            if (part.lenPin != null) adv.lenPin = Number(part.lenPin);
+            // Limits
+            if (part.maxDuration != null) adv.maxDuration = Number(part.maxDuration);
+            if (part.maxExtension != null) adv.maxExtension = Number(part.maxExtension);
+            if (part.maxRetraction != null) adv.maxRetraction = Number(part.maxRetraction);
             if (part.modelId) adv.modelId = part.modelId;
           }
           c.value = JSON.stringify(adv, null, 2);

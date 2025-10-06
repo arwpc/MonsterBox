@@ -1300,11 +1300,46 @@ export async function controlPart(partId, action, params = {}) {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '../..');
         const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
-        const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
-        const partsData = await fs.readFile(partsPath, 'utf8');
-        const parts = JSON.parse(partsData);
 
-        const part = parts.find(p => String(p.id) === String(partId));
+        // Try to load from character-specific parts file first
+        let parts = [];
+        let part = null;
+
+        // Get current character ID
+        let characterId = null;
+        try {
+            const characterDataPath = path.resolve(appRoot, dataDir, 'current-character.json');
+            const characterData = await fs.readFile(characterDataPath, 'utf8');
+            const characterInfo = JSON.parse(characterData);
+            characterId = characterInfo.selectedCharacter;
+        } catch (e) {
+            // No current character set, will try global parts.json
+        }
+
+        // Try character-specific parts file
+        if (characterId) {
+            try {
+                const characterPartsPath = path.resolve(appRoot, dataDir, `character-${characterId}`, 'parts.json');
+                const partsData = await fs.readFile(characterPartsPath, 'utf8');
+                parts = JSON.parse(partsData);
+                part = parts.find(p => String(p.id) === String(partId));
+            } catch (e) {
+                // Character parts file doesn't exist, will try global
+            }
+        }
+
+        // Fall back to global parts.json if not found in character-specific file
+        if (!part) {
+            try {
+                const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
+                const partsData = await fs.readFile(partsPath, 'utf8');
+                parts = JSON.parse(partsData);
+                part = parts.find(p => String(p.id) === String(partId));
+            } catch (e) {
+                // Global parts file doesn't exist
+            }
+        }
+
         if (!part) {
             throw new Error(`Part ${partId} not found`);
         }
@@ -1360,8 +1395,16 @@ export async function controlPart(partId, action, params = {}) {
             if (part.maxRetraction != null) normalized.maxRetraction = Number(part.maxRetraction);
         }
         if (type === 'motor') {
+            // MDD10A/Cytron pins
             if (part.directionPin != null) normalized.directionPin = Number(part.directionPin);
             if (part.pwmPin != null) normalized.pwmPin = Number(part.pwmPin);
+            // BTS7960 pins (same as linear actuator)
+            if (part.rpwmPin != null) normalized.rpwmPin = Number(part.rpwmPin);
+            if (part.lpwmPin != null) normalized.lpwmPin = Number(part.lpwmPin);
+            if (part.renPin != null) normalized.renPin = Number(part.renPin);
+            if (part.lenPin != null) normalized.lenPin = Number(part.lenPin);
+            // Board type and limits
+            if (part.controlBoard != null) normalized.controlBoard = part.controlBoard;
             if (part.maxDuration != null) normalized.maxDuration = Number(part.maxDuration);
         }
         if (type === 'stepper') {
