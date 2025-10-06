@@ -231,16 +231,32 @@ export const createPart = async (req, res) => {
                 }
             }
         } else if (type === 'motor') {
-            // Accept either explicit direction/pwm pins OR a single base pin (dir=pin, pwm=pin+1)
-            if ((!directionPin || !pwmPin)) {
-                if (typeof pin === 'number' || (typeof pin === 'string' && pin !== '')) {
-                    req.body.directionPin = typeof pin === 'number' ? pin : parseInt(pin, 10);
-                    req.body.pwmPin = (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
-                } else {
+            // Handle BTS7960 control board (same as linear actuator)
+            const controlBoard = (req.body && req.body.controlBoard) || null;
+            const rpwmPin = req.body && req.body.rpwmPin;
+            const lpwmPin = req.body && req.body.lpwmPin;
+
+            if (String(controlBoard).toUpperCase() === 'BTS7960') {
+                // BTS7960 requires rpwmPin and lpwmPin
+                if (rpwmPin == null || lpwmPin == null) {
                     return res.status(400).json({
                         success: false,
-                        error: 'Provide either (directionPin and pwmPin) or a base pin for motor parts'
+                        error: 'BTS7960 motor requires rpwmPin and lpwmPin'
                     });
+                }
+                // renPin and lenPin are optional for BTS7960
+            } else {
+                // MDD10A/Cytron: Accept either explicit direction/pwm pins OR a single base pin (dir=pin, pwm=pin+1)
+                if ((!directionPin || !pwmPin)) {
+                    if (typeof pin === 'number' || (typeof pin === 'string' && pin !== '')) {
+                        req.body.directionPin = typeof pin === 'number' ? pin : parseInt(pin, 10);
+                        req.body.pwmPin = (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+                    } else {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Provide either (directionPin and pwmPin) or a base pin for MDD10A motor parts'
+                        });
+                    }
                 }
             }
         } else if (type === 'stepper') {
@@ -318,10 +334,23 @@ export const createPart = async (req, res) => {
 
         // Add motor specific fields
         if (type === 'motor') {
-            const dirPin = (req.body && req.body.directionPin != null) ? req.body.directionPin : directionPin;
-            const pwmP = (req.body && req.body.pwmPin != null) ? req.body.pwmPin : pwmPin;
-            newPart.directionPin = parseInt(dirPin, 10);
-            newPart.pwmPin = parseInt(pwmP, 10);
+            const controlBoard = (req.body && req.body.controlBoard) || null;
+
+            if (String(controlBoard).toUpperCase() === 'BTS7960') {
+                // BTS7960 motor configuration
+                newPart.controlBoard = 'BTS7960';
+                newPart.rpwmPin = parseInt(req.body.rpwmPin, 10);
+                newPart.lpwmPin = parseInt(req.body.lpwmPin, 10);
+                if (req.body.renPin != null) newPart.renPin = parseInt(req.body.renPin, 10);
+                if (req.body.lenPin != null) newPart.lenPin = parseInt(req.body.lenPin, 10);
+            } else {
+                // MDD10A/Cytron motor configuration
+                const dirPin = (req.body && req.body.directionPin != null) ? req.body.directionPin : directionPin;
+                const pwmP = (req.body && req.body.pwmPin != null) ? req.body.pwmPin : pwmPin;
+                newPart.directionPin = parseInt(dirPin, 10);
+                newPart.pwmPin = parseInt(pwmP, 10);
+                if (controlBoard) newPart.controlBoard = controlBoard;
+            }
             newPart.maxDuration = parseInt(req.body.maxDuration, 10) || 10000; // 10 second safety limit
         }
         // Ensure default model for speaker parts before saving

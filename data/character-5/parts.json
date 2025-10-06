@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Groundbreaker Motor",
+    "type": "motor",
+    "pin": null,
+    "description": "BTS7960 motor driver for Groundbreaker movement (GPIO 19=RPWM, 21=LPWM, 5=REN, 22=LEN)",
+    "config": {
+      "maxDuration": 10000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-06T00:00:00.000Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "modelId": "motor_jeep_wagoneer_wiper",
+    "updated": "2025-10-06T00:00:00.000Z"
+  }
+]
