@@ -1,17 +1,16 @@
 #!/bin/bash
 
 # Test script for Groundbreaker BTS7960 motor
-# Wiring: RPWM=GPIO19, LPWM=GPIO21, R_EN=GPIO5, L_EN=GPIO22
+# Wiring: EN=GPIO17, RPWM=GPIO27, LPWM=GPIO22
 # Usage: bash scripts/test-groundbreaker-motor.sh
 
 echo "🤖 Groundbreaker Motor Test Script"
 echo "===================================="
 echo ""
 echo "BTS7960 Configuration:"
-echo "  RPWM Pin: GPIO 19"
-echo "  LPWM Pin: GPIO 21"
-echo "  R_EN Pin: GPIO 5"
-echo "  L_EN Pin: GPIO 22"
+echo "  EN Pin:   GPIO 17 (Pin 11, Brown)"
+echo "  RPWM Pin: GPIO 27 (Pin 13, Red)"
+echo "  LPWM Pin: GPIO 22 (Pin 15, Orange)"
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +28,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "TEST 1: Forward for 15 seconds"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-CONFIG='{"controlBoard":"BTS7960","rpwmPin":19,"lpwmPin":21,"renPin":5,"lenPin":22,"direction":"forward","speed":100,"duration":15000}'
+CONFIG='{"controlBoard":"BTS7960","rpwmPin":27,"lpwmPin":22,"renPin":17,"lenPin":17,"direction":"forward","speed":100,"duration":15000}'
 echo "Running: python3 $PYTHON_WRAPPER '$CONFIG'"
 python3 "$PYTHON_WRAPPER" "$CONFIG"
 echo ""
@@ -39,7 +38,7 @@ sleep 2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "TEST 2: Reverse for 15 seconds"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-CONFIG='{"controlBoard":"BTS7960","rpwmPin":19,"lpwmPin":21,"renPin":5,"lenPin":22,"direction":"reverse","speed":100,"duration":15000}'
+CONFIG='{"controlBoard":"BTS7960","rpwmPin":27,"lpwmPin":22,"renPin":17,"lenPin":17,"direction":"reverse","speed":100,"duration":15000}'
 echo "Running: python3 $PYTHON_WRAPPER '$CONFIG'"
 python3 "$PYTHON_WRAPPER" "$CONFIG"
 echo ""
@@ -49,7 +48,7 @@ sleep 2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "TEST 3: Forward for 4 seconds"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-CONFIG='{"controlBoard":"BTS7960","rpwmPin":19,"lpwmPin":21,"renPin":5,"lenPin":22,"direction":"forward","speed":100,"duration":4000}'
+CONFIG='{"controlBoard":"BTS7960","rpwmPin":27,"lpwmPin":22,"renPin":17,"lenPin":17,"direction":"forward","speed":100,"duration":4000}'
 echo "Running: python3 $PYTHON_WRAPPER '$CONFIG'"
 python3 "$PYTHON_WRAPPER" "$CONFIG"
 echo ""
@@ -59,7 +58,7 @@ sleep 2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "TEST 4: Reverse for 4 seconds"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-CONFIG='{"controlBoard":"BTS7960","rpwmPin":19,"lpwmPin":21,"renPin":5,"lenPin":22,"direction":"reverse","speed":100,"duration":4000}'
+CONFIG='{"controlBoard":"BTS7960","rpwmPin":27,"lpwmPin":22,"renPin":17,"lenPin":17,"direction":"reverse","speed":100,"duration":4000}'
 echo "Running: python3 $PYTHON_WRAPPER '$CONFIG'"
 python3 "$PYTHON_WRAPPER" "$CONFIG"
 echo ""
