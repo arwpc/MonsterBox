@@ -19,5 +19,18 @@
     "maxDuration": 10000,
     "modelId": "motor_jeep_wagoneer_wiper",
     "updated": "2025-10-06T04:44:00.000Z"
+  },
+  {
+    "id": "2",
+    "name": "Groundbreaker Cam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-10-06T22:33:27.536Z",
+    "enabled": true
   }
 ]
