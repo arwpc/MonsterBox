@@ -216,27 +216,13 @@
     "updated": "2025-10-06T02:27:05.846Z"
   },
   {
-    "id": "12",
-    "name": "UI Servo 1759718211367",
-    "type": "servo",
-    "pin": 12,
-    "description": "UI Servo",
-    "config": {
-      "servoType": "standard"
-    },
-    "created": "2025-10-06T02:36:51.817Z",
-    "enabled": true
-  },
-  {
-    "id": "13",
-    "name": "UI Servo 1759718227424",
-    "type": "servo",
-    "pin": 12,
-    "description": "UI Servo",
-    "config": {
-      "servoType": "standard"
-    },
-    "created": "2025-10-06T02:37:07.885Z",
+    "id": "14",
+    "name": "Sensor for Orlok",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-10-07T00:53:34.885Z",
     "enabled": true
   }
 ]

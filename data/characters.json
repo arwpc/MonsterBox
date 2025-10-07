@@ -20,7 +20,8 @@
       "microphonePartId": "7",
       "microphoneDeviceId": "default",
       "format": "mp3"
-    }
+    },
+    "activeImage": "pumpkinhead.jpg"
   },
   {
     "id": 4,

@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 async function getPartsFilePath() {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..');
-  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
   return path.resolve(appRoot, dataDir, 'parts.json');
 }
 

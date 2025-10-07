@@ -862,7 +862,7 @@
               '<input type="range" class="form-range" id="camZoom" min="100" max="300" step="5" value="100">' +
               '</div>' +
               '<div class="mt-2 d-flex flex-wrap gap-2">' +
-              '<a class="btn btn-outline-primary" href="http://localhost:8090/?action=stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+              '<a class="btn btn-outline-primary" href="/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
               '<button id="camSnap" class="btn btn-outline-secondary"><i class="bi bi-camera"></i> Capture</button>' +
               '</div>' +
               '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
