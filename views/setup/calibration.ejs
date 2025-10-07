@@ -9,6 +9,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/monsterbox4.css" rel="stylesheet">
   <style>
+    /* Fix dropdown z-index to appear above safety bar */
+    .navbar .dropdown-menu {
+      z-index: 1040 !important;
+    }
+
     .safety-bar {
       position: sticky;
       top: 56px;
@@ -744,19 +749,33 @@
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
               '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
               '<input type="number" id="motSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
-              '<input type="number" id="motDur" class="form-control form-control-lg" value="500" style="width:140px"> ms' +
+              '<input type="number" id="motDur" class="form-control form-control-lg" value="15000" style="width:140px"> ms' +
               '<button id="motRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Run</button>' +
+              '<button id="motStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
               '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
             el.querySelector('#motRun').addEventListener('click', function () {
               var dir = document.getElementById('motDir').value;
               var speed = parseInt(document.getElementById('motSpd').value || '50', 10);
-              var duration = parseInt(document.getElementById('motDur').value || '500', 10);
+              var duration = parseInt(document.getElementById('motDur').value || '15000', 10);
               var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
               fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'control', params: { direction: dir, speed: speed, duration: duration } })
               }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
                 .catch(function () { if (st) st.textContent = 'Failed'; });
+            });
+            el.querySelector('#motStop').addEventListener('click', async function () {
+              var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…';
+              try {
+                await fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'stop', params: {} })
+                });
+                if (st) st.textContent = 'Stopped';
+                setTimeout(function () { if (st) st.textContent = ''; }, 800);
+              } catch (e) {
+                if (st) st.textContent = 'Failed';
+              }
             });
           } else if (part.type === 'stepper') {
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
@@ -3432,6 +3451,9 @@
         if (!controlBoard) {
           controlBoard = (part.rpwmPin != null || part.lpwmPin != null) ? 'BTS7960' : 'MDD10A';
         }
+
+        console.log('loadEditMotorValues - controlBoard:', controlBoard, 'part:', part);
+
         var cbEl = document.getElementById('editControlBoard');
         if (cbEl) {
           cbEl.value = controlBoard;
@@ -3441,29 +3463,50 @@
             document.getElementById('editBtsGroup').style.display = (v === 'BTS7960') ? 'block' : 'none';
           });
         }
-        // Toggle groups initially
-        if (document.getElementById('editMddGroup') && document.getElementById('editBtsGroup')) {
-          document.getElementById('editMddGroup').style.display = (controlBoard === 'MDD10A') ? 'block' : 'none';
-          document.getElementById('editBtsGroup').style.display = (controlBoard === 'BTS7960') ? 'block' : 'none';
-        }
 
-        // Populate pins
-        const directionPin = part.directionPin || config.directionPin;
-        const pwmPin = part.pwmPin || config.pwmPin;
-        const rpwmPin = (part.rpwmPin != null ? part.rpwmPin : config.rpwmPin);
-        const lpwmPin = (part.lpwmPin != null ? part.lpwmPin : config.lpwmPin);
-        const renPin = (part.renPin != null ? part.renPin : config.renPin);
-        const lenPin = (part.lenPin != null ? part.lenPin : config.lenPin);
-        const maxDuration = config.maxDuration || part.maxDuration || 5000;
+        // Toggle groups initially - use setTimeout to ensure DOM is ready
+        setTimeout(function() {
+          if (document.getElementById('editMddGroup') && document.getElementById('editBtsGroup')) {
+            document.getElementById('editMddGroup').style.display = (controlBoard === 'MDD10A') ? 'block' : 'none';
+            document.getElementById('editBtsGroup').style.display = (controlBoard === 'BTS7960') ? 'block' : 'none';
+          }
 
-        var dirEl = document.getElementById('editDirectionPin'); if (dirEl && directionPin != null) dirEl.value = directionPin;
-        var pwmEl = document.getElementById('editPwmPin'); if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
-        var rpEl = document.getElementById('editRpwmPin'); if (rpEl && rpwmPin != null) rpEl.value = rpwmPin;
-        var lpEl = document.getElementById('editLpwmPin'); if (lpEl && lpwmPin != null) lpEl.value = lpwmPin;
-        var reEl = document.getElementById('editRenPin'); if (reEl && renPin != null) reEl.value = renPin;
-        var leEl = document.getElementById('editLenPin'); if (leEl && lenPin != null) leEl.value = lenPin;
+          // Populate pins
+          const directionPin = part.directionPin || config.directionPin;
+          const pwmPin = part.pwmPin || config.pwmPin;
+          const rpwmPin = (part.rpwmPin != null ? part.rpwmPin : config.rpwmPin);
+          const lpwmPin = (part.lpwmPin != null ? part.lpwmPin : config.lpwmPin);
+          const renPin = (part.renPin != null ? part.renPin : config.renPin);
+          const lenPin = (part.lenPin != null ? part.lenPin : config.lenPin);
+          const maxDuration = config.maxDuration || part.maxDuration || 5000;
 
-        var maxDurEl = document.getElementById('editMaxDuration'); if (maxDurEl) maxDurEl.value = maxDuration;
+          console.log('Motor pins - RPWM:', rpwmPin, 'LPWM:', lpwmPin, 'R_EN:', renPin, 'L_EN:', lenPin);
+
+          var dirEl = document.getElementById('editDirectionPin'); if (dirEl && directionPin != null) dirEl.value = directionPin;
+          var pwmEl = document.getElementById('editPwmPin'); if (pwmEl && pwmPin != null) pwmEl.value = pwmPin;
+          var rpEl = document.getElementById('editRpwmPin');
+          if (rpEl && rpwmPin != null) {
+            rpEl.value = rpwmPin;
+            console.log('Set RPWM pin to:', rpwmPin);
+          }
+          var lpEl = document.getElementById('editLpwmPin');
+          if (lpEl && lpwmPin != null) {
+            lpEl.value = lpwmPin;
+            console.log('Set LPWM pin to:', lpwmPin);
+          }
+          var reEl = document.getElementById('editRenPin');
+          if (reEl && renPin != null) {
+            reEl.value = renPin;
+            console.log('Set R_EN pin to:', renPin);
+          }
+          var leEl = document.getElementById('editLenPin');
+          if (leEl && lenPin != null) {
+            leEl.value = lenPin;
+            console.log('Set L_EN pin to:', lenPin);
+          }
+
+          var maxDurEl = document.getElementById('editMaxDuration'); if (maxDurEl) maxDurEl.value = maxDuration;
+        }, 100);
       }
 
       function loadEditStepperValues(part, config) {

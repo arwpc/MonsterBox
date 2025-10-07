@@ -32,5 +32,34 @@
     },
     "created": "2025-10-06T22:33:27.536Z",
     "enabled": true
+  },
+  {
+    "id": "3",
+    "name": "Groundbreaker Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 75,
+      "bass": 0,
+      "treble": 0
+    },
+    "created": "2025-10-07T00:00:00.000Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "4",
+    "name": "Groundbreaker Microphone",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-07T00:00:00.000Z",
+    "enabled": true,
+    "modelId": "mic_generic_usb"
   }
 ]
