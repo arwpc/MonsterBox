@@ -976,7 +976,19 @@
               }).catch(function () { });
             });
           } else if (part.type === 'motion_sensor') {
-            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-3">' +
+            // Check if sensor is enabled (default to false)
+            const isEnabled = part.config && part.config.enabled !== undefined ? part.config.enabled : false;
+
+            el.innerHTML = '<div class="mb-3">' +
+              '<div class="form-check form-switch">' +
+              '<input class="form-check-input" type="checkbox" id="motionSensorToggle" ' + (isEnabled ? 'checked' : '') + '>' +
+              '<label class="form-check-label fw-semibold" for="motionSensorToggle">' +
+              '<span id="toggleLabel">' + (isEnabled ? 'Sensor Enabled' : 'Sensor Disabled') + '</span>' +
+              '</label>' +
+              '</div>' +
+              '<small class="text-muted">Enable to allow this sensor to trigger scenes automatically</small>' +
+              '</div>' +
+              '<div class="d-flex align-items-center flex-wrap gap-3">' +
               '<button id="readMotion" class="btn btn-outline-info btn-lg"><i class="bi bi-eye"></i> Read</button>' +
               '<button id="startLiveTest" class="btn btn-success btn-lg"><i class="bi bi-play-circle"></i> Start Live Test</button>' +
               '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
@@ -991,6 +1003,44 @@
               '</div>' +
               '</div>' +
               '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+
+            // Add toggle event listener
+            el.querySelector('#motionSensorToggle').addEventListener('change', async function (e) {
+              const enabled = e.target.checked;
+              const toggleLabel = document.getElementById('toggleLabel');
+              const st = document.getElementById('ctrlStatus');
+
+              toggleLabel.textContent = enabled ? 'Sensor Enabled' : 'Sensor Disabled';
+              if (st) st.textContent = enabled ? 'Enabling sensor...' : 'Disabling sensor...';
+
+              try {
+                const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    config: {
+                      ...part.config,
+                      enabled: enabled
+                    }
+                  })
+                });
+
+                const result = await response.json();
+                if (response.ok && result.success) {
+                  if (st) st.textContent = enabled ? 'Sensor enabled successfully' : 'Sensor disabled successfully';
+                  setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                } else {
+                  if (st) st.textContent = 'Failed to update sensor state';
+                  e.target.checked = !enabled; // Revert toggle
+                  toggleLabel.textContent = !enabled ? 'Sensor Enabled' : 'Sensor Disabled';
+                }
+              } catch (error) {
+                console.error('Error updating motion sensor state:', error);
+                if (st) st.textContent = 'Error updating sensor state';
+                e.target.checked = !enabled; // Revert toggle
+                toggleLabel.textContent = !enabled ? 'Sensor Enabled' : 'Sensor Disabled';
+              }
+            });
 
             // Use global variables for live test tracking
 

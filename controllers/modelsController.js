@@ -192,5 +192,23 @@ export const deleteModel = async (req, res) => {
   }
 };
 
-export default { getAllModels, getModelById, createModel, updateModel, deleteModel };
+export const bulkDeleteModels = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, error: 'ids array required' });
+    }
+    const models = await loadModels(type);
+    const idsToDelete = new Set(ids.map(toId));
+    const next = models.filter(m => !idsToDelete.has(toId(m.id)));
+    const deletedCount = models.length - next.length;
+    await saveModels(type, next);
+    res.json({ success: true, message: `Deleted ${deletedCount} model(s)`, type, deletedCount });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+export default { getAllModels, getModelById, createModel, updateModel, deleteModel, bulkDeleteModels };
 

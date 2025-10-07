@@ -4,6 +4,27 @@
     var el = document.getElementById('charLabel');
     if (el) { el.textContent = name || 'No Character'; }
   }
+  function getInitials(name) {
+    if (!name) return '?';
+    var words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+  }
+  function createAvatar(c, size) {
+    size = size || 32;
+    var initials = getInitials(c.name || 'Character ' + c.id);
+    var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + c.activeImage : '';
+    var avatarHtml = '<div class="character-avatar rounded-circle overflow-hidden d-flex align-items-center justify-content-center me-2" ' +
+      'style="width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:bold;font-size:' + Math.floor(size * 0.4) + 'px;border:2px solid rgba(255,255,255,0.2);">';
+    if (imageUrl) {
+      avatarHtml += '<img src="' + esc(imageUrl) + '" alt="' + esc(c.name || '') + '" class="w-100 h-100" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
+      avatarHtml += '<div class="w-100 h-100 d-none align-items-center justify-content-center" style="display:none!important;">' + initials + '</div>';
+    } else {
+      avatarHtml += initials;
+    }
+    avatarHtml += '</div>';
+    return avatarHtml;
+  }
   function populateMenu(chars, selectedId) {
     var ul = document.getElementById('charMenu');
     var loading = document.getElementById('charLoading');
@@ -13,7 +34,9 @@
     for (var i = 0; i < chars.length; i++) {
       var c = chars[i];
       var badge = (selectedId === c.id) ? ' <span class="badge bg-success ms-2">Current</span>' : '';
-      itemsHtml += '<li><button class="dropdown-item d-flex align-items-center" data-char-id="' + c.id + '">' + esc(c.name || ('Character ' + c.id)) + badge + '</button></li>';
+      itemsHtml += '<li><button class="dropdown-item d-flex align-items-center" data-char-id="' + c.id + '">' +
+        createAvatar(c, 32) +
+        '<span>' + esc(c.name || ('Character ' + c.id)) + badge + '</span></button></li>';
     }
     var hr = ul.querySelector('hr');
     var tmp = document.createElement('div');

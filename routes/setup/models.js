@@ -16,6 +16,7 @@ router.get('/', (req, res) => {
 router.get('/api/:type', modelsController.getAllModels);
 router.get('/api/:type/:id', modelsController.getModelById);
 router.post('/api/:type', express.json(), modelsController.createModel);
+router.post('/api/:type/bulk-delete', express.json(), modelsController.bulkDeleteModels);
 router.put('/api/:type/:id', express.json(), modelsController.updateModel);
 router.delete('/api/:type/:id', modelsController.deleteModel);
 

@@ -73,6 +73,8 @@
             <div class="card-header d-flex justify-content-between align-items-center">
               <span>Models List</span>
               <div>
+                <button class="btn btn-sm btn-danger me-2" id="btnDeleteSelected" style="display:none;">Delete Selected
+                  (<span id="selectedCount">0</span>)</button>
                 <button class="btn btn-sm btn-outline-secondary" id="btnRefresh">Refresh</button>
               </div>
             </div>
@@ -81,6 +83,7 @@
                 <table class="table table-sm" id="modelsTable">
                   <thead>
                     <tr>
+                      <th><input type="checkbox" id="selectAll" title="Select All"></th>
                       <th>ID</th>
                       <th>Name</th>
                       <th>Description</th>
@@ -90,7 +93,7 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td colspan="5" class="text-center text-muted">No data</td>
+                      <td colspan="6" class="text-center text-muted">No data</td>
                     </tr>
                   </tbody>
                 </table>
@@ -126,22 +129,34 @@
         var typeSelect = document.getElementById('typeSelect');
         var btnLoad = document.getElementById('btnLoad');
         var btnRefresh = document.getElementById('btnRefresh');
+        var btnDeleteSelected = document.getElementById('btnDeleteSelected');
+        var selectAllCheckbox = document.getElementById('selectAll');
+        var selectedCountSpan = document.getElementById('selectedCount');
         var tableBody = document.querySelector('#modelsTable tbody');
         var partsSelect = document.getElementById('partsSelect');
         var applyModelId = document.getElementById('applyModelId');
+        var selectedModels = new Set();
+
+        function updateSelectedCount() {
+          selectedCountSpan.textContent = selectedModels.size;
+          btnDeleteSelected.style.display = selectedModels.size > 0 ? 'inline-block' : 'none';
+        }
 
         function loadModels() {
           var type = typeSelect.value;
+          selectedModels.clear();
+          updateSelectedCount();
           fetch('/setup/models/api/' + encodeURIComponent(type))
             .then(function (r) { return r.json(); })
             .then(function (d) {
               var models = (d && d.models) || [];
               var html = '';
               if (models.length === 0) {
-                html = '<tr><td colspan="5" class="text-center text-muted">No models</td></tr>';
+                html = '<tr><td colspan="6" class="text-center text-muted">No models</td></tr>';
               } else {
                 models.forEach(function (m) {
                   html += '<tr>' +
+                    '<td><input type="checkbox" class="model-checkbox" data-model-id="' + m.id + '"></td>' +
                     '<td><a href="#" class="link-secondary" data-fill-id="' + m.id + '">' + m.id + '</a></td>' +
                     '<td>' + (m.name || '') + '</td>' +
                     '<td>' + (m.description || '') + '</td>' +
@@ -154,7 +169,7 @@
               wireModelRowHandlers();
               loadPartsOfType();
             })
-            .catch(function () { tableBody.innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load</td></tr>'; });
+            .catch(function () { tableBody.innerHTML = '<tr><td colspan="6" class="text-danger">Failed to load</td></tr>'; });
         }
 
         function wireModelRowHandlers() {
@@ -164,7 +179,80 @@
           document.querySelectorAll('[data-choose-apply]').forEach(function (btn) {
             btn.onclick = function () { applyModelId.value = btn.getAttribute('data-choose-apply'); };
           });
+          document.querySelectorAll('.model-checkbox').forEach(function (cb) {
+            cb.onchange = function () {
+              var modelId = cb.getAttribute('data-model-id');
+              if (cb.checked) {
+                selectedModels.add(modelId);
+              } else {
+                selectedModels.delete(modelId);
+              }
+              updateSelectedCount();
+              updateSelectAllState();
+            };
+          });
         }
+
+        function updateSelectAllState() {
+          var checkboxes = document.querySelectorAll('.model-checkbox');
+          if (checkboxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+          } else if (selectedModels.size === checkboxes.length) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+          } else if (selectedModels.size > 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+          } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+          }
+        }
+
+        selectAllCheckbox.onchange = function () {
+          var checkboxes = document.querySelectorAll('.model-checkbox');
+          if (selectAllCheckbox.checked) {
+            checkboxes.forEach(function (cb) {
+              cb.checked = true;
+              selectedModels.add(cb.getAttribute('data-model-id'));
+            });
+          } else {
+            checkboxes.forEach(function (cb) {
+              cb.checked = false;
+            });
+            selectedModels.clear();
+          }
+          updateSelectedCount();
+        };
+
+        btnDeleteSelected.onclick = function () {
+          if (selectedModels.size === 0) return;
+          if (!confirm('Delete ' + selectedModels.size + ' selected model(s)? This cannot be undone.')) return;
+
+          var type = typeSelect.value;
+          var ids = Array.from(selectedModels);
+
+          fetch('/setup/models/api/' + encodeURIComponent(type) + '/bulk-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids })
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (resp) {
+              if (resp && resp.success) {
+                alert('Successfully deleted ' + resp.deletedCount + ' model(s)');
+              } else {
+                alert('Failed to delete models: ' + (resp.error || 'Unknown error'));
+              }
+              selectedModels.clear();
+              loadModels();
+            })
+            .catch(function (err) {
+              alert('Error deleting models: ' + err.message);
+              loadModels();
+            });
+        };
 
         function fillFormFromId(id) {
           var type = typeSelect.value;

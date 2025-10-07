@@ -40,6 +40,7 @@ import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import pipewireService from './services/pipewireService.js';
+import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import conversationRoutes from './routes/conversation.js';
 import demoRoutes from './routes/demo.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
@@ -140,22 +141,25 @@ app.use(async (req, res, next) => {
         res.locals.config = merged;
         res.locals.currentCharacter = merged.selectedCharacter || null;
 
-        // Load character name for navigation
+        // Load character name and data for navigation
         if (merged.selectedCharacter) {
             try {
                 const charactersData = await fs.readFile(path.join(__dirname, 'data', 'characters.json'), 'utf8');
                 const characters = JSON.parse(charactersData);
                 const currentChar = characters.find(c => c.id === merged.selectedCharacter);
                 res.locals.currentCharacterName = currentChar ? currentChar.name : null;
+                res.locals.currentCharacterObject = currentChar || null;
                 // Expose active image (if any)
                 res.locals.currentCharacterImage = (currentChar && currentChar.activeImage)
                     ? `/data/character-${currentChar.id}/images/${currentChar.activeImage}`
                     : null;
             } catch (e) {
                 res.locals.currentCharacterName = null;
+                res.locals.currentCharacterObject = null;
             }
         } else {
             res.locals.currentCharacterName = null;
+            res.locals.currentCharacterObject = null;
         }
     } catch (_) {
         const fallback = req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : config;
@@ -248,6 +252,26 @@ printRoutes();
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
+
+// Audio Health Monitor API endpoints
+app.get('/api/audio/health', (req, res) => {
+    res.json(audioHealthMonitor.getStatus());
+});
+
+app.get('/api/audio/info', async (req, res) => {
+    const info = await audioHealthMonitor.getAudioInfo();
+    res.json(info);
+});
+
+app.post('/api/audio/test', async (req, res) => {
+    const result = await audioHealthMonitor.testAudio();
+    res.json(result);
+});
+
+app.post('/api/audio/reset', (req, res) => {
+    audioHealthMonitor.resetRestartAttempts();
+    res.json({ success: true, message: 'Restart attempts reset' });
+});
 
 // Main dashboard route
 app.get('/', (req, res) => {
@@ -479,6 +503,14 @@ app.listen(PORT, '0.0.0.0', async () => {
     } catch (error) {
         console.error(`❌ Failed to start WebSocket server:`, error.message);
         console.log(`   AI chat will use HTTP fallback (slower responses)`);
+    }
+
+    // Start Audio Health Monitor
+    try {
+        audioHealthMonitor.start();
+        console.log(`🔊 Audio Health Monitor started (checking every 30s)`);
+    } catch (error) {
+        console.error(`❌ Failed to start Audio Health Monitor:`, error.message);
     }
 
     // Initialize jaw animation audio integration

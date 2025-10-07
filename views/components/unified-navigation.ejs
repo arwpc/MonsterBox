@@ -108,22 +108,25 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
                         data-bs-toggle="dropdown">
-                        <% if (typeof currentCharacterImage !=='undefined' && currentCharacterImage) { %>
-                            <img src="<%= currentCharacterImage %>" alt="char"
-                                style="width:24px;height:24px;object-fit:cover;border-radius:3px;">
-                            <% } else { %>
-                                <i class="bi bi-person-circle"></i>
-                                <% } %>
-                                    <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ?
-                                        currentCharacter : ((typeof config !=='undefined' && config &&
-                                        config.selectedCharacter) ? config.selectedCharacter : null); %>
-                                        <% var __curName=(typeof currentCharacterName !=='undefined' &&
-                                            currentCharacterName) ? currentCharacterName : null; %>
+                        <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter :
+                            ((typeof config !=='undefined' && config && config.selectedCharacter) ?
+                            config.selectedCharacter : null); var __curName=(typeof currentCharacterName !=='undefined'
+                            && currentCharacterName) ? currentCharacterName : null; var __curObj=(typeof
+                            currentCharacterObject !=='undefined' && currentCharacterObject) ? currentCharacterObject :
+                            null; %>
+                            <% if (__curObj) { %>
+                                <%- include('character-avatar', { character: __curObj, size: 32, showName: false }) %>
+                                    <% } else { %>
+                                        <i class="bi bi-person-circle"></i>
+                                        <% } %>
                                             <span id="charLabel" data-char-id="<%= __cur || '' %>">
                                                 <% if (__curName) { %>
                                                     <%= __curName %>
-                                                        <% } else if (__cur) { %>Character <%= __cur %>
-                                                                <% } else { %>No Character<% } %>
+                                                        <% } else if (__cur) { %>
+                                                            Character <%= __cur %>
+                                                                <% } else { %>
+                                                                    No Character
+                                                                    <% } %>
                                             </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" id="charMenu">

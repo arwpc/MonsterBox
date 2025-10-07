@@ -1,28 +1,37 @@
 <% /* First-run skull-themed character selection */ %>
-<div class="container py-5 first-run">
-  <div class="text-center mb-4">
-    <h1 class="neon">Welcome to MonsterBox 5.2</h1>
-    <p class="lead text-muted">Pick the animatronic you are setting up on this device.</p>
-  </div>
+  <div class="container py-5 first-run">
+    <div class="text-center mb-4">
+      <h1 class="neon">Welcome to MonsterBox 5.2</h1>
+      <p class="lead text-muted">Pick the animatronic you are setting up on this device.</p>
+    </div>
 
-  <div class="row g-4">
-    <% (characters || []).forEach(function(ch){ %>
-      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-        <div class="card skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>">
-          <div class="skull thumb d-flex align-items-center justify-content-center">
-            <span class="skull-emoji">💀</span>
-          </div>
-          <div class="card-body text-center">
-            <h5 class="card-title"><%= ch.name %></h5>
-            <button class="btn btn-primary btn-select" data-id="<%= ch.id %>">Use <%= ch.name %></button>
+    <div class="row g-4">
+      <% (characters || []).forEach(function(ch){ %>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <div class="card skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>">
+            <div class="skull thumb d-flex align-items-center justify-content-center p-4">
+              <% if (ch.activeImage) { %>
+                <img src="/api/characters/<%= ch.id %>/images/<%= ch.activeImage %>" alt="<%= ch.name %>"
+                  class="character-first-run-image rounded-circle"
+                  style="width: 120px; height: 120px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <span class="skull-emoji" style="display: none;">💀</span>
+                <% } else { %>
+                  <span class="skull-emoji">💀</span>
+                  <% } %>
+            </div>
+            <div class="card-body text-center">
+              <h5 class="card-title">
+                <%= ch.name %>
+              </h5>
+              <button class="btn btn-primary btn-select" data-id="<%= ch.id %>">Use <%= ch.name %></button>
+            </div>
           </div>
         </div>
-      </div>
-    <% }) %>
-  </div>
+        <% }) %>
+    </div>
 
-  <div class="text-center mt-4">
-    <a href="/" class="btn btn-outline-light">Skip for now</a>
+    <div class="text-center mt-4">
+      <a href="/" class="btn btn-outline-light">Skip for now</a>
+    </div>
   </div>
-</div>
-

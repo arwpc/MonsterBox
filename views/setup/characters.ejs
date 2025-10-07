@@ -47,6 +47,29 @@
 
         function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
+        function getInitials(name) {
+          if (!name) return '?';
+          var words = name.trim().split(/\s+/);
+          if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+          return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+        }
+
+        function createAvatar(c, size) {
+          size = size || 40;
+          var initials = getInitials(c.name || 'Character ' + c.id);
+          var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + c.activeImage : '';
+          var avatarHtml = '<div class="character-avatar rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center" ' +
+            'style="width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:bold;font-size:' + Math.floor(size * 0.4) + 'px;border:2px solid rgba(255,255,255,0.2);vertical-align:middle;">';
+          if (imageUrl) {
+            avatarHtml += '<img src="' + esc(imageUrl) + '" alt="' + esc(c.name || '') + '" class="w-100 h-100" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
+            avatarHtml += '<div class="w-100 h-100 d-none align-items-center justify-content-center" style="display:none!important;">' + initials + '</div>';
+          } else {
+            avatarHtml += initials;
+          }
+          avatarHtml += '</div>';
+          return avatarHtml;
+        }
+
         function render() {
           var characters = state.characters;
           var selected = state.selected;
@@ -54,11 +77,12 @@
           if (!characters || !characters.length) {
             html = '<div class="text-center text-muted py-4">No characters yet</div>';
           } else {
-            html = '<table class="table table-dark table-striped"><thead><tr><th>ID</th><th>Name</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody>';
+            html = '<table class="table table-dark table-striped"><thead><tr><th>Avatar</th><th>ID</th><th>Name</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody>';
             for (var i = 0; i < characters.length; i++) {
               var c = characters[i];
               var isSel = (selected === c.id);
               html += '<tr>' +
+                '<td>' + createAvatar(c, 40) + '</td>' +
                 '<td>' + c.id + '</td>' +
                 '<td>' + esc(c.name || '') + '</td>' +
                 '<td>' + (isSel ? '<span class="badge bg-success">Current</span>' : '') + '</td>' +

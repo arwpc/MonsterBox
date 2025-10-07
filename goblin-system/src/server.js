@@ -25,19 +25,19 @@ class GoblinServer {
     this.monsterboxHost = null;
     this.monsterboxConnection = null;
     this.isConnected = false;
-    
+
     // Initialize components
     this.app = express();
     this.beacon = new BeaconService(this);
     this.mediaPlayer = new MediaPlayer(this);
     this.statusMonitor = new StatusMonitor(this);
     this.fileManager = new FileManager(this);
-    
+
     // Bind methods
     this.handleMonsterBoxConnection = this.handleMonsterBoxConnection.bind(this);
     this.handleMonsterBoxMessage = this.handleMonsterBoxMessage.bind(this);
     this.handleConnectionLost = this.handleConnectionLost.bind(this);
-    
+
     console.log(`🎃 MonsterBox Goblin ${this.goblinId} initializing...`);
   }
 
@@ -57,26 +57,26 @@ class GoblinServer {
     try {
       // Setup Express middleware
       this.setupExpress();
-      
+
       // Setup API routes
       this.setupRoutes();
-      
+
       // Start HTTP server
       this.server = this.app.listen(this.port, () => {
         console.log(`👹 Goblin ${this.goblinId} listening on port ${this.port}`);
       });
-      
+
       // Initialize components
       await this.mediaPlayer.initialize();
       await this.statusMonitor.start();
       await this.fileManager.initialize();
-      
+
       // Start beacon to find MonsterBox
       console.log(`🔍 Starting network beacon to find MonsterBox...`);
       this.beacon.start();
-      
+
       console.log(`✅ Goblin ${this.goblinId} ready for haunting! 👻`);
-      
+
     } catch (error) {
       console.error('❌ Failed to start Goblin:', error);
       process.exit(1);
@@ -90,7 +90,7 @@ class GoblinServer {
     this.app.use(cors());
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
-    
+
     // Request logging
     this.app.use((req, res, next) => {
       console.log(`📡 ${req.method} ${req.path} from ${req.ip}`);
@@ -115,10 +115,10 @@ class GoblinServer {
     });
 
     // Goblin info
-    this.app.get('/info', (req, res) => {
+    this.app.get('/info', async (req, res) => {
       res.json({
         goblinId: this.goblinId,
-        version: require('./package.json').version,
+        version: require('../package.json').version,
         capabilities: {
           video: ['mp4', 'avi', 'mkv', 'mov'],
           audio: ['mp3', 'wav', 'aac', 'ogg'],
@@ -127,7 +127,7 @@ class GoblinServer {
         },
         hardware: this.statusMonitor.getHardwareInfo(),
         status: this.statusMonitor.getStatus(),
-        mediaFiles: this.fileManager.getMediaList()
+        mediaFiles: await this.fileManager.getMediaList()
       });
     });
 
@@ -195,20 +195,20 @@ class GoblinServer {
   async handleMonsterBoxConnection(host, port) {
     try {
       console.log(`🔌 Connecting to MonsterBox at ${host}:${port}`);
-      
+
       this.monsterboxHost = `${host}:${port}`;
-      
+
       // Create WebSocket connection to MonsterBox
       const ws = new WebSocket(`ws://${host}:${port}/goblin-websocket`);
-      
+
       ws.on('open', () => {
         console.log(`✅ Connected to MonsterBox at ${this.monsterboxHost}`);
         this.isConnected = true;
         this.monsterboxConnection = ws;
-        
+
         // Stop beacon once connected
         this.beacon.stop();
-        
+
         // Send registration message
         this.sendToMonsterBox({
           type: 'register',
@@ -225,14 +225,14 @@ class GoblinServer {
           }
         });
       });
-      
+
       ws.on('message', this.handleMonsterBoxMessage);
       ws.on('close', this.handleConnectionLost);
       ws.on('error', (error) => {
         console.error('❌ WebSocket error:', error);
         this.handleConnectionLost();
       });
-      
+
     } catch (error) {
       console.error('❌ Failed to connect to MonsterBox:', error);
       this.handleConnectionLost();
@@ -246,24 +246,24 @@ class GoblinServer {
     try {
       const message = JSON.parse(data);
       console.log(`📨 Received from MonsterBox:`, message.type);
-      
+
       switch (message.type) {
         case 'ping':
           this.sendToMonsterBox({ type: 'pong', goblinId: this.goblinId });
           break;
-          
+
         case 'play-media':
           await this.handlePlayMedia(message);
           break;
-          
+
         case 'stop-playback':
           await this.handleStopPlayback(message);
           break;
-          
+
         case 'upload-media':
           await this.handleMediaUpload(message);
           break;
-          
+
         case 'get-status':
           this.sendToMonsterBox({
             type: 'status-report',
@@ -272,11 +272,11 @@ class GoblinServer {
             playback: this.mediaPlayer.getPlaybackStatus()
           });
           break;
-          
+
         default:
           console.warn('❓ Unknown message type:', message.type);
       }
-      
+
     } catch (error) {
       console.error('❌ Error handling MonsterBox message:', error);
     }
@@ -288,12 +288,12 @@ class GoblinServer {
   async handlePlayMedia(message) {
     const { video, audio, options = {} } = message.payload;
     const results = {};
-    
+
     try {
       if (video) {
         results.video = await this.mediaPlayer.playVideo(video, options);
       }
-      
+
       if (audio) {
         if (Array.isArray(audio)) {
           results.audio = [];
@@ -305,14 +305,14 @@ class GoblinServer {
           results.audio = await this.mediaPlayer.playAudio(audio, options);
         }
       }
-      
+
       this.sendToMonsterBox({
         type: 'playback-result',
         goblinId: this.goblinId,
         success: true,
         results: results
       });
-      
+
     } catch (error) {
       console.error('❌ Playback error:', error);
       this.sendToMonsterBox({
@@ -353,14 +353,14 @@ class GoblinServer {
     try {
       const { filename, data, type } = message.payload;
       const result = await this.fileManager.saveFile(filename, data, type);
-      
+
       this.sendToMonsterBox({
         type: 'upload-result',
         goblinId: this.goblinId,
         success: result.success,
         filename: filename
       });
-      
+
     } catch (error) {
       console.error('❌ Upload error:', error);
       this.sendToMonsterBox({
@@ -389,7 +389,7 @@ class GoblinServer {
     this.isConnected = false;
     this.monsterboxConnection = null;
     this.monsterboxHost = null;
-    
+
     // Restart beacon to find MonsterBox again
     console.log(`🔍 Restarting beacon to find MonsterBox...`);
     this.beacon.start();
@@ -401,7 +401,7 @@ class GoblinServer {
   getLocalIP() {
     const { networkInterfaces } = require('os');
     const nets = networkInterfaces();
-    
+
     for (const name of Object.keys(nets)) {
       for (const net of nets[name]) {
         if (net.family === 'IPv4' && !net.internal) {
@@ -409,7 +409,7 @@ class GoblinServer {
         }
       }
     }
-    
+
     return '127.0.0.1';
   }
 
@@ -418,20 +418,20 @@ class GoblinServer {
    */
   async shutdown() {
     console.log(`👋 Shutting down Goblin ${this.goblinId}`);
-    
+
     this.beacon.stop();
-    
+
     if (this.monsterboxConnection) {
       this.monsterboxConnection.close();
     }
-    
+
     await this.mediaPlayer.stopAll();
     this.statusMonitor.stop();
-    
+
     if (this.server) {
       this.server.close();
     }
-    
+
     console.log(`💀 Goblin ${this.goblinId} has departed`);
   }
 }

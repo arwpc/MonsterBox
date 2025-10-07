@@ -303,20 +303,44 @@ export const streamMJPEG = async (req, res) => {
     res.setHeader('Connection', 'close');
     res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=--myboundary');
 
-    // Proxy the stream from mjpg-streamer
+    // Proxy the stream from mjpg-streamer with retry logic
+    let retryCount = 0;
+    const maxRetries = 5;
+    let streamResponse = null;
+
+    while (retryCount < maxRetries && !streamResponse) {
+      try {
+        // Create an AbortController for better timeout management
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+        }, 60000); // 60 second timeout for streaming data
+
+        streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
+          signal: abortController.signal,
+          headers: {
+            'Connection': 'keep-alive',
+            'Keep-Alive': 'timeout=60, max=100'
+          }
+        });
+
+        // Clear timeout if fetch succeeds
+        clearTimeout(timeoutId);
+        break;
+      } catch (fetchErr) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          const backoffMs = Math.pow(2, retryCount - 1) * 1000;
+          console.log(`mjpg-streamer connection attempt ${retryCount} failed, retrying in ${backoffMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+        } else {
+          throw fetchErr;
+        }
+      }
+    }
+
     try {
-      // Create an AbortController for better timeout management
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => {
-        abortController.abort();
-      }, 30000); // 30 second timeout
-
-      const streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
-        signal: abortController.signal
-      });
-
-      // Clear timeout if fetch succeeds
-      clearTimeout(timeoutId);
 
       if (!streamResponse.ok) {
         throw new Error(`mjpg-streamer returned ${streamResponse.status}: ${streamResponse.statusText}`);
@@ -360,7 +384,10 @@ export const streamMJPEG = async (req, res) => {
         : streamResponse.body;
 
       nodeReadable.on?.('error', (error) => {
-        if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
+        // Handle specific undici body timeout errors
+        if (error.code === 'UND_ERR_BODY_TIMEOUT' || error.name === 'BodyTimeoutError') {
+          console.warn('Stream body timeout detected, connection will auto-reconnect on next request');
+        } else if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
           console.error('Stream piping error:', error);
         }
         cleanup();
@@ -381,7 +408,10 @@ export const streamMJPEG = async (req, res) => {
           close() { cleanup(); },
           abort() { cleanup(); }
         })).catch((error) => {
-          if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
+          // Handle specific undici body timeout errors
+          if (error.code === 'UND_ERR_BODY_TIMEOUT' || error.name === 'BodyTimeoutError') {
+            console.warn('Stream body timeout detected, connection will auto-reconnect on next request');
+          } else if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
             console.error('Stream piping error:', error);
           }
           cleanup();
