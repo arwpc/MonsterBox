@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Calibration - MonsterBox 4.0</title>
+  <title>Setup Calibration - MonsterBox 5.1</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/monsterbox4.css" rel="stylesheet">
@@ -2394,7 +2394,7 @@
             return;
           }
 
-          fetch(`/ setup / calibration / api / parts / ${encodeURIComponent(selected.id)} `, {
+          fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
             method: 'DELETE'
           })
             .then(r => r.json())
@@ -2440,7 +2440,7 @@
             return;
           }
 
-          fetch(`/ setup / webcam / api / parts / ${encodeURIComponent(selected.id)}/apply-device`, {
+          fetch(`/setup/webcam/api/parts/${encodeURIComponent(selected.id)}/apply-device`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
@@ -3565,95 +3565,6 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Step Pin</label>
-
-      // ===== Simple Calibration helpers (Unified) =====
-      async function sc_refresh() {
-        try {
-          var pid = window.selectedPartId; if (!pid) return;
-          const r = await fetch(`/ setup / calibration / api / simple / ${ encodeURIComponent(pid) } `);
-          const j = await r.json(); if (!j || j.success === false) return;
-          var d = j.calibration || {};
-          var minEl = document.getElementById('scMinVal'); var maxEl = document.getElementById('scMaxVal');
-          if (minEl) minEl.textContent = (typeof d.safeMin === 'number') ? String(d.safeMin) : 'Not Set';
-          if (maxEl) maxEl.textContent = (typeof d.safeMax === 'number') ? String(d.safeMax) : 'Not Set';
-          var list = document.getElementById('scList'); if (list) {
-            list.innerHTML = '';
-            (d.points || []).forEach(function (p) {
-              var li = document.createElement('li'); li.className = 'list-group-item d-flex justify-content-between align-items-center';
-              var left = document.createElement('div');
-left.appendChild((() => { var s=document.createElement('strong'); s.textContent=p.name; return s; })());
-var sub = document.createElement('div'); sub.className='small text-muted'; sub.textContent=String(p.value); left.appendChild(sub);
-var btns = document.createElement('div'); btns.className='btn-group btn-group-sm';
-var del = document.createElement('button'); del.className='btn btn-outline-danger'; del.innerHTML='<i class="bi bi-trash"></i>';
-del.addEventListener('click', function(){ window.sc_del(p.name); });
-btns.appendChild(del);
-li.appendChild(left); li.appendChild(btns);
-        list.appendChild(li);
-      });
-          }
-        } catch (_) { /* ignore */ }
-      }
-      window.sc_refresh = sc_refresh;
-
-      function sc_currentValue() {
-        var part = window.selectedPart || {}; var t = String(part.type || '');
-        if (t === 'servo') {
-          var n = document.getElementById('angNum'); if (n) { var v = parseInt(n.value || '0', 10); if (!isNaN(v)) return v; }
-          var v2 = prompt('Enter angle (0-180)'); var pv = parseInt(v2, 10); return isNaN(pv) ? 90 : pv;
-        } else if (t === 'motor') {
-          var d = document.getElementById('motDur'); if (d) { var v3 = parseInt(d.value || '500', 10); if (!isNaN(v3)) return v3; }
-          var v4 = prompt('Enter duration (ms)'); var pv2 = parseInt(v4, 10); return isNaN(pv2) ? 500 : pv2;
-        } else if (t === 'linear_actuator') {
-          var d2 = document.getElementById('laDur'); if (d2) { var v5 = parseInt(d2.value || '500', 10); if (!isNaN(v5)) return v5; }
-          var v6 = prompt('Enter duration (ms)'); var pv3 = parseInt(v6, 10); return isNaN(pv3) ? 500 : pv3;
-        }
-        var fallback = prompt('Enter value'); var pf = parseInt(fallback, 10); return isNaN(pf) ? 0 : pf;
-      }
-
-      async function sc_set(which) {
-        try {
-          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
-          var val = sc_currentValue();
-          const r = await fetch(`/ setup / calibration / api / simple / ${ encodeURIComponent(pid) } /set-safe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: which, value: val }) });
-        const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
-        sc_refresh();
-      } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
-      }
-      window.sc_set = sc_set;
-
-      async function sc_add() {
-        try {
-          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
-          var name = prompt('Position name'); if (!name) return;
-          var val = sc_currentValue();
-          const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, value: val }) });
-          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
-          sc_refresh();
-        } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
-      }
-      window.sc_add = sc_add;
-
-      async function sc_del(name) {
-        try {
-          var pid = window.selectedPartId; if (!pid) return;
-          if (!confirm('Delete "' + name + '"?')) return;
-          const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points/${encodeURIComponent(name)}`, { method: 'DELETE' });
-          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
-          sc_refresh();
-        } catch (e) { /* ignore */ }
-      }
-      window.sc_del = sc_del;
-
-      // Refresh panel when switching to Edit tab or selecting part
-      document.addEventListener('click', function (ev) {
-        var t = ev.target; if (!t) return;
-        if (t.matches && t.matches('[data-bs-target="#tabEdit"]')) { setTimeout(sc_refresh, 200); }
-      });
-      // Also refresh on selection changes
-      const _origSelectPart = window.selectPart;
-      // If selectPart is not globally exposed, fallback to periodic light refresh on selection
-      setInterval(function () { if (window.selectedPartId) sc_refresh(); }, 5000);
-
                   <input type="number" class="form-control" id="editStepPin" min="1" max="40">
                 </div>
                 <div class="col-md-3">
@@ -3674,15 +3585,15 @@ li.appendChild(left); li.appendChild(btns);
                     <option value="16">16</option>
                   </select>
                 </div>
-              </div >
-        <div class="row g-3 mt-1">
-          <div class="col-md-3">
-            <label class="form-label">Steps/Rev</label>
-            <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
+              </div>
+              <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                  <label class="form-label">Steps/Rev</label>
+                  <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-            </div >
-          </div >
         `;
       }
 

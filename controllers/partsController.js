@@ -69,7 +69,7 @@ async function ensureDefaultSpeakerModelExists() {
 const getPartsFilePath = async () => {
     const cfg = await readConfig();
     const appRoot = path.resolve(__dirname, '..');
-    const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+    const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
     return path.resolve(appRoot, dataDir, 'parts.json');
 };
 
@@ -81,21 +81,31 @@ export const loadParts = async () => {
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            // Seed with a default standard servo so calibration tests have a non-continuous servo (id=1)
-            const seedParts = [
-                {
-                    id: '1',
-                    name: 'Default Servo',
-                    type: 'servo',
-                    pin: 18,
-                    description: PART_TYPES.servo.description,
-                    config: { servoType: 'standard', minPulse: 500, maxPulse: 2500, minAngle: 0, maxAngle: 180 },
-                    created: new Date().toISOString(),
-                    enabled: true
-                }
-            ];
-            await saveParts(seedParts);
-            return seedParts;
+            // Attempt migration from legacy '../data/parts.json' location
+            try {
+                const appRoot = path.resolve(__dirname, '..');
+                const legacyPath = path.resolve(appRoot, '../data', 'parts.json');
+                const legacyTxt = await fs.readFile(legacyPath, 'utf8');
+                const legacyParts = JSON.parse(legacyTxt || '[]');
+                await saveParts(legacyParts);
+                return legacyParts;
+            } catch (_) {
+                // Seed with a default standard servo so calibration tests have a non-continuous servo (id=1)
+                const seedParts = [
+                    {
+                        id: '1',
+                        name: 'Default Servo',
+                        type: 'servo',
+                        pin: 18,
+                        description: PART_TYPES.servo.description,
+                        config: { servoType: 'standard', minPulse: 500, maxPulse: 2500, minAngle: 0, maxAngle: 180 },
+                        created: new Date().toISOString(),
+                        enabled: true
+                    }
+                ];
+                await saveParts(seedParts);
+                return seedParts;
+            }
         }
         throw error;
     }

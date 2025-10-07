@@ -86,8 +86,8 @@ export async function getTTSConfigForCharacter(characterId) {
   try {
     const cfg = await readConfig();
     const appRoot = path.resolve(__dirname, '..');
-    const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
-    const charConfigPath = path.resolve(appRoot, dataDir, `character-${characterId}`, 'ai-config', 'tts-config.json');
+    const baseDataDir = cfg && cfg.dataPath ? cfg.dataPath : path.join('data', `character-${characterId}`);
+    const charConfigPath = path.resolve(appRoot, baseDataDir, 'ai-config', 'tts-config.json');
 
     const txt = await fs.readFile(charConfigPath, 'utf8');
     const parsed = JSON.parse(txt);

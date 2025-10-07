@@ -62,7 +62,7 @@ async function saveCharacterParts(characterId, parts) {
 router.get('/', async (req, res) => {
     try {
         res.render('setup/calibration', {
-            title: 'Setup Calibration - MonsterBox 4.0',
+            title: 'Setup Calibration - MonsterBox 5.1',
             page: 'setup-calibration',
             config: { theme: 'dark' }
         });
@@ -528,7 +528,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
         const calibrationStatus = await linearActuatorCalibration.getCalibrationStatus(partId);
 
         res.render('setup/calibration-linear-actuator', {
-            title: `Calibrate ${part.name} - MonsterBox 4.0`,
+            title: `Calibrate ${part.name} - MonsterBox 5.1`,
             page: 'setup-calibration-linear-actuator',
             config: { theme: 'dark' },
             part: part,
@@ -804,7 +804,7 @@ router.get('/standard_servo/:id', async (req, res) => {
             .map(p => ({ id: p.id, name: p.name }));
 
         res.render('setup/calibration-standard-servo', {
-            title: `Calibrate ${part.name} - MonsterBox 4.0`,
+            title: `Calibrate ${part.name} - MonsterBox 5.1`,
             page: 'setup-calibration-standard-servo',
             config: { theme: 'dark' },
 
@@ -1078,7 +1078,7 @@ router.get('/continuous_servo/:id', async (req, res) => {
         const suggestedPositions = continuousServoCalibration.getSuggestedPositions(part.name);
 
         res.render('setup/calibration-continuous-servo', {
-            title: `Calibrate ${part.name} - MonsterBox 4.0`,
+            title: `Calibrate ${part.name} - MonsterBox 5.1`,
             page: 'setup-calibration-continuous-servo',
             config: { theme: 'dark' },
             part: part,
