@@ -74,7 +74,7 @@ Wants=network.target
 Type=simple
 User=remote
 Group=video
-WorkingDirectory=/home/remote
+WorkingDirectory=/tmp
 ExecStartPre=/bin/sleep 5
 ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 15 -q 85" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
 ExecStop=/bin/kill -TERM $MAINPID
@@ -88,8 +88,8 @@ Environment=PATH=/usr/local/bin:/usr/bin:/bin
 # Security settings
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
+#ProtectSystem=strict
+#ProtectHome=true
 ReadWritePaths=/tmp
 
 # Resource limits

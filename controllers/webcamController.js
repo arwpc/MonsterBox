@@ -307,12 +307,16 @@ export const streamMJPEG = async (req, res) => {
     let retryCount = 0;
     const maxRetries = 5;
     let streamResponse = null;
+    // Hoisted controller and timeout for proper cleanup
+    let abortController = null;
+    let timeoutId = null;
+
 
     while (retryCount < maxRetries && !streamResponse) {
       try {
         // Create an AbortController for better timeout management
-        const abortController = new AbortController();
-        const timeoutId = setTimeout(() => {
+        abortController = new AbortController();
+        timeoutId = setTimeout(() => {
           abortController.abort();
         }, 60000); // 60 second timeout for streaming data
 
