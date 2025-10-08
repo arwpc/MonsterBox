@@ -10,6 +10,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 const execAsync = promisify(exec);
+const RUNTIME_DIR = process.env.XDG_RUNTIME_DIR || (typeof process.getuid === 'function' ? `/run/user/${process.getuid()}` : undefined);
 
 class AudioHealthMonitor {
   constructor() {
@@ -78,7 +79,7 @@ class AudioHealthMonitor {
       // Check if WirePlumber is responding
       const { stdout, stderr } = await execAsync('wpctl status', {
         timeout: 5000,
-        env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
+        env: { ...process.env, ...(RUNTIME_DIR ? { XDG_RUNTIME_DIR: RUNTIME_DIR } : {}) }
       });
 
       // If we got here, WirePlumber is responding
@@ -125,7 +126,7 @@ class AudioHealthMonitor {
       // Try restarting WirePlumber
       await execAsync('systemctl --user restart wireplumber', {
         timeout: 10000,
-        env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
+        env: { ...process.env, ...(RUNTIME_DIR ? { XDG_RUNTIME_DIR: RUNTIME_DIR } : {}) }
       });
 
       console.log('🔄 WirePlumber restart command sent');
@@ -137,7 +138,7 @@ class AudioHealthMonitor {
       try {
         await execAsync('wpctl status', {
           timeout: 5000,
-          env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
+          env: { ...process.env, ...(RUNTIME_DIR ? { XDG_RUNTIME_DIR: RUNTIME_DIR } : {}) }
         });
 
         console.log('✅ Audio system recovery successful');
@@ -177,7 +178,7 @@ class AudioHealthMonitor {
     try {
       const { stdout } = await execAsync('wpctl status', {
         timeout: 5000,
-        env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
+        env: { ...process.env, ...(RUNTIME_DIR ? { XDG_RUNTIME_DIR: RUNTIME_DIR } : {}) }
       });
 
       return {
@@ -205,7 +206,7 @@ class AudioHealthMonitor {
 
       await execAsync(`aplay ${testSoundPath}`, {
         timeout: 10000,
-        env: { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000' }
+        env: { ...process.env, ...(RUNTIME_DIR ? { XDG_RUNTIME_DIR: RUNTIME_DIR } : {}) }
       });
 
       return {

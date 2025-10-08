@@ -256,6 +256,11 @@ alsactl store || true
 
 print_success "Audio system configured"
 
+# 15b. Configure WirePlumber to auto-start at boot for the user
+print_status "Configuring WirePlumber for user $ACTUAL_USER..."
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$REPO_DIR/scripts/configure-wireplumber.sh" "$ACTUAL_USER" || print_warning "configure-wireplumber.sh reported a non-fatal issue"
+
 # 16b. Apply MonsterBox OS performance optimizations (idempotent)
 print_status "Applying OS performance optimizations (CPU governor, sysctl, service priority)..."
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
