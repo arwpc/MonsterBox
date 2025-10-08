@@ -1,1 +1,104 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Coffin Door",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-08T17:43:18.234Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 5,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010196402",
+    "updated": "2025-10-08T17:51:17.443Z"
+  },
+  {
+    "id": "2",
+    "name": "Burning Rose",
+    "type": "light",
+    "pin": 16,
+    "description": "basic on/off lighting",
+    "config": {
+      "modelId": "servo_miuzei_mg90s"
+    },
+    "created": "2025-10-08T17:44:17.131Z",
+    "enabled": true,
+    "modelId": "light_generic_12v",
+    "updated": "2025-10-08T17:51:12.637Z"
+  },
+  {
+    "id": "3",
+    "name": "Coffin Cam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "modelId": "default-uvc-1",
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-10-08T17:44:56.329Z",
+    "enabled": true,
+    "modelId": "default-uvc-1",
+    "updated": "2025-10-08T17:51:08.356Z"
+  },
+  {
+    "id": "4",
+    "name": "Neck Movement Coffin",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 0
+    },
+    "created": "2025-10-08T17:46:52.933Z",
+    "enabled": true,
+    "updated": "2025-10-08T17:51:03.308Z",
+    "modelId": "servo_miuzei_mg90s"
+  },
+  {
+    "id": "5",
+    "name": "Jaw of Coffin",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "servo_miuzei_mg90s",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 4,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-08T17:49:19.823Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_mg90s",
+    "updated": "2025-10-08T17:51:00.432Z"
+  },
+  {
+    "id": "6",
+    "name": "Eye Servos",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 2
+    },
+    "created": "2025-10-08T17:50:45.727Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_mg90s",
+    "updated": "2025-10-08T17:52:13.793Z"
+  }
+]
