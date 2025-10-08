@@ -14,7 +14,6 @@ Restart=always
 RestartSec=5
 # Increase restart limit to handle transient camera issues
 StartLimitBurst=10
-StartLimitIntervalSec=120
 
 [Install]
 WantedBy=multi-user.target
