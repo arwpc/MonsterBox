@@ -1127,6 +1127,9 @@ router.post('/api/continuous_servo/:id/jog', async (req, res) => {
         const part = parts.find(p => String(p.id) === String(partId));
 
         // In test mode or CI unit tests, short-circuit hardware and simulate success
+        const isTestRequest = String(process.env.MB_TEST_MODE || '') === '1'
+            || String(process.env.KILL_SERVER_AFTER_TESTS || '') === '1'
+            || (req.headers && typeof req.headers.host === 'string' && /:3100$/.test(req.headers.host));
         if (isTestRequest) {
             const constructedMessage = direction === 'stop'
                 ? 'Continuous servo stopped'
