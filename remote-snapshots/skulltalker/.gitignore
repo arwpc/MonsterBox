@@ -1,0 +1,64 @@
+repopack-output.txt
+node_modules/
+.vscode/
+.idea/
+# Ignore all log files, including those in the /log directory
+*.log
+MonsterBox*.log
+/log/
+.env
+*.env
+
+# Added by Task Master AI
+# Logs
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+.DS_Store
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+# Task files
+tasks.json
+tasks/
+# MkDocs generated site
+site/data/last-used-character.json
+data/port-registry.json
+data/last-used-character.json
+data/port-registry.json
+
+
+# Playwright/UI test artifacts (large files) - ignore
+playwright-report/
+test-results/
+.playwright/
+
+# App-scoped Playwright artifacts
+apps/monsterbox4/playwright-report/
+apps/monsterbox4/test-results/
+apps/monsterbox4/.playwright/
+
+# Optional artifact subfolders (if configured)
+apps/monsterbox4/tests/ui/screenshots/
+apps/monsterbox4/tests/ui/videos/
+apps/monsterbox4/tests/ui/traces/
+
+
+# Generic archives
+*.zip

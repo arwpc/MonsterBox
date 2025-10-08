@@ -1,0 +1,331 @@
+[
+  {
+    "id": 1,
+    "name": "Right Arm of Satan",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": 2,
+    "name": "Left Arm of Manipulation",
+    "type": "linear-actuator",
+    "characterId": 1,
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": 3,
+    "name": "Hand of Azura",
+    "type": "light",
+    "characterId": 1,
+    "gpioPin": 26
+  },
+  {
+    "id": 4,
+    "name": "Eye of Orlok",
+    "type": "sensor",
+    "characterId": 1,
+    "gpioPin": "24",
+    "active": "on",
+    "sensorType": "motion"
+  },
+  {
+    "id": 10,
+    "name": "Punkin Motion Detector",
+    "type": "sensor",
+    "characterId": 3,
+    "gpioPin": 16,
+    "active": true,
+    "sensorType": "motion"
+  },
+  {
+    "id": 12,
+    "name": "Coffin door",
+    "type": "linear-actuator",
+    "characterId": 2,
+    "directionPin": 5,
+    "pwmPin": 13,
+    "maxExtension": 20000,
+    "maxRetraction": 20000
+  },
+  {
+    "id": 13,
+    "name": "Burning Rose",
+    "type": "light",
+    "characterId": 2,
+    "gpioPin": "16"
+  },
+  {
+    "id": 14,
+    "name": "Head Light",
+    "type": "led",
+    "characterId": 3,
+    "gpioPin": 17
+  },
+  {
+    "id": 15,
+    "type": "motor",
+    "name": "Body Move",
+    "characterId": 3,
+    "directionPin": "6",
+    "pwmPin": "13"
+  },
+  {
+    "id": 28,
+    "name": "Orlok's Gaze",
+    "type": "webcam",
+    "characterId": 1,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 30,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 0,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 10,
+      "backlight_compensation": 80,
+      "white_balance_temperature": 4600,
+      "exposure_time_absolute": 157,
+      "white_balance_automatic": true,
+      "exposure_dynamic_framerate": false,
+      "auto_exposure": 3,
+      "power_line_frequency": 1
+    }
+  },
+  {
+    "id": 29,
+    "name": "Orlok Head Servo",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 0,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "GoBilda Stingray 2 Servo",
+    "minPulse": 500,
+    "maxPulse": 2500,
+    "defaultAngle": 90,
+    "mode": [
+      "Feedback",
+      "Continuous",
+      "Standard",
+      "Digital"
+    ],
+    "feedback": true,
+    "controlType": [
+      "PWM",
+      "Digital"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 30,
+    "name": "Forearm",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 5,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 400,
+    "maxPulse": 2800,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Extension"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 31,
+    "name": "Elbow of Orlok",
+    "type": "servo",
+    "characterId": 1,
+    "pin": 3,
+    "usePCA9685": true,
+    "channel": 4,
+    "pca9685Settings": {
+      "frequency": 50,
+      "address": "0x40"
+    },
+    "servoType": "Hooyij 40kg DS3240MG",
+    "minPulse": 400,
+    "maxPulse": 2800,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard",
+      "Extension"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 33,
+    "name": "Skull Talking Jaw",
+    "type": "servo",
+    "characterId": 4,
+    "pin": 26,
+    "usePCA9685": false,
+    "channel": null,
+    "pca9685Settings": null,
+    "servoType": "Miuzei MG90S",
+    "minPulse": 500,
+    "maxPulse": 2400,
+    "defaultAngle": 90,
+    "mode": [
+      "Standard"
+    ],
+    "feedback": false,
+    "controlType": [
+      "PWM"
+    ],
+    "customSettings": null
+  },
+  {
+    "id": 34,
+    "characterId": 4,
+    "type": "microphone",
+    "name": "Ears of the Skull",
+    "description": "",
+    "deviceId": "default",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.42",
+    "voiceActivation": "on"
+  },
+  {
+    "id": 54,
+    "name": "SkullTalker Vision",
+    "type": "webcam",
+    "characterId": 4,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 30,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 0,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 2,
+      "backlight_compensation": 1,
+      "exposure_auto": 3,
+      "exposure_absolute": 250,
+      "focus_auto": 1
+    }
+  },
+  {
+    "id": 55,
+    "name": "Coffin Breaker Vision",
+    "type": "webcam",
+    "characterId": 2,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 30,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 0,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 2,
+      "backlight_compensation": 1,
+      "exposure_auto": 3,
+      "exposure_absolute": 250,
+      "focus_auto": 1
+    }
+  },
+  {
+    "id": 56,
+    "name": "PumpkinHead Vision",
+    "type": "webcam",
+    "characterId": 3,
+    "deviceId": 0,
+    "devicePath": "/dev/video0",
+    "resolution": "1280x720",
+    "fps": 30,
+    "status": "active",
+    "cameraControls": {
+      "brightness": 0,
+      "contrast": 32,
+      "saturation": 64,
+      "hue": 0,
+      "gamma": 100,
+      "gain": 0,
+      "sharpness": 2,
+      "backlight_compensation": 1,
+      "exposure_auto": 3,
+      "exposure_absolute": 250,
+      "focus_auto": 1
+    }
+  },
+  {
+    "id": 57,
+    "type": "motor",
+    "name": "Test Motor",
+    "characterId": 1,
+    "directionPin": "19",
+    "pwmPin": "13"
+  },
+  {
+    "id": 58,
+    "type": "speaker",
+    "characterId": 1,
+    "name": "skullspewaker",
+    "description": "",
+    "outputDevice": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+    "volume": "80"
+  },
+  {
+    "id": 59,
+    "type": "microphone",
+    "characterId": 1,
+    "name": "testasdasd",
+    "description": "",
+    "deviceId": "default",
+    "outputDevice": "default",
+    "sampleRate": "8000",
+    "channels": "1",
+    "sensitivity": "1",
+    "echoCancellation": "on",
+    "noiseSuppression": "on",
+    "autoGainControl": "on",
+    "voiceActivationThreshold": "0.1"
+  }
+]

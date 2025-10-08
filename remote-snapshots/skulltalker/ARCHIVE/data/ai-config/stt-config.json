@@ -1,0 +1,14 @@
+{
+  "apiKey": "",
+  "model": "scribe_v1",
+  "language": "en",
+  "confidenceThreshold": "0.8",
+  "chunkDuration": "2000",
+  "timeout": "30000",
+  "fallbackToSystem": "true",
+  "vadType": "server_vad",
+  "vadThreshold": 0.5,
+  "prefixPadding": 300,
+  "silenceDuration": 700,
+  "updatedAt": "2025-09-07T21:45:44.589Z"
+}

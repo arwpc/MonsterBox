@@ -1,0 +1,75 @@
+[
+  {
+    "id": "1",
+    "name": "Hooyij 40kg DS3240MG",
+    "manufacturer": "Hooyij",
+    "defaults": {
+      "minPulse": 400,
+      "maxPulse": 2800,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "High torque waterproof servo ideal for arm joints, elbows, and heavy-duty applications requiring precise positioning. Supports extended pulse width range for maximum mechanical travel.",
+      "controlType": [
+        "PWM"
+      ]
+    }
+  },
+  {
+    "id": "2",
+    "name": "Miuzei MG90S",
+    "manufacturer": "Miuzei",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2400,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "Compact and lightweight; suitable for small applications like RC models.",
+      "controlType": [
+        "PWM"
+      ]
+    }
+  },
+  {
+    "id": "3",
+    "name": "GoBilda Stingray 2 Servo",
+    "manufacturer": "GoBilda",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 900,
+      "servoType": "feedback"
+    },
+    "meta": {
+      "notes": "High power with extensive rotation, suitable for animatronics and robotics with multiple operation modes.",
+      "controlType": [
+        "PWM",
+        "Digital"
+      ]
+    }
+  },
+  {
+    "id": "4",
+    "name": "FITEC FS90R",
+    "manufacturer": "FITEC",
+    "defaults": {
+      "minPulse": 700,
+      "maxPulse": 2300,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 180,
+      "servoType": "continuous"
+    },
+    "meta": {
+      "notes": "Continuous rotation micro servo. Use pulse width 700-1500µs for CW rotation (faster as pulse decreases), 1500µs to stop, and 1500-2300µs for CCW rotation (faster as pulse increases).",
+      "controlType": [
+        "PWM"
+      ]
+    }
+  }
+]

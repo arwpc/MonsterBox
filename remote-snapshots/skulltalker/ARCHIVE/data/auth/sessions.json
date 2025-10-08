@@ -1,0 +1,1237 @@
+{
+  "sessions": [
+    {
+      "sessionId": "session_1749241459151_8ed74r0di",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:19.155Z",
+      "lastActivity": "2025-06-06T20:24:19.155Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241459573_8nrrmtu84",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:19.575Z",
+      "lastActivity": "2025-06-06T20:24:19.575Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241459822_58caqcat4",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:19.824Z",
+      "lastActivity": "2025-06-06T20:24:19.824Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241468770_mv7u9l609",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:28.772Z",
+      "lastActivity": "2025-06-06T20:24:28.772Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241498596_qy8e1teg2",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:58.601Z",
+      "lastActivity": "2025-06-06T20:24:58.601Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241499019_lu5dr06hm",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:59.021Z",
+      "lastActivity": "2025-06-06T20:24:59.021Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241499279_whvjlecrq",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:24:59.281Z",
+      "lastActivity": "2025-06-06T20:24:59.281Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241508230_dh6itwu8k",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:25:08.232Z",
+      "lastActivity": "2025-06-06T20:25:08.232Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241508439_4qh2pg9xp",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:25:08.442Z",
+      "lastActivity": "2025-06-06T20:25:08.442Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749241508646_ibzjiosvf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T20:25:08.648Z",
+      "lastActivity": "2025-06-06T20:25:08.648Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247211413_3fhfq48f8",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:11.417Z",
+      "lastActivity": "2025-06-06T22:00:11.417Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247211850_en6xp6laz",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:11.852Z",
+      "lastActivity": "2025-06-06T22:00:11.852Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225156_92oud46tj",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.159Z",
+      "lastActivity": "2025-06-06T22:00:25.159Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225568_u3mf408wf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.570Z",
+      "lastActivity": "2025-06-06T22:00:25.570Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247225779_dzkioaejf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:25.781Z",
+      "lastActivity": "2025-06-06T22:00:25.781Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247234684_ftibtks6v",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:34.685Z",
+      "lastActivity": "2025-06-06T22:00:34.685Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247234894_58fohf8s3",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:34.896Z",
+      "lastActivity": "2025-06-06T22:00:34.896Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749247235101_s1rzqg90u",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:00:35.103Z",
+      "lastActivity": "2025-06-06T22:00:35.103Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248236330_f2dqcvrck",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:16.334Z",
+      "lastActivity": "2025-06-06T22:17:16.334Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248236776_qq5u0nft2",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:16.779Z",
+      "lastActivity": "2025-06-06T22:17:16.779Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248250064_nb99vlela",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:30.067Z",
+      "lastActivity": "2025-06-06T22:17:30.067Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248250475_5bhmgv61z",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:30.478Z",
+      "lastActivity": "2025-06-06T22:17:30.478Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248250690_68y9r4g7p",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:30.692Z",
+      "lastActivity": "2025-06-06T22:17:30.692Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248259605_ivruk1n8i",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:39.606Z",
+      "lastActivity": "2025-06-06T22:17:39.606Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248259816_mweso6vi3",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:39.817Z",
+      "lastActivity": "2025-06-06T22:17:39.817Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749248260027_ardjpxiqz",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T22:17:40.029Z",
+      "lastActivity": "2025-06-06T22:17:40.029Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250953645_zkrpzlrdw",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:33.649Z",
+      "lastActivity": "2025-06-06T23:02:33.649Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250954082_24hc7ijqy",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:34.084Z",
+      "lastActivity": "2025-06-06T23:02:34.084Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250967356_1uqyiwgu5",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:47.358Z",
+      "lastActivity": "2025-06-06T23:02:47.358Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250967761_tk3i7n0ms",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:47.763Z",
+      "lastActivity": "2025-06-06T23:02:47.763Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250967973_cc0f4q3c1",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:47.975Z",
+      "lastActivity": "2025-06-06T23:02:47.975Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250976909_cjel0598o",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:56.911Z",
+      "lastActivity": "2025-06-06T23:02:56.911Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250977116_rr8xl70vn",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:57.118Z",
+      "lastActivity": "2025-06-06T23:02:57.118Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749250977323_6bro9v7es",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:02:57.325Z",
+      "lastActivity": "2025-06-06T23:02:57.325Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749253847002_q4svwtavb",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:50:47.006Z",
+      "lastActivity": "2025-06-06T23:50:47.006Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749253847444_2rsrh3kc0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:50:47.446Z",
+      "lastActivity": "2025-06-06T23:50:47.446Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254197858_tf8a9wgn0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:56:37.862Z",
+      "lastActivity": "2025-06-06T23:56:37.862Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254198294_i8o9k5ry0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:56:38.296Z",
+      "lastActivity": "2025-06-06T23:56:38.296Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254211568_qks9agulh",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:56:51.570Z",
+      "lastActivity": "2025-06-06T23:56:51.570Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254211977_k9vl1dzig",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:56:51.979Z",
+      "lastActivity": "2025-06-06T23:56:51.979Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254212191_yj9oah3p7",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:56:52.193Z",
+      "lastActivity": "2025-06-06T23:56:52.193Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254221125_xrslvmftk",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:01.127Z",
+      "lastActivity": "2025-06-06T23:57:01.127Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254221334_t6egk67ja",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:01.336Z",
+      "lastActivity": "2025-06-06T23:57:01.336Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254221539_zh94jszi2",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:01.541Z",
+      "lastActivity": "2025-06-06T23:57:01.541Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254234566_ia6bpdye9",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:14.570Z",
+      "lastActivity": "2025-06-06T23:57:14.570Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254235003_fx6m9by7z",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:15.005Z",
+      "lastActivity": "2025-06-06T23:57:15.005Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254248284_x3865k0qq",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:28.286Z",
+      "lastActivity": "2025-06-06T23:57:28.286Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254248691_ptjn1bxss",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:28.693Z",
+      "lastActivity": "2025-06-06T23:57:28.693Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254248909_wgwrkor5u",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:28.912Z",
+      "lastActivity": "2025-06-06T23:57:28.912Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254257837_pvlobxuaz",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:37.838Z",
+      "lastActivity": "2025-06-06T23:57:37.838Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254258050_56t3cw3ou",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:38.052Z",
+      "lastActivity": "2025-06-06T23:57:38.052Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749254258261_zb00je0en",
+      "userId": "admin-001",
+      "createdAt": "2025-06-06T23:57:38.263Z",
+      "lastActivity": "2025-06-06T23:57:38.263Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514534220_53y8w3xu4",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:15:34.225Z",
+      "lastActivity": "2025-06-10T00:15:34.225Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514534678_eon5j57w8",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:15:34.680Z",
+      "lastActivity": "2025-06-10T00:15:34.680Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514549762_b24l4nwp8",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:15:49.764Z",
+      "lastActivity": "2025-06-10T00:15:49.764Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514550183_k2qovlqkv",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:15:50.185Z",
+      "lastActivity": "2025-06-10T00:15:50.185Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514550401_o83z9u46x",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:15:50.403Z",
+      "lastActivity": "2025-06-10T00:15:50.403Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514562474_8jfoesfjh",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:16:02.476Z",
+      "lastActivity": "2025-06-10T00:16:02.476Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514562692_yc995ffm0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:16:02.695Z",
+      "lastActivity": "2025-06-10T00:16:02.695Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749514562918_3whibg2uj",
+      "userId": "admin-001",
+      "createdAt": "2025-06-10T00:16:02.920Z",
+      "lastActivity": "2025-06-10T00:16:02.920Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683854612_4toj0jt7m",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:17:34.626Z",
+      "lastActivity": "2025-06-11T23:17:34.626Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683855626_63g591cci",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:17:35.632Z",
+      "lastActivity": "2025-06-11T23:17:35.632Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683884142_oqlq4s54m",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:04.153Z",
+      "lastActivity": "2025-06-11T23:18:04.153Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683884974_y5zzp6vai",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:04.979Z",
+      "lastActivity": "2025-06-11T23:18:04.979Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683885422_vjouf28t5",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:05.428Z",
+      "lastActivity": "2025-06-11T23:18:05.428Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683897527_opo47brhz",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:17.532Z",
+      "lastActivity": "2025-06-11T23:18:17.532Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683897969_da3v9z03t",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:17.974Z",
+      "lastActivity": "2025-06-11T23:18:17.974Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749683898402_w0vyf8aw9",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:18:18.411Z",
+      "lastActivity": "2025-06-11T23:18:18.411Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684223006_vhyn32mze",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:23:43.019Z",
+      "lastActivity": "2025-06-11T23:23:43.019Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684223938_ubpbgvxko",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:23:43.944Z",
+      "lastActivity": "2025-06-11T23:23:43.944Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684433114_04c77cedd",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:27:13.127Z",
+      "lastActivity": "2025-06-11T23:27:13.127Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684434081_ztmq0pb3o",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:27:14.088Z",
+      "lastActivity": "2025-06-11T23:27:14.088Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684480750_l643mfhzw",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:00.759Z",
+      "lastActivity": "2025-06-11T23:28:00.759Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684481578_qj07nf527",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:01.583Z",
+      "lastActivity": "2025-06-11T23:28:01.583Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684482023_0owv93co5",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:02.029Z",
+      "lastActivity": "2025-06-11T23:28:02.029Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684494738_oqih3uk4e",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:14.744Z",
+      "lastActivity": "2025-06-11T23:28:14.744Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684504643_4qabk4wx4",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:24.649Z",
+      "lastActivity": "2025-06-11T23:28:24.649Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684505081_7fe2k708b",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:28:25.087Z",
+      "lastActivity": "2025-06-11T23:28:25.087Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684557529_lym93kc8v",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:29:17.542Z",
+      "lastActivity": "2025-06-11T23:29:17.542Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684558496_jhvlugmon",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:29:18.502Z",
+      "lastActivity": "2025-06-11T23:29:18.502Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684604647_ouw2mtrpe",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:04.656Z",
+      "lastActivity": "2025-06-11T23:30:04.656Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684605483_4ckahqnnv",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:05.488Z",
+      "lastActivity": "2025-06-11T23:30:05.488Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684605978_8frvcl0do",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:05.984Z",
+      "lastActivity": "2025-06-11T23:30:05.984Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684618879_fhxcea290",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:18.884Z",
+      "lastActivity": "2025-06-11T23:30:18.885Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684637574_0svrthugs",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:37.580Z",
+      "lastActivity": "2025-06-11T23:30:37.580Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684638012_l5hxmpsix",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:30:38.019Z",
+      "lastActivity": "2025-06-11T23:30:38.019Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684908751_pruw5hslf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:35:08.764Z",
+      "lastActivity": "2025-06-11T23:35:08.764Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684909683_a89kwsvdr",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:35:09.689Z",
+      "lastActivity": "2025-06-11T23:35:09.689Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684956658_7t954blv4",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:35:56.666Z",
+      "lastActivity": "2025-06-11T23:35:56.666Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684957511_cojxlc83l",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:35:57.516Z",
+      "lastActivity": "2025-06-11T23:35:57.516Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684957956_jxzh2p6zu",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:35:57.964Z",
+      "lastActivity": "2025-06-11T23:35:57.964Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684970276_3cturpk8d",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:36:10.283Z",
+      "lastActivity": "2025-06-11T23:36:10.283Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684980658_lxadtqoey",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:36:20.664Z",
+      "lastActivity": "2025-06-11T23:36:20.664Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749684981117_1minxjdax",
+      "userId": "admin-001",
+      "createdAt": "2025-06-11T23:36:21.123Z",
+      "lastActivity": "2025-06-11T23:36:21.123Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749940050259_qa2yp9mdk",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:27:30.273Z",
+      "lastActivity": "2025-06-14T22:27:30.273Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749940051256_vh8zn5g24",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:27:31.261Z",
+      "lastActivity": "2025-06-14T22:27:31.261Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749940081679_8jcdkslt7",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:28:01.689Z",
+      "lastActivity": "2025-06-14T22:28:01.689Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749940082569_vqjha55wf",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:28:02.576Z",
+      "lastActivity": "2025-06-14T22:28:02.576Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749940083040_zgui8a3sx",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:28:03.046Z",
+      "lastActivity": "2025-06-14T22:28:03.046Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941115364_eylphlg10",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:15.378Z",
+      "lastActivity": "2025-06-14T22:45:15.378Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941116315_ilvm94hx1",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:16.320Z",
+      "lastActivity": "2025-06-14T22:45:16.320Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941116874_l68yp11zc",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:16.880Z",
+      "lastActivity": "2025-06-14T22:45:16.880Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941129340_4u262ek17",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:29.349Z",
+      "lastActivity": "2025-06-14T22:45:29.349Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941129805_xk3ozl1sk",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:29.811Z",
+      "lastActivity": "2025-06-14T22:45:29.811Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941130252_lz12xmfby",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:45:30.257Z",
+      "lastActivity": "2025-06-14T22:45:30.257Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941424978_09xb9j69l",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:50:24.991Z",
+      "lastActivity": "2025-06-14T22:50:24.991Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941426169_6i8wqpogy",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:50:26.175Z",
+      "lastActivity": "2025-06-14T22:50:26.175Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941453773_jwih5mkq7",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:50:53.781Z",
+      "lastActivity": "2025-06-14T22:50:53.781Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941454628_ib98jau5b",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:50:54.635Z",
+      "lastActivity": "2025-06-14T22:50:54.635Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941455107_r8io7o3bd",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:50:55.113Z",
+      "lastActivity": "2025-06-14T22:50:55.113Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941467364_hi2n1nm5d",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:07.371Z",
+      "lastActivity": "2025-06-14T22:51:07.371Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941469051_w78eyd3vd",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:09.056Z",
+      "lastActivity": "2025-06-14T22:51:09.056Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941469494_89wizb7b6",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:09.500Z",
+      "lastActivity": "2025-06-14T22:51:09.500Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941496995_ofzh6awb2",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:37.010Z",
+      "lastActivity": "2025-06-14T22:51:37.010Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941497851_6jbd0e0fo",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:37.856Z",
+      "lastActivity": "2025-06-14T22:51:37.856Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941498412_ub56f6h7r",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:38.417Z",
+      "lastActivity": "2025-06-14T22:51:38.417Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941510637_5tq4xbekw",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:51:50.645Z",
+      "lastActivity": "2025-06-14T22:51:50.645Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941588343_j6m0zlhxa",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:53:08.357Z",
+      "lastActivity": "2025-06-14T22:53:08.357Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749941588910_gdb8q22yc",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T22:53:08.939Z",
+      "lastActivity": "2025-06-14T22:53:08.939Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "ssh-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942323345_g7qnh43hr",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:05:23.359Z",
+      "lastActivity": "2025-06-14T23:05:23.359Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942324213_1qoajaaas",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:05:24.243Z",
+      "lastActivity": "2025-06-14T23:05:24.243Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942324863_r1f483pic",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:05:24.868Z",
+      "lastActivity": "2025-06-14T23:05:24.869Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942337238_1bphw29i3",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:05:37.246Z",
+      "lastActivity": "2025-06-14T23:05:37.246Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942680207_8xjr4q5xt",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:11:20.225Z",
+      "lastActivity": "2025-06-14T23:11:20.225Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942681065_h7x6rv2e8",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:11:21.070Z",
+      "lastActivity": "2025-06-14T23:11:21.070Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942681618_soxtdudvd",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:11:21.623Z",
+      "lastActivity": "2025-06-14T23:11:21.623Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942693928_bhynhchxr",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:11:33.937Z",
+      "lastActivity": "2025-06-14T23:11:33.937Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942804816_8bvvcv8k3",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:13:24.830Z",
+      "lastActivity": "2025-06-14T23:13:24.830Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942805671_kvpqii3s9",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:13:25.677Z",
+      "lastActivity": "2025-06-14T23:13:25.677Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942806234_v54b9fdub",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:13:26.239Z",
+      "lastActivity": "2025-06-14T23:13:26.240Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749942818546_0zh040yef",
+      "userId": "admin-001",
+      "createdAt": "2025-06-14T23:13:38.556Z",
+      "lastActivity": "2025-06-14T23:13:38.556Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749957802341_iqjtbafak",
+      "userId": "admin-001",
+      "createdAt": "2025-06-15T03:23:22.354Z",
+      "lastActivity": "2025-06-15T03:23:22.354Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "test-agent",
+      "active": true
+    },
+    {
+      "sessionId": "session_1749957803277_nrp79cys5",
+      "userId": "admin-001",
+      "createdAt": "2025-06-15T03:23:23.284Z",
+      "lastActivity": "2025-06-15T03:23:23.284Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713694375_js0xpg9y0",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:34.398Z",
+      "lastActivity": "2025-06-23T21:21:34.398Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713695313_bwdp40jjp",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:35.320Z",
+      "lastActivity": "2025-06-23T21:21:35.320Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713695965_5grfm0wmn",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:35.974Z",
+      "lastActivity": "2025-06-23T21:21:35.974Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1750713710204_mhntovyjm",
+      "userId": "admin-001",
+      "createdAt": "2025-06-23T21:21:50.211Z",
+      "lastActivity": "2025-06-23T21:21:50.211Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1756412817641_nhr6qix3l",
+      "userId": "admin-001",
+      "createdAt": "2025-08-28T20:26:57.655Z",
+      "lastActivity": "2025-08-28T20:26:57.655Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1756412818648_2xf4qjs4l",
+      "userId": "admin-001",
+      "createdAt": "2025-08-28T20:26:58.654Z",
+      "lastActivity": "2025-08-28T20:26:58.654Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    },
+    {
+      "sessionId": "session_1756412819215_4d5gujhce",
+      "userId": "admin-001",
+      "createdAt": "2025-08-28T20:26:59.221Z",
+      "lastActivity": "2025-08-28T20:26:59.221Z",
+      "ipAddress": "::ffff:127.0.0.1",
+      "active": true
+    },
+    {
+      "sessionId": "session_1756412831884_0q1rvzrjv",
+      "userId": "admin-001",
+      "createdAt": "2025-08-28T20:27:11.892Z",
+      "lastActivity": "2025-08-28T20:27:11.892Z",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "mocha-test",
+      "active": true
+    }
+  ]
+}

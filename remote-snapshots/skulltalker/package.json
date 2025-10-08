@@ -1,0 +1,66 @@
+{
+  "name": "monsterbox",
+  "version": "5.2.0",
+  "description": "MonsterBox 5.2 - Animatronic Control System with Conversation Mode, Poses, and Halloween Magic",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "playwright:browsers": "npx playwright install --with-deps chromium",
+    "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
+    "test": "npm run test:syntax && npm run test:unit",
+    "test:syntax": "mocha tests/syntax-validation.test.js --timeout 5000",
+    "test:unit": "KILL_SERVER_AFTER_TESTS=1 MB_TEST_MODE=1 mocha tests/**/*.test.js --timeout 15000",
+    "test:ui": "playwright test -c playwright.config.ts",
+    "test:ui:live": "playwright test -c playwright.config.ts --headed",
+    "test:ui:headed": "playwright test -c playwright.config.ts --headed",
+    "test:ui:firefox": "playwright test -c playwright.config.ts --project=firefox",
+    "test:ui:workflow": "playwright test -c playwright.config.ts tests/playwright/**/*.spec.js",
+    "test:e2e": "playwright test -c playwright.config.ts tests/playwright/e2e-comprehensive-characters.spec.js",
+    "test:e2e:live": "playwright test -c playwright.config.ts --headed tests/playwright/e2e-comprehensive-characters.spec.js",
+    "test:all": "npm run test:syntax && npm run test:unit && npm run test:ui",
+    "test:jaw-animation": "bash test/run-jaw-animation-tests.sh",
+    "test:jaw-animation:unit": "mocha test/jaw-animation-service-unit.test.js --timeout 15000",
+    "test:jaw-animation:api": "mocha test/jaw-animation-super-power.test.js --timeout 15000",
+    "test:jaw-animation:ui": "playwright test --config test/jaw-animation.config.js --project=jaw-animation-ui-tests",
+    "test:jaw-animation:mobile": "playwright test --config test/jaw-animation.config.js --project=jaw-animation-mobile-ui",
+    "setup": "bash setup-monsterbox.sh",
+    "setup:webcam": "bash scripts/setup-webcam.sh",
+    "check": "bash scripts/system-check.sh",
+    "install:python": "python3 -m pip install --user -r utils/requirements.txt",
+    "postinstall": "node scripts/post-install.js",
+    "migrate:models": "node scripts/migrate-models.js"
+  },
+  "keywords": [
+    "animatronic",
+    "raspberry-pi",
+    "servo",
+    "poses",
+    "hardware-control"
+  ],
+  "author": "MonsterBox Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "form-data": "^4.0.4",
+    "multer": "^2.0.2",
+    "music-metadata": "^11.9.0",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^24.22.2",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "nodemon": "^3.0.1",
+    "playwright": "^1.55.0",
+    "supertest": "^7.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

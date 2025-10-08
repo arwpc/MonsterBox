@@ -1,0 +1,14 @@
+{
+  "id": "test-sound-2",
+  "name": "Validation Alert",
+  "description": "A sound for testing validation alerts",
+  "filename": "validation-alert.wav",
+  "duration": 1.2,
+  "characterId": "test-character-2",
+  "tags": [
+    "test",
+    "alert",
+    "validation"
+  ],
+  "created_at": "2025-06-23T21:16:58.886Z"
+}

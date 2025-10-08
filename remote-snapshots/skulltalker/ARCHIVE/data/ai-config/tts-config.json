@@ -1,0 +1,9 @@
+{
+  "defaultSpeed": 1,
+  "defaultPitch": 0,
+  "defaultVolume": 0,
+  "audioFormat": "mp3",
+  "sampleRate": "22050",
+  "timeout": 20000,
+  "testMode": true
+}
