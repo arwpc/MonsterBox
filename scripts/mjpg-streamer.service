@@ -1,0 +1,21 @@
+[Unit]
+Description=MJPG Streamer (UVC to HTTP)
+After=network.target dev-video0.device
+Wants=dev-video0.device
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/tmp
+# Small delay to ensure camera is fully initialized
+ExecStartPre=/bin/sleep 2
+ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 24 -q 80" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
+Restart=always
+RestartSec=5
+# Increase restart limit to handle transient camera issues
+StartLimitBurst=10
+StartLimitIntervalSec=120
+
+[Install]
+WantedBy=multi-user.target
+
