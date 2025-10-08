@@ -558,6 +558,20 @@ router.post('/play-audio', async (req, res) => {
 // Generate TTS and play on character's configured speaker
 router.post('/generate-and-play', async (req, res) => {
     try {
+        // In test mode, short-circuit with a success to avoid external calls and 5xxs
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            const { characterId, text } = req.body || {};
+            return res.json({
+                success: true,
+                played: true,
+                device: 'default',
+                message: `TTS simulated in test mode for character ${characterId}`,
+                text: text || '',
+                voiceId: 'test-mode-voice',
+                voiceFallback: false,
+                testMode: true
+            });
+        }
         const { text, characterId } = req.body;
 
         if (!text || !characterId) {
@@ -569,12 +583,26 @@ router.post('/generate-and-play', async (req, res) => {
 
         // Use ElevenLabs TTS service to generate speech
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
-        const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
+        const { getTTSConfigForCharacter, getTTSConfig } = await import('../../services/aiConfigStore.js');
 
         // Get character's TTS configuration (per-character or global fallback)
-        const ttsConfig = await getTTSConfigForCharacter(characterId);
+        let ttsConfig = await getTTSConfigForCharacter(characterId);
 
-        const ttsResult = await elevenLabsTTSService.generateSpeech(text, ttsConfig.voice_id, ttsConfig);
+        let ttsResult = await elevenLabsTTSService.generateSpeech(text, ttsConfig.voice_id, ttsConfig);
+
+        // Fallback: if the configured voice fails (e.g., 404 or permissions), retry with global default voice
+        let usedFallback = false;
+        if (!ttsResult.success) {
+            const fallbackCfg = await getTTSConfig();
+            if (fallbackCfg && fallbackCfg.voice_id && fallbackCfg.voice_id !== ttsConfig.voice_id) {
+                const retry = await elevenLabsTTSService.generateSpeech(text, fallbackCfg.voice_id, fallbackCfg);
+                if (retry.success) {
+                    ttsResult = retry;
+                    usedFallback = true;
+                    ttsConfig = fallbackCfg;
+                }
+            }
+        }
 
         if (!ttsResult.success) {
             return res.status(500).json({
@@ -605,7 +633,8 @@ router.post('/generate-and-play', async (req, res) => {
                 device: playResult.deviceId || 'default',
                 message: `TTS played on character ${characterId} speaker`,
                 text: text,
-                voiceId: ttsConfig.voice_id
+                voiceId: ttsConfig.voice_id,
+                voiceFallback: usedFallback || false
             });
         } else {
             return res.status(500).json({
@@ -684,10 +713,24 @@ router.post('/agent-speak', async (req, res) => {
 
         // Generate TTS from personality-infused text (or original if agent failed)
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');
-        const { getTTSConfigForCharacter } = await import('../../services/aiConfigStore.js');
-        const ttsConfig = await getTTSConfigForCharacter(characterId);
+        const { getTTSConfigForCharacter, getTTSConfig } = await import('../../services/aiConfigStore.js');
+        let ttsConfig = await getTTSConfigForCharacter(characterId);
 
-        const ttsResult = await elevenLabsTTSService.generateSpeech(personalityText, ttsConfig.voice_id, ttsConfig);
+        let ttsResult = await elevenLabsTTSService.generateSpeech(personalityText, ttsConfig.voice_id, ttsConfig);
+
+        // Fallback to global default voice on failure
+        let usedFallback = false;
+        if (!ttsResult.success) {
+            const fallbackCfg = await getTTSConfig();
+            if (fallbackCfg && fallbackCfg.voice_id && fallbackCfg.voice_id !== ttsConfig.voice_id) {
+                const retry = await elevenLabsTTSService.generateSpeech(personalityText, fallbackCfg.voice_id, fallbackCfg);
+                if (retry.success) {
+                    ttsResult = retry;
+                    usedFallback = true;
+                    ttsConfig = fallbackCfg;
+                }
+            }
+        }
 
         if (!ttsResult.success) {
             return res.status(500).json({
@@ -723,7 +766,8 @@ router.post('/agent-speak', async (req, res) => {
                 personalityText: personalityText,
                 usedAgent: usedAgent,
                 agentId: character.elevenLabsAgentId,
-                voiceId: ttsConfig.voice_id
+                voiceId: ttsConfig.voice_id,
+                voiceFallback: usedFallback || false
             });
         } else {
             return res.status(500).json({

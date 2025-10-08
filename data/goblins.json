@@ -18,5 +18,47 @@
       "volume": 80,
       "autoLock": false
     }
+  },
+  {
+    "id": "goblin-1",
+    "endpoint": "http://192.168.8.160:3001",
+    "capabilities": [
+      "video",
+      "audio"
+    ],
+    "platform": "pi3",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-08T03:11:15.547Z",
+    "lastSeen": "2025-10-08T03:11:15.547Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
+  },
+  {
+    "id": "goblin-2",
+    "endpoint": "http://192.168.8.161:3001",
+    "capabilities": [
+      "video",
+      "audio"
+    ],
+    "platform": "pi5",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-08T03:11:23.109Z",
+    "lastSeen": "2025-10-08T03:11:23.109Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
   }
 ]

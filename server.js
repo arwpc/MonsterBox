@@ -80,7 +80,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use((req, res, next) => {
     res.renderWithLayout = function (contentTemplate, options = {}) {
         const layoutOptions = {
-            title: options.title || 'MonsterBox 5.2',
+            title: options.title || 'MonsterBox 5.3',
             page: options.page || 'dashboard',
             config: req.app.locals.config,
             currentCharacter: res.locals.currentCharacter,
@@ -281,7 +281,7 @@ app.get('/', (req, res) => {
     }
 
     res.renderWithLayout('index', {
-        title: 'MonsterBox 5.2 Dashboard',
+        title: 'MonsterBox 5.3 Dashboard',
         page: 'dashboard',
         bodyExtras: `
             <script>

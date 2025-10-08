@@ -62,15 +62,27 @@ for char_id in {1..4}; do
         --connect-timeout 10 \
         --max-time 30)
     
-    if echo "$response" | jq -e '.success' > /dev/null 2>&1; then
-        echo -e "${GREEN}✓${NC} TTS generation and playback successful"
-        device=$(echo "$response" | jq -r '.device // "unknown"')
-        voice_id=$(echo "$response" | jq -r '.voiceId // "unknown"')
-        echo "  Device: $device"
-        echo "  Voice ID: $voice_id"
+    if command -v jq >/dev/null 2>&1; then
+        if echo "$response" | jq -e '.success' > /dev/null 2>&1; then
+            echo -e "${GREEN}✓${NC} TTS generation and playback successful"
+            device=$(echo "$response" | jq -r '.device // "unknown"')
+            voice_id=$(echo "$response" | jq -r '.voiceId // "unknown"')
+            echo "  Device: $device"
+            echo "  Voice ID: $voice_id"
+        else
+            echo -e "${RED}✗${NC} TTS generation or playback failed"
+            echo "Response: $response"
+        fi
     else
-        echo -e "${RED}✗${NC} TTS generation or playback failed"
-        echo "Response: $response"
+        # Fallback parser without jq
+        if echo "$response" | grep -q '"success"\s*:\s*true'; then
+            echo -e "${GREEN}✓${NC} TTS generation and playback successful"
+            echo "  Device: $(echo "$response" | sed -n 's/.*"device"\s*:\s*"\([^"]*\)".*/\1/p' | head -n1 | sed 's/.*/&/;t;d' || echo unknown)"
+            echo "  Voice ID: $(echo "$response" | sed -n 's/.*"voiceId"\s*:\s*"\([^"]*\)".*/\1/p' | head -n1 | sed 's/.*/&/;t;d' || echo unknown)"
+        else
+            echo -e "${RED}✗${NC} TTS generation or playback failed"
+            echo "Response: $response"
+        fi
     fi
     
     echo ""

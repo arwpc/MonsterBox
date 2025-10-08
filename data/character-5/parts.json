@@ -61,5 +61,201 @@
     "created": "2025-10-07T00:00:00.000Z",
     "enabled": true,
     "modelId": "mic_generic_usb"
+  },
+  {
+    "id": "5",
+    "name": "Temp Servo",
+    "type": "servo",
+    "pin": null,
+    "description": "tmp",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 15,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-08T04:18:56.546Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "Tmp CS",
+    "type": "servo",
+    "pin": null,
+    "description": "tmp",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 15,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-08T04:26:51.106Z",
+    "enabled": true
+  },
+  {
+    "id": "7",
+    "name": "Tmp2",
+    "type": "servo",
+    "pin": null,
+    "description": "tmp",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "channel": 15,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-08T04:28:44.790Z",
+    "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "Demo Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "resolution": "640x480"
+    },
+    "created": "2025-10-08T06:07:40.867Z",
+    "enabled": true,
+    "characterId": 5
+  },
+  {
+    "id": "9",
+    "name": "Head Pan",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-10-08T06:07:40.868Z",
+    "enabled": true,
+    "characterId": 5
+  },
+  {
+    "id": "10",
+    "name": "UI Servo 1759905453828",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-08T06:37:34.277Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "UI Servo 1759905467541",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-08T06:37:48.101Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-08T06:38:19.145Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "updated": "2025-10-08T06:58:03.933Z"
+  },
+  {
+    "id": "13",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-08T06:38:33.113Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "14",
+    "name": "UI Servo 1759906625368",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-08T06:57:05.827Z",
+    "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "UI Servo 1759906642192",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-08T06:57:22.796Z",
+    "enabled": true
+  },
+  {
+    "id": "16",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-10-08T06:57:55.252Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000
+  },
+  {
+    "id": "17",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-08T06:58:07.829Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
   }
 ]

@@ -38,18 +38,19 @@ async function writeJson(file, data) {
 }
 
 export async function getSTTConfig() {
-  const d = await readJson('stt-config.json');
-  return (
-    d || {
-      model: 'scribe_v1',
-      language: 'auto',
-      format: 'wav',
-      sampleRate: 16000,
-      channels: 1,
-      microphonePartId: null,
-      microphoneDeviceId: null,
-    }
-  );
+  const raw = (await readJson('stt-config.json')) || {};
+  return {
+    model: raw.model ?? 'scribe_v1',
+    language: raw.language ?? 'auto',
+    format: raw.format ?? 'wav',
+    sampleRate: typeof raw.sampleRate === 'number' ? raw.sampleRate : 16000,
+    channels: typeof raw.channels === 'number' ? raw.channels : 1,
+    microphonePartId: raw.microphonePartId ?? null,
+    microphoneDeviceId: raw.microphoneDeviceId ?? null,
+    // Enable simple VAD by default with a slightly higher threshold to reduce background triggers
+    vadEnabled: typeof raw.vadEnabled === 'boolean' ? raw.vadEnabled : true,
+    vadThreshold: typeof raw.vadThreshold === 'number' ? raw.vadThreshold : 0.06,
+  };
 }
 
 export async function saveSTTConfig(cfg) {
@@ -58,16 +59,22 @@ export async function saveSTTConfig(cfg) {
 
 export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
-  return (
-    d || {
-      voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
-      model: 'eleven_monolingual_v1',
-      stability: 0.5,
-      similarity_boost: 0.5,
-      style: 0.0,
-      use_speaker_boost: true,
-    }
-  );
+  const base = {
+    voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
+    model: 'eleven_monolingual_v1',
+    stability: 0.5,
+    similarity_boost: 0.5,
+    style: 0.0,
+    use_speaker_boost: true,
+  };
+  return {
+    voice_id: d && typeof d.voice_id === 'string' && d.voice_id.trim() ? d.voice_id : base.voice_id,
+    model: (d && d.model) || base.model,
+    stability: d && typeof d.stability === 'number' ? d.stability : base.stability,
+    similarity_boost: d && typeof d.similarity_boost === 'number' ? d.similarity_boost : base.similarity_boost,
+    style: d && typeof d.style === 'number' ? d.style : base.style,
+    use_speaker_boost: d && typeof d.use_speaker_boost === 'boolean' ? d.use_speaker_boost : base.use_speaker_boost,
+  };
 }
 
 export async function saveTTSConfig(cfg) {
@@ -86,7 +93,10 @@ export async function getTTSConfigForCharacter(characterId) {
   try {
     const cfg = await readConfig();
     const appRoot = path.resolve(__dirname, '..');
-    const baseDataDir = cfg && cfg.dataPath ? cfg.dataPath : path.join('data', `character-${characterId}`);
+    // Determine data root; if cfg.dataPath already points to a character subdir, use its parent as root
+    const dataPath = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+    const dataRoot = /character-\d+/.test(dataPath) ? path.dirname(dataPath) : dataPath;
+    const baseDataDir = path.join(dataRoot, `character-${characterId}`);
     const charConfigPath = path.resolve(appRoot, baseDataDir, 'ai-config', 'tts-config.json');
 
     const txt = await fs.readFile(charConfigPath, 'utf8');
@@ -94,7 +104,7 @@ export async function getTTSConfigForCharacter(characterId) {
 
     // Merge with defaults to ensure all required fields exist
     return {
-      voice_id: parsed.voice_id || 'Tj9l48J9AJbry5yCP5eW',
+      voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : 'Tj9l48J9AJbry5yCP5eW',
       model: parsed.model || 'eleven_monolingual_v1',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
       similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,

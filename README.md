@@ -1,8 +1,8 @@
-# MonsterBox 5.2 - Single Node Animatronic Control System
+# MonsterBox 5.3 - Single Node Animatronic Control System
 
-**MonsterBox 5.2** is the production-ready animatronic control system for Halloween 2025. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters.
+**MonsterBox 5.3** is the production-ready animatronic control system for Halloween 2025. This clean, single-node application runs directly from the repository root and provides complete hardware control for building, programming, and running interactive animatronic characters.
 
-**Latest Release:** MonsterBox 5.2 (October 2025)
+**Latest Release:** MonsterBox 5.3 (October 2025)
 - ✅ All 63 unit tests passing
 - ✅ BTS7960 motor driver full support
 - ✅ Random poses during conversation

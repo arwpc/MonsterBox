@@ -106,7 +106,8 @@ class OrchestrationService {
      */
     async rebootDevice(ip) {
         try {
-            await execAsync(`ssh ${this.sshUser}@${ip} sudo reboot`);
+            const sshCmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} 'echo ${this.sshPassword} | sudo -S reboot'`;
+            await execAsync(sshCmd);
             return { success: true, message: 'Reboot command sent' };
         } catch (error) {
             throw new Error(`Reboot failed: ${error.message}`);
@@ -118,7 +119,7 @@ class OrchestrationService {
      */
     async restartService(ip) {
         try {
-            const cmd = `ssh ${this.sshUser}@${ip} "pkill -f 'node.*server.js' && cd ~/MonsterBox && nohup npm start > /tmp/monsterbox.log 2>&1 &"`;
+            const cmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "sudo systemctl restart monsterbox || (pkill -f 'node.*server.js' || true; cd ~/MonsterBox && nohup npm start > /tmp/monsterbox.log 2>&1 &)"`;
             await execAsync(cmd);
             return { success: true, message: 'Service restart initiated' };
         } catch (error) {
@@ -209,8 +210,8 @@ class OrchestrationService {
      */
     async updateConfig(ip, config) {
         try {
-            const configJson = JSON.stringify(config, null, 2);
-            const cmd = `ssh ${this.sshUser}@${ip} "echo '${configJson}' > ~/MonsterBox/config/app-config.json"`;
+            const configJson = JSON.stringify(config, null, 2).replace(/'/g, "'\\''");
+            const cmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "printf '%s' '${configJson}' | sudo tee ~/MonsterBox/config/app-config.json >/dev/null"`;
             await execAsync(cmd);
             return { success: true, message: 'Config updated' };
         } catch (error) {
