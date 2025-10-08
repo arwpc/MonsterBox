@@ -1,0 +1,20 @@
+[Unit]
+Description=MonsterBox Boot Readiness Check
+Documentation=https://github.com/arwpc/MonsterBox
+After=monsterbox.service
+Wants=monsterbox.service
+
+[Service]
+Type=oneshot
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+ExecStart=/bin/bash /home/remote/MonsterBox/scripts/monsterbox-boot-complete.sh
+RemainAfterExit=yes
+
+# Logging
+StandardOutput=append:/var/log/monsterbox-boot.log
+StandardError=append:/var/log/monsterbox-boot.log
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,37 @@
+[Unit]
+Description=MonsterBox Complete Animatronic System
+Documentation=https://github.com/arwpc/MonsterBox
+After=network-online.target multi-user.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+# Start MonsterBox application
+ExecStart=/usr/bin/npm start
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+
+# Logging
+StandardOutput=append:/var/log/monsterbox.log
+StandardError=append:/var/log/monsterbox.err
+SyslogIdentifier=monsterbox
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=4096
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target
+
