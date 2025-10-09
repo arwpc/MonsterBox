@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
+import { getMarkersForPart } from './calibrationController.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,7 @@ const trackingStatus = new Map(); // webcamId -> status
 // Head tracking state/config
 const headTrackingConfigs = new Map(); // webcamId -> { enabled, panServoId, tiltServoId, centerDeg, rangeDeg, invertPan, smoothing, deadzone }
 const headTrackingStates = new Map(); // webcamId -> { lastPanDeg, lastCmdAt }
+const headTrackingGuardrails = new Map(); // servoId -> { minAngle, maxAngle } - cached calibration limits
 
 const MJPG_STREAM_URL = 'http://localhost:8090/?action=stream';
 
@@ -476,8 +478,38 @@ async function getAvailableServoParts() {
 }
 
 /**
+ * Load calibration guardrails (Min/Max) from markers for head tracking servo
+ */
+async function loadHeadTrackingGuardrails(servoId) {
+  try {
+    // Check cache first
+    if (headTrackingGuardrails.has(servoId)) {
+      return headTrackingGuardrails.get(servoId);
+    }
+
+    const markers = await getMarkersForPart(servoId);
+    const minMarker = markers.find(m => m.name === 'Min');
+    const maxMarker = markers.find(m => m.name === 'Max');
+
+    const guardrails = {
+      minAngle: minMarker ? parseFloat(minMarker.value) : -90,
+      maxAngle: maxMarker ? parseFloat(maxMarker.value) : 90
+    };
+
+    // Cache for 60 seconds
+    headTrackingGuardrails.set(servoId, guardrails);
+    setTimeout(() => headTrackingGuardrails.delete(servoId), 60000);
+
+    return guardrails;
+  } catch (error) {
+    console.warn('Could not load head tracking guardrails:', error.message);
+    return { minAngle: -90, maxAngle: 90 };
+  }
+}
+
+/**
  * Internal: Map motion position to servo control and command hardware
- * Supports both positional and continuous rotation servos
+ * Supports both positional and continuous rotation servos with calibration guardrails
  */
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
@@ -540,7 +572,7 @@ async function maybeDriveHead(webcamId, status) {
           console.warn('Head tracking servo error:', e && e.message);
         });
     } else {
-      // Positional servo: move to specific angle
+      // Positional servo: move to specific angle with calibration guardrails
       var target = center + ((err / 50) * range * (invert ? -1 : 1));
 
       // Smooth toward target
@@ -548,22 +580,35 @@ async function maybeDriveHead(webcamId, status) {
       if (smooth < 0) smooth = 0; if (smooth > 1) smooth = 1;
       var next = state.lastPanDeg + (target - state.lastPanDeg) * smooth;
 
-      // Clamp to reasonable safe range (-90..+90); servo layer will clamp further via calibration
-      if (next > 90) next = 90; if (next < -90) next = -90;
+      // Load and apply calibration guardrails
+      loadHeadTrackingGuardrails(cfg.panServoId).then(function (guardrails) {
+        // Clamp to calibration limits to prevent over-rotation
+        var minLimit = guardrails.minAngle;
+        var maxLimit = guardrails.maxAngle;
+        if (next > maxLimit) next = maxLimit;
+        if (next < minLimit) next = minLimit;
 
-      console.log('🎯 Head tracking (positional): target=' + target.toFixed(1) + '°, smoothed=' + next.toFixed(1) + '°, servo=' + cfg.panServoId);
+        console.log('🎯 Head tracking (positional): target=' + target.toFixed(1) + '°, smoothed=' + next.toFixed(1) + '°, limits=[' + minLimit + '°..' + maxLimit + '°], servo=' + cfg.panServoId);
 
-      hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next })
-        .then(function (result) {
-          if (result && !result.success) {
-            console.warn('Head tracking servo failed:', result.message || result.error);
-          }
-        })
-        .catch(function (e) {
-          console.warn('Head tracking servo error:', e && e.message);
-        });
+        hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next })
+          .then(function (result) {
+            if (result && !result.success) {
+              console.warn('Head tracking servo failed:', result.message || result.error);
+            }
+          })
+          .catch(function (e) {
+            console.warn('Head tracking servo error:', e && e.message);
+          });
 
-      state.lastPanDeg = next;
+        state.lastPanDeg = next;
+        state.lastCmdAt = now;
+        headTrackingStates.set(webcamId, state);
+      }).catch(function (e) {
+        console.warn('Head tracking guardrail load error:', e && e.message);
+      });
+
+      // Early return since we're handling state update in the promise
+      return;
     }
   }
 
