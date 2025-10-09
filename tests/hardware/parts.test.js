@@ -18,7 +18,6 @@ describe('Hardware Parts Integration', () => {
             { type: 'light', icon: '💡', description: 'basic on/off lighting' },
             { type: 'led', icon: '🔆', description: 'PWM-controlled with brightness' },
             { type: 'servo', icon: '🦷', description: 'precise angle control: standard, continuous, feedback' },
-            { type: 'sensor', icon: '📡', description: 'digital/analog sensors' },
             { type: 'motion_sensor', icon: '🔍', description: 'PIR motion detection' },
             { type: 'webcam', icon: '📹', description: 'video capture devices' },
             { type: 'microphone', icon: '🎤', description: 'audio input devices' },
@@ -26,9 +25,9 @@ describe('Hardware Parts Integration', () => {
             { type: 'head_tracking', icon: '🎯', description: 'computer vision tracking' }
         ];
 
-        it('should support all 11 Part types', () => {
+        it('should support all 10 Part types', () => {
             // This test validates that our system recognizes all required part types
-            expect(expectedPartTypes).to.have.lengthOf(11);
+            expect(expectedPartTypes).to.have.lengthOf(10);
 
             // Validate each part type has required properties
             expectedPartTypes.forEach(partType => {
@@ -143,34 +142,7 @@ describe('Hardware Parts Integration', () => {
             }
         });
 
-        it('should create a new sensor part', async () => {
-            const sensorData = {
-                name: 'Test Sensor',
-                type: 'sensor',
-                pin: 14,
-                description: 'Digital/analog sensor',
-                config: {
-                    sensorType: 'digital',
-                    pullUp: true,
-                    threshold: 512
-                }
-            };
 
-            const response = await request(BASE_URL)
-                .post('/setup/parts/api/parts')
-                .send(sensorData)
-                .expect(201);
-
-            expect(response.body).to.have.property('success', true);
-            expect(response.body.part).to.have.property('type', 'sensor');
-            expect(response.body.part.config).to.have.property('sensorType', 'digital');
-
-            // Cleanup immediately
-            const createdId = response.body.part.id;
-            if (createdId) {
-                await request(BASE_URL).delete(`/setup/parts/api/parts/${createdId}`).expect(200);
-            }
-        });
     });
 
     describe('Part Configuration Validation', () => {

@@ -709,40 +709,7 @@ const HARDWARE_CONTROLLERS = {
         }
     },
 
-    // 📡 Sensor - digital/analog sensors
-    sensor: {
-        async read({ pin, sensorType = 'digital' }) {
-            try {
-                const out = await runWrapper('sensor_cli.py', ['read', String(pin)]);
-                const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : false;
-                const value = parsed && typeof parsed.value !== 'undefined' ? parsed.value : undefined;
-                return {
-                    success,
-                    partType: 'sensor',
-                    pin,
-                    sensorType,
-                    value,
-                    rawOutput: out,
-                    timestamp: new Date().toISOString(),
-                    message: parsed && parsed.message ? parsed.message : (success ? `Sensor on pin ${pin} value: ${value}` : 'Sensor read failed')
-                };
-            } catch (error) {
-                return { success: false, partType: 'sensor', pin, error: error.message };
-            }
-        },
 
-        async calibrate({ pin, minValue, maxValue }) {
-            console.log(`📡 Sensor Calibrate - Pin ${pin}: ${minValue} - ${maxValue}`);
-            return {
-                success: true,
-                partType: 'sensor',
-                pin: pin,
-                calibration: { minValue, maxValue },
-                message: `Sensor on pin ${pin} calibrated`
-            };
-        }
-    },
 
     // 🔍 Motion Sensor - PIR motion detection
     motion_sensor: {

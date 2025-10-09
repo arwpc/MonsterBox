@@ -20,7 +20,6 @@ const PART_TYPES = {
     light: { icon: '💡', description: 'basic on/off lighting', requiresPin: true },
     led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
     servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
-    sensor: { icon: '📡', description: 'digital/analog sensors', requiresPin: true },
     motion_sensor: { icon: '🔍', description: 'PIR motion detection', requiresPin: true },
     webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
     microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },

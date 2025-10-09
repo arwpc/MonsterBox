@@ -968,19 +968,6 @@
                 setTimeout(function () { if (st) st.textContent = ''; }, 1000);
               }).catch(function () { if (st) st.textContent = 'Failed'; });
             });
-          } else if (part.type === 'sensor' || part.type === 'motion_sensor') {
-            el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-              '<button id="snsRead" class="btn btn-primary btn-lg"><i class="bi bi-graph-up"></i> Read</button>' +
-              '<pre id="snsOut" class="ms-2 small"></pre>' +
-              '</div>';
-            el.querySelector('#snsRead').addEventListener('click', function () {
-              fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read' })
-              }).then(function (r) { return r.json(); }).then(function (j) {
-                var out = document.getElementById('snsOut');
-                if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
-              }).catch(function () { });
-            });
           } else if (part.type === 'head_tracking') {
             el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
               '<button id="htGet" class="btn btn-primary btn-lg"><i class="bi bi-bullseye"></i> Get Position</button>' +

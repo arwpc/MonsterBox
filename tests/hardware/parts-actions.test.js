@@ -25,7 +25,6 @@ async function createPart(type, overrides = {}) {
     light: { name: 'T Light', type: 'light', pin: 20, description: 'Light', config: {} },
     led: { name: 'T LED', type: 'led', pin: 21, description: 'LED', config: {} },
     servo: { name: 'T Servo', type: 'servo', pin: 12, description: 'Servo', config: { servoType: 'standard' } },
-    sensor: { name: 'T Sensor', type: 'sensor', pin: 14, description: 'Sensor', config: { sensorType: 'digital' } },
     motion_sensor: { name: 'T Motion', type: 'motion_sensor', pin: 16, description: 'Motion', config: {} },
     webcam: { name: 'T Webcam', type: 'webcam', description: 'Webcam', config: {} },
     microphone: { name: 'T Mic', type: 'microphone', description: 'Mic', config: {} },
@@ -55,7 +54,6 @@ function defaultActionPayload(part) {
     case 'light': return { action: 'toggle', params: {} };
     case 'motor': return { action: 'control', params: { direction: 'cw', speed: 50, duration: 200 } };
     case 'linear_actuator': return { action: 'extend', params: { speed: 50, distance: 10 } };
-    case 'sensor': return { action: 'read', params: {} };
     case 'motion_sensor': return { action: 'read', params: {} };
     case 'microphone': return { action: 'getLevel', params: {} };
     case 'speaker': return { action: 'stop', params: {} };
@@ -109,13 +107,6 @@ describe('Parts Test Actions API', () => {
     const result = await testPart(part);
     expectHwAware(result);
     expect(result.testResult).to.have.property('action', 'extend');
-  });
-
-  it('sensor: read', async () => {
-    const part = await createPart('sensor');
-    const result = await testPart(part);
-    expectHwAware(result);
-    expect(result.testResult).to.have.property('action', 'read');
   });
 
   it('motion_sensor: read', async () => {
