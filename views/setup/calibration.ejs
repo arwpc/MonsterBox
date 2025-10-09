@@ -1009,6 +1009,7 @@
               '</div>' +
               '<div class="d-flex align-items-center flex-wrap gap-3">' +
               '<button id="readMotion" class="btn btn-outline-info btn-lg"><i class="bi bi-eye"></i> Read</button>' +
+              '<button id="detectMotion" class="btn btn-primary btn-lg"><i class="bi bi-radar"></i> Detect Motion</button>' +
               '<button id="startLiveTest" class="btn btn-success btn-lg"><i class="bi bi-play-circle"></i> Start Live Test</button>' +
               '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
               '</div>' +
@@ -1109,6 +1110,71 @@
                 if (st) st.textContent = 'Read error';
                 status.textContent = 'Communication error';
                 status.className = 'fw-semibold text-warning';
+              }
+            });
+
+            // Detect Motion button - runs detection for 10 seconds
+            el.querySelector('#detectMotion').addEventListener('click', async function () {
+              const st = document.getElementById('ctrlStatus');
+              const indicator = document.getElementById('motionIndicator');
+              const status = document.getElementById('motionStatus');
+              const details = document.getElementById('motionDetails');
+              const detectBtn = document.getElementById('detectMotion');
+
+              detectBtn.disabled = true;
+              if (st) st.textContent = `Detecting motion on ${part.name} for 10 seconds...`;
+              status.textContent = 'Detecting...';
+              status.className = 'fw-semibold text-primary';
+              indicator.style.backgroundColor = '#0d6efd'; // Blue
+              indicator.style.borderColor = '#0d6efd';
+
+              try {
+                const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'detectMotion',
+                    params: { duration: 10 }
+                  })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.testResult) {
+                  const detections = result.testResult.detections || 0;
+                  const timestamp = new Date().toLocaleTimeString();
+
+                  // Update indicator based on detections
+                  if (detections > 0) {
+                    indicator.style.backgroundColor = '#dc3545'; // Red
+                    indicator.style.borderColor = '#dc3545';
+                    status.textContent = `${detections} motion event${detections > 1 ? 's' : ''} detected!`;
+                    status.className = 'fw-semibold text-danger';
+                  } else {
+                    indicator.style.backgroundColor = '#198754'; // Green
+                    indicator.style.borderColor = '#198754';
+                    status.textContent = 'No motion detected';
+                    status.className = 'fw-semibold text-success';
+                  }
+
+                  details.textContent = `Detection completed at ${timestamp}`;
+                  if (st) st.textContent = `Detection complete: ${detections} event${detections > 1 ? 's' : ''}`;
+                  setTimeout(() => { if (st) st.textContent = ''; }, 3000);
+                } else {
+                  if (st) st.textContent = 'Detection failed';
+                  status.textContent = 'Detection error';
+                  status.className = 'fw-semibold text-warning';
+                  indicator.style.backgroundColor = '#ffc107'; // Yellow
+                  indicator.style.borderColor = '#ffc107';
+                }
+              } catch (error) {
+                console.error(`Error detecting motion on ${part.name}:`, error);
+                if (st) st.textContent = 'Detection error';
+                status.textContent = 'Communication error';
+                status.className = 'fw-semibold text-warning';
+                indicator.style.backgroundColor = '#ffc107'; // Yellow
+                indicator.style.borderColor = '#ffc107';
+              } finally {
+                detectBtn.disabled = false;
               }
             });
 

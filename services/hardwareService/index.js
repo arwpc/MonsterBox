@@ -767,6 +767,57 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
+        async detectMotion({ pin, duration = 10 }) {
+            try {
+                console.log(`🔍 Starting motion detection on pin ${pin} for ${duration}s`);
+                const out = await runWrapper('motion_detect_cli.py', ['detect', String(pin), String(duration)]);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' || parsed.status === 'completed' : false;
+                return {
+                    success,
+                    partType: 'motion_sensor',
+                    pin,
+                    duration,
+                    detections: parsed && parsed.detections ? parsed.detections : 0,
+                    rawOutput: out,
+                    timestamp: new Date().toISOString(),
+                    message: parsed && parsed.message ? parsed.message : (success ? `Motion detection completed: ${parsed.detections || 0} detections` : 'Motion detection failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'motion_sensor', pin, duration, error: error.message };
+            }
+        },
+
+        async startMonitoring({ pin, duration = 0 }) {
+            try {
+                console.log(`🔍 Starting continuous motion monitoring on pin ${pin}`);
+                // This will be handled by streaming in the routes
+                return {
+                    success: true,
+                    partType: 'motion_sensor',
+                    pin,
+                    duration,
+                    message: `Motion monitoring started on pin ${pin}`
+                };
+            } catch (error) {
+                return { success: false, partType: 'motion_sensor', pin, error: error.message };
+            }
+        },
+
+        async stopMonitoring({ pin }) {
+            try {
+                console.log(`🛑 Stopping motion monitoring on pin ${pin}`);
+                return {
+                    success: true,
+                    partType: 'motion_sensor',
+                    pin,
+                    message: `Motion monitoring stopped on pin ${pin}`
+                };
+            } catch (error) {
+                return { success: false, partType: 'motion_sensor', pin, error: error.message };
+            }
+        },
+
         async setSensitivity({ pin, sensitivity }) {
             console.log(`🔍 Motion Sensor Sensitivity - Pin ${pin}: ${sensitivity}%`);
             return {
