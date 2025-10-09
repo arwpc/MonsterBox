@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import hardwareService from './hardwareService/index.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
+import { getMarkersForPart } from '../controllers/calibrationController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,12 +24,12 @@ let characterConfigs = new Map(); // characterId -> jaw animation config
 async function getCharacterDataDir(characterId) {
   const config = await readConfig();
   const baseDataPath = config.dataPath || 'data';
-  
+
   if (baseDataPath.includes('character-')) {
     // Already character-specific path
     return path.resolve(baseDataPath);
   }
-  
+
   // Create character-specific path
   return path.resolve(`data/character-${characterId}`);
 }
@@ -40,10 +41,10 @@ async function readJawConfig(characterId) {
   try {
     const dataDir = await getCharacterDataDir(characterId);
     const configFile = path.join(dataDir, 'super-powers.json');
-    
+
     const data = await fs.readFile(configFile, 'utf8');
     const config = JSON.parse(data);
-    
+
     return config.jawAnimation || getDefaultJawConfig();
   } catch (error) {
     // Return default config if file doesn't exist
@@ -58,9 +59,9 @@ async function writeJawConfig(characterId, jawConfig) {
   try {
     const dataDir = await getCharacterDataDir(characterId);
     await fs.mkdir(dataDir, { recursive: true });
-    
+
     const configFile = path.join(dataDir, 'super-powers.json');
-    
+
     // Read existing config or create new one
     let config = {};
     try {
@@ -69,16 +70,16 @@ async function writeJawConfig(characterId, jawConfig) {
     } catch (error) {
       // File doesn't exist, start with empty config
     }
-    
+
     // Update jaw animation section
     config.jawAnimation = jawConfig;
-    
+
     // Write back to file
     await fs.writeFile(configFile, JSON.stringify(config, null, 2));
-    
+
     // Update in-memory cache
     characterConfigs.set(String(characterId), jawConfig);
-    
+
     return true;
   } catch (error) {
     console.error('Error writing jaw config:', error);
@@ -122,21 +123,21 @@ async function loadPartsSafe() {
 async function getAvailableServos(characterId = null) {
   try {
     const parts = await loadPartsSafe();
-    
+
     // Filter servos and add calibration status
     const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-    
+
     const servoInfo = await Promise.all(servos.map(async (servo) => {
       // Check if servo has calibration data
       let calibrated = false;
       let minAngle = null;
       let maxAngle = null;
-      
+
       try {
         const dataDir = characterId ? await getCharacterDataDir(characterId) : 'data';
         const calibFile = path.resolve(dataDir, 'servo_calibrations.json');
         const calibData = JSON.parse(await fs.readFile(calibFile, 'utf8'));
-        
+
         if (calibData[servo.id] && calibData[servo.id].positions) {
           const positions = calibData[servo.id].positions;
           if (positions.min && positions.max) {
@@ -148,7 +149,7 @@ async function getAvailableServos(characterId = null) {
       } catch (error) {
         // No calibration data available
       }
-      
+
       return {
         ...servo,
         calibrated,
@@ -157,7 +158,7 @@ async function getAvailableServos(characterId = null) {
         isJawCandidate: String(servo.name || '').toLowerCase().includes('jaw')
       };
     }));
-    
+
     // Sort by jaw candidates first, then by calibrated status
     return servoInfo.sort((a, b) => {
       if (a.isJawCandidate && !b.isJawCandidate) return -1;
@@ -166,7 +167,7 @@ async function getAvailableServos(characterId = null) {
       if (!a.calibrated && b.calibrated) return 1;
       return 0;
     });
-    
+
   } catch (error) {
     console.error('Error getting available servos:', error);
     return [];
@@ -174,23 +175,44 @@ async function getAvailableServos(characterId = null) {
 }
 
 /**
- * Calculate jaw angle based on audio amplitude
+ * Load calibration guardrails (Min/Max) from markers
  */
-function calculateJawAngle(amplitude, config) {
+async function loadCalibrationGuardrails(servoPartId) {
+  try {
+    const markers = await getMarkersForPart(servoPartId);
+    const minMarker = markers.find(m => m.name === 'Min');
+    const maxMarker = markers.find(m => m.name === 'Max');
+
+    return {
+      minAngle: minMarker ? parseFloat(minMarker.value) : null,
+      maxAngle: maxMarker ? parseFloat(maxMarker.value) : null
+    };
+  } catch (error) {
+    console.warn('Could not load calibration guardrails:', error.message);
+    return { minAngle: null, maxAngle: null };
+  }
+}
+
+/**
+ * Calculate jaw angle based on audio amplitude with calibration guardrails
+ */
+function calculateJawAngle(amplitude, config, guardrails = {}) {
   // Apply volume threshold
   if (amplitude < config.volumeThreshold) {
-    return config.minAngle || 0;
+    return guardrails.minAngle || config.minAngle || 0;
   }
-  
+
   // Apply sensitivity
   const sensitiveAmplitude = Math.min(1.0, amplitude * config.sensitivity);
-  
-  // Map to angle range
-  const minAngle = config.minAngle || 0;
-  const maxAngle = config.maxAngle || 180;
+
+  // Use calibration guardrails if available, otherwise fall back to config
+  const minAngle = guardrails.minAngle ?? config.minAngle ?? 0;
+  const maxAngle = guardrails.maxAngle ?? config.maxAngle ?? 180;
   const angleRange = maxAngle - minAngle;
-  
-  return minAngle + (sensitiveAmplitude * angleRange);
+
+  // Calculate target angle and clamp to guardrails
+  const targetAngle = minAngle + (sensitiveAmplitude * angleRange);
+  return Math.max(minAngle, Math.min(maxAngle, targetAngle));
 }
 
 /**
@@ -202,55 +224,59 @@ function applySmoothingToAmplitude(characterId, currentAmplitude, config) {
     lastAmplitude: 0,
     smoothedAmplitude: 0
   };
-  
+
   // Apply exponential smoothing
   const alpha = 1.0 - config.smoothing;
   state.smoothedAmplitude = (alpha * currentAmplitude) + (config.smoothing * state.smoothedAmplitude);
   state.lastAmplitude = currentAmplitude;
-  
+
   audioMonitoringState.set(String(characterId), state);
-  
+
   return state.smoothedAmplitude;
 }
 
 /**
- * Drive jaw servo based on amplitude
+ * Drive jaw servo based on amplitude with calibration guardrails
  */
 async function driveJawFromAmplitude(characterId, amplitude) {
   try {
     const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
-    
+
     if (!config.enabled || !config.servoPartId) {
       return { success: false, message: 'Jaw animation disabled or no servo configured' };
     }
-    
+
     // Get servo part
     const parts = await loadPartsSafe();
     const jawServo = parts.find(p => p.id === config.servoPartId);
-    
+
     if (!jawServo) {
       return { success: false, message: 'Jaw servo not found' };
     }
-    
+
+    // Load calibration guardrails (Min/Max markers)
+    const guardrails = await loadCalibrationGuardrails(config.servoPartId);
+
     // Apply smoothing
     const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
-    
-    // Calculate target angle
-    const targetAngle = calculateJawAngle(smoothedAmplitude, config);
-    
+
+    // Calculate target angle with guardrails
+    const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails);
+
     // Move servo
     const result = await hardwareService.controlPart(jawServo, 'moveToAngle', {
       angleDeg: targetAngle
     });
-    
+
     return {
       success: true,
       amplitude: amplitude,
       smoothedAmplitude: smoothedAmplitude,
       targetAngle: targetAngle,
+      guardrails: guardrails,
       servoResult: result
     };
-    
+
   } catch (error) {
     console.error('Error driving jaw from amplitude:', error);
     return { success: false, message: error.message };
@@ -263,23 +289,23 @@ async function driveJawFromAmplitude(characterId, amplitude) {
 async function testJawMovement(characterId) {
   try {
     const config = await readJawConfig(characterId);
-    
+
     if (!config.servoPartId) {
       throw new Error('No jaw servo configured');
     }
-    
+
     // Get servo part
     const parts = await loadPartsSafe();
     const jawServo = parts.find(p => p.id === config.servoPartId);
-    
+
     if (!jawServo) {
       throw new Error('Jaw servo not found');
     }
-    
+
     const minAngle = config.minAngle || 0;
     const maxAngle = config.maxAngle || 180;
     const midAngle = (minAngle + maxAngle) / 2;
-    
+
     // Test sequence: min -> max -> mid -> min
     const testSequence = [
       { angle: minAngle, duration: 500 },
@@ -287,18 +313,18 @@ async function testJawMovement(characterId) {
       { angle: midAngle, duration: 500 },
       { angle: minAngle, duration: 500 }
     ];
-    
+
     for (const step of testSequence) {
       await hardwareService.controlPart(jawServo, 'moveToAngle', {
         angleDeg: step.angle
       });
-      
+
       // Wait for movement
       await new Promise(resolve => setTimeout(resolve, step.duration));
     }
-    
+
     return { success: true, message: 'Jaw test completed successfully' };
-    
+
   } catch (error) {
     console.error('Error testing jaw movement:', error);
     return { success: false, message: error.message };
@@ -314,10 +340,10 @@ async function startAudioMonitoring(characterId) {
     lastAmplitude: 0,
     smoothedAmplitude: 0
   };
-  
+
   state.isMonitoring = true;
   audioMonitoringState.set(String(characterId), state);
-  
+
   return { success: true, message: 'Audio monitoring started' };
 }
 
@@ -326,12 +352,12 @@ async function startAudioMonitoring(characterId) {
  */
 async function stopAudioMonitoring(characterId) {
   const state = audioMonitoringState.get(String(characterId));
-  
+
   if (state) {
     state.isMonitoring = false;
     audioMonitoringState.set(String(characterId), state);
   }
-  
+
   return { success: true, message: 'Audio monitoring stopped' };
 }
 
@@ -344,7 +370,7 @@ function getAudioMonitoringState(characterId) {
     lastAmplitude: 0,
     smoothedAmplitude: 0
   };
-  
+
   return state;
 }
 
@@ -356,10 +382,10 @@ function estimateAmplitudeFromText(text) {
   const len = Math.min(String(text || '').length, 400);
   const vowels = (text.match(/[aeiouAEIOU]/g) || []).length;
   const punctuation = (text.match(/[!?,.;:]/g) || []).length;
-  
+
   const score = len * 0.3 + vowels * 0.8 + punctuation * 1.5;
   const normalized = Math.max(0.1, Math.min(1.0, score / 100));
-  
+
   return normalized;
 }
 
@@ -371,12 +397,12 @@ async function initializeForCharacter(characterId) {
     // Load and cache configuration
     const config = await readJawConfig(characterId);
     characterConfigs.set(String(characterId), config);
-    
+
     // Initialize monitoring state
     if (config.enabled) {
       await startAudioMonitoring(characterId);
     }
-    
+
     return config;
   } catch (error) {
     console.error('Error initializing jaw animation for character:', error);
@@ -390,7 +416,7 @@ async function initializeForCharacter(characterId) {
 async function testServoPosition(characterId, servoPartId, position) {
   try {
     console.log(`🔧 Testing servo ${servoPartId} at position ${position}° for character ${characterId}`);
-    
+
     // Validate parameters
     if (!characterId || !servoPartId || position === undefined) {
       return {
@@ -398,7 +424,7 @@ async function testServoPosition(characterId, servoPartId, position) {
         error: 'Missing required parameters'
       };
     }
-    
+
     // Validate position range
     const pos = parseInt(position);
     if (pos < 0 || pos > 180) {
@@ -407,21 +433,21 @@ async function testServoPosition(characterId, servoPartId, position) {
         error: 'Position must be between 0 and 180 degrees'
       };
     }
-    
+
     // Get the servo part
     const parts = await loadPartsFromController(characterId);
     const servoPart = parts.find(p => p.id === parseInt(servoPartId) && p.type === 'servo');
-    
+
     if (!servoPart) {
       return {
         success: false,
         error: 'Servo part not found'
       };
     }
-    
+
     // Use hardware service to move servo
     const result = await hardwareService.moveServo(servoPart, pos);
-    
+
     if (result.success) {
       console.log(`✅ Servo ${servoPartId} successfully moved to ${pos}°`);
       return {
@@ -437,7 +463,7 @@ async function testServoPosition(characterId, servoPartId, position) {
         error: result.error || 'Failed to move servo'
       };
     }
-    
+
   } catch (error) {
     console.error('Error testing servo position:', error);
     return {
@@ -454,7 +480,7 @@ async function testServoPosition(characterId, servoPartId, position) {
 async function testJawWithAudio(characterId, audioFile, jawConfig) {
   try {
     console.log(`🎵🦷 Testing jaw animation with audio "${audioFile.title}" for character ${characterId}`);
-    
+
     // Validate jaw configuration
     if (!jawConfig.enabled || !jawConfig.servoPartId) {
       return {
@@ -462,33 +488,33 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
         error: 'Jaw animation must be enabled with a servo selected'
       };
     }
-    
+
     // Get the servo to make sure it exists and is calibrated
     const servos = await getAvailableServos(characterId);
     const jawServo = servos.find(s => s.id === jawConfig.servoPartId);
-    
+
     if (!jawServo) {
       return {
         success: false,
         error: 'Selected jaw servo not found'
       };
     }
-    
+
     if (!jawServo.calibrated) {
       return {
         success: false,
         error: 'Selected jaw servo must be calibrated first'
       };
     }
-    
+
     // Initialize jaw animation for this character
     await initializeForCharacter(characterId);
-    
+
     // Start the audio playback with jaw animation
     // This will rely on the existing audio processing pipeline
     // that hooks into driveJawFromAmplitude during playback
     console.log(`🎵 Starting audio playback with jaw sync for "${audioFile.title}"`);
-    
+
     // Use the audio library service to play the file
     // The audio playback will automatically trigger jaw animation
     // through the existing audio processing hooks
@@ -498,7 +524,7 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
       jawAnimationConfig: jawConfig,
       volume: 80
     });
-    
+
     if (playbackResult.success) {
       return {
         success: true,
@@ -514,7 +540,7 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
         error: playbackResult.error || 'Failed to start audio playback with jaw sync'
       };
     }
-    
+
   } catch (error) {
     console.error('Error testing jaw with audio:', error);
     return {
