@@ -1,0 +1,20 @@
+[Unit]
+Description=MJPG Streamer (UVC to HTTP) - Auto-detect USB Camera
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/tmp
+# Use wrapper script to auto-detect USB camera
+ExecStart=/home/remote/MonsterBox/scripts/start-mjpg-auto.sh
+Restart=always
+RestartSec=5
+# Increase restart limit to handle transient camera issues
+StartLimitBurst=10
+StartLimitIntervalSec=120
+
+[Install]
+WantedBy=multi-user.target
+
