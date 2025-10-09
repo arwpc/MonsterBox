@@ -318,14 +318,17 @@ export const streamMJPEG = async (req, res) => {
     let timeoutId = null;
 
 
+    console.log(`📹 Attempting to fetch MJPEG stream from ${MJPG_STREAM_ENDPOINT} for part ${id}`);
     while (retryCount < maxRetries && !streamResponse) {
       try {
         // Create an AbortController for better timeout management
         abortController = new AbortController();
         timeoutId = setTimeout(() => {
+          console.log(`⏱️ Fetch timeout after 60s, aborting...`);
           abortController.abort();
         }, 60000); // 60 second timeout for streaming data
 
+        console.log(`🔄 Fetch attempt ${retryCount + 1}/${maxRetries}...`);
         streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
           signal: abortController.signal,
           headers: {
@@ -334,10 +337,12 @@ export const streamMJPEG = async (req, res) => {
           }
         });
 
+        console.log(`✅ Fetch successful, status: ${streamResponse.status}`);
         // Clear timeout if fetch succeeds
         clearTimeout(timeoutId);
         break;
       } catch (fetchErr) {
+        console.error(`❌ Fetch attempt ${retryCount + 1} failed:`, fetchErr.message);
         retryCount++;
         if (retryCount < maxRetries) {
           // Exponential backoff: 1s, 2s, 4s, 8s, 16s
@@ -345,6 +350,7 @@ export const streamMJPEG = async (req, res) => {
           console.log(`mjpg-streamer connection attempt ${retryCount} failed, retrying in ${backoffMs}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffMs));
         } else {
+          console.error(`❌ All ${maxRetries} fetch attempts failed`);
           throw fetchErr;
         }
       }
@@ -445,10 +451,12 @@ export const streamMJPEG = async (req, res) => {
       }
     }
   } catch (err) {
+    console.error('❌ Webcam stream error:', err);
+    console.error('Error stack:', err.stack);
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
     if (!res.headersSent) {
       if (inTest) return res.json({ success: false, error: err.message, testMode: true });
-      res.status(500).json({ success: false, error: err.message });
+      res.status(500).json({ success: false, error: err.message, details: err.stack });
     } else {
       try { res.end(); } catch (e) { /* ignore */ }
     }
