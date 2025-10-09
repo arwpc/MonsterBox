@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
+import nodeFetch from 'node-fetch';
 
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
@@ -330,7 +331,7 @@ export const streamMJPEG = async (req, res) => {
         }, 60000); // 60 second timeout for streaming data
 
         console.log(`🔄 Fetch attempt ${retryCount + 1}/${maxRetries}...`);
-        streamResponse = await fetch(MJPG_STREAM_ENDPOINT, {
+        streamResponse = await nodeFetch(MJPG_STREAM_ENDPOINT, {
           signal: abortController.signal,
           headers: {
             'Connection': 'keep-alive',
