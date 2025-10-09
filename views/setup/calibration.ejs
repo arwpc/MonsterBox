@@ -360,11 +360,11 @@
           </div>
         </div>
 
-        <!-- Right Panel: Markers -->
+        <!-- Right Panel: Simple Calibration -->
         <div class="col-12 col-xl-3">
           <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>Markers</span>
+              <span><i class="bi bi-sliders"></i> Simple Calibration</span>
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="lockMinMax">
                 <label class="form-check-label" for="lockMinMax">Lock Min/Max</label>
@@ -375,37 +375,45 @@
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <strong>Min</strong>
                   <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" id="setMinBtn">Set from current</button>
-                    <button class="btn btn-outline-primary" id="goMinBtn">Go To</button>
+                    <button class="btn btn-outline-secondary" id="setMinBtn"
+                      title="Set Min to current position">Set</button>
+                    <button class="btn btn-outline-primary" id="goMinBtn" title="Move to Min position">Go</button>
                   </div>
                 </div>
-                <input id="minValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+                <input id="minValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset"
+                  readonly>
               </div>
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <strong>Mid</strong>
+                  <strong>Center</strong>
                   <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" id="setMidBtn">Set from current</button>
-                    <button class="btn btn-outline-primary" id="goMidBtn">Go To</button>
+                    <button class="btn btn-outline-secondary" id="setMidBtn"
+                      title="Set Center to current position">Set</button>
+                    <button class="btn btn-outline-primary" id="goMidBtn" title="Move to Center position">Go</button>
                   </div>
                 </div>
-                <input id="midValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+                <input id="midValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset"
+                  readonly>
               </div>
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <strong>Max</strong>
                   <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" id="setMaxBtn">Set from current</button>
-                    <button class="btn btn-outline-primary" id="goMaxBtn">Go To</button>
+                    <button class="btn btn-outline-secondary" id="setMaxBtn"
+                      title="Set Max to current position">Set</button>
+                    <button class="btn btn-outline-primary" id="goMaxBtn" title="Move to Max position">Go</button>
                   </div>
                 </div>
-                <input id="maxValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
+                <input id="maxValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset"
+                  readonly>
               </div>
               <hr>
+              <div class="mb-2"><strong>Custom Positions</strong></div>
               <div id="customMarkers" class="d-flex flex-wrap gap-2"></div>
               <div class="input-group input-group-sm mt-2">
-                <input id="newMarkerName" class="form-control" placeholder="New marker name">
-                <button id="addMarkerBtn" class="btn btn-outline-success"><i class="bi bi-plus"></i> Add</button>
+                <input id="newMarkerName" class="form-control" placeholder="Position name">
+                <button id="addMarkerBtn" class="btn btn-outline-success" title="Add custom position"><i
+                    class="bi bi-plus"></i> Add</button>
               </div>
             </div>
           </div>
@@ -3518,7 +3526,7 @@
         }
 
         // Toggle groups initially - use setTimeout to ensure DOM is ready
-        setTimeout(function() {
+        setTimeout(function () {
           if (document.getElementById('editMddGroup') && document.getElementById('editBtsGroup')) {
             document.getElementById('editMddGroup').style.display = (controlBoard === 'MDD10A') ? 'block' : 'none';
             document.getElementById('editBtsGroup').style.display = (controlBoard === 'BTS7960') ? 'block' : 'none';
