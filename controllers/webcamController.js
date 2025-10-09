@@ -397,11 +397,10 @@ export const streamMJPEG = async (req, res) => {
       req.on('aborted', cleanup);
 
       // Pipe using Node.js streams to minimize buffering/latency
-      const nodeReadable = (typeof Readable !== 'undefined' && Readable.fromWeb)
-        ? Readable.fromWeb(streamResponse.body)
-        : streamResponse.body;
+      // node-fetch returns a Node.js stream directly, no conversion needed
+      const nodeReadable = streamResponse.body;
 
-      nodeReadable.on?.('error', (error) => {
+      nodeReadable.on('error', (error) => {
         // Handle specific undici body timeout errors
         if (error.code === 'UND_ERR_BODY_TIMEOUT' || error.name === 'BodyTimeoutError') {
           console.warn('Stream body timeout detected, connection will auto-reconnect on next request');
@@ -412,29 +411,8 @@ export const streamMJPEG = async (req, res) => {
       });
 
       // Pipe to response
-      if (nodeReadable.pipe) {
-        nodeReadable.pipe(res);
-        nodeReadable.on?.('end', () => cleanup());
-      } else {
-        // Fallback to manual reads (very old Node/webstreams)
-        streamResponse.body.pipeTo(new WritableStream({
-          write(chunk) {
-            if (!closed && !res.destroyed) {
-              try { res.write(chunk); } catch (_) { cleanup(); }
-            }
-          },
-          close() { cleanup(); },
-          abort() { cleanup(); }
-        })).catch((error) => {
-          // Handle specific undici body timeout errors
-          if (error.code === 'UND_ERR_BODY_TIMEOUT' || error.name === 'BodyTimeoutError') {
-            console.warn('Stream body timeout detected, connection will auto-reconnect on next request');
-          } else if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
-            console.error('Stream piping error:', error);
-          }
-          cleanup();
-        });
-      }
+      nodeReadable.pipe(res);
+      nodeReadable.on('end', () => cleanup());
 
     } catch (fetchError) {
       console.error('mjpg-streamer fetch error:', fetchError);
