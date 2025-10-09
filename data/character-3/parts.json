@@ -151,10 +151,13 @@
     "pin": null,
     "description": "video capture devices",
     "config": {
+      "devicePath": "/dev/video1",
+      "deviceId": "video1",
       "modelId": "default-uvc-1"
     },
     "created": "2025-10-06T02:14:37.260Z",
-    "enabled": true
+    "enabled": true,
+    "updated": "2025-10-09T18:30:54.119Z"
   },
   {
     "id": "10",
