@@ -199,7 +199,7 @@ if __name__ == '__main__':
                         except Exception as ee:
                             fail(f"mpg123 not available and fallback failed: {ee}")
                     else:
-                        cmdv = ['mpg123', '--quiet']
+                        cmdv = ['mpg123', '--quiet', '-o', 'pulse']
                         # Apply soft volume scaling for MP3
                         if volume is not None:
                             scale = int(32768 * (volume / 100.0))
