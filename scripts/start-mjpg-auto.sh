@@ -33,8 +33,10 @@ fi
 
 echo "Starting mjpg-streamer with camera: $USB_CAMERA"
 
-# Start mjpg-streamer
+# Start mjpg-streamer with low-latency settings
+# Higher FPS (30), lower quality (70) for reduced latency
+# Minimize buffering with -n flag (no-buffer mode)
 exec /usr/local/bin/mjpg_streamer \
-    -i "input_uvc.so -d $USB_CAMERA -r 640x480 -f 24 -q 80" \
-    -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
+    -i "input_uvc.so -d $USB_CAMERA -r 640x480 -f 30 -q 70 -n" \
+    -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www -n"
 
