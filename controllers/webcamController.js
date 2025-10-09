@@ -9,7 +9,8 @@ import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 
 // mjpg-streamer service configuration
-const MJPG_STREAMER_URL = 'http://localhost:8090';
+// Use 127.0.0.1 instead of localhost to avoid DNS resolution issues
+const MJPG_STREAMER_URL = 'http://127.0.0.1:8090';
 const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 
 const __filename = fileURLToPath(import.meta.url);
