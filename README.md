@@ -540,6 +540,123 @@ API endpoints
 - `POST /setup/calibration/api/standard_servo/:id/copy-from` { fromPartId }
 
 
+## 🎯 Simple Calibration System (NEW - MonsterBox 5.3)
+
+**Universal calibration interface for ALL moving part types with integrated guardrails for Jaw Animation and Head Tracking.**
+
+### Overview
+
+The Simple Calibration panel provides a unified interface for setting Min/Max/Center positions and custom named positions for all moving parts. These calibration markers serve as **safety guardrails** that prevent over-extension and over-rotation during automated movements.
+
+### Supported Part Types
+- **Linear Actuators**: Min/Max positions in millimeters
+- **Servos** (Standard & Continuous): Min/Max/Center angles in degrees
+- **Motors**: Min/Max positions in encoder counts or presets
+- **Stepper Motors**: Min/Max positions in steps
+
+### Key Features
+
+**🎚️ Min/Max/Center Positions**
+- **Set**: Capture current hardware position as Min, Center, or Max
+- **Go**: Move hardware to saved Min, Center, or Max position
+- **Lock**: Prevent accidental changes to Min/Max limits
+- **Visual Status**: Green checkmarks show which positions are calibrated
+
+**📍 Custom Named Positions**
+- Create unlimited custom positions with descriptive names
+- Full CRUD: Create, Read, Update, Delete
+- Click badge to instantly move to saved position
+- Suggested presets for common positions (e.g., "Home", "Extended", "Retracted")
+
+**🛡️ Integrated Safety Guardrails**
+- **Jaw Animation**: Automatically uses Min/Max markers to prevent jaw over-extension
+- **Head Tracking**: Automatically uses Min/Max markers to prevent head over-rotation
+- **Real-time Clamping**: Target angles/positions are clamped to calibration limits
+- **Hardware Protection**: Prevents mechanical damage from excessive movement
+
+### Usage
+
+1. **Navigate to Calibration**: `http://localhost:3000/setup/calibration`
+2. **Select Part**: Choose your moving part from the list
+3. **Set Limits**:
+   - Use Controls panel to move part to minimum safe position → Click "Set" under Min
+   - Move part to maximum safe position → Click "Set" under Max
+   - Optionally set Center position
+4. **Test Limits**: Click "Go" buttons to verify saved positions
+5. **Create Custom Positions**: Add named positions for frequently-used poses
+
+### Guardrail Integration
+
+**Jaw Animation**
+- When Jaw Animation is enabled, the system automatically loads Min/Max markers from the jaw servo's calibration
+- Audio amplitude is mapped to the angle range between Min and Max
+- Target angle is clamped to prevent jaw from opening beyond Max or closing beyond Min
+- Example: If Min=0° and Max=45°, jaw will never exceed 45° regardless of audio volume
+
+**Head Tracking**
+- When Head Tracking is enabled, the system automatically loads Min/Max markers from the pan servo's calibration
+- Motion tracking target positions are clamped to the calibration limits
+- Prevents head from rotating beyond safe mechanical limits
+- Example: If Min=-60° and Max=60°, head will never rotate beyond ±60° regardless of motion position
+
+### API Endpoints
+
+```bash
+# Get markers for a part
+GET /setup/calibration/api/parts/:id/markers
+
+# Save/update a marker
+POST /setup/calibration/api/parts/:id/markers
+{
+  "name": "Min",
+  "kind": "absolute",
+  "value": 0,
+  "unit": "deg"
+}
+
+# Delete a marker
+DELETE /setup/calibration/api/parts/:id/markers/:name
+```
+
+### Testing
+
+Run the calibration guardrails integration test:
+
+```bash
+node test/calibration-guardrails-test.js
+```
+
+This test verifies:
+- ✅ Simple Calibration UI implemented
+- ✅ Jaw Animation uses Min/Max guardrails
+- ✅ Head Tracking uses Min/Max guardrails
+- ✅ Marker API endpoints available
+- ✅ Calibration services functional
+
+### Best Practices
+
+1. **Always calibrate before enabling automation**: Set Min/Max limits before enabling Jaw Animation or Head Tracking
+2. **Test limits manually**: Use "Go" buttons to verify positions are safe before enabling automated movement
+3. **Use Lock feature**: Lock Min/Max after calibration to prevent accidental changes
+4. **Document custom positions**: Use descriptive names for custom positions (e.g., "Neutral", "Attack", "Retreat")
+5. **Regular verification**: Periodically verify calibration limits, especially after hardware maintenance
+
+### Troubleshooting
+
+**Jaw Animation not respecting limits:**
+- Verify Min/Max markers are set for the jaw servo
+- Check that marker values are reasonable (e.g., Min < Max)
+- Restart Jaw Animation after updating calibration
+
+**Head Tracking not respecting limits:**
+- Verify Min/Max markers are set for the pan servo
+- Check that marker values allow sufficient range of motion
+- Restart Head Tracking after updating calibration
+
+**Markers not saving:**
+- Check browser console for errors
+- Verify part ID is correct
+- Ensure character is selected in navbar
 
 ## 🔊 Speaker (Design requirement)
 
