@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
-import { getMarkersForPart } from './calibrationController.js';
+import { getMarkersForPart } from '../routes/setup/calibration.js';
 
 
 const __filename = fileURLToPath(import.meta.url);

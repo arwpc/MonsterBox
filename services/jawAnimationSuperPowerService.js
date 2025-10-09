@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import hardwareService from './hardwareService/index.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
-import { getMarkersForPart } from '../controllers/calibrationController.js';
+import { getMarkersForPart } from '../routes/setup/calibration.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

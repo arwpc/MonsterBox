@@ -64,41 +64,39 @@
   },
   {
     "id": "4",
-    "name": "Forearm",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "modelId": "servo_miuzei_25kg",
-      "servoType": "standard",
-      "controllerType": "pca9685",
-      "channel": 4,
-      "address": 64,
-      "pca9685Frequency": 50
-    },
-    "created": "2025-10-05T18:12:14.762Z",
-    "enabled": true,
-    "modelId": "servo_miuzei_25kg",
-    "updated": "2025-10-05T18:12:53.066Z"
-  },
-  {
-    "id": "5",
     "name": "Elbow",
     "type": "servo",
     "pin": null,
     "description": "precise angle control: standard, continuous, feedback",
     "config": {
-      "modelId": "servo_miuzei_25kg",
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 5,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 4
+    },
+    "created": "2025-10-05T18:12:14.762Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2025-10-09T21:00:59.115Z"
+  },
+  {
+    "id": "5",
+    "name": "Forearm Rotation",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 5
     },
     "created": "2025-10-05T18:12:32.839Z",
     "enabled": true,
     "modelId": "servo_miuzei_25kg",
-    "updated": "2025-10-05T18:12:48.629Z"
+    "updated": "2025-10-09T21:00:45.054Z"
   },
   {
     "id": "6",

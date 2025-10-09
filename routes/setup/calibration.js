@@ -352,8 +352,10 @@ router.get('/api/parts/:id/effective', async (req, res) => {
     }
 });
 
-// Markers CRUD on parts.json (character-aware)
-router.get('/api/parts/:id/markers', async (req, res) => {
+/**
+ * Helper function to get markers for a part (can be imported by other modules)
+ */
+export async function getMarkersForPart(partId) {
     try {
         let characterId = null;
         try {
@@ -361,9 +363,20 @@ router.get('/api/parts/:id/markers', async (req, res) => {
             characterId = config.selectedCharacter;
         } catch (_) { }
         const parts = await loadCharacterParts(characterId);
-        const idx = parts.findIndex(p => String(p.id) === String(req.params.id));
-        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
-        res.json({ success: true, markers: parts[idx].markers || [] });
+        const idx = parts.findIndex(p => String(p.id) === String(partId));
+        if (idx === -1) return [];
+        return parts[idx].markers || [];
+    } catch (e) {
+        console.error('Failed to get markers for part', partId, e);
+        return [];
+    }
+}
+
+// Markers CRUD on parts.json (character-aware)
+router.get('/api/parts/:id/markers', async (req, res) => {
+    try {
+        const markers = await getMarkersForPart(req.params.id);
+        res.json({ success: true, markers });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to get markers' });
     }
