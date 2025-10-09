@@ -82,8 +82,13 @@ router.get('/', async (req, res) => {
 // List parts for calibration (with lightweight flags for UI)
 router.get('/api/parts', async (req, res) => {
     try {
-        const { characterId } = req.query;
+        const { characterId, type } = req.query;
         let parts = await loadCharacterParts(characterId);
+
+        // Filter by type if specified
+        if (type) {
+            parts = parts.filter(part => part.type === type);
+        }
 
         // GPIO conflict detection among enabled parts within the current set
         function pinsFor(p) {

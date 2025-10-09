@@ -589,10 +589,10 @@
         pipewireEl.textContent = status.wpctl ? 'Available' : 'Not Available';
         pipewireEl.className = 'badge mb-2 ' + (status.wpctl ? 'bg-success' : 'bg-danger');
 
-        // WirePlumber status (assume available if pactl works)
+        // WirePlumber status (requires wpctl to be working)
         const wireplumberEl = document.getElementById('wireplumber-status');
-        wireplumberEl.textContent = status.pactl ? 'Available' : 'Not Available';
-        wireplumberEl.className = 'badge mb-2 ' + (status.pactl ? 'bg-success' : 'bg-warning');
+        wireplumberEl.textContent = status.wpctl ? 'Available' : 'Not Available';
+        wireplumberEl.className = 'badge mb-2 ' + (status.wpctl ? 'bg-success' : 'bg-danger');
 
         // Counts
         document.getElementById('sinks-count').textContent = currentConfig.availableSinks.length;
