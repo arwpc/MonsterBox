@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
-import { listImages, saveImage, deleteImage, setActiveImage } from '../../services/characterImageService.js';
+import path from 'path';
+import { listImages, saveImage, deleteImage, setActiveImage, ensureImagesDir } from '../../services/characterImageService.js';
 
 const router = express.Router({ mergeParams: true });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
