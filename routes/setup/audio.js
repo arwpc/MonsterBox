@@ -13,7 +13,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.render('setup/audio', {
-            title: 'Setup Audio - MonsterBox 4.0',
+            title: 'Setup Audio - MonsterBox 5.1',
             page: 'setup-audio',
             config: { theme: 'dark' }
         });
@@ -33,10 +33,12 @@ router.get('/', async (req, res) => {
 router.get('/api/outputs', async (req, res) => {
     try {
         if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-            return res.json({ success: true, outputs: [
-                { id: 'default', name: 'Default Output', description: 'Default Output [Recommended]' },
-                { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output' }
-            ]});
+            return res.json({
+                success: true, outputs: [
+                    { id: 'default', name: 'Default Output', description: 'Default Output [Recommended]' },
+                    { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output' }
+                ]
+            });
         }
         console.log('🔊 Enumerating PipeWire audio outputs...');
         const sinks = await pipewireService.listSinks();
@@ -67,10 +69,12 @@ router.get('/api/outputs', async (req, res) => {
 router.get('/api/inputs', async (req, res) => {
     try {
         if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-            return res.json({ success: true, inputs: [
-                { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
-                { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
-            ]});
+            return res.json({
+                success: true, inputs: [
+                    { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
+                    { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
+                ]
+            });
         }
         console.log('🎤 Enumerating PipeWire audio inputs...');
         const sources = await pipewireService.listSources();

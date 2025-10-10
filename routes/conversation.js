@@ -51,7 +51,7 @@ async function writeJawSettings(obj) {
 // GET /conversation (page)
 router.get('/', async (req, res) => {
   res.render('conversation/index', {
-    title: 'Conversation - MonsterBox 4.0',
+    title: 'Conversation - MonsterBox 5.1',
     page: 'conversation'
   });
 });
@@ -120,7 +120,7 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
-  });
+});
 
 // Head Tracking status for current character's webcam
 router.get('/api/head-tracking-status', async (req, res) => {
@@ -183,7 +183,7 @@ router.post('/api/say', express.json(), async (req, res) => {
 
     // In test mode, bypass external TTS and return success to keep E2E deterministic
     if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-      try { jawAnimationService.driveFromText({ characterId, text }).catch(() => {}); } catch (_) {}
+      try { jawAnimationService.driveFromText({ characterId, text }).catch(() => { }); } catch (_) { }
       return res.json({ success: true, testMode: true });
     }
 
@@ -197,7 +197,7 @@ router.post('/api/say', express.json(), async (req, res) => {
     if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
 
     // Fire-and-forget rudimentary jaw animation driven by text amplitude heuristic
-    try { jawAnimationService.driveFromText({ characterId, text }).catch(() => {}); } catch (_) {}
+    try { jawAnimationService.driveFromText({ characterId, text }).catch(() => { }); } catch (_) { }
 
     res.json({ success: true, device: play.deviceId });
   } catch (e) {
@@ -211,7 +211,7 @@ router.post('/api/jaw-drive', express.json(), async (req, res) => {
     const characterId = getCurrentCharacterId(req);
     const amp = Number(req.body && req.body.amplitude);
     if (!Number.isFinite(amp)) return res.status(400).json({ success: false, error: 'amplitude required (0..1)' });
-    try { await jawAnimationService.driveFromAmplitude({ characterId, amplitude: Math.max(0, Math.min(1, amp)) }); } catch (_) {}
+    try { await jawAnimationService.driveFromAmplitude({ characterId, amplitude: Math.max(0, Math.min(1, amp)) }); } catch (_) { }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

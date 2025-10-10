@@ -204,3 +204,62 @@ npx playwright test -c playwright.config.ts tests/playwright/character-images.sp
 
 — End of 5.2 Gold Release —
 
+
+
+## Parrot Mode – WAV Loopback Test (Server Mic via Monitor)
+
+Use this to verify Parrot Mode without speaking into a physical microphone. The server STT listens to the sink’s monitor so anything played to the speakers is transcribed and parroted back via the Conversation page.
+
+Steps
+1) Choose a monitor source (PipeWire/Pulse):
+   - curl -s http://127.0.0.1:3000/setup/audio/api/inputs | jq
+   - Pick an id that contains "monitor" (e.g., alsa_output.usb-...monitor)
+2) Apply as default source:
+   - curl -s -X POST -H "Content-Type: application/json" \
+     -d '{"defaultSource":"<MONITOR_ID>"}' \
+     http://127.0.0.1:3000/setup/audio/api/system-config
+3) Start server with audio debug (separate terminal):
+   - MB_DEBUG_AUDIO=1 NODE_ENV=production PORT=3000 node server.js
+4) Conversation page → enable "Parrot Mode (repeat what you say)".
+5) Play the built-in WAV twice (room silent):
+   - paplay /usr/share/sounds/alsa/Front_Center.wav; sleep 1; \
+     paplay /usr/share/sounds/alsa/Front_Center.wav
+   - (Fallback) aplay -D pulse /usr/share/sounds/alsa/Front_Center.wav
+
+Expected
+- Conversation page shows: "You: front center" then "Parrot spoke"
+- Logs show STT chunk and STT response text followed by 200 on /conversation/api/say
+
+Notes
+- If transcripts don’t appear, try a different monitor id and raise Setup→Audio Input Level.
+- Keep STT language set to English for this test.
+- Revert to default when done:
+  - curl -s -X POST -H "Content-Type: application/json" -d '{"defaultSource":"default"}' \
+    http://127.0.0.1:3000/setup/audio/api/system-config
+
+
+## Autotune: Mic/STT/VAD (Production)
+
+This Playwright test runs on the device and automatically tunes microphone input gain, STT language/VAD threshold using only existing endpoints. It plays the built-in ALSA WAV to a speaker and verifies Parrot Mode echoes via /conversation/api/say.
+
+Run on Orlok (server must NOT be test mode):
+```
+# In one terminal (on Orlok)
+MB_DEBUG_AUDIO=1 NODE_ENV=production PORT=3000 node server.js
+
+# In another terminal (on Orlok)
+BASE_URL=http://127.0.0.1:3000 MB_E2E=1 \
+  npx playwright test -c playwright.config.ts \
+  tests/playwright/mic-stt-vad-autotune.spec.js --project=firefox --reporter=list
+```
+What it does:
+- Picks a monitor source from /setup/audio/api/inputs and applies it as default source
+- Saves STT config: language = "en", vadEnabled = true
+- Tries a small grid of Input Gain (100/130/160%) and VAD thresholds (4/6/8/10%)
+- For each combo, plays Front_Center.wav twice and waits for /conversation/api/say
+- Persists the first working combo and re-checks once
+
+If it fails:
+- Try another monitor id; confirm speakers produce audio
+- Increase input gain to ~160–180% and retry
+- Ensure ElevenLabs API key is configured and network is reachable

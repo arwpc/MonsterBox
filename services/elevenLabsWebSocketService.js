@@ -512,6 +512,29 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
                     break;
 
+                case 'user_transcript':
+                    // Forward user transcript from ElevenLabs to client (for Parrot Mode)
+                    try {
+                        const userText = (message.user_transcription_event && message.user_transcription_event.user_transcript)
+                            || message.text || '';
+                        if (userText) {
+                            // Primary event used by mic-panel
+                            this.sendToClient(sessionId, {
+                                type: 'user_transcript',
+                                user_transcription_event: message.user_transcription_event || { user_transcript: userText },
+                                timestamp: Date.now()
+                            });
+                            // Also send generic transcript event for broader UI compatibility
+                            this.sendToClient(sessionId, {
+                                type: 'transcript',
+                                role: 'user',
+                                text: userText,
+                                timestamp: Date.now()
+                            });
+                        }
+                    } catch (_) { /* noop */ }
+                    break;
+
                 case 'agent_response':
                     // Text-only agent response
                     const responseText = message.agent_response_event?.agent_response ||
@@ -604,6 +627,24 @@ class ElevenLabsWebSocketService extends EventEmitter {
     /**
      * Server microphone capture loop -> send user_audio_chunk to ElevenLabs
      */
+    // Optional WAV denoise/bandpass using ffmpeg if available
+    async _filterWavForSTT(wavBuf) {
+        try {
+            const { spawn } = require('child_process');
+            return await new Promise(function (resolve) {
+                try {
+                    const ff = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'wav', '-i', 'pipe:0', '-ac', '1', '-ar', '16000', '-af', 'highpass=f=200,lowpass=f=3800,afftdn=nf=-25', '-f', 'wav', 'pipe:1']);
+                    let out = Buffer.alloc(0);
+                    ff.stdout.on('data', function (d) { out = Buffer.concat([out, d]); });
+                    ff.on('close', function () { resolve(out.length > 44 ? out : wavBuf); });
+                    ff.stdin.end(wavBuf);
+                } catch (e) {
+                    resolve(wavBuf);
+                }
+            });
+        } catch (_) { return wavBuf; }
+    }
+
     async _startServerMicLoop(sessionId) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
@@ -612,10 +653,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
         const tick = async () => {
             if (!connection.serverMicActive) return;
-            if (!connection.isActive) { // wait until real-time agent socket is ready
-                connection.serverMicTimer = setTimeout(tick, 100);
-                return;
-            }
+            // If real-time agent socket isn't ready, continue with local STT only (skip agent streaming)
+            const agentReady = !!(connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN);
             try {
                 let deviceId = 'default';
                 if (connection.characterId != null) {
@@ -658,8 +697,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 ? connection.sttPcm.slice(-Math.min(connection.sttPcm.length, 16000 * 2 * 2))
                                 : null;
                             if (pcmForStt) {
-                                const sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
+                                let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
                                 const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
+                                try { if (process.env.MB_STT_FILTER === '1' || (lang && lang.slice(0, 2) === 'en')) { sttWav = await this._filterWavForSTT(sttWav); } } catch (_) { /* keep original on failure */ }
                                 const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
                                 if (text) {
