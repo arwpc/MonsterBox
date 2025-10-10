@@ -38,6 +38,17 @@
                             </h5>
                         </div>
                         <div class="card-body">
+                            <!-- Filter Presets -->
+                            <div class="alert alert-info mb-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-magic me-2"></i>
+                                    <strong>Quick Presets</strong>
+                                </div>
+                                <div class="row g-2" id="filterPresets">
+                                    <div class="col-12 text-muted small">Loading presets...</div>
+                                </div>
+                            </div>
+
                             <form id="sttConfigForm">
                                 <div class="row">
                                     <div class="col-md-6">
@@ -64,7 +75,6 @@
                                     </div>
                                 </div>
                                 <div class="row">
-
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="sampleRate" class="form-label">Sample Rate</label>
@@ -75,6 +85,158 @@
                                                 <option value="44100">44.1 kHz</option>
                                                 <option value="48000">48 kHz</option>
                                             </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Voice Activity Detection (VAD)</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="vadEnabled"
+                                                    name="vadEnabled" checked>
+                                                <label class="form-check-label" for="vadEnabled">
+                                                    Enable VAD
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Automatically detect when speech
+                                                starts/stops</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="vadThreshold" class="form-label">
+                                                VAD Threshold: <span id="vadThresholdValue">0.40</span>
+                                            </label>
+                                            <input type="range" class="form-range" id="vadThreshold" name="vadThreshold"
+                                                min="0.05" max="0.95" step="0.05" value="0.40">
+                                            <small class="text-muted">Lower = more sensitive (may pick up noise)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="vadSilenceDuration" class="form-label">
+                                                Silence Duration: <span id="vadSilenceDurationValue">500</span>ms
+                                            </label>
+                                            <input type="range" class="form-range" id="vadSilenceDuration"
+                                                name="vadSilenceDuration" min="100" max="2000" step="100" value="500">
+                                            <small class="text-muted">How long to wait before ending speech</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Filtering Section -->
+                                <hr class="my-4">
+                                <h6 class="mb-3"><i class="bi bi-soundwave"></i> Audio Filtering</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Audio Preprocessing</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="audioFilterEnabled"
+                                                    name="audioFilterEnabled" checked>
+                                                <label class="form-check-label" for="audioFilterEnabled">
+                                                    Enable Bandpass & Denoise Filters
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Removes background noise and non-speech
+                                                frequencies</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="highpassFreq" class="form-label">
+                                                Highpass Filter: <span id="highpassFreqValue">180</span>Hz
+                                            </label>
+                                            <input type="range" class="form-range" id="highpassFreq" name="highpassFreq"
+                                                min="50" max="500" step="50" value="180">
+                                            <small class="text-muted">Remove low-frequency rumble</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="lowpassFreq" class="form-label">
+                                                Lowpass Filter: <span id="lowpassFreqValue">4200</span>Hz
+                                            </label>
+                                            <input type="range" class="form-range" id="lowpassFreq" name="lowpassFreq"
+                                                min="2000" max="8000" step="200" value="4200">
+                                            <small class="text-muted">Remove high-frequency hiss</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="denoiseLevel" class="form-label">
+                                                Denoise Level: <span id="denoiseLevelValue">-22</span>dB
+                                            </label>
+                                            <input type="range" class="form-range" id="denoiseLevel" name="denoiseLevel"
+                                                min="-50" max="-10" step="5" value="-22">
+                                            <small class="text-muted">Noise reduction strength</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Text Filtering Section -->
+                                <hr class="my-4">
+                                <h6 class="mb-3"><i class="bi bi-filter"></i> Text Filtering</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Sound Effects Filtering</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="filterSfx"
+                                                    name="filterSfx" checked>
+                                                <label class="form-check-label" for="filterSfx">
+                                                    Filter Bracketed Sound Effects
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Remove transcriptions like "(beep)", "(music)",
+                                                etc.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Language Validation</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="validateEnglish"
+                                                    name="validateEnglish" checked>
+                                                <label class="form-check-label" for="validateEnglish">
+                                                    Validate English Text
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Reject non-English or gibberish
+                                                transcriptions</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="minLetterRatio" class="form-label">
+                                                Min Letter Ratio: <span id="minLetterRatioValue">55</span>%
+                                            </label>
+                                            <input type="range" class="form-range" id="minLetterRatio"
+                                                name="minLetterRatio" min="30" max="90" step="5" value="55">
+                                            <small class="text-muted">Minimum percentage of letters in text</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Require Vowels</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="requireVowels"
+                                                    name="requireVowels" checked>
+                                                <label class="form-check-label" for="requireVowels">
+                                                    Require At Least One Vowel
+                                                </label>
+                                            </div>
+                                            <small class="text-muted">Reject consonant-only gibberish</small>
                                         </div>
                                     </div>
                                 </div>

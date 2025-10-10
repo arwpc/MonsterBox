@@ -32,10 +32,81 @@ STTManager.prototype.init = function () {
 
     this.loadSTTModels();
     this.loadMicrophoneParts();
+    this.loadFilterPresets();
     this.loadSavedConfig();
     this.bindEvents();
 
     console.log('STT Manager initialized');
+};
+
+STTManager.prototype.loadFilterPresets = function () {
+    var self = this;
+
+    fetch('/api/elevenlabs/stt/presets')
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data && data.success && data.presets) {
+                self.displayFilterPresets(data.presets);
+            }
+        })
+        .catch(function (error) {
+            console.error('Failed to load filter presets:', error);
+        });
+};
+
+STTManager.prototype.displayFilterPresets = function (presets) {
+    var self = this;
+    var container = document.getElementById('filterPresets');
+    if (!container) return;
+
+    var html = '';
+    presets.forEach(function (preset) {
+        html += '<div class="col-md-4 col-lg-3">' +
+            '<button type="button" class="btn btn-outline-primary btn-sm w-100" ' +
+            'data-preset-id="' + preset.id + '" ' +
+            'title="' + preset.description + '">' +
+            '<i class="bi bi-' + preset.icon + ' me-1"></i>' +
+            preset.name +
+            '</button>' +
+            '</div>';
+    });
+
+    container.innerHTML = html;
+
+    // Bind click events
+    container.querySelectorAll('button[data-preset-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var presetId = this.getAttribute('data-preset-id');
+            self.applyFilterPreset(presetId);
+        });
+    });
+};
+
+STTManager.prototype.applyFilterPreset = function (presetId) {
+    var self = this;
+
+    fetch('/api/elevenlabs/stt/presets/' + presetId + '/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data && data.success) {
+                self.showAlert('Applied preset: ' + presetId, 'success');
+                // Reload configuration to update UI
+                self.loadSavedConfig();
+            } else {
+                self.showAlert('Failed to apply preset', 'danger');
+            }
+        })
+        .catch(function (error) {
+            console.error('Failed to apply preset:', error);
+            self.showAlert('Failed to apply preset', 'danger');
+        });
 };
 
 STTManager.prototype.loadSTTModels = function () {
@@ -314,9 +385,58 @@ STTManager.prototype.bindEvents = function () {
     }
     if (inputGain) { inputGain.addEventListener('input', applyInputGainNow); }
 
-    // VAD tuning controls
-    var vadEnabledEl = document.getElementById('vadEnabled');
+    // Range slider value display updates
     var vadThresholdEl = document.getElementById('vadThreshold');
+    var vadThresholdValue = document.getElementById('vadThresholdValue');
+    if (vadThresholdEl && vadThresholdValue) {
+        vadThresholdEl.addEventListener('input', function () {
+            vadThresholdValue.textContent = parseFloat(vadThresholdEl.value).toFixed(2);
+        });
+    }
+
+    var vadSilenceDurationEl = document.getElementById('vadSilenceDuration');
+    var vadSilenceDurationValue = document.getElementById('vadSilenceDurationValue');
+    if (vadSilenceDurationEl && vadSilenceDurationValue) {
+        vadSilenceDurationEl.addEventListener('input', function () {
+            vadSilenceDurationValue.textContent = vadSilenceDurationEl.value;
+        });
+    }
+
+    var highpassFreqEl = document.getElementById('highpassFreq');
+    var highpassFreqValue = document.getElementById('highpassFreqValue');
+    if (highpassFreqEl && highpassFreqValue) {
+        highpassFreqEl.addEventListener('input', function () {
+            highpassFreqValue.textContent = highpassFreqEl.value;
+        });
+    }
+
+    var lowpassFreqEl = document.getElementById('lowpassFreq');
+    var lowpassFreqValue = document.getElementById('lowpassFreqValue');
+    if (lowpassFreqEl && lowpassFreqValue) {
+        lowpassFreqEl.addEventListener('input', function () {
+            lowpassFreqValue.textContent = lowpassFreqEl.value;
+        });
+    }
+
+    var denoiseLevelEl = document.getElementById('denoiseLevel');
+    var denoiseLevelValue = document.getElementById('denoiseLevelValue');
+    if (denoiseLevelEl && denoiseLevelValue) {
+        denoiseLevelEl.addEventListener('input', function () {
+            denoiseLevelValue.textContent = denoiseLevelEl.value;
+        });
+    }
+
+    var minLetterRatioEl = document.getElementById('minLetterRatio');
+    var minLetterRatioValue = document.getElementById('minLetterRatioValue');
+    if (minLetterRatioEl && minLetterRatioValue) {
+        minLetterRatioEl.addEventListener('input', function () {
+            minLetterRatioValue.textContent = minLetterRatioEl.value;
+        });
+    }
+
+    // VAD tuning controls (legacy - keep for backward compatibility)
+    var vadEnabledEl = document.getElementById('vadEnabled');
+    var vadThresholdEl2 = document.getElementById('vadThreshold');
     var vadLbl = document.getElementById('vadThresholdLabel');
     if (vadEnabledEl) {
         vadEnabledEl.addEventListener('change', function () {

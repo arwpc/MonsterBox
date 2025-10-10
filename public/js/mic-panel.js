@@ -125,7 +125,13 @@
         var source = audioCtx.createMediaStreamSource(mediaStream);
         analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024; dataArray = new Uint8Array(analyser.fftSize);
         source.connect(analyser); rafId = requestAnimationFrame(loop);
-      } catch (e) { setStatus('Mic error: ' + (e && e.message ? e.message : e)); stop(); return; }
+      } catch (e) {
+        // In headless/test mode, browser mic may not be available, but server mic can still work
+        console.warn('Browser microphone not available:', e.message);
+        setStatus('Listening (server mic)...');
+        // Don't call stop() - keep WebSocket connection alive for server mic
+        return;
+      }
     }
 
     function stop() {

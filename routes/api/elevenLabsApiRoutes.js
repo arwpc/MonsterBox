@@ -426,6 +426,42 @@ router.post('/stt/config', requireElevenLabsConfig, async (req, res) => {
     }
 });
 
+// STT Filter Presets
+router.get('/stt/presets', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { getAllPresets } = await import('../../services/sttFilterPresets.js');
+        const presets = getAllPresets();
+        res.json({ success: true, presets });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.get('/stt/presets/:presetId', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { getPreset } = await import('../../services/sttFilterPresets.js');
+        const preset = getPreset(req.params.presetId);
+        if (!preset) {
+            return res.status(404).json({ success: false, error: 'Preset not found' });
+        }
+        res.json({ success: true, preset });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.post('/stt/presets/:presetId/apply', requireElevenLabsConfig, async (req, res) => {
+    try {
+        const { applyPreset } = await import('../../services/sttFilterPresets.js');
+        const currentConfig = await getSTTConfig();
+        const newConfig = applyPreset(req.params.presetId, currentConfig);
+        const saved = await saveSTTConfig(newConfig);
+        res.json({ success: true, config: saved, preset: req.params.presetId });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 // TTS Config
 router.get('/tts/config', requireElevenLabsConfig, async (req, res) => {
     try {

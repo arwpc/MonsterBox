@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Audio - MonsterBox 4.0</title>
+  <title>Setup Audio - MonsterBox 5.1</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/monsterbox4.css" rel="stylesheet">
@@ -160,53 +160,7 @@
 
       <!-- Configuration Cards -->
       <div class="row">
-        <!-- Default Audio Output -->
-        <div class="col-md-6 mb-4">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="mb-0"><i class="bi bi-speaker"></i> Default Audio Output (Speakers)</h5>
-            </div>
-            <div class="card-body">
-              <div class="mb-3">
-                <label for="default-sink" class="form-label">System Default Sink</label>
-                <select class="form-select" id="default-sink">
-                  <option value="auto">Auto (Let PipeWire decide)</option>
-                </select>
-                <div class="form-text">This sets the system-wide default audio output device</div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Current Sink Details</label>
-                <div id="current-sink-info" class="p-3 bg-dark rounded">
-                  <div class="text-muted">Loading...</div>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Output Level</label>
-                <div class="vu-meter-container">
-                  <div class="vu-meter" id="output-vu-meter">
-                    <div class="vu-bar"></div>
-                  </div>
-                  <div class="vu-label">
-                    <span id="output-level-text">0%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="d-grid gap-2">
-                <button class="btn btn-outline-primary" onclick="testAudioOutput()">
-                  <i class="bi bi-play-circle"></i> Test Audio Output
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" onclick="toggleOutputVUMeter()">
-                  <i class="bi bi-bar-chart"></i> <span id="output-vu-toggle">Start</span> Output Monitoring
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Default Audio Input -->
+        <!-- Default Audio Input (LEFT PANEL) -->
         <div class="col-md-6 mb-4">
           <div class="card">
             <div class="card-header">
@@ -251,6 +205,52 @@
             </div>
           </div>
         </div>
+
+        <!-- Default Audio Output (RIGHT PANEL) -->
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-speaker"></i> Default Audio Output (Speakers)</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="default-sink" class="form-label">System Default Sink</label>
+                <select class="form-select" id="default-sink">
+                  <option value="auto">Auto (Let PipeWire decide)</option>
+                </select>
+                <div class="form-text">This sets the system-wide default audio output device</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Current Sink Details</label>
+                <div id="current-sink-info" class="p-3 bg-dark rounded">
+                  <div class="text-muted">Loading...</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Output Level</label>
+                <div class="vu-meter-container">
+                  <div class="vu-meter" id="output-vu-meter">
+                    <div class="vu-bar"></div>
+                  </div>
+                  <div class="vu-label">
+                    <span id="output-level-text">0%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary" onclick="testAudioOutput()">
+                  <i class="bi bi-play-circle"></i> Test Audio Output
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleOutputVUMeter()">
+                  <i class="bi bi-bar-chart"></i> <span id="output-vu-toggle">Start</span> Output Monitoring
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Microphone Parts Controls -->
@@ -282,14 +282,14 @@
             <div class="card-body">
               <div class="row">
                 <div class="col-md-6">
-                  <h6>Available Audio Outputs (Sinks)</h6>
-                  <div id="available-sinks" class="list-group mb-3">
+                  <h6>Available Audio Inputs (Sources)</h6>
+                  <div id="available-sources" class="list-group mb-3">
                     <div class="list-group-item">Loading...</div>
                   </div>
                 </div>
                 <div class="col-md-6">
-                  <h6>Available Audio Inputs (Sources)</h6>
-                  <div id="available-sources" class="list-group mb-3">
+                  <h6>Available Audio Outputs (Sinks)</h6>
+                  <div id="available-sinks" class="list-group mb-3">
                     <div class="list-group-item">Loading...</div>
                   </div>
                 </div>
@@ -366,6 +366,55 @@
 
         // Initial stream load
         setTimeout(refreshStreams, 1000);
+
+        // Add change handlers for device selectors
+        document.getElementById('default-sink').addEventListener('change', function () {
+          const deviceId = this.value;
+          console.log('🔊 Output device changed to:', deviceId);
+
+          // Update current device info
+          updateCurrentDeviceInfo();
+
+          // Restart VU meter if it's running
+          if (vuMeterIntervals['output-vu-meter']) {
+            stopVUMeterMonitoring('output-vu-meter');
+            if (deviceId && deviceId !== 'auto') {
+              startVUMeterMonitoring(deviceId, 'output', 'output-vu-meter');
+              document.getElementById('output-vu-toggle').textContent = 'Stop';
+            }
+          }
+
+          // Save to localStorage for persistence
+          try {
+            localStorage.setItem('setupAudio.defaultSink', deviceId);
+          } catch (e) {
+            console.warn('Failed to save sink to localStorage:', e);
+          }
+        });
+
+        document.getElementById('default-source').addEventListener('change', function () {
+          const deviceId = this.value;
+          console.log('🎤 Input device changed to:', deviceId);
+
+          // Update current device info
+          updateCurrentDeviceInfo();
+
+          // Restart VU meter if it's running
+          if (vuMeterIntervals['input-vu-meter']) {
+            stopVUMeterMonitoring('input-vu-meter');
+            if (deviceId && deviceId !== 'auto') {
+              startVUMeterMonitoring(deviceId, 'input', 'input-vu-meter');
+              document.getElementById('input-vu-toggle').textContent = 'Stop';
+            }
+          }
+
+          // Save to localStorage for persistence
+          try {
+            localStorage.setItem('setupAudio.defaultSource', deviceId);
+          } catch (e) {
+            console.warn('Failed to save source to localStorage:', e);
+          }
+        });
       });
 
       // Show notification
@@ -794,31 +843,71 @@
       // Test audio output
       async function testAudioOutput() {
         const deviceId = document.getElementById('default-sink').value;
+        const testBtn = event.target.closest('button');
+
+        if (!deviceId || deviceId === 'auto') {
+          showNotification('Please select a specific output device first', 'error');
+          return;
+        }
+
+        // Disable button during test
+        if (testBtn) {
+          testBtn.disabled = true;
+          testBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Playing...';
+        }
 
         // Start VU meter monitoring for output
         startVUMeterMonitoring(deviceId, 'output', 'output-vu-meter');
 
-        await runAudioTest('speaker', deviceId);
+        try {
+          await runAudioTest('speaker', deviceId);
+        } finally {
+          // Re-enable button
+          if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.innerHTML = '<i class="bi bi-play-circle"></i> Test Audio Output';
+          }
 
-        // Stop VU meter monitoring after test
-        setTimeout(function () {
-          stopVUMeterMonitoring('output-vu-meter');
-        }, 3000);
+          // Stop VU meter monitoring after test
+          setTimeout(function () {
+            stopVUMeterMonitoring('output-vu-meter');
+          }, 3000);
+        }
       }
 
       // Test audio input
       async function testAudioInput() {
         const deviceId = document.getElementById('default-source').value;
+        const testBtn = event.target.closest('button');
+
+        if (!deviceId || deviceId === 'auto') {
+          showNotification('Please select a specific input device first', 'error');
+          return;
+        }
+
+        // Disable button during test
+        if (testBtn) {
+          testBtn.disabled = true;
+          testBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Testing...';
+        }
 
         // Start VU meter monitoring for input
         startVUMeterMonitoring(deviceId, 'input', 'input-vu-meter');
 
-        await runAudioTest('microphone', deviceId);
+        try {
+          await runAudioTest('microphone', deviceId);
+        } finally {
+          // Re-enable button
+          if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.innerHTML = '<i class="bi bi-mic"></i> Test Audio Input';
+          }
 
-        // Stop VU meter monitoring after test
-        setTimeout(function () {
-          stopVUMeterMonitoring('input-vu-meter');
-        }, 5000); // Keep input monitoring longer to see levels
+          // Stop VU meter monitoring after test
+          setTimeout(function () {
+            stopVUMeterMonitoring('input-vu-meter');
+          }, 5000); // Keep input monitoring longer to see levels
+        }
       }
 
       // Test specific sink
@@ -835,7 +924,8 @@
       async function runAudioTest(testType, deviceId) {
         try {
           const testResults = document.getElementById('test-results');
-          testResults.textContent = 'Running ' + testType + ' test on device: ' + deviceId + '...\n';
+          const timestamp = new Date().toLocaleTimeString();
+          testResults.textContent = '[' + timestamp + '] Running ' + testType + ' test on device: ' + deviceId + '...\n';
 
           const response = await fetch('/setup/audio/api/test-system', {
             method: 'POST',
@@ -843,21 +933,28 @@
             body: JSON.stringify({ testType, deviceId })
           });
 
+          if (!response.ok) {
+            throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+          }
+
           const data = await response.json();
 
           if (data.success) {
-            testResults.textContent += 'Test completed successfully!\n';
-            testResults.textContent += 'Result: ' + data.result + '\n';
-            showNotification(testType + ' test completed', 'success');
+            testResults.textContent += '[' + new Date().toLocaleTimeString() + '] Test completed successfully!\n';
+            if (data.result) {
+              testResults.textContent += 'Result: ' + data.result + '\n';
+            }
+            showNotification(testType + ' test completed successfully', 'success');
           } else {
-            testResults.textContent += 'Test failed: ' + data.error + '\n';
-            showNotification(testType + ' test failed', 'error');
+            const errorMsg = data.error || 'Unknown error';
+            testResults.textContent += '[' + new Date().toLocaleTimeString() + '] Test failed: ' + errorMsg + '\n';
+            showNotification(testType + ' test failed: ' + errorMsg, 'error');
           }
         } catch (error) {
           console.error('Error running test:', error);
           const testResults = document.getElementById('test-results');
-          testResults.textContent += 'Error running test: ' + error.message + '\n';
-          showNotification('Test error', 'error');
+          testResults.textContent += '[' + new Date().toLocaleTimeString() + '] Error running test: ' + error.message + '\n';
+          showNotification('Test error: ' + error.message, 'error');
         }
       }
 
@@ -881,6 +978,8 @@
       }
 
       const vuMeterBusy = {};
+      const vuMeterErrorCount = {};
+
       function startVUMeterMonitoring(deviceId, deviceType, meterId) {
         // Stop existing monitoring for this meter
         if (vuMeterIntervals[meterId]) {
@@ -890,27 +989,44 @@
         // Start new monitoring with throttle and no console spam
         if (window.MONSTERBOX_DEBUG_AUDIO) console.log('🎵 Starting VU meter monitoring for', deviceId, deviceType);
         vuMeterBusy[meterId] = false;
+        vuMeterErrorCount[meterId] = 0;
 
         vuMeterIntervals[meterId] = setInterval(async function () {
           if (vuMeterBusy[meterId]) return; // prevent overlapping fetches
           vuMeterBusy[meterId] = true;
           try {
             const response = await fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=' + deviceType);
+
+            if (!response.ok) {
+              throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+            }
+
             const data = await response.json();
 
             if (data && data.success) {
               var level = (typeof data.level === 'number') ? data.level : 0;
               updateVUMeter(meterId, level);
+              vuMeterErrorCount[meterId] = 0; // Reset error count on success
               if (window.MONSTERBOX_DEBUG_AUDIO && level > 0.01) {
                 console.log('🎵 VU level detected:', level, 'for', deviceId);
               }
+            } else {
+              throw new Error(data.error || 'Unknown error from audio-levels endpoint');
             }
           } catch (error) {
+            vuMeterErrorCount[meterId] = (vuMeterErrorCount[meterId] || 0) + 1;
             if (window.MONSTERBOX_DEBUG_AUDIO) console.warn('VU meter update failed:', error);
+
+            // If we get too many consecutive errors, show a toast and stop monitoring
+            if (vuMeterErrorCount[meterId] >= 5) {
+              console.error('VU meter monitoring failed 5 times, stopping:', meterId);
+              showNotification('Audio level monitoring failed for ' + deviceType + '. Check device connection.', 'error');
+              stopVUMeterMonitoring(meterId);
+            }
           } finally {
             vuMeterBusy[meterId] = false;
           }
-        }, 100); // 100ms: snappier VU without overlapping fetches
+        }, 100); // 100ms = 10 Hz refresh rate
       }
 
       function stopVUMeterMonitoring(meterId) {

@@ -48,9 +48,14 @@ function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
 function _isBracketedSfx(text) {
     try { return /^\s*\([^)]{1,120}\)\s*$/.test(text); } catch (_) { return false; }
 }
-function _isLikelyEnglish(text) {
+function _isLikelyEnglish(text, config) {
     try {
         if (!text) return false;
+
+        // Get configuration values or use defaults
+        const minLetterRatio = (config && config.minLetterRatio) ? (config.minLetterRatio / 100) : 0.55;
+        const requireVowels = (config && config.requireVowels !== false); // default true
+
         // Drop if any non-ASCII present (catches many other scripts and emojis)
         if (/[^\x00-\x7F]/.test(text)) return false;
         // Keep if mostly letters/digits/basic punctuation
@@ -60,9 +65,9 @@ function _isLikelyEnglish(text) {
         var total = compact.length;
         if (!letters) return false;
         var ratio = letters / total;
-        if (ratio < 0.55) return false;
-        // Require at least one vowel to avoid SFX-like tokens
-        if (!/[AEIOUaeiou]/.test(text)) return false;
+        if (ratio < minLetterRatio) return false;
+        // Require at least one vowel to avoid SFX-like tokens (if enabled)
+        if (requireVowels && !/[AEIOUaeiou]/.test(text)) return false;
         return true;
     } catch (_) { return false; }
 }
@@ -628,15 +633,58 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * Server microphone capture loop -> send user_audio_chunk to ElevenLabs
      */
     // Optional WAV denoise/bandpass using ffmpeg if available
-    async _filterWavForSTT(wavBuf) {
+    async _filterWavForSTT(wavBuf, filterConfig) {
         try {
+            // Skip filtering if buffer is too small (< 1KB)
+            if (!wavBuf || wavBuf.length < 1024) return wavBuf;
+
+            // Get filter settings from config or use defaults
+            const highpass = (filterConfig && filterConfig.highpassFreq) || 180;
+            const lowpass = (filterConfig && filterConfig.lowpassFreq) || 4200;
+            const denoise = (filterConfig && filterConfig.denoiseLevel) || -22;
+
             const { spawn } = require('child_process');
             return await new Promise(function (resolve) {
                 try {
-                    const ff = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'wav', '-i', 'pipe:0', '-ac', '1', '-ar', '16000', '-af', 'highpass=f=200,lowpass=f=3800,afftdn=nf=-25', '-f', 'wav', 'pipe:1']);
+                    // Build optimized filter chain
+                    const filterChain = 'highpass=f=' + highpass + ',lowpass=f=' + lowpass + ',afftdn=nf=' + denoise;
+
+                    // Use faster FFmpeg options for real-time processing
+                    const ff = spawn('ffmpeg', [
+                        '-hide_banner',
+                        '-loglevel', 'error',
+                        '-f', 'wav',
+                        '-i', 'pipe:0',
+                        '-ac', '1',
+                        '-ar', '16000',
+                        '-af', filterChain,
+                        '-f', 'wav',
+                        'pipe:1'
+                    ]);
+
                     let out = Buffer.alloc(0);
+                    let errored = false;
+
                     ff.stdout.on('data', function (d) { out = Buffer.concat([out, d]); });
-                    ff.on('close', function () { resolve(out.length > 44 ? out : wavBuf); });
+                    ff.stderr.on('data', function () { /* ignore stderr */ });
+                    ff.on('error', function () { errored = true; resolve(wavBuf); });
+                    ff.on('close', function (code) {
+                        if (errored || code !== 0 || out.length < 44) {
+                            resolve(wavBuf);
+                        } else {
+                            resolve(out);
+                        }
+                    });
+
+                    // Set timeout to prevent hanging
+                    setTimeout(function () {
+                        if (!errored) {
+                            try { ff.kill(); } catch (_) { }
+                            errored = true;
+                            resolve(wavBuf);
+                        }
+                    }, 5000);
+
                     ff.stdin.end(wavBuf);
                 } catch (e) {
                     resolve(wavBuf);
@@ -699,22 +747,73 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             if (pcmForStt) {
                                 let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
                                 const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
-                                try { if (process.env.MB_STT_FILTER === '1' || (lang && lang.slice(0, 2) === 'en')) { sttWav = await this._filterWavForSTT(sttWav); } } catch (_) { /* keep original on failure */ }
-                                const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
-                                const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
-                                if (text) {
-                                    let allow = true;
-                                    if ((lang || '').slice(0, 2) === 'en') {
-                                        if (_isBracketedSfx(text) || !_isLikelyEnglish(text)) {
-                                            allow = false;
-                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered', data: { text } }); } catch (_) { }
+
+                                // Apply audio filtering if enabled
+                                const audioFilterEnabled = (sttCfg.audioFilterEnabled !== false); // default true
+                                const debugAudio = process.env.MB_DEBUG_AUDIO === '1';
+                                try {
+                                    if (process.env.MB_STT_FILTER === '1' || (audioFilterEnabled && lang && lang.slice(0, 2) === 'en')) {
+                                        const beforeSize = sttWav.length;
+                                        const startTime = Date.now();
+                                        sttWav = await this._filterWavForSTT(sttWav, sttCfg);
+                                        const afterSize = sttWav.length;
+                                        const duration = Date.now() - startTime;
+                                        if (debugAudio) {
+                                            console.log('[STT Filter] Applied audio filters in ' + duration + 'ms (before: ' + beforeSize + ' bytes, after: ' + afterSize + ' bytes)');
                                         }
                                     }
+                                } catch (err) {
+                                    if (debugAudio) {
+                                        console.error('[STT Filter] Audio filtering failed:', err.message || err);
+                                    }
+                                    /* keep original on failure */
+                                }
+
+                                const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
+                                const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
+
+                                if (debugAudio && text) {
+                                    console.log('[STT] Transcription received: "' + text + '"');
+                                }
+
+                                if (text) {
+                                    let allow = true;
+                                    let filterReason = null;
+
+                                    // Text filtering based on configuration
+                                    const allowSfxForAutotune = process.env.MB_AUTOTUNE_ALLOW_SFX === '1';
+                                    const filterSfx = (sttCfg.filterSfx !== false); // default true
+                                    const validateEnglish = (sttCfg.validateEnglish !== false); // default true
+
+                                    if ((lang || '').slice(0, 2) === 'en' && !allowSfxForAutotune) {
+                                        // Check for bracketed sound effects
+                                        if (filterSfx && _isBracketedSfx(text)) {
+                                            allow = false;
+                                            filterReason = 'bracketed_sfx';
+                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_sfx', data: { text } }); } catch (_) { }
+                                        }
+                                        // Validate English text
+                                        else if (validateEnglish && !_isLikelyEnglish(text, sttCfg)) {
+                                            allow = false;
+                                            filterReason = 'non_english';
+                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_english', data: { text } }); } catch (_) { }
+                                        }
+                                    }
+
+                                    if (debugAudio && !allow) {
+                                        console.log('[STT Filter] Rejected transcription "' + text + '" (reason: ' + filterReason + ')');
+                                    }
+
                                     if (allow) {
+                                        if (debugAudio) {
+                                            console.log('[STT] Accepted transcription: "' + text + '"');
+                                        }
                                         this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
                                         // reset buffer after a successful partial to avoid repeats
                                         connection.sttPcm = Buffer.alloc(0);
                                     }
+                                } else if (debugAudio && result && !result.success) {
+                                    console.log('[STT] Transcription failed:', result.error || 'Unknown error');
                                 }
                             }
                         } catch (e) {

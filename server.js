@@ -451,21 +451,8 @@ function getLanAddresses() {
 
 
 
-// Also expose a secondary test port (3100) to satisfy CI tests that expect this base URL
-try {
-    const TEST_PORT = 3100;
-    if ((config && config.port) !== TEST_PORT) {
-        // Start a lightweight secondary listener without duplicating startup side-effects
-        app.listen(TEST_PORT, '0.0.0.0', () => {
-            console.log(`🧪 Test port listener active on ${TEST_PORT}`);
-        });
-    }
-} catch (e) {
-    console.warn('Test port listener setup failed:', (e && e.message) || e);
-}
-
-// Start server
-app.listen(PORT, '0.0.0.0', async () => {
+// Start server on primary port
+const server = app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🎭 MonsterBox 5.2 server running on port ${PORT}`);
     console.log(`📱 Dashboard: http://localhost:${PORT}`);
     console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
@@ -549,6 +536,25 @@ app.listen(PORT, '0.0.0.0', async () => {
     } catch { }
 
 });
+
+// Also expose a secondary test port (3100) to satisfy CI tests that expect this base URL
+// This creates a separate HTTP server instance to avoid conflicts
+try {
+    const TEST_PORT = 3100;
+    if (PORT !== TEST_PORT) {
+        import('http').then(({ default: http }) => {
+            const testServer = http.createServer(app);
+            testServer.listen(TEST_PORT, '0.0.0.0', () => {
+                console.log(`🧪 Test port listener active on ${TEST_PORT}`);
+            });
+            testServer.on('error', (e) => {
+                console.warn('Test port listener setup failed:', e.message);
+            });
+        });
+    }
+} catch (e) {
+    console.warn('Test port listener setup failed:', (e && e.message) || e);
+}
 
 // Graceful shutdown handling
 async function gracefulShutdown(signal) {

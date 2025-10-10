@@ -6,6 +6,7 @@ This document is the authoritative checklist and handoff plan for releasing Mons
 - Ship stable MonsterBox 5.2 across all devices with clean deploy and zero critical regressions
 - Verify actuator control (including BTS7960 full-control wiring), audio, AI, and UI flows
 - Enable passwordless deploys and fast recovery
+- Deliver production-ready Speech-to-Text with comprehensive filter controls and 75%+ recognition accuracy
 
 ## Scope and Key Items
 - BTS7960 Full Control in UI: Add/Edit Part must surface controlBoard, RPWM, LPWM, R_EN, L_EN and persist
@@ -17,6 +18,7 @@ This document is the authoritative checklist and handoff plan for releasing Mons
 - Character Images: CRUD + round thumbnail in navbar + presence in selection/manage forms + home tile
 - Attention to detail: no stray 4.0 labels; proper DOCTYPE on all pages; Playwright green
 - Optional: Multi-select deletion on /setup/models
+- **NEW**: Advanced STT Filter System with comprehensive UI controls and preset configurations
 
 ## Release Readiness Checklist
 - [ ] Code complete for BTS7960 UI fields and persistence; Edit/Add forms verified
@@ -28,6 +30,101 @@ This document is the authoritative checklist and handoff plan for releasing Mons
 - [ ] Physical jog tests pass for each actuator on each device
 - [ ] ElevenLabs TTS plays through character’s assigned speaker automatically
 - [ ] Microphone level meters visible and functional on Setup Audio page
+- [x] **STT Filter System**: Comprehensive UI controls for audio/text filtering
+- [x] **STT Filter Presets**: 7 quick-apply presets for different environments
+- [ ] **STT Recognition Rate**: Achieve 75%+ success rate on autotune test (10 runs)
+
+
+## Setup Audio Page – Critical Fix List (Gold Requirements)
+
+Context: Very little on this page currently works reliably, which makes it difficult to tune STT. This page must be bullet‑proof and truly real‑time before 5.2 can be considered Gold.
+
+Page: http://orlok:3000/setup/audio
+
+Action items (must‑do):
+- Make Monitoring absolutely real time for BOTH Input (microphone) and Output (speaker)
+  - Input Level: live VU meter, updates at ~10Hz or faster
+  - Output Level: live activity monitor/VU for speaker stream(s), ~10Hz or faster
+- Swap panels: Input on the LEFT, Output on the RIGHT (current layout is reversed)
+- Input and Output levels must update continuously (no polling gaps, no stale values)
+- Test every button and interaction on the page:
+  - Test Audio Output must play an audible file through the selected Speaker device
+  - All other Play/Test buttons (per device, per part) must audibly work
+  - Start/Stop monitoring controls must be responsive and never wedge
+  - Device dropdown changes apply immediately and persist as expected
+- Test every feature and every device combination (HDMI, headphone jack, USB dongle, camera mic, etc.)
+- Ensure failures are clearly surfaced to the user (toast + inline help) with actionable guidance
+
+Acceptance criteria:
+- With Orlok’s current hardware, clicking Test Audio Output audibly plays a known sample (e.g., monster‑howl) through the configured speaker within 250ms
+- Input and Output meters visibly move in real‑time while audio plays/capture occurs (no >250ms freezes)
+- Swapped layout (Input left, Output right) persists across reloads and devices
+- No console errors or 4xx/5xx when interacting with controls
+- Page remains snappy (<100ms UI responsiveness) for all actions
+
+Verification plan:
+- Manual: Execute a full click‑through of every control and device on http://orlok:3000/setup/audio
+- Automated: Add Playwright tests to click each button, verify API 200s, and assert VU endpoints return changing values while test audio plays
+
+### Detailed Task Checklist (must be tracked to completion)
+
+- Layout & UX
+  - [ ] Swap panels so Input is on the left and Output is on the right
+  - [ ] Persist swapped layout and selections across reloads
+  - [ ] Eliminate any visual jank; ensure sub-panels don’t reflow on updates
+
+- Real‑time Monitoring
+  - [ ] Input VU meter updates at ≥10 Hz with smooth animation
+  - [ ] Output activity/VU updates at ≥10 Hz while audio is playing
+  - [ ] No polling collisions: requests are serialized/canceled to avoid backlog
+  - [ ] Monitoring Start/Stop is instant and never wedges; state always accurate
+
+- Input Path (Microphone)
+  - [ ] Enumerate PipeWire sources accurately; meaningful names
+  - [ ] Changing device applies immediately to monitoring and persists
+  - [ ] Input gain (percent) applies instantly via PipeWire and persists
+  - [ ] VU meter reflects real device levels while monitoring (server‑side capture)
+
+- Output Path (Speaker)
+  - [ ] Enumerate PipeWire sinks accurately; meaningful names
+  - [ ] Changing device applies immediately to playback and persists
+  - [ ] Test Audio Output plays public/sounds/monster-howl-85304.mp3 (or equivalent) through the selected sink, audible within 250 ms
+  - [ ] Output activity/VU visibly moves during playback
+
+- Buttons & Interactions
+  - [ ] Test Audio Output (global) works and is audible
+  - [ ] Per‑device Test buttons work and are audible on that device
+  - [ ] All Play/Stop/Refresh/Monitor toggles work across devices
+  - [ ] All controls disabled appropriately during active operations
+
+- Error Handling & Feedback
+  - [ ] Clear toasts for success/failure with actionable hints
+  - [ ] Inline help on common failure states (no device, permission, tool missing)
+  - [ ] Zero console errors; zero unhandled rejections
+  - [ ] API errors surfaced with status and short detail
+
+- Device Coverage on Orlok
+  - [ ] HDMI output
+  - [ ] Headphone jack
+  - [ ] USB audio dongle (speaker + mic)
+  - [ ] USB camera microphone
+
+- Performance & Robustness
+  - [ ] UI responsiveness <100 ms for all interactions
+  - [ ] Monitoring endpoints return fresh data (no stale cache)
+  - [ ] No overlapping long polls; cancel on navigation or device change
+  - [ ] Works for concurrent streams (multiple output streams playing)
+
+- Automation (Playwright on RPi4b Firefox)
+  - [ ] Test clicks every button and asserts 200 responses
+  - [ ] Triggers Test Output and verifies output VU/activity endpoint changes during playback
+  - [ ] Verifies input VU endpoint changes during monitoring
+  - [ ] Exercises device dropdowns (inputs/outputs) and validates persistence
+
+- Documentation
+  - [ ] README: Add Setup Audio “Gold” instructions and troubleshooting
+  - [ ] Add a short How‑To in docs/ for monitoring and device testing
+
 
 ## Task Status (snapshot)
 - Complete:

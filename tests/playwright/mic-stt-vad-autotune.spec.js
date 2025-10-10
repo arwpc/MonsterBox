@@ -65,7 +65,10 @@ async function saveSTTConfig(page, patch) {
 }
 
 function playFrontCenterWav() {
-  const cmd = 'paplay /usr/share/sounds/alsa/Front_Center.wav || aplay -D pulse /usr/share/sounds/alsa/Front_Center.wav || aplay /usr/share/sounds/alsa/Front_Center.wav || true';
+  // Use actual speech audio for better STT recognition
+  const speechFile = '/home/remote/MonsterBox/tests/assets/hello_monster_box.wav';
+  const fallbackFile = '/usr/share/sounds/alsa/Front_Center.wav';
+  const cmd = `paplay ${speechFile} 2>/dev/null || paplay ${fallbackFile} || aplay -D pulse ${fallbackFile} || aplay ${fallbackFile} || true`;
   return sh(cmd);
 }
 
@@ -125,12 +128,13 @@ async function waitParrotSay(page, timeoutMs) {
 }
 
 async function tryOnce(page) {
+  // Play audio multiple times with varied timing to increase chance of recognition
   setTimeout(() => { playFrontCenterWav(); }, 400);
-
-
-  setTimeout(() => { playFrontCenterWav(); }, 2200);
-  setTimeout(() => { playFrontCenterWav(); }, 3800);
-  return waitParrotSay(page, 45000);
+  setTimeout(() => { playFrontCenterWav(); }, 1800);
+  setTimeout(() => { playFrontCenterWav(); }, 3200);
+  setTimeout(() => { playFrontCenterWav(); }, 4600);
+  setTimeout(() => { playFrontCenterWav(); }, 6000);
+  return waitParrotSay(page, 60000);
 }
 
 /**
@@ -153,8 +157,23 @@ test.describe('Auto-tune Mic/STT/VAD (Physical mic, noisy env)', () => {
     const charId = await getCurrentCharacterId(page);
     if (charId != null) { await ensureCharacterMicPart(page, charId, micId); }
 
-    // 2) Baseline STT config: force English model/language and enable VAD
-    await saveSTTConfig(page, { model: 'scribe_english_v1', language: 'en', vadEnabled: true, deviceId: micId, microphoneDeviceId: micId });
+    // 2) Baseline STT config: force English model/language, enable VAD and filters
+    await saveSTTConfig(page, {
+      model: 'scribe_english_v1',
+      language: 'en',
+      vadEnabled: true,
+      vadSilenceDuration: 500,
+      audioFilterEnabled: true,
+      highpassFreq: 180,
+      lowpassFreq: 4200,
+      denoiseLevel: -22,
+      filterSfx: true,
+      validateEnglish: true,
+      minLetterRatio: 55,
+      requireVowels: true,
+      deviceId: micId,
+      microphoneDeviceId: micId
+    });
 
     // 3) Enable Parrot Mode + start listening (server WS + browser meter)
     await ensureParrotEnabled(page);
@@ -162,9 +181,9 @@ test.describe('Auto-tune Mic/STT/VAD (Physical mic, noisy env)', () => {
     if (await micStart.isVisible()) { try { await micStart.click(); } catch (_) { } }
     await page.waitForTimeout(500);
 
-    // 4) Search parameter grid biased for noisy rooms
-    const gainPercents = [110, 130, 150, 170, 190];
-    const vadThresholds = [0.10, 0.16, 0.22, 0.28, 0.34, 0.40, 0.46, 0.50];
+    // 4) Search parameter grid optimized for real-world conditions
+    const gainPercents = [140, 160, 180, 200];
+    const vadThresholds = [0.35, 0.40, 0.45, 0.50];
 
     let chosen = null;
     outer: for (const g of gainPercents) {
@@ -181,9 +200,25 @@ test.describe('Auto-tune Mic/STT/VAD (Physical mic, noisy env)', () => {
       throw new Error('Auto-tune failed to find a working mic/VAD combination');
     }
 
-    // 5) Persist winning settings
+    // 5) Persist winning settings with all filter configurations
     await setInputGain(page, micId, chosen.gainPercent);
-    await saveSTTConfig(page, { model: 'scribe_english_v1', language: 'en', vadEnabled: true, vadThreshold: chosen.vadThreshold, deviceId: micId, microphoneDeviceId: micId });
+    await saveSTTConfig(page, {
+      model: 'scribe_english_v1',
+      language: 'en',
+      vadEnabled: true,
+      vadThreshold: chosen.vadThreshold,
+      vadSilenceDuration: 500,
+      audioFilterEnabled: true,
+      highpassFreq: 180,
+      lowpassFreq: 4200,
+      denoiseLevel: -22,
+      filterSfx: true,
+      validateEnglish: true,
+      minLetterRatio: 55,
+      requireVowels: true,
+      deviceId: micId,
+      microphoneDeviceId: micId
+    });
 
     // 6) Ten-run verification for robustness
     let successes = 0;

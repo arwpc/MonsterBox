@@ -47,9 +47,20 @@ export async function getSTTConfig() {
     channels: typeof raw.channels === 'number' ? raw.channels : 1,
     microphonePartId: raw.microphonePartId ?? null,
     microphoneDeviceId: raw.microphoneDeviceId ?? null,
-    // Enable simple VAD by default with a slightly higher threshold to reduce background triggers
+    // Voice Activity Detection - optimized for real-world use
     vadEnabled: typeof raw.vadEnabled === 'boolean' ? raw.vadEnabled : true,
-    vadThreshold: typeof raw.vadThreshold === 'number' ? raw.vadThreshold : 0.06,
+    vadThreshold: typeof raw.vadThreshold === 'number' ? raw.vadThreshold : 0.40,
+    vadSilenceDuration: typeof raw.vadSilenceDuration === 'number' ? raw.vadSilenceDuration : 500,
+    // Audio Filtering - optimized for speech clarity
+    audioFilterEnabled: typeof raw.audioFilterEnabled === 'boolean' ? raw.audioFilterEnabled : true,
+    highpassFreq: typeof raw.highpassFreq === 'number' ? raw.highpassFreq : 180,
+    lowpassFreq: typeof raw.lowpassFreq === 'number' ? raw.lowpassFreq : 4200,
+    denoiseLevel: typeof raw.denoiseLevel === 'number' ? raw.denoiseLevel : -22,
+    // Text Filtering - reject gibberish and sound effects
+    filterSfx: typeof raw.filterSfx === 'boolean' ? raw.filterSfx : true,
+    validateEnglish: typeof raw.validateEnglish === 'boolean' ? raw.validateEnglish : true,
+    minLetterRatio: typeof raw.minLetterRatio === 'number' ? raw.minLetterRatio : 55,
+    requireVowels: typeof raw.requireVowels === 'boolean' ? raw.requireVowels : true,
   };
 }
 
