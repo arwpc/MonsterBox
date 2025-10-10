@@ -109,6 +109,10 @@ Do exactly:
 Deliverables: screenshots of passing Playwright runs, server log snippets showing English `stt_partial`, and final gain/VAD settings saved.
 """
 
+## Decision needed
+Would you like me to proceed with implementing an autotune-only toggle (MB_AUTOTUNE_ALLOW_SFX=1) to temporarily allow bracketed SFX through during tuning, or keep the current strict filter and follow the stepwise plan first?
+
+
 ## Appendix: Files touched in this iteration
 - services/elevenLabsWebSocketService.js
   - `_filterWavForSTT()` (optional ffmpeg bandpass/denoise)
