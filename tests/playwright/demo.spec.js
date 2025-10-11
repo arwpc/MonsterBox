@@ -30,7 +30,7 @@ async function waitServerReady(page) {
     try {
       const res = await page.request.get('/');
       if (res && res.status() >= 200) return;
-    } catch {}
+    } catch { }
     await new Promise(r => setTimeout(r, 150));
   }
 }
@@ -91,7 +91,7 @@ test.describe('Animatronic Demo', () => {
     const tracker = await trackHttpErrors(page, 'speak');
     await page.fill('#sayInput', 'Hello there!');
     await page.click('#sayBtn');
-    await expect(page.locator('#sayStatus')).toContainText(/Done|Success|test/i, { timeout: 5000 });
+    await expect(page.locator('#sayStatus')).toContainText(/Done|Success|test|AI responded/i, { timeout: 5000 });
     tracker.assertClean();
     tracker.stop();
     expect(await getServerErrorCount(page)).toBe(0);
@@ -106,8 +106,8 @@ test.describe('Animatronic Demo', () => {
     const btn = page.locator('#pressHoldBtn');
     await expect(btn).toHaveCount(1);
 
-    // Agent dropdown is present
-    await expect(page.locator('#agentSelect')).toHaveCount(1);
+    // Agent indicator is present (demo shows agent name, not a dropdown)
+    await expect(page.locator('#characterAgentName')).toHaveCount(1);
 
     // Device dropdowns present with at least a default option
     const mic = page.locator('#micSelect');
@@ -119,7 +119,7 @@ test.describe('Animatronic Demo', () => {
       const m = document.querySelectorAll('#micSelect option').length;
       const s = document.querySelectorAll('#speakerSelect option').length;
       return m > 0 && s > 0;
-    }, null, { timeout: 5000 }).catch(() => {});
+    }, null, { timeout: 5000 }).catch(() => { });
 
     const micOptCount = await mic.locator('option').count();
     const spkOptCount = await spk.locator('option').count();

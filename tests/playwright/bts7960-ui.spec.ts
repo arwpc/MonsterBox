@@ -8,6 +8,8 @@ async function openAddPartModal(page) {
 }
 
 test.describe('Setup Calibration UI - Motor/Actuator/Servo basic controls', () => {
+  // Run these related tests serially to avoid modal/backdrop and list refresh races in CI
+  test.describe.configure({ mode: 'serial' });
   test('Add Motor (BTS7960), Edit, and Run', async ({ page }) => {
     await openAddPartModal(page);
 

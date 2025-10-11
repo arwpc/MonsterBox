@@ -26,7 +26,7 @@ async function loadAppConfig() {
 router.get('/', async (req, res) => {
   try {
     const [characters, config] = await Promise.all([loadCharacters(), loadAppConfig()]);
-    res.render('first-run/index', {
+    res.renderWithLayout('first-run/index', {
       title: 'First Run - Select Your Character',
       page: 'first-run',
       characters,

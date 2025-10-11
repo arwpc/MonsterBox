@@ -1,0 +1,31 @@
+[
+  {
+    "id": 39,
+    "name": "TestCharWithAgent_1760200496946 Microphone",
+    "deviceId": "default",
+    "type": "system",
+    "status": "assigned",
+    "characterId": 39,
+    "config": {
+      "enabled": true,
+      "sensitivity": 1,
+      "sampleRate": 16000,
+      "channels": 1,
+      "echoCancellation": true,
+      "noiseSuppression": true,
+      "autoGainControl": true,
+      "voiceActivation": false,
+      "voiceActivationThreshold": 0.1,
+      "bufferSize": 1024,
+      "format": "float32"
+    },
+    "capabilities": {
+      "sttIntegration": true,
+      "audioStreaming": true,
+      "realTimeProcessing": true,
+      "voiceActivationDetection": true
+    },
+    "created": "2025-10-11T16:34:59.949Z",
+    "lastModified": "2025-10-11T16:34:59.949Z"
+  }
+]

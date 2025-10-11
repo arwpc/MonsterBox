@@ -813,5 +813,805 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1760151892748",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760151952081",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760153956584",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760154020835",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760159815148",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760159862002",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760168529402",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760168586551",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760171889311",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760171940789",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760175376695",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760175423200",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760177065271",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760177118245",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760178529661",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760178575591",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760178981025",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760180931468",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760180969869",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181243170",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181281052",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181409901",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181450045",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181655080",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181695815",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181776818",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760181817435",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182151273",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182193543",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182401329",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182424075",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182465322",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182497188",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182617213",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182639312",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182680214",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760182710553",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183015153",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183036557",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183057538",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183081114",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183200017",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183241090",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183267322",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183282621",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183321066",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760183400635",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204535490",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204584492",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204602399",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204622797",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204690623",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760204748465",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206255031",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206325846",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206327799",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206363198",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206408901",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206471383",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760206530818",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760208468444",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760208491731",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760208513262",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760208535455",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760209775638",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760209840777",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760209885947",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760209927871",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760210715280",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760210737843",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760210758389",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211210701",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211232938",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211254002",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211276687",
+    "name": "E2E Motor Model",
+    "description": "motor defaults",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211325614",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760211768718",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760213314211",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760213424313",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760213565964",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

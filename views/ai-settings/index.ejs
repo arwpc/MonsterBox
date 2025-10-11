@@ -1,182 +1,159 @@
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-brain"></i> AI Settings</h1>
+                <button class="btn btn-primary" id="testConnection">
+                    <i class="bi bi-plug"></i> Test Connection
+                </button>
+            </div>
+        </div>
+    </div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Settings - MonsterBox 4.0</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="/css/monsterbox4.css" rel="stylesheet">
-</head>
+    <!-- Configuration Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> ElevenLabs Configuration Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">API Key Status</label>
+                                <div id="apiKeyStatus" class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span>Checking configuration...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Connection Status</label>
+                                <div id="connectionStatus" class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <span>Testing connection...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<body>
-    <%- include('../components/unified-navigation', { page: 'ai-settings' }) %>
+    <!-- AI Settings Dashboard -->
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-mic display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Speech-to-Text</h5>
+                    <p class="card-text">Configure STT models and audio processing for voice input.</p>
+                    <a href="/ai-settings/stt" class="btn btn-primary">
+                        <i class="bi bi-arrow-right"></i> Configure STT
+                    </a>
+                </div>
+            </div>
+        </div>
 
-        <main class="container-fluid py-4">
-            <div class="row">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h1><i class="bi bi-brain"></i> AI Settings</h1>
-                        <button class="btn btn-primary" id="testConnection">
-                            <i class="bi bi-plug"></i> Test Connection
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-robot display-4 text-success mb-3"></i>
+                    <h5 class="card-title">AI Agents</h5>
+                    <p class="card-text">Create and manage conversational AI agents for characters.</p>
+                    <a href="/ai-settings/agents" class="btn btn-success">
+                        <i class="bi bi-arrow-right"></i> Manage Agents
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-volume-up display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Text-to-Speech</h5>
+                    <p class="card-text">Configure voices and TTS settings for audio output.</p>
+                    <a href="/ai-settings/tts" class="btn btn-warning">
+                        <i class="bi bi-arrow-right"></i> Configure TTS
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mt-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i> AI Integration Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="display-6 text-primary" id="agentCount">-</div>
+                                <small class="text-muted">AI Agents</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="display-6 text-success" id="voiceCount">-</div>
+                                <small class="text-muted">Available Voices</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="display-6 text-warning" id="characterCount">-</div>
+                                <small class="text-muted">Characters</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="display-6 text-info" id="assignmentCount">-</div>
+                                <small class="text-muted">Assignments</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-tools"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" id="createAgent">
+                            <i class="bi bi-plus-circle"></i> Create New Agent
+                        </button>
+                        <button class="btn btn-outline-success" id="testConversation">
+                            <i class="bi bi-chat-dots"></i> Test Conversation
+                        </button>
+                        <button class="btn btn-outline-info" id="viewLogs">
+                            <i class="bi bi-journal-text"></i> View AI Logs
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Configuration Status -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-info-circle"></i> ElevenLabs Configuration Status
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">API Key Status</label>
-                                        <div id="apiKeyStatus" class="d-flex align-items-center">
-                                            <div class="spinner-border spinner-border-sm me-2" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                            <span>Checking configuration...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Connection Status</label>
-                                        <div id="connectionStatus" class="d-flex align-items-center">
-                                            <div class="spinner-border spinner-border-sm me-2" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                            <span>Testing connection...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Settings Dashboard -->
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-mic display-4 text-primary mb-3"></i>
-                            <h5 class="card-title">Speech-to-Text</h5>
-                            <p class="card-text">Configure STT models and audio processing for voice input.</p>
-                            <a href="/ai-settings/stt" class="btn btn-primary">
-                                <i class="bi bi-arrow-right"></i> Configure STT
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-robot display-4 text-success mb-3"></i>
-                            <h5 class="card-title">AI Agents</h5>
-                            <p class="card-text">Create and manage conversational AI agents for characters.</p>
-                            <a href="/ai-settings/agents" class="btn btn-success">
-                                <i class="bi bi-arrow-right"></i> Manage Agents
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 col-lg-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-volume-up display-4 text-warning mb-3"></i>
-                            <h5 class="card-title">Text-to-Speech</h5>
-                            <p class="card-text">Configure voices and TTS settings for audio output.</p>
-                            <a href="/ai-settings/tts" class="btn btn-warning">
-                                <i class="bi bi-arrow-right"></i> Configure TTS
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
-
-            <!-- Quick Stats -->
-            <div class="row g-4 mt-4">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-graph-up"></i> AI Integration Status
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="text-center">
-                                        <div class="display-6 text-primary" id="agentCount">-</div>
-                                        <small class="text-muted">AI Agents</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
-                                        <div class="display-6 text-success" id="voiceCount">-</div>
-                                        <small class="text-muted">Available Voices</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
-                                        <div class="display-6 text-warning" id="characterCount">-</div>
-                                        <small class="text-muted">Characters</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="text-center">
-                                        <div class="display-6 text-info" id="assignmentCount">-</div>
-                                        <small class="text-muted">Assignments</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-tools"></i> Quick Actions
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary" id="createAgent">
-                                    <i class="bi bi-plus-circle"></i> Create New Agent
-                                </button>
-                                <button class="btn btn-outline-success" id="testConversation">
-                                    <i class="bi bi-chat-dots"></i> Test Conversation
-                                </button>
-                                <button class="btn btn-outline-info" id="viewLogs">
-                                    <i class="bi bi-journal-text"></i> View AI Logs
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="/js/ai-settings.js"></script>
-        <script src="/js/character-menu.js"></script>
-</body>
-
-</html>
+        </div>
+    </div>
+</div>

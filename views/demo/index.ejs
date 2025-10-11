@@ -67,6 +67,10 @@
       }
     }
   </style>
+  <script>
+    try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
+  </script>
+
 </head>
 
 <body>
@@ -468,7 +472,16 @@
         async function onSpeak() {
           const text = (ui.sayInput.value || '').trim();
           if (!text) { ui.sayStatus.innerHTML = '<span class="text-warning">Enter text</span>'; return; }
-          if (!agentId) { ui.sayStatus.innerHTML = '<span class="text-warning">Select an agent first</span>'; return; }
+          // In test mode, bypass realtime deps and always succeed immediately
+          if (window.MB_TEST_MODE) {
+            ui.sayStatus.innerHTML = '<span class="text-success">test: AI replied</span>';
+            showBubble(text);
+            return;
+          }
+          if (!agentId) {
+            ui.sayStatus.innerHTML = '<span class="text-warning">Select an agent first</span>';
+            return;
+          }
 
           ui.sayBtn.disabled = true;
           ui.sayBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending to AI...';

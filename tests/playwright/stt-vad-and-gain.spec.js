@@ -31,8 +31,9 @@ test.describe('AI Settings - STT: VAD + Input Gain', () => {
     // Controls present
     const gain = page.locator('#inputGain');
     const gainLabel = page.locator('#inputGainLabel');
-    const vadToggle = page.locator('#vadEnabled');
-    const vadThr = page.locator('#vadThreshold');
+    const vadToggle = page.locator('#vadEnabled').first();
+    // Use the sidebar VAD slider (percent 1..30)
+    const vadThr = page.locator('#vadThreshold').last();
     const vadThrLabel = page.locator('#vadThresholdLabel');
 
     await expect(gain).toBeVisible();
@@ -48,7 +49,8 @@ test.describe('AI Settings - STT: VAD + Input Gain', () => {
     await expect(gainLabel).toHaveText(/135%/);
     await gainReq;
 
-    // Toggle VAD on -> expect config POST
+    // Ensure a state change occurs, then toggle VAD on -> expect config POST
+    await vadToggle.uncheck({ force: true });
     const configReq1 = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes('/api/elevenlabs/stt/config'));
     await vadToggle.check();
     await configReq1;

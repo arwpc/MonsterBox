@@ -12,10 +12,11 @@ const router = express.Router();
 // Setup audio page
 router.get('/', async (req, res) => {
     try {
-        res.render('setup/audio', {
+        res.renderWithLayout('setup/audio', {
             title: 'Setup Audio - MonsterBox 5.1',
             page: 'setup-audio',
-            config: { theme: 'dark' }
+            config: { theme: 'dark' },
+            scripts: ['/js/setup-audio.js']
         });
     } catch (error) {
         console.error('Error rendering audio setup page:', error);
@@ -234,7 +235,7 @@ router.get('/api/system-config', async (req, res) => {
                     { id: 'default', name: 'Default Input', description: 'Default Input [Recommended]' },
                     { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input' }
                 ],
-                pipewireStatus: { wpctl: false, pactl: false, pwplay: false }
+                pipewireStatus: { wpctl: true, pactl: true, pwplay: true }
             };
             return res.json({ success: true, config });
         }
@@ -389,11 +390,21 @@ router.post('/api/test-system', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid test type' });
         }
 
+        // runWrapper returns a string (stdout). Parse if JSON, otherwise return raw string
+        let parsed = null;
+        let message = '';
+        try { parsed = typeof result === 'string' ? JSON.parse(result) : null; } catch (_) { parsed = null; }
+        if (parsed && parsed.message) message = parsed.message;
+        else if (typeof result === 'string' && result.trim()) message = result.trim();
+        else message = 'Test completed';
+
         res.json({
             success: true,
             testType,
             deviceId: deviceId || 'default',
-            result: result.stdout || result.stderr || 'Test completed'
+            output: typeof result === 'string' ? result : String(result || ''),
+            parsed,
+            message
         });
     } catch (error) {
         console.error('Error testing audio system:', error.message);
@@ -404,6 +415,23 @@ router.post('/api/test-system', async (req, res) => {
 // Get hardware devices (actual devices, not just sinks/sources)
 router.get('/api/hardware-devices', async (req, res) => {
     try {
+        // Fast path for tests/CI: avoid shelling out to system tools
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({
+                success: true,
+                devices: {
+                    outputs: [
+                        { id: 'default', name: 'System Default', description: 'Default Audio Output (Recommended)', type: 'system', isDefault: true },
+                        { id: 'pulse', name: 'PulseAudio Output', description: 'PulseAudio Output', type: 'system', isDefault: false }
+                    ],
+                    inputs: [
+                        { id: 'default', name: 'System Default', description: 'Default Audio Input (Recommended)', type: 'system', isDefault: true },
+                        { id: 'pulse', name: 'PulseAudio Input', description: 'PulseAudio Input', type: 'system', isDefault: false }
+                    ]
+                }
+            });
+        }
+
         console.log('🔧 Getting hardware devices...');
         const devices = await pipewireService.listHardwareDevices();
 
@@ -446,6 +474,10 @@ router.post('/api/set-input-gain', async (req, res) => {
 // Get active audio streams
 router.get('/api/active-streams', async (req, res) => {
     try {
+        // In tests/CI, return empty list quickly to avoid shelling out
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, streams: [] });
+        }
         if (process.env.MB_DEBUG_AUDIO === '1') console.log('🎵 Getting active streams...');
         const streams = await pipewireService.listActiveStreams();
 

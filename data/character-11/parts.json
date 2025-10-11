@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "name": "Demo Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "resolution": "640x480"
+    },
+    "created": "2025-10-11T05:41:10.163Z",
+    "enabled": true,
+    "characterId": 11
+  },
+  {
+    "id": "2",
+    "name": "Head Pan",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-10-11T05:41:10.163Z",
+    "enabled": true,
+    "characterId": 11
+  }
+]

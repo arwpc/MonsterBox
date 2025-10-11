@@ -21,6 +21,7 @@ const PART_TYPES = {
     led: { icon: '🔆', description: 'PWM-controlled with brightness', requiresPin: true },
     servo: { icon: '🦷', description: 'precise angle control: standard, continuous, feedback', requiresPin: true },
     motion_sensor: { icon: '🔍', description: 'PIR motion detection', requiresPin: true },
+    sensor: { icon: '🧪', description: 'generic GPIO sensor', requiresPin: true },
     webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
     microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },
     speaker: { icon: '🔊', description: 'audio output devices', requiresPin: false },
@@ -118,6 +119,11 @@ export const saveParts = async (parts) => {
     const dataDir = path.dirname(filePath);
     await fs.mkdir(dataDir, { recursive: true });
 
+    try {
+        const cfg = await readConfig();
+        console.log('[saveParts] writing %d parts to %s (selectedCharacter=%s)', Array.isArray(parts) ? parts.length : -1, filePath, cfg && cfg.selectedCharacter);
+    } catch { }
+
     await fs.writeFile(filePath, JSON.stringify(parts, null, 2));
 };
 
@@ -194,7 +200,9 @@ export const createPart = async (req, res) => {
         const { name, type, pin, description, config, directionPin, pwmPin, maxExtension, maxRetraction } = req.body;
 
         // Validate part type
+        try { console.log('[createPart] incoming type=%s', type); } catch { }
         if (!PART_TYPES[type]) {
+            try { console.warn('[createPart] invalid type=%s; valid=%s', type, Object.keys(PART_TYPES).join(',')); } catch { }
             return res.status(400).json({
                 success: false,
                 error: 'Invalid part type',
@@ -588,6 +596,13 @@ export const testPart = async (req, res) => {
         // Perform hardware test
         const testResult = await hardwareService.controlPart(id, chosenAction, actionParams);
 
+        // Flatten key fields for certain types so UI can read them without digging into details
+        const flatExtras = {};
+        if (part.type === 'motion_sensor') {
+            if (typeof testResult.motionDetected !== 'undefined') flatExtras.motionDetected = testResult.motionDetected;
+            if (typeof testResult.detections !== 'undefined') flatExtras.detections = testResult.detections;
+        }
+
         res.json({
             success: !!testResult.success,
             message: testResult.success ?
@@ -600,6 +615,8 @@ export const testPart = async (req, res) => {
                 action: chosenAction,
                 testParams: actionParams,
                 result: testResult.success ? 'HARDWARE_SUCCESS' : 'HARDWARE_ERROR',
+                // Provide both flattened values (for UI) and full details
+                ...flatExtras,
                 details: testResult,
                 availableActions: availableActions,
                 timestamp: new Date().toISOString()

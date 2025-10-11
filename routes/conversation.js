@@ -63,7 +63,12 @@ router.get('/api/webcam-stream-url', async (req, res) => {
     const parts = await loadParts();
     const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
     const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-    if (!cam) return res.json({ success: true, url: null });
+    // In test mode, synthesize a stream URL even if no cam exists
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+    if (!cam) {
+      const url = inTest ? `/setup/webcam/api/parts/auto/stream` : null;
+      return res.json({ success: true, url });
+    }
     const url = `/setup/webcam/api/parts/${cam.id}/stream`;
     res.json({ success: true, url });
   } catch (e) {

@@ -14,16 +14,20 @@ router.get('/', async (req, res) => {
         const isConfigured = elevenLabsConfigService.isElevenLabsConfigured();
         const maskedApiKey = elevenLabsConfigService.getMaskedApiKey();
 
-        res.render('ai-settings/index', {
+        res.renderWithLayout('ai-settings/index', {
             title: 'AI Settings - ElevenLabs Integration',
+            page: 'ai-settings',
             isConfigured,
             maskedApiKey,
-            activeTab: req.query.tab || 'overview'
+            activeTab: req.query.tab || 'overview',
+            scripts: ['/js/ai-settings.js']
         });
     } catch (error) {
         console.error('Error loading AI settings:', error);
-        res.status(500).render('error', {
+        res.status(500);
+        res.renderWithLayout('error', {
             title: 'AI Settings Error',
+            page: 'error',
             error: 'Failed to load AI settings'
         });
     }
@@ -33,9 +37,11 @@ router.get('/', async (req, res) => {
 router.get('/stt', async (req, res) => {
     try {
         // TODO: Fetch STT models and settings from ElevenLabs API
-        res.render('ai-settings/stt', {
+        res.renderWithLayout('ai-settings/stt', {
             title: 'Speech-to-Text Settings',
-            activeTab: 'stt'
+            page: 'ai-settings-stt',
+            activeTab: 'stt',
+            scripts: ['/js/ai-settings-stt.js']
         });
     } catch (error) {
         console.error('Error loading STT settings:', error);
@@ -47,9 +53,11 @@ router.get('/stt', async (req, res) => {
 router.get('/agents', async (req, res) => {
     try {
         // TODO: Fetch agents from ElevenLabs API
-        res.render('ai-settings/agents', {
+        res.renderWithLayout('ai-settings/agents', {
             title: 'AI Agent Management',
-            activeTab: 'agents'
+            page: 'ai-settings-agents',
+            activeTab: 'agents',
+            scripts: ['/js/websocket-chat.js', '/js/ai-settings-agents.js']
         });
     } catch (error) {
         console.error('Error loading agents:', error);
@@ -61,9 +69,11 @@ router.get('/agents', async (req, res) => {
 router.get('/tts', async (req, res) => {
     try {
         // TODO: Fetch voices and TTS settings from ElevenLabs API
-        res.render('ai-settings/tts', {
+        res.renderWithLayout('ai-settings/tts', {
             title: 'Text-to-Speech Settings',
-            activeTab: 'tts'
+            page: 'ai-settings-tts',
+            activeTab: 'tts',
+            scripts: ['/js/ai-settings-tts.js']
         });
     } catch (error) {
         console.error('Error loading TTS settings:', error);

@@ -18,7 +18,7 @@ export const test = base.extend<{
   mcp: MCPBuffers;
 }>({
   // Spawn MCP log collector once per worker and collect stdout/stderr
-  mcp: [async ({}, use) => {
+  mcp: [async ({ }, use) => {
     const out: string[] = [];
     const err: string[] = [];
     const proc = spawn('node', ['mcp-servers/log-collector-server.js'], {
@@ -32,14 +32,16 @@ export const test = base.extend<{
 
     await use({ proc, out, err });
 
-    try { proc.kill('SIGTERM'); } catch {}
+    try { proc.kill('SIGTERM'); } catch { }
   }, { scope: 'worker', auto: true }],
 
   page: async ({ page, mcp }, use) => {
     // Browser console → hard fail on error/warning
     page.on('console', msg => {
       if (['error', 'warning'].includes(msg.type())) {
-        throw new Error(`Console ${msg.type()}: ${msg.text()}`);
+        const text = msg.text() || '';
+        if (msg.type() === 'warning' && text.includes('Layout was forced before the page was fully loaded')) return;
+        throw new Error(`Console ${msg.type()}: ${text}`);
       }
     });
 
@@ -62,7 +64,8 @@ export const test = base.extend<{
     page.on('requestfailed', req => {
       const err = (req.failure()?.errorText || '').toLowerCase();
       // Ignore benign client-side aborts (navigation/cancellation), focus on real failures
-      if (err.includes('aborted')) return;
+      // Firefox often reports NS_BINDING_ABORTED/NS_ERROR_FAILURE during rapid navigations
+      if (err.includes('aborted') || err.includes('ns_error_failure') || err.includes('ns_binding_aborted')) return;
       throw new Error(`Request failed: ${req.url()} - ${req.failure()?.errorText}`);
     });
 

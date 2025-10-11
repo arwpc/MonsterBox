@@ -180,32 +180,3 @@
         }
     }
 </script>
-
-<script src="/js/character-menu.js"></script>
-<script>
-    (function () {
-        if (typeof window.bootstrap === 'undefined') {
-            document.addEventListener('click', function (e) {
-                var t = e.target;
-                // Collapse toggler fallback
-                var u = t;
-                while (u && u.nodeType === 1 && !(u.matches && u.matches('[data-bs-toggle="collapse"]'))) { u = u.parentNode; }
-                if (u) {
-                    var sel = u.getAttribute('data-bs-target');
-                    if (sel) {
-                        var el = document.querySelector(sel);
-                        if (el) { e.preventDefault(); el.classList.toggle('show'); return; }
-                    }
-                }
-                // Dropdown fallback
-                var d = t;
-                while (d && d.nodeType === 1 && !(d.matches && d.matches('[data-bs-toggle="dropdown"]'))) { d = d.parentNode; }
-                if (d) {
-                    e.preventDefault();
-                    var menu = d.nextElementSibling;
-                    if (menu && menu.classList) { menu.classList.toggle('show'); }
-                }
-            }, true);
-        }
-    })();
-</script>

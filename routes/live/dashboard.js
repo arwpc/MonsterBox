@@ -35,10 +35,11 @@ async function loadParts() {
 // Live dashboard page
 router.get('/', async (req, res) => {
   try {
-    res.render('live/dashboard', {
+    res.renderWithLayout('live/dashboard', {
       title: 'Live Dashboard - MonsterBox 4.0',
-      page: 'live-dashboard',
-      config: { theme: 'dark' }
+      page: 'live',
+      config: { theme: 'dark' },
+      scripts: ['/js/mic-panel.js']
     });
   } catch (error) {
     console.error('Error rendering live dashboard page:', error);

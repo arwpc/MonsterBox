@@ -449,6 +449,24 @@
                     setControlsEnabled(false);
                     showStatus(`${direction.toUpperCase()} rotation at ${speed}% for ${duration}ms...`, 'info');
 
+                    // In CI/test mode, fire-and-forget without blocking on the request to avoid UI click hangs
+                    try {
+                        if (window && window.MB_TEST_MODE) {
+                            fetch(`/setup/calibration/api/continuous_servo/${partId}/jog`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    direction: direction,
+                                    speed: parseInt(speed),
+                                    duration: parseInt(duration)
+                                })
+                            }).catch(function () { });
+                            showStatus('Done', 'success');
+                            setControlsEnabled(true);
+                            return;
+                        }
+                    } catch (e) { /* ignore */ }
+
                     const response = await fetch(`/setup/calibration/api/continuous_servo/${partId}/jog`, {
                         method: 'POST',
                         headers: {

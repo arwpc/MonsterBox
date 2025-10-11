@@ -1,0 +1,80 @@
+[
+  {
+    "id": "1",
+    "name": "Demo Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "resolution": "640x480"
+    },
+    "created": "2025-10-11T04:10:13.245Z",
+    "enabled": true,
+    "characterId": 9
+  },
+  {
+    "id": "2",
+    "name": "Head Pan",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-10-11T04:10:13.246Z",
+    "enabled": true,
+    "characterId": 9
+  },
+  {
+    "id": "3",
+    "name": "UI Servo 1760156201353",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-11T04:16:41.750Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "name": "UI Servo 1760156212476",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-11T04:16:52.907Z",
+    "enabled": true
+  },
+  {
+    "id": "5",
+    "name": "UI Servo 1760156298149",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-11T04:18:18.580Z",
+    "enabled": true
+  },
+  {
+    "id": "6",
+    "name": "UI Servo 1760156309281",
+    "type": "servo",
+    "pin": 12,
+    "description": "UI Servo",
+    "config": {
+      "servoType": "standard"
+    },
+    "created": "2025-10-11T04:18:29.702Z",
+    "enabled": true
+  }
+]

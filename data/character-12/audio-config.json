@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-11T07:50:19.621Z",
+  "characterId": 12,
+  "created": "2025-10-11T07:50:19.619Z",
+  "microphone": {
+    "enabled": true,
+    "sensitivity": 1,
+    "echoCancellation": true,
+    "noiseSuppression": true,
+    "autoGainControl": true,
+    "voiceActivation": false,
+    "voiceActivationThreshold": 0.1
+  },
+  "stt": {
+    "enabled": true,
+    "language": "en",
+    "confidenceThreshold": 0.7,
+    "realTimeProcessing": true,
+    "provider": "elevenlabs",
+    "vadThreshold": 0.5,
+    "silenceDuration": 200,
+    "prefixPadding": 300
+  },
+  "microphoneSTTConfigs": {},
+  "jawAnimation": {
+    "enabled": true,
+    "sensitivity": 1.2,
+    "responseCurve": "exponential",
+    "attackTime": 0.03,
+    "releaseTime": 0.1,
+    "minPosition": 45,
+    "maxPosition": 10,
+    "volumeThreshold": 0.005,
+    "smoothingFactor": 0.7
+  },
+  "audioProcessing": {
+    "sampleRate": 16000,
+    "channels": 1,
+    "bufferSize": 1024,
+    "processingDelay": 100,
+    "enableRealTimeEffects": false
+  },
+  "characterSpecific": {
+    "voiceProfile": "default",
+    "emotionalResponse": true,
+    "contextAwareness": true,
+    "personalityAdjustments": true
+  },
+  "lastModified": "2025-10-11T07:50:19.621Z",
+  "speaker": {
+    "defaultSpeakerId": null,
+    "outputDevice": "default",
+    "volume": 80,
+    "enabled": true
+  }
+}

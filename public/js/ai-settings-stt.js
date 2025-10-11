@@ -377,10 +377,11 @@ STTManager.prototype.bindEvents = function () {
     function applyInputGainNow() {
         if (!inputGain) return; var pct = parseInt(inputGain.value, 10) || 100;
         if (inputGainLabel) inputGainLabel.textContent = pct + '%';
-        var devId = self.getSelectedMicDeviceId(); if (!devId) return;
+        var devId = self.getSelectedMicDeviceId();
+        var idToUse = devId || 'default';
         fetch('/setup/audio/api/set-input-gain', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId: devId, gainPercent: pct })
+            body: JSON.stringify({ deviceId: idToUse, gainPercent: pct })
         }).catch(function () { /* ignore */ });
     }
     if (inputGain) { inputGain.addEventListener('input', applyInputGainNow); }
@@ -434,22 +435,35 @@ STTManager.prototype.bindEvents = function () {
         });
     }
 
-    // VAD tuning controls (legacy - keep for backward compatibility)
-    var vadEnabledEl = document.getElementById('vadEnabled');
-    var vadThresholdEl2 = document.getElementById('vadThreshold');
+    // VAD tuning controls (attach to all duplicates safely)
     var vadLbl = document.getElementById('vadThresholdLabel');
-    if (vadEnabledEl) {
-        vadEnabledEl.addEventListener('change', function () {
-            self.savePartialConfig({ vadEnabled: !!vadEnabledEl.checked });
+    // Enable toggles
+    var vadToggles = document.querySelectorAll('#vadEnabled');
+    vadToggles.forEach(function (el) {
+        el.addEventListener('change', function () {
+            self.savePartialConfig({ vadEnabled: !!el.checked });
         });
-    }
-    if (vadThresholdEl) {
-        vadThresholdEl.addEventListener('input', function () {
-            var p = parseInt(vadThresholdEl.value, 10) || 3; if (vadLbl) vadLbl.textContent = p + '%';
-            var thr = Math.max(0.01, Math.min(0.3, p / 100));
+    });
+    // Threshold sliders (two variants exist: 0.05..0.95 and 1..30)
+    var vadSliders = document.querySelectorAll('#vadThreshold');
+    vadSliders.forEach(function (sl) {
+        sl.addEventListener('input', function () {
+            var min = parseFloat(sl.min || '0');
+            var max = parseFloat(sl.max || '0');
+            var pct;
+            if (max <= 1.0) {
+                // Decimal slider (0.05..0.95)
+                var f = parseFloat(sl.value || '0.03') || 0.03;
+                pct = Math.max(1, Math.min(30, Math.round(f * 100)));
+            } else {
+                // Percent slider (1..30)
+                pct = Math.max(1, Math.min(30, parseInt(sl.value, 10) || 3));
+            }
+            if (vadLbl) vadLbl.textContent = pct + '%';
+            var thr = Math.max(0.01, Math.min(0.3, pct / 100));
             self.savePartialConfig({ vadThreshold: thr });
         });
-    }
+    });
 
     if (stopRecordingBtn) {
         stopRecordingBtn.addEventListener('click', function () { self.stopRecording(); });
@@ -892,11 +906,17 @@ STTManager.prototype.runTwoSecondTest = function () {
 };
 
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function () {
-    var sttManager = new STTManager();
-    sttManager.init();
-
-    // Make globally available for debugging
-    window.sttManager = sttManager;
-});
+// Initialize when DOM is loaded (or immediately if already loaded)
+(function () {
+    function boot() {
+        var sttManager = new STTManager();
+        sttManager.init();
+        window.sttManager = sttManager; // for debugging
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        // DOM is already parsed; initialize now
+        try { boot(); } catch (e) { console.error('STT init error', e); }
+    }
+})();

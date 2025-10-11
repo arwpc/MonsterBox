@@ -4,6 +4,11 @@ import fs from 'fs';
 import path from 'path';
 
 // Comprehensive, headed-mode friendly E2E covering:
+
+// Extend timeout for this comprehensive flow
+// Default 30s is insufficient for full multi-character path even in test mode.
+test.setTimeout(120_000);
+
 // - Character creation/selection
 // - Parts CRUD for ALL supported types + inline tests
 // - Models + Calibration basics
@@ -117,11 +122,13 @@ async function openSetupParts(page) {
 
 async function createServo(page, name, servoType, channel = 0) {
   // Create via API (UI Add Part disabled)
-  await page.request.post('/setup/calibration/api/parts', { data: {
-    name,
-    type: 'servo',
-    config: { servoType, controllerType: 'pca9685', pcaAddress: '0x40', pcaChannel: channel }
-  }});
+  await page.request.post('/setup/calibration/api/parts', {
+    data: {
+      name,
+      type: 'servo',
+      config: { servoType, controllerType: 'pca9685', pcaAddress: '0x40', pcaChannel: channel }
+    }
+  });
   // Verify via API instead of UI list (Parts page UI is de-featured)
   const res = await page.request.get('/setup/calibration/api/parts');
   const json = await res.json();
@@ -130,14 +137,16 @@ async function createServo(page, name, servoType, channel = 0) {
 }
 
 async function createLinearActuator(page, name) {
-  await page.request.post('/setup/calibration/api/parts', { data: {
-    name,
-    type: 'linear_actuator',
-    directionPin: 18,
-    pwmPin: 13,
-    maxExtension: 15000,
-    maxRetraction: 15000
-  }});
+  await page.request.post('/setup/calibration/api/parts', {
+    data: {
+      name,
+      type: 'linear_actuator',
+      directionPin: 18,
+      pwmPin: 13,
+      maxExtension: 15000,
+      maxRetraction: 15000
+    }
+  });
   const resLA = await page.request.get('/setup/calibration/api/parts');
   const jsonLA = await resLA.json();
   const foundLA = (jsonLA && jsonLA.success && jsonLA.parts || []).some(p => p.name === name && p.type === 'linear_actuator');
@@ -145,12 +154,14 @@ async function createLinearActuator(page, name) {
 }
 
 async function createMotor(page, name) {
-  await page.request.post('/setup/calibration/api/parts', { data: {
-    name,
-    type: 'motor',
-    directionPin: 22,
-    pwmPin: 12
-  }});
+  await page.request.post('/setup/calibration/api/parts', {
+    data: {
+      name,
+      type: 'motor',
+      directionPin: 22,
+      pwmPin: 12
+    }
+  });
   const resM = await page.request.get('/setup/calibration/api/parts');
   const jsonM = await resM.json();
   const foundM = (jsonM && jsonM.success && jsonM.parts || []).some(p => p.name === name && p.type === 'motor');
@@ -158,11 +169,13 @@ async function createMotor(page, name) {
 }
 
 async function createPinPart(page, type, name, pin) {
-  await page.request.post('/setup/calibration/api/parts', { data: {
-    name,
-    type,
-    pin
-  }});
+  await page.request.post('/setup/calibration/api/parts', {
+    data: {
+      name,
+      type,
+      pin
+    }
+  });
   const resPin = await page.request.get('/setup/calibration/api/parts');
   const jsonPin = await resPin.json();
   const foundPin = (jsonPin && jsonPin.success && jsonPin.parts || []).some(p => p.name === name && p.type === type);
@@ -331,7 +344,7 @@ test.describe('MonsterBox 4.0 - Comprehensive E2E (headed-friendly)', () => {
 
       // Phase 1: Parts
       await openSetupParts(page);
-      const suffix = `-${c.name.replace(/\s+/g,'_')}`;
+      const suffix = `-${c.name.replace(/\s+/g, '_')}`;
       await createServo(page, `Servo-Std${suffix}`, 'standard', 0);
       await createServo(page, `Servo-Cont${suffix}`, 'continuous', 1);
       await createServo(page, `Servo-Fb${suffix}`, 'feedback', 2);

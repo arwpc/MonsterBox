@@ -1,0 +1,22 @@
+{
+  "model": "scribe_v1",
+  "language": "auto",
+  "format": "wav",
+  "sampleRate": 16000,
+  "channels": 1,
+  "microphonePartId": null,
+  "microphoneDeviceId": null,
+  "vadEnabled": true,
+  "vadThreshold": 0.5,
+  "vadSilenceDuration": 500,
+  "audioFilterEnabled": true,
+  "highpassFreq": 200,
+  "lowpassFreq": 3800,
+  "denoiseLevel": -25,
+  "filterSfx": true,
+  "validateEnglish": true,
+  "minLetterRatio": 70,
+  "requireVowels": true,
+  "_preset": "high-accuracy",
+  "_presetName": "High Accuracy"
+}

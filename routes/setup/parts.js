@@ -8,8 +8,8 @@ const router = express.Router();
 // Page
 router.get('/', async (req, res) => {
   try {
-    res.render('setup/parts', {
-      title: 'Setup Parts - MonsterBox 5.1',
+    res.renderWithLayout('setup/parts-content', {
+      title: 'Setup Parts - MonsterBox 5.3',
       page: 'setup-parts'
     });
   } catch (err) {

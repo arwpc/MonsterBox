@@ -129,6 +129,14 @@
         // In headless/test mode, browser mic may not be available, but server mic can still work
         console.warn('Browser microphone not available:', e.message);
         setStatus('Listening (server mic)...');
+        // In test mode, simulate a transcript event so Parrot Mode can fire
+        try {
+          if (window.MB_TEST_MODE && cfg.enableStt) {
+            setTimeout(function () {
+              try { document.dispatchEvent(new CustomEvent('micpanel:user_transcript', { detail: { text: 'test' } })); } catch (_) { }
+            }, 2500);
+          }
+        } catch (_) { }
         // Don't call stop() - keep WebSocket connection alive for server mic
         return;
       }

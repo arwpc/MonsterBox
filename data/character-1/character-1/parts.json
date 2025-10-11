@@ -1,0 +1,57 @@
+[
+  {
+    "id": "1",
+    "name": "Default Servo",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 600,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180,
+      "customFlag": "ok"
+    },
+    "created": "2025-10-11T20:10:24.609Z",
+    "enabled": true,
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-10-11T20:12:50.906Z",
+    "markers": [
+      {
+        "name": "MinA",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      },
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 10,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-11T20:31:50.823Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "updated": "2025-10-11T20:33:17.671Z"
+  }
+]

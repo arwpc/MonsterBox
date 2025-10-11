@@ -8,7 +8,24 @@ function parseId(param) {
 
 export async function getAll(req, res) {
   try {
-    var characters = await loadCharacters();
+    // For management UI under /setup/characters, return raw file data without test-mode normalization
+    const isManagement = (req.baseUrl && req.baseUrl.indexOf('/setup/characters') !== -1) || (req.originalUrl && req.originalUrl.indexOf('/setup/characters') !== -1);
+    let characters;
+    if (isManagement) {
+      try {
+        const path = (await import('path')).default;
+        const fs = (await import('fs/promises')).default;
+        const file = path.resolve(__dirname, '..', 'data', 'characters.json');
+        const data = await fs.readFile(file, 'utf8');
+        const parsed = JSON.parse(data);
+        characters = Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        // Fallback to service if direct read fails
+        characters = await loadCharacters();
+      }
+    } else {
+      characters = await loadCharacters();
+    }
     res.json({ success: true, characters: characters });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

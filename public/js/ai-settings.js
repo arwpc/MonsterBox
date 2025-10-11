@@ -207,7 +207,18 @@ AISettingsManager.prototype.bindEvents = function () {
                 const cur = await curRes.json();
                 const characterId = cur && cur.selectedCharacter ? cur.selectedCharacter : null;
 
-                var prompt = window.prompt('Enter a test prompt to send to the AI:', 'Happy Halloween!');
+                var prompt;
+                try {
+                    if (window && window.MB_TEST_MODE) {
+                        // In test mode, avoid real prompt dialog that can race with Playwright handlers
+                        prompt = 'Hello from Playwright';
+                    } else {
+                        prompt = window.prompt('Enter a test prompt to send to the AI:', 'Happy Halloween!');
+                    }
+                } catch (_) {
+                    // Fallback to prompt if window.MB_TEST_MODE access fails
+                    prompt = window.prompt('Enter a test prompt to send to the AI:', 'Happy Halloween!');
+                }
                 if (!prompt) return;
 
                 const resp = await fetch('/api/elevenlabs/conversation/test', {
