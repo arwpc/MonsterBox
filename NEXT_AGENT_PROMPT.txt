@@ -1,2 +1,2 @@
-Read and execute MONSTERBOX_5.3_AUTONOMOUS_COMPLETION.md - Complete all tasks to 100% without human input. All tests must pass. All hardware must work.
+Execute MONSTERBOX_5.3_AUTONOMOUS_COMPLETION.md autonomously. Complete all 5 phases. Achieve 100% test pass rate. Fix audio system. Implement calibration UI. No human input until production ready.
 
