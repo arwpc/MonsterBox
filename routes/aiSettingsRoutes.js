@@ -71,19 +71,7 @@ router.get('/tts', async (req, res) => {
     }
 });
 
-// Character-Agent Assignment
-router.get('/character-assignment', async (req, res) => {
-    try {
-        // TODO: Load characters and their agent assignments
-        res.render('ai-settings/character-assignment', {
-            title: 'Character-Agent Assignment',
-            activeTab: 'assignment'
-        });
-    } catch (error) {
-        console.error('Error loading character assignments:', error);
-        res.status(500).json({ error: 'Failed to load character assignments' });
-    }
-});
+
 
 // API Routes for AJAX operations
 

@@ -205,7 +205,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
             sttPcm: Buffer.alloc(0), // rolling PCM buffer for partial STT
             _dbgLastTs: 0,           // throttle for client debug breadcrumbs
             sttLanguage: null,       // per-connection STT language override
-            suppressMicUntilMs: 0    // suppress server mic during server playback
+            suppressMicUntilMs: 0,   // suppress server mic during server playback
+            audioBuffer: [],         // base64 MP3 frames from ElevenLabs
+            audioPlaying: false      // audio playback loop active flag
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -492,14 +494,21 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             message.text ||
                             null;
 
-                        // If we're outputting on server speaker, suppress mic during playback
+                        const c = this.activeConnections.get(sessionId);
+
+                        // If we're outputting on server speaker, suppress mic during playback and enqueue audio for streaming
                         try {
-                            const c = this.activeConnections.get(sessionId);
                             if (c && c.outputMode === 'server') {
                                 c.suppressMicUntilMs = Date.now() + 1200; // extend on each chunk
+                                if (!Array.isArray(c.audioBuffer)) c.audioBuffer = [];
+                                c.audioBuffer.push(audioData);
+                                if (!c.audioPlaying) {
+                                    this._startAudioPlayback(sessionId).catch(function () { /* noop */ });
+                                }
                             }
                         } catch (_) { }
 
+                        // Always also send to client so UI can display text and/or play locally if selected
                         this.sendToClient(sessionId, {
                             type: 'agent_response',
                             text: responseText || 'Audio response',
@@ -509,7 +518,6 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         });
                         // Trigger a safe random pose during speech if enabled
                         try {
-                            const c = this.activeConnections.get(sessionId);
                             if (c && c.characterId != null) {
                                 randomPoseService.triggerDuringTTS(c.characterId, (responseText || '').length);
                             }
@@ -909,6 +917,66 @@ class ElevenLabsWebSocketService extends EventEmitter {
     /**
      * Stop WebSocket server
      */
+    /**
+     * Start continuous audio playback from buffer
+     * Streams buffered chunks as a continuous MP3 stream to avoid gaps
+     */
+    async _startAudioPlayback(sessionId) {
+        const c = this.activeConnections.get(sessionId);
+        if (!c || c.audioPlaying) return;
+
+        c.audioPlaying = true;
+        c._streamPrimed = false;
+        console.log(`🔊 Starting audio playback for session ${sessionId}, character ${c.characterId}`);
+
+        try {
+            while ((Array.isArray(c.audioBuffer) && c.audioBuffer.length > 0) || c.isActive) {
+                // Wait for buffer to have chunks or timeout
+                if (!c.audioBuffer || c.audioBuffer.length === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                    if ((!c.audioBuffer || c.audioBuffer.length === 0) && !c.isActive) break;
+                    continue;
+                }
+
+                // Prime the stream with a few chunks to prevent underflow
+                if (!c._streamPrimed && c.audioBuffer.length < 3) {
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                    continue;
+                }
+                c._streamPrimed = true;
+
+                // Collect multiple chunks for smoother playback (aggregate frames)
+                const chunksToPlay = [];
+                const maxChunks = 12; // larger aggregation reduces syscall overhead
+                while (c.audioBuffer.length > 0 && chunksToPlay.length < maxChunks) {
+                    chunksToPlay.push(c.audioBuffer.shift());
+                }
+                if (chunksToPlay.length === 0) continue;
+
+                // Combine chunks into single buffer and stream
+                const combinedBase64 = chunksToPlay.join('');
+                const audioBuffer = Buffer.from(combinedBase64, 'base64');
+
+                const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+                    characterId: c.characterId,
+                    contentType: 'audio/mpeg', // ElevenLabs ConvAI default stream is MP3 frames
+                    volume: 80
+                });
+                if (!result.success) {
+                    console.error(`❌ Audio playback failed: ${result.error}`);
+                }
+
+                // Extend mic suppression during server playback to avoid echo
+                c.suppressMicUntilMs = Date.now() + 1500;
+            }
+        } catch (error) {
+            console.error(`❌ Error in audio playback loop:`, error.message);
+        } finally {
+            c.audioPlaying = false;
+            console.log(`🔇 Audio playback stopped for session ${sessionId}`);
+        }
+    }
+
     async stopWebSocketServer() {
         if (this.wsServer) {
             // Close all active connections

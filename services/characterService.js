@@ -77,6 +77,11 @@ export async function createCharacter(data) {
     name: data && data.name ? String(data.name) : 'New Character'
   };
 
+  // Add optional fields if provided
+  if (data && data.elevenLabsAgentId) {
+    newChar.elevenLabsAgentId = data.elevenLabsAgentId;
+  }
+
   // Create character data directory
   const appRoot = path.resolve(__dirname, '..');
   const characterDataDir = path.resolve(appRoot, 'data', `character-${newChar.id}`);

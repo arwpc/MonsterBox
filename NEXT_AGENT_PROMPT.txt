@@ -1,0 +1,2 @@
+Read and execute MONSTERBOX_5.3_AUTONOMOUS_COMPLETION.md - Complete all tasks to 100% without human input. All tests must pass. All hardware must work.
+

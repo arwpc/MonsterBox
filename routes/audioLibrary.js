@@ -24,8 +24,8 @@ const upload = multer({
             'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave',
             'audio/ogg', 'audio/m4a', 'audio/aac', 'audio/flac'
         ];
-        
-        if (allowedMimes.includes(file.mimetype) || 
+
+        if (allowedMimes.includes(file.mimetype) ||
             audioLibraryService.isValidAudioFormat(file.originalname)) {
             cb(null, true);
         } else {
@@ -153,7 +153,7 @@ router.post('/api/upload', upload.array('audioFiles', 10), async (req, res) => {
 router.get('/api/audio/:id', async (req, res) => {
     try {
         const audio = await audioLibraryService.getAudioById(req.params.id);
-        
+
         if (!audio) {
             return res.status(404).json({
                 success: false,
@@ -188,7 +188,7 @@ router.put('/api/audio/:id', async (req, res) => {
         };
 
         const updatedAudio = await audioLibraryService.updateAudio(req.params.id, updates);
-        
+
         res.json({
             success: true,
             audio: updatedAudio,
@@ -209,7 +209,7 @@ router.put('/api/audio/:id', async (req, res) => {
 router.delete('/api/audio/:id', async (req, res) => {
     try {
         await audioLibraryService.deleteAudio(req.params.id);
-        
+
         res.json({
             success: true,
             message: 'Audio file deleted successfully'
@@ -289,7 +289,7 @@ router.post('/api/audio/:id/play', async (req, res) => {
 router.get('/api/audio/:id/download', async (req, res) => {
     try {
         const audio = await audioLibraryService.getAudioById(req.params.id);
-        
+
         if (!audio) {
             return res.status(404).json({
                 success: false,
@@ -298,10 +298,10 @@ router.get('/api/audio/:id/download', async (req, res) => {
         }
 
         const audioFilePath = audioLibraryService.getAudioFilePath(audio.filename);
-        
+
         res.setHeader('Content-Disposition', `attachment; filename="${audio.originalFilename}"`);
         res.setHeader('Content-Type', `audio/${audio.format}`);
-        
+
         const fileStream = await fs.readFile(audioFilePath);
         res.send(fileStream);
 
@@ -320,7 +320,7 @@ router.get('/api/audio/:id/download', async (req, res) => {
 router.get('/api/audio/:id/waveform', async (req, res) => {
     try {
         const audio = await audioLibraryService.getAudioById(req.params.id);
-        
+
         if (!audio) {
             return res.status(404).json({
                 success: false,
@@ -416,6 +416,27 @@ router.get('/api/audio-select', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to load audio selection'
+        });
+    }
+});
+
+/**
+ * POST /api/audio/stop-all - Stop all audio playback
+ */
+router.post('/api/audio/stop-all', async (req, res) => {
+    try {
+        // Stop all audio streams
+        await serverPlaybackService.stopAll();
+
+        res.json({
+            success: true,
+            message: 'All audio playback stopped'
+        });
+    } catch (error) {
+        console.error('Error stopping audio:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop audio playback'
         });
     }
 });

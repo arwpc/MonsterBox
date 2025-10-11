@@ -161,12 +161,21 @@ if __name__ == '__main__':
                 if ext in ('.wav', '.wave'):
                     # Prefer pw-play for WAV files (native PipeWire)
                     if tools['pw-play']:
-                        cmdv = ['pw-play', file_path]
+                        cmdv = ['pw-play']
+                        # Add target sink if specified (critical for routing!)
+                        if device_id and device_id not in ('default', 'pulse'):
+                            cmdv.extend(['--target', device_id])
+                        cmdv.append(file_path)
                         proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        proc.wait()  # Wait for playback to complete
                     elif tools['paplay']:
                         # Fallback to paplay (PulseAudio compatibility)
-                        cmdv = ['paplay', file_path]
+                        cmdv = ['paplay']
+                        if device_id and device_id not in ('default', 'pulse'):
+                            cmdv.extend(['--device', device_id])
+                        cmdv.append(file_path)
                         proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        proc.wait()  # Wait for playback to complete
                     else:
                         fail("No suitable WAV player found (pw-play or paplay required)")
                 else:
@@ -190,12 +199,19 @@ if __name__ == '__main__':
                                     wf.writeframes(struct.pack('<h', val))
                             # Play the synthesized tone
                             if tools['pw-play']:
-                                cmdv = ['pw-play', tmp.name]
+                                cmdv = ['pw-play']
+                                if device_id and device_id not in ('default', 'pulse'):
+                                    cmdv.extend(['--target', device_id])
+                                cmdv.append(tmp.name)
                             elif tools['paplay']:
-                                cmdv = ['paplay', tmp.name]
+                                cmdv = ['paplay']
+                                if device_id and device_id not in ('default', 'pulse'):
+                                    cmdv.extend(['--device', device_id])
+                                cmdv.append(tmp.name)
                             else:
                                 fail("No suitable audio player found (need pw-play or paplay)")
                             proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            proc.wait()  # Wait for playback to complete
                         except Exception as ee:
                             fail(f"mpg123 not available and fallback failed: {ee}")
                     else:
@@ -207,6 +223,7 @@ if __name__ == '__main__':
                             cmdv += ['-f', str(scale)]
                         cmdv.append(file_path)
                         proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        proc.wait()  # Wait for playback to complete
 
                 if proc is None:
                     fail("Failed to start playback process")

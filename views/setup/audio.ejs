@@ -963,12 +963,25 @@
 
       function updateVUMeter(meterId, level) {
         const meter = document.getElementById(meterId);
+        if (!meter) {
+          console.warn('VU meter element not found:', meterId);
+          return;
+        }
+
         const bar = meter.querySelector('.vu-bar');
-        const label = document.getElementById(meterId.replace('-vu-meter', '-level-text'));
+        if (!bar) {
+          console.warn('VU meter bar not found for:', meterId);
+          return;
+        }
+
+        const labelId = meterId.includes('-vu-') ? meterId + '-level-text' : meterId.replace('-vu-meter', '-level-text');
+        const label = document.getElementById(labelId);
 
         const percentage = Math.min(Math.max(level * 100, 0), 100);
         bar.style.width = percentage + '%';
-        label.textContent = Math.round(percentage) + '%';
+        if (label) {
+          label.textContent = Math.round(percentage) + '%';
+        }
 
         if (percentage > 5) {
           meter.classList.add('active');

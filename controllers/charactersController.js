@@ -30,7 +30,14 @@ export async function create(req, res) {
     return res.status(400).json({ success: false, error: 'Name is required' });
   }
   try {
-    var created = await createCharacter({ name: name.trim() });
+    var characterData = { name: name.trim() };
+
+    // Add optional fields
+    if (body.elevenLabsAgentId) {
+      characterData.elevenLabsAgentId = body.elevenLabsAgentId;
+    }
+
+    var created = await createCharacter(characterData);
     res.status(201).json({ success: true, character: created });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

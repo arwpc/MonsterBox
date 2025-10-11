@@ -78,6 +78,119 @@ async function writeTempAudio(buffer, contentType) {
 }
 
 class ServerPlaybackService {
+  constructor() {
+    // Streaming players keyed by characterId
+    this._streams = new Map();
+  }
+
+  async _resolveDeviceId(opts = {}) {
+    const characterId = opts.characterId || null;
+    if (opts.deviceId) return opts.deviceId;
+    if (opts.speakerPartId) return await getSpeakerDeviceForPartId(opts.speakerPartId);
+    if (characterId) return await getSpeakerDeviceForCharacter(characterId);
+    return 'default';
+  }
+
+  _calcMpg123Scale(volume) {
+    const vol = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : 80;
+    return Math.max(0, Math.min(32768, Math.round(32768 * (vol / 100))));
+  }
+
+  async _ensureMp3Stream(opts = {}) {
+    const key = String(opts.characterId || 'default');
+    let rec = this._streams.get(key);
+    if (rec && rec.proc && !rec.proc.killed) {
+      return rec;
+    }
+
+    const deviceId = await this._resolveDeviceId(opts);
+    const volume = typeof opts.volume === 'number' ? opts.volume : 80;
+
+    const env = { ...process.env };
+    if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
+
+    const { spawn } = await import('child_process');
+
+    // Use ffmpeg to convert MP3 stream to WAV for paplay (more reliable than mpg123)
+    // ffmpeg -i - -f wav - | paplay
+    const ffmpegArgs = ['-i', '-', '-f', 'wav', '-'];
+    const paplayArgs = [];
+    if (deviceId && deviceId !== 'default') {
+      paplayArgs.push('--device', deviceId);
+    }
+
+    console.log(`🎵 Starting audio stream for character ${key}: device=${deviceId}, volume=${volume}`);
+
+    // Start ffmpeg to convert MP3 to WAV
+    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { env });
+
+    // Start paplay to play the WAV
+    const paplay = spawn('paplay', paplayArgs, { env });
+
+    // Pipe ffmpeg output to paplay input
+    ffmpeg.stdout.pipe(paplay.stdin);
+
+    // Handle errors to prevent EPIPE crashes
+    ffmpeg.stdin.on('error', (err) => {
+      console.error(`ffmpeg stdin error for ${key}:`, err.message);
+      this._streams.delete(key);
+    });
+
+    ffmpeg.stderr.on('data', (data) => {
+      const msg = data.toString();
+      if (!msg.includes('ALSA lib') && !msg.includes('size=') && !msg.includes('time=')) {
+        console.error(`ffmpeg stderr for ${key}:`, msg.trim());
+      }
+    });
+
+    paplay.stderr.on('data', (data) => {
+      const msg = data.toString();
+      if (!msg.includes('ALSA lib')) {
+        console.error(`paplay stderr for ${key}:`, msg.trim());
+      }
+    });
+
+    ffmpeg.on('exit', (code, signal) => {
+      console.log(`ffmpeg exited for ${key} with code ${code}, signal ${signal}`);
+      try { paplay.stdin.end(); } catch (_) { }
+    });
+
+    paplay.on('exit', (code, signal) => {
+      console.log(`paplay exited for ${key} with code ${code}, signal ${signal}`);
+      const cur = this._streams.get(key);
+      if (cur && cur.proc === ffmpeg) this._streams.delete(key);
+    });
+
+    rec = { proc: ffmpeg, paplay, deviceId, contentType: 'audio/mpeg', writerBusy: false };
+    this._streams.set(key, rec);
+    return rec;
+  }
+
+  async writeMp3Stream(buffer, opts = {}) {
+    if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    const rec = await this._ensureMp3Stream(opts);
+    console.log(`🔊 Writing ${buffer.length} bytes to mpg123 stream (device: ${rec.deviceId})`);
+    return new Promise((resolve) => {
+      const ok = rec.proc.stdin.write(buffer);
+      if (ok) return resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
+      rec.proc.stdin.once('drain', () => resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId }));
+    });
+  }
+
+  async stopStream(opts = {}) {
+    const key = String(opts.characterId || 'default');
+    const rec = this._streams.get(key);
+    if (!rec) return { success: true };
+    try { rec.proc.stdin.end(); } catch (_) { }
+    try { rec.proc.kill('SIGTERM'); } catch (_) { }
+    if (rec.paplay) {
+      try { rec.paplay.stdin.end(); } catch (_) { }
+      try { rec.paplay.kill('SIGTERM'); } catch (_) { }
+    }
+    this._streams.delete(key);
+    return { success: true };
+  }
+
   async playBufferOnCharacterSpeaker(buffer, opts = {}) {
     try {
       if (!buffer || !buffer.length) {
@@ -87,15 +200,15 @@ class ServerPlaybackService {
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : 80;
 
-      // Determine output device priority: explicit deviceId > speakerPartId > character speaker > default
-      let deviceId = 'default';
-      if (opts.deviceId) {
-        deviceId = opts.deviceId;
-      } else if (opts.speakerPartId) {
-        deviceId = await getSpeakerDeviceForPartId(opts.speakerPartId);
-      } else if (characterId) {
-        deviceId = await getSpeakerDeviceForCharacter(characterId);
+      // Streaming fast-path for MP3 chunks
+      if ((contentType || '').toLowerCase().includes('mpeg') || (contentType || '').toLowerCase().includes('mp3')) {
+        const res = await this.writeMp3Stream(buffer, { characterId, volume, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
+        if (res && res.success) return { success: true, streamed: buffer.length, deviceId: res.deviceId, player: 'mpg123' };
+        // if streaming failed, fall through to file-based
       }
+
+      // Determine output device priority: explicit deviceId > speakerPartId > character speaker > default
+      const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
       const tmpFile = await writeTempAudio(buffer, contentType);
 
@@ -120,6 +233,9 @@ class ServerPlaybackService {
 
   async stopForCharacter(characterId, opts = {}) {
     try {
+      // Stop managed stream first
+      try { await this.stopStream({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId }); } catch (_) { }
+
       // Determine device for stopping: explicit deviceId > speakerPartId > character speaker > default
       let deviceId = 'default';
       if (opts.deviceId) {
@@ -140,6 +256,16 @@ class ServerPlaybackService {
 
   async stopAll() {
     try {
+      // Stop all managed streams
+      for (const [key, rec] of this._streams) {
+        try { rec.proc.stdin.end(); } catch (_) { }
+        try { rec.proc.kill('SIGTERM'); } catch (_) { }
+        if (rec.paplay) {
+          try { rec.paplay.stdin.end(); } catch (_) { }
+          try { rec.paplay.kill('SIGTERM'); } catch (_) { }
+        }
+      }
+      this._streams.clear();
       try {
         await runWrapper('speaker_cli.py', ['stop'], { enableLogging: false, timeoutMs: 5000 });
       } catch (_) { /* best-effort */ }

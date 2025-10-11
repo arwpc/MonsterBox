@@ -220,5 +220,31 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1760140089152",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760140140528",
+    "name": "Test Servo Model",
+    "description": "servo defaults for tests",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutral": 1500,
+      "rotationRangeDeg": 180
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

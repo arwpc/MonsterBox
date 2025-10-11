@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "name": "PumpkinHead",
-    "elevenLabsAgentId": "agent_0801k3f1dybkecj88sta18gwwrv5"
+    "name": "PumpkinHead_Updated",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   },
   {
     "id": 2,
@@ -32,7 +32,8 @@
       "microphoneDeviceId": null,
       "format": "mp3"
     },
-    "activeImage": "pumpkinhead.jpg"
+    "activeImage": "1orlok.png",
+    "speakerId": "6"
   },
   {
     "id": 4,

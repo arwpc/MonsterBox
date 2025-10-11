@@ -105,14 +105,14 @@
     "pin": null,
     "description": "audio output devices",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 75,
-      "bass": 0,
-      "treble": 0
+      "audioDeviceId": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+      "volume": 100
     },
     "created": "2025-10-05T18:13:31.695Z",
     "enabled": true,
-    "modelId": "default_speaker"
+    "modelId": "default_speaker",
+    "characterId": 3,
+    "updated": "2025-10-11T02:22:02.627Z"
   },
   {
     "id": "7",
@@ -225,5 +225,47 @@
     "config": {},
     "created": "2025-10-07T00:53:34.885Z",
     "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-10T22:45:19.202Z",
+    "enabled": true
+  },
+  {
+    "id": "16",
+    "name": "Demo Webcam",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "resolution": "640x480"
+    },
+    "created": "2025-10-10T23:08:52.918Z",
+    "enabled": true,
+    "characterId": 3
+  },
+  {
+    "id": "17",
+    "name": "Head Pan",
+    "type": "servo",
+    "pin": 18,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "minAngle": 0,
+      "maxAngle": 180
+    },
+    "created": "2025-10-10T23:08:52.919Z",
+    "enabled": true,
+    "characterId": 3
   }
 ]
