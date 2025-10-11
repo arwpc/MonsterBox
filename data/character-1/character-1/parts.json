@@ -26,10 +26,24 @@
         "unit": "deg"
       },
       {
+        "name": "MinA",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      },
+      {
+        "name": "IsoTest",
+        "kind": "absolute",
+        "locked": false,
+        "value": 99,
+        "unit": "deg"
+      },
+      {
         "name": "Min",
         "kind": "absolute",
         "locked": false,
-        "value": 10,
+        "value": 12,
         "unit": "deg"
       }
     ]

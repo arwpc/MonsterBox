@@ -1,11 +1,11 @@
 [
   {
-    "id": 78,
-    "name": "TestChar_1760219559565 Microphone",
+    "id": 81,
+    "name": "TestChar_1760220596038 Microphone",
     "deviceId": "default",
     "type": "system",
     "status": "assigned",
-    "characterId": 78,
+    "characterId": 81,
     "config": {
       "enabled": true,
       "sensitivity": 1,
@@ -25,7 +25,7 @@
       "realTimeProcessing": true,
       "voiceActivationDetection": true
     },
-    "created": "2025-10-11T21:52:40.767Z",
-    "lastModified": "2025-10-11T21:52:40.767Z"
+    "created": "2025-10-11T22:09:56.968Z",
+    "lastModified": "2025-10-11T22:09:56.968Z"
   }
 ]

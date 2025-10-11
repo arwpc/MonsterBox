@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "PumpkinHead",
+    "name": "PumpkinHead_Updated",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   },
   {
@@ -89,10 +89,6 @@
   {
     "id": 22,
     "name": "Groundbreaker"
-  },
-  {
-    "id": 23,
-    "name": "TestChar_1760170893273"
   },
   {
     "id": 24,
@@ -313,6 +309,28 @@
   {
     "id": 77,
     "name": "TestCharWithAgent_1760214754232",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+  },
+  {
+    "id": 78,
+    "name": "TestChar_1760219559565"
+  },
+  {
+    "id": 79,
+    "name": "TestCharWithAgent_1760219560574",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+  },
+  {
+    "id": 80,
+    "name": "PumpkinHead"
+  },
+  {
+    "id": 81,
+    "name": "TestChar_1760220596038"
+  },
+  {
+    "id": 82,
+    "name": "TestCharWithAgent_1760220605212",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   }
 ]

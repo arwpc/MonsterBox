@@ -11,12 +11,13 @@
       "maxPulse": 2500,
       "minAngle": 0,
       "maxAngle": 180,
-      "customFlag": "ok"
+      "customFlag": "ok",
+      "testFlag": true
     },
     "created": "2025-10-11T20:10:24.609Z",
     "enabled": true,
     "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-10-11T20:12:50.906Z",
+    "updated": "2025-10-11T22:03:49.449Z",
     "markers": [
       {
         "name": "MinA",
@@ -123,6 +124,18 @@
       "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
     },
     "created": "2025-10-11T20:34:05.199Z",
+    "enabled": true
+  },
+  {
+    "id": "8",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-11T21:53:50.925Z",
     "enabled": true
   }
 ]

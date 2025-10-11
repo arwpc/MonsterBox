@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-11T22:07:54.827Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "updated": "2025-10-11T22:09:08.155Z"
+  }
+]
