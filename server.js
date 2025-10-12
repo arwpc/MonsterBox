@@ -228,6 +228,18 @@ app.use('/first-run', firstRunRoutes);
 
 app.use('/poses', posesRoutes);
 app.use('/ai-settings', aiSettingsRoutes);
+
+// Direct API endpoint for stopping audio (needed by audio-library page)
+app.post('/api/audio/stop-all', async (req, res) => {
+    try {
+        const serverPlaybackService = (await import('./services/serverPlaybackService.js')).default;
+        await serverPlaybackService.stopAll();
+        res.json({ success: true, message: 'All audio playback stopped' });
+    } catch (error) {
+        console.error('Error stopping audio:', error);
+        res.status(500).json({ success: false, error: 'Failed to stop audio playback' });
+    }
+});
 // Debug: list registered routes once on startup
 function printRoutes() {
     const routes = [];

@@ -422,6 +422,8 @@ router.get('/api/audio-select', async (req, res) => {
 
 /**
  * POST /api/audio/stop-all - Stop all audio playback
+ * Note: This route is mounted at /audio-library, so the full path is /audio-library/api/audio/stop-all
+ * But we also need it at /api/audio/stop-all for direct API calls
  */
 router.post('/api/audio/stop-all', async (req, res) => {
     try {
