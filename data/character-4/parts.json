@@ -1,272 +1,94 @@
 [
   {
     "id": "1",
-    "name": "Auto Mic",
-    "type": "microphone",
+    "name": "Head Servo",
+    "type": "servo",
     "pin": null,
-    "description": "autotune mic",
+    "description": "Head movement servo",
     "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback",
-      "testFlag": true,
-      "minPulse": 600
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 0,
+      "address": 64,
+      "pca9685Frequency": 50
     },
-    "created": "2025-10-11T12:03:28.259Z",
+    "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
-    "modelId": "mic_generic_usb",
-    "updated": "2025-10-12T00:05:31.960Z"
+    "modelId": "servo_miuzei_25kg"
   },
   {
     "id": "2",
-    "name": "Demo Webcam",
-    "type": "webcam",
+    "name": "Jaw Servo",
+    "type": "servo",
     "pin": null,
-    "description": "video capture devices",
+    "description": "Jaw movement servo (same as Orlok)",
     "config": {
-      "resolution": "640x480"
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 8,
+      "address": 64,
+      "pca9685Frequency": 50
     },
-    "created": "2025-10-11T12:08:04.185Z",
+    "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
-    "characterId": 4
+    "modelId": "servo_miuzei_25kg"
   },
   {
     "id": "3",
-    "name": "Head Pan",
-    "type": "servo",
-    "pin": 18,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "minAngle": 0,
-      "maxAngle": 180
-    },
-    "created": "2025-10-11T12:08:04.189Z",
-    "enabled": true,
-    "characterId": 4
-  },
-  {
-    "id": "8",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T15:50:35.782Z",
-    "enabled": true
-  },
-  {
-    "id": "13",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T16:38:32.422Z",
-    "enabled": true
-  },
-  {
-    "id": "14",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T17:16:34.418Z",
-    "enabled": true
-  },
-  {
-    "id": "23",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T17:53:56.022Z",
-    "enabled": true
-  },
-  {
-    "id": "26",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T18:22:44.250Z",
-    "enabled": true
-  },
-  {
-    "id": "27",
-    "name": "Servo-Std-Skulltalker",
+    "name": "Magic Box Servo",
     "type": "servo",
     "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
+    "description": "Magic box mechanism servo",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 0
+      "channel": 12,
+      "address": 64,
+      "pca9685Frequency": 50
     },
-    "created": "2025-10-12T02:01:24.040Z",
+    "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
-    "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-10-12T02:01:33.221Z"
+    "modelId": "servo_miuzei_25kg"
   },
   {
-    "id": "28",
-    "name": "Servo-Cont-Skulltalker",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "continuous",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 1
-    },
-    "created": "2025-10-12T02:01:24.168Z",
-    "enabled": true
-  },
-  {
-    "id": "29",
-    "name": "Servo-Fb-Skulltalker",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "feedback",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 2
-    },
-    "created": "2025-10-12T02:01:24.239Z",
-    "enabled": true
-  },
-  {
-    "id": "30",
-    "name": "LinearAct-Skulltalker",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-12T02:01:24.294Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "31",
-    "name": "Motor-Skulltalker",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {},
-    "created": "2025-10-12T02:01:24.364Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 22,
-    "pwmPin": 12,
-    "maxDuration": 10000
-  },
-  {
-    "id": "32",
-    "name": "LED-Skulltalker",
-    "type": "led",
-    "pin": 20,
-    "description": "PWM-controlled with brightness",
-    "config": {},
-    "created": "2025-10-12T02:01:24.494Z",
-    "enabled": true
-  },
-  {
-    "id": "33",
-    "name": "Light-Skulltalker",
-    "type": "light",
-    "pin": 21,
-    "description": "basic on/off lighting",
-    "config": {},
-    "created": "2025-10-12T02:01:24.562Z",
-    "enabled": true
-  },
-  {
-    "id": "34",
-    "name": "Sensor-Skulltalker",
-    "type": "sensor",
-    "pin": 22,
-    "description": "generic GPIO sensor",
-    "config": {},
-    "created": "2025-10-12T02:01:24.633Z",
-    "enabled": true
-  },
-  {
-    "id": "35",
-    "name": "Motion-Skulltalker",
-    "type": "motion_sensor",
-    "pin": 23,
-    "description": "PIR motion detection",
-    "config": {},
-    "created": "2025-10-12T02:01:24.683Z",
-    "enabled": true
-  },
-  {
-    "id": "36",
-    "name": "Webcam-Skulltalker",
+    "id": "4",
+    "name": "Skulltalker Cam",
     "type": "webcam",
     "pin": null,
-    "description": "video capture devices",
+    "description": "Main webcam",
     "config": {
-      "device": "/dev/video0"
+      "devicePath": "/dev/video0",
+      "deviceId": "video0"
     },
-    "created": "2025-10-12T02:01:24.740Z",
-    "enabled": true
+    "created": "2025-10-12T06:00:03.000Z",
+    "enabled": true,
+    "modelId": "default-uvc-1"
   },
   {
-    "id": "37",
-    "name": "Microphone-Skulltalker",
+    "id": "5",
+    "name": "Webcam Microphone",
     "type": "microphone",
     "pin": null,
-    "description": "audio input devices",
+    "description": "Webcam built-in mic",
     "config": {
       "deviceId": "default"
     },
-    "created": "2025-10-12T02:01:24.823Z",
-    "enabled": true
+    "created": "2025-10-12T06:00:04.000Z",
+    "enabled": true,
+    "modelId": "mic_generic_usb"
   },
   {
-    "id": "38",
-    "name": "Speaker-Skulltalker",
+    "id": "6",
+    "name": "Speaker Skulltalker",
     "type": "speaker",
     "pin": null,
-    "description": "audio output devices",
+    "description": "Main speaker",
     "config": {
       "device": "default",
-      "volume": 50
+      "volume": 80
     },
-    "created": "2025-10-12T02:01:24.936Z",
+    "created": "2025-10-12T06:00:05.000Z",
     "enabled": true,
     "modelId": "default_speaker"
-  },
-  {
-    "id": "39",
-    "name": "HeadTrack-Skulltalker",
-    "type": "head_tracking",
-    "pin": null,
-    "description": "computer vision tracking",
-    "config": {},
-    "created": "2025-10-12T02:01:25.028Z",
-    "enabled": true
   }
 ]

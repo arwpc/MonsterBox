@@ -1,471 +1,55 @@
 [
   {
     "id": "1",
-    "name": "Default Servo",
-    "type": "servo",
-    "pin": 18,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "minPulse": 600,
-      "maxPulse": 2500,
-      "minAngle": 0,
-      "maxAngle": 180,
-      "customFlag": "ok",
-      "testFlag": true
-    },
-    "created": "2025-10-11T20:10:24.609Z",
-    "enabled": true,
-    "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-10-12T02:01:47.297Z",
-    "markers": [
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "MinA",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      },
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10,
-        "unit": "deg"
-      }
-    ]
-  },
-  {
-    "id": "5",
-    "name": "Demo Webcam",
-    "type": "webcam",
-    "pin": null,
-    "description": "video capture devices",
-    "config": {
-      "resolution": "640x480"
-    },
-    "created": "2025-10-11T20:33:39.727Z",
-    "enabled": true,
-    "characterId": 1,
-    "modelId": "default-uvc-1",
-    "updated": "2025-10-11T23:43:49.714Z",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10
-      }
-    ]
-  },
-  {
-    "id": "6",
-    "name": "Head Pan",
-    "type": "servo",
-    "pin": 18,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "minAngle": 0,
-      "maxAngle": 180
-    },
-    "created": "2025-10-11T20:33:39.728Z",
-    "enabled": true,
-    "characterId": 1
-  },
-  {
-    "id": "7",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T20:34:05.199Z",
-    "enabled": true
-  },
-  {
-    "id": "8",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T21:53:50.925Z",
-    "enabled": true
-  },
-  {
-    "id": "12",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T23:02:04.684Z",
-    "enabled": true
-  },
-  {
-    "id": "13",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T23:28:45.891Z",
-    "enabled": true
-  },
-  {
-    "id": "27",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T23:54:02.519Z",
-    "enabled": true
-  },
-  {
-    "id": "41",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-12T00:15:49.927Z",
-    "enabled": true
-  },
-  {
-    "id": "55",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-12T00:34:51.582Z",
-    "enabled": true
-  },
-  {
-    "id": "71",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-12T00:50:07.528Z",
-    "enabled": true
-  },
-  {
-    "id": "72",
-    "name": "Servo-Std-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 0
-    },
-    "created": "2025-10-12T02:00:19.119Z",
-    "enabled": true,
-    "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-10-12T02:00:29.072Z",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      }
-    ]
-  },
-  {
-    "id": "73",
-    "name": "Servo-Cont-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "continuous",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 1
-    },
-    "created": "2025-10-12T02:00:19.216Z",
-    "enabled": true
-  },
-  {
-    "id": "74",
-    "name": "Servo-Fb-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "feedback",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 2
-    },
-    "created": "2025-10-12T02:00:19.278Z",
-    "enabled": true
-  },
-  {
-    "id": "75",
-    "name": "LinearAct-PumpkinHead",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-12T02:00:19.352Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "76",
-    "name": "Motor-PumpkinHead",
+    "name": "Wiper Motor",
     "type": "motor",
     "pin": null,
-    "description": "DC motors for movement",
+    "description": "Main wiper motor for movement",
     "config": {},
-    "created": "2025-10-12T02:00:19.406Z",
+    "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "controlBoard": "MDD10A",
-    "directionPin": 22,
-    "pwmPin": 12,
+    "directionPin": 26,
+    "pwmPin": 13,
     "maxDuration": 10000
   },
   {
-    "id": "77",
-    "name": "LED-PumpkinHead",
-    "type": "led",
-    "pin": 17,
-    "description": "PWM-controlled with brightness",
-    "config": {},
-    "created": "2025-10-12T02:00:19.539Z",
-    "enabled": true
-  },
-  {
-    "id": "78",
-    "name": "Light-PumpkinHead",
+    "id": "2",
+    "name": "PumpkinHead Light",
     "type": "light",
-    "pin": 18,
-    "description": "basic on/off lighting",
+    "pin": 16,
+    "description": "Main light",
     "config": {},
-    "created": "2025-10-12T02:00:19.598Z",
-    "enabled": true
+    "created": "2025-10-12T06:00:01.000Z",
+    "enabled": true,
+    "modelId": "light_generic_12v"
   },
   {
-    "id": "79",
-    "name": "Sensor-PumpkinHead",
-    "type": "sensor",
-    "pin": 19,
-    "description": "generic GPIO sensor",
-    "config": {},
-    "created": "2025-10-12T02:00:19.643Z",
-    "enabled": true
-  },
-  {
-    "id": "80",
-    "name": "Motion-PumpkinHead",
-    "type": "motion_sensor",
-    "pin": 20,
-    "description": "PIR motion detection",
-    "config": {},
-    "created": "2025-10-12T02:00:19.685Z",
-    "enabled": true
-  },
-  {
-    "id": "81",
-    "name": "Webcam-PumpkinHead",
-    "type": "webcam",
-    "pin": null,
-    "description": "video capture devices",
-    "config": {
-      "device": "/dev/video0"
-    },
-    "created": "2025-10-12T02:00:19.730Z",
-    "enabled": true
-  },
-  {
-    "id": "82",
-    "name": "Microphone-PumpkinHead",
-    "type": "microphone",
-    "pin": null,
-    "description": "audio input devices",
-    "config": {
-      "deviceId": "default"
-    },
-    "created": "2025-10-12T02:00:19.785Z",
-    "enabled": true
-  },
-  {
-    "id": "83",
-    "name": "Speaker-PumpkinHead",
+    "id": "3",
+    "name": "Speaker Left",
     "type": "speaker",
     "pin": null,
-    "description": "audio output devices",
+    "description": "Left speaker",
     "config": {
       "device": "default",
-      "volume": 50
+      "volume": 80
     },
-    "created": "2025-10-12T02:00:19.834Z",
+    "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
     "modelId": "default_speaker"
   },
   {
-    "id": "84",
-    "name": "HeadTrack-PumpkinHead",
-    "type": "head_tracking",
+    "id": "4",
+    "name": "Speaker Right",
+    "type": "speaker",
     "pin": null,
-    "description": "computer vision tracking",
-    "config": {},
-    "created": "2025-10-12T02:00:19.878Z",
-    "enabled": true
-  },
-  {
-    "id": "85",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
+    "description": "Right speaker",
     "config": {
-      "maxDuration": 5000,
-      "controlBoard": "BTS7960"
+      "device": "default",
+      "volume": 80
     },
-    "created": "2025-10-12T02:04:12.506Z",
+    "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000,
-    "updated": "2025-10-12T02:04:16.743Z"
-  },
-  {
-    "id": "86",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-12T02:04:21.776Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "87",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-12T02:05:40.273Z",
-    "enabled": true
-  },
-  {
-    "id": "88",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-12T02:07:21.429Z",
-    "enabled": true
+    "modelId": "default_speaker"
   }
 ]
