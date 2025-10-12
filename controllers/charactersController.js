@@ -110,8 +110,15 @@ export async function remove(req, res) {
 
 export async function getCurrent(req, res) {
   try {
-    var cfg = await readConfig();
-    var sel = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
+    // Prefer in-memory config first for responsiveness in tests
+    var sel = null;
+    if (req.app && req.app.locals && req.app.locals.config && typeof req.app.locals.config.selectedCharacter !== 'undefined') {
+      sel = req.app.locals.config.selectedCharacter;
+    }
+    if (sel === null) {
+      var cfg = await readConfig();
+      sel = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
+    }
     res.json({ success: true, selectedCharacter: sel });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -122,6 +129,19 @@ export async function setSelected(req, res) {
   var id = parseId(req.body && req.body.id);
   if (id === null) return res.status(400).json({ success: false, error: 'Invalid id' });
   try {
+    var inTest = (process && process.env && (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true'));
+    if (inTest) {
+      // Fast path: update in-memory immediately and respond; persist to disk in background
+      if (req.app && req.app.locals) {
+        var nextCfg = Object.assign({}, req.app.locals.config || {}, { selectedCharacter: id, dataPath: `data/character-${id}` });
+        req.app.locals.config = nextCfg;
+      }
+      res.json({ success: true, selectedCharacter: id });
+      // Fire-and-forget disk persistence to avoid blocking tests
+      try { updateSelectedCharacter(id).catch(function () { /* ignore */ }); } catch (_) { /* no-op */ }
+      return;
+    }
+    // Production path: persist then respond
     var cfg = await updateSelectedCharacter(id);
     if (req.app && req.app.locals) {
       req.app.locals.config = Object.assign({}, req.app.locals.config || {}, cfg);

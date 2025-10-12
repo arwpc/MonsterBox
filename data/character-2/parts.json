@@ -17,7 +17,7 @@
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2025-10-11T18:12:55.086Z",
+    "updated": "2025-10-12T00:30:21.291Z",
     "markers": [
       {
         "name": "Min",
@@ -113,43 +113,6 @@
     "updated": "2025-10-08T17:52:13.793Z"
   },
   {
-    "id": "7",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {
-      "maxDuration": 5000,
-      "controlBoard": "BTS7960"
-    },
-    "created": "2025-10-11T07:49:36.960Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000,
-    "updated": "2025-10-11T19:47:00.253Z"
-  },
-  {
-    "id": "8",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-11T07:49:40.203Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
     "id": "9",
     "name": "Demo Webcam",
     "type": "webcam",
@@ -192,118 +155,176 @@
     "enabled": true
   },
   {
-    "id": "14",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
+    "id": "12",
+    "name": "Servo-Std-Coffin_Breaker",
+    "type": "servo",
     "pin": null,
-    "description": "DC motors for movement",
-    "config": {},
-    "created": "2025-10-11T11:57:43.764Z",
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-12T02:00:42.077Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-10-12T02:00:50.481Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "13",
+    "name": "Servo-Cont-Coffin_Breaker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-10-12T02:00:42.188Z",
+    "enabled": true
+  },
+  {
+    "id": "14",
+    "name": "Servo-Fb-Coffin_Breaker",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-10-12T02:00:42.262Z",
+    "enabled": true
   },
   {
     "id": "15",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
+    "name": "LinearAct-Coffin_Breaker",
+    "type": "linear_actuator",
     "pin": null,
-    "description": "DC motors for movement",
+    "description": "extending/retracting movements",
     "config": {},
-    "created": "2025-10-11T11:58:28.639Z",
+    "created": "2025-10-12T02:00:42.326Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000
+    "controlBoard": "MDD10A",
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
   },
   {
     "id": "16",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
+    "name": "Motor-Coffin_Breaker",
+    "type": "motor",
     "pin": null,
-    "description": "extending/retracting movements",
+    "description": "DC motors for movement",
     "config": {},
-    "created": "2025-10-11T11:58:43.495Z",
+    "created": "2025-10-12T02:00:42.366Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
+    "controlBoard": "MDD10A",
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
   },
   {
     "id": "17",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
+    "name": "LED-Coffin_Breaker",
+    "type": "led",
+    "pin": 18,
+    "description": "PWM-controlled with brightness",
     "config": {},
-    "created": "2025-10-11T11:59:23.938Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
+    "created": "2025-10-12T02:00:42.415Z",
+    "enabled": true
   },
   {
     "id": "18",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
+    "name": "Light-Coffin_Breaker",
+    "type": "light",
+    "pin": 19,
+    "description": "basic on/off lighting",
     "config": {},
-    "created": "2025-10-11T19:46:51.849Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000
+    "created": "2025-10-12T02:00:42.468Z",
+    "enabled": true
   },
   {
     "id": "19",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
+    "name": "Sensor-Coffin_Breaker",
+    "type": "sensor",
+    "pin": 20,
+    "description": "generic GPIO sensor",
     "config": {},
-    "created": "2025-10-11T19:47:10.172Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
+    "created": "2025-10-12T02:00:42.563Z",
+    "enabled": true
   },
   {
     "id": "20",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
+    "name": "Motion-Coffin_Breaker",
+    "type": "motion_sensor",
+    "pin": 21,
+    "description": "PIR motion detection",
     "config": {},
-    "created": "2025-10-11T21:51:53.537Z",
+    "created": "2025-10-12T02:00:42.665Z",
+    "enabled": true
+  },
+  {
+    "id": "21",
+    "name": "Webcam-Coffin_Breaker",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-10-12T02:00:42.721Z",
+    "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "Microphone-Coffin_Breaker",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-12T02:00:42.776Z",
+    "enabled": true
+  },
+  {
+    "id": "23",
+    "name": "Speaker-Coffin_Breaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-10-12T02:00:42.821Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "24",
+    "name": "HeadTrack-Coffin_Breaker",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-10-12T02:00:42.863Z",
+    "enabled": true
   }
 ]

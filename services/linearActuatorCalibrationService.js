@@ -11,12 +11,22 @@ import { readConfig } from './configService.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Get calibration file path (character-aware)
-async function getCalibrationFilePath() {
-  const cfg = await readConfig();
-  const appRoot = path.resolve(__dirname, '..');
-  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
-  return path.resolve(appRoot, dataDir, 'linear_actuator_calibrations.json');
+// Get calibration file path (character-aware with graceful global fallback semantics)
+async function getCalibrationFilePath(preferGlobalFallback = false) {
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '..');
+    // cfg.dataPath may already be character-scoped (e.g., data/character-1)
+    const baseDataRoot = cfg && cfg.dataPath ? path.resolve(appRoot, cfg.dataPath) : path.resolve(appRoot, 'data');
+    const selectedCharacter = cfg && cfg.selectedCharacter;
+
+    if (preferGlobalFallback || !selectedCharacter) {
+        // Global file path
+        return path.resolve(baseDataRoot, 'linear_actuator_calibrations.json');
+    }
+    // If baseDataRoot already ends with character-{id}, use it; otherwise nest character-{id}
+    const alreadyCharScoped = new RegExp(`(^|/)character-${selectedCharacter}(/|$)`).test(baseDataRoot.replace(/\\/g, '/'));
+    const perCharDir = alreadyCharScoped ? baseDataRoot : path.resolve(baseDataRoot, `character-${selectedCharacter}`);
+    return path.resolve(perCharDir, 'linear_actuator_calibrations.json');
 }
 
 /**
@@ -24,14 +34,21 @@ async function getCalibrationFilePath() {
  * @returns {Promise<Object>} Calibration data object
  */
 export async function loadCalibrations() {
+    // Try character-scoped first; on ENOENT, fall back to global file
     try {
-        const calibrationFile = await getCalibrationFilePath();
-        const data = await fs.readFile(calibrationFile, 'utf8');
+        const charFile = await getCalibrationFilePath(false);
+        const data = await fs.readFile(charFile, 'utf8');
         return JSON.parse(data);
     } catch (error) {
         if (error.code === 'ENOENT') {
-            // File doesn't exist, return empty object
-            return {};
+            try {
+                const globalFile = await getCalibrationFilePath(true);
+                const data = await fs.readFile(globalFile, 'utf8');
+                return JSON.parse(data);
+            } catch (e2) {
+                if (e2.code === 'ENOENT') return {};
+                throw e2;
+            }
         }
         throw error;
     }
@@ -43,7 +60,9 @@ export async function loadCalibrations() {
  * @returns {Promise<void>}
  */
 export async function saveCalibrations(calibrations) {
-    const calibrationFile = await getCalibrationFilePath();
+    // Always save to the character-scoped file when a character is selected; otherwise global
+    const calibrationFile = await getCalibrationFilePath(false);
+    await fs.mkdir(path.dirname(calibrationFile), { recursive: true });
     await fs.writeFile(calibrationFile, JSON.stringify(calibrations, null, 2));
 }
 
@@ -125,22 +144,27 @@ export async function isFullyCalibrated(partId) {
  */
 export async function getCalibrationStatus(partId) {
     const calibration = await getCalibration(partId);
-    
+
     if (!calibration) {
+        // Default structure for brand-new parts
         return {
             exists: false,
             fullyCalibrated: false,
             minCalibrated: false,
             maxCalibrated: false,
-            calibratedDate: null
+            calibratedDate: null,
+            positions: {
+                min: { calibrated: false },
+                max: { calibrated: false }
+            }
         };
     }
 
     return {
         exists: true,
-        fullyCalibrated: calibration.positions.min.calibrated && calibration.positions.max.calibrated,
-        minCalibrated: calibration.positions.min.calibrated,
-        maxCalibrated: calibration.positions.max.calibrated,
+        fullyCalibrated: !!(calibration.positions && calibration.positions.min && calibration.positions.max && calibration.positions.min.calibrated && calibration.positions.max.calibrated),
+        minCalibrated: !!(calibration.positions && calibration.positions.min && calibration.positions.min.calibrated),
+        maxCalibrated: !!(calibration.positions && calibration.positions.max && calibration.positions.max.calibrated),
         calibratedDate: calibration.calibrated_date,
         positions: calibration.positions
     };

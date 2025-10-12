@@ -21,7 +21,7 @@
       },
       {
         "type": "part",
-        "partId": 9,
+        "partId": 8,
         "partType": "light",
         "action": "turnOn",
         "params": {
@@ -53,7 +53,7 @@
       },
       {
         "type": "part",
-        "partId": 9,
+        "partId": 8,
         "partType": "light",
         "action": "turnOff",
         "params": {},
@@ -100,7 +100,7 @@
       },
       {
         "type": "part",
-        "partId": 4,
+        "partId": 11,
         "partType": "servo",
         "action": "continuous",
         "params": {

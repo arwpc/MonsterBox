@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+const inTestMode = process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true';
+
 export default defineConfig({
   testDir: './tests',
   // Only pick up Playwright-style specs in UX folders; avoid Mocha/integration .test.js files at repo root
@@ -9,6 +11,8 @@ export default defineConfig({
   ],
   retries: 1,
   fullyParallel: true,
+  // Reduce concurrency in MB_TEST_MODE to eliminate server contention/timeouts on low-power devices
+  workers: inTestMode ? 1 : undefined,
   forbidOnly: !!process.env.CI,
 
   reporter: [

@@ -1,5 +1,46 @@
 {
   "characterId": 3,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2025-10-12T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "head - Wiggle",
+      "description": "Wiggle pose created from head template",
+      "parts": [
+        {
+          "partId": 11,
+          "type": "servo",
+          "target": {
+            "continuous": {
+              "direction": "random",
+              "durationMs": 3000,
+              "pattern": "wiggle"
+            }
+          }
+        }
+      ],
+      "category": "head",
+      "concurrent": false,
+      "notes": "Generated from head template",
+      "created": "2025-10-12T00:00:00.000Z"
+    }
+  ],
   "templates": {}
 }

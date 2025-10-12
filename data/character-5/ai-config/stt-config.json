@@ -1,11 +1,9 @@
 {
   "model": "scribe_v1",
-  "language": "en",
+  "language": "auto",
   "format": "wav",
   "sampleRate": 16000,
   "channels": 1,
   "microphonePartId": null,
-  "microphoneDeviceId": null,
-  "vadEnabled": true,
-  "vadThreshold": 0.1
+  "microphoneDeviceId": null
 }

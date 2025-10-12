@@ -25,15 +25,21 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 
 // Character-aware parts loading and saving functions
-// IMPORTANT: Always honor app-config.dataPath for consistency with controllers/partsController
+// IMPORTANT: Honor app-config.dataPath which may already point to a character directory
 async function loadCharacterParts(characterId) {
     try {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '..', '..');
-        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+        // If cfg.dataPath is set, it may already be character-scoped (e.g., data/character-1)
+        const baseDataRoot = cfg && cfg.dataPath ? path.resolve(appRoot, cfg.dataPath) : path.resolve(appRoot, 'data');
         const effectiveCharId = characterId || cfg.selectedCharacter || null;
+
+        // Prefer character-specific parts.json when a character is selected
         if (effectiveCharId) {
-            const perCharPath = path.resolve(appRoot, dataDir, `character-${effectiveCharId}`, 'parts.json');
+            // If baseDataRoot already ends with character-{id}, use it directly; otherwise nest character-{id}
+            const alreadyCharScoped = new RegExp(`(^|/)character-${effectiveCharId}(/|$)`).test(baseDataRoot.replace(/\\/g, '/'));
+            const perCharDir = alreadyCharScoped ? baseDataRoot : path.resolve(baseDataRoot, `character-${effectiveCharId}`);
+            const perCharPath = path.resolve(perCharDir, 'parts.json');
             try {
                 const raw = await fs.readFile(perCharPath, 'utf8');
                 const parts = JSON.parse(raw || '[]');
@@ -41,11 +47,11 @@ async function loadCharacterParts(characterId) {
                 return parts;
             } catch (e) {
                 // If per-character file missing, fall back to global parts.json
-                console.warn(`ℹ️ character-${effectiveCharId}/parts.json missing, falling back to global parts.json:`, e && e.message);
+                console.warn(`ℹ️ ${perCharPath} missing, falling back to global parts.json:`, e && e.message);
             }
         }
         // Global fallback
-        const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
+        const partsPath = path.resolve(baseDataRoot, 'parts.json');
         const raw = await fs.readFile(partsPath, 'utf8').catch(() => '[]');
         const parts = JSON.parse(raw || '[]');
         console.log(`✅ Loaded ${parts.length} parts from ${partsPath} (selectedCharacter=${cfg.selectedCharacter}, requestedCharacterId=${characterId || 'n/a'})`);
@@ -60,11 +66,17 @@ async function saveCharacterParts(characterId, parts) {
     try {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '..', '..');
-        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+        const baseDataRoot = cfg && cfg.dataPath ? path.resolve(appRoot, cfg.dataPath) : path.resolve(appRoot, 'data');
         const effectiveCharId = characterId || cfg.selectedCharacter || null;
-        const partsPath = effectiveCharId
-            ? path.resolve(appRoot, dataDir, `character-${effectiveCharId}`, 'parts.json')
-            : path.resolve(appRoot, dataDir, 'parts.json');
+
+        let targetDir;
+        if (effectiveCharId) {
+            const alreadyCharScoped = new RegExp(`(^|/)character-${effectiveCharId}(/|$)`).test(baseDataRoot.replace(/\\/g, '/'));
+            targetDir = alreadyCharScoped ? baseDataRoot : path.resolve(baseDataRoot, `character-${effectiveCharId}`);
+        } else {
+            targetDir = baseDataRoot;
+        }
+        const partsPath = path.resolve(targetDir, 'parts.json');
         // Ensure directory exists
         await fs.mkdir(path.dirname(partsPath), { recursive: true });
         await fs.writeFile(partsPath, JSON.stringify(parts, null, 2));

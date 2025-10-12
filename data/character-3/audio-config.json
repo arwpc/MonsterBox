@@ -29,8 +29,8 @@
     "responseCurve": "exponential",
     "attackTime": 0.03,
     "releaseTime": 0.1,
-    "minPosition": 45,
-    "maxPosition": 10,
+    "minPosition": 10,
+    "maxPosition": 45,
     "volumeThreshold": 0.005,
     "smoothingFactor": 0.7
   },

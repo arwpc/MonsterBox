@@ -40,7 +40,7 @@
         "unit": "deg"
       },
       {
-        "name": "Min",
+        "name": "MinA",
         "kind": "absolute",
         "locked": false,
         "value": 12,
@@ -66,6 +66,6 @@
     "renPin": 5,
     "lenPin": 22,
     "maxDuration": 10000,
-    "updated": "2025-10-11T20:33:17.671Z"
+    "updated": "2025-10-11T23:01:10.705Z"
   }
 ]
