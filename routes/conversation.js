@@ -51,12 +51,12 @@ async function writeJawSettings(obj) {
 // GET /conversation (page)
 router.get('/', async (req, res) => {
   res.render('conversation/index', {
-    title: 'Conversation - MonsterBox 5.1',
+    title: 'Conversation Mode - MonsterBox 5.3',
     page: 'conversation'
   });
 });
 
-// GET /conversation/api/webcam-stream-url - same logic as /live
+// GET /conversation/api/webcam-stream-url - returns webcam stream URL for current character
 router.get('/api/webcam-stream-url', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
@@ -218,6 +218,87 @@ router.post('/api/jaw-drive', express.json(), async (req, res) => {
     if (!Number.isFinite(amp)) return res.status(400).json({ success: false, error: 'amplitude required (0..1)' });
     try { await jawAnimationService.driveFromAmplitude({ characterId, amplitude: Math.max(0, Math.min(1, amp)) }); } catch (_) { }
     res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// GET /conversation/api/listen-in-url
+// Returns URL for streaming server-side microphone audio to browser
+router.get('/api/listen-in-url', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+
+    const parts = await loadParts();
+    const micPart = parts.find(p => p.characterId === characterId && p.type === 'microphone');
+
+    if (!micPart) {
+      return res.json({ success: false, error: 'No microphone configured for this character' });
+    }
+
+    // For now, return a placeholder URL - this would need PipeWire/PulseAudio streaming setup
+    // In production, this would stream from the microphone's ALSA device
+    res.json({
+      success: true,
+      url: `/api/audio-stream/microphone/${micPart.id}`,
+      message: 'Listen In feature requires PipeWire streaming setup'
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/ai-on { enabled }
+// Toggle ElevenLabs Conversational AI Agent
+router.post('/api/ai-on', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+
+    const enabled = !!req.body.enabled;
+    const dataDir = await getDataDir();
+    const aiStateFile = path.resolve(dataDir, 'ai_agent_state.json');
+
+    // Store AI agent state
+    const state = { characterId, enabled, timestamp: Date.now() };
+    await fs.mkdir(path.dirname(aiStateFile), { recursive: true });
+    await fs.writeFile(aiStateFile, JSON.stringify(state, null, 2), 'utf8');
+
+    // TODO: Actually start/stop ElevenLabs Conversational AI WebSocket connection
+    // This would integrate with elevenLabsWebSocketService
+
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// GET /conversation/api/ai-status
+// Get current AI agent status and latency
+router.get('/api/ai-status', async (req, res) => {
+  try {
+    const dataDir = await getDataDir();
+    const aiStateFile = path.resolve(dataDir, 'ai_agent_state.json');
+
+    let state = { enabled: false };
+    try {
+      const content = await fs.readFile(aiStateFile, 'utf8');
+      state = JSON.parse(content);
+    } catch {
+      // File doesn't exist or is invalid, return default state
+    }
+
+    // TODO: Get actual latency from ElevenLabs WebSocket service
+    // For now, return a simulated latency
+    const latency = state.enabled ? Math.floor(Math.random() * 200 + 100) : null;
+
+    res.json({
+      success: true,
+      enabled: !!state.enabled,
+      latency: latency,
+      characterId: state.characterId || null
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Comprehensive Navigation Test for MonsterBox 4.0
+ * Comprehensive Navigation Test for MonsterBox 5.3
  * Tests every single link and route in the updated navigation structure
  * Run with: MB_E2E=1 npx playwright test test/e2e/navigation-complete.spec.js
  */

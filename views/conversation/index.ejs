@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conversation - MonsterBox 5.1</title>
+  <title>Conversation Mode - MonsterBox 5.3</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/monsterbox4.css" rel="stylesheet">
@@ -30,10 +30,13 @@
 
       <div class="row g-3">
         <div class="col-xl-6">
+          <!-- Live Audio Panel -->
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Microphone</h5>
-              <span class="badge rounded-pill bg-info text-dark">ElevenLabs</span>
+              <h5 class="card-title mb-0"><i class="bi bi-mic"></i> Live Audio</h5>
+              <a href="/ai-settings/stt" class="btn btn-sm btn-outline-secondary" title="STT Configuration">
+                <i class="bi bi-gear"></i>
+              </a>
             </div>
             <div class="card-body">
               <div id="micStatus" class="small text-muted mb-2">Configure VAD and input device in STT Config</div>
@@ -44,19 +47,23 @@
                 <button id="micStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start
                   Listening</button>
                 <button id="micStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
+                <button id="listenInBtn" class="btn btn-outline-info btn-sm"><i class="bi bi-headphones"></i> Listen
+                  In</button>
               </div>
-              <div id="transcript" class="mt-3 small text-muted"></div>
+              <div class="mt-3">
+                <label class="form-label small text-muted">Live Transcription</label>
+                <div id="transcript" class="border rounded p-2 small"
+                  style="min-height: 60px; max-height: 120px; overflow-y: auto; background: #1a1a1a;">
+                  <span class="text-muted">Transcription will appear here...</span>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- Make Character Say Panel -->
           <div class="card mt-3">
-            <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="card-header">
               <h5 class="card-title mb-0"><i class="bi bi-send"></i> Make <span id="charName">Character</span> Say</h5>
-              <div class="d-inline-flex align-items-center">
-                <label for="convSpeakerSelect" class="me-2 mb-0 small text-muted"><i class="bi bi-speaker"></i>
-                  Speaker:</label>
-                <select id="convSpeakerSelect" class="form-select form-select-sm" style="min-width: 240px;"></select>
-              </div>
             </div>
             <div class="card-body">
               <div class="input-group">
@@ -64,26 +71,74 @@
                 <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
               </div>
               <div id="sayStatus" class="mt-2 small"></div>
-              <hr>
-              <div class="row mt-2">
-                <div class="col-md-6">
-                  <div class="form-check form-switch">
+            </div>
+          </div>
+
+          <!-- Monster Features Panel -->
+          <div class="card mt-3">
+            <div class="card-header">
+              <h5 class="card-title mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h5>
+            </div>
+            <div class="card-body">
+              <!-- Jaw Animation -->
+              <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-grow-1">
+                  <div class="form-check form-switch mb-1">
                     <input class="form-check-input" type="checkbox" id="jawToggle">
-                    <label class="form-check-label" for="jawToggle">Jaw Animation</label>
+                    <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
                   </div>
+                  <small class="text-muted">Automatically animates the jaw servo in sync with speech audio
+                    output</small>
                 </div>
-                <div class="col-md-6">
-                  <div class="mt-3">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="parrotToggle">
-                      <label class="form-check-label" for="parrotToggle">Parrot Mode (repeat what you say)</label>
-                    </div>
-                    <div class="small text-muted">Uses current character voice and speaker. Toggle to enable/disable.
-                    </div>
+                <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary ms-2"
+                  title="Configure Jaw Animation">
+                  <i class="bi bi-gear"></i>
+                </a>
+              </div>
+
+              <!-- Parrot Mode -->
+              <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-grow-1">
+                  <div class="form-check form-switch mb-1">
+                    <input class="form-check-input" type="checkbox" id="parrotToggle">
+                    <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
                   </div>
-                  <div class="form-check form-switch">
+                  <small class="text-muted">Repeats detected speech back to the visitor using the animatronic's
+                    voice</small>
+                </div>
+                <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary ms-2"
+                  title="Configure Parrot Mode">
+                  <i class="bi bi-gear"></i>
+                </a>
+              </div>
+
+              <!-- Head Tracking -->
+              <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-grow-1">
+                  <div class="form-check form-switch mb-1">
                     <input class="form-check-input" type="checkbox" id="headTrackToggle">
-                    <label class="form-check-label" for="headTrackToggle">Enable Head Tracking</label>
+                    <label class="form-check-label fw-bold" for="headTrackToggle">Enable Head Tracking</label>
+                  </div>
+                  <small class="text-muted">Tracks visitor movement using webcam and moves the head to follow
+                    them</small>
+                </div>
+                <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary ms-2"
+                  title="Configure Head Tracking">
+                  <i class="bi bi-gear"></i>
+                </a>
+              </div>
+
+              <!-- AI On -->
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1">
+                  <div class="form-check form-switch mb-1">
+                    <input class="form-check-input" type="checkbox" id="aiOnToggle">
+                    <label class="form-check-label fw-bold" for="aiOnToggle">AI On</label>
+                  </div>
+                  <small class="text-muted">Enables fully autonomous conversation mode using ElevenLabs Conversational
+                    AI Agent</small>
+                  <div id="aiLatency" class="mt-1 small text-info" style="display: none;">
+                    <i class="bi bi-speedometer2"></i> Response latency: <span id="latencyMs">--</span>ms
                   </div>
                 </div>
               </div>
@@ -92,7 +147,28 @@
         </div>
 
         <div class="col-xl-6">
+          <!-- Scenes Panel -->
           <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0"><i class="bi bi-film"></i> Scenes</h5>
+              <a href="/scenes" class="btn btn-sm btn-outline-secondary" title="Manage Scenes">
+                <i class="bi bi-gear"></i>
+              </a>
+            </div>
+            <div class="card-body">
+              <div id="scenesContainer">
+                <div class="text-center text-muted py-2">
+                  <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-2 mb-0">Loading scenes...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Webcam Panel -->
+          <div class="card mt-3">
             <div class="card-header d-flex justify-content-between align-items-center">
               <h5 class="card-title mb-0"><i class="bi bi-camera-video"></i> Webcam</h5>
               <small class="text-muted" id="webcamHint"></small>
@@ -103,8 +179,6 @@
               <div id="webcamStatus" class="text-muted mt-2">Finding webcam...</div>
             </div>
           </div>
-
-
         </div>
       </div>
     </main>
@@ -123,9 +197,15 @@
           speakerSelect: null,
           jawToggle: null,
           headTrackToggle: null,
+          listenInBtn: null,
+          aiOnToggle: null,
+          aiLatency: null,
+          latencyMs: null,
         };
         let speakers = [];
         let selectedSpeakerPartId = null;
+        let listenInAudio = null;
+        let aiOnInterval = null;
 
         // Parrot Mode state and function declared early to avoid TDZ issues in event handlers
         var parrotEnabled = false;
@@ -155,6 +235,10 @@
           ui.jawToggle = $('jawToggle');
           ui.headTrackToggle = $('headTrackToggle');
           ui.parrotToggle = $('parrotToggle');
+          ui.listenInBtn = $('listenInBtn');
+          ui.aiOnToggle = $('aiOnToggle');
+          ui.aiLatency = $('aiLatency');
+          ui.latencyMs = $('latencyMs');
           setCharName();
           bindEvents();
           await loadSpeakers();
@@ -164,6 +248,8 @@
           await loadWebcam();
           await loadJawSettings();
           await loadHeadTrackStatus();
+          await loadScenes();
+          await loadAiStatus();
         }
 
         function setCharName() {
@@ -177,6 +263,8 @@
           ui.sayInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); sendSay(); } });
           ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
           ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
+          ui.listenInBtn && ui.listenInBtn.addEventListener('click', toggleListenIn);
+          ui.aiOnToggle && ui.aiOnToggle.addEventListener('change', toggleAiOn);
           ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
             parrotEnabled = !!ui.parrotToggle.checked;
             try { window.__setParrotEnabled = function (v) { parrotEnabled = !!v; }; } catch (e) { }
@@ -285,8 +373,136 @@
           finally { ui.sayBtn.disabled = false; ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak'; }
         }
 
+        // Listen In - Stream server-side microphone to browser
+        function toggleListenIn() {
+          if (listenInAudio) {
+            listenInAudio.pause();
+            listenInAudio = null;
+            ui.listenInBtn.innerHTML = '<i class="bi bi-headphones"></i> Listen In';
+            ui.listenInBtn.classList.remove('active');
+          } else {
+            // Get current character's microphone stream URL
+            fetch('/conversation/api/listen-in-url')
+              .then(r => r.json())
+              .then(j => {
+                if (j && j.success && j.url) {
+                  listenInAudio = new Audio(j.url);
+                  listenInAudio.play();
+                  ui.listenInBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Stop Listening';
+                  ui.listenInBtn.classList.add('active');
+                } else {
+                  alert('No microphone configured for this character');
+                }
+              })
+              .catch(e => alert('Failed to start Listen In: ' + e.message));
+          }
+        }
+
+        // AI On - Toggle ElevenLabs Conversational AI Agent
+        async function toggleAiOn() {
+          const enabled = ui.aiOnToggle.checked;
+          try {
+            const r = await fetch('/conversation/api/ai-on', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ enabled })
+            });
+            const j = await r.json();
+            if (j && j.success) {
+              if (enabled) {
+                ui.aiLatency.style.display = 'block';
+                startAiLatencyMonitor();
+              } else {
+                ui.aiLatency.style.display = 'none';
+                stopAiLatencyMonitor();
+              }
+            } else {
+              ui.aiOnToggle.checked = !enabled;
+              alert('Failed to toggle AI: ' + (j.error || 'Unknown error'));
+            }
+          } catch (e) {
+            ui.aiOnToggle.checked = !enabled;
+            alert('Error toggling AI: ' + e.message);
+          }
+        }
+
+        async function loadAiStatus() {
+          try {
+            const r = await fetch('/conversation/api/ai-status');
+            const j = await r.json();
+            if (j && j.success) {
+              ui.aiOnToggle.checked = !!j.enabled;
+              if (j.enabled) {
+                ui.aiLatency.style.display = 'block';
+                if (j.latency) ui.latencyMs.textContent = j.latency;
+                startAiLatencyMonitor();
+              }
+            }
+          } catch { }
+        }
+
+        function startAiLatencyMonitor() {
+          if (aiOnInterval) return;
+          aiOnInterval = setInterval(async () => {
+            try {
+              const r = await fetch('/conversation/api/ai-status');
+              const j = await r.json();
+              if (j && j.success && j.latency) {
+                ui.latencyMs.textContent = j.latency;
+              }
+            } catch { }
+          }, 2000);
+        }
+
+        function stopAiLatencyMonitor() {
+          if (aiOnInterval) {
+            clearInterval(aiOnInterval);
+            aiOnInterval = null;
+          }
+        }
+
+        // Load Scenes
+        async function loadScenes() {
+          const container = $('scenesContainer');
+          try {
+            const r = await fetch('/scenes/api/scenes');
+            const j = await r.json();
+            if (j && j.success && j.scenes && j.scenes.length > 0) {
+              container.innerHTML = j.scenes.map(scene => `
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                  <div>
+                    <strong>${scene.name}</strong>
+                    <div class="small text-muted">${scene.description || 'No description'}</div>
+                  </div>
+                  <button class="btn btn-sm btn-primary" onclick="playScene(${scene.id})">
+                    <i class="bi bi-play"></i>
+                  </button>
+                </div>
+              `).join('');
+            } else {
+              container.innerHTML = '<div class="text-center text-muted py-2"><i class="bi bi-film"></i><p class="mt-2 mb-0">No scenes available</p><a href="/scenes" class="btn btn-sm btn-primary mt-2">Create Scene</a></div>';
+            }
+          } catch {
+            container.innerHTML = '<div class="text-center text-danger py-2">Failed to load scenes</div>';
+          }
+        }
+
+        window.playScene = async function (sceneId) {
+          try {
+            const r = await fetch(`/scenes/api/scenes/${sceneId}/play`, { method: 'POST' });
+            const j = await r.json();
+            if (j && j.success) {
+              console.log('Scene playing:', sceneId);
+            } else {
+              alert('Failed to play scene: ' + (j.error || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Error playing scene: ' + e.message);
+          }
+        };
+
         document.addEventListener('DOMContentLoaded', init);
-        window.__conv = { loadSpeakers, loadWebcam };
+        window.__conv = { loadSpeakers, loadWebcam, loadScenes };
       })();
     </script>
     <script src="/js/character-menu.js"></script>

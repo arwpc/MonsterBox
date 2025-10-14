@@ -891,7 +891,7 @@ router.get('/standard_servo/:id', async (req, res) => {
             .map(p => ({ id: p.id, name: p.name }));
 
         res.render('setup/calibration-standard-servo', {
-            title: `Calibrate ${part.name} - MonsterBox 5.1`,
+            title: `Calibrate ${part.name} - MonsterBox 5.3`,
             page: 'setup-calibration-standard-servo',
             config: { theme: 'dark' },
 

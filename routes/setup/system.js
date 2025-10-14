@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.render('setup/system', {
-            title: 'Setup System - MonsterBox 4.0',
+            title: 'Setup System - MonsterBox 5.3',
             page: 'setup-system'
         });
     } catch (error) {

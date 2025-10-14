@@ -56,6 +56,10 @@ jobs:
       env:
         PW_CLEAN_SERVER: 1
       run: npm run test:ui -- tests/playwright/demo.spec.js
+    - name: Run Conversation Mode Tests
+      env:
+        MB_E2E: 1
+      run: npm run test:conversation
     - name: Stop Server
       if: always()
       run: |

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        <%= title %> - MonsterBox 4.0
+        <%= title %> - MonsterBox 5.3
     </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -67,13 +67,27 @@
         }
 
         @keyframes pulse-green {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
         }
 
         @keyframes pulse-red {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .capability-badge {
@@ -100,8 +114,17 @@
         }
 
         @keyframes heartbeat {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.1); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1);
+            }
         }
 
         .lock-timer {
@@ -163,365 +186,380 @@
     <!-- Unified Navigation - Same on ALL pages -->
     <%- include('../components/unified-navigation', { page: 'goblin-management' }) %>
 
-    <main class="container-fluid py-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h2 mb-1">
-                            <i class="bi bi-cpu text-primary"></i>
-                            Goblin Management
-                        </h1>
-                        <p class="text-muted mb-0">Monitor and control distributed MonsterBox Goblins</p>
-                    </div>
-                    <div>
-                        <div class="btn-group me-2" role="group">
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerGoblinModal">
-                                <i class="bi bi-plus-circle"></i> Register Goblin
-                            </button>
-                            <button class="btn btn-outline-info" onclick="goblinManager.refreshAllStatus()">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh All
-                            </button>
-                            <button class="btn btn-outline-warning" onclick="goblinManager.broadcastCommand()">
-                                <i class="bi bi-broadcast"></i> Broadcast
-                            </button>
-                        </div>
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-outline-success" onclick="goblinManager.unlockAll()">
-                                <i class="bi bi-unlock"></i> Unlock All
-                            </button>
-                            <button class="btn btn-outline-danger" onclick="goblinManager.stopAllPlayback()">
-                                <i class="bi bi-stop-fill"></i> Stop All
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Dashboard -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <i class="bi bi-cpu fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="totalGoblins">0</h3>
-                        <small>Total Goblins</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success">
-                    <div class="card-body text-center">
-                        <i class="bi bi-check-circle fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="onlineGoblins">0</h3>
-                        <small>Online</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-danger">
-                    <div class="card-body text-center">
-                        <i class="bi bi-lock fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="lockedGoblins">0</h3>
-                        <small>Locked</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-dark">
-                    <div class="card-body text-center">
-                        <i class="bi bi-exclamation-triangle fs-1"></i>
-                        <h3 class="mt-2 mb-0" id="offlineGoblins">0</h3>
-                        <small>Offline</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="row">
-            <!-- Goblin Grid -->
-            <div class="col-lg-9">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-grid-3x3-gap"></i> Registered Goblins
-                        </h5>
+        <main class="container-fluid py-4">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
-                                <label class="form-check-label" for="autoRefresh">Auto Refresh</label>
+                            <h1 class="h2 mb-1">
+                                <i class="bi bi-cpu text-primary"></i>
+                                Goblin Management
+                            </h1>
+                            <p class="text-muted mb-0">Monitor and control distributed MonsterBox Goblins</p>
+                        </div>
+                        <div>
+                            <div class="btn-group me-2" role="group">
+                                <button class="btn btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#registerGoblinModal">
+                                    <i class="bi bi-plus-circle"></i> Register Goblin
+                                </button>
+                                <button class="btn btn-outline-info" onclick="goblinManager.refreshAllStatus()">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh All
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="goblinManager.broadcastCommand()">
+                                    <i class="bi bi-broadcast"></i> Broadcast
+                                </button>
                             </div>
-                            <select class="form-select form-select-sm d-inline-block ms-2" style="width: auto;" id="statusFilter">
-                                <option value="all">All Status</option>
-                                <option value="online">Online Only</option>
-                                <option value="offline">Offline Only</option>
-                                <option value="locked">Locked Only</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <!-- Goblin Cards -->
-                        <div class="row g-3" id="goblinGrid">
-                            <!-- Goblin cards will be populated here -->
-                        </div>
-
-                        <!-- Empty State -->
-                        <div id="emptyState" style="display: none;" class="text-center py-5">
-                            <i class="bi bi-cpu text-muted" style="font-size: 4rem;"></i>
-                            <h3 class="text-muted mt-3">No Goblins Registered</h3>
-                            <p class="text-muted">Register your first MonsterBox Goblin to get started!</p>
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerGoblinModal">
-                                <i class="bi bi-plus-circle"></i> Register First Goblin
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-success" onclick="goblinManager.unlockAll()">
+                                    <i class="bi bi-unlock"></i> Unlock All
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="goblinManager.stopAllPlayback()">
+                                    <i class="bi bi-stop-fill"></i> Stop All
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Actions & Log -->
-            <div class="col-lg-3">
-                <div class="quick-actions">
-                    <!-- Network Status -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="bi bi-wifi"></i> Network Status
-                            </h6>
-                        </div>
-                        <div class="card-body py-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>Last Update:</small>
-                                <small id="lastUpdate">Never</small>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>Avg Response:</small>
-                                <small id="avgResponse">0ms</small>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <small>Success Rate:</small>
-                                <small id="successRate">0%</small>
-                            </div>
+            <!-- Stats Dashboard -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cpu fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="totalGoblins">0</h3>
+                            <small>Total Goblins</small>
                         </div>
                     </div>
-
-                    <!-- Quick Deploy -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="bi bi-lightning"></i> Quick Deploy
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="goblinManager.openVideoLibrary()">
-                                <i class="bi bi-camera-video"></i> Video Library
-                            </button>
-                            <button class="btn btn-sm btn-outline-success w-100 mb-2" onclick="goblinManager.testAllConnections()">
-                                <i class="bi bi-wifi"></i> Test All
-                            </button>
-                            <button class="btn btn-sm btn-outline-info w-100" onclick="goblinManager.showSystemHealth()">
-                                <i class="bi bi-heart-pulse"></i> System Health
-                            </button>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-check-circle fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="onlineGoblins">0</h3>
+                            <small>Online</small>
                         </div>
                     </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-lock fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="lockedGoblins">0</h3>
+                            <small>Locked</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                            <h3 class="mt-2 mb-0" id="offlineGoblins">0</h3>
+                            <small>Offline</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Activity Log -->
+            <!-- Main Content -->
+            <div class="row">
+                <!-- Goblin Grid -->
+                <div class="col-lg-9">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">
-                                <i class="bi bi-list-ul"></i> Activity Log
-                            </h6>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.clearLog()">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <h5 class="mb-0">
+                                <i class="bi bi-grid-3x3-gap"></i> Registered Goblins
+                            </h5>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                    <label class="form-check-label" for="autoRefresh">Auto Refresh</label>
+                                </div>
+                                <select class="form-select form-select-sm d-inline-block ms-2" style="width: auto;"
+                                    id="statusFilter">
+                                    <option value="all">All Status</option>
+                                    <option value="online">Online Only</option>
+                                    <option value="offline">Offline Only</option>
+                                    <option value="locked">Locked Only</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="deployment-log" id="activityLog">
-                                <div class="text-muted">Waiting for activity...</div>
+                        <div class="card-body">
+                            <!-- Goblin Cards -->
+                            <div class="row g-3" id="goblinGrid">
+                                <!-- Goblin cards will be populated here -->
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="emptyState" style="display: none;" class="text-center py-5">
+                                <i class="bi bi-cpu text-muted" style="font-size: 4rem;"></i>
+                                <h3 class="text-muted mt-3">No Goblins Registered</h3>
+                                <p class="text-muted">Register your first MonsterBox Goblin to get started!</p>
+                                <button class="btn btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#registerGoblinModal">
+                                    <i class="bi bi-plus-circle"></i> Register First Goblin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Log -->
+                <div class="col-lg-3">
+                    <div class="quick-actions">
+                        <!-- Network Status -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-wifi"></i> Network Status
+                                </h6>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Last Update:</small>
+                                    <small id="lastUpdate">Never</small>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Avg Response:</small>
+                                    <small id="avgResponse">0ms</small>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small>Success Rate:</small>
+                                    <small id="successRate">0%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Deploy -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-lightning"></i> Quick Deploy
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-sm btn-outline-primary w-100 mb-2"
+                                    onclick="goblinManager.openVideoLibrary()">
+                                    <i class="bi bi-camera-video"></i> Video Library
+                                </button>
+                                <button class="btn btn-sm btn-outline-success w-100 mb-2"
+                                    onclick="goblinManager.testAllConnections()">
+                                    <i class="bi bi-wifi"></i> Test All
+                                </button>
+                                <button class="btn btn-sm btn-outline-info w-100"
+                                    onclick="goblinManager.showSystemHealth()">
+                                    <i class="bi bi-heart-pulse"></i> System Health
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Activity Log -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-list-ul"></i> Activity Log
+                                </h6>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.clearLog()">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="deployment-log" id="activityLog">
+                                    <div class="text-muted">Waiting for activity...</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <!-- Register Goblin Modal -->
-    <div class="modal fade" id="registerGoblinModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-plus-circle"></i> Register New Goblin
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="registerGoblinForm">
-                        <div class="mb-3">
-                            <label class="form-label">Goblin Name *</label>
-                            <input type="text" class="form-control" name="name" required 
-                                   placeholder="e.g., living-room-goblin, porch-display">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">IP Address or Hostname *</label>
-                            <input type="text" class="form-control" name="host" required 
-                                   placeholder="e.g., 192.168.1.100 or goblin1.local">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Port</label>
-                            <input type="number" class="form-control" name="port" value="3001" min="1" max="65535">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Capabilities</label>
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="capabilities" value="video-playback" id="cap1" checked>
-                                        <label class="form-check-label" for="cap1">Video Playback</label>
+        <!-- Register Goblin Modal -->
+        <div class="modal fade" id="registerGoblinModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-plus-circle"></i> Register New Goblin
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="registerGoblinForm">
+                            <div class="mb-3">
+                                <label class="form-label">Goblin Name *</label>
+                                <input type="text" class="form-control" name="name" required
+                                    placeholder="e.g., living-room-goblin, porch-display">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">IP Address or Hostname *</label>
+                                <input type="text" class="form-control" name="host" required
+                                    placeholder="e.g., 192.168.1.100 or goblin1.local">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Port</label>
+                                <input type="number" class="form-control" name="port" value="3001" min="1" max="65535">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Capabilities</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="capabilities"
+                                                value="video-playback" id="cap1" checked>
+                                            <label class="form-check-label" for="cap1">Video Playback</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="capabilities"
+                                                value="audio-playback" id="cap2" checked>
+                                            <label class="form-check-label" for="cap2">Audio Playback</label>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="capabilities" value="audio-playback" id="cap2" checked>
-                                        <label class="form-check-label" for="cap2">Audio Playback</label>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="capabilities" value="screen-effects" id="cap3">
-                                        <label class="form-check-label" for="cap3">Screen Effects</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="capabilities" value="hardware-control" id="cap4">
-                                        <label class="form-check-label" for="cap4">Hardware Control</label>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="capabilities"
+                                                value="screen-effects" id="cap3">
+                                            <label class="form-check-label" for="cap3">Screen Effects</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="capabilities"
+                                                value="hardware-control" id="cap4">
+                                            <label class="form-check-label" for="cap4">Hardware Control</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location"
+                                    placeholder="e.g., Living Room, Front Porch, Basement">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="2"
+                                    placeholder="Optional description of this Goblin's purpose"></textarea>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="testConnection"
+                                    id="testConnection" checked>
+                                <label class="form-check-label" for="testConnection">
+                                    Test connection before registering
+                                </label>
+                            </div>
+                        </form>
+
+                        <div class="alert alert-info mt-3" id="registrationStatus" style="display: none;">
+                            <i class="bi bi-info-circle"></i> <span id="statusMessage">Testing connection...</span>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Location</label>
-                            <input type="text" class="form-control" name="location" 
-                                   placeholder="e.g., Living Room, Front Porch, Basement">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" rows="2" 
-                                      placeholder="Optional description of this Goblin's purpose"></textarea>
-                        </div>
-                        
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="testConnection" id="testConnection" checked>
-                            <label class="form-check-label" for="testConnection">
-                                Test connection before registering
-                            </label>
-                        </div>
-                    </form>
-                    
-                    <div class="alert alert-info mt-3" id="registrationStatus" style="display: none;">
-                        <i class="bi bi-info-circle"></i> <span id="statusMessage">Testing connection...</span>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="registerBtn" onclick="goblinManager.registerGoblin()">
-                        <i class="bi bi-plus-circle"></i> Register Goblin
-                    </button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" id="registerBtn"
+                            onclick="goblinManager.registerGoblin()">
+                            <i class="bi bi-plus-circle"></i> Register Goblin
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Goblin Details Modal -->
-    <div class="modal fade" id="goblinDetailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-cpu"></i> Goblin Details
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="goblinDetailsContent">
-                        <!-- Details will be loaded here -->
+        <!-- Goblin Details Modal -->
+        <div class="modal fade" id="goblinDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-cpu"></i> Goblin Details
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="editGoblinBtn">
-                        <i class="bi bi-pencil"></i> Edit Settings
-                    </button>
+                    <div class="modal-body">
+                        <div id="goblinDetailsContent">
+                            <!-- Details will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="editGoblinBtn">
+                            <i class="bi bi-pencil"></i> Edit Settings
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Broadcast Command Modal -->
-    <div class="modal fade" id="broadcastModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-broadcast"></i> Broadcast Command
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="broadcastForm">
-                        <div class="mb-3">
-                            <label class="form-label">Command</label>
-                            <select class="form-select" name="command" id="broadcastCommand">
-                                <option value="stop-all">Stop All Playback</option>
-                                <option value="test-video">Test Video Playback</option>
-                                <option value="health">Health Check</option>
-                                <option value="restart-service">Restart Service</option>
-                                <option value="clear-cache">Clear Cache</option>
-                                <option value="custom">Custom Command</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3" id="customCommandGroup" style="display: none;">
-                            <label class="form-label">Custom Command</label>
-                            <input type="text" class="form-control" name="customCommand" placeholder="Enter custom endpoint">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Data (JSON)</label>
-                            <textarea class="form-control" name="data" rows="3" placeholder='{"key": "value"}'></textarea>
-                        </div>
-                        
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="onlineOnly" id="onlineOnly" checked>
-                            <label class="form-check-label" for="onlineOnly">
-                                Send to online Goblins only
-                            </label>
-                        </div>
-                    </form>
-                    
-                    <div class="mt-3" id="broadcastResults" style="display: none;">
-                        <h6>Results:</h6>
-                        <div id="broadcastResultsList"></div>
+        <!-- Broadcast Command Modal -->
+        <div class="modal fade" id="broadcastModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-broadcast"></i> Broadcast Command
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="goblinManager.executeBroadcast()">
-                        <i class="bi bi-broadcast"></i> Send Command
-                    </button>
+                    <div class="modal-body">
+                        <form id="broadcastForm">
+                            <div class="mb-3">
+                                <label class="form-label">Command</label>
+                                <select class="form-select" name="command" id="broadcastCommand">
+                                    <option value="stop-all">Stop All Playback</option>
+                                    <option value="test-video">Test Video Playback</option>
+                                    <option value="health">Health Check</option>
+                                    <option value="restart-service">Restart Service</option>
+                                    <option value="clear-cache">Clear Cache</option>
+                                    <option value="custom">Custom Command</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="customCommandGroup" style="display: none;">
+                                <label class="form-label">Custom Command</label>
+                                <input type="text" class="form-control" name="customCommand"
+                                    placeholder="Enter custom endpoint">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Data (JSON)</label>
+                                <textarea class="form-control" name="data" rows="3"
+                                    placeholder='{"key": "value"}'></textarea>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="onlineOnly" id="onlineOnly"
+                                    checked>
+                                <label class="form-check-label" for="onlineOnly">
+                                    Send to online Goblins only
+                                </label>
+                            </div>
+                        </form>
+
+                        <div class="mt-3" id="broadcastResults" style="display: none;">
+                            <h6>Results:</h6>
+                            <div id="broadcastResultsList"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="goblinManager.executeBroadcast()">
+                            <i class="bi bi-broadcast"></i> Send Command
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/character-menu.js"></script>
-    <script src="/js/goblin-management.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/character-menu.js"></script>
+        <script src="/js/goblin-management.js"></script>
 </body>
 
 </html>

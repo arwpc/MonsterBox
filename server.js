@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * MonsterBox 4.0 - Single Node Express Server
- * Clean, single-character application with Poses feature
- * Eliminates WebSocket complexity while preserving all functionality
+ * MonsterBox 5.3 - Animatronic Control System
+ * Single Node Express Server with Conversation Mode, Poses, and AI Integration
+ * Unified navigation with consolidated features
  */
 
 import express from 'express';
@@ -30,7 +30,6 @@ import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
-import liveDashboardRoutes from './routes/live/dashboard.js';
 import scenesRoutes from './routes/scenes/index.js';
 import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
@@ -42,7 +41,6 @@ import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js
 import pipewireService from './services/pipewireService.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import conversationRoutes from './routes/conversation.js';
-import demoRoutes from './routes/demo.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
 import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
@@ -219,9 +217,7 @@ app.use('/audio-library', audioLibraryRoutes);
 app.use('/video-library', videoLibraryRoutes);
 app.use('/goblin-management', goblinManagementRoutes);
 app.use('/conversation', conversationRoutes);
-app.use('/demo', demoRoutes);
 app.use('/orchestration', orchestrationWebRoutes);
-app.use('/live', liveDashboardRoutes);
 app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
 app.use('/first-run', firstRunRoutes);

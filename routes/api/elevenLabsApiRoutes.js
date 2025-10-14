@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - ElevenLabs API Routes
+ * MonsterBox 5.3 - ElevenLabs API Routes
  * RESTful API endpoints for ElevenLabs integration
  */
 

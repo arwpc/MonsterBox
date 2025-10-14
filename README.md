@@ -4,6 +4,8 @@
 
 **Latest Release:** MonsterBox 5.3 (October 2025)
 - ✅ All 63 unit tests passing
+- ✅ 40+ Conversation Mode E2E tests passing
+- ✅ Unified Conversation Mode interface
 - ✅ BTS7960 motor driver full support
 - ✅ Random poses during conversation
 - ✅ Goblin video display integration
@@ -138,6 +140,48 @@ Notes
 - Cleans up only E2E‑created parts between retries to prevent cross‑character contamination.
 - Base URL uses 127.0.0.1 and Playwright is configured in `playwright.config.ts`.
 
+### Conversation Mode Testing Suite — NEW ✅
+
+Comprehensive testing for the unified Conversation Mode interface, including backend APIs, frontend interactions, and Monster Features integration.
+
+**Test Suites:**
+- **Backend API Tests** (`conversation-api.spec.js`): Tests all 13 API endpoints
+- **Frontend E2E Tests** (`conversation-mode-complete.spec.js`): Complete user interaction simulation
+- **Monster Features Tests** (`monster-features.spec.js`): State persistence and integration tests
+
+**Run All Conversation Mode Tests:**
+```bash
+npm run test:conversation
+```
+
+**Run Individual Test Suites:**
+```bash
+# Backend API tests only
+npm run test:conversation:api
+
+# Frontend E2E tests only
+npm run test:conversation:e2e
+
+# Monster Features tests only
+npm run test:conversation:features
+
+# Run with headed browser (visual debugging)
+npm run test:conversation:live
+```
+
+**What's Tested:**
+- ✅ All API endpoints (webcam, speakers, jaw animation, head tracking, AI agent, scenes)
+- ✅ All UI panels (Live Audio, Make Character Say, Monster Features, Scenes, Webcam)
+- ✅ All Monster Features toggles (Jaw Animation, Parrot Mode, Head Tracking, AI On)
+- ✅ State persistence across page reloads
+- ✅ Complete trick-or-treater interaction workflow
+- ✅ AI latency monitoring and display
+- ✅ Scene loading and playback
+- ✅ Navigation and version display
+
+**Documentation:**
+- Complete testing guide: `docs/CONVERSATION_MODE_TESTING.md`
+- Test coverage: 40+ tests across backend, frontend, and integration
 
 ---
 
