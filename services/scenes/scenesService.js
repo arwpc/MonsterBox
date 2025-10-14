@@ -37,5 +37,23 @@ export async function nextSceneId() {
   return maxId + 1;
 }
 
-export default { loadScenes, saveScenes, nextSceneId };
+export async function getSceneById(sceneId, characterId) {
+  const scenes = await loadScenes();
+  const scene = scenes.find(s => parseInt(s.id, 10) === parseInt(sceneId, 10));
+  return scene || null;
+}
+
+export async function loadTemplates() {
+  const appRoot = path.resolve(__dirname, '..', '..');
+  const templatesPath = path.resolve(appRoot, 'data', 'scene-templates.json');
+  try {
+    const data = await fs.readFile(templatesPath, 'utf8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export default { loadScenes, saveScenes, nextSceneId, getSceneById, loadTemplates };
 

@@ -5,13 +5,26 @@
     "type": "motor",
     "pin": null,
     "description": "Main wiper motor for movement",
-    "config": {},
+    "config": {
+      "testFlag": true,
+      "minPulse": 600
+    },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "controlBoard": "MDD10A",
     "directionPin": 26,
     "pwmPin": 13,
-    "maxDuration": 10000
+    "maxDuration": 10000,
+    "modelId": "motor_jeep_wagoneer_wiper",
+    "updated": "2025-10-14T03:31:58.395Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 10
+      }
+    ]
   },
   {
     "id": "3",
@@ -25,7 +38,15 @@
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
-    "modelId": "default_speaker"
+    "modelId": "default_speaker",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 10
+      }
+    ]
   },
   {
     "id": "4",
@@ -39,7 +60,15 @@
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
-    "modelId": "default_speaker"
+    "modelId": "default_speaker",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 10
+      }
+    ]
   },
   {
     "id": "5",
@@ -52,7 +81,17 @@
       "retriggerMs": 5000
     },
     "created": "2025-10-14T02:20:16.978Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "pir_generic",
+    "updated": "2025-10-14T03:29:43.557Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 10
+      }
+    ]
   },
   {
     "id": "6",
@@ -95,5 +134,190 @@
     "created": "2025-10-14T02:20:17.065Z",
     "enabled": true,
     "modelId": "default_speaker"
+  },
+  {
+    "id": "9",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0
+    },
+    "created": "2025-10-14T03:32:26.224Z",
+    "enabled": true,
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-10-14T03:32:47.253Z",
+    "markers": [
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 12,
+        "unit": "deg"
+      }
+    ]
+  },
+  {
+    "id": "10",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-10-14T03:32:26.402Z",
+    "enabled": true
+  },
+  {
+    "id": "11",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-10-14T03:32:26.549Z",
+    "enabled": true
+  },
+  {
+    "id": "12",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-14T03:32:26.726Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "13",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-10-14T03:32:26.859Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "14",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-10-14T03:32:26.999Z",
+    "enabled": true
+  },
+  {
+    "id": "15",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-10-14T03:32:27.123Z",
+    "enabled": true
+  },
+  {
+    "id": "16",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "generic GPIO sensor",
+    "config": {},
+    "created": "2025-10-14T03:32:27.209Z",
+    "enabled": true
+  },
+  {
+    "id": "17",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-10-14T03:32:27.303Z",
+    "enabled": true
+  },
+  {
+    "id": "18",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-10-14T03:32:27.390Z",
+    "enabled": true
+  },
+  {
+    "id": "19",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-14T03:32:27.471Z",
+    "enabled": true
+  },
+  {
+    "id": "20",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-10-14T03:32:27.608Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "21",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-10-14T03:32:27.748Z",
+    "enabled": true
+  },
+  {
+    "id": "22",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "pulse"
+    },
+    "created": "2025-10-14T03:49:47.879Z",
+    "enabled": true
   }
 ]

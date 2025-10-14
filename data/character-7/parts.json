@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "pulse"
+    },
+    "created": "2025-10-14T03:51:23.160Z",
+    "enabled": true
+  }
+]

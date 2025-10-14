@@ -7,6 +7,8 @@ import sceneExecutor from '../../services/scenes/sceneExecutor.js';
 import sceneQueue from '../../services/scenes/sceneQueue.js';
 import queueTemplates from '../../services/scenes/queueTemplates.js';
 import queueLibrary from '../../services/scenes/queueLibrary.js';
+import sceneAnalytics from '../../services/scenes/sceneAnalyticsService.js';
+import armedModeRoutes from './armed-mode.js';
 
 const router = express.Router();
 
@@ -79,13 +81,9 @@ router.post('/:id/play', async (req, res) => {
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
 
-    // In test mode, avoid running hardware/pose execution paths entirely
+    // In test mode, run with dryRun to avoid hardware but still log analytics
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
-    if (inTest) {
-      return res.json({ success: true, played: id, steps: (scene.steps||[]).length, result: { testMode: true }, dryRun: true });
-    }
-
-    const dryRun = (String(req.query?.dryRun||'').toLowerCase() === '1' || String(req.query?.dryRun||'').toLowerCase() === 'true');
+    const dryRun = inTest || (String(req.query?.dryRun||'').toLowerCase() === '1' || String(req.query?.dryRun||'').toLowerCase() === 'true');
     const result = await sceneExecutor.executeScene(scene, characterId, null, { dryRun });
     res.json({ success: true, played: id, steps: (scene.steps||[]).length, result, dryRun });
   } catch (e) {
@@ -372,5 +370,166 @@ router.post('/queue/library/import', express.json(), async (req,res) => {
     res.status(400).json({ success: false, error: e && e.message });
   }
 });
+
+// --- Scene Templates ---
+router.get('/templates', async (req,res) => {
+  try {
+    const templates = await scenesService.loadTemplates();
+    res.json({ success: true, templates });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.post('/from-template', express.json(), async (req,res) => {
+  try {
+    const templateId = req.body && req.body.templateId;
+    const name = req.body && req.body.name;
+    if (!templateId) return res.status(400).json({ success: false, error: 'templateId required' });
+
+    const templates = await scenesService.loadTemplates();
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return res.status(404).json({ success: false, error: 'Template not found' });
+
+    const scenes = await scenesService.loadScenes();
+    const id = await scenesService.nextSceneId();
+    const scene = {
+      id,
+      name: name || template.name,
+      description: template.description || '',
+      steps: JSON.parse(JSON.stringify(template.steps || [])), // Deep copy
+      created: new Date().toISOString(),
+      fromTemplate: templateId
+    };
+    scenes.push(scene);
+    await scenesService.saveScenes(scenes);
+    res.json({ success: true, scene });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// --- Scene Duplication ---
+router.post('/:id/duplicate', express.json(), async (req,res) => {
+  try {
+    const id = parseInt(req.params.id,10);
+    const newName = req.body && req.body.name;
+
+    const scenes = await scenesService.loadScenes();
+    const source = scenes.find(s => parseInt(s.id,10) === id);
+    if (!source) return res.status(404).json({ success: false, error: 'Scene not found' });
+
+    const newId = await scenesService.nextSceneId();
+    const duplicate = {
+      id: newId,
+      name: newName || `${source.name} (Copy)`,
+      description: source.description || '',
+      steps: JSON.parse(JSON.stringify(source.steps || [])), // Deep copy
+      created: new Date().toISOString(),
+      duplicatedFrom: id
+    };
+    scenes.push(duplicate);
+    await scenesService.saveScenes(scenes);
+    res.json({ success: true, scene: duplicate });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// --- Scene Import/Export ---
+router.get('/export', async (req,res) => {
+  try {
+    const scenes = await scenesService.loadScenes();
+    const exportData = {
+      version: '5.0',
+      exported: new Date().toISOString(),
+      scenes: scenes
+    };
+
+    const filename = `scenes_export_${new Date().toISOString().split('T')[0]}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.json(exportData);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.post('/import', express.json(), async (req,res) => {
+  try {
+    const importData = req.body || {};
+    const overwrite = req.body.overwrite === true || req.body.overwrite === 'true';
+
+    if (!importData.scenes || !Array.isArray(importData.scenes)) {
+      return res.status(400).json({ success: false, error: 'Invalid import data: scenes array required' });
+    }
+
+    const scenes = await scenesService.loadScenes();
+    let imported = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const importScene of importData.scenes) {
+      const existingIdx = scenes.findIndex(s => parseInt(s.id,10) === parseInt(importScene.id,10));
+
+      if (existingIdx !== -1) {
+        if (overwrite) {
+          scenes[existingIdx] = { ...importScene, updated: new Date().toISOString() };
+          updated++;
+        } else {
+          skipped++;
+        }
+      } else {
+        scenes.push({ ...importScene, imported: new Date().toISOString() });
+        imported++;
+      }
+    }
+
+    await scenesService.saveScenes(scenes);
+    res.json({ success: true, imported, updated, skipped, total: importData.scenes.length });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// --- Scene Analytics ---
+router.get('/analytics', async (req,res) => {
+  try {
+    const sceneId = req.query.sceneId ? parseInt(req.query.sceneId, 10) : null;
+    const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : null;
+    const analytics = await sceneAnalytics.getSceneAnalytics(sceneId, characterId);
+    res.json({ success: true, analytics });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.get('/analytics/popular', async (req,res) => {
+  try {
+    const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : null;
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
+    const popular = await sceneAnalytics.getPopularScenes(characterId, limit);
+    res.json({ success: true, popular });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.get('/analytics/:sceneId', async (req,res) => {
+  try {
+    const sceneId = parseInt(req.params.sceneId, 10);
+    const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : getCurrentCharacterId(req);
+    const metrics = await sceneAnalytics.getScenePerformanceMetrics(sceneId, characterId);
+    if (!metrics) {
+      return res.status(404).json({ success: false, error: 'No analytics data found for this scene' });
+    }
+    res.json({ success: true, metrics });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// Mount armed mode routes
+router.use('/armed-mode', armedModeRoutes);
 
 export default router;
