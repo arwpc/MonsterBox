@@ -13,7 +13,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/audio', {
-            title: 'Setup Audio - MonsterBox 5.1',
+            title: 'Setup Audio - MonsterBox 5.3',
             page: 'setup-audio',
             config: { theme: 'dark' },
             scripts: ['/js/setup-audio.js']

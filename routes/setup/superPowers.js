@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
         ] : (req.app.locals?.characters || []);
 
         res.render('setup/super-powers', {
-            title: 'Setup Super Powers - MonsterBox 4.0',
+            title: 'Setup Super Powers - MonsterBox 5.3',
             page: 'setup-super-powers',
             characters,
             selectedCharacterId
