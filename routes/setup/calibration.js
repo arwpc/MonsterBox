@@ -94,7 +94,6 @@ router.get('/', async (req, res) => {
             title: 'Setup Calibration - MonsterBox 5.3',
             page: 'setup-calibration',
             config: { theme: 'dark' },
-            includeNavigation: false,
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
         });
     } catch (error) {
@@ -890,11 +889,11 @@ router.get('/standard_servo/:id', async (req, res) => {
             .filter(p => String(p.id) !== String(partId) && p.type === 'servo' && String(p.config?.servoType || 'standard').toLowerCase() !== 'continuous')
             .map(p => ({ id: p.id, name: p.name }));
 
-        res.render('setup/calibration-standard-servo', {
+        res.renderWithLayout('setup/calibration-standard-servo', {
             title: `Calibrate ${part.name} - MonsterBox 5.3`,
             page: 'setup-calibration-standard-servo',
             config: { theme: 'dark' },
-
+            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
             part,
             calibrationStatus,
             suggestedPositions,
@@ -902,7 +901,14 @@ router.get('/standard_servo/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Error rendering standard servo calibration page:', error);
-        res.status(500).render('error', { title: 'Error', page: 'error', config: { theme: 'dark' }, error: 'Failed to render page', message: error.message });
+        res.status(500).renderWithLayout('error', {
+            title: 'Error',
+            page: 'error',
+            config: { theme: 'dark' },
+            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
+            error: 'Failed to render page',
+            message: error.message
+        });
     }
 });
 

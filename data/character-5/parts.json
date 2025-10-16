@@ -15,7 +15,13 @@
     "maxSpeed": 100,
     "description": "12V wiper motor on BTS7960 H-bridge driver",
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true
+    "enabled": true,
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "controlBoard": "BTS7960",
+    "updated": "2025-10-16T01:15:45.530Z"
   },
   {
     "id": "2",

@@ -37,6 +37,8 @@ import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
+import configApiRoutes from './routes/api/configRoutes.js';
+import systemApiRoutes from './routes/api/systemRoutes.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import pipewireService from './services/pipewireService.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
@@ -263,12 +265,13 @@ function printRoutes() {
     });
     console.log('Registered routes count:', routes.length);
     const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
-    app.use('/api', characterImagesApiRoutes);
-
     console.log('Some routes:', interesting.slice(0, 25));
 }
 printRoutes();
 
+app.use('/api', characterImagesApiRoutes);
+app.use('/api/config', configApiRoutes);
+app.use('/api/system', systemApiRoutes);
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);

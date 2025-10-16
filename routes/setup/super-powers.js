@@ -17,8 +17,9 @@ router.get('/', async (req, res) => {
     const currentCharacter = config.selectedCharacter;
 
     if (!currentCharacter) {
-      return res.render('setup/super-powers', {
-        page: 'setup',
+      return res.renderWithLayout('setup/super-powers', {
+        title: 'Setup Super Powers - MonsterBox 5.3',
+        page: 'setup-super-powers',
         pageTitle: 'Super Powers',
         error: 'No character selected. Please select a character from the navigation menu.',
         currentCharacter: null,
@@ -31,8 +32,9 @@ router.get('/', async (req, res) => {
     const character = characters.find(c => c.id === currentCharacter);
 
     if (!character) {
-      return res.render('setup/super-powers', {
-        page: 'setup',
+      return res.renderWithLayout('setup/super-powers', {
+        title: 'Setup Super Powers - MonsterBox 5.3',
+        page: 'setup-super-powers',
         pageTitle: 'Super Powers',
         error: 'Selected character not found. Please select a valid character.',
         currentCharacter: null,
@@ -40,8 +42,9 @@ router.get('/', async (req, res) => {
       });
     }
 
-    res.render('setup/super-powers', {
-      page: 'setup',
+    res.renderWithLayout('setup/super-powers', {
+      title: 'Setup Super Powers - MonsterBox 5.3',
+      page: 'setup-super-powers',
       pageTitle: 'Super Powers',
       currentCharacter: currentCharacter,
       currentCharacterName: character.name,

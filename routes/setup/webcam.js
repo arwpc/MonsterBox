@@ -13,14 +13,15 @@ const router = express.Router();
 // Setup webcam page
 router.get('/', async (req, res) => {
     try {
-        res.render('setup/webcam', {
+        res.renderWithLayout('setup/webcam', {
             title: 'Setup Webcam - MonsterBox 5.3',
             page: 'setup-webcam'
         });
     } catch (error) {
         console.error('Error rendering webcam setup page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
+            page: 'error',
             error: 'Failed to load webcam setup page',
             message: error.message
         });

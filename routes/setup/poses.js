@@ -11,14 +11,15 @@ const router = express.Router();
 // Setup poses page
 router.get('/', async (req, res) => {
     try {
-        res.render('setup/poses', {
+        res.renderWithLayout('setup/poses', {
             title: 'Setup Poses - MonsterBox 5.3',
             page: 'setup-poses',
-            config: { theme: 'dark' }
+            config: { theme: 'dark' },
+            scripts: ['/js/monsterbox4.js', '/js/poses-setup.js']
         });
     } catch (error) {
         console.error('Error rendering poses setup page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
             config: { theme: 'dark' },

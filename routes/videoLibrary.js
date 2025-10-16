@@ -31,8 +31,9 @@ const upload = multer({
 
 // Main video library page
 router.get('/', (req, res) => {
-    res.render('video-library/index', {
-        title: 'Video Library',
+    res.renderWithLayout('video-library/index', {
+        title: 'Video Library - MonsterBox 5.3',
+        page: 'video-library',
         pageTitle: 'Video Library'
     });
 });

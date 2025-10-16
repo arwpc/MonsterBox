@@ -130,7 +130,7 @@ class LinearActuatorController:
             return False
     
     def control_bts7960(self, direction, speed, duration, pwm_hz=2000):
-        """Control actuator using BTS7960 board."""
+        """Control actuator using BTS7960 board with simple digital control."""
         try:
             rpwm_pin = self.pins['rpwm']
             lpwm_pin = self.pins['lpwm']
@@ -147,7 +147,7 @@ class LinearActuatorController:
             # Stop motor first
             lgpio.gpio_write(self.h, rpwm_pin, 0)
             lgpio.gpio_write(self.h, lpwm_pin, 0)
-            time.sleep(0.02)
+            time.sleep(0.05)
 
             # Normalize direction
             if direction in ('extend', 'forward'):
@@ -155,41 +155,47 @@ class LinearActuatorController:
             else:
                 dir_norm = 'reverse'
 
-            # Calculate duty cycle
-            duty_cycle = int((speed / 100.0) * 255)
-            log_info(f"BTS7960 control - Direction: {dir_norm}, Speed: {speed}%, Duty: {duty_cycle}/255, PWM: {pwm_hz} Hz")
+            log_info(f"BTS7960 control - Direction: {dir_norm}, Speed: {speed}%, Duration: {duration}ms")
 
-            # Determine which PWM pin to use
+            # Determine which pin to use based on direction
             active_pin = rpwm_pin if dir_norm == 'forward' else lpwm_pin
             inactive_pin = lpwm_pin if dir_norm == 'forward' else rpwm_pin
 
             # Ensure inactive pin is LOW
             lgpio.gpio_write(self.h, inactive_pin, 0)
+            time.sleep(0.02)
 
-            # Software PWM on active pin
-            cycle_time = max(1.0/float(pwm_hz or 2000), 0.0002)
-            start_time = time.time()
-            end_time = start_time + (duration / 1000.0)
+            # Simple digital control: Set active pin HIGH for duration
+            # This works reliably for wiper motors and similar DC motors
+            # Speed control can be added later with hardware PWM if needed
+            if speed > 0:
+                lgpio.gpio_write(self.h, active_pin, 1)
+                log_info(f"Motor running {dir_norm} (pin {active_pin} HIGH)")
 
-            while time.time() < end_time:
-                if duty_cycle > 0:
-                    on_time = cycle_time * (duty_cycle / 255.0)
-                    off_time = cycle_time - on_time
-                    lgpio.gpio_write(self.h, active_pin, 1)
-                    time.sleep(on_time)
-                    lgpio.gpio_write(self.h, active_pin, 0)
-                    time.sleep(off_time)
-                else:
-                    time.sleep(cycle_time)
+                # Run for specified duration
+                time.sleep(duration / 1000.0)
 
-            # Stop motor
+                # Stop motor
+                lgpio.gpio_write(self.h, active_pin, 0)
+                log_info("Motor stopped")
+            else:
+                log_info("Speed is 0, motor not started")
+
+            # Ensure both PWM pins are LOW
             lgpio.gpio_write(self.h, rpwm_pin, 0)
             lgpio.gpio_write(self.h, lpwm_pin, 0)
-            log_info("BTS7960 motor stopped")
+
+            log_info("BTS7960 motor control complete")
             return True
 
         except Exception as e:
             log_error(f"Error controlling BTS7960: {str(e)}")
+            # Ensure motor is stopped on error
+            try:
+                lgpio.gpio_write(self.h, self.pins['rpwm'], 0)
+                lgpio.gpio_write(self.h, self.pins['lpwm'], 0)
+            except:
+                pass
             return False
     
     def cleanup(self):

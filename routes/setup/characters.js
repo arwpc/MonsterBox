@@ -10,15 +10,16 @@ const router = express.Router();
 // Characters setup page
 router.get('/', async function (req, res) {
   try {
-    res.render('setup/characters', {
+    res.renderWithLayout('setup/characters', {
       title: 'Setup Characters - MonsterBox 5.3',
       page: 'setup-characters',
       config: { theme: 'dark' }
     });
   } catch (err) {
     console.error('Error rendering characters page:', err);
-    res.status(500).render('error', {
+    res.status(500).renderWithLayout('error', {
       title: 'Error',
+      page: 'error',
       error: 'Failed to load characters setup page',
       message: err.message
     });
@@ -41,13 +42,19 @@ router.post('/api/character-assignments', charactersController.updateAssignment)
 // Lightweight image manager page
 router.get('/images', async function (req, res) {
   try {
-    res.render('setup/character-images', {
+    res.renderWithLayout('setup/character-images', {
       title: 'Character Images - MonsterBox 5.3',
       page: 'setup-characters',
-      config: { theme: 'dark' }
+      config: { theme: 'dark' },
+      includeMainWrapper: false
     });
   } catch (err) {
-    res.status(500).render('error', { title: 'Error', error: 'Failed to load images page', message: err.message });
+    res.status(500).renderWithLayout('error', {
+      title: 'Error',
+      page: 'error',
+      error: 'Failed to load images page',
+      message: err.message
+    });
   }
 });
 
