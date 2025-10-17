@@ -263,6 +263,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
             characterId: null,
             outputMode: 'server',    // 'server' | 'local'
             micSource: 'server',     // 'server' | 'browser'
+            transcriptionOnly: false, // true = STT only, false = full conversation
             serverMicTimer: null,
             serverMicActive: false,
             sttLastAt: 0,
@@ -323,6 +324,33 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     if (connection.micSource === 'server') {
                         this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
                     }
+                    break;
+
+                case 'start_transcription_only':
+                    // Start transcription-only mode (no agent, just STT)
+                    console.log(`🎤 Starting transcription-only mode for session ${sessionId}`);
+                    connection.isActive = true;
+                    connection.transcriptionOnly = true;
+                    this.sendToClient(sessionId, {
+                        type: 'transcription_started',
+                        message: 'Transcription-only mode active - speak into the microphone'
+                    });
+                    // Start server mic loop for transcription
+                    if (connection.micSource === 'server') {
+                        this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
+                    }
+                    break;
+
+                case 'stop_transcription':
+                    // Stop transcription-only mode
+                    console.log(`🛑 Stopping transcription for session ${sessionId}`);
+                    connection.isActive = false;
+                    connection.transcriptionOnly = false;
+                    this._stopServerMicLoop(sessionId, false);
+                    this.sendToClient(sessionId, {
+                        type: 'transcription_stopped',
+                        message: 'Transcription stopped'
+                    });
                     break;
 
                 case 'send_message':

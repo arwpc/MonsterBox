@@ -986,17 +986,9 @@ STTManager.prototype.connectWebSocket = function () {
             console.log('📤 Setting STT language:', lang);
             self.ws.send(JSON.stringify({ type: 'set_stt_language', language: lang }));
 
-            // Start conversation with agent
-            if (self.currentCharacterId) {
-                self.getAgentIdForCharacter(self.currentCharacterId, function (agentId) {
-                    if (agentId) {
-                        console.log('📤 Starting conversation with agent:', agentId);
-                        self.ws.send(JSON.stringify({ type: 'start_conversation', agentId: agentId }));
-                    } else {
-                        console.warn('⚠️ No agent configured for character', self.currentCharacterId);
-                    }
-                });
-            }
+            // Start transcription-only mode (no agent, just STT)
+            console.log('📤 Starting transcription-only mode');
+            self.ws.send(JSON.stringify({ type: 'start_transcription_only' }));
         };
 
         self.ws.onmessage = function (ev) {
@@ -1098,8 +1090,16 @@ STTManager.prototype.stopListening = function () {
 
     console.log('🛑 stopListening called');
 
-    // Close WebSocket connection
+    // Send stop transcription message
     if (self.ws && self.wsConnected) {
+        console.log('📤 Sending stop_transcription message');
+        try {
+            self.ws.send(JSON.stringify({ type: 'stop_transcription' }));
+        } catch (e) {
+            console.error('❌ Error sending stop message:', e);
+        }
+
+        // Close WebSocket connection
         console.log('🔌 Closing WebSocket connection');
         try {
             self.ws.close();
