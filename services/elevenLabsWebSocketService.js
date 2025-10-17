@@ -143,6 +143,63 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this.activeConnections = new Map(); // sessionId -> connection info
         this.wsServer = null;
         this.port = 8795; // Dedicated port for AI chat WebSocket
+
+        // Hardening: Session management
+        this.sessionTimeoutMs = 3600000; // 1 hour max session duration
+        this.cleanupIntervalMs = 60000; // cleanup every minute
+        this._cleanupTimer = null;
+
+        console.log('🎤 ElevenLabsWebSocketService initialized with hardening');
+    }
+
+    /**
+     * Cleanup old/stale sessions
+     */
+    _cleanupOldSessions() {
+        const now = Date.now();
+        const toDelete = [];
+
+        for (const [sessionId, connection] of this.activeConnections.entries()) {
+            const age = now - connection.startTime.getTime();
+
+            // Remove sessions older than timeout OR inactive for 5 minutes
+            const inactive = !connection.isActive && age > 300000;
+            const expired = age > this.sessionTimeoutMs;
+
+            if (expired || inactive) {
+                console.log(`🧹 Cleaning up session ${sessionId} (age=${Math.round(age/1000)}s, active=${connection.isActive})`);
+
+                // Close WebSocket connections
+                try {
+                    if (connection.clientWs && connection.clientWs.readyState === WebSocket.OPEN) {
+                        connection.clientWs.close();
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ Error closing client WS for ${sessionId}:`, e.message);
+                }
+
+                try {
+                    if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        connection.elevenLabsWs.close();
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ Error closing ElevenLabs WS for ${sessionId}:`, e.message);
+                }
+
+                // Stop server mic loop
+                if (connection.serverMicActive) {
+                    connection.serverMicActive = false;
+                }
+
+                toDelete.push(sessionId);
+            }
+        }
+
+        toDelete.forEach(id => this.activeConnections.delete(id));
+
+        if (toDelete.length > 0) {
+            console.log(`🧹 Cleaned up ${toDelete.length} old WebSocket sessions`);
+        }
     }
 
     /**
@@ -167,6 +224,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 this.wsServer.on('listening', () => {
                     console.log(`🌐 ElevenLabs Chat WebSocket server listening on port ${this.port}`);
+
+                    // Start periodic cleanup
+                    this._cleanupTimer = setInterval(() => {
+                        this._cleanupOldSessions();
+                    }, this.cleanupIntervalMs);
+                    console.log(`🧹 Session cleanup timer started (every ${this.cleanupIntervalMs/1000}s)`);
+
                     resolve();
                 });
 
@@ -207,7 +271,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
             sttLanguage: null,       // per-connection STT language override
             suppressMicUntilMs: 0,   // suppress server mic during server playback
             audioBuffer: [],         // base64 MP3 frames from ElevenLabs
-            audioPlaying: false      // audio playback loop active flag
+            audioPlaying: false,     // audio playback loop active flag
+            // Hardening: Error tracking
+            consecutiveErrors: 0,
+            maxConsecutiveErrors: 10,
+            lastError: null,
+            transcriptCount: 0,
+            audioChunkCount: 0
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -531,6 +601,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const userText = (message.user_transcription_event && message.user_transcription_event.user_transcript)
                             || message.text || '';
                         if (userText) {
+                            // Hardening: Track successful transcription
+                            connection.transcriptCount += 1;
+                            connection.consecutiveErrors = 0; // Reset error counter on success
+                            console.log(`✅ Session ${sessionId}: Transcribed "${userText}" (count=${connection.transcriptCount})`);
+
                             // Primary event used by mic-panel
                             this.sendToClient(sessionId, {
                                 type: 'user_transcript',
@@ -545,7 +620,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 timestamp: Date.now()
                             });
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (err) {
+                        console.error(`❌ Session ${sessionId}: Error handling user_transcript:`, err.message);
+                        connection.consecutiveErrors += 1;
+                        connection.lastError = err.message;
+                    }
                     break;
 
                 case 'agent_response':
