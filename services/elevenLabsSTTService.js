@@ -79,17 +79,18 @@ class ElevenLabsSTTService {
             }
 
             // ALWAYS log what we're sending to ElevenLabs
-            console.log(`🎙️ STT Request: model_id="${modelToSend}", language="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, original_model="${options.model}", original_lang="${options.language}"`);
+            console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, original_model="${options.model}", original_lang="${options.language}"`);
 
             // Required by ElevenLabs STT
             formData.append('model_id', modelToSend);
 
             // Only pass language if explicitly provided and not 'auto'
+            // NOTE: ElevenLabs API expects 'language_code', not 'language'
             if (langToSend && langToSend !== 'auto') {
-                formData.append('language', langToSend);
-                console.log(`✅ Language parameter SENT to ElevenLabs: "${langToSend}"`);
+                formData.append('language_code', langToSend);
+                console.log(`✅ Language code parameter SENT to ElevenLabs: "${langToSend}"`);
             } else {
-                console.log(`⚠️ Language parameter NOT sent (langToSend="${langToSend}")`);
+                console.log(`⚠️ Language code parameter NOT sent (langToSend="${langToSend}")`);
             }
 
             const response = await axios.post(
