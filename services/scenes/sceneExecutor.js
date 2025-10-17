@@ -8,6 +8,7 @@ import elevenLabsTTSService from '../elevenLabsTTSService.js';
 import serverPlaybackService from '../serverPlaybackService.js';
 import { getTTSConfig } from '../aiConfigStore.js';
 import goblinManagerService from '../goblinManagerService.js';
+import sceneAnalytics from './sceneAnalyticsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,6 +168,99 @@ async function executeGoblinVideoStep(step, characterId, emit) {
   }
 }
 
+async function executeSensorStep(step, characterId, emit) {
+  const { sensorId, partId, action = 'read', waitForMotion = false, timeout = 30000, threshold } = step;
+
+  // Support both sensorId and partId for flexibility
+  const id = sensorId || partId;
+  if (!id) throw new Error('sensor.step requires sensorId or partId');
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'sensor', sensorId: id, action, waitForMotion });
+
+  try {
+    // Load parts to get sensor details
+    const parts = await loadParts();
+    const sensor = parts.find(p => String(p.id) === String(id));
+
+    if (!sensor) {
+      throw new Error(`Sensor not found: ${id}`);
+    }
+
+    if (sensor.type !== 'motion_sensor') {
+      throw new Error(`Part ${id} is not a motion sensor (type: ${sensor.type})`);
+    }
+
+    const pin = sensor.pin;
+    if (!pin) {
+      throw new Error(`Sensor ${id} has no pin configured`);
+    }
+
+    // If waitForMotion is true, wait for motion to be detected
+    if (waitForMotion) {
+      emit && emit({ type: 'step', status: 'waiting', stepType: 'sensor', sensorId: id, message: 'Waiting for motion...' });
+
+      const startTime = Date.now();
+      const checkInterval = 500; // Check every 500ms
+
+      while (Date.now() - startTime < timeout) {
+        const result = await hardwareService.motion_sensor.read({ pin });
+
+        if (result.success && result.motionDetected) {
+          emit && emit({
+            type: 'step',
+            status: 'complete',
+            stepType: 'sensor',
+            sensorId: id,
+            motionDetected: true,
+            result
+          });
+          return { success: true, motionDetected: true, waitedMs: Date.now() - startTime };
+        }
+
+        // Wait before next check
+        await new Promise(r => setTimeout(r, checkInterval));
+      }
+
+      // Timeout reached without motion
+      throw new Error(`Timeout waiting for motion on sensor ${id} (${timeout}ms)`);
+    }
+
+    // Otherwise, just read the current sensor value
+    const result = await hardwareService.motion_sensor.read({ pin });
+
+    emit && emit({
+      type: 'step',
+      status: result.success ? 'complete' : 'error',
+      stepType: 'sensor',
+      sensorId: id,
+      result
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Sensor read failed');
+    }
+
+    // If threshold is specified, check if motion meets threshold
+    if (threshold !== undefined) {
+      const meetsThreshold = result.motionDetected === threshold;
+      if (!meetsThreshold) {
+        throw new Error(`Sensor value (${result.motionDetected}) does not meet threshold (${threshold})`);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    emit && emit({
+      type: 'step',
+      status: 'error',
+      stepType: 'sensor',
+      sensorId: id,
+      error: error.message
+    });
+    throw error;
+  }
+}
+
 export async function executeStep(step, characterId, emit, options) {
   const dryRun = options && options.dryRun;
   const t = (step.type || (step.poseId != null ? 'pose' : null));
@@ -195,6 +289,8 @@ export async function executeStep(step, characterId, emit, options) {
     case 'goblin':
     case 'goblin-video':
       return executeGoblinVideoStep(step, characterId, emit);
+    case 'sensor':
+      return executeSensorStep(step, characterId, emit);
     default:
       throw new Error('Unknown step type: ' + t);
   }
@@ -219,34 +315,81 @@ export async function executeScene(scene, characterId, emit, options) {
   const groups = groupStepsForConcurrency(steps);
   const results = [];
   const opts = options || {};
+  const startTime = new Date().toISOString();
+  const startTs = Date.now();
+  let stepsExecuted = 0;
+  const errors = [];
 
   emit && emit({ type: 'scene', status: 'start', id: scene.id, name: scene.name, totalSteps: steps.length, dryRun: !!opts.dryRun });
 
-  for (let gi = 0; gi < groups.length; gi++) {
-    const group = groups[gi];
-    const startTs = Date.now();
-    emit && emit({ type: 'group', status: 'start', index: gi, size: group.length });
+  try {
+    for (let gi = 0; gi < groups.length; gi++) {
+      const group = groups[gi];
+      const groupStartTs = Date.now();
+      emit && emit({ type: 'group', status: 'start', index: gi, size: group.length });
 
-    if (group.length === 1) {
-      const r = await executeStep(group[0], characterId, emit, opts);
-      results.push(r);
-    } else {
-      // concurrent pair
-      const proms = group.map(s => executeStep(s, characterId, emit, opts));
-      const settled = await Promise.allSettled(proms);
-      results.push(settled);
-      const anyRejected = settled.some(p => p.status === 'rejected');
-      if (anyRejected) {
-        emit && emit({ type: 'group', status: 'error', index: gi, durationMs: Date.now() - startTs });
-        throw new Error('Concurrent step failed at group ' + gi);
+      if (group.length === 1) {
+        const r = await executeStep(group[0], characterId, emit, opts);
+        results.push(r);
+        stepsExecuted++;
+      } else {
+        // concurrent pair
+        const proms = group.map(s => executeStep(s, characterId, emit, opts));
+        const settled = await Promise.allSettled(proms);
+        results.push(settled);
+        stepsExecuted += group.length;
+        const anyRejected = settled.some(p => p.status === 'rejected');
+        if (anyRejected) {
+          emit && emit({ type: 'group', status: 'error', index: gi, durationMs: Date.now() - groupStartTs });
+          throw new Error('Concurrent step failed at group ' + gi);
+        }
+      }
+
+      emit && emit({ type: 'group', status: 'complete', index: gi, durationMs: Date.now() - groupStartTs });
+    }
+
+    emit && emit({ type: 'scene', status: 'complete', id: scene.id, name: scene.name, resultsCount: results.length });
+
+    // Log analytics (don't fail scene execution if analytics fails)
+    if (!opts.dryRun && scene.id && characterId) {
+      try {
+        await sceneAnalytics.logSceneExecution(scene.id, characterId, {
+          startTime,
+          endTime: new Date().toISOString(),
+          duration: Date.now() - startTs,
+          stepsExecuted,
+          totalSteps: steps.length,
+          success: true,
+          errors: [],
+          performance: {}
+        });
+        await sceneAnalytics.updateSceneUsageStats(scene.id, characterId);
+      } catch (analyticsError) {
+        console.error('Failed to log scene analytics:', analyticsError);
       }
     }
 
-    emit && emit({ type: 'group', status: 'complete', index: gi, durationMs: Date.now() - startTs });
+    return { success: true, results };
+  } catch (error) {
+    // Log failed execution
+    if (!opts.dryRun && scene.id && characterId) {
+      try {
+        await sceneAnalytics.logSceneExecution(scene.id, characterId, {
+          startTime,
+          endTime: new Date().toISOString(),
+          duration: Date.now() - startTs,
+          stepsExecuted,
+          totalSteps: steps.length,
+          success: false,
+          errors: [{ message: error.message }],
+          performance: {}
+        });
+      } catch (analyticsError) {
+        console.error('Failed to log scene analytics:', analyticsError);
+      }
+    }
+    throw error;
   }
-
-  emit && emit({ type: 'scene', status: 'complete', id: scene.id, name: scene.name, resultsCount: results.length });
-  return { success: true, results };
 }
 
 export default { executeScene, executeStep };

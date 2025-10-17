@@ -16,6 +16,7 @@ if [ $# -lt 2 ]; then
     echo "  2 - Coffin Breaker (192.168.8.140)"
     echo "  3 - Orlok (192.168.8.120)"
     echo "  4 - Skulltalker (192.168.8.130)"
+    echo "  5 - Groundbreaker (192.168.8.200)"
     exit 1
 fi
 
@@ -46,25 +47,28 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # SSH options for non-interactive deploys
-SSH_OPTS="-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5"
+SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=8"
+PASS="${SSH_PASS:-klrklr89!}"
 
-# Test SSH connection
+# Test SSH connection (password auth by default)
 echo "Testing SSH connection..."
-if ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "echo 'Connected'" > /dev/null 2>&1; then
+if sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "echo 'Connected'" > /dev/null 2>&1; then
     echo -e "${GREEN}✓${NC} SSH connection successful"
 else
     echo "✗ SSH connection failed"
-    echo "  Make sure you can SSH to ${REMOTE_USER}@${IP_ADDRESS}"
-    echo "  Tip: use ssh-copy-id to install your deploy key"
+    echo "  Ensure ${REMOTE_USER}@${IP_ADDRESS} is reachable and password is correct"
     exit 1
 fi
 echo ""
 
 # Sync code (excluding node_modules, data, logs)
+# Pre-clean heavy artifacts on remote to free space
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "rm -rf ${REMOTE_PATH}/playwright-report ${REMOTE_PATH}/test-results ${REMOTE_PATH}/playwright-diagnostics || true"
+
 echo "Syncing code to ${IP_ADDRESS}..."
 RSYNC_DRY=""
 if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
-rsync -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
+sshpass -p "$PASS" rsync -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'node_modules' \
     --exclude 'data/character-*/parts.json' \
     --exclude 'data/character-*/poses.json' \
@@ -73,6 +77,10 @@ rsync -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'logs' \
     --exclude 'tmp' \
     --exclude '*.log' \
+    --exclude 'playwright-report' \
+    --exclude 'test-results' \
+    --exclude 'playwright-diagnostics' \
+    --exclude 'ARCHIVE' \
     ./ ${REMOTE_USER}@${IP_ADDRESS}:${REMOTE_PATH}/
 if [ "$DRY_RUN" = "1" ]; then
     echo -e "${YELLOW}Dry-run complete. Skipping remote key/dependencies/restart steps.${NC}"
@@ -84,9 +92,14 @@ fi
 echo -e "${GREEN}✓${NC} Code synced"
 echo ""
 
-# Ensure ElevenLabs key file exists
+# Ensure ElevenLabs key file exists or set from env
+if [ -n "${XI_API_KEY:-}" ]; then
+  echo "Installing ElevenLabs key from XI_API_KEY..."
+  sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo mkdir -p /etc/monsterbox && echo '${XI_API_KEY}' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key && echo '✓ Key installed'" || true
+fi
+
 echo "Checking ElevenLabs API key..."
-ssh ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     if [ ! -f /etc/monsterbox/elevenlabs.key ]; then
         echo '⚠ ElevenLabs key file not found on remote'
         echo '  Create it with: echo \"sk_YOUR_KEY_HERE\" | sudo tee /etc/monsterbox/elevenlabs.key'
@@ -105,46 +118,101 @@ echo ""
 
 # Install dependencies if needed
 echo "Checking dependencies..."
-ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     cd ${REMOTE_PATH}
     if [ ! -d node_modules ]; then
-        echo 'Installing npm dependencies...'
-        npm install
+        echo 'Installing npm dependencies (ci)...'
+        npm ci || npm install
     else
         echo '✓ Dependencies already installed'
     fi
 "
 echo ""
 
-# Restart service
-echo "Restarting MonsterBox service..."
-ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
-    cd ${REMOTE_PATH}
-    pkill -f 'node.*server.js' || true
-    sleep 2
-    nohup npm start > /tmp/monsterbox.out 2>&1 &
-    sleep 3
-    if pgrep -f 'node.*server.js' > /dev/null; then
-        echo '✓ MonsterBox service started'
-    else
-        echo '✗ Failed to start MonsterBox service'
-        echo 'Check logs: tail -f /tmp/monsterbox.out'
-        exit 1
+# Ensure systemd service is installed and running
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    SERVICE_FILE=/etc/systemd/system/monsterbox.service
+    if [ ! -f \"$SERVICE_FILE\" ]; then
+      echo 'Installing systemd service...'
+      sudo bash -c 'cat > /etc/systemd/system/monsterbox.service' <<'EOF'
+[Unit]
+Description=MonsterBox Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=GAIN=130
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/monsterbox.log
+StandardError=append:/var/log/monsterbox.err
+
+[Install]
+WantedBy=multi-user.target
+EOF
+      sudo systemctl daemon-reload
+      sudo systemctl enable monsterbox || true
     fi
+    echo 'Restarting monsterbox.service...'
+    sudo systemctl restart monsterbox || true
+    sleep 3
+    systemctl is-active monsterbox && echo '✓ MonsterBox service active' || echo '⚠ MonsterBox service not active yet'
+"
+
+# Install/enable boot-init service to set random poses on boot (best-effort)
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    mkdir -p ${REMOTE_PATH}/scripts
+    cp ${REMOTE_PATH}/scripts/boot-init.sh ${REMOTE_PATH}/scripts/boot-init.sh 2>/dev/null || true
+    sudo bash -c 'cat > /etc/systemd/system/monsterbox-init.service' <<'EOF'
+[Unit]
+Description=MonsterBox Post-Boot Initializer
+After=network-online.target monsterbox.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+ExecStart=/usr/bin/bash /home/remote/MonsterBox/scripts/boot-init.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    sudo systemctl daemon-reload
+    sudo systemctl enable monsterbox-init || true
+    sudo systemctl restart monsterbox-init || true
 "
 echo ""
 
-# Check service status
-echo "Checking service status..."
-ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
-    sleep 2
-    if curl -sf http://127.0.0.1:3000/health > /dev/null 2>&1; then
-        echo '✓ MonsterBox API is responding'
-    elif curl -sf http://127.0.0.1:3000/ > /dev/null 2>&1; then
-        echo '✓ MonsterBox HTTP root responding'
-    else
-        echo '⚠ MonsterBox API not responding yet (may still be starting)'
+# Optional: ensure mjpg-streamer is present and running
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    if ! systemctl list-unit-files | grep -q '^mjpg-streamer'; then
+      echo 'Installing mjpg-streamer integration (best-effort)...'
+      sudo bash /home/remote/MonsterBox/scripts/install-mjpg-streamer-integration.sh || true
     fi
+    sudo systemctl enable mjpg-streamer 2>/dev/null || true
+    sudo systemctl restart mjpg-streamer 2>/dev/null || true
+"
+
+# Check service status and select character
+echo "Checking service status..."
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      if curl -sf http://127.0.0.1:3000/health > /dev/null 2>&1; then
+        echo '✓ MonsterBox API is responding'
+        break
+      fi
+      sleep 1
+    done
+    # Select the target character id as active
+    curl -s -X POST -H 'Content-Type: application/json' -d '{"id":'${CHARACTER_ID}'}' http://127.0.0.1:3000/setup/characters/api/select >/dev/null 2>&1 || true
+    echo 'Selected character: ${CHARACTER_ID}'
 "
 echo ""
 

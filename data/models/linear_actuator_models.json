@@ -846,28 +846,6 @@
     "meta": {}
   },
   {
-    "id": "1760234277999",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1760234385993",
-    "name": "Test LA Model",
-    "description": "linear_actuator defaults for tests",
-    "defaults": {
-      "speedMaxPct": 100,
-      "strokeMs": 2000
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
     "id": "1760234424423",
     "name": "E2E LA Model",
     "description": "linear_actuator defaults",
@@ -902,6 +880,50 @@
   },
   {
     "id": "1760234488836",
+    "name": "E2E LA Model",
+    "description": "linear_actuator defaults",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760412565833",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760412618723",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760412700769",
+    "name": "E2E LA Model",
+    "description": "linear_actuator defaults",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1760412757435",
     "name": "E2E LA Model",
     "description": "linear_actuator defaults",
     "defaults": {

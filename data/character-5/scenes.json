@@ -1,0 +1,138 @@
+[
+  {
+    "id": 7,
+    "name": "Multi-Step Sensor Scene",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sensor",
+        "sensorId": "5",
+        "action": "read"
+      },
+      {
+        "type": "wait",
+        "duration": 100
+      }
+    ],
+    "created": "2025-10-14T22:07:53.852Z"
+  },
+  {
+    "id": 14,
+    "name": "Custom Duplicate Name",
+    "description": "",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      }
+    ],
+    "created": "2025-10-14T22:11:58.040Z",
+    "duplicatedFrom": 12
+  },
+  {
+    "id": 9003,
+    "name": "New Scene",
+    "steps": [],
+    "imported": "2025-10-14T22:11:58.220Z"
+  },
+  {
+    "id": 9004,
+    "name": "Adv Scene 1",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-10-14T22:11:58.380Z"
+  },
+  {
+    "id": 9005,
+    "name": "Adv Scene 2",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 50
+      }
+    ],
+    "created": "2025-10-14T22:11:58.389Z"
+  },
+  {
+    "id": 9006,
+    "name": "Queueable Scene",
+    "steps": [],
+    "created": "2025-10-14T22:12:02.578Z"
+  },
+  {
+    "id": 9007,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 10
+      }
+    ],
+    "created": "2025-10-14T22:12:02.972Z"
+  },
+  {
+    "id": 9008,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "Hello from dry run"
+      }
+    ],
+    "created": "2025-10-14T22:12:03.001Z"
+  },
+  {
+    "id": 9009,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "sample.wav",
+        "volume": 50
+      }
+    ],
+    "created": "2025-10-14T22:12:03.031Z"
+  },
+  {
+    "id": 9010,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "part",
+        "partId": "servo-1",
+        "action": "move",
+        "params": {
+          "position": 120
+        }
+      }
+    ],
+    "created": "2025-10-14T22:12:03.050Z"
+  },
+  {
+    "id": 9011,
+    "name": "Steps Test",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 5,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 5
+      }
+    ],
+    "created": "2025-10-14T22:12:03.070Z"
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "1",
+    "characterId": 5,
+    "name": "Groundbreaker Motor",
+    "type": "motor",
+    "model": "motor_jeep_wagoneer_wiper",
+    "driver": "BTS7960",
+    "rpwmPin": 27,
+    "lpwmPin": 22,
+    "renPin": 17,
+    "lenPin": 17,
+    "enableMode": "dual",
+    "minSpeed": 0,
+    "maxSpeed": 100,
+    "description": "12V wiper motor on BTS7960 H-bridge driver",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "2",
+    "characterId": 5,
+    "name": "Groundbreaker Webcam",
+    "type": "webcam",
+    "deviceIndex": 0,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "description": "USB webcam for video capture",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "characterId": 5,
+    "name": "Groundbreaker Speaker",
+    "type": "speaker",
+    "deviceName": "default",
+    "volume": 80,
+    "description": "Audio output speaker",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "characterId": 5,
+    "name": "Groundbreaker Microphone",
+    "type": "microphone",
+    "deviceIndex": 0,
+    "sampleRate": 16000,
+    "channels": 1,
+    "description": "Webcam microphone for audio input",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  }
+]
+
