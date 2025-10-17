@@ -10,8 +10,9 @@ const router = express.Router();
 
 // Main Goblin management page
 router.get('/', (req, res) => {
-    res.render('goblin-management/index', {
-        title: 'Goblin Management',
+    res.renderWithLayout('goblin-management/index', {
+        title: 'Goblin Management - MonsterBox 5.3',
+        page: 'goblin-management',
         pageTitle: 'Goblin Management'
     });
 });

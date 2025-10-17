@@ -511,7 +511,20 @@ router.post('/api/move-stream', async (req, res) => {
     }
 });
 
-// Real-time audio level monitoring
+// Real-time audio level monitoring with caching for performance
+const audioLevelCache = new Map();
+const CACHE_TTL = 100; // Cache for 100ms to reduce Python wrapper calls
+
+// Periodic cache cleanup to prevent memory leaks
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of audioLevelCache.entries()) {
+        if (now - value.timestamp > CACHE_TTL * 10) {
+            audioLevelCache.delete(key);
+        }
+    }
+}, 5000); // Clean up every 5 seconds
+
 router.get('/api/audio-levels', async (req, res) => {
     try {
         const { deviceId, deviceType } = req.query;
@@ -520,27 +533,42 @@ router.get('/api/audio-levels', async (req, res) => {
         }
 
         if (deviceType === 'input') {
-            // Get microphone level with shorter duration for real-time response
+            const cacheKey = `input:${deviceId || 'default'}`;
+            const cached = audioLevelCache.get(cacheKey);
+            const now = Date.now();
+
+            // Return cached value if still fresh
+            if (cached && (now - cached.timestamp) < CACHE_TTL) {
+                return res.json(cached.data);
+            }
+
+            // Get microphone level with ultra-short duration for snappy VU (20ms)
             if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for input device: ${deviceId}`);
             const result = await runWrapper('microphone_cli.py', [
                 'get_level',
                 deviceId || 'default',
                 '16000',  // Sample rate
                 '1',
-                '0.03'     // Short duration for snappy VU (30ms)
-            ], { timeoutMs: 2000, enableLogging: false });
+                '0.02'     // Ultra-short duration for snappy VU (20ms, reduced from 30ms)
+            ], { timeoutMs: 1500, enableLogging: false });
 
             if (result) {
                 try {
                     const data = JSON.parse(result);
                     const level = data.level || 0;
                     if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Input level: ${level} for device: ${deviceId}`);
-                    res.json({
+
+                    const responseData = {
                         success: true,
                         level: level,
                         deviceId: deviceId || 'default',
                         type: 'input'
-                    });
+                    };
+
+                    // Cache the result
+                    audioLevelCache.set(cacheKey, { data: responseData, timestamp: now });
+
+                    res.json(responseData);
                 } catch (parseError) {
                     console.warn('Failed to parse microphone level:', parseError);
                     res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'input' });

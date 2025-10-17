@@ -17,9 +17,31 @@ const __dirname = path.dirname(__filename);
 class ServerSTTListener {
   constructor() {
     this.sessions = new Map(); // sessionId -> { deviceId, model, language, running, timer, transcript }
-    this.captureDurationSec = 1.2; // longer chunks improve accuracy for English model
-    this.pollIntervalMs = 650; // slight overlap to maintain continuity
+    this.captureDurationSec = 2.0; // longer chunks capture full sentences
+    this.pollIntervalMs = 500; // faster polling for better responsiveness
     this._lastCapturePath = null; // 'python' | 'ffmpeg' | 'arecord' | 'parec'
+    this.sessionTimeoutMs = 3600000; // 1 hour max session duration
+    this.cleanupIntervalMs = 60000; // cleanup every minute
+
+    // Start periodic cleanup of old sessions
+    this._cleanupTimer = setInterval(() => this._cleanupOldSessions(), this.cleanupIntervalMs);
+  }
+
+  _cleanupOldSessions() {
+    const now = Date.now();
+    const toDelete = [];
+    for (const [sessionId, state] of this.sessions.entries()) {
+      const age = now - state.startedAt;
+      // Remove sessions older than timeout OR not running and older than 5 minutes
+      if (age > this.sessionTimeoutMs || (!state.running && age > 300000)) {
+        if (state.timer) clearTimeout(state.timer);
+        toDelete.push(sessionId);
+      }
+    }
+    toDelete.forEach(id => this.sessions.delete(id));
+    if (toDelete.length > 0) {
+      console.log(`🧹 Cleaned up ${toDelete.length} old STT sessions`);
+    }
   }
 
   _errText(e) {
@@ -40,12 +62,23 @@ class ServerSTTListener {
 
 
   startSession({ deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' }) {
+    // Stop any existing sessions for this device to prevent conflicts
+    for (const [sid, s] of this.sessions.entries()) {
+      if (s.deviceId === deviceId && s.running) {
+        console.log(`⚠️ Stopping existing STT session ${sid} for device ${deviceId}`);
+        this.stopSession(sid);
+      }
+    }
+
     const sessionId = 'stt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const state = {
       deviceId, model, language, running: true, transcript: '', lastError: null, timer: null,
       chunksCaptured: 0, chunksWithAudio: 0, chunksTranscribed: 0, lastChunkBytes: 0, startedAt: Date.now(), lastActivityAt: null,
-      vadEnabled: false, vadThreshold: 0.03
+      vadEnabled: false, vadThreshold: 0.03, consecutiveErrors: 0, maxConsecutiveErrors: 10
     };
+
+    console.log(`🎤 Starting STT session ${sessionId} for device: ${deviceId}, model: ${model}, language: ${language}`);
+
     // Load VAD settings asynchronously from STT config (no await to keep sync start)
     try {
       getSTTConfig().then((cfg) => {
@@ -54,6 +87,7 @@ class ServerSTTListener {
         if (typeof cfg.vadThreshold === 'number') {
           var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.03; state.vadThreshold = t;
         }
+        console.log(`🎤 Session ${sessionId} VAD settings: enabled=${state.vadEnabled}, threshold=${state.vadThreshold}`);
       }).catch(() => { /* ignore */ });
     } catch (_) { /* ignore */ }
     this.sessions.set(sessionId, state);
@@ -65,37 +99,92 @@ class ServerSTTListener {
         state.chunksCaptured += 1;
         const sz = (buffer && buffer.length) || 0;
         state.lastChunkBytes = sz;
+
         if (sz > 0) {
           state.chunksWithAudio += 1;
           // Basic amplitude-based VAD gating (RMS on PCM16 from WAV)
           var shouldTranscribe = true;
+          var rms = 0;
           try {
             if (state.vadEnabled) {
-              var rms = this._computeWavRms(buffer);
+              rms = this._computeWavRms(buffer);
               var thr = state.vadThreshold || 0.03;
-              if (!(rms >= thr)) { shouldTranscribe = false; }
+              if (!(rms >= thr)) {
+                shouldTranscribe = false;
+                if (state.chunksCaptured % 20 === 0) {
+                  console.log(`🔇 Session ${sessionId}: Audio below VAD threshold (${rms.toFixed(4)} < ${thr})`);
+                }
+              }
             }
-          } catch (_) { /* ignore */ }
+          } catch (vadErr) {
+            console.warn(`⚠️ Session ${sessionId}: VAD error:`, vadErr);
+          }
+
           if (shouldTranscribe) {
-            const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model: state.model, language: state.language });
-            if (result && result.success && (result.transcript || result.text)) {
-              const text = (result.transcript || result.text || '').trim();
-              if (text) { state.transcript += (state.transcript ? ' ' : '') + text; state.chunksTranscribed += 1; }
-              state.lastError = null; state.lastActivityAt = Date.now();
-            } else {
-              state.lastError = this._errText((result && result.error) || 'STT failed');
+            try {
+              const result = await elevenLabsSTTService.transcribeAudio(buffer, { mimeType: 'audio/wav', model: state.model, language: state.language });
+              if (result && result.success && (result.transcript || result.text)) {
+                const text = (result.transcript || result.text || '').trim();
+                if (text) {
+                  state.transcript += (state.transcript ? ' ' : '') + text;
+                  state.chunksTranscribed += 1;
+                  console.log(`✅ Session ${sessionId}: Transcribed "${text}" (chunk ${state.chunksTranscribed})`);
+                }
+                state.lastError = null;
+                state.lastActivityAt = Date.now();
+                state.consecutiveErrors = 0; // Reset error counter on success
+              } else {
+                const errMsg = this._errText((result && result.error) || 'STT failed');
+                state.lastError = errMsg;
+                state.consecutiveErrors += 1;
+                console.warn(`⚠️ Session ${sessionId}: Transcription failed (${state.consecutiveErrors}/${state.maxConsecutiveErrors}): ${errMsg}`);
+
+                // Stop session if too many consecutive errors
+                if (state.consecutiveErrors >= state.maxConsecutiveErrors) {
+                  console.error(`❌ Session ${sessionId}: Too many consecutive errors, stopping session`);
+                  state.running = false;
+                  state.lastError = `Session stopped: ${state.maxConsecutiveErrors} consecutive errors`;
+                }
+              }
+            } catch (transcribeErr) {
+              const errMsg = this._errText(transcribeErr);
+              state.lastError = errMsg;
+              state.consecutiveErrors += 1;
+              console.error(`❌ Session ${sessionId}: Transcription exception (${state.consecutiveErrors}/${state.maxConsecutiveErrors}):`, transcribeErr);
+
+              if (state.consecutiveErrors >= state.maxConsecutiveErrors) {
+                state.running = false;
+                state.lastError = `Session stopped: ${state.maxConsecutiveErrors} consecutive errors`;
+              }
             }
           } else {
             // Below VAD threshold: treat as silence (no error)
             state.lastError = null;
+            state.consecutiveErrors = 0;
           }
         } else {
-          state.lastError = 'No audio captured (0 bytes)'; // harmless, will retry
+          state.lastError = 'No audio captured (0 bytes)';
+          state.consecutiveErrors += 1;
+          if (state.chunksCaptured % 10 === 0) {
+            console.warn(`⚠️ Session ${sessionId}: No audio captured (${state.consecutiveErrors} times)`);
+          }
         }
       } catch (e) {
-        state.lastError = this._errText(e);
+        const errMsg = this._errText(e);
+        state.lastError = errMsg;
+        state.consecutiveErrors += 1;
+        console.error(`❌ Session ${sessionId}: Capture error (${state.consecutiveErrors}/${state.maxConsecutiveErrors}):`, e);
+
+        if (state.consecutiveErrors >= state.maxConsecutiveErrors) {
+          state.running = false;
+          state.lastError = `Session stopped: ${state.maxConsecutiveErrors} consecutive errors`;
+        }
       } finally {
-        if (state.running) state.timer = setTimeout(tick, this.pollIntervalMs);
+        if (state.running) {
+          state.timer = setTimeout(tick, this.pollIntervalMs);
+        } else {
+          console.log(`🛑 Session ${sessionId}: Stopped (running=false)`);
+        }
       }
     };
 
@@ -106,9 +195,21 @@ class ServerSTTListener {
   stopSession(sessionId) {
     const s = this.sessions.get(sessionId);
     if (!s) return { success: false, error: 'No such session' };
+    console.log(`🛑 Stopping STT session ${sessionId} (captured=${s.chunksCaptured}, transcribed=${s.chunksTranscribed})`);
     s.running = false;
     if (s.timer) { clearTimeout(s.timer); s.timer = null; }
+    // Don't delete immediately - let cleanup handle it
     return { success: true };
+  }
+
+  stopAllSessions() {
+    console.log(`🛑 Stopping all ${this.sessions.size} STT sessions`);
+    for (const [sessionId, state] of this.sessions.entries()) {
+      if (state.running) {
+        this.stopSession(sessionId);
+      }
+    }
+    return { success: true, stopped: this.sessions.size };
   }
 
   getStatus(sessionId) {

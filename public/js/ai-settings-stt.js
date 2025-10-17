@@ -18,13 +18,16 @@ function STTManager() {
     // VU meter
     this.vuTimer = null;
     this.currentMicDeviceId = null;
-    // Server-side listening session
+    this.vuPending = false; // Prevent overlapping VU requests
+    // WebSocket connection for real-time STT
+    this.ws = null;
+    this.wsConnected = false;
     this.isListening = false;
-    this.serverSessionId = null;
-    this.statusPollTimer = null;
     this.lastTranscriptText = '';
-    this.lastStatusError = '';
-    this.mediaRecorderTimeslice = 1000; // ms per chunk (legacy)
+    this.currentCharacterId = null;
+    // Debounce timers for performance
+    this.saveDebounceTimer = null;
+    this.saveDebounceDelay = 500; // ms
 }
 
 STTManager.prototype.init = function () {
@@ -248,23 +251,50 @@ STTManager.prototype.applySavedConfigIfReady = function () {
         var micSelect = document.getElementById('microphonePart');
         if (micSelect && cfg.microphonePartId) {
             micSelect.value = String(cfg.microphonePartId);
+            console.log('Setting microphone part to:', cfg.microphonePartId);
+            this.onMicSelectionChange();
+        } else if (micSelect && micSelect.options.length > 1) {
+            // Auto-select first microphone if none configured
+            micSelect.selectedIndex = 1;
+            console.log('Auto-selecting first microphone part');
             this.onMicSelectionChange();
         }
     }
 };
 
-// Save subset of STT config immediately (called on change)
+// Save subset of STT config with debouncing for performance
 STTManager.prototype.savePartialConfig = function (patch) {
     var self = this;
+
+    // Update local config immediately for UI responsiveness
     var base = self.savedConfig || {};
-    var merged = {};
-    for (var k in base) merged[k] = base[k];
-    for (var p in patch) merged[p] = patch[p];
-    return fetch('/api/elevenlabs/stt/config', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(merged)
-    }).then(function (r) { return r.json(); })
-        .then(function (j) { if (j && j.success) { self.savedConfig = j.config; self.currentConfig = j.config; } })
+    for (var p in patch) base[p] = patch[p];
+    self.savedConfig = base;
+    self.currentConfig = base;
+
+    // Debounce the actual save to reduce server load
+    if (self.saveDebounceTimer) {
+        clearTimeout(self.saveDebounceTimer);
+    }
+
+    self.saveDebounceTimer = setTimeout(function () {
+        var merged = {};
+        for (var k in self.savedConfig) merged[k] = self.savedConfig[k];
+
+        fetch('/api/elevenlabs/stt/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.success) {
+                self.savedConfig = j.config;
+                self.currentConfig = j.config;
+            }
+        })
         .catch(function () { /* ignore */ });
+    }, self.saveDebounceDelay);
 };
 
 STTManager.prototype.populateMicrophoneSelect = function () {
@@ -345,10 +375,19 @@ STTManager.prototype.bindEvents = function () {
     var startListeningBtn = document.getElementById('startListening');
     var stopListeningBtn = document.getElementById('stopListening');
     if (startListeningBtn) {
-        startListeningBtn.addEventListener('click', function () { self.startListening(); });
+        startListeningBtn.addEventListener('click', function (e) {
+            console.log('🎤 Start button clicked');
+            self.startListening();
+        });
     }
     if (stopListeningBtn) {
-        stopListeningBtn.addEventListener('click', function () { self.stopListening(); });
+        // Use pointer-events CSS instead of disabled attribute
+        // This allows clicks to fire while maintaining visual disabled state
+        stopListeningBtn.addEventListener('click', function (e) {
+            console.log('🛑 Stop button clicked, isListening=' + self.isListening + ', sessionId=' + self.serverSessionId);
+            // Always call stopListening - it will handle cleanup even if not listening
+            self.stopListening();
+        });
     }
     // 2s diagnostic test
     var twoSecBtn = document.getElementById('sttTwoSecTest');
@@ -386,12 +425,14 @@ STTManager.prototype.bindEvents = function () {
     }
     if (inputGain) { inputGain.addEventListener('input', applyInputGainNow); }
 
-    // Range slider value display updates
+    // Range slider value display updates + auto-save
     var vadThresholdEl = document.getElementById('vadThreshold');
     var vadThresholdValue = document.getElementById('vadThresholdValue');
     if (vadThresholdEl && vadThresholdValue) {
         vadThresholdEl.addEventListener('input', function () {
-            vadThresholdValue.textContent = parseFloat(vadThresholdEl.value).toFixed(2);
+            var val = parseFloat(vadThresholdEl.value);
+            vadThresholdValue.textContent = val.toFixed(2);
+            self.savePartialConfig({ vadThreshold: val });
         });
     }
 
@@ -399,7 +440,9 @@ STTManager.prototype.bindEvents = function () {
     var vadSilenceDurationValue = document.getElementById('vadSilenceDurationValue');
     if (vadSilenceDurationEl && vadSilenceDurationValue) {
         vadSilenceDurationEl.addEventListener('input', function () {
-            vadSilenceDurationValue.textContent = vadSilenceDurationEl.value;
+            var val = parseInt(vadSilenceDurationEl.value, 10);
+            vadSilenceDurationValue.textContent = val;
+            self.savePartialConfig({ vadSilenceDuration: val });
         });
     }
 
@@ -407,7 +450,9 @@ STTManager.prototype.bindEvents = function () {
     var highpassFreqValue = document.getElementById('highpassFreqValue');
     if (highpassFreqEl && highpassFreqValue) {
         highpassFreqEl.addEventListener('input', function () {
-            highpassFreqValue.textContent = highpassFreqEl.value;
+            var val = parseInt(highpassFreqEl.value, 10);
+            highpassFreqValue.textContent = val;
+            self.savePartialConfig({ highpassFreq: val });
         });
     }
 
@@ -415,7 +460,9 @@ STTManager.prototype.bindEvents = function () {
     var lowpassFreqValue = document.getElementById('lowpassFreqValue');
     if (lowpassFreqEl && lowpassFreqValue) {
         lowpassFreqEl.addEventListener('input', function () {
-            lowpassFreqValue.textContent = lowpassFreqEl.value;
+            var val = parseInt(lowpassFreqEl.value, 10);
+            lowpassFreqValue.textContent = val;
+            self.savePartialConfig({ lowpassFreq: val });
         });
     }
 
@@ -423,7 +470,9 @@ STTManager.prototype.bindEvents = function () {
     var denoiseLevelValue = document.getElementById('denoiseLevelValue');
     if (denoiseLevelEl && denoiseLevelValue) {
         denoiseLevelEl.addEventListener('input', function () {
-            denoiseLevelValue.textContent = denoiseLevelEl.value;
+            var val = parseInt(denoiseLevelEl.value, 10);
+            denoiseLevelValue.textContent = val;
+            self.savePartialConfig({ denoiseLevel: val });
         });
     }
 
@@ -431,7 +480,38 @@ STTManager.prototype.bindEvents = function () {
     var minLetterRatioValue = document.getElementById('minLetterRatioValue');
     if (minLetterRatioEl && minLetterRatioValue) {
         minLetterRatioEl.addEventListener('input', function () {
-            minLetterRatioValue.textContent = minLetterRatioEl.value;
+            var val = parseInt(minLetterRatioEl.value, 10);
+            minLetterRatioValue.textContent = val;
+            self.savePartialConfig({ minLetterRatio: val });
+        });
+    }
+
+    // Checkbox auto-save
+    var audioFilterEnabledEl = document.getElementById('audioFilterEnabled');
+    if (audioFilterEnabledEl) {
+        audioFilterEnabledEl.addEventListener('change', function () {
+            self.savePartialConfig({ audioFilterEnabled: !!audioFilterEnabledEl.checked });
+        });
+    }
+
+    var filterSfxEl = document.getElementById('filterSfx');
+    if (filterSfxEl) {
+        filterSfxEl.addEventListener('change', function () {
+            self.savePartialConfig({ filterSfx: !!filterSfxEl.checked });
+        });
+    }
+
+    var validateEnglishEl = document.getElementById('validateEnglish');
+    if (validateEnglishEl) {
+        validateEnglishEl.addEventListener('change', function () {
+            self.savePartialConfig({ validateEnglish: !!validateEnglishEl.checked });
+        });
+    }
+
+    var requireVowelsEl = document.getElementById('requireVowels');
+    if (requireVowelsEl) {
+        requireVowelsEl.addEventListener('change', function () {
+            self.savePartialConfig({ requireVowels: !!requireVowelsEl.checked });
         });
     }
 
@@ -731,7 +811,9 @@ STTManager.prototype.getSelectedMicDeviceId = function () {
     var selId = String(micSelect.value);
     for (var i = 0; i < this.microphoneParts.length; i++) {
         if (String(this.microphoneParts[i].id) === selId) {
-            return this.microphoneParts[i].config && this.microphoneParts[i].config.deviceId;
+            var deviceId = this.microphoneParts[i].config && this.microphoneParts[i].config.deviceId;
+            // If no deviceId configured, use 'default' as fallback
+            return deviceId || 'default';
         }
     }
     return null;
@@ -740,31 +822,75 @@ STTManager.prototype.getSelectedMicDeviceId = function () {
 // VU meter handling
 STTManager.prototype.onMicSelectionChange = function () {
     this.currentMicDeviceId = this.getSelectedMicDeviceId();
+    console.log('Microphone selection changed. Device ID:', this.currentMicDeviceId);
     if (this.currentMicDeviceId) this.startVUMeter(); else this.stopVUMeter();
 };
 
 STTManager.prototype.startVUMeter = function () {
     var self = this;
     self.stopVUMeter();
-    if (!self.currentMicDeviceId) return;
+    if (!self.currentMicDeviceId) {
+        console.warn('Cannot start VU meter: no microphone device ID');
+        return;
+    }
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
-    if (!meterEl || !labelEl) return;
+    if (!meterEl || !labelEl) {
+        console.warn('Cannot start VU meter: elements not found', { meterEl: !!meterEl, labelEl: !!labelEl });
+        return;
+    }
+    console.log('Starting VU meter for device:', self.currentMicDeviceId);
 
-    self.vuTimer = setInterval(function () {
+    // Optimized VU meter with request deduplication
+    var lastLoggedPct = -1;
+    function updateVU() {
+        // Skip if previous request still pending
+        if (self.vuPending) return;
+
+        self.vuPending = true;
         var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
         fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (j) {
-                if (!j || !j.success) return;
+                self.vuPending = false;
+                if (!j || !j.success) {
+                    console.warn('VU meter: API returned failure', j);
+                    return;
+                }
                 var level = +j.level || 0;
-                var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                // Amplify display for better visibility: multiply by 10 for display only
+                // This makes quiet sounds visible (0.001 becomes 1%)
+                var displayLevel = level * 10;
+                var pct = Math.max(0, Math.min(100, Math.round(displayLevel * 100)));
+
+                // Color code: green for low, yellow for medium, red for clipping
+                if (pct < 30) {
+                    meterEl.className = 'progress-bar bg-success';
+                } else if (pct < 70) {
+                    meterEl.className = 'progress-bar bg-warning';
+                } else {
+                    meterEl.className = 'progress-bar bg-danger';
+                }
+
+                // Only log when level changes significantly (reduces console spam)
+                if (Math.abs(pct - lastLoggedPct) >= 5 || pct > 10) {
+                    console.log('🎤 Audio level:', level.toFixed(6), '→', pct + '% (amplified 10x)');
+                    lastLoggedPct = pct;
+                }
+
                 meterEl.style.width = pct + '%';
                 meterEl.setAttribute('aria-valuenow', String(pct));
                 labelEl.textContent = pct + '%';
             })
-            .catch(function () { /* ignore */ });
-    }, 300);
+            .catch(function (err) {
+                self.vuPending = false;
+                console.error('VU meter fetch error:', err);
+            });
+    }
+
+    // Reduced polling frequency: 500ms instead of 300ms for better performance
+    updateVU(); // Initial update
+    self.vuTimer = setInterval(updateVU, 500);
 };
 
 STTManager.prototype.stopVUMeter = function () {
@@ -772,6 +898,7 @@ STTManager.prototype.stopVUMeter = function () {
         clearInterval(this.vuTimer);
         this.vuTimer = null;
     }
+    this.vuPending = false; // Reset pending flag
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
     if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); }
@@ -788,73 +915,172 @@ STTManager.prototype.appendTranscript = function (text) {
     area.scrollTop = area.scrollHeight;
 };
 
-// Real-time listening using server-side Microphone Part
+// Get current character ID from page
+STTManager.prototype.getCurrentCharacterId = function () {
+    var label = document.getElementById('charLabel');
+    var cid = label && label.getAttribute('data-char-id');
+    var n = parseInt(cid, 10);
+    return Number.isFinite(n) ? n : null;
+};
+
+// Get agent ID for character
+STTManager.prototype.getAgentIdForCharacter = function (charId, callback) {
+    var self = this;
+    fetch('/setup/characters/api/characters/' + charId)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            var agent = (j && j.character && (j.character.elevenLabsAgentId || j.character.agentId)) || null;
+            if (agent) {
+                callback(String(agent));
+                return;
+            }
+            // fallback: assignments map
+            fetch('/setup/characters/api/character-assignments')
+                .then(function (r2) { return r2.json(); })
+                .then(function (a) {
+                    if (a && a[charId] && a[charId].agentId) {
+                        callback(String(a[charId].agentId));
+                    } else {
+                        callback(null);
+                    }
+                })
+                .catch(function () { callback(null); });
+        })
+        .catch(function () { callback(null); });
+};
+
+// Connect to WebSocket server (port 8795)
+STTManager.prototype.connectWebSocket = function () {
+    var self = this;
+
+    if (self.ws && self.wsConnected) {
+        console.log('✅ WebSocket already connected');
+        return;
+    }
+
+    console.log('🔌 Connecting to WebSocket on port 8795...');
+
+    var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+    var wsUrl = protocol + '//' + window.location.hostname + ':8795';
+
+    try {
+        self.ws = new WebSocket(wsUrl);
+
+        self.ws.onopen = function () {
+            console.log('✅ WebSocket connected');
+            self.wsConnected = true;
+
+            // Set character ID
+            self.currentCharacterId = self.getCurrentCharacterId();
+            if (self.currentCharacterId) {
+                console.log('📤 Setting character ID:', self.currentCharacterId);
+                self.ws.send(JSON.stringify({ type: 'set_character', characterId: self.currentCharacterId }));
+            }
+
+            // Set mic source to server
+            console.log('📤 Setting mic source to server');
+            self.ws.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+
+            // Set STT language
+            var lang = (document.getElementById('sttLanguage') || {}).value || 'auto';
+            console.log('📤 Setting STT language:', lang);
+            self.ws.send(JSON.stringify({ type: 'set_stt_language', language: lang }));
+
+            // Start transcription-only mode (no agent, just STT)
+            console.log('📤 Starting transcription-only mode');
+            self.ws.send(JSON.stringify({ type: 'start_transcription_only' }));
+        };
+
+        self.ws.onmessage = function (ev) {
+            try {
+                var msg = JSON.parse(ev.data);
+                if (!msg) return;
+
+                // Handle user transcript (final)
+                if (msg.type === 'user_transcript' && msg.user_transcription_event && msg.user_transcription_event.user_transcript) {
+                    var finalText = msg.user_transcription_event.user_transcript;
+                    console.log('✅ Transcript:', finalText);
+                    self.appendTranscript(finalText);
+                }
+                // Handle generic transcript event
+                else if (msg.type === 'transcript' && msg.role === 'user' && msg.text) {
+                    console.log('✅ Transcript (generic):', msg.text);
+                    self.appendTranscript(msg.text);
+                }
+                // Handle partial transcript (transcription-only mode)
+                else if (msg.type === 'stt_partial' && msg.text) {
+                    console.log('📝 Partial:', msg.text);
+                    self.appendTranscript(msg.text);
+                }
+            } catch (e) {
+                console.error('❌ Error parsing WebSocket message:', e);
+            }
+        };
+
+        self.ws.onclose = function () {
+            console.log('🔌 WebSocket disconnected');
+            self.wsConnected = false;
+            self.ws = null;
+        };
+
+        self.ws.onerror = function (err) {
+            console.error('❌ WebSocket error:', err);
+        };
+
+    } catch (e) {
+        console.error('❌ Failed to create WebSocket:', e);
+    }
+};
+
+// Real-time listening using WebSocket
 STTManager.prototype.startListening = function () {
     var self = this;
     var startBtn = document.getElementById('startListening');
     var stopBtn = document.getElementById('stopListening');
 
-    var devId = self.getSelectedMicDeviceId();
-    if (!devId) { self.showAlert('Select a Microphone Part first', 'warning'); return; }
+    console.log('🎤 Starting listening...');
 
+    // Clear transcript area
     var area = document.getElementById('liveTranscript');
     if (area) area.textContent = '';
     self.lastTranscriptText = '';
 
-    var body = {
-        deviceId: devId,
-        model: (document.getElementById('sttModel') || {}).value || 'scribe_v1',
-        language: (document.getElementById('sttLanguage') || {}).value || 'auto'
-    };
+    // Connect to WebSocket if not already connected
+    if (!self.wsConnected) {
+        self.connectWebSocket();
+    }
 
-    fetch('/api/elevenlabs/stt/listen/start', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); }).then(function (j) {
-        if (!j || !j.success) { self.showAlert('Failed to start listening', 'danger'); return; }
-        self.serverSessionId = j.sessionId; self.isListening = true;
-        if (startBtn) startBtn.disabled = true; if (stopBtn) stopBtn.disabled = false;
-        self.showAlert('Listening started (server)', 'info');
-        // begin polling status
-        self.statusPollTimer = setInterval(function () { self.pollTranscript(); }, 300); // faster UI updates
-    }).catch(function () { self.showAlert('Failed to start listening', 'danger'); });
+    // Update UI
+    self.isListening = true;
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        startBtn.style.cursor = 'not-allowed';
+    }
+    if (stopBtn) {
+        stopBtn.disabled = false;
+        stopBtn.style.opacity = '1';
+        stopBtn.style.cursor = 'pointer';
+    }
+
+    self.showAlert('Listening started - speak into the microphone', 'success');
 };
 
-STTManager.prototype.pollTranscript = function () {
-    var self = this; if (!self.serverSessionId) return;
-    fetch('/api/elevenlabs/stt/listen/status?sessionId=' + encodeURIComponent(self.serverSessionId))
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            if (!j || !j.success) return;
-            if (j.lastError && j.lastError !== self.lastStatusError) { self.lastStatusError = j.lastError; self.showAlert('STT warning: ' + j.lastError, 'warning'); }
-            if (!j.lastError && self.lastStatusError) { self.lastStatusError = ''; }
+// Append transcript to live transcript area
+STTManager.prototype.appendTranscript = function (text) {
+    var area = document.getElementById('liveTranscript');
+    if (!area) return;
 
-            // Debug counters (helps determine if audio is reaching server/ElevenLabs)
-            var prev = self._lastCounters || {};
-            if (typeof j.chunksCaptured === 'number' && j.chunksCaptured !== prev.chunksCaptured) {
-                if (window.MONSTERBOX_DEBUG_AUDIO) {
-                    console.log('[STT] captured=%d, withAudio=%d, transcribed=%d, lastChunkBytes=%d, err=%s',
-                        j.chunksCaptured, j.chunksWithAudio, j.chunksTranscribed, j.lastChunkBytes, j.lastError || '');
-                }
-                // Notify once if we are capturing audio but not getting transcripts
-                if (!j.lastError && j.chunksWithAudio > 0 && j.chunksTranscribed === 0 && !self._notifiedNoTranscriptYet) {
-                    self._notifiedNoTranscriptYet = true;
-                    self.showAlert('Capturing audio but no transcription yet. Please speak clearly for 2–3 seconds.', 'info');
-                }
-                self._lastCounters = {
-                    chunksCaptured: j.chunksCaptured,
-                    chunksWithAudio: j.chunksWithAudio,
-                    chunksTranscribed: j.chunksTranscribed,
-                    lastChunkBytes: j.lastChunkBytes
-                };
-            }
+    var timestamp = new Date().toLocaleTimeString();
+    var line = '[' + timestamp + '] ' + text;
 
-            var text = String(j.transcript || '');
-            if (text && text !== self.lastTranscriptText) {
-                var area = document.getElementById('liveTranscript');
-                if (area) { area.textContent = text; area.scrollTop = area.scrollHeight; }
-                self.lastTranscriptText = text;
-            }
-        }).catch(function () { });
+    if (area.textContent) {
+        area.textContent += '\n' + line;
+    } else {
+        area.textContent = line;
+    }
+
+    area.scrollTop = area.scrollHeight;
 };
 
 STTManager.prototype.stopListening = function () {
@@ -862,18 +1088,42 @@ STTManager.prototype.stopListening = function () {
     var startBtn = document.getElementById('startListening');
     var stopBtn = document.getElementById('stopListening');
 
-    function cleanup() {
-        self.isListening = false; self.serverSessionId = null;
-        if (self.statusPollTimer) { clearInterval(self.statusPollTimer); self.statusPollTimer = null; }
-        if (startBtn) startBtn.disabled = false; if (stopBtn) stopBtn.disabled = true;
-        self.showAlert('Listening stopped', 'info');
+    console.log('🛑 stopListening called');
+
+    // Send stop transcription message
+    if (self.ws && self.wsConnected) {
+        console.log('📤 Sending stop_transcription message');
+        try {
+            self.ws.send(JSON.stringify({ type: 'stop_transcription' }));
+        } catch (e) {
+            console.error('❌ Error sending stop message:', e);
+        }
+
+        // Close WebSocket connection
+        console.log('🔌 Closing WebSocket connection');
+        try {
+            self.ws.close();
+        } catch (e) {
+            console.error('❌ Error closing WebSocket:', e);
+        }
+        self.ws = null;
+        self.wsConnected = false;
     }
 
-    if (!self.serverSessionId) { cleanup(); return; }
+    // Update UI
+    self.isListening = false;
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+    }
+    if (stopBtn) {
+        stopBtn.disabled = true;
+        stopBtn.style.opacity = '0.5';
+        stopBtn.style.cursor = 'not-allowed';
+    }
 
-    fetch('/api/elevenlabs/stt/listen/stop', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: self.serverSessionId })
-    }).then(function () { cleanup(); }).catch(function () { cleanup(); });
+    self.showAlert('Listening stopped', 'info');
 };
 
 STTManager.prototype.runTwoSecondTest = function () {

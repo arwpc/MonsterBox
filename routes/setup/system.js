@@ -10,14 +10,15 @@ const router = express.Router();
 // Setup system page
 router.get('/', async (req, res) => {
     try {
-        res.render('setup/system', {
+        res.renderWithLayout('setup/system', {
             title: 'Setup System - MonsterBox 5.3',
             page: 'setup-system'
         });
     } catch (error) {
         console.error('Error rendering system setup page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
+            page: 'error',
             error: 'Failed to load system setup page',
             message: error.message
         });

@@ -344,6 +344,9 @@ class AdvancedAudioPlayer {
         const WaveSurfer = await import('https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js');
 
         // Create new WaveSurfer instance
+        // Use MediaElement backend instead of WebAudio to support MP3 files
+        // WebAudio cannot decode MP3 - it only supports WAV, OGG, etc.
+        // MediaElement uses HTML5 audio element which natively supports MP3
         this.wavesurfer = WaveSurfer.default.create({
             container: '#waveform',
             waveColor: '#0d6efd',
@@ -354,7 +357,7 @@ class AdvancedAudioPlayer {
             responsive: true,
             height: 100,
             normalize: true,
-            backend: 'WebAudio'
+            backend: 'MediaElement'
         });
 
         // Set up WaveSurfer event listeners

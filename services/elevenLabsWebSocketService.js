@@ -143,6 +143,63 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this.activeConnections = new Map(); // sessionId -> connection info
         this.wsServer = null;
         this.port = 8795; // Dedicated port for AI chat WebSocket
+
+        // Hardening: Session management
+        this.sessionTimeoutMs = 3600000; // 1 hour max session duration
+        this.cleanupIntervalMs = 60000; // cleanup every minute
+        this._cleanupTimer = null;
+
+        console.log('🎤 ElevenLabsWebSocketService initialized with hardening');
+    }
+
+    /**
+     * Cleanup old/stale sessions
+     */
+    _cleanupOldSessions() {
+        const now = Date.now();
+        const toDelete = [];
+
+        for (const [sessionId, connection] of this.activeConnections.entries()) {
+            const age = now - connection.startTime.getTime();
+
+            // Remove sessions older than timeout OR inactive for 5 minutes
+            const inactive = !connection.isActive && age > 300000;
+            const expired = age > this.sessionTimeoutMs;
+
+            if (expired || inactive) {
+                console.log(`🧹 Cleaning up session ${sessionId} (age=${Math.round(age/1000)}s, active=${connection.isActive})`);
+
+                // Close WebSocket connections
+                try {
+                    if (connection.clientWs && connection.clientWs.readyState === WebSocket.OPEN) {
+                        connection.clientWs.close();
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ Error closing client WS for ${sessionId}:`, e.message);
+                }
+
+                try {
+                    if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        connection.elevenLabsWs.close();
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ Error closing ElevenLabs WS for ${sessionId}:`, e.message);
+                }
+
+                // Stop server mic loop
+                if (connection.serverMicActive) {
+                    connection.serverMicActive = false;
+                }
+
+                toDelete.push(sessionId);
+            }
+        }
+
+        toDelete.forEach(id => this.activeConnections.delete(id));
+
+        if (toDelete.length > 0) {
+            console.log(`🧹 Cleaned up ${toDelete.length} old WebSocket sessions`);
+        }
     }
 
     /**
@@ -167,6 +224,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 this.wsServer.on('listening', () => {
                     console.log(`🌐 ElevenLabs Chat WebSocket server listening on port ${this.port}`);
+
+                    // Start periodic cleanup
+                    this._cleanupTimer = setInterval(() => {
+                        this._cleanupOldSessions();
+                    }, this.cleanupIntervalMs);
+                    console.log(`🧹 Session cleanup timer started (every ${this.cleanupIntervalMs/1000}s)`);
+
                     resolve();
                 });
 
@@ -199,6 +263,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
             characterId: null,
             outputMode: 'server',    // 'server' | 'local'
             micSource: 'server',     // 'server' | 'browser'
+            transcriptionOnly: false, // true = STT only, false = full conversation
             serverMicTimer: null,
             serverMicActive: false,
             sttLastAt: 0,
@@ -207,7 +272,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
             sttLanguage: null,       // per-connection STT language override
             suppressMicUntilMs: 0,   // suppress server mic during server playback
             audioBuffer: [],         // base64 MP3 frames from ElevenLabs
-            audioPlaying: false      // audio playback loop active flag
+            audioPlaying: false,     // audio playback loop active flag
+            // Hardening: Error tracking
+            consecutiveErrors: 0,
+            maxConsecutiveErrors: 10,
+            lastError: null,
+            transcriptCount: 0,
+            audioChunkCount: 0
         };
 
         this.activeConnections.set(sessionId, connection);
@@ -253,6 +324,33 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     if (connection.micSource === 'server') {
                         this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
                     }
+                    break;
+
+                case 'start_transcription_only':
+                    // Start transcription-only mode (no agent, just STT)
+                    console.log(`🎤 Starting transcription-only mode for session ${sessionId}`);
+                    connection.isActive = true;
+                    connection.transcriptionOnly = true;
+                    this.sendToClient(sessionId, {
+                        type: 'transcription_started',
+                        message: 'Transcription-only mode active - speak into the microphone'
+                    });
+                    // Start server mic loop for transcription
+                    if (connection.micSource === 'server') {
+                        this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
+                    }
+                    break;
+
+                case 'stop_transcription':
+                    // Stop transcription-only mode
+                    console.log(`🛑 Stopping transcription for session ${sessionId}`);
+                    connection.isActive = false;
+                    connection.transcriptionOnly = false;
+                    this._stopServerMicLoop(sessionId, false);
+                    this.sendToClient(sessionId, {
+                        type: 'transcription_stopped',
+                        message: 'Transcription stopped'
+                    });
                     break;
 
                 case 'send_message':
@@ -531,6 +629,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const userText = (message.user_transcription_event && message.user_transcription_event.user_transcript)
                             || message.text || '';
                         if (userText) {
+                            // Hardening: Track successful transcription
+                            connection.transcriptCount += 1;
+                            connection.consecutiveErrors = 0; // Reset error counter on success
+                            console.log(`✅ Session ${sessionId}: Transcribed "${userText}" (count=${connection.transcriptCount})`);
+
                             // Primary event used by mic-panel
                             this.sendToClient(sessionId, {
                                 type: 'user_transcript',
@@ -545,7 +648,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 timestamp: Date.now()
                             });
                         }
-                    } catch (_) { /* noop */ }
+                    } catch (err) {
+                        console.error(`❌ Session ${sessionId}: Error handling user_transcript:`, err.message);
+                        connection.consecutiveErrors += 1;
+                        connection.lastError = err.message;
+                    }
                     break;
 
                 case 'agent_response':
@@ -756,6 +863,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
                                 const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
 
+                                // Debug: Log STT configuration
+                                console.log(`🎤 STT Config: model=${sttCfg.model}, lang=${lang}, connLang=${connection.sttLanguage}, cfgLang=${sttCfg.language}`);
+
                                 // Apply audio filtering if enabled
                                 const audioFilterEnabled = (sttCfg.audioFilterEnabled !== false); // default true
                                 const debugAudio = process.env.MB_DEBUG_AUDIO === '1';
@@ -780,8 +890,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
 
-                                if (debugAudio && text) {
-                                    console.log('[STT] Transcription received: "' + text + '"');
+                                if (text) {
+                                    console.log(`📝 STT received: "${text}" (lang=${lang}, detected=${result.language || 'unknown'})`);
                                 }
 
                                 if (text) {
@@ -793,29 +903,33 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                     const filterSfx = (sttCfg.filterSfx !== false); // default true
                                     const validateEnglish = (sttCfg.validateEnglish !== false); // default true
 
+                                    console.log(`🔍 Filter check: lang="${lang}", validateEnglish=${validateEnglish}, filterSfx=${filterSfx}`);
+
                                     if ((lang || '').slice(0, 2) === 'en' && !allowSfxForAutotune) {
                                         // Check for bracketed sound effects
                                         if (filterSfx && _isBracketedSfx(text)) {
                                             allow = false;
                                             filterReason = 'bracketed_sfx';
+                                            console.log(`❌ Filtered (SFX): "${text}"`);
                                             try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_sfx', data: { text } }); } catch (_) { }
                                         }
                                         // Validate English text
                                         else if (validateEnglish && !_isLikelyEnglish(text, sttCfg)) {
                                             allow = false;
                                             filterReason = 'non_english';
+                                            console.log(`❌ Filtered (non-English): "${text}"`);
                                             try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_english', data: { text } }); } catch (_) { }
                                         }
+                                    } else {
+                                        console.log(`⚠️ Skipping English filter: lang="${lang}" (not 'en')`);
                                     }
 
-                                    if (debugAudio && !allow) {
-                                        console.log('[STT Filter] Rejected transcription "' + text + '" (reason: ' + filterReason + ')');
+                                    if (!allow) {
+                                        console.log(`❌ Rejected: "${text}" (reason: ${filterReason})`);
                                     }
 
                                     if (allow) {
-                                        if (debugAudio) {
-                                            console.log('[STT] Accepted transcription: "' + text + '"');
-                                        }
+                                        console.log(`✅ Accepted: "${text}"`);
                                         this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
                                         // reset buffer after a successful partial to avoid repeats
                                         connection.sttPcm = Buffer.alloc(0);

@@ -1,0 +1,18 @@
+[Unit]
+Description=Webcam Health Watchdog
+After=mjpg-streamer.service pipewire.service
+Wants=mjpg-streamer.service
+
+[Service]
+Type=simple
+User=remote
+Group=video
+ExecStart=/home/remote/MonsterBox/scripts/webcam-watchdog.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

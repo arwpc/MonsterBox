@@ -5,15 +5,23 @@ Wants=dev-video0.device
 
 [Service]
 Type=simple
-User=root
+User=remote
+Group=video
 WorkingDirectory=/tmp
 # Small delay to ensure camera is fully initialized
-ExecStartPre=/bin/sleep 2
-ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 24 -q 80" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
+ExecStartPre=/bin/sleep 3
+# Use lower FPS (15) and quality (75) for stability
+# -n flag enables no-buffer mode for lower latency
+ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 15 -q 75 -n" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www -n"
 Restart=always
 RestartSec=5
 # Increase restart limit to handle transient camera issues
 StartLimitBurst=10
+# Watchdog to detect hangs
+WatchdogSec=30
+# Resource limits to prevent runaway process
+MemoryMax=256M
+CPUQuota=50%
 
 [Install]
 WantedBy=multi-user.target

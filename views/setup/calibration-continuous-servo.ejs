@@ -1,5 +1,76 @@
-<!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+
+        .saved-position-badge {
+            cursor: pointer;
+        }
+
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+        }
+
+        .card-header {
+            background-color: #21262d;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #1f6feb;
+            border-color: #1f6feb;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #238636;
+            border-color: #238636;
+        }
+
+        .btn-outline-warning:hover {
+            background-color: #d29922;
+            border-color: #d29922;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: #da3633;
+            border-color: #da3633;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #0d1117;
+            border-color: #1f6feb;
+            color: #c9d1d9;
+            box-shadow: 0 0 0 0.25rem rgba(31, 111, 235, 0.25);
+        }
+
+        .text-success {
+            color: #3fb950 !important;
+        }
+
+        .text-warning {
+            color: #d29922 !important;
+        }
+
+        .text-danger {
+            color: #f85149 !important;
+        }
+
+        .pulse-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+    </style>
 
 <head>
     <meta charset="UTF-8">
@@ -89,12 +160,7 @@
     </style>
 </head>
 
-<body>
-    <!-- Navigation -->
-    <!-- Unified Navigation - Same on ALL pages -->
-    <%- include('../components/unified-navigation', { page: 'setup-calibration' }) %>
-
-        <main class="container-fluid py-4">
+<main class="container-fluid py-4">
             <!-- Header -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -374,8 +440,6 @@
         </main>
 
         <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
         <!-- Calibration JavaScript -->
         <script>
             const partId = '<%= part.id %>';
@@ -393,7 +457,6 @@
             var msPerDegree = null; // milliseconds per degree at calibratedSpeed
             var calibratedSpeed = null; // % speed used when calibrating msPerDegree
             var currentAngleEstimate = null; // degrees; null if unknown
-
 
             document.getElementById('jogDuration').addEventListener('input', function () {
                 document.getElementById('durationValue').textContent = this.value;
@@ -443,7 +506,6 @@
 
                 // Any manual jog invalidates our angle estimate (we no longer know absolute heading)
                 try { if (direction !== 'stop') { currentAngleEstimate = null; } } catch (e) { /* ignore */ }
-
 
                 try {
                     setControlsEnabled(false);
@@ -732,7 +794,6 @@
                 } catch (e) { /* ignore */ }
             }
 
-
             // Reset calibration
             async function resetCalibration() {
                 if (!confirm('Are you sure you want to reset all calibration data? This cannot be undone.')) {
@@ -809,9 +870,3 @@
                 }
             });
         </script>
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="/js/character-menu.js"></script>
-</body>
-
-</html>

@@ -1,57 +1,66 @@
 [
-    {
-        "id": "1",
-        "name": "Head Motor",
-        "type": "motor",
-        "pin": null,
-        "description": "Head rotation motor - BE CAREFUL",
-        "config": {},
-        "created": "2025-10-12T06:00:00.000Z",
-        "enabled": true,
-        "controlBoard": "MDD10A",
-        "directionPin": 18,
-        "pwmPin": 13,
-        "maxDuration": 5000
+  {
+    "id": "1",
+    "characterId": 5,
+    "name": "Groundbreaker Motor",
+    "type": "motor",
+    "model": "motor_jeep_wagoneer_wiper",
+    "driver": "BTS7960",
+    "rpwmPin": 27,
+    "lpwmPin": 22,
+    "renPin": 17,
+    "lenPin": 17,
+    "enableMode": "dual",
+    "minSpeed": 0,
+    "maxSpeed": 100,
+    "description": "12V wiper motor on BTS7960 H-bridge driver",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true,
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
     },
-    {
-        "id": "2",
-        "name": "Speaker Groundbreaker",
-        "type": "speaker",
-        "pin": null,
-        "description": "Main speaker",
-        "config": {
-            "device": "default",
-            "volume": 80
-        },
-        "created": "2025-10-12T06:00:01.000Z",
-        "enabled": true,
-        "modelId": "default_speaker"
+    "controlBoard": "BTS7960",
+    "updated": "2025-10-17T19:23:33.217Z",
+    "modelId": "motor_jeep_wagoneer_wiper"
+  },
+  {
+    "id": "2",
+    "characterId": 5,
+    "name": "Groundbreaker Webcam",
+    "type": "webcam",
+    "deviceIndex": 0,
+    "resolution": "1920x1080",
+    "fps": 30,
+    "description": "USB webcam for video capture",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "characterId": 5,
+    "name": "Groundbreaker Speaker",
+    "type": "speaker",
+    "deviceName": "default",
+    "volume": 80,
+    "description": "Audio output speaker",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "4",
+    "characterId": 5,
+    "name": "Groundbreaker Microphone",
+    "type": "microphone",
+    "deviceIndex": 0,
+    "sampleRate": 16000,
+    "channels": 1,
+    "description": "Webcam microphone for audio input",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true,
+    "config": {
+      "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
     },
-    {
-        "id": "3",
-        "name": "Groundbreaker Cam",
-        "type": "webcam",
-        "pin": null,
-        "description": "Main webcam",
-        "config": {
-            "devicePath": "/dev/video0",
-            "deviceId": "video0"
-        },
-        "created": "2025-10-12T06:00:02.000Z",
-        "enabled": true,
-        "modelId": "default-uvc-1"
-    },
-    {
-        "id": "4",
-        "name": "Webcam Microphone",
-        "type": "microphone",
-        "pin": null,
-        "description": "Webcam built-in mic",
-        "config": {
-            "deviceId": "default"
-        },
-        "created": "2025-10-12T06:00:03.000Z",
-        "enabled": true,
-        "modelId": "mic_generic_usb"
-    }
+    "updated": "2025-10-17T19:23:01.992Z"
+  }
 ]

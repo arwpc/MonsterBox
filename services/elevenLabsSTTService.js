@@ -78,16 +78,20 @@ class ElevenLabsSTTService {
                 if (!langToSend || langToSend === 'auto') langToSend = 'en';
             }
 
+            // ALWAYS log what we're sending to ElevenLabs
+            console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, original_model="${options.model}", original_lang="${options.language}"`);
+            console.log(`🔥🔥🔥 USING FIXED CODE - language_code parameter (NOT language) 🔥🔥🔥`);
+
             // Required by ElevenLabs STT
             formData.append('model_id', modelToSend);
 
             // Only pass language if explicitly provided and not 'auto'
+            // NOTE: ElevenLabs API expects 'language_code', not 'language'
             if (langToSend && langToSend !== 'auto') {
-                formData.append('language', langToSend);
-            }
-
-            if (process.env.MB_DEBUG_AUDIO === '1') {
-                console.log(`🎙️ Sending STT chunk to ElevenLabs (${mimeType}, ${audioBuffer.length} bytes, model=${options.model || 'scribe_v1'}, lang=${options.language || 'auto'})`);
+                formData.append('language_code', langToSend);
+                console.log(`✅ Language code parameter SENT to ElevenLabs: "${langToSend}"`);
+            } else {
+                console.log(`⚠️ Language code parameter NOT sent (langToSend="${langToSend}")`);
             }
 
             const response = await axios.post(
@@ -102,15 +106,17 @@ class ElevenLabsSTTService {
                 }
             );
 
-            if (process.env.MB_DEBUG_AUDIO === '1') {
-                console.log(`📝 STT response: text='${(response.data && response.data.text) ? String(response.data.text).slice(0, 60) : ''}'`);
-            }
+            const transcript = response.data.text || '';
+            const detectedLang = response.data.detected_language || 'unknown';
+            const confidence = response.data.confidence || null;
+
+            console.log(`📝 STT Response: text="${transcript}", detected_language="${detectedLang}", confidence=${confidence}`);
 
             return {
                 success: true,
-                transcript: response.data.text,
-                confidence: response.data.confidence || null,
-                language: response.data.detected_language || options.language,
+                transcript: transcript,
+                confidence: confidence,
+                language: detectedLang,
                 duration: response.data.duration || null
             };
         } catch (error) {
