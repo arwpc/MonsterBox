@@ -39,11 +39,30 @@ async function findSpeakerDeviceForCharacter(characterId) {
 }
 
 async function resolveAudioFile(audioId) {
-  // Allow absolute or relative; if bare filename, resolve under data/audio-library
+  // Allow absolute or relative; if bare filename, resolve under data/audio-library/files
   if (!audioId) return null;
   if (audioId.startsWith('/') || audioId.startsWith('./')) return path.resolve(audioId);
-  const dataDir = await getDataDir();
-  const p = path.resolve(dataDir, 'audio-library', audioId);
+
+  // Load audio library to get the actual filename
+  // Audio library is in the ROOT data directory (data/audio-library), NOT character-specific
+  const appRoot = path.resolve(__dirname, '..', '..');
+  const rootDataDir = path.resolve(appRoot, 'data'); // Always use root data directory for audio
+
+  try {
+    const audioLibPath = path.resolve(rootDataDir, 'audio-library', 'library.json');
+    const raw = await fs.readFile(audioLibPath, 'utf8');
+    const library = JSON.parse(raw);
+    const audioArray = library.audio || library; // Handle both {audio: [...]} and [...] formats
+    const audioFile = audioArray.find(a => a.id === audioId);
+    if (audioFile && audioFile.filename) {
+      return path.resolve(rootDataDir, 'audio-library', 'files', audioFile.filename);
+    }
+  } catch (err) {
+    console.error('Error loading audio library:', err.message);
+  }
+
+  // Fallback: try to resolve directly
+  const p = path.resolve(rootDataDir, 'audio-library', 'files', audioId);
   return p;
 }
 
@@ -62,7 +81,7 @@ async function executeAudioStep(step, characterId, emit) {
   if (!filename) throw new Error('audio.step requires audioId');
   const deviceId = await findSpeakerDeviceForCharacter(characterId);
   emit && emit({ type: 'step', status: 'start', stepType: 'audio', audioId: step.audioId, deviceId });
-  const r = await hardwareService.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 80 });
+  const r = await hardwareService.HARDWARE_CONTROLLERS.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 80 });
   emit && emit({ type: 'step', status: r.success ? 'complete' : 'error', stepType: 'audio', audioId: step.audioId, result: r });
   if (!r.success) throw new Error(r.error || 'Audio play failed');
   return r;
@@ -108,7 +127,7 @@ async function executeSayThisStep(step, characterId, emit) {
 
 async function executeGoblinVideoStep(step, characterId, emit) {
   const { goblinId, videoId, options = {} } = step;
-  
+
   if (!goblinId) throw new Error('goblin.step requires goblinId');
   if (!videoId) throw new Error('goblin.step requires videoId (filename)');
 
@@ -145,28 +164,79 @@ async function executeGoblinVideoStep(step, characterId, emit) {
       throw new Error(`Failed to play video on Goblin: ${playResult.error}`);
     }
 
-    emit && emit({ 
-      type: 'step', 
-      status: 'complete', 
-      stepType: 'goblin', 
-      goblinId, 
-      videoId, 
-      result: playResult 
+    emit && emit({
+      type: 'step',
+      status: 'complete',
+      stepType: 'goblin',
+      goblinId,
+      videoId,
+      result: playResult
     });
 
     return playResult;
   } catch (error) {
-    emit && emit({ 
-      type: 'step', 
-      status: 'error', 
-      stepType: 'goblin', 
-      goblinId, 
-      videoId, 
-      error: error.message 
+    emit && emit({
+      type: 'step',
+      status: 'error',
+      stepType: 'goblin',
+      goblinId,
+      videoId,
+      error: error.message
     });
     throw error;
   }
 }
+
+async function executeServoStep(step, characterId, emit) {
+  const { partId, angle, duration = 1000 } = step;
+  if (!partId) throw new Error('servo.step requires partId');
+  if (angle == null) throw new Error('servo.step requires angle');
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle, duration });
+  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: angle, duration });
+  emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'servo', partId, result: r });
+  if (!r || !r.success) throw new Error((r && r.error) || 'Servo move failed');
+  return r;
+}
+
+async function executeMotorStep(step, characterId, emit) {
+  const { partId, direction = 'forward', speed = 50, duration = 1000 } = step;
+  if (!partId) throw new Error('motor.step requires partId');
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed, duration });
+  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed, duration });
+  emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'motor', partId, result: r });
+  if (!r || !r.success) throw new Error((r && r.error) || 'Motor control failed');
+  return r;
+}
+
+async function executeLinearActuatorStep(step, characterId, emit) {
+  const { partId, direction = 'extend', speed = 50, duration = 1000 } = step;
+  if (!partId) throw new Error('linear-actuator.step requires partId');
+
+  // Linear actuators use 'extend' or 'retract' actions, not 'control'
+  const action = direction === 'retract' ? 'retract' : 'extend';
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed, duration });
+  const r = await hardwareService.controlPart(String(partId), action, { speed, duration });
+  emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
+  if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
+  return r;
+}
+
+async function executeLightStep(step, characterId, emit) {
+  const { partId, state = 'on', brightness = 100, duration = 0 } = step;
+  if (!partId) throw new Error('light.step requires partId');
+
+  // Light parts use 'turnOn' and 'turnOff' actions
+  const action = state === 'on' ? 'turnOn' : 'turnOff';
+  emit && emit({ type: 'step', status: 'start', stepType: 'light', partId, state, brightness, duration });
+  const r = await hardwareService.controlPart(String(partId), action, { brightness, duration });
+  emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'light', partId, result: r });
+  if (!r || !r.success) throw new Error((r && r.error) || 'Light control failed');
+  return r;
+}
+
 
 async function executeSensorStep(step, characterId, emit) {
   const { sensorId, partId, action = 'read', waitForMotion = false, timeout = 30000, threshold } = step;
@@ -203,7 +273,7 @@ async function executeSensorStep(step, characterId, emit) {
       const checkInterval = 500; // Check every 500ms
 
       while (Date.now() - startTime < timeout) {
-        const result = await hardwareService.motion_sensor.read({ pin });
+        const result = await hardwareService.HARDWARE_CONTROLLERS.motion_sensor.read({ pin });
 
         if (result.success && result.motionDetected) {
           emit && emit({
@@ -226,7 +296,7 @@ async function executeSensorStep(step, characterId, emit) {
     }
 
     // Otherwise, just read the current sensor value
-    const result = await hardwareService.motion_sensor.read({ pin });
+    const result = await hardwareService.HARDWARE_CONTROLLERS.motion_sensor.read({ pin });
 
     emit && emit({
       type: 'step',
@@ -291,6 +361,19 @@ export async function executeStep(step, characterId, emit, options) {
       return executeGoblinVideoStep(step, characterId, emit);
     case 'sensor':
       return executeSensorStep(step, characterId, emit);
+    case 'servo':
+      // Servo step: move servo to angle
+      return executeServoStep(step, characterId, emit);
+    case 'motor':
+      // Motor step: control DC motor
+      return executeMotorStep(step, characterId, emit);
+    case 'linear-actuator':
+      // Linear actuator step: extend/retract
+      return executeLinearActuatorStep(step, characterId, emit);
+    case 'light':
+    case 'led':
+      // Light/LED step: turn on/off with brightness
+      return executeLightStep(step, characterId, emit);
     default:
       throw new Error('Unknown step type: ' + t);
   }

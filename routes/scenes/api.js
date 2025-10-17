@@ -12,15 +12,27 @@ import armedModeRoutes from './armed-mode.js';
 
 const router = express.Router();
 
-function getCurrentCharacterId(req){
+function getCurrentCharacterId(req) {
   // Default to character 1 (PumpkinHead) when unset to keep tests and demos stable
-  return (parseInt(req.app.locals?.config?.selectedCharacter,10)) || 1;
+  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || 1;
 }
 
 router.get('/', async (req, res) => {
   try {
     const scenes = await scenesService.loadScenes();
     res.json({ success: true, scenes });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const scenes = await scenesService.loadScenes();
+    const scene = scenes.find(s => parseInt(s.id, 10) === id);
+    if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
+    res.json({ success: true, scene });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -43,10 +55,10 @@ router.post('/', express.json(), async (req, res) => {
 
 router.put('/:id', express.json(), async (req, res) => {
   try {
-    const id = parseInt(req.params.id,10);
+    const id = parseInt(req.params.id, 10);
     const body = req.body || {};
     const scenes = await scenesService.loadScenes();
-    const idx = scenes.findIndex(s => parseInt(s.id,10) === id);
+    const idx = scenes.findIndex(s => parseInt(s.id, 10) === id);
     if (idx === -1) return res.status(404).json({ success: false, error: 'Scene not found' });
     const prev = scenes[idx];
     const next = Object.assign({}, prev, { name: body.name != null ? String(body.name) : prev.name, steps: Array.isArray(body.steps) ? body.steps : prev.steps, updated: new Date().toISOString() });
@@ -60,13 +72,33 @@ router.put('/:id', express.json(), async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id,10);
+    const id = parseInt(req.params.id, 10);
     const scenes = await scenesService.loadScenes();
-    const idx = scenes.findIndex(s => parseInt(s.id,10) === id);
+    const idx = scenes.findIndex(s => parseInt(s.id, 10) === id);
     if (idx === -1) return res.status(404).json({ success: false, error: 'Scene not found' });
-    const removed = scenes.splice(idx,1)[0];
+    const removed = scenes.splice(idx, 1)[0];
     await scenesService.saveScenes(scenes);
     res.json({ success: true, removed });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// Test a single step
+router.post('/test-step', express.json(), async (req, res) => {
+  try {
+    const step = req.body;
+    if (!step || !step.type) {
+      return res.status(400).json({ success: false, error: 'Step object with type is required' });
+    }
+
+    const characterId = getCurrentCharacterId(req);
+    const dryRun = (String(req.query?.dryRun || '').toLowerCase() === '1' || String(req.query?.dryRun || '').toLowerCase() === 'true');
+
+    // Execute the single step
+    const result = await sceneExecutor.executeStep(step, characterId, null, { dryRun });
+
+    res.json({ success: true, result, dryRun });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -75,17 +107,17 @@ router.delete('/:id', async (req, res) => {
 // Play a scene and return when complete
 router.post('/:id/play', async (req, res) => {
   try {
-    const id = parseInt(req.params.id,10);
+    const id = parseInt(req.params.id, 10);
     const scenes = await scenesService.loadScenes();
-    const scene = scenes.find(s => parseInt(s.id,10) === id);
+    const scene = scenes.find(s => parseInt(s.id, 10) === id);
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
 
     // In test mode, run with dryRun to avoid hardware but still log analytics
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
-    const dryRun = inTest || (String(req.query?.dryRun||'').toLowerCase() === '1' || String(req.query?.dryRun||'').toLowerCase() === 'true');
+    const dryRun = inTest || (String(req.query?.dryRun || '').toLowerCase() === '1' || String(req.query?.dryRun || '').toLowerCase() === 'true');
     const result = await sceneExecutor.executeScene(scene, characterId, null, { dryRun });
-    res.json({ success: true, played: id, steps: (scene.steps||[]).length, result, dryRun });
+    res.json({ success: true, played: id, steps: (scene.steps || []).length, result, dryRun });
   } catch (e) {
     const msg = (e && e.message) ? e.message : String(e);
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
@@ -100,9 +132,9 @@ router.post('/:id/play', async (req, res) => {
 // Stream live progress with Server-Sent Events (SSE)
 router.get('/:id/play-stream', async (req, res) => {
   try {
-    const id = parseInt(req.params.id,10);
+    const id = parseInt(req.params.id, 10);
     const scenes = await scenesService.loadScenes();
-    const scene = scenes.find(s => parseInt(s.id,10) === id);
+    const scene = scenes.find(s => parseInt(s.id, 10) === id);
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
 
@@ -112,20 +144,20 @@ router.get('/:id/play-stream', async (req, res) => {
     res.flushHeaders && res.flushHeaders();
 
     const emit = (ev) => {
-      try { res.write(`data: ${JSON.stringify(ev)}\n\n`); } catch (_) {}
+      try { res.write(`data: ${JSON.stringify(ev)}\n\n`); } catch (_) { }
     };
 
     emit({ type: 'sse', status: 'open' });
 
-    const dryRun = (String(req.query?.dryRun||'').toLowerCase() === '1' || String(req.query?.dryRun||'').toLowerCase() === 'true');
+    const dryRun = (String(req.query?.dryRun || '').toLowerCase() === '1' || String(req.query?.dryRun || '').toLowerCase() === 'true');
     sceneExecutor.executeScene(scene, characterId, emit, { dryRun })
       .then((result) => {
         emit({ type: 'scene', status: 'done', success: true, result, dryRun });
-        try { res.end(); } catch (_) {}
+        try { res.end(); } catch (_) { }
       })
       .catch((err) => {
         emit({ type: 'scene', status: 'done', success: false, error: err && err.message, dryRun });
-        try { res.end(); } catch (_) {}
+        try { res.end(); } catch (_) { }
       });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -133,7 +165,7 @@ router.get('/:id/play-stream', async (req, res) => {
 });
 
 // --- Queue Endpoints ---
-router.get('/queue', async (req,res) => {
+router.get('/queue', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.getStatus(characterId);
@@ -143,7 +175,7 @@ router.get('/queue', async (req,res) => {
   }
 });
 
-router.post('/queue/enqueue', express.json(), async (req,res) => {
+router.post('/queue/enqueue', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const sceneId = parseInt(req.body && req.body.sceneId, 10);
@@ -155,7 +187,7 @@ router.post('/queue/enqueue', express.json(), async (req,res) => {
   }
 });
 
-router.post('/queue/start', async (req,res) => {
+router.post('/queue/start', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = await sceneQueue.start(characterId);
@@ -165,7 +197,7 @@ router.post('/queue/start', async (req,res) => {
   }
 });
 
-router.post('/queue/stop', async (req,res) => {
+router.post('/queue/stop', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.stop(characterId);
@@ -175,7 +207,7 @@ router.post('/queue/stop', async (req,res) => {
   }
 });
 
-router.post('/queue/clear', async (req,res) => {
+router.post('/queue/clear', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.clear(characterId);
@@ -185,7 +217,7 @@ router.post('/queue/clear', async (req,res) => {
   }
 });
 
-router.post('/queue/reorder', express.json(), async (req,res) => {
+router.post('/queue/reorder', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const fromIndex = parseInt(req.body && req.body.fromIndex, 10);
@@ -199,7 +231,7 @@ router.post('/queue/reorder', express.json(), async (req,res) => {
 });
 
 // Queue Templates
-router.get('/queue/templates', async (req,res) => {
+router.get('/queue/templates', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const templates = await queueTemplates.loadTemplates(characterId);
@@ -209,7 +241,7 @@ router.get('/queue/templates', async (req,res) => {
   }
 });
 
-router.post('/queue/templates/save', express.json(), async (req,res) => {
+router.post('/queue/templates/save', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.getStatus(characterId);
@@ -222,7 +254,7 @@ router.post('/queue/templates/save', express.json(), async (req,res) => {
   }
 });
 
-router.post('/queue/templates/enqueue', express.json(), async (req,res) => {
+router.post('/queue/templates/enqueue', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const id = req.body && req.body.id;
@@ -235,7 +267,7 @@ router.post('/queue/templates/enqueue', express.json(), async (req,res) => {
 });
 
 // Advanced Queue Controls
-router.post('/queue/pause', async (req,res) => {
+router.post('/queue/pause', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.pause(characterId);
@@ -245,7 +277,7 @@ router.post('/queue/pause', async (req,res) => {
   }
 });
 
-router.post('/queue/resume', async (req,res) => {
+router.post('/queue/resume', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.resume(characterId);
@@ -255,7 +287,7 @@ router.post('/queue/resume', async (req,res) => {
   }
 });
 
-router.post('/queue/skip', async (req,res) => {
+router.post('/queue/skip', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.skip(characterId);
@@ -265,7 +297,7 @@ router.post('/queue/skip', async (req,res) => {
   }
 });
 
-router.post('/queue/insert', express.json(), async (req,res) => {
+router.post('/queue/insert', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const sceneId = parseInt(req.body && req.body.sceneId, 10);
@@ -277,7 +309,7 @@ router.post('/queue/insert', express.json(), async (req,res) => {
   }
 });
 
-router.post('/queue/emergency-stop', async (req,res) => {
+router.post('/queue/emergency-stop', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.emergencyStop(characterId);
@@ -287,7 +319,7 @@ router.post('/queue/emergency-stop', async (req,res) => {
   }
 });
 
-router.post('/queue/start-config', express.json(), async (req,res) => {
+router.post('/queue/start-config', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const def = queueLibrary.validateQueueDefinition(req.body || {});
@@ -299,7 +331,7 @@ router.post('/queue/start-config', express.json(), async (req,res) => {
 });
 
 // Queue Library
-router.get('/queue/library', async (req,res) => {
+router.get('/queue/library', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const queues = await queueLibrary.loadQueues(characterId);
@@ -309,7 +341,7 @@ router.get('/queue/library', async (req,res) => {
   }
 });
 
-router.post('/queue/library', express.json(), async (req,res) => {
+router.post('/queue/library', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const q = await queueLibrary.createQueue(characterId, req.body || {});
@@ -319,7 +351,7 @@ router.post('/queue/library', express.json(), async (req,res) => {
   }
 });
 
-router.get('/queue/library/:id', async (req,res) => {
+router.get('/queue/library/:id', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const q = await queueLibrary.getQueue(characterId, req.params.id);
@@ -330,7 +362,7 @@ router.get('/queue/library/:id', async (req,res) => {
   }
 });
 
-router.put('/queue/library/:id', express.json(), async (req,res) => {
+router.put('/queue/library/:id', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const q = await queueLibrary.updateQueue(characterId, req.params.id, req.body || {});
@@ -340,7 +372,7 @@ router.put('/queue/library/:id', express.json(), async (req,res) => {
   }
 });
 
-router.delete('/queue/library/:id', async (req,res) => {
+router.delete('/queue/library/:id', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const removed = await queueLibrary.deleteQueue(characterId, req.params.id);
@@ -350,7 +382,7 @@ router.delete('/queue/library/:id', async (req,res) => {
   }
 });
 
-router.post('/queue/library/:id/export', async (req,res) => {
+router.post('/queue/library/:id/export', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const json = await queueLibrary.exportQueue(characterId, req.params.id);
@@ -361,7 +393,7 @@ router.post('/queue/library/:id/export', async (req,res) => {
   }
 });
 
-router.post('/queue/library/import', express.json(), async (req,res) => {
+router.post('/queue/library/import', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     const q = await queueLibrary.importQueue(characterId, req.body || {});
@@ -372,7 +404,7 @@ router.post('/queue/library/import', express.json(), async (req,res) => {
 });
 
 // --- Scene Templates ---
-router.get('/templates', async (req,res) => {
+router.get('/templates', async (req, res) => {
   try {
     const templates = await scenesService.loadTemplates();
     res.json({ success: true, templates });
@@ -381,7 +413,7 @@ router.get('/templates', async (req,res) => {
   }
 });
 
-router.post('/from-template', express.json(), async (req,res) => {
+router.post('/from-template', express.json(), async (req, res) => {
   try {
     const templateId = req.body && req.body.templateId;
     const name = req.body && req.body.name;
@@ -410,13 +442,13 @@ router.post('/from-template', express.json(), async (req,res) => {
 });
 
 // --- Scene Duplication ---
-router.post('/:id/duplicate', express.json(), async (req,res) => {
+router.post('/:id/duplicate', express.json(), async (req, res) => {
   try {
-    const id = parseInt(req.params.id,10);
+    const id = parseInt(req.params.id, 10);
     const newName = req.body && req.body.name;
 
     const scenes = await scenesService.loadScenes();
-    const source = scenes.find(s => parseInt(s.id,10) === id);
+    const source = scenes.find(s => parseInt(s.id, 10) === id);
     if (!source) return res.status(404).json({ success: false, error: 'Scene not found' });
 
     const newId = await scenesService.nextSceneId();
@@ -437,7 +469,7 @@ router.post('/:id/duplicate', express.json(), async (req,res) => {
 });
 
 // --- Scene Import/Export ---
-router.get('/export', async (req,res) => {
+router.get('/export', async (req, res) => {
   try {
     const scenes = await scenesService.loadScenes();
     const exportData = {
@@ -455,7 +487,7 @@ router.get('/export', async (req,res) => {
   }
 });
 
-router.post('/import', express.json(), async (req,res) => {
+router.post('/import', express.json(), async (req, res) => {
   try {
     const importData = req.body || {};
     const overwrite = req.body.overwrite === true || req.body.overwrite === 'true';
@@ -470,7 +502,7 @@ router.post('/import', express.json(), async (req,res) => {
     let skipped = 0;
 
     for (const importScene of importData.scenes) {
-      const existingIdx = scenes.findIndex(s => parseInt(s.id,10) === parseInt(importScene.id,10));
+      const existingIdx = scenes.findIndex(s => parseInt(s.id, 10) === parseInt(importScene.id, 10));
 
       if (existingIdx !== -1) {
         if (overwrite) {
@@ -493,7 +525,7 @@ router.post('/import', express.json(), async (req,res) => {
 });
 
 // --- Scene Analytics ---
-router.get('/analytics', async (req,res) => {
+router.get('/analytics', async (req, res) => {
   try {
     const sceneId = req.query.sceneId ? parseInt(req.query.sceneId, 10) : null;
     const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : null;
@@ -504,7 +536,7 @@ router.get('/analytics', async (req,res) => {
   }
 });
 
-router.get('/analytics/popular', async (req,res) => {
+router.get('/analytics/popular', async (req, res) => {
   try {
     const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : null;
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
@@ -515,7 +547,7 @@ router.get('/analytics/popular', async (req,res) => {
   }
 });
 
-router.get('/analytics/:sceneId', async (req,res) => {
+router.get('/analytics/:sceneId', async (req, res) => {
   try {
     const sceneId = parseInt(req.params.sceneId, 10);
     const characterId = req.query.characterId ? parseInt(req.query.characterId, 10) : getCurrentCharacterId(req);

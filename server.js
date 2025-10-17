@@ -37,6 +37,7 @@ import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
+import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import pipewireService from './services/pipewireService.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
@@ -218,8 +219,8 @@ app.use('/video-library', videoLibraryRoutes);
 app.use('/goblin-management', goblinManagementRoutes);
 app.use('/conversation', conversationRoutes);
 app.use('/orchestration', orchestrationWebRoutes);
-app.use('/scenes', scenesRoutes);
 app.use('/scenes/api', scenesApiRoutes);
+app.use('/scenes', scenesRoutes);
 app.use('/first-run', firstRunRoutes);
 
 app.use('/poses', posesRoutes);
@@ -272,6 +273,7 @@ printRoutes();
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
+app.use('/api', sceneEditorApiRoutes);
 
 // Audio Health Monitor API endpoints
 app.get('/api/audio/health', (req, res) => {

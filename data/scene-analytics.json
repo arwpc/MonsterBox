@@ -1117,6 +1117,474 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "17607375618667lcg3w2d1",
+      "sceneId": 4,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:46:01.866Z",
+      "startTime": "2025-10-17T21:46:01.856Z",
+      "endTime": "2025-10-17T21:46:01.861Z",
+      "duration": 5,
+      "stepsExecuted": 0,
+      "totalSteps": 13,
+      "success": false,
+      "errors": [
+        {
+          "message": "Cannot read properties of undefined (reading 'read')"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760737601777o4rnhi8mb",
+      "sceneId": 4,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:46:41.777Z",
+      "startTime": "2025-10-17T21:46:41.774Z",
+      "endTime": "2025-10-17T21:46:41.776Z",
+      "duration": 2,
+      "stepsExecuted": 0,
+      "totalSteps": 13,
+      "success": false,
+      "errors": [
+        {
+          "message": "Cannot read properties of undefined (reading 'read')"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760737747414u6vmdlqkv",
+      "sceneId": 6,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:49:07.414Z",
+      "startTime": "2025-10-17T21:49:07.408Z",
+      "endTime": "2025-10-17T21:49:07.413Z",
+      "duration": 5,
+      "stepsExecuted": 2,
+      "totalSteps": 12,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 0"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760737758648trgjpwbmq",
+      "sceneId": 7,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:49:18.649Z",
+      "startTime": "2025-10-17T21:49:18.641Z",
+      "endTime": "2025-10-17T21:49:18.646Z",
+      "duration": 5,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Cannot read properties of undefined (reading 'play')"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17607377756247cbkek0ob",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:49:35.625Z",
+      "startTime": "2025-10-17T21:49:35.616Z",
+      "endTime": "2025-10-17T21:49:35.622Z",
+      "duration": 6,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Cannot read properties of undefined (reading 'play')"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17607378978346kvn7qxmn",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:51:37.834Z",
+      "startTime": "2025-10-17T21:51:37.676Z",
+      "endTime": "2025-10-17T21:51:37.832Z",
+      "duration": 155,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17607380068139cwexo7yp",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:53:26.813Z",
+      "startTime": "2025-10-17T21:53:26.661Z",
+      "endTime": "2025-10-17T21:53:26.810Z",
+      "duration": 148,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738092086q371007p4",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:54:52.086Z",
+      "startTime": "2025-10-17T21:54:51.918Z",
+      "endTime": "2025-10-17T21:54:52.083Z",
+      "duration": 164,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738201582yefmibyb1",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:56:41.582Z",
+      "startTime": "2025-10-17T21:56:41.433Z",
+      "endTime": "2025-10-17T21:56:41.580Z",
+      "duration": 146,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17607383249887qhr3pe5q",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T21:58:44.988Z",
+      "startTime": "2025-10-17T21:58:44.839Z",
+      "endTime": "2025-10-17T21:58:44.986Z",
+      "duration": 146,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738436418i5h4pdihr",
+      "sceneId": 8,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:00:36.418Z",
+      "startTime": "2025-10-17T22:00:30.986Z",
+      "endTime": "2025-10-17T22:00:36.413Z",
+      "duration": 5427,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1760738453671xgqv67b7j",
+      "sceneId": 6,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:00:53.671Z",
+      "startTime": "2025-10-17T22:00:48.280Z",
+      "endTime": "2025-10-17T22:00:53.670Z",
+      "duration": 5390,
+      "stepsExecuted": 2,
+      "totalSteps": 12,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 0"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "176073849008526gi5ux7y",
+      "sceneId": 9,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:01:30.085Z",
+      "startTime": "2025-10-17T22:01:24.649Z",
+      "endTime": "2025-10-17T22:01:30.083Z",
+      "duration": 5434,
+      "stepsExecuted": 1,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Unknown step type: servo"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738504431rh66q69ui",
+      "sceneId": 9,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:01:44.431Z",
+      "startTime": "2025-10-17T22:01:39.020Z",
+      "endTime": "2025-10-17T22:01:44.429Z",
+      "duration": 5409,
+      "stepsExecuted": 1,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Unknown step type: servo"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738726315cax60h7do",
+      "sceneId": 9,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:05:26.315Z",
+      "startTime": "2025-10-17T22:05:20.874Z",
+      "endTime": "2025-10-17T22:05:26.313Z",
+      "duration": 5438,
+      "stepsExecuted": 1,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Action 'move' not supported for part type: servo"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "176073881560963o5xrwkj",
+      "sceneId": 9,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:06:55.609Z",
+      "startTime": "2025-10-17T22:06:43.717Z",
+      "endTime": "2025-10-17T22:06:55.605Z",
+      "duration": 11887,
+      "stepsExecuted": 8,
+      "totalSteps": 8,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1760738848469fopg58wea",
+      "sceneId": 10,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:07:28.469Z",
+      "startTime": "2025-10-17T22:07:22.765Z",
+      "endTime": "2025-10-17T22:07:28.468Z",
+      "duration": 5703,
+      "stepsExecuted": 3,
+      "totalSteps": 14,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760738977101pkdudxhmc",
+      "sceneId": 10,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:09:37.101Z",
+      "startTime": "2025-10-17T22:09:19.412Z",
+      "endTime": "2025-10-17T22:09:37.098Z",
+      "duration": 17686,
+      "stepsExecuted": 14,
+      "totalSteps": 14,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1760740619197oam9ymts8",
+      "sceneId": 12,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:36:59.197Z",
+      "startTime": "2025-10-17T22:36:52.167Z",
+      "endTime": "2025-10-17T22:36:59.194Z",
+      "duration": 7028,
+      "stepsExecuted": 4,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Action 'on' not supported for part type: light"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760740627695yxb876xqr",
+      "sceneId": 12,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:37:07.695Z",
+      "startTime": "2025-10-17T22:37:00.734Z",
+      "endTime": "2025-10-17T22:37:07.694Z",
+      "duration": 6960,
+      "stepsExecuted": 4,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Action 'on' not supported for part type: light"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760740678689em4kalusd",
+      "sceneId": 12,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:37:58.689Z",
+      "startTime": "2025-10-17T22:37:51.585Z",
+      "endTime": "2025-10-17T22:37:58.688Z",
+      "duration": 7103,
+      "stepsExecuted": 4,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Action 'on' not supported for part type: light"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "176074072003900thfk8gk",
+      "sceneId": 12,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:38:40.039Z",
+      "startTime": "2025-10-17T22:38:31.794Z",
+      "endTime": "2025-10-17T22:38:40.036Z",
+      "duration": 8242,
+      "stepsExecuted": 6,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Sensor value (true) does not meet threshold (500)"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760740746997b3u6z3emk",
+      "sceneId": 13,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:39:06.997Z",
+      "startTime": "2025-10-17T22:38:58.068Z",
+      "endTime": "2025-10-17T22:39:06.995Z",
+      "duration": 8927,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1760740760168vpkbe6yy3",
+      "sceneId": 14,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:39:20.168Z",
+      "startTime": "2025-10-17T22:39:11.230Z",
+      "endTime": "2025-10-17T22:39:20.165Z",
+      "duration": 8935,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17607407976982ipr5egce",
+      "sceneId": 14,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:39:57.698Z",
+      "startTime": "2025-10-17T22:39:48.706Z",
+      "endTime": "2025-10-17T22:39:57.696Z",
+      "duration": 8990,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17607408083945ksanuxps",
+      "sceneId": 14,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:40:08.394Z",
+      "startTime": "2025-10-17T22:39:59.521Z",
+      "endTime": "2025-10-17T22:40:08.393Z",
+      "duration": 8872,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17607409877326g71tu74d",
+      "sceneId": 14,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:43:07.732Z",
+      "startTime": "2025-10-17T22:42:58.781Z",
+      "endTime": "2025-10-17T22:43:07.730Z",
+      "duration": 8949,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1760741003626tsnxpqau3",
+      "sceneId": 14,
+      "characterId": 3,
+      "timestamp": "2025-10-17T22:43:23.626Z",
+      "startTime": "2025-10-17T22:43:14.723Z",
+      "endTime": "2025-10-17T22:43:23.624Z",
+      "duration": 8902,
+      "stepsExecuted": 7,
+      "totalSteps": 7,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -1165,6 +1633,46 @@
       "characterId": 5,
       "executionCount": 1,
       "lastExecuted": "2025-10-14T22:12:02.619Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_8": {
+      "sceneId": 8,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-17T22:00:36.426Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_9": {
+      "sceneId": 9,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-17T22:06:55.627Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_10": {
+      "sceneId": 10,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-17T22:09:37.110Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_13": {
+      "sceneId": 13,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-17T22:39:07.003Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_14": {
+      "sceneId": 14,
+      "characterId": 3,
+      "executionCount": 5,
+      "lastExecuted": "2025-10-17T22:43:23.630Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

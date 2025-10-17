@@ -122,5 +122,462 @@
       }
     ],
     "created": "2025-09-25T01:46:41.673Z"
+  },
+  {
+    "id": 4,
+    "name": "Orlok Motion Detection Scare",
+    "steps": [
+      {
+        "type": "sensor",
+        "partId": 14,
+        "timeout": 30000,
+        "threshold": 50,
+        "concurrent": false,
+        "comment": "Wait for PIR motion sensor to detect movement",
+        "waitForMotion": true
+      },
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": true,
+        "comment": "Play Monster Howl audio concurrently"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "extend",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise right arm"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "retract",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower left arm"
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 135,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head right"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left again"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 90,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Return head to center"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "retract",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower right arm back down"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise left arm back up"
+      }
+    ],
+    "created": "2025-10-17T21:45:37.424Z",
+    "updated": "2025-10-17T21:46:31.485Z"
+  },
+  {
+    "id": 5,
+    "name": "Orlok Scare Sequence",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": true,
+        "comment": "Play Monster Howl audio concurrently"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "extend",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise right arm"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "retract",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower left arm"
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 135,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head right"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left again"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 90,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Return head to center"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "retract",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower right arm back down"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise left arm back up"
+      }
+    ],
+    "created": "2025-10-17T21:48:49.081Z"
+  },
+  {
+    "id": 6,
+    "name": "Orlok Scare Sequence",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": true,
+        "comment": "Play Monster Howl audio concurrently"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "extend",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise right arm"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "retract",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower left arm"
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 135,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head right"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Turn head left again"
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 90,
+        "duration": 500,
+        "concurrent": false,
+        "comment": "Return head to center"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "retract",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Lower right arm back down"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true,
+        "comment": "Raise left arm back up"
+      }
+    ],
+    "created": "2025-10-17T21:48:55.801Z"
+  },
+  {
+    "id": 9,
+    "name": "Orlok Simple Scare",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 135,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 90,
+        "duration": 500,
+        "concurrent": false
+      }
+    ],
+    "created": "2025-10-17T22:01:15.098Z"
+  },
+  {
+    "id": 10,
+    "name": "Orlok Motion Scare Complete",
+    "steps": [
+      {
+        "type": "sensor",
+        "partId": 14,
+        "waitForMotion": true,
+        "timeout": 60000,
+        "concurrent": false
+      },
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980",
+        "volume": 85,
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "extend",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "retract",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 135,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 45,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": 17,
+        "angle": 90,
+        "duration": 500,
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 1000,
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 1,
+        "direction": "retract",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": 2,
+        "direction": "extend",
+        "speed": 75,
+        "duration": 2000,
+        "concurrent": false
+      }
+    ],
+    "created": "2025-10-17T22:07:11.212Z"
   }
 ]
