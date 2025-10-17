@@ -56,6 +56,10 @@
     "channels": 1,
     "description": "Webcam microphone for audio input",
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true
+    "enabled": true,
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "updated": "2025-10-17T19:02:47.293Z"
   }
 ]

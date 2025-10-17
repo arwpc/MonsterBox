@@ -840,19 +840,29 @@ STTManager.prototype.startVUMeter = function () {
 
         self.vuPending = true;
         var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
+        console.log('VU meter fetching:', url);
         fetch(url)
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                console.log('VU meter response status:', r.status);
+                return r.json();
+            })
             .then(function (j) {
                 self.vuPending = false;
-                if (!j || !j.success) return;
+                console.log('VU meter data:', j);
+                if (!j || !j.success) {
+                    console.warn('VU meter: API returned failure', j);
+                    return;
+                }
                 var level = +j.level || 0;
                 var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
+                console.log('VU meter level:', level, 'pct:', pct);
                 meterEl.style.width = pct + '%';
                 meterEl.setAttribute('aria-valuenow', String(pct));
                 labelEl.textContent = pct + '%';
             })
-            .catch(function () {
+            .catch(function (err) {
                 self.vuPending = false;
+                console.error('VU meter fetch error:', err);
             });
     }
 
