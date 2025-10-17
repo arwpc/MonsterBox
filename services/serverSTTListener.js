@@ -17,8 +17,8 @@ const __dirname = path.dirname(__filename);
 class ServerSTTListener {
   constructor() {
     this.sessions = new Map(); // sessionId -> { deviceId, model, language, running, timer, transcript }
-    this.captureDurationSec = 1.2; // longer chunks improve accuracy for English model
-    this.pollIntervalMs = 650; // slight overlap to maintain continuity
+    this.captureDurationSec = 2.0; // longer chunks capture full sentences
+    this.pollIntervalMs = 500; // faster polling for better responsiveness
     this._lastCapturePath = null; // 'python' | 'ffmpeg' | 'arecord' | 'parec'
     this.sessionTimeoutMs = 3600000; // 1 hour max session duration
     this.cleanupIntervalMs = 60000; // cleanup every minute

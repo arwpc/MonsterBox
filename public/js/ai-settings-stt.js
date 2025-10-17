@@ -1029,22 +1029,48 @@ STTManager.prototype.stopListening = function () {
     var startBtn = document.getElementById('startListening');
     var stopBtn = document.getElementById('stopListening');
 
+    console.log('🛑 stopListening called, sessionId:', self.serverSessionId);
+
     function cleanup() {
         console.log('🧹 Cleaning up STT session');
         self.isListening = false;
         self.serverSessionId = null;
         self._notifiedNoTranscriptYet = false;
         self._lastCounters = null;
-        if (self.statusPollTimer) { clearInterval(self.statusPollTimer); self.statusPollTimer = null; }
-        if (startBtn) startBtn.disabled = false; if (stopBtn) stopBtn.disabled = true;
+        if (self.statusPollTimer) {
+            console.log('🧹 Clearing status poll timer');
+            clearInterval(self.statusPollTimer);
+            self.statusPollTimer = null;
+        }
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
         self.showAlert('Listening stopped', 'info');
     }
 
-    if (!self.serverSessionId) { cleanup(); return; }
+    if (!self.serverSessionId) {
+        console.log('⚠️ No session ID, just cleaning up');
+        cleanup();
+        return;
+    }
 
+    console.log('📡 Sending stop request to server for session:', self.serverSessionId);
     fetch('/api/elevenlabs/stt/listen/stop', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: self.serverSessionId })
-    }).then(function () { cleanup(); }).catch(function () { cleanup(); });
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: self.serverSessionId })
+    })
+    .then(function (r) {
+        console.log('✅ Stop request response status:', r.status);
+        return r.json();
+    })
+    .then(function (j) {
+        console.log('✅ Stop request result:', j);
+        cleanup();
+    })
+    .catch(function (err) {
+        console.error('❌ Stop request error:', err);
+        cleanup();
+    });
 };
 
 STTManager.prototype.runTwoSecondTest = function () {

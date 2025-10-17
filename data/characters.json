@@ -25,7 +25,7 @@
       "language": "en",
       "sampleRate": "16000",
       "vadEnabled": "on",
-      "vadThreshold": "0.7",
+      "vadThreshold": "0.75",
       "vadSilenceDuration": "500",
       "audioFilterEnabled": "on",
       "highpassFreq": "200",
@@ -36,7 +36,7 @@
       "minLetterRatio": "55",
       "requireVowels": "on",
       "microphonePartId": "4",
-      "microphoneDeviceId": "default",
+      "microphoneDeviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo",
       "format": "mp3"
     }
   },
