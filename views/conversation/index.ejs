@@ -456,7 +456,7 @@
         async function loadScenes() {
           const container = $('scenesContainer');
           try {
-            const r = await fetch('/scenes/api/scenes');
+            const r = await fetch('/scenes/api/');
             const j = await r.json();
             if (j && j.success && j.scenes && j.scenes.length > 0) {
               container.innerHTML = j.scenes.map(scene => `
@@ -480,7 +480,7 @@
 
         window.playScene = async function (sceneId) {
           try {
-            const r = await fetch(`/scenes/api/scenes/${sceneId}/play`, { method: 'POST' });
+            const r = await fetch(`/scenes/api/${sceneId}/play`, { method: 'POST' });
             const j = await r.json();
             if (j && j.success) {
               console.log('Scene playing:', sceneId);
