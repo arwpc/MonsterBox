@@ -105,6 +105,7 @@ apt-get install -y \
     pipewire \
     pipewire-alsa \
     pipewire-pulse \
+    pulseaudio-utils \
     wireplumber \
     ffmpeg \
     mpg123 \

@@ -391,7 +391,8 @@ sudo bash scripts/tune-mjpg.sh /dev/video0 640x480 24 80
 - Raspberry Pi 4B (for hardware control)
 - **PipeWire + WirePlumber** (for audio system)
 - **PyAudio** (for microphone capture)
-- **mpg123, pw-play, wpctl, pactl** (audio playback tools)
+- **mpg123, pulseaudio-utils** (audio playback - REQUIRED for TTS)
+- **pw-play, wpctl, pactl** (audio tools)
 
 ### Installation
 
@@ -418,8 +419,8 @@ MonsterBox 4.0 uses **PipeWire with WirePlumber** for modern, low-latency audio 
 sudo apt update
 sudo apt install -y pipewire pipewire-pulse wireplumber
 
-# Install audio tools
-sudo apt install -y mpg123 python3-pyaudio
+# Install audio tools (REQUIRED for TTS)
+sudo apt install -y mpg123 pulseaudio-utils python3-pyaudio
 
 # Enable PipeWire services
 systemctl --user enable pipewire pipewire-pulse wireplumber
@@ -428,6 +429,7 @@ systemctl --user start pipewire pipewire-pulse wireplumber
 # Verify installation
 wpctl status
 pactl info
+mpg123 --version
 ```
 
 #### Audio Device Configuration
@@ -449,6 +451,119 @@ The application will be available at:
 - **Setup**: http://127.0.0.1:3000/setup  ← **Start here for parts creation**
 - **Live Mode**: http://127.0.0.1:3000/live
 - **Audio Library**: http://127.0.0.1:3000/audio-library  ← **✅ FULLY OPERATIONAL: Centralized audio management**
+
+## ⚠️ **CRITICAL: Audio/TTS Production Requirements (MonsterBox 5.3)**
+
+**🔊 REQUIRED FOR PRODUCTION** - These fixes are essential for conversation TTS audio to work correctly.
+
+### **Issue: No Audio from Conversation TTS**
+
+If the conversation API returns `{"success":true}` but you hear no audio, you need to configure the systemd service environment.
+
+### **Fix 1: Add XDG_RUNTIME_DIR to systemd service**
+
+**Problem:** mpg123 cannot access PulseAudio/PipeWire without the user's runtime directory.
+
+**Solution:** Edit `/etc/systemd/system/monsterbox.service` and add:
+
+```ini
+[Service]
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=XDG_RUNTIME_DIR=/run/user/1000  # ← ADD THIS LINE
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/monsterbox.log
+StandardError=append:/var/log/monsterbox.err
+```
+
+Then reload and restart:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart monsterbox
+```
+
+### **Fix 2: Install Required Audio Dependencies**
+
+```bash
+# Install mpg123 and pulseaudio-utils
+sudo apt update
+sudo apt install -y mpg123 pulseaudio-utils
+
+# Verify installation
+mpg123 --version
+paplay --version
+```
+
+### **Fix 3: Configure Character Voice**
+
+Each character's TTS voice is configured in `data/character-{id}/ai-config/tts-config.json`:
+
+```json
+{
+  "model": "eleven_monolingual_v1",
+  "voice_id": "vfaqCOvlrKi4Zp7C2IAm",
+  "stability": 0.5,
+  "similarity_boost": 0.5,
+  "style": 0,
+  "use_speaker_boost": true
+}
+```
+
+**Important:** The `voice_id` must match the voice configured in your ElevenLabs agent. To find your agent's voice:
+
+```bash
+# Get agent details
+curl -s -H "xi-api-key: $(cat /etc/monsterbox/elevenlabs.key)" \
+  https://api.elevenlabs.io/v1/convai/agents/<agent_id> | \
+  python3 -m json.tool | grep voice_id
+```
+
+### **Technical Details**
+
+**Audio Streaming Pipeline:**
+```
+TTS API → ElevenLabs → MP3 Buffer → mpg123 → PulseAudio → PipeWire → Speakers
+```
+
+**Why mpg123?**
+- Direct MP3 streaming from stdin (no conversion needed)
+- Native PulseAudio support with `-o pulse`
+- Volume control with `-f` flag (0-32768 scale)
+- More reliable than ffmpeg + paplay pipeline
+
+**Environment Requirements:**
+- `XDG_RUNTIME_DIR=/run/user/1000` - Required for PulseAudio access
+- `PULSE_SINK=<device_id>` - Optional, for specific device routing
+
+### **Verification**
+
+Test conversation TTS:
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"text":"Hello, I am Groundbreaker"}' \
+  http://localhost:3000/conversation/api/say
+```
+
+Check logs:
+```bash
+sudo tail -f /var/log/monsterbox.log | grep -E "(mpg123|🔊|🎵)"
+```
+
+Expected output:
+```
+🎵 Starting mpg123 audio stream for character 5: device=default, volume=80
+🔊 Writing 87398 bytes to mpg123 stream (device: default)
+```
+
+**✅ If you see these logs and hear audio, the fix is working!**
+
+For complete details, see: [CONVERSATION_TTS_AUDIO_FIX.md](CONVERSATION_TTS_AUDIO_FIX.md)
+
+---
 
 ## 🦴 **Motor & Linear Actuator Configuration**
 

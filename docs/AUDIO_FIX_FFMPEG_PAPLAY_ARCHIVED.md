@@ -1,11 +1,55 @@
-# Audio Fix - ffmpeg + paplay Solution ✅
+# ⚠️ ARCHIVED - Audio Fix - ffmpeg + paplay Solution
 
-**Date**: October 11, 2025  
-**Status**: ✅ **FIXED - READY FOR TESTING**
+**Date**: October 11, 2025
+**Status**: ⚠️ **ARCHIVED - SUPERSEDED BY MPG123 FIX**
 
 ---
 
-## The Problem
+## ⚠️ THIS DOCUMENT IS OUTDATED
+
+This document describes the **ffmpeg + paplay** audio streaming method which was used temporarily but has been **replaced with a more reliable mpg123 solution**.
+
+**For current audio/TTS configuration, see:**
+- [CONVERSATION_TTS_AUDIO_FIX.md](../CONVERSATION_TTS_AUDIO_FIX.md) - Current production fix
+- [README.md](../README.md) - Section "⚠️ CRITICAL: Audio/TTS Production Requirements"
+
+---
+
+## Why This Was Replaced
+
+The ffmpeg + paplay pipeline had issues:
+- ❌ paplay would hang or not produce audio
+- ❌ Multiple stuck ffmpeg processes would accumulate
+- ❌ Required complex pipeline: MP3 → ffmpeg → WAV → paplay
+- ❌ More failure points in the audio chain
+
+**Current Solution (MonsterBox 5.3):**
+- ✅ Direct mpg123 streaming from stdin
+- ✅ No conversion needed (plays MP3 directly)
+- ✅ Requires `XDG_RUNTIME_DIR=/run/user/1000` in systemd service
+- ✅ More reliable and simpler pipeline
+
+---
+
+## Historical Context
+
+This document is preserved for historical reference. The ffmpeg + paplay approach was implemented as a workaround when mpg123 was failing, but the root cause was actually the missing `XDG_RUNTIME_DIR` environment variable in the systemd service configuration.
+
+Once `XDG_RUNTIME_DIR` was properly configured, mpg123 worked reliably and the complex ffmpeg + paplay pipeline was no longer needed.
+
+---
+
+**Last Updated**: October 17, 2025
+**Archived By**: Augment Agent
+**Reason**: Superseded by mpg123 direct streaming solution
+
+---
+
+# ORIGINAL CONTENT BELOW (FOR HISTORICAL REFERENCE)
+
+---
+
+## The Problem (HISTORICAL)
 
 **Orlok had NO AUDIO OUTPUT** despite:
 - ✅ Speakers working (aplay works)
@@ -14,40 +58,42 @@
 - ✅ Speaker assigned
 - ✅ PipeWire/PulseAudio running
 
-**Root Cause**: `mpg123 -o pulse` was unreliable and exiting with EPIPE errors
+**Root Cause (INCORRECT)**: `mpg123 -o pulse` was unreliable and exiting with EPIPE errors
+
+**Actual Root Cause (DISCOVERED LATER)**: Missing `XDG_RUNTIME_DIR` environment variable in systemd service
 
 ---
 
-## The Solution
+## The Solution (HISTORICAL - NO LONGER USED)
 
 **Switched from mpg123 to ffmpeg + paplay pipeline**
 
-### **Why This Works**
+### **Why This Works (HISTORICAL)**
 
 1. **ffmpeg**: Converts MP3 stream to WAV (universal format)
 2. **paplay**: Plays WAV through PulseAudio/PipeWire (proven to work)
 3. **Pipeline**: `MP3 → ffmpeg → WAV → paplay → Speakers`
 
-### **Benefits**
+### **Benefits (HISTORICAL)**
 
-- ✅ **More reliable** than mpg123
+- ✅ **More reliable** than mpg123 (at the time)
 - ✅ **Works with PipeWire** natively
-- ✅ **No EPIPE errors** 
+- ✅ **No EPIPE errors**
 - ✅ **Proven to work** (aplay/paplay already working)
 
 ---
 
-## Technical Implementation
+## Technical Implementation (HISTORICAL)
 
 ### **Audio Stream Pipeline**
 
 **Before** (BROKEN):
 ```
 ElevenLabs MP3 → mpg123 -o pulse → PulseAudio → Speakers
-                    ↑ FAILS with EPIPE
+                    ↑ FAILS with EPIPE (due to missing XDG_RUNTIME_DIR)
 ```
 
-**After** (FIXED):
+**After** (TEMPORARY FIX):
 ```
 ElevenLabs MP3 → ffmpeg → WAV → paplay → PulseAudio → Speakers
                     ✅ WORKS

@@ -126,6 +126,27 @@ cd ~/MonsterBox && pkill -f "node.*MonsterBox" && nohup npm start > /tmp/monster
 ```
 
 ### No Audio Output
+
+**⚠️ CRITICAL FIX (MonsterBox 5.3)**: If conversation TTS returns success but no audio plays, the systemd service is missing `XDG_RUNTIME_DIR`.
+
+```bash
+# Fix: Edit /etc/systemd/system/monsterbox.service and add:
+# Environment=XDG_RUNTIME_DIR=/run/user/1000
+
+# Then reload and restart:
+sudo systemctl daemon-reload
+sudo systemctl restart monsterbox
+
+# Verify the fix:
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"text":"Testing audio"}' \
+  http://localhost:3000/conversation/api/say
+
+# Check logs for mpg123 output:
+sudo tail -f /var/log/monsterbox.log | grep -E "(mpg123|🔊|🎵)"
+```
+
+**Other audio checks:**
 ```bash
 # Check mpg123
 mpg123 --version
@@ -137,6 +158,8 @@ wpctl status
 python3 ~/MonsterBox/python_wrappers/speaker_cli.py play \
   /usr/share/sounds/alsa/Front_Center.wav 80 --device <sink_name>
 ```
+
+**See also**: [CONVERSATION_TTS_AUDIO_FIX.md](../CONVERSATION_TTS_AUDIO_FIX.md) for complete details.
 
 ### Service Won't Start
 ```bash

@@ -10,6 +10,8 @@ User=remote
 WorkingDirectory=/home/remote/MonsterBox
 Environment=NODE_ENV=production
 Environment=PORT=3000
+Environment=GAIN=130
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 
 # Start MonsterBox application
 ExecStart=/usr/bin/npm start
