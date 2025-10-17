@@ -41,20 +41,26 @@
                                     <select class="form-select" id="sttModel" name="model">
                                         <option value="">Loading models...</option>
                                     </select>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> Use <strong>Scribe English v1</strong> for English-only transcription
+                                    </small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="sttLanguage" class="form-label">Language</label>
                                     <select class="form-select" id="sttLanguage" name="language">
-                                        <option value="en">English</option>
+                                        <option value="en">English (Recommended)</option>
                                         <option value="es">Spanish</option>
                                         <option value="fr">French</option>
                                         <option value="de">German</option>
                                         <option value="it">Italian</option>
                                         <option value="pt">Portuguese</option>
-                                        <option value="auto">Auto-detect</option>
+                                        <option value="auto">Auto-detect (May transcribe in other languages)</option>
                                     </select>
+                                    <small class="text-muted">
+                                        <i class="bi bi-exclamation-triangle"></i> Auto-detect may transcribe background noise as foreign languages
+                                    </small>
                                 </div>
                             </div>
                         </div>
