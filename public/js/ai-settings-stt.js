@@ -19,13 +19,12 @@ function STTManager() {
     this.vuTimer = null;
     this.currentMicDeviceId = null;
     this.vuPending = false; // Prevent overlapping VU requests
-    // Server-side listening session
+    // WebSocket connection for real-time STT
+    this.ws = null;
+    this.wsConnected = false;
     this.isListening = false;
-    this.serverSessionId = null;
-    this.statusPollTimer = null;
     this.lastTranscriptText = '';
-    this.lastStatusError = '';
-    this.mediaRecorderTimeslice = 1000; // ms per chunk (legacy)
+    this.currentCharacterId = null;
     // Debounce timers for performance
     this.saveDebounceTimer = null;
     this.saveDebounceDelay = 500; // ms
@@ -916,130 +915,180 @@ STTManager.prototype.appendTranscript = function (text) {
     area.scrollTop = area.scrollHeight;
 };
 
-// Real-time listening using server-side Microphone Part
+// Get current character ID from page
+STTManager.prototype.getCurrentCharacterId = function () {
+    var label = document.getElementById('charLabel');
+    var cid = label && label.getAttribute('data-char-id');
+    var n = parseInt(cid, 10);
+    return Number.isFinite(n) ? n : null;
+};
+
+// Get agent ID for character
+STTManager.prototype.getAgentIdForCharacter = function (charId, callback) {
+    var self = this;
+    fetch('/setup/characters/api/characters/' + charId)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            var agent = (j && j.character && (j.character.elevenLabsAgentId || j.character.agentId)) || null;
+            if (agent) {
+                callback(String(agent));
+                return;
+            }
+            // fallback: assignments map
+            fetch('/setup/characters/api/character-assignments')
+                .then(function (r2) { return r2.json(); })
+                .then(function (a) {
+                    if (a && a[charId] && a[charId].agentId) {
+                        callback(String(a[charId].agentId));
+                    } else {
+                        callback(null);
+                    }
+                })
+                .catch(function () { callback(null); });
+        })
+        .catch(function () { callback(null); });
+};
+
+// Connect to WebSocket server (port 8795)
+STTManager.prototype.connectWebSocket = function () {
+    var self = this;
+
+    if (self.ws && self.wsConnected) {
+        console.log('✅ WebSocket already connected');
+        return;
+    }
+
+    console.log('🔌 Connecting to WebSocket on port 8795...');
+
+    var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+    var wsUrl = protocol + '//' + window.location.hostname + ':8795';
+
+    try {
+        self.ws = new WebSocket(wsUrl);
+
+        self.ws.onopen = function () {
+            console.log('✅ WebSocket connected');
+            self.wsConnected = true;
+
+            // Set character ID
+            self.currentCharacterId = self.getCurrentCharacterId();
+            if (self.currentCharacterId) {
+                console.log('📤 Setting character ID:', self.currentCharacterId);
+                self.ws.send(JSON.stringify({ type: 'set_character', characterId: self.currentCharacterId }));
+            }
+
+            // Set mic source to server
+            console.log('📤 Setting mic source to server');
+            self.ws.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+
+            // Set STT language
+            var lang = (document.getElementById('sttLanguage') || {}).value || 'auto';
+            console.log('📤 Setting STT language:', lang);
+            self.ws.send(JSON.stringify({ type: 'set_stt_language', language: lang }));
+
+            // Start conversation with agent
+            if (self.currentCharacterId) {
+                self.getAgentIdForCharacter(self.currentCharacterId, function (agentId) {
+                    if (agentId) {
+                        console.log('📤 Starting conversation with agent:', agentId);
+                        self.ws.send(JSON.stringify({ type: 'start_conversation', agentId: agentId }));
+                    } else {
+                        console.warn('⚠️ No agent configured for character', self.currentCharacterId);
+                    }
+                });
+            }
+        };
+
+        self.ws.onmessage = function (ev) {
+            try {
+                var msg = JSON.parse(ev.data);
+                if (!msg) return;
+
+                // Handle user transcript (final)
+                if (msg.type === 'user_transcript' && msg.user_transcription_event && msg.user_transcription_event.user_transcript) {
+                    var finalText = msg.user_transcription_event.user_transcript;
+                    console.log('✅ Transcript:', finalText);
+                    self.appendTranscript(finalText);
+                }
+                // Handle generic transcript event
+                else if (msg.type === 'transcript' && msg.role === 'user' && msg.text) {
+                    console.log('✅ Transcript (generic):', msg.text);
+                    self.appendTranscript(msg.text);
+                }
+                // Handle partial transcript
+                else if (msg.type === 'stt_partial' && msg.text) {
+                    console.log('📝 Partial:', msg.text);
+                    // Could show partial in a different color/style if desired
+                }
+            } catch (e) {
+                console.error('❌ Error parsing WebSocket message:', e);
+            }
+        };
+
+        self.ws.onclose = function () {
+            console.log('🔌 WebSocket disconnected');
+            self.wsConnected = false;
+            self.ws = null;
+        };
+
+        self.ws.onerror = function (err) {
+            console.error('❌ WebSocket error:', err);
+        };
+
+    } catch (e) {
+        console.error('❌ Failed to create WebSocket:', e);
+    }
+};
+
+// Real-time listening using WebSocket
 STTManager.prototype.startListening = function () {
     var self = this;
     var startBtn = document.getElementById('startListening');
     var stopBtn = document.getElementById('stopListening');
 
-    // Stop any existing session first
-    if (self.serverSessionId) {
-        console.log('🛑 Stopping existing session before starting new one:', self.serverSessionId);
-        self.stopListening();
-        // Wait a bit for cleanup
-        setTimeout(function() { self._doStartListening(); }, 500);
-    } else {
-        self._doStartListening();
-    }
-};
+    console.log('🎤 Starting listening...');
 
-STTManager.prototype._doStartListening = function () {
-    var self = this;
-    var startBtn = document.getElementById('startListening');
-    var stopBtn = document.getElementById('stopListening');
-
-    var devId = self.getSelectedMicDeviceId();
-    if (!devId) { self.showAlert('Select a Microphone Part first', 'warning'); return; }
-
+    // Clear transcript area
     var area = document.getElementById('liveTranscript');
     if (area) area.textContent = '';
     self.lastTranscriptText = '';
-    self._notifiedNoTranscriptYet = false; // Reset notification flag
-    self._lastCounters = null; // Reset counters
 
-    var body = {
-        deviceId: devId,
-        model: (document.getElementById('sttModel') || {}).value || 'scribe_v1',
-        language: (document.getElementById('sttLanguage') || {}).value || 'auto'
-    };
+    // Connect to WebSocket if not already connected
+    if (!self.wsConnected) {
+        self.connectWebSocket();
+    }
 
-    console.log('🎤 Starting STT session with:', body);
+    // Update UI
+    self.isListening = true;
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        startBtn.style.cursor = 'not-allowed';
+    }
+    if (stopBtn) {
+        stopBtn.disabled = false;
+        stopBtn.style.opacity = '1';
+        stopBtn.style.cursor = 'pointer';
+    }
 
-    fetch('/api/elevenlabs/stt/listen/start', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); }).then(function (j) {
-        if (!j || !j.success) {
-            console.error('❌ Failed to start listening:', j);
-            self.showAlert('Failed to start listening', 'danger');
-            return;
-        }
-        console.log('✅ STT session started:', j.sessionId);
-        self.serverSessionId = j.sessionId; self.isListening = true;
-        if (startBtn) {
-            startBtn.disabled = true;
-            startBtn.style.opacity = '0.5';
-            startBtn.style.cursor = 'not-allowed';
-        }
-        if (stopBtn) {
-            stopBtn.disabled = false;
-            stopBtn.style.opacity = '1';
-            stopBtn.style.cursor = 'pointer';
-        }
-        self.showAlert('Listening started (server)', 'info');
-        // begin polling status
-        self.statusPollTimer = setInterval(function () { self.pollTranscript(); }, 300); // faster UI updates
-    }).catch(function (err) {
-        console.error('❌ Error starting listening:', err);
-        self.showAlert('Failed to start listening', 'danger');
-    });
+    self.showAlert('Listening started - speak into the microphone', 'success');
 };
 
-STTManager.prototype.pollTranscript = function () {
-    var self = this; if (!self.serverSessionId) return;
-    fetch('/api/elevenlabs/stt/listen/status?sessionId=' + encodeURIComponent(self.serverSessionId))
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            if (!j || !j.success) {
-                console.warn('⚠️ STT status poll failed:', j);
-                return;
-            }
+// Append transcript to live transcript area
+STTManager.prototype.appendTranscript = function (text) {
+    var area = document.getElementById('liveTranscript');
+    if (!area) return;
 
-            // Check if session stopped due to errors
-            if (!j.running) {
-                console.warn('⚠️ STT session stopped on server');
-                self.showAlert('Session stopped: ' + (j.lastError || 'Unknown reason'), 'danger');
-                self.stopListening();
-                return;
-            }
+    var timestamp = new Date().toLocaleTimeString();
+    var line = '[' + timestamp + '] ' + text;
 
-            if (j.lastError && j.lastError !== self.lastStatusError) {
-                self.lastStatusError = j.lastError;
-                console.warn('⚠️ STT error:', j.lastError);
-                self.showAlert('STT warning: ' + j.lastError, 'warning');
-            }
-            if (!j.lastError && self.lastStatusError) { self.lastStatusError = ''; }
+    if (area.textContent) {
+        area.textContent += '\n' + line;
+    } else {
+        area.textContent = line;
+    }
 
-            // Debug counters (helps determine if audio is reaching server/ElevenLabs)
-            var prev = self._lastCounters || {};
-            if (typeof j.chunksCaptured === 'number' && j.chunksCaptured !== prev.chunksCaptured) {
-                // Always log progress (not just when MONSTERBOX_DEBUG_AUDIO is set)
-                console.log('📊 STT: captured=%d, withAudio=%d, transcribed=%d, bytes=%d, err=%s',
-                    j.chunksCaptured, j.chunksWithAudio, j.chunksTranscribed, j.lastChunkBytes, j.lastError || 'none');
-
-                // Notify once if we are capturing audio but not getting transcripts
-                if (!j.lastError && j.chunksWithAudio > 5 && j.chunksTranscribed === 0 && !self._notifiedNoTranscriptYet) {
-                    self._notifiedNoTranscriptYet = true;
-                    console.warn('⚠️ Capturing audio but no transcription yet - check VAD threshold or speak louder');
-                    self.showAlert('Capturing audio but no transcription yet. Please speak clearly for 2–3 seconds.', 'info');
-                }
-                self._lastCounters = {
-                    chunksCaptured: j.chunksCaptured,
-                    chunksWithAudio: j.chunksWithAudio,
-                    chunksTranscribed: j.chunksTranscribed,
-                    lastChunkBytes: j.lastChunkBytes
-                };
-            }
-
-            var text = String(j.transcript || '');
-            if (text && text !== self.lastTranscriptText) {
-                console.log('📝 New transcript:', text);
-                var area = document.getElementById('liveTranscript');
-                if (area) { area.textContent = text; area.scrollTop = area.scrollHeight; }
-                self.lastTranscriptText = text;
-            }
-        }).catch(function (err) {
-            console.error('❌ STT status poll error:', err);
-        });
+    area.scrollTop = area.scrollHeight;
 };
 
 STTManager.prototype.stopListening = function () {
@@ -1047,56 +1096,34 @@ STTManager.prototype.stopListening = function () {
     var startBtn = document.getElementById('startListening');
     var stopBtn = document.getElementById('stopListening');
 
-    console.log('🛑 stopListening called, sessionId:', self.serverSessionId);
+    console.log('🛑 stopListening called');
 
-    function cleanup() {
-        console.log('🧹 Cleaning up STT session');
-        self.isListening = false;
-        self.serverSessionId = null;
-        self._notifiedNoTranscriptYet = false;
-        self._lastCounters = null;
-        if (self.statusPollTimer) {
-            console.log('🧹 Clearing status poll timer');
-            clearInterval(self.statusPollTimer);
-            self.statusPollTimer = null;
+    // Close WebSocket connection
+    if (self.ws && self.wsConnected) {
+        console.log('🔌 Closing WebSocket connection');
+        try {
+            self.ws.close();
+        } catch (e) {
+            console.error('❌ Error closing WebSocket:', e);
         }
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.cursor = 'pointer';
-        }
-        if (stopBtn) {
-            stopBtn.disabled = true;
-            stopBtn.style.opacity = '0.5';
-            stopBtn.style.cursor = 'not-allowed';
-        }
-        self.showAlert('Listening stopped', 'info');
+        self.ws = null;
+        self.wsConnected = false;
     }
 
-    if (!self.serverSessionId) {
-        console.log('⚠️ No session ID, just cleaning up');
-        cleanup();
-        return;
+    // Update UI
+    self.isListening = false;
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+    }
+    if (stopBtn) {
+        stopBtn.disabled = true;
+        stopBtn.style.opacity = '0.5';
+        stopBtn.style.cursor = 'not-allowed';
     }
 
-    console.log('📡 Sending stop request to server for session:', self.serverSessionId);
-    fetch('/api/elevenlabs/stt/listen/stop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: self.serverSessionId })
-    })
-    .then(function (r) {
-        console.log('✅ Stop request response status:', r.status);
-        return r.json();
-    })
-    .then(function (j) {
-        console.log('✅ Stop request result:', j);
-        cleanup();
-    })
-    .catch(function (err) {
-        console.error('❌ Stop request error:', err);
-        cleanup();
-    });
+    self.showAlert('Listening stopped', 'info');
 };
 
 STTManager.prototype.runTwoSecondTest = function () {
