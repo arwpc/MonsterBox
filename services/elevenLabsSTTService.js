@@ -80,6 +80,7 @@ class ElevenLabsSTTService {
 
             // ALWAYS log what we're sending to ElevenLabs
             console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, original_model="${options.model}", original_lang="${options.language}"`);
+            console.log(`🔥🔥🔥 USING FIXED CODE - language_code parameter (NOT language) 🔥🔥🔥`);
 
             // Required by ElevenLabs STT
             formData.append('model_id', modelToSend);
