@@ -834,28 +834,42 @@ STTManager.prototype.startVUMeter = function () {
     console.log('Starting VU meter for device:', self.currentMicDeviceId);
 
     // Optimized VU meter with request deduplication
+    var lastLoggedPct = -1;
     function updateVU() {
         // Skip if previous request still pending
         if (self.vuPending) return;
 
         self.vuPending = true;
         var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
-        console.log('VU meter fetching:', url);
         fetch(url)
-            .then(function (r) {
-                console.log('VU meter response status:', r.status);
-                return r.json();
-            })
+            .then(function (r) { return r.json(); })
             .then(function (j) {
                 self.vuPending = false;
-                console.log('VU meter data:', j);
                 if (!j || !j.success) {
                     console.warn('VU meter: API returned failure', j);
                     return;
                 }
                 var level = +j.level || 0;
-                var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
-                console.log('VU meter level:', level, 'pct:', pct);
+                // Amplify display for better visibility: multiply by 10 for display only
+                // This makes quiet sounds visible (0.001 becomes 1%)
+                var displayLevel = level * 10;
+                var pct = Math.max(0, Math.min(100, Math.round(displayLevel * 100)));
+
+                // Color code: green for low, yellow for medium, red for clipping
+                if (pct < 30) {
+                    meterEl.className = 'progress-bar bg-success';
+                } else if (pct < 70) {
+                    meterEl.className = 'progress-bar bg-warning';
+                } else {
+                    meterEl.className = 'progress-bar bg-danger';
+                }
+
+                // Only log when level changes significantly (reduces console spam)
+                if (Math.abs(pct - lastLoggedPct) >= 5 || pct > 10) {
+                    console.log('🎤 Audio level:', level.toFixed(6), '→', pct + '% (amplified 10x)');
+                    lastLoggedPct = pct;
+                }
+
                 meterEl.style.width = pct + '%';
                 meterEl.setAttribute('aria-valuenow', String(pct));
                 labelEl.textContent = pct + '%';
