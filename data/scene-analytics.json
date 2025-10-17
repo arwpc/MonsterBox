@@ -1117,6 +1117,20 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1760724330323qby12scb1",
+      "sceneId": 9012,
+      "characterId": 5,
+      "timestamp": "2025-10-17T18:05:30.323Z",
+      "startTime": "2025-10-17T18:05:30.316Z",
+      "endTime": "2025-10-17T18:05:30.316Z",
+      "duration": 1,
+      "stepsExecuted": 0,
+      "totalSteps": 0,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -1165,6 +1179,14 @@
       "characterId": 5,
       "executionCount": 1,
       "lastExecuted": "2025-10-14T22:12:02.619Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "5_9012": {
+      "sceneId": 9012,
+      "characterId": 5,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-17T18:05:30.331Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

@@ -1,0 +1,19 @@
+{
+  "model": "scribe_v1",
+  "language": "auto",
+  "sampleRate": "16000",
+  "vadEnabled": "on",
+  "vadThreshold": "0.85",
+  "vadSilenceDuration": "500",
+  "audioFilterEnabled": "on",
+  "highpassFreq": "200",
+  "lowpassFreq": "4200",
+  "denoiseLevel": "-25",
+  "filterSfx": "on",
+  "validateEnglish": "on",
+  "minLetterRatio": "55",
+  "requireVowels": "on",
+  "microphonePartId": "4",
+  "microphoneDeviceId": "default",
+  "format": "mp3"
+}

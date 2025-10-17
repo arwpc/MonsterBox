@@ -18,6 +18,7 @@ function STTManager() {
     // VU meter
     this.vuTimer = null;
     this.currentMicDeviceId = null;
+    this.vuPending = false; // Prevent overlapping VU requests
     // Server-side listening session
     this.isListening = false;
     this.serverSessionId = null;
@@ -25,6 +26,9 @@ function STTManager() {
     this.lastTranscriptText = '';
     this.lastStatusError = '';
     this.mediaRecorderTimeslice = 1000; // ms per chunk (legacy)
+    // Debounce timers for performance
+    this.saveDebounceTimer = null;
+    this.saveDebounceDelay = 500; // ms
 }
 
 STTManager.prototype.init = function () {
@@ -253,18 +257,39 @@ STTManager.prototype.applySavedConfigIfReady = function () {
     }
 };
 
-// Save subset of STT config immediately (called on change)
+// Save subset of STT config with debouncing for performance
 STTManager.prototype.savePartialConfig = function (patch) {
     var self = this;
+
+    // Update local config immediately for UI responsiveness
     var base = self.savedConfig || {};
-    var merged = {};
-    for (var k in base) merged[k] = base[k];
-    for (var p in patch) merged[p] = patch[p];
-    return fetch('/api/elevenlabs/stt/config', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(merged)
-    }).then(function (r) { return r.json(); })
-        .then(function (j) { if (j && j.success) { self.savedConfig = j.config; self.currentConfig = j.config; } })
+    for (var p in patch) base[p] = patch[p];
+    self.savedConfig = base;
+    self.currentConfig = base;
+
+    // Debounce the actual save to reduce server load
+    if (self.saveDebounceTimer) {
+        clearTimeout(self.saveDebounceTimer);
+    }
+
+    self.saveDebounceTimer = setTimeout(function () {
+        var merged = {};
+        for (var k in self.savedConfig) merged[k] = self.savedConfig[k];
+
+        fetch('/api/elevenlabs/stt/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.success) {
+                self.savedConfig = j.config;
+                self.currentConfig = j.config;
+            }
+        })
         .catch(function () { /* ignore */ });
+    }, self.saveDebounceDelay);
 };
 
 STTManager.prototype.populateMicrophoneSelect = function () {
@@ -753,11 +778,17 @@ STTManager.prototype.startVUMeter = function () {
     var labelEl = document.getElementById('micVULabel');
     if (!meterEl || !labelEl) return;
 
-    self.vuTimer = setInterval(function () {
+    // Optimized VU meter with request deduplication
+    function updateVU() {
+        // Skip if previous request still pending
+        if (self.vuPending) return;
+
+        self.vuPending = true;
         var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
         fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (j) {
+                self.vuPending = false;
                 if (!j || !j.success) return;
                 var level = +j.level || 0;
                 var pct = Math.max(0, Math.min(100, Math.round(level * 100)));
@@ -765,8 +796,14 @@ STTManager.prototype.startVUMeter = function () {
                 meterEl.setAttribute('aria-valuenow', String(pct));
                 labelEl.textContent = pct + '%';
             })
-            .catch(function () { /* ignore */ });
-    }, 300);
+            .catch(function () {
+                self.vuPending = false;
+            });
+    }
+
+    // Reduced polling frequency: 500ms instead of 300ms for better performance
+    updateVU(); // Initial update
+    self.vuTimer = setInterval(updateVU, 500);
 };
 
 STTManager.prototype.stopVUMeter = function () {
@@ -774,6 +811,7 @@ STTManager.prototype.stopVUMeter = function () {
         clearInterval(this.vuTimer);
         this.vuTimer = null;
     }
+    this.vuPending = false; // Reset pending flag
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
     if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); }
