@@ -3,7 +3,7 @@
   "language": "en",
   "sampleRate": "16000",
   "vadEnabled": "on",
-  "vadThreshold": 0.3,
+  "vadThreshold": "0.75",
   "vadSilenceDuration": "500",
   "audioFilterEnabled": "on",
   "highpassFreq": "200",

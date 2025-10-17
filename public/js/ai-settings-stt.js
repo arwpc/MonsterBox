@@ -252,6 +252,12 @@ STTManager.prototype.applySavedConfigIfReady = function () {
         var micSelect = document.getElementById('microphonePart');
         if (micSelect && cfg.microphonePartId) {
             micSelect.value = String(cfg.microphonePartId);
+            console.log('Setting microphone part to:', cfg.microphonePartId);
+            this.onMicSelectionChange();
+        } else if (micSelect && micSelect.options.length > 1) {
+            // Auto-select first microphone if none configured
+            micSelect.selectedIndex = 1;
+            console.log('Auto-selecting first microphone part');
             this.onMicSelectionChange();
         }
     }
@@ -808,16 +814,24 @@ STTManager.prototype.getSelectedMicDeviceId = function () {
 // VU meter handling
 STTManager.prototype.onMicSelectionChange = function () {
     this.currentMicDeviceId = this.getSelectedMicDeviceId();
+    console.log('Microphone selection changed. Device ID:', this.currentMicDeviceId);
     if (this.currentMicDeviceId) this.startVUMeter(); else this.stopVUMeter();
 };
 
 STTManager.prototype.startVUMeter = function () {
     var self = this;
     self.stopVUMeter();
-    if (!self.currentMicDeviceId) return;
+    if (!self.currentMicDeviceId) {
+        console.warn('Cannot start VU meter: no microphone device ID');
+        return;
+    }
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
-    if (!meterEl || !labelEl) return;
+    if (!meterEl || !labelEl) {
+        console.warn('Cannot start VU meter: elements not found', { meterEl: !!meterEl, labelEl: !!labelEl });
+        return;
+    }
+    console.log('Starting VU meter for device:', self.currentMicDeviceId);
 
     // Optimized VU meter with request deduplication
     function updateVU() {
