@@ -376,10 +376,19 @@ STTManager.prototype.bindEvents = function () {
     var startListeningBtn = document.getElementById('startListening');
     var stopListeningBtn = document.getElementById('stopListening');
     if (startListeningBtn) {
-        startListeningBtn.addEventListener('click', function () { self.startListening(); });
+        startListeningBtn.addEventListener('click', function (e) {
+            console.log('🎤 Start button clicked');
+            self.startListening();
+        });
     }
     if (stopListeningBtn) {
-        stopListeningBtn.addEventListener('click', function () { self.stopListening(); });
+        // Use pointer-events CSS instead of disabled attribute
+        // This allows clicks to fire while maintaining visual disabled state
+        stopListeningBtn.addEventListener('click', function (e) {
+            console.log('🛑 Stop button clicked, isListening=' + self.isListening + ', sessionId=' + self.serverSessionId);
+            // Always call stopListening - it will handle cleanup even if not listening
+            self.stopListening();
+        });
     }
     // 2s diagnostic test
     var twoSecBtn = document.getElementById('sttTwoSecTest');
@@ -956,7 +965,16 @@ STTManager.prototype._doStartListening = function () {
         }
         console.log('✅ STT session started:', j.sessionId);
         self.serverSessionId = j.sessionId; self.isListening = true;
-        if (startBtn) startBtn.disabled = true; if (stopBtn) stopBtn.disabled = false;
+        if (startBtn) {
+            startBtn.disabled = true;
+            startBtn.style.opacity = '0.5';
+            startBtn.style.cursor = 'not-allowed';
+        }
+        if (stopBtn) {
+            stopBtn.disabled = false;
+            stopBtn.style.opacity = '1';
+            stopBtn.style.cursor = 'pointer';
+        }
         self.showAlert('Listening started (server)', 'info');
         // begin polling status
         self.statusPollTimer = setInterval(function () { self.pollTranscript(); }, 300); // faster UI updates
@@ -1042,8 +1060,16 @@ STTManager.prototype.stopListening = function () {
             clearInterval(self.statusPollTimer);
             self.statusPollTimer = null;
         }
-        if (startBtn) startBtn.disabled = false;
-        if (stopBtn) stopBtn.disabled = true;
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+        }
+        if (stopBtn) {
+            stopBtn.disabled = true;
+            stopBtn.style.opacity = '0.5';
+            stopBtn.style.cursor = 'not-allowed';
+        }
         self.showAlert('Listening stopped', 'info');
     }
 
