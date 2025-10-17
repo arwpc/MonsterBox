@@ -411,12 +411,14 @@ STTManager.prototype.bindEvents = function () {
     }
     if (inputGain) { inputGain.addEventListener('input', applyInputGainNow); }
 
-    // Range slider value display updates
+    // Range slider value display updates + auto-save
     var vadThresholdEl = document.getElementById('vadThreshold');
     var vadThresholdValue = document.getElementById('vadThresholdValue');
     if (vadThresholdEl && vadThresholdValue) {
         vadThresholdEl.addEventListener('input', function () {
-            vadThresholdValue.textContent = parseFloat(vadThresholdEl.value).toFixed(2);
+            var val = parseFloat(vadThresholdEl.value);
+            vadThresholdValue.textContent = val.toFixed(2);
+            self.savePartialConfig({ vadThreshold: val });
         });
     }
 
@@ -424,7 +426,9 @@ STTManager.prototype.bindEvents = function () {
     var vadSilenceDurationValue = document.getElementById('vadSilenceDurationValue');
     if (vadSilenceDurationEl && vadSilenceDurationValue) {
         vadSilenceDurationEl.addEventListener('input', function () {
-            vadSilenceDurationValue.textContent = vadSilenceDurationEl.value;
+            var val = parseInt(vadSilenceDurationEl.value, 10);
+            vadSilenceDurationValue.textContent = val;
+            self.savePartialConfig({ vadSilenceDuration: val });
         });
     }
 
@@ -432,7 +436,9 @@ STTManager.prototype.bindEvents = function () {
     var highpassFreqValue = document.getElementById('highpassFreqValue');
     if (highpassFreqEl && highpassFreqValue) {
         highpassFreqEl.addEventListener('input', function () {
-            highpassFreqValue.textContent = highpassFreqEl.value;
+            var val = parseInt(highpassFreqEl.value, 10);
+            highpassFreqValue.textContent = val;
+            self.savePartialConfig({ highpassFreq: val });
         });
     }
 
@@ -440,7 +446,9 @@ STTManager.prototype.bindEvents = function () {
     var lowpassFreqValue = document.getElementById('lowpassFreqValue');
     if (lowpassFreqEl && lowpassFreqValue) {
         lowpassFreqEl.addEventListener('input', function () {
-            lowpassFreqValue.textContent = lowpassFreqEl.value;
+            var val = parseInt(lowpassFreqEl.value, 10);
+            lowpassFreqValue.textContent = val;
+            self.savePartialConfig({ lowpassFreq: val });
         });
     }
 
@@ -448,7 +456,9 @@ STTManager.prototype.bindEvents = function () {
     var denoiseLevelValue = document.getElementById('denoiseLevelValue');
     if (denoiseLevelEl && denoiseLevelValue) {
         denoiseLevelEl.addEventListener('input', function () {
-            denoiseLevelValue.textContent = denoiseLevelEl.value;
+            var val = parseInt(denoiseLevelEl.value, 10);
+            denoiseLevelValue.textContent = val;
+            self.savePartialConfig({ denoiseLevel: val });
         });
     }
 
@@ -456,7 +466,38 @@ STTManager.prototype.bindEvents = function () {
     var minLetterRatioValue = document.getElementById('minLetterRatioValue');
     if (minLetterRatioEl && minLetterRatioValue) {
         minLetterRatioEl.addEventListener('input', function () {
-            minLetterRatioValue.textContent = minLetterRatioEl.value;
+            var val = parseInt(minLetterRatioEl.value, 10);
+            minLetterRatioValue.textContent = val;
+            self.savePartialConfig({ minLetterRatio: val });
+        });
+    }
+
+    // Checkbox auto-save
+    var audioFilterEnabledEl = document.getElementById('audioFilterEnabled');
+    if (audioFilterEnabledEl) {
+        audioFilterEnabledEl.addEventListener('change', function () {
+            self.savePartialConfig({ audioFilterEnabled: !!audioFilterEnabledEl.checked });
+        });
+    }
+
+    var filterSfxEl = document.getElementById('filterSfx');
+    if (filterSfxEl) {
+        filterSfxEl.addEventListener('change', function () {
+            self.savePartialConfig({ filterSfx: !!filterSfxEl.checked });
+        });
+    }
+
+    var validateEnglishEl = document.getElementById('validateEnglish');
+    if (validateEnglishEl) {
+        validateEnglishEl.addEventListener('change', function () {
+            self.savePartialConfig({ validateEnglish: !!validateEnglishEl.checked });
+        });
+    }
+
+    var requireVowelsEl = document.getElementById('requireVowels');
+    if (requireVowelsEl) {
+        requireVowelsEl.addEventListener('change', function () {
+            self.savePartialConfig({ requireVowels: !!requireVowelsEl.checked });
         });
     }
 

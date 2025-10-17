@@ -52,8 +52,7 @@ async function writeJawSettings(obj) {
 router.get('/', async (req, res) => {
   res.renderWithLayout('conversation/index', {
     title: 'Conversation Mode - MonsterBox 5.3',
-    page: 'conversation',
-    includeMainWrapper: false
+    page: 'conversation'
   });
 });
 

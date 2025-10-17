@@ -21,8 +21,8 @@
     "name": "Groundbreaker",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
     "sttConfig": {
-      "model": "scribe_v1",
-      "language": "auto",
+      "model": "scribe_english_v1",
+      "language": "en",
       "sampleRate": "16000",
       "vadEnabled": "on",
       "vadThreshold": "0.95",

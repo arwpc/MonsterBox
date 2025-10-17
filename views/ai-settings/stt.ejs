@@ -14,7 +14,7 @@
 
     <div class="row g-4">
         <!-- STT Configuration -->
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -93,6 +93,53 @@
                             </div>
                         </div>
 
+                        <!-- Microphone Hardware Section -->
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-mic"></i> Microphone Hardware</h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="microphonePart" class="form-label">Microphone Part</label>
+                                    <select class="form-select" id="microphonePart">
+                                        <option value="">Loading microphone parts...</option>
+                                    </select>
+                                    <small class="text-muted">Select the microphone hardware for this character</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Input Level (VU Meter)</label>
+                                    <div class="progress" style="height: 20px;">
+                                        <div id="micVUMeter" class="progress-bar bg-success" role="progressbar" style="width: 0%"
+                                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small id="micVULabel" class="text-muted">0% - Real-time audio level</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Input Gain <span id="inputGainLabel" class="text-muted">100%</span></label>
+                                    <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1" value="100">
+                                    <small class="text-muted">Adjusted via PipeWire/PulseAudio (applies immediately)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-info w-100 mt-4" id="testMicrophoneIntegration">
+                                        <i class="bi bi-arrow-repeat"></i> Test Microphone → STT
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- VAD Tuning Section -->
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-activity"></i> Voice Activity Detection (VAD) Tuning</h6>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -101,7 +148,7 @@
                                     </label>
                                     <input type="range" class="form-range" id="vadThreshold" name="vadThreshold"
                                         min="0.05" max="0.95" step="0.05" value="0.40">
-                                    <small class="text-muted">Lower = more sensitive (may pick up noise)</small>
+                                    <small class="text-muted">Lower = more sensitive (may pick up noise). Tune while watching VU meter.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -266,66 +313,6 @@
                         <label class="form-label">Live Transcription</label>
                         <div id="liveTranscript" class="form-control bg-dark text-light"
                             style="height: 200px; overflow-y: auto;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- STT Models & Microphone Integration -->
-        <div class="col-lg-4">
-
-
-            <!-- Microphone Integration -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-link-45deg"></i> Microphone Integration
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="microphonePart" class="form-label">Select Microphone Part</label>
-                        <select class="form-select" id="microphonePart">
-                            <option value="">Loading microphone parts...</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Input Level</label>
-                        <div class="progress" style="height: 10px;">
-                            <div id="micVUMeter" class="progress-bar bg-info" role="progressbar" style="width: 0%"
-                                aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <small id="micVULabel" class="text-muted">0%</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Input Gain <span id="inputGainLabel"
-                                class="text-muted">100%</span></label>
-                        <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1" value="100">
-                        <div class="form-text">Adjusted via PipeWire/PulseAudio (applies immediately)</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="vadEnabled">
-                            <label class="form-check-label" for="vadEnabled">Enable Voice Activity Detection
-                                (VAD)</label>
-                        </div>
-                        <div class="mt-2">
-                            <label class="form-label">VAD Threshold <span id="vadThresholdLabel"
-                                    class="text-muted">3%</span></label>
-                            <input type="range" class="form-range" id="vadThreshold" min="1" max="30" step="1"
-                                value="3">
-                        </div>
-                        <div class="form-text">Tune while watching the VU meter. Saved with STT config; restart
-                            "Start Listening" to apply.</div>
-                    </div>
-
-
-                    <div class="d-grid">
-                        <button type="button" class="btn btn-info" id="testMicrophoneIntegration">
-                            <i class="bi bi-arrow-repeat"></i> Test Microphone → STT
-                        </button>
                     </div>
                 </div>
             </div>
