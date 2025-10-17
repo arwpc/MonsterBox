@@ -13,16 +13,21 @@
     "voiceActivation": false,
     "voiceActivationThreshold": 0.1
   },
-  "lastModified": "2025-09-23T05:03:57.391Z",
+  "lastModified": "2025-10-17T23:28:48.823Z",
   "stt": {
     "enabled": true,
     "language": "en",
     "confidenceThreshold": 0.7,
     "realTimeProcessing": true,
     "provider": "elevenlabs",
-    "vadThreshold": 0.5,
-    "silenceDuration": 700,
-    "prefixPadding": 300
+    "vadThreshold": 0.02,
+    "silenceDuration": 500,
+    "prefixPadding": 300,
+    "captureChunkDuration": 0.5,
+    "minBufferDuration": 2.5,
+    "maxBufferDuration": 6,
+    "sttThrottleInterval": 2500,
+    "microphoneInputGain": 70
   },
   "audioProcessing": {
     "sampleRate": 16000,

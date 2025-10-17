@@ -826,16 +826,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     try { const cfg = await getSTTConfig(); deviceId = cfg.deviceId || cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
                 }
                 if (deviceId !== connection._lastDevId) { connection._lastDevId = deviceId; try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { } }
-                // Capture ~250ms chunks to reduce process-spawn overhead and improve stability
-                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.25);
+                // Capture ~500ms chunks to reduce process-spawn overhead and improve stability
+                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.5);
                 if (wav && wav.length > 44) {
                     const raw = wav.subarray(44); // strip 44-byte WAV header -> raw PCM16LE
 
-                    // Accumulate raw PCM into rolling buffer for partial STT (keep ~2s max)
+                    // Accumulate raw PCM into rolling buffer for partial STT (keep ~6s max to capture full sentences)
                     try {
                         if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
                         connection.sttPcm = Buffer.concat([connection.sttPcm, raw]);
-                        const maxBytes = 16000 * 2 * 2; // 2 seconds @16kHz mono 16-bit
+                        const maxBytes = 16000 * 2 * 6; // 6 seconds @16kHz mono 16-bit (increased for longer phrases)
                         if (connection.sttPcm.length > maxBytes) {
                             connection.sttPcm = connection.sttPcm.slice(connection.sttPcm.length - maxBytes);
                         }
@@ -852,12 +852,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
 
                     // 2) Throttled STT transcription for on-screen "You (STT)" lines (unless suppressed)
-                    if (!suppressed && (!connection.sttLastAt || (now - connection.sttLastAt) >= 1000)) {
+                    // Increased throttle to 2.5s and minimum buffer to 2.5s to capture full sentences
+                    if (!suppressed && (!connection.sttLastAt || (now - connection.sttLastAt) >= 2500)) {
                         connection.sttLastAt = now;
                         try {
                             const sttCfg = await getSTTConfig();
-                            const pcmForStt = (connection.sttPcm && connection.sttPcm.length >= 20000)
-                                ? connection.sttPcm.slice(-Math.min(connection.sttPcm.length, 16000 * 2 * 2))
+                            // Require at least 2.5 seconds of audio (80000 bytes = 2.5s @ 16kHz mono 16-bit)
+                            const pcmForStt = (connection.sttPcm && connection.sttPcm.length >= 80000)
+                                ? connection.sttPcm.slice(-Math.min(connection.sttPcm.length, 16000 * 2 * 6))
                                 : null;
                             if (pcmForStt) {
                                 let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);

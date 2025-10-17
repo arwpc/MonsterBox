@@ -147,6 +147,56 @@ VAD automatically detects when speech starts and stops.
 - **Shorter durations**: Faster response, may cut off speech
 - **Longer durations**: More complete sentences, slower response
 
+### Buffer Timing & Capture Settings
+
+These settings control how audio is captured and buffered before being sent to the STT service.
+
+#### Capture Chunk Duration
+- **What it does**: Duration of each audio capture chunk
+- **Range**: 0.25s - 1.0s
+- **Default**: 0.5s
+- **Recommended**: 0.5s (reduces process spawning overhead)
+- **Use cases**:
+  - Smaller chunks (0.25s): Lower latency, more CPU overhead
+  - Larger chunks (1.0s): Higher latency, less CPU overhead
+
+#### STT Throttle Interval
+- **What it does**: How often to send accumulated audio to the STT service
+- **Range**: 1000ms - 5000ms
+- **Default**: 2500ms
+- **Recommended**: 2500ms for full sentence capture
+- **Use cases**:
+  - Shorter intervals (1500ms): Faster response, may fragment sentences
+  - Longer intervals (3500ms): Complete sentences, slower response
+
+#### Minimum Buffer Duration
+- **What it does**: Minimum audio duration before sending to STT
+- **Range**: 1.0s - 5.0s
+- **Default**: 2.5s
+- **Recommended**: 2.5s (captures full sentences)
+- **Use cases**:
+  - Shorter duration (1.5s): Faster response, may miss words
+  - Longer duration (3.5s): Complete long phrases, slower response
+
+#### Maximum Buffer Duration
+- **What it does**: Maximum audio buffer size before forcing transcription
+- **Range**: 3.0s - 10.0s
+- **Default**: 6.0s
+- **Recommended**: 6.0s (allows long phrases without truncation)
+- **Use cases**:
+  - Shorter duration (4.0s): Prevents very long buffers
+  - Longer duration (8.0s): Captures very long sentences
+
+#### Microphone Input Gain
+- **What it does**: System-level microphone volume control
+- **Range**: 25% - 100%
+- **Default**: 70%
+- **Recommended**: 70% (prevents audio clipping while maintaining good levels)
+- **Use cases**:
+  - Lower gain (50-60%): Very loud environments or sensitive microphones
+  - Higher gain (80-90%): Quiet environments or distant microphones
+  - **Warning**: Gain above 75% may cause audio clipping (distortion)
+
 ---
 
 ## Tuning for Your Environment
@@ -294,6 +344,11 @@ Highpass: 180Hz
 Lowpass: 4200Hz
 Denoise: -22dB
 Min Letter Ratio: 55%
+Capture Chunk Duration: 0.5s
+STT Throttle Interval: 2500ms
+Min Buffer Duration: 2.5s
+Max Buffer Duration: 6.0s
+Microphone Input Gain: 70%
 ```
 
 #### Haunted House (Noisy, Music)
@@ -304,6 +359,11 @@ Highpass: 300Hz
 Lowpass: 3500Hz
 Denoise: -35dB
 Min Letter Ratio: 65%
+Capture Chunk Duration: 0.5s
+STT Throttle Interval: 3000ms
+Min Buffer Duration: 3.0s
+Max Buffer Duration: 6.0s
+Microphone Input Gain: 65%
 ```
 
 #### Museum Guide (Quiet, Accurate)
@@ -314,6 +374,11 @@ Highpass: 150Hz
 Lowpass: 4000Hz
 Denoise: -20dB
 Min Letter Ratio: 60%
+Capture Chunk Duration: 0.5s
+STT Throttle Interval: 2500ms
+Min Buffer Duration: 2.5s
+Max Buffer Duration: 6.0s
+Microphone Input Gain: 70%
 ```
 
 ### Understanding the Audio Pipeline
@@ -321,7 +386,9 @@ Min Letter Ratio: 60%
 ```
 Microphone Input
     ↓
-PipeWire/PulseAudio (Gain Control)
+PipeWire/PulseAudio (Gain Control - 70% default)
+    ↓
+Audio Capture (0.5s chunks)
     ↓
 Audio Filtering (if enabled)
     ├─ Highpass Filter
@@ -329,6 +396,10 @@ Audio Filtering (if enabled)
     └─ Denoise
     ↓
 Voice Activity Detection
+    ↓
+Buffer Accumulation (2.5s min, 6.0s max)
+    ↓
+STT Throttle (2.5s interval)
     ↓
 ElevenLabs STT API
     ↓
@@ -343,10 +414,14 @@ Transcription Output
 
 ### Performance Considerations
 
+- **Audio capture** uses 0.5s chunks to reduce process spawning overhead
+- **Buffer accumulation** waits for 2.5s minimum before sending to STT
+- **STT throttle** limits requests to every 2.5s to capture full sentences
 - **Audio filtering** adds ~50-100ms latency (FFmpeg processing)
 - **Text filtering** adds <1ms latency (regex checks)
 - **VAD** affects response time based on Silence Duration setting
 - **Network latency** to ElevenLabs API is typically 100-300ms
+- **Total latency**: Typically 2.5-3.5 seconds from speech start to transcription
 
 ### Best Practices
 
@@ -368,6 +443,6 @@ For additional help:
 
 ---
 
-**Last Updated**: 2025-10-10  
-**MonsterBox Version**: 5.2
+**Last Updated**: 2025-10-17
+**MonsterBox Version**: 5.0 (Gold Release)
 

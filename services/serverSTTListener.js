@@ -294,15 +294,22 @@ class ServerSTTListener {
     const sr = 16000, ch = 1;
     const src = await this.resolvePulseSourceId(deviceId);
     const sourceArg = src || 'default';
+
+    // ALWAYS log which microphone we're using (not just in debug mode)
+    console.log(`🎙️ STT capturing from: "${sourceArg}" (requested: "${deviceId}") for ${durationSec || 1}s`);
+
     if (process.env.MB_DEBUG_AUDIO === '1') {
-      console.log(`🎙️ STT capture from source: ${sourceArg} (requested: ${deviceId}) for ${durationSec || 1}s`);
+      console.log(`   Sample rate: ${sr}Hz, Channels: ${ch}`);
     }
 
     // 1) First try Python/PyAudio route which is verified working on Orlok
     const pyBuf = await this._captureWithPython(sourceArg, durationSec);
     if (pyBuf && pyBuf.length > 44) { // WAV header is 44 bytes
       this._lastCapturePath = 'python';
+      console.log(`✓ Captured ${pyBuf.length} bytes via Python/PyAudio from "${sourceArg}"`);
       return pyBuf;
+    } else {
+      console.warn(`⚠️ Python capture failed or returned empty buffer (${pyBuf ? pyBuf.length : 0} bytes), trying fallback...`);
     }
 
     // 2) Fallback chain: ffmpeg -> arecord -> parec

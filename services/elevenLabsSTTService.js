@@ -79,8 +79,56 @@ class ElevenLabsSTTService {
             }
 
             // ALWAYS log what we're sending to ElevenLabs
-            console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, original_model="${options.model}", original_lang="${options.language}"`);
-            console.log(`🔥🔥🔥 USING FIXED CODE - language_code parameter (NOT language) 🔥🔥🔥`);
+            console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, mimeType="${mimeType}", filename="${filename}"`);
+            console.log(`   Original params: model="${options.model}", lang="${options.language}"`);
+
+            // Audio quality diagnostics
+            if (process.env.MB_DEBUG_AUDIO === '1') {
+                try {
+                    console.log(`   🔍 DEBUG: MB_DEBUG_AUDIO is set, analyzing audio...`);
+                    console.log(`   Buffer info: length=${audioBuffer.length}, mimeType=${mimeType}`);
+
+                    // Skip WAV header (44 bytes) if this is a WAV file
+                    const dataStart = mimeType === 'audio/wav' ? 44 : 0;
+                    const audioData = audioBuffer.slice(dataStart);
+                    console.log(`   After header skip: dataStart=${dataStart}, audioData.length=${audioData.length}`);
+
+                    console.error(`   Starting amplitude calculation...`);
+                    // Calculate basic audio statistics from PCM data
+                    const sampleCount = Math.floor(audioData.length / 2); // 16-bit samples
+                    console.error(`   Sample count: ${sampleCount}`);
+
+                    let sum = 0;
+                    let maxAmp = 0;
+                    console.error(`   Looping through samples...`);
+                    for (let i = 0; i < audioData.length - 1; i += 2) {
+                        const sample = audioData.readInt16LE(i);
+                        const amp = Math.abs(sample);
+                        sum += amp;
+                        if (amp > maxAmp) maxAmp = amp;
+                    }
+                    console.error(`   Loop complete. sum=${sum}, maxAmp=${maxAmp}`);
+
+                    const avgAmp = sum / sampleCount;
+                    console.error(`   avgAmp calculated: ${avgAmp}`);
+
+                    const rms = Math.sqrt(sum * sum / sampleCount) / 32768; // Normalize to 0-1
+                    console.error(`   rms calculated: ${rms}`);
+
+                    console.error(`   📊 Audio stats: avgAmp=${avgAmp.toFixed(0)}, maxAmp=${maxAmp}, rms=${rms.toFixed(4)}, samples=${sampleCount}`);
+
+                    if (maxAmp < 1000) {
+                        console.warn(`   ⚠️ WARNING: Audio level very low (maxAmp=${maxAmp}) - microphone may not be working!`);
+                    } else if (maxAmp > 30000) {
+                        console.warn(`   ⚠️ WARNING: Audio level very high (maxAmp=${maxAmp}) - may be clipping/distorted!`);
+                    } else {
+                        console.error(`   ✓ Audio levels look reasonable`);
+                    }
+                } catch (err) {
+                    console.error(`   ❌ Error analyzing audio: ${err.message}`);
+                    console.error(err.stack);
+                }
+            }
 
             // Required by ElevenLabs STT
             formData.append('model_id', modelToSend);
@@ -111,6 +159,11 @@ class ElevenLabsSTTService {
             const confidence = response.data.confidence || null;
 
             console.log(`📝 STT Response: text="${transcript}", detected_language="${detectedLang}", confidence=${confidence}`);
+
+            // Log full response in debug mode
+            if (process.env.MB_DEBUG_AUDIO === '1') {
+                console.log(`   Full API response:`, JSON.stringify(response.data));
+            }
 
             return {
                 success: true,
