@@ -1007,10 +1007,10 @@ STTManager.prototype.connectWebSocket = function () {
                     console.log('✅ Transcript (generic):', msg.text);
                     self.appendTranscript(msg.text);
                 }
-                // Handle partial transcript
+                // Handle partial transcript (transcription-only mode)
                 else if (msg.type === 'stt_partial' && msg.text) {
                     console.log('📝 Partial:', msg.text);
-                    // Could show partial in a different color/style if desired
+                    self.appendTranscript(msg.text);
                 }
             } catch (e) {
                 console.error('❌ Error parsing WebSocket message:', e);
