@@ -5,7 +5,7 @@
   "sampleRate": 16000,
   "channels": 1,
   "microphonePartId": "4",
-  "microphoneDeviceId": "default",
+  "microphoneDeviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo",
   "vadEnabled": true,
   "vadThreshold": 0.38,
   "vadSilenceDuration": 550,

@@ -21,7 +21,8 @@
       "controlBoard": "BTS7960"
     },
     "controlBoard": "BTS7960",
-    "updated": "2025-10-16T01:15:45.530Z"
+    "updated": "2025-10-17T19:23:33.217Z",
+    "modelId": "motor_jeep_wagoneer_wiper"
   },
   {
     "id": "2",
@@ -58,8 +59,8 @@
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+      "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
     },
-    "updated": "2025-10-17T19:02:47.293Z"
+    "updated": "2025-10-17T19:23:01.992Z"
   }
 ]
