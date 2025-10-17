@@ -863,6 +863,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
                                 const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
 
+                                // Debug: Log STT configuration
+                                console.log(`🎤 STT Config: model=${sttCfg.model}, lang=${lang}, connLang=${connection.sttLanguage}, cfgLang=${sttCfg.language}`);
+
                                 // Apply audio filtering if enabled
                                 const audioFilterEnabled = (sttCfg.audioFilterEnabled !== false); // default true
                                 const debugAudio = process.env.MB_DEBUG_AUDIO === '1';
@@ -887,8 +890,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
 
-                                if (debugAudio && text) {
-                                    console.log('[STT] Transcription received: "' + text + '"');
+                                if (text) {
+                                    console.log(`📝 STT received: "${text}" (lang=${lang}, detected=${result.language || 'unknown'})`);
                                 }
 
                                 if (text) {
@@ -900,29 +903,33 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                     const filterSfx = (sttCfg.filterSfx !== false); // default true
                                     const validateEnglish = (sttCfg.validateEnglish !== false); // default true
 
+                                    console.log(`🔍 Filter check: lang="${lang}", validateEnglish=${validateEnglish}, filterSfx=${filterSfx}`);
+
                                     if ((lang || '').slice(0, 2) === 'en' && !allowSfxForAutotune) {
                                         // Check for bracketed sound effects
                                         if (filterSfx && _isBracketedSfx(text)) {
                                             allow = false;
                                             filterReason = 'bracketed_sfx';
+                                            console.log(`❌ Filtered (SFX): "${text}"`);
                                             try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_sfx', data: { text } }); } catch (_) { }
                                         }
                                         // Validate English text
                                         else if (validateEnglish && !_isLikelyEnglish(text, sttCfg)) {
                                             allow = false;
                                             filterReason = 'non_english';
+                                            console.log(`❌ Filtered (non-English): "${text}"`);
                                             try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_english', data: { text } }); } catch (_) { }
                                         }
+                                    } else {
+                                        console.log(`⚠️ Skipping English filter: lang="${lang}" (not 'en')`);
                                     }
 
-                                    if (debugAudio && !allow) {
-                                        console.log('[STT Filter] Rejected transcription "' + text + '" (reason: ' + filterReason + ')');
+                                    if (!allow) {
+                                        console.log(`❌ Rejected: "${text}" (reason: ${filterReason})`);
                                     }
 
                                     if (allow) {
-                                        if (debugAudio) {
-                                            console.log('[STT] Accepted transcription: "' + text + '"');
-                                        }
+                                        console.log(`✅ Accepted: "${text}"`);
                                         this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
                                         // reset buffer after a successful partial to avoid repeats
                                         connection.sttPcm = Buffer.alloc(0);
