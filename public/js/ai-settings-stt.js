@@ -731,7 +731,9 @@ STTManager.prototype.getSelectedMicDeviceId = function () {
     var selId = String(micSelect.value);
     for (var i = 0; i < this.microphoneParts.length; i++) {
         if (String(this.microphoneParts[i].id) === selId) {
-            return this.microphoneParts[i].config && this.microphoneParts[i].config.deviceId;
+            var deviceId = this.microphoneParts[i].config && this.microphoneParts[i].config.deviceId;
+            // If no deviceId configured, use 'default' as fallback
+            return deviceId || 'default';
         }
     }
     return null;
