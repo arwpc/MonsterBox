@@ -111,57 +111,36 @@ class ServerPlaybackService {
 
     const { spawn } = await import('child_process');
 
-    // Use ffmpeg to convert MP3 stream to WAV for paplay (more reliable than mpg123)
-    // ffmpeg -i - -f wav - | paplay
-    const ffmpegArgs = ['-i', '-', '-f', 'wav', '-'];
-    const paplayArgs = [];
-    if (deviceId && deviceId !== 'default') {
-      paplayArgs.push('--device', deviceId);
-    }
+    // Use mpg123 to play MP3 stream directly (no conversion needed)
+    // Calculate volume scale (0-32768) from percentage (0-100)
+    const scale = Math.max(0, Math.min(32768, Math.floor(32768 * (volume / 100.0))));
+    const mpg123Args = ['--quiet', '-o', 'pulse', '-f', String(scale), '-'];
 
-    console.log(`🎵 Starting audio stream for character ${key}: device=${deviceId}, volume=${volume}`);
+    console.log(`🎵 Starting mpg123 audio stream for character ${key}: device=${deviceId}, volume=${volume}`);
 
-    // Start ffmpeg to convert MP3 to WAV
-    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { env });
-
-    // Start paplay to play the WAV
-    const paplay = spawn('paplay', paplayArgs, { env });
-
-    // Pipe ffmpeg output to paplay input
-    ffmpeg.stdout.pipe(paplay.stdin);
+    // Start mpg123 to play MP3 from stdin
+    const mpg123 = spawn('mpg123', mpg123Args, { env });
 
     // Handle errors to prevent EPIPE crashes
-    ffmpeg.stdin.on('error', (err) => {
-      console.error(`ffmpeg stdin error for ${key}:`, err.message);
+    mpg123.stdin.on('error', (err) => {
+      console.error(`mpg123 stdin error for ${key}:`, err.message);
       this._streams.delete(key);
     });
 
-    ffmpeg.stderr.on('data', (data) => {
+    mpg123.stderr.on('data', (data) => {
       const msg = data.toString();
-      if (!msg.includes('ALSA lib') && !msg.includes('size=') && !msg.includes('time=')) {
-        console.error(`ffmpeg stderr for ${key}:`, msg.trim());
+      if (!msg.includes('ALSA lib') && !msg.includes('Playing MPEG')) {
+        console.error(`mpg123 stderr for ${key}:`, msg.trim());
       }
     });
 
-    paplay.stderr.on('data', (data) => {
-      const msg = data.toString();
-      if (!msg.includes('ALSA lib')) {
-        console.error(`paplay stderr for ${key}:`, msg.trim());
-      }
-    });
-
-    ffmpeg.on('exit', (code, signal) => {
-      console.log(`ffmpeg exited for ${key} with code ${code}, signal ${signal}`);
-      try { paplay.stdin.end(); } catch (_) { }
-    });
-
-    paplay.on('exit', (code, signal) => {
-      console.log(`paplay exited for ${key} with code ${code}, signal ${signal}`);
+    mpg123.on('exit', (code, signal) => {
+      console.log(`mpg123 exited for ${key} with code ${code}, signal ${signal}`);
       const cur = this._streams.get(key);
-      if (cur && cur.proc === ffmpeg) this._streams.delete(key);
+      if (cur && cur.proc === mpg123) this._streams.delete(key);
     });
 
-    rec = { proc: ffmpeg, paplay, deviceId, contentType: 'audio/mpeg', writerBusy: false };
+    rec = { proc: mpg123, deviceId, contentType: 'audio/mpeg', writerBusy: false };
     this._streams.set(key, rec);
     return rec;
   }
