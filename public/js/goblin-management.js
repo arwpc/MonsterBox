@@ -117,7 +117,7 @@ class GoblinManager {
 
             return `
                 <div class="col-lg-6 col-xl-4">
-                    <div class="card goblin-card ${goblin.status}" data-goblin-id="${goblin.id}">
+                    <div class="card goblin-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')" style="cursor: pointer;">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
                             <div>
                                 <h6 class="mb-0 d-flex align-items-center">
@@ -985,14 +985,322 @@ Success Rate: ${stats.successRate}%`);
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         `;
-        
+
         document.body.appendChild(toast);
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
-        
+
         toast.addEventListener('hidden.bs.toast', () => {
             document.body.removeChild(toast);
         });
+    }
+
+    // Video Queue Management
+    async openVideoQueue(goblinId) {
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        if (!goblin) {
+            this.showError('Goblin not found');
+            return;
+        }
+
+        if (goblin.status !== 'online') {
+            this.showWarning('Goblin must be online to manage video queue');
+            return;
+        }
+
+        // Store current goblin for queue operations
+        this.currentQueueGoblin = goblin;
+
+        // Load queue status and available videos
+        await this.loadVideoQueue(goblin);
+        await this.loadGoblinVideos(goblin);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('videoQueueModal'));
+        modal.show();
+    }
+
+    async loadVideoQueue(goblin) {
+        try {
+            const response = await fetch(`${goblin.endpoint}/queue`);
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+            } else {
+                this.showError('Failed to load video queue');
+            }
+        } catch (error) {
+            console.error('Error loading video queue:', error);
+            this.showError('Error loading video queue: ' + error.message);
+        }
+    }
+
+    async loadGoblinVideos(goblin) {
+        try {
+            const response = await fetch(`${goblin.endpoint}/media`);
+            const data = await response.json();
+
+            if (data.success) {
+                this.goblinVideos = data.media.video || [];
+                this.renderAvailableVideos();
+            } else {
+                this.goblinVideos = [];
+                this.renderAvailableVideos();
+            }
+        } catch (error) {
+            console.error('Error loading goblin videos:', error);
+            this.goblinVideos = [];
+            this.renderAvailableVideos();
+        }
+    }
+
+    renderVideoQueue() {
+        const queueList = document.getElementById('videoQueueList');
+        const queueStatus = document.getElementById('queueStatus');
+
+        if (!this.currentQueue) {
+            queueList.innerHTML = '<div class="text-muted">Loading...</div>';
+            return;
+        }
+
+        // Update status
+        queueStatus.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span><strong>Status:</strong> ${this.currentQueue.running ? '▶️ Running' : '⏸️ Stopped'}</span>
+                <span><strong>Mode:</strong> ${this.currentQueue.mode}</span>
+            </div>
+            ${this.currentQueue.currentVideo ? `
+                <div class="alert alert-info py-2 mb-2">
+                    <strong>Now Playing:</strong> ${this.currentQueue.currentVideo}
+                </div>
+            ` : ''}
+        `;
+
+        // Render queue
+        if (this.currentQueue.queue.length === 0 && this.currentQueue.priorityQueue.length === 0) {
+            queueList.innerHTML = '<div class="text-muted text-center py-3">Queue is empty</div>';
+            return;
+        }
+
+        let html = '';
+
+        // Priority queue
+        if (this.currentQueue.priorityQueue.length > 0) {
+            html += '<div class="mb-3"><h6 class="text-warning">⚡ Priority Queue</h6>';
+            this.currentQueue.priorityQueue.forEach((item, index) => {
+                html += this.renderQueueItem(item, index, true);
+            });
+            html += '</div>';
+        }
+
+        // Regular queue
+        if (this.currentQueue.queue.length > 0) {
+            html += '<div><h6>📋 Queue</h6>';
+            this.currentQueue.queue.forEach((item, index) => {
+                html += this.renderQueueItem(item, index, false);
+            });
+            html += '</div>';
+        }
+
+        queueList.innerHTML = html;
+    }
+
+    renderQueueItem(item, index, isPriority) {
+        return `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-secondary me-2">${index + 1}</span>
+                    <span>${item.filename}</span>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue(${index}, ${isPriority})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    renderAvailableVideos() {
+        const videoList = document.getElementById('availableVideosList');
+
+        if (!this.goblinVideos || this.goblinVideos.length === 0) {
+            videoList.innerHTML = '<div class="text-muted text-center py-3">No videos available on this Goblin</div>';
+            return;
+        }
+
+        videoList.innerHTML = this.goblinVideos.map(video => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${video}</span>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${video}')">
+                        <i class="bi bi-plus"></i> Add
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${video}', true)">
+                        <i class="bi bi-lightning"></i> Priority
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async addToQueue(filename, priority = false) {
+        const endpoint = priority ? '/queue/enqueue-priority' : '/queue/enqueue';
+
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess(`Added ${filename} to ${priority ? 'priority ' : ''}queue`);
+            } else {
+                this.showError('Failed to add video to queue');
+            }
+        } catch (error) {
+            console.error('Error adding to queue:', error);
+            this.showError('Error adding to queue: ' + error.message);
+        }
+    }
+
+    async removeFromQueue(index, isPriority) {
+        // Note: This requires implementing a remove endpoint on the Goblin
+        this.showWarning('Remove from queue not yet implemented');
+    }
+
+    async startQueue(mode = 'sequential') {
+        if (!this.currentQueue || this.currentQueue.queue.length === 0) {
+            this.showWarning('Queue is empty. Add videos first.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videos: this.currentQueue.queue.map(item => item.filename),
+                    mode
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Queue started');
+            } else {
+                this.showError('Failed to start queue');
+            }
+        } catch (error) {
+            console.error('Error starting queue:', error);
+            this.showError('Error starting queue: ' + error.message);
+        }
+    }
+
+    async pauseQueue() {
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/pause`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Queue paused');
+            }
+        } catch (error) {
+            this.showError('Error pausing queue: ' + error.message);
+        }
+    }
+
+    async resumeQueue() {
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/resume`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Queue resumed');
+            }
+        } catch (error) {
+            this.showError('Error resuming queue: ' + error.message);
+        }
+    }
+
+    async skipVideo() {
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/skip`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Skipped to next video');
+            }
+        } catch (error) {
+            this.showError('Error skipping video: ' + error.message);
+        }
+    }
+
+    async stopQueue() {
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/stop`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Queue stopped');
+            }
+        } catch (error) {
+            this.showError('Error stopping queue: ' + error.message);
+        }
+    }
+
+    async clearQueue() {
+        if (!confirm('Clear all videos from queue?')) return;
+
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/clear`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.currentQueue = data.queue;
+                this.renderVideoQueue();
+                this.showSuccess('Queue cleared');
+            }
+        } catch (error) {
+            this.showError('Error clearing queue: ' + error.message);
+        }
+    }
+
+    async refreshQueue() {
+        if (this.currentQueueGoblin) {
+            await this.loadVideoQueue(this.currentQueueGoblin);
+        }
     }
 }
 

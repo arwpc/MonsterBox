@@ -77,6 +77,9 @@ class GoblinServer {
       console.log(`🔍 Starting network beacon to find MonsterBox...`);
       this.beacon.start();
 
+      // Start heartbeat if MONSTERBOX_URL is set
+      this.startHeartbeat();
+
       console.log(`✅ Goblin ${this.goblinId} ready for haunting! 👻`);
 
     } catch (error) {
@@ -297,6 +300,53 @@ class GoblinServer {
         res.status(500).json({ success: false, error: error.message });
       }
     });
+  }
+
+  /**
+   * Start heartbeat to MonsterBox
+   */
+  startHeartbeat() {
+    const monsterboxUrl = process.env.MONSTERBOX_URL;
+
+    if (!monsterboxUrl) {
+      console.log('⚠️  MONSTERBOX_URL not set - heartbeat disabled');
+      return;
+    }
+
+    console.log(`💓 Starting heartbeat to ${monsterboxUrl}`);
+
+    // Send initial heartbeat
+    this.sendHeartbeat(monsterboxUrl);
+
+    // Send heartbeat every 30 seconds
+    this.heartbeatInterval = setInterval(() => {
+      this.sendHeartbeat(monsterboxUrl);
+    }, 30000);
+  }
+
+  /**
+   * Send heartbeat to MonsterBox
+   */
+  async sendHeartbeat(monsterboxUrl) {
+    try {
+      const axios = require('axios');
+      const response = await axios.post(
+        `${monsterboxUrl}/goblin-management/api/goblin/${this.goblinId}/heartbeat`,
+        {},
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 5000
+        }
+      );
+
+      if (response.status === 200) {
+        console.log(`💓 Heartbeat sent to ${monsterboxUrl}`);
+      } else {
+        console.warn(`⚠️  Heartbeat failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error(`❌ Heartbeat error:`, error.message);
+    }
   }
 
   /**
