@@ -438,6 +438,13 @@ class MediaPlayer {
       videoPlayer: this.videoPlayer
     };
   }
+
+  /**
+   * Alias for getStatus() for compatibility
+   */
+  getPlaybackStatus() {
+    return this.getStatus();
+  }
 }
 
 module.exports = MediaPlayer;
