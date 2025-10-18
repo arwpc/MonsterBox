@@ -260,6 +260,58 @@ STTManager.prototype.applySavedConfigIfReady = function () {
             this.onMicSelectionChange();
         }
     }
+
+    // Buffer Timing Settings
+    var captureChunkDurationEl = document.getElementById('captureChunkDuration');
+    var captureChunkDurationValue = document.getElementById('captureChunkDurationValue');
+    if (captureChunkDurationEl && typeof cfg.captureChunkDuration !== 'undefined') {
+        captureChunkDurationEl.value = cfg.captureChunkDuration;
+        if (captureChunkDurationValue) captureChunkDurationValue.textContent = cfg.captureChunkDuration.toFixed(2);
+    }
+
+    var sttThrottleIntervalEl = document.getElementById('sttThrottleInterval');
+    var sttThrottleIntervalValue = document.getElementById('sttThrottleIntervalValue');
+    if (sttThrottleIntervalEl && typeof cfg.sttThrottleInterval !== 'undefined') {
+        sttThrottleIntervalEl.value = cfg.sttThrottleInterval;
+        if (sttThrottleIntervalValue) sttThrottleIntervalValue.textContent = cfg.sttThrottleInterval;
+    }
+
+    var minBufferDurationEl = document.getElementById('minBufferDuration');
+    var minBufferDurationValue = document.getElementById('minBufferDurationValue');
+    if (minBufferDurationEl && typeof cfg.minBufferDuration !== 'undefined') {
+        minBufferDurationEl.value = cfg.minBufferDuration;
+        if (minBufferDurationValue) minBufferDurationValue.textContent = cfg.minBufferDuration.toFixed(1);
+    }
+
+    var maxBufferDurationEl = document.getElementById('maxBufferDuration');
+    var maxBufferDurationValue = document.getElementById('maxBufferDurationValue');
+    if (maxBufferDurationEl && typeof cfg.maxBufferDuration !== 'undefined') {
+        maxBufferDurationEl.value = cfg.maxBufferDuration;
+        if (maxBufferDurationValue) maxBufferDurationValue.textContent = cfg.maxBufferDuration.toFixed(1);
+    }
+
+    var microphoneInputGainEl = document.getElementById('microphoneInputGain');
+    var microphoneInputGainValue = document.getElementById('microphoneInputGainValue');
+    if (microphoneInputGainEl && typeof cfg.microphoneInputGain !== 'undefined') {
+        microphoneInputGainEl.value = cfg.microphoneInputGain;
+        if (microphoneInputGainValue) microphoneInputGainValue.textContent = cfg.microphoneInputGain;
+    }
+
+    // VAD Silence Duration
+    var vadSilenceDurationEl = document.getElementById('vadSilenceDuration');
+    var vadSilenceDurationValue = document.getElementById('vadSilenceDurationValue');
+    if (vadSilenceDurationEl && typeof cfg.vadSilenceDuration !== 'undefined') {
+        vadSilenceDurationEl.value = cfg.vadSilenceDuration;
+        if (vadSilenceDurationValue) vadSilenceDurationValue.textContent = cfg.vadSilenceDuration;
+    }
+
+    // VAD Threshold (decimal slider)
+    var vadThresholdEl = document.getElementById('vadThreshold');
+    var vadThresholdValue = document.getElementById('vadThresholdValue');
+    if (vadThresholdEl && typeof cfg.vadThreshold !== 'undefined') {
+        vadThresholdEl.value = cfg.vadThreshold;
+        if (vadThresholdValue) vadThresholdValue.textContent = cfg.vadThreshold.toFixed(2);
+    }
 };
 
 // Save subset of STT config with debouncing for performance
@@ -483,6 +535,57 @@ STTManager.prototype.bindEvents = function () {
             var val = parseInt(minLetterRatioEl.value, 10);
             minLetterRatioValue.textContent = val;
             self.savePartialConfig({ minLetterRatio: val });
+        });
+    }
+
+    // Buffer Timing Controls
+    var captureChunkDurationEl = document.getElementById('captureChunkDuration');
+    var captureChunkDurationValue = document.getElementById('captureChunkDurationValue');
+    if (captureChunkDurationEl && captureChunkDurationValue) {
+        captureChunkDurationEl.addEventListener('input', function () {
+            var val = parseFloat(captureChunkDurationEl.value);
+            captureChunkDurationValue.textContent = val.toFixed(2);
+            self.savePartialConfig({ captureChunkDuration: val });
+        });
+    }
+
+    var sttThrottleIntervalEl = document.getElementById('sttThrottleInterval');
+    var sttThrottleIntervalValue = document.getElementById('sttThrottleIntervalValue');
+    if (sttThrottleIntervalEl && sttThrottleIntervalValue) {
+        sttThrottleIntervalEl.addEventListener('input', function () {
+            var val = parseInt(sttThrottleIntervalEl.value, 10);
+            sttThrottleIntervalValue.textContent = val;
+            self.savePartialConfig({ sttThrottleInterval: val });
+        });
+    }
+
+    var minBufferDurationEl = document.getElementById('minBufferDuration');
+    var minBufferDurationValue = document.getElementById('minBufferDurationValue');
+    if (minBufferDurationEl && minBufferDurationValue) {
+        minBufferDurationEl.addEventListener('input', function () {
+            var val = parseFloat(minBufferDurationEl.value);
+            minBufferDurationValue.textContent = val.toFixed(1);
+            self.savePartialConfig({ minBufferDuration: val });
+        });
+    }
+
+    var maxBufferDurationEl = document.getElementById('maxBufferDuration');
+    var maxBufferDurationValue = document.getElementById('maxBufferDurationValue');
+    if (maxBufferDurationEl && maxBufferDurationValue) {
+        maxBufferDurationEl.addEventListener('input', function () {
+            var val = parseFloat(maxBufferDurationEl.value);
+            maxBufferDurationValue.textContent = val.toFixed(1);
+            self.savePartialConfig({ maxBufferDuration: val });
+        });
+    }
+
+    var microphoneInputGainEl = document.getElementById('microphoneInputGain');
+    var microphoneInputGainValue = document.getElementById('microphoneInputGainValue');
+    if (microphoneInputGainEl && microphoneInputGainValue) {
+        microphoneInputGainEl.addEventListener('input', function () {
+            var val = parseInt(microphoneInputGainEl.value, 10);
+            microphoneInputGainValue.textContent = val;
+            self.savePartialConfig({ microphoneInputGain: val });
         });
     }
 

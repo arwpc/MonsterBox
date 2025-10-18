@@ -199,6 +199,69 @@
                             </div>
                         </div>
 
+                        <!-- Buffer Timing Section -->
+                        <hr class="my-4">
+                        <h6 class="mb-3"><i class="bi bi-clock-history"></i> Buffer Timing & Capture Settings</h6>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="captureChunkDuration" class="form-label">
+                                        Capture Chunk Duration: <span id="captureChunkDurationValue">0.5</span>s
+                                    </label>
+                                    <input type="range" class="form-range" id="captureChunkDuration"
+                                        name="captureChunkDuration" min="0.25" max="1.0" step="0.25" value="0.5">
+                                    <small class="text-muted">Duration of each audio capture chunk (0.5s recommended)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sttThrottleInterval" class="form-label">
+                                        STT Throttle Interval: <span id="sttThrottleIntervalValue">2500</span>ms
+                                    </label>
+                                    <input type="range" class="form-range" id="sttThrottleInterval"
+                                        name="sttThrottleInterval" min="1000" max="5000" step="500" value="2500">
+                                    <small class="text-muted">How often to send audio to STT service</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="minBufferDuration" class="form-label">
+                                        Minimum Buffer Duration: <span id="minBufferDurationValue">2.5</span>s
+                                    </label>
+                                    <input type="range" class="form-range" id="minBufferDuration"
+                                        name="minBufferDuration" min="1.0" max="5.0" step="0.5" value="2.5">
+                                    <small class="text-muted">Minimum audio duration before transcription (2.5s captures full sentences)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="maxBufferDuration" class="form-label">
+                                        Maximum Buffer Duration: <span id="maxBufferDurationValue">6.0</span>s
+                                    </label>
+                                    <input type="range" class="form-range" id="maxBufferDuration"
+                                        name="maxBufferDuration" min="3.0" max="10.0" step="1.0" value="6.0">
+                                    <small class="text-muted">Maximum audio buffer size (6s allows long phrases)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="microphoneInputGain" class="form-label">
+                                        Microphone Input Gain: <span id="microphoneInputGainValue">70</span>%
+                                    </label>
+                                    <input type="range" class="form-range" id="microphoneInputGain"
+                                        name="microphoneInputGain" min="25" max="100" step="5" value="70">
+                                    <small class="text-muted">System microphone volume (70% prevents clipping)</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Audio Filtering Section -->
                         <hr class="my-4">
                         <h6 class="mb-3"><i class="bi bi-soundwave"></i> Audio Filtering</h6>
