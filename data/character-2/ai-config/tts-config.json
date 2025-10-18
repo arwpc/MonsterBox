@@ -2,7 +2,7 @@
   "model": "eleven_monolingual_v1",
   "voice_id": "",
   "stability": 0.5,
-  "similarity_boost": 0.6,
+  "similarity_boost": 0.5,
   "style": 0,
   "use_speaker_boost": true
 }

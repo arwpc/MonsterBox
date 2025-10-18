@@ -553,12 +553,12 @@ class VideoLibrary {
         try {
             this.showSuccess(`Deploying "${video.title}" to ${goblin.name}...`);
 
-            const response = await fetch('/video-library/api/deploy', {
+            const response = await fetch(`/video-library/api/video/${videoId}/play-on-goblin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    videoId: videoId,
-                    goblinId: goblinId
+                    goblinId: goblinId,
+                    loop: true
                 })
             });
 
@@ -633,10 +633,10 @@ class VideoLibrary {
                     statusContainer.innerHTML += `<div class="mb-2">Deploying "${video.title}" to ${goblin.name}... <span class="text-warning">In Progress</span></div>`;
 
                     try {
-                        const response = await fetch('/video-library/api/deploy', {
+                        const response = await fetch(`/video-library/api/video/${videoId}/play-on-goblin`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ videoId, goblinId })
+                            body: JSON.stringify({ goblinId, loop: true })
                         });
 
                         const result = await response.json();
