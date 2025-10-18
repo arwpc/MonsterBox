@@ -277,12 +277,52 @@ router.get('/api/video/:id/thumbnail', async (req, res) => {
 });
 
 /**
- * POST /api/video/:id/deploy - Deploy video to specific Goblin
+ * POST /api/deploy - Deploy video to specific Goblin (frontend-compatible endpoint)
+ */
+router.post('/api/deploy', async (req, res) => {
+    try {
+        const { videoId, goblinId } = req.body;
+
+        if (!videoId || !goblinId) {
+            return res.status(400).json({ success: false, error: 'Video ID and Goblin ID are required' });
+        }
+
+        // Get video data
+        const videoResult = await videoLibraryService.getVideo(videoId);
+        if (!videoResult.success) {
+            return res.status(404).json(videoResult);
+        }
+
+        const streamResult = await videoLibraryService.getVideoStream(videoId);
+        if (!streamResult.success) {
+            return res.status(404).json(streamResult);
+        }
+
+        // Read video file
+        const videoBuffer = await fs.readFile(streamResult.filePath);
+
+        // Deploy to Goblin
+        const deployResult = await goblinManagerService.deployVideoToGoblin(goblinId, {
+            filename: videoResult.video.fileName,
+            originalName: videoResult.video.originalName,
+            title: videoResult.video.title,
+            data: videoBuffer.toString('base64')
+        });
+
+        res.json(deployResult);
+    } catch (error) {
+        console.error('Error deploying video to Goblin:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/video/:id/deploy - Deploy video to specific Goblin (legacy endpoint)
  */
 router.post('/api/video/:id/deploy', async (req, res) => {
     try {
         const { goblinId } = req.body;
-        
+
         if (!goblinId) {
             return res.status(400).json({ success: false, error: 'Goblin ID is required' });
         }
@@ -300,7 +340,7 @@ router.post('/api/video/:id/deploy', async (req, res) => {
 
         // Read video file
         const videoBuffer = await fs.readFile(streamResult.filePath);
-        
+
         // Deploy to Goblin
         const deployResult = await goblinManagerService.deployVideoToGoblin(goblinId, {
             filename: videoResult.video.fileName,
