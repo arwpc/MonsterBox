@@ -1256,29 +1256,34 @@ Success Rate: ${stats.successRate}%`);
                 resolutionBadge = `<span class="badge ${resClass} me-1">${resolution}${fps ? '@' + fps + 'fps' : ''}</span>`;
             }
 
+            // Create a simple placeholder thumbnail (no server request needed for now)
+            const thumbnailPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect fill='%231a1a1a' width='80' height='60'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23666' font-size='24'%3E🎬%3C/text%3E%3C/svg%3E`;
+
             return `
                 <div class="list-group-item p-2">
                     <div class="d-flex align-items-start">
                         <!-- Thumbnail -->
                         <div class="flex-shrink-0 me-3">
-                            <img src="${this.currentQueueGoblin.endpoint}/thumbnail/${encodeURIComponent(filename)}"
+                            <img src="${thumbnailPlaceholder}"
                                  class="rounded"
                                  style="width: 80px; height: 60px; object-fit: cover; background: #1a1a1a;"
-                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2260%22%3E%3Crect fill=%22%231a1a1a%22 width=%2280%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2224%22%3E🎬%3C/text%3E%3C/svg%3E'"
                                  alt="${filename}">
                         </div>
 
                         <!-- Video Info -->
                         <div class="flex-grow-1 min-width-0">
                             <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div class="text-truncate me-2">
+                                <div class="text-truncate me-2" style="max-width: 400px;">
                                     <strong>${filename}</strong>
                                 </div>
-                                <div class="flex-shrink-0">
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${filename}')" title="Add this video to the end of the queue">
+                                <div class="flex-shrink-0 btn-group">
+                                    <button class="btn btn-sm btn-success" onclick="goblinManager.playNow('${filename.replace(/'/g, "\\'")}')" title="Stop current playback and play this video immediately">
+                                        <i class="bi bi-play-fill"></i> Play
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}')" title="Add this video to the end of the queue">
                                         <i class="bi bi-plus"></i> Add
                                     </button>
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename}', true)" title="Add this video to priority queue (plays next)">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}', true)" title="Add this video to priority queue (plays next)">
                                         <i class="bi bi-lightning"></i> Priority
                                     </button>
                                 </div>
@@ -1314,6 +1319,57 @@ Success Rate: ${stats.successRate}%`);
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+
+    async playNow(filename) {
+        try {
+            // Stop current queue
+            await fetch(`${this.currentQueueGoblin.endpoint}/queue/stop`, {
+                method: 'POST'
+            });
+
+            // Clear queue
+            await fetch(`${this.currentQueueGoblin.endpoint}/queue/clear`, {
+                method: 'POST'
+            });
+
+            // Add video to priority queue
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/enqueue-priority`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Start queue in sequential mode
+                const startResponse = await fetch(`${this.currentQueueGoblin.endpoint}/queue/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videos: [filename],
+                        mode: 'sequential'
+                    })
+                });
+
+                const startData = await startResponse.json();
+
+                if (startData.success) {
+                    this.currentQueue = startData.queue;
+                    this.renderVideoQueue();
+                    await this.updatePlaybackStatus();
+                    this.showSuccess(`Now playing: ${filename}`);
+                } else {
+                    this.showError('Failed to start playback');
+                }
+            } else {
+                this.showError('Failed to queue video');
+            }
+        } catch (error) {
+            console.error('Error playing video:', error);
+            this.showError('Error playing video: ' + error.message);
+        }
     }
 
     async addToQueue(filename, priority = false) {
