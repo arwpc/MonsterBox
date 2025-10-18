@@ -1129,19 +1129,35 @@ Success Rate: ${stats.successRate}%`);
             return;
         }
 
-        videoList.innerHTML = this.goblinVideos.map(video => `
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <span>${video}</span>
-                <div>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${video}')" title="Add this video to the end of the queue">
-                        <i class="bi bi-plus"></i> Add
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${video}', true)" title="Add this video to priority queue (plays next)">
-                        <i class="bi bi-lightning"></i> Priority
-                    </button>
+        videoList.innerHTML = this.goblinVideos.map(video => {
+            // Handle both string filenames (legacy) and video objects (new format)
+            const filename = typeof video === 'string' ? video : video.filename;
+            const fileSize = video.size ? this.formatFileSize(video.size) : '';
+
+            return `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <span>${filename}</span>
+                        ${fileSize ? `<small class="text-muted ms-2">(${fileSize})</small>` : ''}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${filename}')" title="Add this video to the end of the queue">
+                            <i class="bi bi-plus"></i> Add
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename}', true)" title="Add this video to priority queue (plays next)">
+                            <i class="bi bi-lightning"></i> Priority
+                        </button>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+    }
+
+    formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
     }
 
     async addToQueue(filename, priority = false) {
