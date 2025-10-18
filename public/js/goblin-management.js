@@ -1014,10 +1014,24 @@ Success Rate: ${stats.successRate}%`);
         // Load queue status and available videos
         await this.loadVideoQueue(goblin);
         await this.loadGoblinVideos(goblin);
+        await this.updatePlaybackStatus();
 
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('videoQueueModal'));
         modal.show();
+
+        // Set up auto-refresh for playback status while modal is open
+        this.playbackStatusInterval = setInterval(() => {
+            this.updatePlaybackStatus();
+        }, 2000); // Update every 2 seconds
+
+        // Clear interval when modal is closed
+        document.getElementById('videoQueueModal').addEventListener('hidden.bs.modal', () => {
+            if (this.playbackStatusInterval) {
+                clearInterval(this.playbackStatusInterval);
+                this.playbackStatusInterval = null;
+            }
+        }, { once: true });
     }
 
     async loadVideoQueue(goblin) {
@@ -1054,6 +1068,104 @@ Success Rate: ${stats.successRate}%`);
             this.goblinVideos = [];
             this.renderAvailableVideos();
         }
+    }
+
+    async updatePlaybackStatus() {
+        if (!this.currentQueueGoblin) return;
+
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/playback-status`);
+            const data = await response.json();
+
+            if (data.success) {
+                this.renderPlaybackStatus(data);
+            }
+        } catch (error) {
+            console.error('Error fetching playback status:', error);
+        }
+    }
+
+    renderPlaybackStatus(data) {
+        const card = document.getElementById('currentlyPlayingCard');
+        const content = document.getElementById('currentlyPlayingContent');
+
+        // Check if anything is playing
+        const isPlaying = data.playback?.video?.playing || data.queue?.currentVideo;
+
+        if (!isPlaying) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+
+        const currentFile = data.queue?.currentVideo || data.playback?.video?.file || 'Unknown';
+        const queueMode = data.queue?.mode || 'sequential';
+        const queueRunning = data.queue?.running || false;
+
+        // Performance metrics
+        const cpu = data.performance?.cpu?.usage || 0;
+        const memory = data.performance?.memory?.percent || 0;
+        const temp = data.performance?.temperature?.current || 0;
+        const uptime = data.performance?.uptime || 0;
+
+        // Format uptime
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const uptimeStr = `${hours}h ${minutes}m`;
+
+        // Performance status colors
+        const cpuClass = cpu > 80 ? 'danger' : cpu > 60 ? 'warning' : 'success';
+        const memClass = memory > 80 ? 'danger' : memory > 60 ? 'warning' : 'success';
+        const tempClass = temp > 70 ? 'danger' : temp > 60 ? 'warning' : 'success';
+
+        content.innerHTML = `
+            <div class="mb-3">
+                <h6 class="mb-2"><i class="bi bi-film"></i> ${currentFile}</h6>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-${queueRunning ? 'success' : 'secondary'}">
+                        ${queueRunning ? '▶️ Playing' : '⏸️ Paused'}
+                    </span>
+                    <span class="badge bg-info">${queueMode}</span>
+                </div>
+            </div>
+
+            <div class="row g-2 small">
+                <div class="col-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>CPU:</span>
+                        <span class="badge bg-${cpuClass}">${cpu.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-${cpuClass}" style="width: ${cpu}%"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Memory:</span>
+                        <span class="badge bg-${memClass}">${memory.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-${memClass}" style="width: ${memory}%"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Temp:</span>
+                        <span class="badge bg-${tempClass}">${temp.toFixed(1)}°C</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-${tempClass}" style="width: ${Math.min(temp, 100)}%"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Uptime:</span>
+                        <span class="badge bg-secondary">${uptimeStr}</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     renderVideoQueue() {
@@ -1133,24 +1245,68 @@ Success Rate: ${stats.successRate}%`);
             // Handle both string filenames (legacy) and video objects (new format)
             const filename = typeof video === 'string' ? video : video.filename;
             const fileSize = video.size ? this.formatFileSize(video.size) : '';
+            const resolution = video.resolution || '';
+            const fps = video.fps || '';
+            const duration = video.duration ? this.formatDuration(video.duration) : '';
+
+            // Build resolution/fps badge
+            let resolutionBadge = '';
+            if (resolution && resolution !== 'unknown') {
+                const resClass = this.getResolutionClass(resolution);
+                resolutionBadge = `<span class="badge ${resClass} me-1">${resolution}${fps ? '@' + fps + 'fps' : ''}</span>`;
+            }
 
             return `
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <span>${filename}</span>
-                        ${fileSize ? `<small class="text-muted ms-2">(${fileSize})</small>` : ''}
-                    </div>
-                    <div>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${filename}')" title="Add this video to the end of the queue">
-                            <i class="bi bi-plus"></i> Add
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename}', true)" title="Add this video to priority queue (plays next)">
-                            <i class="bi bi-lightning"></i> Priority
-                        </button>
+                <div class="list-group-item p-2">
+                    <div class="d-flex align-items-start">
+                        <!-- Thumbnail -->
+                        <div class="flex-shrink-0 me-3">
+                            <img src="${this.currentQueueGoblin.endpoint}/thumbnail/${encodeURIComponent(filename)}"
+                                 class="rounded"
+                                 style="width: 80px; height: 60px; object-fit: cover; background: #1a1a1a;"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2260%22%3E%3Crect fill=%22%231a1a1a%22 width=%2280%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2224%22%3E🎬%3C/text%3E%3C/svg%3E'"
+                                 alt="${filename}">
+                        </div>
+
+                        <!-- Video Info -->
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div class="text-truncate me-2">
+                                    <strong>${filename}</strong>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${filename}')" title="Add this video to the end of the queue">
+                                        <i class="bi bi-plus"></i> Add
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename}', true)" title="Add this video to priority queue (plays next)">
+                                        <i class="bi bi-lightning"></i> Priority
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="small text-muted">
+                                ${resolutionBadge}
+                                ${fileSize ? `<span class="me-2">${fileSize}</span>` : ''}
+                                ${duration ? `<span class="me-2"><i class="bi bi-clock"></i> ${duration}</span>` : ''}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
+    }
+
+    getResolutionClass(resolution) {
+        // Color code based on resolution for easy identification
+        const [width] = resolution.split('x').map(Number);
+        if (width <= 720) return 'bg-success'; // Green for 720p and below (good for Goblins)
+        if (width <= 1080) return 'bg-warning'; // Yellow for 1080p (may need conversion)
+        return 'bg-danger'; // Red for higher (needs conversion)
+    }
+
+    formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     formatFileSize(bytes) {
@@ -1316,6 +1472,7 @@ Success Rate: ${stats.successRate}%`);
     async refreshQueue() {
         if (this.currentQueueGoblin) {
             await this.loadVideoQueue(this.currentQueueGoblin);
+            await this.updatePlaybackStatus();
         }
     }
 }

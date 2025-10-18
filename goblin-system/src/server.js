@@ -452,6 +452,58 @@ class GoblinServer {
         res.status(500).json({ success: false, error: error.message });
       }
     });
+
+    // Thumbnail endpoints
+    this.app.get('/thumbnail/:filename', async (req, res) => {
+      try {
+        const thumbnailPath = this.fileManager.getThumbnailPath(req.params.filename);
+
+        // Check if thumbnail exists
+        try {
+          await fs.access(thumbnailPath);
+          res.setHeader('Content-Type', 'image/jpeg');
+          res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+          const fileStream = require('fs').createReadStream(thumbnailPath);
+          fileStream.pipe(res);
+        } catch {
+          // Thumbnail doesn't exist, generate it
+          const result = await this.fileManager.generateThumbnail(req.params.filename);
+          if (result.success) {
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            const fileStream = require('fs').createReadStream(result.thumbnailPath);
+            fileStream.pipe(res);
+          } else {
+            res.status(404).json({ success: false, error: 'Thumbnail generation failed' });
+          }
+        }
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    // Playback status endpoint with performance metrics
+    this.app.get('/playback-status', (req, res) => {
+      try {
+        const playbackStatus = this.mediaPlayer.getPlaybackStatus();
+        const queueStatus = this.videoQueue.getStatus();
+        const systemStatus = this.statusMonitor.getStatus();
+
+        res.json({
+          success: true,
+          playback: playbackStatus,
+          queue: queueStatus,
+          performance: {
+            cpu: systemStatus.cpu,
+            memory: systemStatus.memory,
+            temperature: systemStatus.temperature,
+            uptime: Math.floor(process.uptime())
+          }
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
   }
 
   /**

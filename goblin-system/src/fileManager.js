@@ -6,6 +6,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const { spawn } = require('child_process');
 
 class FileManager {
   constructor(goblinServer) {
@@ -23,9 +24,13 @@ class FileManager {
       audio: ['.mp3', '.wav', '.aac', '.ogg', '.flac', '.m4a']
     };
 
+    // Thumbnail directory
+    this.thumbnailPath = path.join(goblinRoot, 'media', 'thumbnails');
+
     console.log(`📁 File manager initialized for Goblin ${this.goblin.goblinId}`);
     console.log(`📁 Video path: ${this.mediaPaths.video}`);
     console.log(`📁 Audio path: ${this.mediaPaths.audio}`);
+    console.log(`📁 Thumbnail path: ${this.thumbnailPath}`);
   }
 
   /**
@@ -61,6 +66,15 @@ class FileManager {
         throw error;
       }
     }
+
+    // Ensure thumbnail directory exists
+    try {
+      await fs.mkdir(this.thumbnailPath, { recursive: true });
+      console.log(`📁 Ensured directory: ${this.thumbnailPath}`);
+    } catch (error) {
+      console.error(`❌ Failed to create thumbnail directory:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -89,7 +103,13 @@ class FileManager {
               type: type,
               extension: path.extname(file).toLowerCase()
             };
-            
+
+            // Extract video metadata if it's a video file
+            if (type === 'video') {
+              const metadata = await this.extractVideoMetadata(filePath);
+              Object.assign(fileInfo, metadata);
+            }
+
             mediaList[type].push(fileInfo);
           }
         }
@@ -411,6 +431,133 @@ class FileManager {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Extract video metadata using ffprobe
+   */
+  async extractVideoMetadata(filePath) {
+    return new Promise((resolve) => {
+      const ffprobe = spawn('ffprobe', [
+        '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'stream=width,height,r_frame_rate,duration',
+        '-show_entries', 'format=duration',
+        '-of', 'json',
+        filePath
+      ]);
+
+      let output = '';
+      let error = '';
+
+      ffprobe.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      ffprobe.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      ffprobe.on('close', (code) => {
+        if (code === 0 && output) {
+          try {
+            const data = JSON.parse(output);
+            const videoStream = data.streams && data.streams[0];
+
+            if (videoStream) {
+              const width = videoStream.width || 0;
+              const height = videoStream.height || 0;
+              const resolution = width && height ? `${width}x${height}` : 'unknown';
+
+              // Calculate FPS from r_frame_rate (e.g., "60/1" or "30000/1001")
+              let fps = 0;
+              if (videoStream.r_frame_rate) {
+                const [num, den] = videoStream.r_frame_rate.split('/').map(Number);
+                fps = den ? Math.round(num / den) : 0;
+              }
+
+              const duration = parseFloat(videoStream.duration || data.format?.duration || 0);
+
+              resolve({
+                resolution,
+                width,
+                height,
+                fps,
+                duration
+              });
+              return;
+            }
+          } catch (parseError) {
+            console.warn(`⚠️ Failed to parse ffprobe output for ${path.basename(filePath)}:`, parseError.message);
+          }
+        }
+
+        // Fallback if ffprobe fails or no video stream
+        resolve({
+          resolution: 'unknown',
+          width: 0,
+          height: 0,
+          fps: 0,
+          duration: 0
+        });
+      });
+
+      ffprobe.on('error', (err) => {
+        console.warn(`⚠️ ffprobe error for ${path.basename(filePath)}:`, err.message);
+        resolve({
+          resolution: 'unknown',
+          width: 0,
+          height: 0,
+          fps: 0,
+          duration: 0
+        });
+      });
+    });
+  }
+
+  /**
+   * Generate thumbnail for a video file
+   */
+  async generateThumbnail(filename) {
+    return new Promise((resolve) => {
+      const videoPath = path.join(this.mediaPaths.video, filename);
+      const thumbnailFilename = `${path.parse(filename).name}.jpg`;
+      const thumbnailPath = path.join(this.thumbnailPath, thumbnailFilename);
+
+      // Use ffmpeg to extract frame at 1 second
+      const ffmpeg = spawn('ffmpeg', [
+        '-i', videoPath,
+        '-ss', '00:00:01.000',
+        '-vframes', '1',
+        '-q:v', '2',
+        '-vf', 'scale=320:240:force_original_aspect_ratio=decrease',
+        '-y',
+        thumbnailPath
+      ], { stdio: 'pipe' });
+
+      ffmpeg.on('close', (code) => {
+        if (code === 0) {
+          console.log(`📸 Generated thumbnail for ${filename}`);
+          resolve({ success: true, thumbnailPath, thumbnailFilename });
+        } else {
+          console.warn(`⚠️ Thumbnail generation failed for ${filename}`);
+          resolve({ success: false });
+        }
+      });
+
+      ffmpeg.on('error', (error) => {
+        console.warn(`⚠️ Thumbnail generation error for ${filename}:`, error.message);
+        resolve({ success: false });
+      });
+    });
+  }
+
+  /**
+   * Get thumbnail path for a video
+   */
+  getThumbnailPath(filename) {
+    const thumbnailFilename = `${path.parse(filename).name}.jpg`;
+    return path.join(this.thumbnailPath, thumbnailFilename);
   }
 }
 
