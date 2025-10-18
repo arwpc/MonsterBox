@@ -64,12 +64,13 @@ cd ~/MonsterBox && ./scripts/orlok-bringup-test.sh
 ### Character Network Map
 ```
 Character 1: PumpkinHead     → 192.168.8.150
-Character 2: Coffin          → 192.168.8.140
-Character 3: Orlok           → 192.168.8.120 (Primary/Control Node)
+Character 2: Coffin          → 192.168.8.140 (Current Control Node)
+Character 3: Orlok           → 192.168.8.120
 Character 4: Skulltalker     → 192.168.8.130
 Character 5: Groundbreaker   → 192.168.8.200
-Goblin 1:    Chestwound      → 192.168.8.160:3001 (Video Display)
-Goblin 2:    Goblin2         → 192.168.8.161:3001 (Video Display)
+Goblin 1:    Goblin One      → 192.168.8.40:3001 (Video Display)
+Goblin 2:    Goblin Two      → 192.168.8.106:3001 (Video Display)
+Goblin 3:    Goblin Three    → 192.168.8.14:3001 (Video Display)
 ```
 
 ### SSH Credentials (All Animatronics)
@@ -81,10 +82,86 @@ Sudo:     Available
 
 ### Goblin Video Displays
 
-**Important:** Goblin displays are **lightweight devices** that only run video display code. They do NOT need the full MonsterBox installation - only the goblin video player application and local video storage.
+**Important:** Goblin displays are **lightweight Raspberry Pi devices** that only run video display code. They do NOT need the full MonsterBox installation - only the goblin video player application and local video storage.
 
-Goblin displays store videos locally at `/home/remote/goblin/media/video/` (copied from USB sticks).
-Videos are organized in subdirectories (e.g., `Poltergeist/`, `fire/`, `ethereal/`).
+**Current Goblins:**
+- **Goblin One** (192.168.8.40:3001) - ✅ Operational, playing fire
+- **Goblin Two** (192.168.8.106:3001) - ✅ Operational, playing fire
+- **Goblin Three** (192.168.8.14:3001) - ✅ Operational, playing fire
+
+**Video Storage:**
+- Goblin displays store videos locally at `/home/remote/goblin/media/video/`
+- Videos are automatically converted to 720p@60fps (max resolution for Goblins)
+- USB sticks can be inserted for automatic video copying and conversion
+- Processed files are tracked to avoid duplicate conversions
+
+#### Facehugger Deployment System 👽
+
+**NEW**: Automatic SSH-based deployment system for fresh Raspberry Pi Goblins!
+
+The "Facehugger" deployment system can take a fresh Raspberry Pi with SSH enabled and automatically:
+- Deploy the Goblin video player code
+- Install Node.js and dependencies
+- Create systemd service for auto-start
+- Configure video/audio directories
+- Register with MonsterBox control system
+- Verify health and connectivity
+
+**Deploy via Web UI:**
+1. Navigate to Goblin Management: `http://localhost:3000/goblin-management`
+2. Click "Deploy & Register New Goblin" button
+3. Fill in the form:
+   - **Goblin ID**: Unique identifier (e.g., "goblin-four")
+   - **IP Address**: The Raspberry Pi's IP (e.g., `192.168.8.50`)
+   - **SSH Password**: Password for user `remote` (default: `klrklr89!`)
+   - **Name, Location, Description**: Metadata for the Goblin
+4. Click "Deploy & Register"
+5. Watch real-time deployment progress (takes ~30 seconds)
+
+**Deploy via API:**
+```bash
+curl -X POST http://localhost:3000/goblin-management/api/deploy-and-register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goblinData": {
+      "goblinId": "goblin-four",
+      "endpoint": "http://192.168.8.50:3001",
+      "capabilities": ["video", "audio"],
+      "metadata": {
+        "name": "Goblin Four",
+        "location": "Front Porch",
+        "description": "Video display goblin"
+      }
+    },
+    "sshPassword": "klrklr89!"
+  }'
+```
+
+**Requirements:**
+- Fresh Raspberry Pi with Raspberry Pi OS
+- SSH enabled (user: `remote`, password: `klrklr89!`)
+- Network connectivity to MonsterBox control node
+- Sudo access for the `remote` user
+
+**Note:** If the Raspberry Pi has overlayroot enabled (read-only filesystem), the deployment will automatically disable it and reboot to ensure persistent storage.
+
+#### Manual Goblin Registration (Web UI)
+
+1. **Navigate to Goblin Management**: `http://localhost:3000/goblin-management`
+2. **Click "Register Goblin"** button (for already-deployed Goblins)
+3. **Fill in the form**:
+   - **Goblin Name**: Friendly name (e.g., "Chestwound Window", "Front Porch Display")
+   - **IP Address or Hostname**: The Goblin's network address (e.g., `192.168.8.40`)
+   - **Port**: Default is `3001`
+   - **Capabilities**: Select video-playback, audio-playback, etc.
+   - **Location**: Optional (e.g., "Living Room", "Front Porch")
+   - **Description**: Optional notes about this Goblin
+4. **Test Connection**: Leave checked to verify the Goblin is reachable before registering
+5. **Click "Register Goblin"**
+
+The Goblin will appear in the management grid with real-time status monitoring.
+
+#### Manual Goblin Control (API)
 
 **Play video on Goblin:**
 ```bash

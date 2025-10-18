@@ -247,13 +247,23 @@ class GoblinManager {
         const capabilities = Array.from(form.querySelectorAll('input[name="capabilities"]:checked'))
             .map(cb => cb.value);
 
+        const name = formData.get('name');
+        const host = formData.get('host');
+        const port = parseInt(formData.get('port') || '3001');
+
+        // Transform frontend form data to backend API format
         const goblinData = {
-            name: formData.get('name'),
-            host: formData.get('host'),
-            port: parseInt(formData.get('port') || '3001'),
-            capabilities: capabilities,
-            location: formData.get('location') || '',
-            description: formData.get('description') || ''
+            goblinId: name.toLowerCase().replace(/\s+/g, '-'),  // Convert name to ID format
+            endpoint: `http://${host}:${port}`,                  // Combine host:port into endpoint
+            capabilities: capabilities.length > 0 ? capabilities : ['video', 'audio'],  // Default capabilities
+            platform: 'unknown',                                 // Will be updated by Goblin on first heartbeat
+            version: '1.0.0',
+            // Store additional metadata for display purposes
+            metadata: {
+                name: name,
+                location: formData.get('location') || '',
+                description: formData.get('description') || ''
+            }
         };
 
         registerBtn.disabled = true;
@@ -261,19 +271,30 @@ class GoblinManager {
         statusDiv.className = 'alert alert-info mt-3';
 
         try {
+            // Check if facehugger mode is enabled
+            const autoDeploy = formData.get('autoDeploy');
+            const sshPassword = formData.get('sshPassword');
+
             // Test connection first if requested
             if (formData.get('testConnection')) {
                 statusMessage.textContent = 'Testing connection...';
-                
-                // Simple connection test
-                const testUrl = `http://${goblinData.host}:${goblinData.port}/health`;
-                const testResponse = await fetch(testUrl, { 
-                    method: 'GET', 
-                    signal: AbortSignal.timeout(10000) 
+
+                // Simple connection test using the endpoint
+                const testUrl = `${goblinData.endpoint}/health`;
+                const testResponse = await fetch(testUrl, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(10000)
                 });
 
                 if (!testResponse.ok) {
-                    throw new Error(`Connection test failed: ${testResponse.status}`);
+                    // Connection failed - check if facehugger mode is enabled
+                    if (autoDeploy && sshPassword) {
+                        statusMessage.textContent = '👽 Connection failed! Activating FACEHUGGER MODE...';
+                        await this.deployWithFacehugger(goblinData, sshPassword);
+                        return;
+                    } else {
+                        throw new Error(`Connection test failed: ${testResponse.status}`);
+                    }
                 }
 
                 statusMessage.textContent = 'Connection successful! Registering Goblin...';
@@ -292,11 +313,11 @@ class GoblinManager {
 
             if (result.success) {
                 statusDiv.className = 'alert alert-success mt-3';
-                statusMessage.textContent = `Successfully registered ${goblinData.name}!`;
-                
+                statusMessage.textContent = `Successfully registered ${goblinData.metadata.name}!`;
+
                 // Refresh the Goblin list
                 await this.loadGoblins();
-                this.logActivity(`Registered new Goblin: ${goblinData.name}`, 'success');
+                this.logActivity(`Registered new Goblin: ${goblinData.metadata.name}`, 'success');
                 
                 setTimeout(() => {
                     bootstrap.Modal.getInstance(document.getElementById('registerGoblinModal')).hide();
@@ -335,7 +356,89 @@ class GoblinManager {
     resetRegistrationForm() {
         document.getElementById('registerGoblinForm').reset();
         document.getElementById('registrationStatus').style.display = 'none';
+        document.getElementById('facehuggerProgress').style.display = 'none';
         document.getElementById('registerBtn').disabled = true;
+    }
+
+    async deployWithFacehugger(goblinData, sshPassword) {
+        const statusDiv = document.getElementById('registrationStatus');
+        const progressDiv = document.getElementById('facehuggerProgress');
+        const progressBar = document.getElementById('facehuggerProgressBar');
+        const progressStatus = document.getElementById('facehuggerStatus');
+        const registerBtn = document.getElementById('registerBtn');
+
+        // Hide status, show progress
+        statusDiv.style.display = 'none';
+        progressDiv.style.display = 'block';
+        registerBtn.disabled = true;
+
+        try {
+            // Use EventSource for Server-Sent Events
+            const eventSource = new EventSource('/goblin-management/api/deploy-and-register?' + new URLSearchParams({
+                goblinData: JSON.stringify(goblinData),
+                sshPassword: sshPassword
+            }));
+
+            // Actually, we need to use POST for this, so let's use fetch with streaming
+            const response = await fetch('/goblin-management/api/deploy-and-register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ goblinData, sshPassword })
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.substring(6));
+
+                        if (data.progress >= 0) {
+                            progressBar.style.width = `${data.progress}%`;
+                            progressBar.textContent = `${data.progress}%`;
+                            progressStatus.textContent = data.message;
+                        }
+
+                        if (data.final) {
+                            if (data.success) {
+                                progressDiv.style.display = 'none';
+                                statusDiv.style.display = 'block';
+                                statusDiv.className = 'alert alert-success mt-3';
+                                document.getElementById('statusMessage').textContent =
+                                    `👽 FACEHUGGER SUCCESS! ${goblinData.metadata.name} deployed and registered!`;
+
+                                await this.loadGoblins();
+                                this.logActivity(`👽 Facehugger deployed: ${goblinData.metadata.name}`, 'success');
+
+                                setTimeout(() => {
+                                    bootstrap.Modal.getInstance(document.getElementById('registerGoblinModal')).hide();
+                                    this.resetRegistrationForm();
+                                }, 3000);
+                            } else {
+                                throw new Error(data.error || 'Deployment failed');
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error('Facehugger deployment error:', error);
+            progressDiv.style.display = 'none';
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'alert alert-danger mt-3';
+            document.getElementById('statusMessage').textContent =
+                `👽 FACEHUGGER FAILED: ${error.message}`;
+        } finally {
+            registerBtn.disabled = false;
+        }
     }
 
     async lockGoblin(goblinId) {

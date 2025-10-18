@@ -612,17 +612,55 @@
                                     placeholder="Optional description of this Goblin's purpose"></textarea>
                             </div>
 
-                            <div class="form-check">
+                            <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="testConnection"
                                     id="testConnection" checked>
                                 <label class="form-check-label" for="testConnection">
                                     Test connection before registering
                                 </label>
                             </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="autoDeploy"
+                                    id="autoDeploy">
+                                <label class="form-check-label" for="autoDeploy">
+                                    👽 <strong>FACEHUGGER MODE</strong> - Auto-deploy if not responding
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Automatically deploy Goblin system via SSH if the host is not responding
+                                </small>
+                            </div>
+
+                            <div id="sshPasswordGroup" class="mb-3" style="display: none;">
+                                <label class="form-label">SSH Password *</label>
+                                <input type="password" class="form-control" name="sshPassword" id="sshPassword"
+                                    placeholder="Enter SSH password for deployment">
+                                <small class="form-text text-muted">
+                                    Required for facehugger deployment (default: klrklr89!)
+                                </small>
+                            </div>
                         </form>
 
                         <div class="alert alert-info mt-3" id="registrationStatus" style="display: none;">
                             <i class="bi bi-info-circle"></i> <span id="statusMessage">Testing connection...</span>
+                        </div>
+
+                        <!-- Facehugger Progress -->
+                        <div id="facehuggerProgress" class="mt-3" style="display: none;">
+                            <div class="card bg-dark border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-broadcast-pin"></i> 👽 FACEHUGGER DEPLOYMENT IN PROGRESS
+                                    </h6>
+                                    <div class="progress mb-2" style="height: 25px;">
+                                        <div id="facehuggerProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                             role="progressbar" style="width: 0%">0%</div>
+                                    </div>
+                                    <div id="facehuggerStatus" class="text-light small">
+                                        Initializing...
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -722,3 +760,16 @@
         </div>
 
         <script src="/js/goblin-management.js"></script>
+        <script>
+            // Handle facehugger checkbox toggle
+            document.getElementById('autoDeploy').addEventListener('change', function() {
+                const sshPasswordGroup = document.getElementById('sshPasswordGroup');
+                if (this.checked) {
+                    sshPasswordGroup.style.display = 'block';
+                    document.getElementById('sshPassword').required = true;
+                } else {
+                    sshPasswordGroup.style.display = 'none';
+                    document.getElementById('sshPassword').required = false;
+                }
+            });
+        </script>

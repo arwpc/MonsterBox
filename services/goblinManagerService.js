@@ -5,6 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import goblinDeploymentService from './goblinDeploymentService.js';
 
 class GoblinManagerService {
     constructor() {
@@ -36,15 +37,21 @@ class GoblinManagerService {
         try {
             const data = await fs.readFile(this.goblinsFile, 'utf-8');
             const savedGoblins = JSON.parse(data);
-            
+
             // Load saved goblins into memory map
             savedGoblins.forEach(goblin => {
                 // Mark all loaded goblins as offline initially
                 goblin.status = 'offline';
                 goblin.lastSeen = goblin.lastSeen || new Date().toISOString();
+
+                // Add default name, location, description for backward compatibility
+                goblin.name = goblin.name || goblin.id;
+                goblin.location = goblin.location || '';
+                goblin.description = goblin.description || '';
+
                 this.goblins.set(goblin.id, goblin);
             });
-            
+
             console.log(`📡 Loaded ${savedGoblins.length} goblins from registry`);
         } catch (error) {
             // File doesn't exist or is invalid, start with empty registry
@@ -71,7 +78,8 @@ class GoblinManagerService {
                 endpoint,
                 capabilities = ['video', 'audio'],
                 platform = 'unknown',
-                version = '1.0.0'
+                version = '1.0.0',
+                metadata = {}
             } = goblinData;
 
             if (!goblinId || !endpoint) {
@@ -80,17 +88,20 @@ class GoblinManagerService {
 
             const goblin = {
                 id: goblinId,
+                name: metadata.name || goblinId,  // Use friendly name from metadata or fallback to ID
                 endpoint,
                 capabilities,
                 platform,
                 version,
                 status: 'online',
-                registeredAt: this.goblins.has(goblinId) ? 
-                    this.goblins.get(goblinId).registeredAt : 
+                registeredAt: this.goblins.has(goblinId) ?
+                    this.goblins.get(goblinId).registeredAt :
                     new Date().toISOString(),
                 lastSeen: new Date().toISOString(),
                 lockedBy: null,
                 lockedAt: null,
+                location: metadata.location || '',
+                description: metadata.description || '',
                 settings: {
                     audioEnabled: true,
                     videoEnabled: true,
@@ -103,10 +114,71 @@ class GoblinManagerService {
             this.goblins.set(goblinId, goblin);
             await this.saveGoblins();
 
-            console.log(`👹 Goblin registered: ${goblinId} at ${endpoint}`);
+            console.log(`👹 Goblin registered: ${goblinId} (${goblin.name}) at ${endpoint}`);
             return { success: true, goblin };
         } catch (error) {
             console.error('Error registering goblin:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * 👽 FACEHUGGER DEPLOYMENT! 👽
+     * Deploy Goblin system to a fresh host, then register it
+     */
+    async deployAndRegisterGoblin(goblinData, sshPassword, progressCallback) {
+        try {
+            const { goblinId, endpoint, metadata = {} } = goblinData;
+
+            if (!goblinId || !endpoint) {
+                return { success: false, error: 'Missing required fields: goblinId and endpoint' };
+            }
+
+            if (!sshPassword) {
+                return { success: false, error: 'SSH password required for deployment' };
+            }
+
+            // Extract IP from endpoint (e.g., "http://192.168.8.161:3001" -> "192.168.8.161")
+            const ipMatch = endpoint.match(/\/\/([^:]+)/);
+            if (!ipMatch) {
+                return { success: false, error: 'Invalid endpoint format' };
+            }
+            const ipAddress = ipMatch[1];
+
+            console.log(`👽 FACEHUGGER DEPLOYING to ${ipAddress}...`);
+
+            // Deploy using the facehugger service
+            const deployResult = await goblinDeploymentService.deployToHost(
+                goblinId,
+                ipAddress,
+                sshPassword,
+                progressCallback
+            );
+
+            if (!deployResult.success) {
+                return {
+                    success: false,
+                    error: `Deployment failed: ${deployResult.error}`,
+                    deploymentId: deployResult.deploymentId
+                };
+            }
+
+            // Now register the goblin
+            const registerResult = await this.registerGoblin(goblinData);
+
+            if (registerResult.success) {
+                console.log(`👽 FACEHUGGER SUCCESS! Goblin ${goblinId} deployed and registered!`);
+            }
+
+            return {
+                ...registerResult,
+                deployed: true,
+                deploymentId: deployResult.deploymentId,
+                message: `👽 Goblin ${goblinId} deployed and registered successfully!`
+            };
+
+        } catch (error) {
+            console.error('Error in facehugger deployment:', error);
             return { success: false, error: error.message };
         }
     }

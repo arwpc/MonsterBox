@@ -1,17 +1,23 @@
 [
   {
-    "id": "goblin1",
-    "endpoint": "http://192.168.8.160:3001",
+    "id": "goblin-one",
+    "name": "Goblin One",
+    "endpoint": "http://192.168.8.40:3001",
     "capabilities": [
-      "video"
+      "video-playback",
+      "audio-playback",
+      "screen-effects",
+      "hardware-control"
     ],
-    "platform": "raspberry-pi",
+    "platform": "unknown",
     "version": "1.0.0",
     "status": "offline",
-    "registeredAt": "2025-10-05T03:24:47.340Z",
-    "lastSeen": "2025-10-05T03:27:40.795Z",
+    "registeredAt": "2025-10-18T01:40:45.825Z",
+    "lastSeen": "2025-10-18T01:40:45.825Z",
     "lockedBy": null,
     "lockedAt": null,
+    "location": "Music Room",
+    "description": "",
     "settings": {
       "audioEnabled": true,
       "videoEnabled": true,
@@ -20,19 +26,22 @@
     }
   },
   {
-    "id": "goblin-1",
-    "endpoint": "http://192.168.8.160:3001",
+    "id": "test-facehugger",
+    "name": "Test Facehugger",
+    "endpoint": "http://192.168.8.40:3001",
     "capabilities": [
       "video",
       "audio"
     ],
-    "platform": "pi3",
+    "platform": "unknown",
     "version": "1.0.0",
     "status": "offline",
-    "registeredAt": "2025-10-08T03:11:15.547Z",
-    "lastSeen": "2025-10-08T03:11:15.547Z",
+    "registeredAt": "2025-10-18T02:40:43.244Z",
+    "lastSeen": "2025-10-18T02:40:43.244Z",
     "lockedBy": null,
     "lockedAt": null,
+    "location": "Test Lab",
+    "description": "Testing facehugger deployment",
     "settings": {
       "audioEnabled": true,
       "videoEnabled": true,
@@ -41,19 +50,46 @@
     }
   },
   {
-    "id": "goblin-2",
-    "endpoint": "http://192.168.8.161:3001",
+    "id": "goblin-two",
+    "name": "Goblin Two",
+    "endpoint": "http://192.168.8.106:3001",
     "capabilities": [
       "video",
       "audio"
     ],
-    "platform": "pi5",
+    "platform": "unknown",
     "version": "1.0.0",
     "status": "offline",
-    "registeredAt": "2025-10-08T03:11:23.109Z",
-    "lastSeen": "2025-10-08T03:11:23.109Z",
+    "registeredAt": "2025-10-18T03:43:03.816Z",
+    "lastSeen": "2025-10-18T03:43:03.816Z",
     "lockedBy": null,
     "lockedAt": null,
+    "location": "Halloween Display",
+    "description": "Video display goblin",
+    "settings": {
+      "audioEnabled": true,
+      "videoEnabled": true,
+      "volume": 80,
+      "autoLock": false
+    }
+  },
+  {
+    "id": "goblin-three",
+    "name": "Goblin Three",
+    "endpoint": "http://192.168.8.14:3001",
+    "capabilities": [
+      "video",
+      "audio"
+    ],
+    "platform": "unknown",
+    "version": "1.0.0",
+    "status": "offline",
+    "registeredAt": "2025-10-18T03:46:06.311Z",
+    "lastSeen": "2025-10-18T03:46:06.311Z",
+    "lockedBy": null,
+    "lockedAt": null,
+    "location": "Halloween Display",
+    "description": "Video display goblin",
     "settings": {
       "audioEnabled": true,
       "videoEnabled": true,

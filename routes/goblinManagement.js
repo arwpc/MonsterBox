@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
 router.post('/api/register', async (req, res) => {
     try {
         const result = await goblinManagerService.registerGoblin(req.body);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -34,6 +34,51 @@ router.post('/api/register', async (req, res) => {
     } catch (error) {
         console.error('Error registering Goblin:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+/**
+ * POST /api/deploy-and-register - 👽 FACEHUGGER DEPLOYMENT! 👽
+ * Deploy Goblin system to a fresh host, then register it
+ */
+router.post('/api/deploy-and-register', async (req, res) => {
+    try {
+        const { goblinData, sshPassword } = req.body;
+
+        if (!goblinData || !sshPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing goblinData or sshPassword'
+            });
+        }
+
+        // Set up SSE for progress updates
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        const progressCallback = (progress) => {
+            res.write(`data: ${JSON.stringify(progress)}\n\n`);
+        };
+
+        const result = await goblinManagerService.deployAndRegisterGoblin(
+            goblinData,
+            sshPassword,
+            progressCallback
+        );
+
+        // Send final result
+        res.write(`data: ${JSON.stringify({ ...result, final: true })}\n\n`);
+        res.end();
+
+    } catch (error) {
+        console.error('Error in facehugger deployment:', error);
+        res.write(`data: ${JSON.stringify({
+            success: false,
+            error: error.message,
+            final: true
+        })}\n\n`);
+        res.end();
     }
 });
 

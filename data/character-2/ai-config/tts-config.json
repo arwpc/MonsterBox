@@ -1,8 +1,8 @@
 {
-  "voice_id": "wXvR48IpOq9HACltTmt7",
   "model": "eleven_monolingual_v1",
+  "voice_id": "",
   "stability": 0.5,
-  "similarity_boost": 0.5,
-  "style": 0.0,
+  "similarity_boost": 0.6,
+  "style": 0,
   "use_speaker_boost": true
 }
