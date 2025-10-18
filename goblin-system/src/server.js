@@ -53,37 +53,141 @@ class GoblinServer {
   }
 
   /**
+   * Validate startup requirements
+   */
+  async validateStartup() {
+    const errors = [];
+
+    // Check Node.js version
+    const nodeVersion = process.version;
+    const majorVersion = parseInt(nodeVersion.split('.')[0].substring(1));
+    if (majorVersion < 16) {
+      errors.push(`Node.js version ${nodeVersion} is too old. Requires >= 16.0.0`);
+    }
+
+    // Check required directories
+    const requiredDirs = [
+      '/home/remote/goblin/logs',
+      '/home/remote/goblin/media/video',
+      '/home/remote/goblin/media/audio'
+    ];
+
+    for (const dir of requiredDirs) {
+      try {
+        await fs.access(dir);
+      } catch (error) {
+        console.warn(`⚠️  Directory ${dir} not found, creating...`);
+        try {
+          await fs.mkdir(dir, { recursive: true });
+          console.log(`✅ Created ${dir}`);
+        } catch (mkdirError) {
+          errors.push(`Cannot create directory ${dir}: ${mkdirError.message}`);
+        }
+      }
+    }
+
+    // Check port availability
+    const net = require('net');
+    const portAvailable = await new Promise((resolve) => {
+      const server = net.createServer();
+      server.once('error', () => resolve(false));
+      server.once('listening', () => {
+        server.close();
+        resolve(true);
+      });
+      server.listen(this.port);
+    });
+
+    if (!portAvailable) {
+      errors.push(`Port ${this.port} is already in use`);
+    }
+
+    if (errors.length > 0) {
+      console.error('❌ Startup validation failed:');
+      errors.forEach(err => console.error(`   - ${err}`));
+      throw new Error('Startup validation failed');
+    }
+
+    console.log('✅ Startup validation passed');
+  }
+
+  /**
    * Initialize and start the Goblin server
    */
   async start() {
     try {
+      console.log(`🎃 Starting Goblin ${this.goblinId}...`);
+
+      // Validate startup requirements
+      await this.validateStartup();
+
       // Setup Express middleware
       this.setupExpress();
 
       // Setup API routes
       this.setupRoutes();
 
-      // Start HTTP server
-      this.server = this.app.listen(this.port, () => {
-        console.log(`👹 Goblin ${this.goblinId} listening on port ${this.port}`);
+      // Start HTTP server with error handling
+      await new Promise((resolve, reject) => {
+        this.server = this.app.listen(this.port, () => {
+          console.log(`👹 Goblin ${this.goblinId} listening on port ${this.port}`);
+          resolve();
+        });
+
+        this.server.on('error', (error) => {
+          console.error(`❌ Server error:`, error);
+          reject(error);
+        });
       });
 
-      // Initialize components
-      await this.mediaPlayer.initialize();
-      await this.statusMonitor.start();
-      await this.fileManager.initialize();
+      // Initialize components with error handling
+      try {
+        await this.mediaPlayer.initialize();
+        console.log('✅ Media player initialized');
+      } catch (error) {
+        console.error('⚠️  Media player initialization failed:', error.message);
+        console.log('   Continuing without media player...');
+      }
+
+      try {
+        await this.statusMonitor.start();
+        console.log('✅ Status monitor started');
+      } catch (error) {
+        console.error('⚠️  Status monitor failed:', error.message);
+        console.log('   Continuing without status monitor...');
+      }
+
+      try {
+        await this.fileManager.initialize();
+        console.log('✅ File manager initialized');
+      } catch (error) {
+        console.error('⚠️  File manager initialization failed:', error.message);
+        console.log('   Continuing without file manager...');
+      }
 
       // Start beacon to find MonsterBox
-      console.log(`🔍 Starting network beacon to find MonsterBox...`);
-      this.beacon.start();
+      try {
+        console.log(`🔍 Starting network beacon to find MonsterBox...`);
+        this.beacon.start();
+      } catch (error) {
+        console.error('⚠️  Beacon failed to start:', error.message);
+        console.log('   Continuing without beacon...');
+      }
 
       // Start heartbeat if MONSTERBOX_URL is set
-      this.startHeartbeat();
+      try {
+        this.startHeartbeat();
+      } catch (error) {
+        console.error('⚠️  Heartbeat failed to start:', error.message);
+        console.log('   Continuing without heartbeat...');
+      }
 
       console.log(`✅ Goblin ${this.goblinId} ready for haunting! 👻`);
+      console.log(`   Health check: http://localhost:${this.port}/health`);
 
     } catch (error) {
       console.error('❌ Failed to start Goblin:', error);
+      console.error('   Stack trace:', error.stack);
       process.exit(1);
     }
   }
@@ -107,16 +211,30 @@ class GoblinServer {
    * Setup API routes
    */
   setupRoutes() {
-    // Health check
+    // Health check - comprehensive status
     this.app.get('/health', (req, res) => {
-      res.json({
+      const health = {
         status: 'healthy',
         goblinId: this.goblinId,
+        port: this.port,
         connected: this.isConnected,
-        monsterbox: this.monsterboxHost,
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-      });
+        monsterbox: this.monsterboxHost || process.env.MONSTERBOX_URL || 'not configured',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        components: {
+          mediaPlayer: this.mediaPlayer ? 'ok' : 'not initialized',
+          statusMonitor: this.statusMonitor ? 'ok' : 'not initialized',
+          fileManager: this.fileManager ? 'ok' : 'not initialized',
+          beacon: this.beacon ? 'ok' : 'not initialized',
+          videoQueue: this.videoQueue ? 'ok' : 'not initialized'
+        },
+        memory: {
+          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+        }
+      };
+
+      res.json(health);
     });
 
     // Goblin info
@@ -310,13 +428,20 @@ class GoblinServer {
 
     if (!monsterboxUrl) {
       console.log('⚠️  MONSTERBOX_URL not set - heartbeat disabled');
+      console.log('   Set MONSTERBOX_URL environment variable to enable heartbeat');
       return;
     }
 
     console.log(`💓 Starting heartbeat to ${monsterboxUrl}`);
 
-    // Send initial heartbeat
-    this.sendHeartbeat(monsterboxUrl);
+    // Track heartbeat failures
+    this.heartbeatFailures = 0;
+    this.heartbeatSuccesses = 0;
+
+    // Send initial heartbeat with delay to allow server to fully start
+    setTimeout(() => {
+      this.sendHeartbeat(monsterboxUrl);
+    }, 5000);
 
     // Send heartbeat every 30 seconds
     this.heartbeatInterval = setInterval(() => {
@@ -335,17 +460,34 @@ class GoblinServer {
         {},
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 5000
+          timeout: 5000,
+          validateStatus: (status) => status < 500 // Don't throw on 4xx errors
         }
       );
 
       if (response.status === 200) {
-        console.log(`💓 Heartbeat sent to ${monsterboxUrl}`);
+        this.heartbeatSuccesses++;
+        if (this.heartbeatSuccesses === 1 || this.heartbeatSuccesses % 10 === 0) {
+          console.log(`💓 Heartbeat sent to ${monsterboxUrl} (${this.heartbeatSuccesses} successful)`);
+        }
+        this.heartbeatFailures = 0; // Reset failure counter on success
       } else {
-        console.warn(`⚠️  Heartbeat failed: ${response.status}`);
+        this.heartbeatFailures++;
+        console.warn(`⚠️  Heartbeat failed: ${response.status} (${this.heartbeatFailures} failures)`);
       }
     } catch (error) {
-      console.error(`❌ Heartbeat error:`, error.message);
+      this.heartbeatFailures++;
+
+      // Only log every 5th failure to avoid log spam
+      if (this.heartbeatFailures === 1 || this.heartbeatFailures % 5 === 0) {
+        console.error(`❌ Heartbeat error (${this.heartbeatFailures} failures):`, error.message);
+
+        if (error.code === 'ECONNREFUSED') {
+          console.error(`   MonsterBox at ${monsterboxUrl} is not reachable`);
+        } else if (error.code === 'ETIMEDOUT') {
+          console.error(`   Connection to ${monsterboxUrl} timed out`);
+        }
+      }
     }
   }
 
@@ -579,32 +721,55 @@ class GoblinServer {
   async shutdown() {
     console.log(`👋 Shutting down Goblin ${this.goblinId}`);
 
-    this.beacon.stop();
+    try {
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+      }
 
-    if (this.monsterboxConnection) {
-      this.monsterboxConnection.close();
-    }
+      this.beacon.stop();
 
-    await this.mediaPlayer.stopAll();
-    this.statusMonitor.stop();
+      if (this.monsterboxConnection) {
+        this.monsterboxConnection.close();
+      }
 
-    if (this.server) {
-      this.server.close();
+      await this.mediaPlayer.stopAll();
+      this.statusMonitor.stop();
+
+      if (this.server) {
+        this.server.close();
+      }
+    } catch (error) {
+      console.error('Error during shutdown:', error);
     }
 
     console.log(`💀 Goblin ${this.goblinId} has departed`);
   }
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
+// Global error handlers to prevent crashes
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', error);
+  console.error('   Stack:', error.stack);
+  console.error('   This should not crash the Goblin - continuing...');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION:', reason);
+  console.error('   Promise:', promise);
+  console.error('   This should not crash the Goblin - continuing...');
+});
+
+// Handle shutdown signals
+process.on('SIGTERM', async () => {
+  console.log('📡 Received SIGTERM signal');
   if (global.goblinServer) {
     await global.goblinServer.shutdown();
   }
   process.exit(0);
 });
 
-process.on('SIGTERM', async () => {
+process.on('SIGINT', async () => {
+  console.log('📡 Received SIGINT signal (Ctrl+C)');
   if (global.goblinServer) {
     await global.goblinServer.shutdown();
   }
