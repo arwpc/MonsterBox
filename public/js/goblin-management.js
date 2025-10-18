@@ -1430,7 +1430,7 @@ Success Rate: ${stats.successRate}%`);
     }
 
     async startQueue(mode = 'sequential') {
-        if (!this.currentQueue || this.currentQueue.queue.length === 0) {
+        if (!this.currentQueue || !this.currentQueue.queue || this.currentQueue.queue.length === 0) {
             this.showWarning('Queue is empty. Add videos first.');
             return;
         }
@@ -1450,6 +1450,7 @@ Success Rate: ${stats.successRate}%`);
             if (data.success) {
                 this.currentQueue = data.queue;
                 this.renderVideoQueue();
+                await this.updatePlaybackStatus();
                 this.showSuccess('Queue started');
             } else {
                 this.showError('Failed to start queue');
@@ -1489,9 +1490,13 @@ Success Rate: ${stats.successRate}%`);
             if (data.success) {
                 this.currentQueue = data.queue;
                 this.renderVideoQueue();
+                await this.updatePlaybackStatus();
                 this.showSuccess('Queue resumed');
+            } else {
+                this.showError('Failed to resume queue');
             }
         } catch (error) {
+            console.error('Error resuming queue:', error);
             this.showError('Error resuming queue: ' + error.message);
         }
     }

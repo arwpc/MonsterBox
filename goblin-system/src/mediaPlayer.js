@@ -43,11 +43,11 @@ class MediaPlayer {
    */
   async checkDependencies() {
     return new Promise((resolve, reject) => {
-      exec('which vlc', (error) => {
+      exec('which ffplay', (error) => {
         if (error) {
-          reject(new Error('VLC media player not found. Install with: apt-get install vlc'));
+          reject(new Error('ffplay not found. Install with: apt-get install ffmpeg'));
         } else {
-          console.log('✅ VLC media player found');
+          console.log('✅ ffplay found');
           resolve();
         }
       });
@@ -101,43 +101,55 @@ class MediaPlayer {
         throw new Error(`Video file not found: ${filename}`);
       }
       
-      const vlcArgs = [
-        '--intf', 'dummy',           // No interface
-        '--no-video-title-show',     // Don't show title
-        '--fullscreen',              // Fullscreen mode
-        '--no-osd',                  // No on-screen display
-        videoPath
+      // Use ffplay with fade transitions and no console output
+      const ffplayArgs = [
+        '-fs',                       // Fullscreen
+        '-autoexit',                 // Exit when done
+        '-loglevel', 'quiet',        // Suppress all console output
+        '-hide_banner',              // Hide ffmpeg banner
+        '-noborder',                 // No window border
+        '-left', '0',                // Position at left edge
+        '-top', '0',                 // Position at top edge
       ];
-      
+
+      // Add fade in/out filter for seamless transitions
+      // Fade in for 0.5 seconds at start, fade out for 0.5 seconds before end
+      const fadeFilter = 'fade=in:0:15,fade=out:st=0:d=0.5';
+      ffplayArgs.push('-vf', fadeFilter);
+
       // Add loop option if specified
       if (options.loop) {
-        vlcArgs.push('--loop');
+        ffplayArgs.push('-loop', '0');  // Loop forever
       }
-      
-      // Add quit option if not looping
-      if (!options.loop) {
-        vlcArgs.push('--play-and-exit');
+
+      // Disable audio if not needed (can be controlled via options)
+      if (options.noAudio) {
+        ffplayArgs.push('-an');
       }
-      
-      console.log('🎬 Starting VLC with args:', vlcArgs);
-      
-      const vlcProcess = spawn('vlc', vlcArgs, {
+
+      // Add the video file
+      ffplayArgs.push(videoPath);
+
+      console.log('🎬 Starting ffplay with fade transitions');
+
+      const ffplayProcess = spawn('ffplay', ffplayArgs, {
         detached: false,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'ignore', 'ignore'],  // Completely suppress all output
+        env: { ...process.env, DISPLAY: ':0' }  // Ensure display is set
       });
-      
+
       // Handle process events
-      vlcProcess.on('spawn', () => {
+      ffplayProcess.on('spawn', () => {
         console.log(`🎬 Video playback started: ${filename}`);
         this.playbackStatus.video = {
           playing: true,
           file: filename,
-          process: vlcProcess,
+          process: ffplayProcess,
           startTime: Date.now()
         };
       });
-      
-      vlcProcess.on('exit', (code) => {
+
+      ffplayProcess.on('exit', (code) => {
         console.log(`🎬 Video playback ended: ${filename} (exit code: ${code})`);
         this.playbackStatus.video = {
           playing: false,
@@ -145,19 +157,10 @@ class MediaPlayer {
           process: null
         };
       });
-      
-      vlcProcess.on('error', (error) => {
-        console.error(`❌ VLC error for ${filename}:`, error);
+
+      ffplayProcess.on('error', (error) => {
+        console.error(`❌ ffplay error for ${filename}:`, error);
         this.playbackStatus.video.playing = false;
-      });
-      
-      // Log VLC output for debugging
-      vlcProcess.stdout.on('data', (data) => {
-        console.log(`VLC: ${data.toString().trim()}`);
-      });
-      
-      vlcProcess.stderr.on('data', (data) => {
-        console.log(`VLC: ${data.toString().trim()}`);
       });
       
       return {
