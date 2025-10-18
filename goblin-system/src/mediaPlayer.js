@@ -1,6 +1,9 @@
 /**
  * Media Player Service
- * Handles video and audio playback using VLC and system audio
+ * Handles video and audio playback using ffplay (from ffmpeg suite)
+ *
+ * IMPORTANT: All videos are automatically scaled to 720p@60Hz for Raspberry Pi 3B+ compatibility
+ * ffplay handles real-time transcoding, so no pre-conversion is needed
  */
 
 const { spawn, exec } = require('child_process');
@@ -15,7 +18,7 @@ class MediaPlayer {
       video: { playing: false, file: null, process: null },
       audio: { playing: [], processes: new Map() }
     };
-    
+
     console.log(`🎬 Media player initialized for Goblin ${this.goblin.goblinId}`);
   }
 
@@ -24,14 +27,14 @@ class MediaPlayer {
    */
   async initialize() {
     try {
-      // Check if VLC is available
+      // Check if ffplay is available
       await this.checkDependencies();
-      
+
       // Setup audio system
       await this.setupAudio();
-      
-      console.log('🎬 Media player ready');
-      
+
+      console.log('🎬 Media player ready (using ffplay)');
+
     } catch (error) {
       console.error('❌ Media player initialization failed:', error);
       throw error;
@@ -43,12 +46,20 @@ class MediaPlayer {
    */
   async checkDependencies() {
     return new Promise((resolve, reject) => {
-      exec('which ffplay', (error) => {
+      exec('which ffplay', (error, stdout) => {
         if (error) {
           reject(new Error('ffplay not found. Install with: apt-get install ffmpeg'));
         } else {
-          console.log('✅ ffplay found');
-          resolve();
+          console.log('✅ ffplay found at:', stdout.trim());
+
+          // Verify ffplay version
+          exec('ffplay -version', (err, version) => {
+            if (!err) {
+              const versionLine = version.split('\n')[0];
+              console.log('✅ ffplay version:', versionLine);
+            }
+            resolve();
+          });
         }
       });
     });
@@ -101,7 +112,8 @@ class MediaPlayer {
         throw new Error(`Video file not found: ${filename}`);
       }
       
-      // Use ffplay with fade transitions and no console output
+      // Use ffplay with real-time scaling to 720p@60Hz and fade transitions
+      // This ensures ALL videos play at the correct resolution regardless of source
       const ffplayArgs = [
         '-fs',                       // Fullscreen
         '-autoexit',                 // Exit when done
@@ -110,12 +122,24 @@ class MediaPlayer {
         '-noborder',                 // No window border
         '-left', '0',                // Position at left edge
         '-top', '0',                 // Position at top edge
+        '-x', '1280',                // Force width to 1280 (720p)
+        '-y', '720',                 // Force height to 720
       ];
 
-      // Add fade in/out filter for seamless transitions
-      // Fade in for 0.5 seconds at start, fade out for 0.5 seconds before end
-      const fadeFilter = 'fade=in:0:15,fade=out:st=0:d=0.5';
-      ffplayArgs.push('-vf', fadeFilter);
+      // Build video filter chain:
+      // 1. Scale to 720p (1280x720) maintaining aspect ratio
+      // 2. Pad to exact 720p if needed (black bars)
+      // 3. Set output framerate to 60fps
+      // 4. Add fade in/out for seamless transitions
+      const videoFilters = [
+        'scale=1280:720:force_original_aspect_ratio=decrease',  // Scale down to fit 720p
+        'pad=1280:720:(ow-iw)/2:(oh-ih)/2',                     // Center with black bars if needed
+        'fps=60',                                                 // Force 60fps output
+        'fade=in:0:15',                                          // Fade in (15 frames = 0.25s at 60fps)
+        'fade=out:st=0:d=0.5'                                    // Fade out (0.5s before end)
+      ].join(',');
+
+      ffplayArgs.push('-vf', videoFilters);
 
       // Add loop option if specified
       if (options.loop) {
@@ -197,20 +221,22 @@ class MediaPlayer {
       
       const volume = options.volume || 0.8;
       const audioId = `audio-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-      
-      const vlcArgs = [
-        '--intf', 'dummy',           // No interface
-        '--no-video',                // Audio only
-        '--play-and-exit',           // Exit when done
-        `--volume=${Math.floor(volume * 100)}`, // Set volume
+
+      // Use ffplay for audio playback (consistent with video)
+      const ffplayArgs = [
+        '-nodisp',                   // No video display
+        '-autoexit',                 // Exit when done
+        '-loglevel', 'quiet',        // Suppress console output
+        '-hide_banner',              // Hide banner
+        '-volume', Math.floor(volume * 100).toString(), // Set volume (0-100)
         audioPath
       ];
-      
-      console.log('🔊 Starting audio VLC with args:', vlcArgs);
-      
-      const audioProcess = spawn('vlc', vlcArgs, {
+
+      console.log('🔊 Starting audio playback with ffplay');
+
+      const audioProcess = spawn('ffplay', ffplayArgs, {
         detached: false,
-        stdio: ['ignore', 'pipe', 'pipe']
+        stdio: ['ignore', 'ignore', 'ignore']  // Suppress all output
       });
       
       // Handle process events
