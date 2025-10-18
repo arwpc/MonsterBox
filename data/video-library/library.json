@@ -87,8 +87,10 @@
       "bitrate": 0,
       "uploadedAt": "2025-09-29T06:53:40.100Z",
       "favorite": false,
-      "playCount": 0,
-      "thumbnailPath": "dad5cf71-097d-42a8-b310-fa6c95fd28e1.jpg"
+      "playCount": 1,
+      "thumbnailPath": "dad5cf71-097d-42a8-b310-fa6c95fd28e1.jpg",
+      "lastPlayed": "2025-10-18T13:48:58.616Z",
+      "updatedAt": "2025-10-18T13:48:58.622Z"
     },
     {
       "id": "3929fd68-49cc-4349-a817-b00bc5e4c3d8",
@@ -117,5 +119,5 @@
     "other"
   ],
   "version": "1.0.0",
-  "lastUpdated": "2025-09-29T21:33:25.000Z"
+  "lastUpdated": "2025-10-18T13:48:58.623Z"
 }
