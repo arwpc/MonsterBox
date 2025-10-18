@@ -1585,6 +1585,38 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1760750448497w69oauf77",
+      "sceneId": 2,
+      "characterId": 3,
+      "timestamp": "2025-10-18T01:20:48.497Z",
+      "startTime": "2025-10-18T01:20:35.238Z",
+      "endTime": "2025-10-18T01:20:48.494Z",
+      "duration": 13256,
+      "stepsExecuted": 7,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 3"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17607504982289g6to2nvy",
+      "sceneId": 1,
+      "characterId": 3,
+      "timestamp": "2025-10-18T01:21:38.228Z",
+      "startTime": "2025-10-18T01:21:37.507Z",
+      "endTime": "2025-10-18T01:21:38.226Z",
+      "duration": 719,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -1673,6 +1705,14 @@
       "characterId": 3,
       "executionCount": 5,
       "lastExecuted": "2025-10-17T22:43:23.630Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_1": {
+      "sceneId": 1,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-18T01:21:38.234Z",
       "totalDuration": 0,
       "averageDuration": 0
     }
