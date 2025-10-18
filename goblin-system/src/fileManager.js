@@ -10,16 +10,22 @@ const crypto = require('crypto');
 class FileManager {
   constructor(goblinServer) {
     this.goblin = goblinServer;
+
+    // Use absolute path to media directory (not relative to src/)
+    // This ensures we use /home/remote/goblin/media, not /home/remote/goblin/src/media
+    const goblinRoot = path.resolve(__dirname, '..');
     this.mediaPaths = {
-      video: path.join(__dirname, '..', 'media', 'video'),
-      audio: path.join(__dirname, '..', 'media', 'audio')
+      video: path.join(goblinRoot, 'media', 'video'),
+      audio: path.join(goblinRoot, 'media', 'audio')
     };
     this.supportedFormats = {
       video: ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.flv'],
       audio: ['.mp3', '.wav', '.aac', '.ogg', '.flac', '.m4a']
     };
-    
+
     console.log(`📁 File manager initialized for Goblin ${this.goblin.goblinId}`);
+    console.log(`📁 Video path: ${this.mediaPaths.video}`);
+    console.log(`📁 Audio path: ${this.mediaPaths.audio}`);
   }
 
   /**
