@@ -31,7 +31,7 @@ class StatusMonitor {
         audioDevices: []
       },
       services: {
-        vlc: false,
+        ffplay: false,
         audio: false,
         display: false
       }
@@ -179,12 +179,12 @@ class StatusMonitor {
    * Update service status
    */
   async updateServiceStatus() {
-    // Check VLC
-    this.status.services.vlc = await this.checkCommand('vlc --version');
-    
+    // Check ffplay (from ffmpeg suite)
+    this.status.services.ffplay = await this.checkCommand('ffplay -version');
+
     // Check audio system
     this.status.services.audio = await this.checkCommand('aplay -l');
-    
+
     // Check display
     this.status.services.display = await this.checkDisplayStatus();
   }
@@ -336,17 +336,17 @@ class StatusMonitor {
    */
   isHealthy() {
     const metrics = this.getPerformanceMetrics();
-    
+
     // Health criteria
     const healthChecks = {
       network: metrics.network.connected,
       memory: metrics.memory.percent < 90,
       temperature: metrics.temperature < 80, // Celsius
-      services: this.status.services.vlc && this.status.services.audio
+      services: this.status.services.ffplay && this.status.services.audio
     };
-    
+
     const healthy = Object.values(healthChecks).every(check => check);
-    
+
     return {
       healthy: healthy,
       checks: healthChecks,

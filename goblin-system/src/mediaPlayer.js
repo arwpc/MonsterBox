@@ -130,13 +130,12 @@ class MediaPlayer {
       // 1. Scale to 720p (1280x720) maintaining aspect ratio
       // 2. Pad to exact 720p if needed (black bars)
       // 3. Set output framerate to 60fps
-      // 4. Add fade in/out for seamless transitions
+      // 4. Add fade in at start (fade out handled by queue manager between videos)
       const videoFilters = [
         'scale=1280:720:force_original_aspect_ratio=decrease',  // Scale down to fit 720p
         'pad=1280:720:(ow-iw)/2:(oh-ih)/2',                     // Center with black bars if needed
         'fps=60',                                                 // Force 60fps output
-        'fade=in:0:15',                                          // Fade in (15 frames = 0.25s at 60fps)
-        'fade=out:st=0:d=0.5'                                    // Fade out (0.5s before end)
+        'fade=in:0:15'                                           // Fade in (15 frames = 0.25s at 60fps)
       ].join(',');
 
       ffplayArgs.push('-vf', videoFilters);
@@ -154,13 +153,20 @@ class MediaPlayer {
       // Add the video file
       ffplayArgs.push(videoPath);
 
-      console.log('🎬 Starting ffplay with fade transitions');
+      console.log('🎬 Starting ffplay with 720p@60Hz transcoding');
+
+      // Ensure DISPLAY is set for X11
+      const displayEnv = process.env.DISPLAY || ':0';
 
       const ffplayProcess = spawn('ffplay', ffplayArgs, {
         detached: false,
         stdio: ['ignore', 'ignore', 'ignore'],  // Completely suppress all output
-        env: { ...process.env, DISPLAY: ':0' }  // Ensure display is set
+        env: { ...process.env, DISPLAY: displayEnv }
       });
+
+      // Track process for cleanup
+      const processId = `video-${Date.now()}`;
+      this.activeProcesses.set(processId, ffplayProcess);
 
       // Handle process events
       ffplayProcess.on('spawn', () => {
@@ -169,22 +175,37 @@ class MediaPlayer {
           playing: true,
           file: filename,
           process: ffplayProcess,
+          processId: processId,
           startTime: Date.now()
         };
       });
 
-      ffplayProcess.on('exit', (code) => {
-        console.log(`🎬 Video playback ended: ${filename} (exit code: ${code})`);
+      ffplayProcess.on('exit', (code, signal) => {
+        console.log(`🎬 Video playback ended: ${filename} (exit code: ${code}, signal: ${signal})`);
+
+        // Clean up process tracking
+        this.activeProcesses.delete(processId);
+
         this.playbackStatus.video = {
           playing: false,
           file: null,
-          process: null
+          process: null,
+          processId: null
         };
       });
 
       ffplayProcess.on('error', (error) => {
         console.error(`❌ ffplay error for ${filename}:`, error);
-        this.playbackStatus.video.playing = false;
+
+        // Clean up on error
+        this.activeProcesses.delete(processId);
+
+        this.playbackStatus.video = {
+          playing: false,
+          file: null,
+          process: null,
+          processId: null
+        };
       });
       
       return {
@@ -286,24 +307,40 @@ class MediaPlayer {
   async stopVideo() {
     if (this.playbackStatus.video.playing && this.playbackStatus.video.process) {
       console.log('⏹️ Stopping video playback');
-      this.playbackStatus.video.process.kill('SIGTERM');
-      
-      // Wait a moment for graceful shutdown
-      setTimeout(() => {
-        if (this.playbackStatus.video.process && !this.playbackStatus.video.process.killed) {
-          this.playbackStatus.video.process.kill('SIGKILL');
-        }
-      }, 2000);
-      
+
+      const processId = this.playbackStatus.video.processId;
+      const process = this.playbackStatus.video.process;
+
+      try {
+        process.kill('SIGTERM');
+
+        // Wait a moment for graceful shutdown, then force kill if needed
+        setTimeout(() => {
+          if (process && !process.killed) {
+            console.warn('⚠️ Force killing video process');
+            process.kill('SIGKILL');
+          }
+        }, 2000);
+
+      } catch (error) {
+        console.warn('⚠️ Error stopping video:', error.message);
+      }
+
+      // Clean up process tracking
+      if (processId) {
+        this.activeProcesses.delete(processId);
+      }
+
       this.playbackStatus.video = {
         playing: false,
         file: null,
-        process: null
+        process: null,
+        processId: null
       };
-      
+
       return { success: true, message: 'Video playback stopped' };
     }
-    
+
     return { success: true, message: 'No video playing' };
   }
 
@@ -342,10 +379,30 @@ class MediaPlayer {
    */
   async stopAll() {
     console.log('⏹️ Stopping all media playback');
-    
+
     const videoResult = await this.stopVideo();
     const audioResult = await this.stopAllAudio();
-    
+
+    // Clean up any orphaned processes
+    for (const [processId, process] of this.activeProcesses) {
+      try {
+        if (process && !process.killed) {
+          console.warn(`⚠️ Cleaning up orphaned process: ${processId}`);
+          process.kill('SIGTERM');
+          setTimeout(() => {
+            if (!process.killed) {
+              process.kill('SIGKILL');
+            }
+          }, 1000);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error cleaning up process ${processId}:`, error.message);
+      }
+    }
+
+    // Clear all process tracking
+    this.activeProcesses.clear();
+
     return {
       success: true,
       message: 'All playback stopped',

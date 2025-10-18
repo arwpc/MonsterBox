@@ -150,28 +150,41 @@ class VideoQueue {
     try {
       this.currentVideo = videoItem.filename;
       console.log(`🎬 Playing from queue: ${videoItem.filename}`);
-      
+
       // Start video playback
       const result = await this.mediaPlayer.playVideo(
-        videoItem.filename, 
+        videoItem.filename,
         { ...videoItem.options, loop: false } // Never loop individual videos in queue
       );
-      
+
       if (!result.success) {
         console.error(`❌ Failed to play ${videoItem.filename}:`, result.error);
         return;
       }
-      
-      // Monitor playback status
+
+      // Monitor playback status with timeout (max 2 hours per video)
+      const maxWaitTime = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+      const startTime = Date.now();
+
       while (this.mediaPlayer.playbackStatus.video.playing && !this.skipRequested && !this.stopRequested) {
         await this.sleep(500);
+
+        // Safety timeout - prevent infinite loop
+        if (Date.now() - startTime > maxWaitTime) {
+          console.error(`❌ Video playback timeout after 2 hours: ${videoItem.filename}`);
+          await this.mediaPlayer.stopVideo();
+          break;
+        }
       }
-      
+
       if (this.skipRequested) {
         console.log('⏭️  Skipping video');
         await this.mediaPlayer.stopVideo();
       }
-      
+
+      // Small delay between videos for clean transitions
+      await this.sleep(100);
+
     } catch (error) {
       console.error(`❌ Error playing video from queue:`, error);
     } finally {
