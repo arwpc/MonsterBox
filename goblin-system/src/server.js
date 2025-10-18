@@ -115,17 +115,28 @@ class GoblinServer {
    * Initialize and start the Goblin server
    */
   async start() {
+    // Set startup timeout - kill process if startup takes > 60 seconds
+    const startupTimeout = setTimeout(() => {
+      console.error('❌ STARTUP TIMEOUT: Goblin failed to start within 60 seconds');
+      console.error('   Forcing exit to allow systemd to restart...');
+      process.exit(1);
+    }, 60000);
+
     try {
       console.log(`🎃 Starting Goblin ${this.goblinId}...`);
+      console.log(`   [1/7] Validating startup requirements...`);
 
       // Validate startup requirements
       await this.validateStartup();
+      console.log(`   [2/7] Setting up Express middleware...`);
 
       // Setup Express middleware
       this.setupExpress();
+      console.log(`   [3/7] Setting up API routes...`);
 
       // Setup API routes
       this.setupRoutes();
+      console.log(`   [4/7] Starting HTTP server...`);
 
       // Start HTTP server with error handling
       await new Promise((resolve, reject) => {
@@ -140,52 +151,65 @@ class GoblinServer {
         });
       });
 
+      console.log(`   [5/7] Initializing components...`);
+
       // Initialize components with error handling
       try {
         await this.mediaPlayer.initialize();
-        console.log('✅ Media player initialized');
+        console.log('      ✅ Media player initialized');
       } catch (error) {
-        console.error('⚠️  Media player initialization failed:', error.message);
-        console.log('   Continuing without media player...');
+        console.error('      ⚠️  Media player initialization failed:', error.message);
       }
 
       try {
         await this.statusMonitor.start();
-        console.log('✅ Status monitor started');
+        console.log('      ✅ Status monitor started');
       } catch (error) {
-        console.error('⚠️  Status monitor failed:', error.message);
-        console.log('   Continuing without status monitor...');
+        console.error('      ⚠️  Status monitor failed:', error.message);
       }
 
       try {
         await this.fileManager.initialize();
-        console.log('✅ File manager initialized');
+        console.log('      ✅ File manager initialized');
       } catch (error) {
-        console.error('⚠️  File manager initialization failed:', error.message);
-        console.log('   Continuing without file manager...');
+        console.error('      ⚠️  File manager initialization failed:', error.message);
       }
 
-      // Start beacon to find MonsterBox
-      try {
-        console.log(`🔍 Starting network beacon to find MonsterBox...`);
-        this.beacon.start();
-      } catch (error) {
-        console.error('⚠️  Beacon failed to start:', error.message);
-        console.log('   Continuing without beacon...');
+      console.log(`   [6/7] Starting discovery and heartbeat...`);
+
+      // Only start beacon if MONSTERBOX_URL is NOT set
+      const monsterboxUrl = process.env.MONSTERBOX_URL;
+      if (!monsterboxUrl) {
+        console.log('      ℹ️  MONSTERBOX_URL not set - starting network beacon (background)');
+        // Start beacon in background - don't wait for it
+        setImmediate(() => {
+          try {
+            this.beacon.start();
+          } catch (error) {
+            console.error('      ⚠️  Beacon failed to start:', error.message);
+          }
+        });
+      } else {
+        console.log(`      ℹ️  MONSTERBOX_URL set to ${monsterboxUrl} - skipping beacon`);
       }
 
       // Start heartbeat if MONSTERBOX_URL is set
       try {
         this.startHeartbeat();
       } catch (error) {
-        console.error('⚠️  Heartbeat failed to start:', error.message);
-        console.log('   Continuing without heartbeat...');
+        console.error('      ⚠️  Heartbeat failed to start:', error.message);
       }
 
+      console.log(`   [7/7] Startup complete!`);
       console.log(`✅ Goblin ${this.goblinId} ready for haunting! 👻`);
       console.log(`   Health check: http://localhost:${this.port}/health`);
+      console.log(`   Startup time: ${Math.floor(process.uptime() * 1000)}ms`);
+
+      // Clear startup timeout
+      clearTimeout(startupTimeout);
 
     } catch (error) {
+      clearTimeout(startupTimeout);
       console.error('❌ Failed to start Goblin:', error);
       console.error('   Stack trace:', error.stack);
       process.exit(1);
