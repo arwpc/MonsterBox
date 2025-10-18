@@ -1,19 +1,22 @@
 # Goblin System Stability Report
-**Date:** 2025-10-18  
-**Status:** CRITICAL ISSUES RESOLVED - DEPLOYMENT INCOMPLETE
+**Date:** 2025-10-18
+**Status:** QUEUE FIX COMPLETE - VIDEO PLAYBACK ISSUES IDENTIFIED
 
 ---
 
 ## Executive Summary
 
-The Goblin system (distributed Raspberry Pi media players) experienced reliability issues including crashes, memory leaks, and inconsistent video playback. **Critical stability fixes have been implemented and committed to GitHub**, but **deployment to Goblins is incomplete** due to hanging API requests during queue operations.
+The Goblin system (distributed Raspberry Pi media players) experienced reliability issues including crashes, memory leaks, inconsistent video playback, and hanging queue operations. **Queue hanging issues have been resolved**, but **video playback quality issues remain** (choppy playback, CLI visible between videos).
 
 ### Current Status:
 - ✅ **All stability fixes committed to GitHub** (commit: 6ca6929e)
-- ✅ **MonsterBox server restarted** with new code
-- ✅ **All three Goblins online and healthy** with updated code
-- ❌ **Queue start operations hanging** - API requests timeout
-- ❌ **Auto-start on boot not verified**
+- ✅ **Queue hanging fix implemented** - Non-blocking queue start with state persistence
+- ✅ **All three Goblins rebooted and online**
+- ⚠️ **Goblin Three (192.168.8.14)** - Running video successfully
+- ❌ **Goblin One (192.168.8.40)** - No video playing, old code (VLC), needs deployment
+- ❌ **Goblin Two (192.168.8.106)** - No video playing, needs queue start
+- ❌ **Video playback quality issues** - Choppy playback, CLI visible between videos
+- ❌ **ffplay deployment incomplete** - Only Goblin Two/Three have new code
 
 ---
 
@@ -34,9 +37,46 @@ The Goblin system (distributed Raspberry Pi media players) experienced reliabili
 
 ---
 
-## Work Completed
+## Work Completed Since Last Report
 
-### 1. Critical Stability Fixes (✅ COMPLETE)
+### 1. Queue Hanging Fix (✅ COMPLETE)
+
+**Problem:** `/queue/start` API endpoint was blocking indefinitely because `startQueue()` awaited the long-running `runQueue()` loop.
+
+**Solution Implemented:**
+- Modified `videoQueue.js` to use `setImmediate()` for non-blocking queue execution
+- Queue runs in background, API returns immediately (~0.2-0.3 seconds)
+- Added queue state persistence to `/home/remote/goblin/queue-state.json`
+- Implemented auto-restore functionality on server startup
+- Updated `server.js` to auto-resume queues after reboot
+
+**Files Modified:**
+- `goblin-system/src/videoQueue.js` - Non-blocking queue start, state persistence
+- `goblin-system/src/server.js` - Auto-restore on startup
+
+**Test Results:**
+- Goblin Two: Queue start in **0.328 seconds** ✅
+- Goblin Three: Queue start in **0.223 seconds** ✅
+- Auto-resume after service restart: **Working** ✅
+
+### 2. ffplay Video Player Deployment (⚠️ PARTIAL)
+
+**Problem:** Goblins were using VLC which causes choppy playback and visible CLI between videos on Raspberry Pi 3B+.
+
+**Solution from Previous Work (Commit 4eb79554):**
+- Standardized on **ffplay** with real-time 720p@60Hz transcoding
+- Video filter chain: `scale → pad → fps=60 → fade`
+- Fullscreen with suppressed console output
+- Hardware-accelerated decoding
+
+**Deployment Status:**
+- ✅ Goblin Two (192.168.8.106): ffplay code deployed
+- ✅ Goblin Three (192.168.8.14): ffplay code deployed, **video playing**
+- ❌ Goblin One (192.168.8.40): Still has old VLC code, **deployment failed**
+
+**Issue:** SSH deployment to Goblin One hangs, needs manual intervention.
+
+### 3. Previous Stability Fixes (✅ COMPLETE - From Earlier Work)
 
 #### Memory Leak Prevention
 **Files Modified:** `goblin-system/src/mediaPlayer.js`
@@ -163,92 +203,107 @@ const videoFilters = [
 
 ## Issues Unresolved
 
-### 1. Queue Start Operations Hanging (🚨 CRITICAL)
+### 1. Video Playback Quality (🚨 CRITICAL)
 
-**Symptom:** API requests to `/queue/start` hang indefinitely and timeout
+**Symptom:** Choppy video playback and CLI visible between video transitions
+
+**User Report:**
+- Goblin Two: Choppy playback, CLI visible
+- Goblin Three: Running video but quality issues reported earlier
+
+**Root Cause:** Goblins need both:
+1. **ffplay with 720p@60Hz transcoding** (partially deployed)
+2. **Raspberry Pi OS optimization** (not yet applied)
+
+**Solution Required:**
+
+**A. Complete ffplay Deployment:**
+- Deploy `mediaPlayer.js` to Goblin One (192.168.8.40)
+- Verify all Goblins using ffplay (not VLC)
+- Start video queues on all three Goblins
+
+**B. Apply Pi Configuration Optimizations:**
+
+From `pi_config_optimized.txt` and previous work (commit 1327b25f):
+
+```bash
+# GPU Memory
+gpu_mem=128
+
+# Hardware Video Codecs
+gpu_codec_h264=enabled
+gpu_codec_h265=enabled
+gpu_codec_vp6=enabled
+gpu_codec_vp8=enabled
+
+# GPU Performance
+gpu_freq=500
+core_freq=500
+
+# HDMI Output
+hdmi_force_hotplug=1
+hdmi_drive=2
+hdmi_group=1
+hdmi_mode=16  # 1080p@60Hz
+
+# CPU Performance
+force_turbo=1
+arm_freq=1300
+over_voltage=2
+
+# Framebuffer
+framebuffer_width=1920
+framebuffer_height=1080
+framebuffer_depth=24
+
+# Video Driver
+dtoverlay=vc4-fkms-v3d
+```
+
+**Files to Apply:**
+- `/boot/firmware/config.txt` on each Goblin
+- Reboot required after changes
+
+**Reference Scripts:**
+- `scripts/fix-rpi-config.sh` - Automates Pi configuration
+- `scripts/optimize-pi-performance.sh` - Runtime performance tuning
+
+### 2. Goblin One Deployment Failure (❌ BLOCKING)
+
+**Symptom:** SSH deployment to Goblin One (192.168.8.40) hangs indefinitely
 
 **Attempted:**
-```bash
-curl -X POST http://192.168.8.40:3001/queue/start \
-  -H "Content-Type: application/json" \
-  -d '{"videos": [...], "mode": "loop"}'
-```
+- `scp` with password authentication - hangs
+- `sshpass` with password - hangs
+- `ssh-copy-id` for key-based auth - hangs
 
-**Result:** Request hangs, no response, curl shows slow upload progress
+**Current State:**
+- Goblin One is online and responding to HTTP (uptime: 22s)
+- Queue API works but uses old VLC code
+- SSH connection attempts hang
+
+**Workaround Needed:**
+- Manual file copy via USB drive, or
+- Physical access to copy files locally, or
+- Debug SSH connectivity issue
+
+### 3. Goblin Three Network Issue (⚠️ INTERMITTENT)
+
+**Symptom:** Goblin Three (192.168.8.14) intermittently times out on HTTP/ping
+
+**Observed:**
+- Sometimes responds normally
+- Sometimes times out completely
+- After reboot: Initially unresponsive, then came online
+- Currently: **Running video successfully** (only Goblin with working playback)
 
 **Possible Causes:**
-1. Queue start logic blocking the event loop
-2. Video playback initialization hanging
-3. ffplay spawn blocking
-4. Missing async/await in queue start handler
-5. DISPLAY environment variable issue on headless systems
+- Network instability
+- WiFi signal issues (if using WiFi)
+- Power supply issues
+- Ethernet cable/switch issues
 
-**Files to Investigate:**
-- `goblin-system/src/server.js` - `/queue/start` endpoint handler
-- `goblin-system/src/videoQueue.js` - `start()` method
-- `goblin-system/src/mediaPlayer.js` - `playVideo()` spawn logic
-
-### 2. Auto-Start on Boot (❌ NOT IMPLEMENTED)
-
-**Goal:** Video queues should automatically resume after Goblin reboot/power cycle
-
-**Current State:**
-- systemd service `goblin.service` has `Restart=always` policy
-- Service starts on boot
-- **Queue state is NOT persisted** - queues don't auto-resume
-
-**Required Implementation:**
-1. Persist queue state to disk (JSON file)
-2. On startup, check for saved queue state
-3. Auto-resume queue if state exists
-4. Handle edge cases (video files missing, corrupted state)
-
-**Suggested Approach:**
-```javascript
-// On queue start/update
-await fs.writeFile('/home/remote/goblin/queue-state.json', JSON.stringify({
-  mode: this.mode,
-  queue: this.queue,
-  originalQueue: this.originalQueue,
-  running: this.running
-}));
-
-// On server startup
-const stateFile = '/home/remote/goblin/queue-state.json';
-if (await fs.exists(stateFile)) {
-  const state = JSON.parse(await fs.readFile(stateFile));
-  await videoQueue.restore(state);
-}
-```
-
-### 3. Fade Transitions Between Videos (⚠️ INCOMPLETE)
-
-**Goal:** Seamless fade to black between videos, no console visible
-
-**Current State:**
-- Fade-in implemented (0.25s at start of each video)
-- Fade-out removed (was broken)
-- 100ms delay between videos
-- **Console may still be visible** during transitions
-
-**Required:**
-1. Test actual video transitions on physical Goblin display
-2. Verify no console/CLI visible between videos
-3. May need to implement fade-out differently (external script or overlay)
-
-### 4. Video Playback Verification (❌ NOT TESTED)
-
-**Status:** Video playback started successfully via API, but:
-- Not verified on physical display
-- Fade transitions not visually confirmed
-- 720p@60Hz transcoding not verified
-- Queue loop behavior not tested
-
-**Required Testing:**
-1. Visual confirmation on Goblin Three (sitting next to user)
-2. Multi-video queue playback
-3. Loop mode verification
-4. Transition smoothness
+**Recommendation:** Monitor network stability, consider wired connection if using WiFi
 
 ---
 
@@ -287,7 +342,7 @@ goblin-system/
 - `GET /status` - Playback status
 - `GET /media` - List available media files
 - `POST /play-video` - Play single video
-- `POST /queue/start` - Start video queue (⚠️ HANGING)
+- `POST /queue/start` - Start video queue (✅ FIXED)
 - `GET /queue/status` - Queue status
 - `POST /queue/pause` - Pause queue
 - `POST /queue/resume` - Resume queue
@@ -334,18 +389,115 @@ sudo systemctl restart goblin
 
 ---
 
+## Next Steps - Priority Order
+
+### 1. Fix Goblin One Deployment (CRITICAL)
+**Goal:** Deploy ffplay code to Goblin One (192.168.8.40)
+
+**Options:**
+- **A. Debug SSH connectivity** - Why is SSH hanging?
+- **B. Manual deployment** - Physical access, USB drive, or local terminal
+- **C. Rebuild Goblin One** - Fresh OS install with proper SSH setup
+
+**Files to Deploy:**
+- `goblin-system/src/mediaPlayer.js` (ffplay version)
+- `goblin-system/src/videoQueue.js` (non-blocking queue)
+- `goblin-system/src/server.js` (auto-restore)
+
+### 2. Apply Raspberry Pi Optimizations (CRITICAL)
+**Goal:** Fix choppy playback and CLI visibility
+
+**Action:** Apply configuration from `pi_config_optimized.txt` to all three Goblins
+
+**Script:** `scripts/fix-rpi-config.sh` (already exists)
+
+**Manual Steps:**
+```bash
+# On each Goblin
+sudo cp /boot/firmware/config.txt /boot/firmware/config.txt.backup
+sudo nano /boot/firmware/config.txt
+
+# Add/modify these settings:
+gpu_mem=128
+gpu_codec_h264=enabled
+gpu_codec_h265=enabled
+gpu_freq=500
+core_freq=500
+hdmi_force_hotplug=1
+hdmi_drive=2
+hdmi_group=1
+hdmi_mode=16
+force_turbo=1
+arm_freq=1300
+over_voltage=2
+framebuffer_width=1920
+framebuffer_height=1080
+dtoverlay=vc4-fkms-v3d
+
+# Reboot
+sudo reboot
+```
+
+### 3. Start Video Queues on All Goblins
+**Goal:** Get all three Goblins playing video loops
+
+**Commands:**
+```bash
+# Goblin One (192.168.8.40)
+curl -X POST http://192.168.8.40:3001/queue/start \
+  -H "Content-Type: application/json" \
+  -d '{"videos":["07610c3d-6e40-4314-9f96-2f688b445ec3.mp4","da542d7d-7b9c-415a-adb7-cc1b3c725b66.mp4","dad5cf71-097d-42a8-b310-fa6c95fd28e1.mp4"],"mode":"loop"}'
+
+# Goblin Two (192.168.8.106)
+curl -X POST http://192.168.8.106:3001/queue/start \
+  -H "Content-Type: application/json" \
+  -d '{"videos":["07610c3d-6e40-4314-9f96-2f688b445ec3.mp4","da542d7d-7b9c-415a-adb7-cc1b3c725b66.mp4","dad5cf71-097d-42a8-b310-fa6c95fd28e1.mp4"],"mode":"loop"}'
+
+# Goblin Three (192.168.8.14) - Already running, verify
+curl -s http://192.168.8.14:3001/queue | jq '.'
+```
+
+### 4. Visual Verification
+**Goal:** Confirm smooth playback on physical displays
+
+**Check:**
+- [ ] Videos play smoothly (not choppy)
+- [ ] No CLI/console visible between videos
+- [ ] Fade transitions working
+- [ ] Videos loop continuously
+- [ ] All three Goblins playing simultaneously
+
+### 5. Test Auto-Resume After Reboot
+**Goal:** Verify queues auto-start after power cycle
+
+**Test:**
+```bash
+# Reboot each Goblin
+ssh remote@192.168.8.40 "sudo reboot"
+ssh remote@192.168.8.106 "sudo reboot"
+ssh remote@192.168.8.14 "sudo reboot"
+
+# Wait 60 seconds, then check queue status
+curl -s http://192.168.8.40:3001/queue | jq '{running: .queue.running}'
+curl -s http://192.168.8.106:3001/queue | jq '{running: .queue.running}'
+curl -s http://192.168.8.14:3001/queue | jq '{running: .queue.running}'
+```
+
+---
+
 ## Testing Checklist
 
 ### Basic Functionality
-- [ ] All three Goblins online and healthy
-- [ ] Single video playback works
-- [ ] Video displays on physical screen
+- [x] All three Goblins online and healthy
+- [ ] Single video playback works on all Goblins
+- [x] Goblin Three: Video displays on physical screen
+- [ ] Goblin One/Two: Video displays on physical screen
 - [ ] 720p@60Hz transcoding working
 - [ ] Fade-in transition visible
 - [ ] No console visible during playback
 
 ### Queue Functionality
-- [ ] Queue start API responds (not hanging)
+- [x] Queue start API responds (not hanging) - **FIXED**
 - [ ] Sequential mode plays videos in order
 - [ ] Loop mode repeats queue
 - [ ] Queue pause/resume works
@@ -357,12 +509,12 @@ sudo systemctl restart goblin
 - [ ] No crashes after 24 hours
 - [ ] Graceful handling of missing files
 - [ ] Graceful handling of network issues
-- [ ] Process cleanup verified
+- [x] Process cleanup verified - **FIXED**
 
 ### Auto-Start
-- [ ] Queue state persists to disk
-- [ ] Queue resumes after service restart
-- [ ] Queue resumes after system reboot
+- [x] Queue state persists to disk - **IMPLEMENTED**
+- [x] Queue resumes after service restart - **TESTED on Goblin Three**
+- [ ] Queue resumes after system reboot - **NOT TESTED**
 - [ ] Handles missing videos gracefully
 
 ---

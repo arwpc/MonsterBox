@@ -208,6 +208,19 @@ class GoblinServer {
       // Clear startup timeout
       clearTimeout(startupTimeout);
 
+      // Auto-restore queue from saved state (if exists)
+      console.log(`   [BONUS] Checking for saved queue state...`);
+      setImmediate(async () => {
+        try {
+          const restored = await this.videoQueue.restoreFromState();
+          if (restored) {
+            console.log('✅ Queue auto-started from saved state');
+          }
+        } catch (error) {
+          console.error('⚠️  Failed to restore queue state:', error.message);
+        }
+      });
+
     } catch (error) {
       clearTimeout(startupTimeout);
       console.error('❌ Failed to start Goblin:', error);
