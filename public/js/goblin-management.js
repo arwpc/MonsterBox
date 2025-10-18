@@ -1020,9 +1020,10 @@ Success Rate: ${stats.successRate}%`);
         const modal = new bootstrap.Modal(document.getElementById('videoQueueModal'));
         modal.show();
 
-        // Set up auto-refresh for playback status while modal is open
-        this.playbackStatusInterval = setInterval(() => {
-            this.updatePlaybackStatus();
+        // Set up auto-refresh for playback status and queue while modal is open
+        this.playbackStatusInterval = setInterval(async () => {
+            await this.updatePlaybackStatus();
+            await this.loadVideoQueue(this.currentQueueGoblin);
         }, 2000); // Update every 2 seconds
 
         // Clear interval when modal is closed
@@ -1074,8 +1075,27 @@ Success Rate: ${stats.successRate}%`);
         if (!this.currentQueueGoblin) return;
 
         try {
-            const response = await fetch(`${this.currentQueueGoblin.endpoint}/playback-status`);
-            const data = await response.json();
+            // Try the new endpoint first, fall back to /status
+            let response = await fetch(`${this.currentQueueGoblin.endpoint}/playback-status`);
+            let data;
+
+            if (!response.ok) {
+                // Fall back to /status endpoint
+                response = await fetch(`${this.currentQueueGoblin.endpoint}/status`);
+                data = await response.json();
+
+                // Transform /status response to match expected format
+                if (data.success) {
+                    data.performance = {
+                        cpu: { usage: data.status?.system?.loadAvg?.[0] * 100 / 4 || 0 },
+                        memory: { percent: data.status?.system?.memoryUsage?.percent || 0 },
+                        temperature: { current: data.status?.system?.temperature || 0 },
+                        uptime: data.status?.system?.uptime || 0
+                    };
+                }
+            } else {
+                data = await response.json();
+            }
 
             if (data.success) {
                 this.renderPlaybackStatus(data);
@@ -1087,21 +1107,33 @@ Success Rate: ${stats.successRate}%`);
 
     renderPlaybackStatus(data) {
         const card = document.getElementById('currentlyPlayingCard');
+        const header = document.getElementById('currentlyPlayingHeader');
         const content = document.getElementById('currentlyPlayingContent');
+
+        // Always show the card
+        card.style.display = 'block';
 
         // Check if anything is playing
         const isPlaying = data.playback?.video?.playing || data.queue?.currentVideo;
+        const currentFile = data.queue?.currentVideo || data.playback?.video?.file || null;
+        const queueMode = data.queue?.mode || 'sequential';
+        const queueRunning = data.queue?.running || false;
 
-        if (!isPlaying) {
-            card.style.display = 'none';
+        // If nothing is playing, show idle state
+        if (!isPlaying && !currentFile) {
+            header.className = 'card-header bg-secondary text-white';
+            content.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="bi bi-pause-circle" style="font-size: 3rem;"></i>
+                    <p class="mb-0 mt-2">No video playing</p>
+                    <small>Click the Play button on any video to start playback</small>
+                </div>
+            `;
             return;
         }
 
-        card.style.display = 'block';
-
-        const currentFile = data.queue?.currentVideo || data.playback?.video?.file || 'Unknown';
-        const queueMode = data.queue?.mode || 'sequential';
-        const queueRunning = data.queue?.running || false;
+        // Set header color based on playback state
+        header.className = queueRunning ? 'card-header bg-success text-white' : 'card-header bg-warning text-dark';
 
         // Performance metrics
         const cpu = data.performance?.cpu?.usage || 0;

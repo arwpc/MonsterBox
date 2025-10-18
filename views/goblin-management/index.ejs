@@ -773,13 +773,18 @@
                             <!-- Available Videos -->
                             <div class="col-md-6">
                                 <!-- Currently Playing -->
-                                <div class="card mb-3" id="currentlyPlayingCard" style="display: none;">
-                                    <div class="card-header bg-primary text-white">
-                                        <h6 class="mb-0"><i class="bi bi-play-circle-fill"></i> Currently Playing</h6>
+                                <div class="card mb-3" id="currentlyPlayingCard">
+                                    <div class="card-header text-white" id="currentlyPlayingHeader">
+                                        <h6 class="mb-0"><i class="bi bi-play-circle-fill"></i> Playback Status</h6>
                                     </div>
                                     <div class="card-body">
                                         <div id="currentlyPlayingContent">
-                                            <!-- Will be populated by JavaScript -->
+                                            <div class="text-center text-muted py-3">
+                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="mb-0 mt-2">Loading status...</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
