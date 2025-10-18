@@ -365,21 +365,21 @@
                         <div>
                             <div class="btn-group me-2" role="group">
                                 <button class="btn btn-success" data-bs-toggle="modal"
-                                    data-bs-target="#registerGoblinModal">
+                                    data-bs-target="#registerGoblinModal" title="Register a new Goblin to the system">
                                     <i class="bi bi-plus-circle"></i> Register Goblin
                                 </button>
-                                <button class="btn btn-outline-info" onclick="goblinManager.refreshAllStatus()">
+                                <button class="btn btn-outline-info" onclick="goblinManager.refreshAllStatus()" title="Refresh status of all registered Goblins">
                                     <i class="bi bi-arrow-clockwise"></i> Refresh All
                                 </button>
-                                <button class="btn btn-outline-warning" onclick="goblinManager.broadcastCommand()">
+                                <button class="btn btn-outline-warning" onclick="goblinManager.broadcastCommand()" title="Send a command to multiple Goblins at once">
                                     <i class="bi bi-broadcast"></i> Broadcast
                                 </button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button class="btn btn-outline-success" onclick="goblinManager.unlockAll()">
+                                <button class="btn btn-outline-success" onclick="goblinManager.unlockAll()" title="Unlock all locked Goblins">
                                     <i class="bi bi-unlock"></i> Unlock All
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="goblinManager.stopAllPlayback()">
+                                <button class="btn btn-outline-danger" onclick="goblinManager.stopAllPlayback()" title="Stop media playback on all Goblins">
                                     <i class="bi bi-stop-fill"></i> Stop All
                                 </button>
                             </div>
@@ -664,9 +664,9 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close without registering">Cancel</button>
                         <button type="button" class="btn btn-success" id="registerBtn"
-                            onclick="goblinManager.registerGoblin()">
+                            onclick="goblinManager.registerGoblin()" title="Register this Goblin and optionally deploy via Facehugger">
                             <i class="bi bi-plus-circle"></i> Register Goblin
                         </button>
                     </div>
@@ -690,8 +690,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" id="editGoblinBtn">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close details view">Close</button>
+                        <button type="button" class="btn btn-primary" id="editGoblinBtn" title="Edit Goblin configuration and settings">
                             <i class="bi bi-pencil"></i> Edit Settings
                         </button>
                     </div>
@@ -716,7 +716,7 @@
                                 <div class="card mb-3">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">Queue Status</h6>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.refreshQueue()">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.refreshQueue()" title="Refresh queue status from Goblin">
                                             <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                     </div>
@@ -731,27 +731,27 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="d-grid gap-2">
-                                            <button class="btn btn-success" onclick="goblinManager.startQueue('sequential')">
+                                            <button class="btn btn-success" onclick="goblinManager.startQueue('sequential')" title="Play all videos in queue once, then stop">
                                                 <i class="bi bi-play-fill"></i> Start Sequential
                                             </button>
-                                            <button class="btn btn-success" onclick="goblinManager.startQueue('loop')">
+                                            <button class="btn btn-success" onclick="goblinManager.startQueue('loop')" title="Play all videos in queue continuously in a loop">
                                                 <i class="bi bi-arrow-repeat"></i> Start Loop
                                             </button>
                                             <div class="btn-group">
-                                                <button class="btn btn-warning" onclick="goblinManager.pauseQueue()">
+                                                <button class="btn btn-warning" onclick="goblinManager.pauseQueue()" title="Pause queue playback (can be resumed)">
                                                     <i class="bi bi-pause-fill"></i> Pause
                                                 </button>
-                                                <button class="btn btn-info" onclick="goblinManager.resumeQueue()">
+                                                <button class="btn btn-info" onclick="goblinManager.resumeQueue()" title="Resume paused queue playback">
                                                     <i class="bi bi-play-fill"></i> Resume
                                                 </button>
                                             </div>
-                                            <button class="btn btn-outline-primary" onclick="goblinManager.skipVideo()">
+                                            <button class="btn btn-outline-primary" onclick="goblinManager.skipVideo()" title="Skip to the next video in queue">
                                                 <i class="bi bi-skip-forward-fill"></i> Skip
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="goblinManager.stopQueue()">
+                                            <button class="btn btn-outline-danger" onclick="goblinManager.stopQueue()" title="Stop queue playback completely">
                                                 <i class="bi bi-stop-fill"></i> Stop
                                             </button>
-                                            <button class="btn btn-outline-secondary" onclick="goblinManager.clearQueue()">
+                                            <button class="btn btn-outline-secondary" onclick="goblinManager.clearQueue()" title="Remove all videos from the queue">
                                                 <i class="bi bi-trash"></i> Clear Queue
                                             </button>
                                         </div>
@@ -786,7 +786,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close video queue manager">Close</button>
                     </div>
                 </div>
             </div>
@@ -843,8 +843,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="goblinManager.executeBroadcast()">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel broadcast">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="goblinManager.executeBroadcast()" title="Send this command to selected Goblins">
                             <i class="bi bi-broadcast"></i> Send Command
                         </button>
                     </div>

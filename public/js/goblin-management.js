@@ -193,39 +193,39 @@ class GoblinManager {
                         
                         <div class="card-footer py-2">
                             <div class="goblin-controls d-flex flex-wrap justify-content-center">
-                                <button class="btn btn-sm btn-outline-info" onclick="goblinManager.showGoblinDetails('${goblin.id}')">
+                                <button class="btn btn-sm btn-outline-info" onclick="goblinManager.showGoblinDetails('${goblin.id}')" title="View detailed information about this Goblin">
                                     <i class="bi bi-info-circle"></i>
                                 </button>
-                                
+
                                 ${goblin.status === 'online' ? `
-                                    <button class="btn btn-sm btn-outline-success" onclick="goblinManager.testConnection('${goblin.id}')">
+                                    <button class="btn btn-sm btn-outline-success" onclick="goblinManager.testConnection('${goblin.id}')" title="Test network connection to this Goblin">
                                         <i class="bi bi-wifi"></i>
                                     </button>
-                                    
+
                                     ${goblin.locked ? `
-                                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.unlockGoblin('${goblin.id}')">
+                                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.unlockGoblin('${goblin.id}')" title="Unlock this Goblin for other users">
                                             <i class="bi bi-unlock"></i>
                                         </button>
                                     ` : `
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')" title="Lock this Goblin for exclusive control">
                                             <i class="bi bi-lock"></i>
                                         </button>
                                     `}
-                                    
-                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.deployToGoblin('${goblin.id}')">
+
+                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.deployToGoblin('${goblin.id}')" title="Deploy latest code to this Goblin via Facehugger">
                                         <i class="bi bi-broadcast"></i>
                                     </button>
-                                    
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')">
+
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')" title="Stop all media playback on this Goblin">
                                         <i class="bi bi-stop-fill"></i>
                                     </button>
                                 ` : `
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.testConnection('${goblin.id}')">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.testConnection('${goblin.id}')" title="Attempt to reconnect to this Goblin">
                                         <i class="bi bi-arrow-clockwise"></i> Reconnect
                                     </button>
                                 `}
-                                
-                                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')">
+
+                                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')" title="Remove this Goblin from the system">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -1114,7 +1114,7 @@ Success Rate: ${stats.successRate}%`);
                     <span class="badge bg-secondary me-2">${index + 1}</span>
                     <span>${item.filename}</span>
                 </div>
-                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue(${index}, ${isPriority})">
+                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue(${index}, ${isPriority})" title="Remove this video from the queue">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -1133,10 +1133,10 @@ Success Rate: ${stats.successRate}%`);
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <span>${video}</span>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${video}')">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="goblinManager.addToQueue('${video}')" title="Add this video to the end of the queue">
                         <i class="bi bi-plus"></i> Add
                     </button>
-                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${video}', true)">
+                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${video}', true)" title="Add this video to priority queue (plays next)">
                         <i class="bi bi-lightning"></i> Priority
                     </button>
                 </div>
