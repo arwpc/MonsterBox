@@ -17,6 +17,7 @@ const BeaconService = require('./beacon');
 const MediaPlayer = require('./mediaPlayer');
 const StatusMonitor = require('./statusMonitor');
 const FileManager = require('./fileManager');
+const VideoQueue = require('./videoQueue');
 
 class GoblinServer {
   constructor() {
@@ -32,6 +33,7 @@ class GoblinServer {
     this.mediaPlayer = new MediaPlayer(this);
     this.statusMonitor = new StatusMonitor(this);
     this.fileManager = new FileManager(this);
+    this.videoQueue = new VideoQueue(this.mediaPlayer);
 
     // Bind methods
     this.handleMonsterBoxConnection = this.handleMonsterBoxConnection.bind(this);
@@ -184,8 +186,116 @@ class GoblinServer {
         success: true,
         status: this.statusMonitor.getStatus(),
         hardware: this.statusMonitor.getHardwareInfo(),
-        playback: this.mediaPlayer.getPlaybackStatus()
+        playback: this.mediaPlayer.getPlaybackStatus(),
+        queue: this.videoQueue.getStatus()
       });
+    });
+
+    // Video Queue endpoints
+    this.app.get('/queue', (req, res) => {
+      res.json({
+        success: true,
+        queue: this.videoQueue.getStatus()
+      });
+    });
+
+    this.app.post('/queue/start', async (req, res) => {
+      try {
+        const { videos, mode = 'sequential' } = req.body;
+
+        if (!videos || !Array.isArray(videos) || videos.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'videos array is required'
+          });
+        }
+
+        const status = await this.videoQueue.startQueue(videos, mode);
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/enqueue', (req, res) => {
+      try {
+        const { filename, options = {} } = req.body;
+
+        if (!filename) {
+          return res.status(400).json({
+            success: false,
+            error: 'filename is required'
+          });
+        }
+
+        const status = this.videoQueue.enqueue(filename, options);
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/enqueue-priority', (req, res) => {
+      try {
+        const { filename, options = {} } = req.body;
+
+        if (!filename) {
+          return res.status(400).json({
+            success: false,
+            error: 'filename is required'
+          });
+        }
+
+        const status = this.videoQueue.enqueuePriority(filename, options);
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/pause', (req, res) => {
+      try {
+        const status = this.videoQueue.pause();
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/resume', (req, res) => {
+      try {
+        const status = this.videoQueue.resume();
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/skip', (req, res) => {
+      try {
+        const status = this.videoQueue.skip();
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/stop', async (req, res) => {
+      try {
+        const status = await this.videoQueue.stop();
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
+    });
+
+    this.app.post('/queue/clear', (req, res) => {
+      try {
+        const status = this.videoQueue.clear();
+        res.json({ success: true, queue: status });
+      } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+      }
     });
   }
 
