@@ -309,11 +309,21 @@ class GoblinServer {
     });
 
     // Media file management
-    this.app.get('/media', (req, res) => {
-      res.json({
-        success: true,
-        media: this.fileManager.getMediaList()
-      });
+    this.app.get('/media', async (req, res) => {
+      try {
+        const mediaList = await this.fileManager.getMediaList();
+        res.json({
+          success: true,
+          media: mediaList
+        });
+      } catch (error) {
+        console.error('❌ Error getting media list:', error);
+        res.status(500).json({
+          success: false,
+          error: error.message,
+          media: { video: [], audio: [] }
+        });
+      }
     });
 
     this.app.delete('/media/:filename', async (req, res) => {
