@@ -1256,18 +1256,13 @@ Success Rate: ${stats.successRate}%`);
                 resolutionBadge = `<span class="badge ${resClass} me-1">${resolution}${fps ? '@' + fps + 'fps' : ''}</span>`;
             }
 
-            // Create a simple placeholder thumbnail (no server request needed for now)
-            const thumbnailPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='60'%3E%3Crect fill='%231a1a1a' width='80' height='60'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23666' font-size='24'%3E🎬%3C/text%3E%3C/svg%3E`;
-
             return `
                 <div class="list-group-item p-2">
                     <div class="d-flex align-items-start">
                         <!-- Thumbnail -->
-                        <div class="flex-shrink-0 me-3">
-                            <img src="${thumbnailPlaceholder}"
-                                 class="rounded"
-                                 style="width: 80px; height: 60px; object-fit: cover; background: #1a1a1a;"
-                                 alt="${filename}">
+                        <div class="flex-shrink-0 me-3 d-flex align-items-center justify-content-center rounded"
+                             style="width: 120px; height: 90px; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #444;">
+                            <i class="bi bi-film" style="font-size: 2.5rem; color: #666;"></i>
                         </div>
 
                         <!-- Video Info -->
