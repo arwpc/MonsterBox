@@ -5,11 +5,12 @@ A lightweight, native Node.js media player for distributed Halloween displays. G
 ## 🎯 Features
 
 - **Auto-Discovery**: Automatically finds and connects to MonsterBox on port 3000
-- **Media Playback**: 4K video + concurrent audio streams using VLC
+- **Media Playback**: 1080p video + concurrent audio streams using MPV with DRM output
 - **Remote Control**: Full API for media upload and playback control
 - **Health Monitoring**: System status, hardware info, and performance metrics
 - **Native Deployment**: Low-overhead Node.js application
 - **Hardware Optimized**: Designed for Raspberry Pi 3B+ and Pi 4
+- **Headless Operation**: Works reliably as systemd service without X/Wayland
 
 ## 🏗️ Architecture
 
@@ -17,13 +18,13 @@ A lightweight, native Node.js media player for distributed Halloween displays. G
 ┌─────────────────────────────────────────┐
 │              Goblin System              │
 ├─────────────────────────────────────────┤
-│  • Media Player (VLC-based)            │
+│  • Media Player (MPV with DRM output)  │
 │  • Network Beacon (Auto-discovery)     │
 │  • Status Monitor (Hardware/Performance)│
 │  • File Manager (Media storage)        │
 │  • API Server (Remote control)         │
 ├─────────────────────────────────────────┤
-│           Docker Runtime                │
+│         Systemd Service                 │
 ├─────────────────────────────────────────┤
 │          Raspberry Pi OS                │
 └─────────────────────────────────────────┘
@@ -190,8 +191,11 @@ vcgencmd get_mem gpu
 # Check HDMI status
 tvservice -s
 
-# Test VLC installation
-vlc --version
+# Test MPV installation
+mpv --version
+
+# Test video playback directly
+mpv --vo=drm --loop /path/to/test.mp4
 ```
 
 ### Network Discovery Issues

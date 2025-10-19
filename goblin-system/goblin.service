@@ -15,14 +15,22 @@ Environment="GOBLIN_PORT=3001"
 Environment="NODE_ENV=production"
 Environment="MONSTERBOX_URL=http://192.168.8.140:3000"
 
-# Correct path to server.js
+# Pre-start cleanup and display claim (ignore failures)
+ExecStartPre=-/usr/bin/pkill -f ffplay
+ExecStartPre=-/usr/bin/pkill -f mpv
+ExecStartPre=-/usr/bin/pkill -f vlc
+ExecStartPre=-/bin/bash -lc 'lsof -t -i :3001 | xargs -r kill -9'
+ExecStartPre=-/usr/bin/test -x /usr/local/bin/claim_display.sh && /usr/local/bin/claim_display.sh
+
+# Start server
 ExecStart=/usr/bin/node /home/remote/goblin/src/server.js
 
 # Restart policy - production hardened
 Restart=always
-RestartSec=10
+RestartSec=5
 TimeoutStartSec=30
 TimeoutStopSec=15
+KillMode=mixed
 
 # Resource limits
 LimitNOFILE=65536

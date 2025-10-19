@@ -1,11 +1,14 @@
 /**
  * Media Player Service - OPTIMIZED FOR RASPBERRY PI 3B+
- * Handles video and audio playback using mpv with hardware acceleration
- * 
- * TARGET: Smooth 720p@60fps playback on Pi3 with minimal CPU usage
- * PLAYER: mpv (primary), ffmpeg (fallback), omxplayer (legacy fallback)
- * 
- * Based on GOBLIN GOLD system (commit 21713404) which had proven reliability
+ * Handles video and audio playback using MPV with hardware acceleration
+ *
+ * TARGET: Smooth 1080p@30fps output on Pi3 with hardware acceleration
+ * RESOLUTION: Supports all common formats (MP4, AVI, MKV, MOV)
+ * CODECS: H.264, MPEG4 (hardware accelerated via DRM)
+ * PLAYER: MPV (primary) - best for headless DRM output, VLC (fallback)
+ *
+ * MPV uses DRM (Direct Rendering Manager) for Pi3 hardware acceleration
+ * Works reliably as a systemd service without X/Wayland session requirements
  */
 
 const { spawn, exec } = require('child_process');
@@ -49,13 +52,14 @@ class MediaPlayer {
    */
   async checkDependencies() {
     return new Promise((resolve, reject) => {
-      // Prefer mpv for best hardware acceleration on Pi3
-      // Then ffmpeg with h264_v4l2m2m, then omxplayer (legacy)
-      const searchOrder = ['mpv', 'ffmpeg', 'omxplayer', 'ffplay', 'vlc'];
+      // MPV is the best solution for headless DRM output on Pi3
+      // VLC has DRM xlease issues when running as a service
+      // MPV supports H.264, MPEG4, and all common formats (MP4, AVI, MKV, MOV)
+      const searchOrder = ['mpv', 'cvlc', 'vlc'];
 
       const tryNext = (index) => {
         if (index >= searchOrder.length) {
-          reject(new Error('No supported video player found (checked mpv, ffmpeg, omxplayer, ffplay, vlc)'));
+          reject(new Error('No video player found - please install: sudo apt-get install mpv'));
           return;
         }
 
@@ -63,22 +67,10 @@ class MediaPlayer {
         exec(`which ${candidate}`, (err) => {
           if (!err) {
             this.videoPlayer = candidate;
-            switch (candidate) {
-              case 'mpv':
-                console.log('✅ mpv found - using hardware-accelerated playback (BEST for Pi3)');
-                break;
-              case 'ffmpeg':
-                console.log('✅ ffmpeg found - using h264_v4l2m2m hardware decoder');
-                break;
-              case 'omxplayer':
-                console.log('✅ omxplayer found - using legacy Pi hardware decoder');
-                break;
-              case 'ffplay':
-                console.log('⚠️  ffplay found - software decoding (may be choppy)');
-                break;
-              case 'vlc':
-                console.log('⚠️  VLC found - software decoding (may be choppy)');
-                break;
+            if (candidate === 'mpv') {
+              console.log('✅ MPV found - using DRM output with hardware acceleration (supports H.264, MPEG4, MP4, AVI, MKV, MOV)');
+            } else {
+              console.log('✅ VLC found - using MMAL hardware acceleration (supports H.264, MPEG4, MP4, AVI, MKV, MOV)');
             }
             resolve();
           } else {
@@ -127,6 +119,8 @@ class MediaPlayer {
       // Stop any existing video
       if (this.playbackStatus.video.playing) {
         await this.stopVideo();
+        // Wait for process to fully terminate
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       const videoPath = path.join(__dirname, '..', 'media', 'video', filename);
@@ -143,123 +137,108 @@ class MediaPlayer {
       const selectedPlayer = options.player || this.videoPlayer;
 
       if (selectedPlayer === 'mpv') {
-        // mpv with hardware acceleration - BEST for Pi 3B+
-        // Uses DRM/KMS for direct rendering (no X11 overhead)
-        // Hardware H.264 decoding via V4L2 M2M
+        // MPV with DRM output - Best solution for headless Pi 3B+
+        // Supports H.264, MPEG4 hardware decoding via DRM
+        // Supports all common formats: MP4, AVI, MKV, MOV
         const mpvArgs = [
-          '--fullscreen',                 // Fullscreen mode
-          '--no-osc',                     // No on-screen controller
-          '--no-osd-bar',                 // No OSD bar
-          '--no-terminal',                // No terminal output
-          '--really-quiet',               // Suppress all console output
-          '--hwdec=auto',                 // Hardware decoding (V4L2 M2M on Pi3)
-          '--vo=gpu',                     // GPU video output
-          '--gpu-context=drm',            // Direct rendering via DRM (no X11)
-          '--drm-connector=HDMI-A-1',     // HDMI output
-          '--drm-mode=1280x720@60',       // 720p @ 60fps (optimal for Pi3)
-          '--vf=scale=1280:720',          // Scale to 720p
-          '--video-sync=display-resample', // Smooth playback
-          '--interpolation',              // Frame interpolation
-          '--tscale=oversample',          // Temporal scaling
-          '--cache=yes',                  // Enable cache
-          '--cache-secs=10',              // 10 second cache
-          '--audio-device=alsa',          // ALSA audio
-          '--audio-channels=stereo'       // Stereo output
+          '--vo=drm',                     // DRM video output (works without X/Wayland)
+          '--really-quiet',               // Minimal output
+          '--no-terminal',                // No terminal control
+          '--no-input-default-bindings',  // Disable keyboard controls
+          '--hwdec=auto',                 // Hardware decoding
+          '--audio-device=alsa',          // Use ALSA for audio
         ];
 
         // Loop option
         if (options.loop !== false) {
-          mpvArgs.push('--loop=inf');
+          mpvArgs.push('--loop');
         }
 
-        // Volume control
+        // Volume control (0-100 in MPV)
         if (options.volume != null) {
-          mpvArgs.push(`--volume=${Math.max(0, Math.min(100, Math.round(options.volume * 100)))}`);
+          const mpvVolume = Math.max(0, Math.min(100, Math.round(options.volume * 100)));
+          mpvArgs.push('--volume=' + mpvVolume.toString());
         }
 
         mpvArgs.push(videoPath);
 
-        console.log('🎬 Starting mpv with hardware acceleration (720p@60fps, DRM/KMS)');
+        console.log('🎬 Starting MPV with DRM output and hardware acceleration');
 
-        playerProcess = spawn('mpv', mpvArgs, {
+        playerProcess = spawn(selectedPlayer, mpvArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore']
+          stdio: ['ignore', 'pipe', 'pipe']  // Capture stderr to see errors
         });
         playerName = 'mpv';
 
-      } else if (selectedPlayer === 'ffmpeg') {
-        // ffmpeg with hardware H.264 decoder
-        // Uses h264_v4l2m2m for GPU decoding
-        const ffmpegArgs = [
-          '-loglevel', 'quiet',
-          '-c:v', 'h264_v4l2m2m',         // Hardware H.264 decoder
-          '-stream_loop', (options.loop !== false) ? '-1' : '0',
-          '-i', videoPath,
-          '-vf', 'scale=1280:720',        // Scale to 720p
-          '-pix_fmt', 'nv12',             // NV12 format (hardware friendly)
-          '-f', 'fbdev',                  // Framebuffer output
-          '/dev/fb0'                      // HDMI output
+        // Log MPV errors for debugging (filter out common warnings)
+        if (playerProcess.stderr) {
+          playerProcess.stderr.on('data', (data) => {
+            const errorMsg = data.toString().trim();
+            // Filter out expected warnings about VT control
+            if (errorMsg && !errorMsg.includes('VT control') && !errorMsg.includes('VT switcher')) {
+              console.error('MPV stderr:', errorMsg);
+            }
+          });
+        }
+
+      } else if (selectedPlayer === 'cvlc' || selectedPlayer === 'vlc') {
+        // VLC with MMAL hardware acceleration - Fallback for Pi 3B+
+        // Note: VLC has DRM xlease issues when running as a service
+        // Supports H.264, MPEG4 hardware decoding
+        // Supports all common formats: MP4, AVI, MKV, MOV
+        const vlcArgs = [
+          '-I', 'dummy',                  // No interface (headless)
+          '--fullscreen',                 // Fullscreen mode
+          '--no-video-title-show',        // Don't show filename on screen
+          '--no-osd',                     // No on-screen display
+          '--aout=alsa',                  // Use ALSA for audio (not PulseAudio)
+          '--alsa-audio-device=default',  // Default ALSA device
+          '--play-and-exit'               // Exit after playback (for non-loop)
         ];
 
-        console.log('🎬 Starting ffmpeg with h264_v4l2m2m hardware decoder (720p)');
-
-        playerProcess = spawn('ffmpeg', ffmpegArgs, {
-          detached: false,
-          stdio: ['ignore', 'ignore', 'ignore']
-        });
-        playerName = 'ffmpeg';
-
-      } else if (selectedPlayer === 'omxplayer') {
-        // omxplayer - legacy Pi hardware player
-        const omxArgs = [
-          '--no-osd',
-          '--display', 'hdmi',
-          '--blank'
-        ];
-
+        // Loop option
         if (options.loop !== false) {
-          omxArgs.push('--loop');
+          vlcArgs.push('--loop');
         }
 
+        // Volume control (0-256 in VLC, we use 0-100)
         if (options.volume != null) {
-          omxArgs.push('--vol', String(Math.round(options.volume * 3000 - 6000)));
+          const vlcVolume = Math.max(0, Math.min(256, Math.round(options.volume * 256)));
+          vlcArgs.push('--volume', vlcVolume.toString());
         }
 
-        omxArgs.push(videoPath);
+        // Let VLC auto-select the best video output. For Pi3 this is typically MMAL/FB/DRM depending on build.
+        // We previously forced '--vout drm' which caused failures on some boots (DRM lease/xlease).
+        // Removing the explicit vout improves reliability across reboots.
+        // If needed, a specific vout can be supplied via options.vout ('drm' or 'fb').
+        if (options.vout === 'drm') {
+          vlcArgs.push('--vout', 'drm');
+        } else if (options.vout === 'fb') {
+          vlcArgs.push('--vout', 'fb', '--fbdev', '/dev/fb0');
+        }
 
-        console.log('🎬 Starting omxplayer (legacy Pi hardware player)');
+        vlcArgs.push(videoPath);
 
-        playerProcess = spawn('omxplayer', omxArgs, {
+        console.log('🎬 Starting VLC (auto vout unless overridden) with hardware acceleration');
+
+        playerProcess = spawn(selectedPlayer, vlcArgs, {
           detached: false,
-          stdio: ['ignore', 'ignore', 'ignore']
+          stdio: ['ignore', 'pipe', 'pipe']  // Capture stderr to see errors
         });
-        playerName = 'omxplayer';
+        playerName = 'vlc';
+
+        // Log VLC errors for debugging
+        if (playerProcess.stderr) {
+          playerProcess.stderr.on('data', (data) => {
+            const errorMsg = data.toString().trim();
+            if (errorMsg && !errorMsg.includes('dummy interface') && !errorMsg.includes('dbus')) {
+              console.error('VLC stderr:', errorMsg);
+            }
+          });
+        }
 
       } else {
-        // Fallback to ffplay or vlc (software decoding - may be choppy)
-        console.warn('⚠️  Using software player - may be choppy on Pi3');
-
-        const ffplayArgs = [
-          '-fs',
-          '-autoexit',
-          '-loglevel', 'quiet',
-          '-hide_banner',
-          '-noborder',
-          '-vf', 'scale=1280:720,fps=60'
-        ];
-
-        if (options.loop) {
-          ffplayArgs.push('-loop', '0');
-        }
-
-        ffplayArgs.push(videoPath);
-
-        playerProcess = spawn(selectedPlayer, ffplayArgs, {
-          detached: false,
-          stdio: ['ignore', 'ignore', 'ignore'],
-          env: { ...process.env, DISPLAY: process.env.DISPLAY || ':0' }
-        });
-        playerName = selectedPlayer;
+        throw new Error(`Unsupported video player: ${selectedPlayer}. MPV or VLC is required.`);
       }
 
       // Track process for cleanup

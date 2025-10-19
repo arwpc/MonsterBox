@@ -234,8 +234,19 @@ class GoblinServer {
    */
   setupExpress() {
     this.app.use(cors());
+    // Parse JSON bodies first (most common)
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
+
+    // Gracefully handle invalid JSON bodies by falling back to empty body
+    this.app.use(function (err, req, res, next) {
+      if (err && err instanceof SyntaxError && 'body' in err) {
+        console.warn('Invalid JSON received, falling back to urlencoded/query.');
+        req.body = {};
+        return next();
+      }
+      return next(err);
+    });
 
     // Request logging
     this.app.use((req, res, next) => {
@@ -294,8 +305,22 @@ class GoblinServer {
     // Media playback control
     this.app.post('/play-video', async (req, res) => {
       try {
-        const { filename, loop = false } = req.body;
-        const result = await this.mediaPlayer.playVideo(filename, { loop });
+        // If body arrived as text (due to client quirks), try to parse JSON
+        if (typeof req.body === 'string') {
+          try { req.body = JSON.parse(req.body); } catch (e) { }
+        }
+        // Accept from JSON, urlencoded, or querystring; coerce loop to boolean
+        let filename = (req.body && req.body.filename) || req.query.filename;
+        let loopRaw = (req.body && (req.body.loop ?? req.body.loop === false ? req.body.loop : undefined)) ?? req.query.loop;
+        const loop = typeof loopRaw === 'string' ? loopRaw.toLowerCase() === 'true' : Boolean(loopRaw);
+        // Optional vout override (e.g., 'fb' to force framebuffer)
+        const vout = (req.body && req.body.vout) || req.query.vout;
+
+        if (!filename || typeof filename !== 'string') {
+          return res.status(400).json({ success: false, error: 'filename is required' });
+        }
+
+        const result = await this.mediaPlayer.playVideo(filename, { loop, vout });
         res.json(result);
       } catch (error) {
         res.status(500).json({ success: false, error: error.message });

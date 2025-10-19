@@ -118,7 +118,7 @@ echo ""
 
 # Video Driver
 echo "7. Video Driver"
-set_config "dtoverlay" "vc4-fkms-v3d"
+set_config "dtoverlay" "vc4-kms-v3d"
 echo ""
 
 # Disable unnecessary features to save resources

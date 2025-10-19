@@ -41,5 +41,34 @@
       }
     ],
     "created": "2025-10-18T01:23:18.077Z"
+  },
+  {
+    "id": 4,
+    "name": "Muzac Loop Halloween",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "I am your master....welcome to Warner Castle in the Carpathian Mountains. "
+      },
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract"
+      },
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      }
+    ],
+    "created": "2025-10-18T23:38:50.045Z",
+    "updated": "2025-10-18T23:43:29.892Z"
   }
 ]

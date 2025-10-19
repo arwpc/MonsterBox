@@ -1617,6 +1617,42 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1760831037703cd8lr96h8",
+      "sceneId": 4,
+      "characterId": 3,
+      "timestamp": "2025-10-18T23:43:57.703Z",
+      "startTime": "2025-10-18T23:43:43.265Z",
+      "endTime": "2025-10-18T23:43:57.697Z",
+      "duration": 14432,
+      "stepsExecuted": 1,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1760831061360jtztola1r",
+      "sceneId": 4,
+      "characterId": 3,
+      "timestamp": "2025-10-18T23:44:21.360Z",
+      "startTime": "2025-10-18T23:44:10.712Z",
+      "endTime": "2025-10-18T23:44:21.356Z",
+      "duration": 10644,
+      "stepsExecuted": 1,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {
