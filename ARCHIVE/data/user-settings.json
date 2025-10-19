@@ -1,8 +1,0 @@
-{
-  "theme": "monsterbox",
-  "fontSize": "small",
-  "fontFamily": "terminal",
-  "accentColor": "neon-green",
-  "navigationStyle": "sidebar",
-  "animationLevel": "subtle"
-}

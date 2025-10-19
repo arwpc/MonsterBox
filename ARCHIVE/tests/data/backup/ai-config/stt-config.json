@@ -1,9 +1,0 @@
-{
-  "apiKey": "",
-  "model": "whisper-1",
-  "language": "en",
-  "confidenceThreshold": "0.8",
-  "chunkDuration": "2000",
-  "timeout": "30000",
-  "fallbackToSystem": "true"
-}
