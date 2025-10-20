@@ -7,12 +7,17 @@ systemctl stop getty@tty1.service 2>/dev/null || true
 systemctl disable getty@tty1.service 2>/dev/null || true
 pkill -t tty1 2>/dev/null || true
 
+# CRITICAL: Unbind fbcon from the framebuffer so DRM can use it
+# This fixes the issue where fbcon holds the DRM plane and MPV can't display
+echo 0 > /sys/class/vtconsole/vtcon1/bind 2>/dev/null || true
+
 # Clear framebuffer (ignore errors if not present)
 dd if=/dev/zero of=/dev/fb0 bs=1M count=1 2>/dev/null || true
 
 # Ensure runtime dir for user 1000 (remote)
 mkdir -p /run/user/1000
-chown remote:remote /run/user/1000
+mkdir -p /run/user/1000/pulse
+chown -R remote:remote /run/user/1000
 chmod 700 /run/user/1000
 
 # Device permissions for DRM/KMS
@@ -28,10 +33,11 @@ pkill -f vlc 2>/dev/null || true
 
 # Switch to VT1 for DRM access
 chvt 1 2>/dev/null || true
-# Quiet and clear TTY1 so it never paints over DRM
-{ setterm -blank 0 -cursor off -clear all >/dev/tty1; } 2>/dev/null || true
+
+# Blank the console completely - force blank and hide cursor
+setterm -blank force -cursor off >/dev/tty1 2>/dev/null || true
 # Also clear via ANSI as a fallback
-printf "\033[2J\033[H" >/dev/tty1 2>/dev/null || true
+printf "\033[2J\033[H\033[?25l" >/dev/tty1 2>/dev/null || true
 
 # Ensure CPU performance governor for smooth playback
 if ls /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor >/dev/null 2>&1; then

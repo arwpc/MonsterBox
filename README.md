@@ -91,24 +91,41 @@ Docs: docs/AI-Management-Feature.md, docs/development/ai-integration-guide.md
 ## Goblin Gold - Reliable Video Playback
 Designed for Goblin displays (RPi 3B+/4B) with MPV + DRM/KMS and v4l2m2m-copy hardware decode.
 
-- API (on Goblin):
+**Current Architecture (MonsterBox 5.3):**
+- Standardized video format: 720p @ 30fps H.264 MP4
+- Direct playback with hardware decoding (no transcoding)
+- Video directory: `/home/remote/media/video/` (standardized across all Goblins)
+- MPV settings optimized for smooth 30fps playback on 60Hz displays
+
+**API (on Goblin):**
 ```bash
-# play a file (relative to /home/remote/goblin/media/video/)
+# Play a video immediately (interrupts current playback)
 curl -X POST http://GOBLIN_IP:3001/play-video \
   -H "Content-Type: application/json" \
-  -d '{"filename":"Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4","loop":true}'
+  -d '{"filename":"307 Jb Hd.mp4"}'
 
-# stop all
-curl -X POST http://GOBLIN_IP:3001/stop-all
+# Queue management
+curl -X POST http://GOBLIN_IP:3001/queue/add \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"312 Jb Hd.mp4"}'
 
-# queue start/stop
-curl -X POST "http://GOBLIN_IP:3001/queue/start?loopMode=queue"
+curl -X POST http://GOBLIN_IP:3001/queue/start \
+  -H "Content-Type: application/json" \
+  -d '{"loopMode":"queue"}'
+
 curl -X POST http://GOBLIN_IP:3001/queue/stop
-```
-- Media path on Goblins: /home/remote/goblin/media/video/ (copied from USB)
-- Modes auto-hinted from filenames: 720p59.94 -> display-fps 59.94, DRM mode 1280x720@59.94
 
-See: docs/goblin-reliable-media-player-design.md and goblin-gold/systemd/goblin.service
+# Health check
+curl http://GOBLIN_IP:3001/health
+```
+
+**Integration with MonsterBox:**
+- Goblin video playback can be triggered from Steps (for animatronic sequences)
+- Playlist management through MonsterBox UI
+- Video library scanning and CRUD operations
+- Push playlists to one or all Goblins
+
+See: goblin-gold/systemd/goblin.service and goblin-gold/src/
 
 ## Network and Roles (MonsterNet)
 - Coffin (controller): 192.168.8.140
@@ -149,7 +166,7 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 ## Documentation Index
 - Deployment: docs/deployment/README.md
 - Technical Overview: docs/MonsterBox-Technical-Overview.md
-- Goblin Gold design: docs/goblin-reliable-media-player-design.md
+- Goblin Gold: goblin-gold/README.md (to be created)
 - Orlok audio results: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md
 - Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
 - Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md
