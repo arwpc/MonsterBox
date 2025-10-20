@@ -45,7 +45,13 @@ const PORT = process.env.GOBLIN_PORT || 3001;
         return res.status(400).json({ success: false, error: 'Missing filename' });
       }
 
-      await mpv.play(filename, { loop });
+      // Infer display FPS and DRM mode from cached filename pattern for smoother pacing
+      let displayFps = null;
+      let mode = null;
+      if (/720p59\.94\.mp4$/.test(filename)) { displayFps = '59.94'; mode = '1280x720@59.94'; }
+      else if (/720p60\.mp4$/.test(filename)) { displayFps = '60'; mode = '1280x720@60'; }
+
+      await mpv.play(filename, { loop, displayFps, mode });
       res.json({ success: true, nowPlaying: filename });
     } catch (e) {
       res.status(500).json({ success: false, error: e.message });
@@ -121,7 +127,7 @@ const PORT = process.env.GOBLIN_PORT || 3001;
   app.listen(PORT, () => console.log('Goblin Gold API listening on ' + PORT));
 
   const cleanExit = async () => {
-    try { await mpv.stop(); } catch (_e) {}
+    try { await mpv.stop(); } catch (_e) { }
     process.exit(0);
   };
   process.on('SIGINT', cleanExit);

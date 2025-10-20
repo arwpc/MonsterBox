@@ -7,13 +7,25 @@ const LOG_DIR = '/home/remote/goblin/logs';
 try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (_) { }
 
 // Proven-good MPV configuration for Raspberry Pi 3B+
+// Allow tuning via environment without code changes
+const DEFAULT_HWDEC = process.env.GOBLIN_HWDEC || 'v4l2m2m';
+const ENV_EXTRA_ARGS = (process.env.GOBLIN_MPV_EXTRA_ARGS || '')
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean);
+
+const DEFAULT_VO = process.env.GOBLIN_VO || 'drm';
+
 const MPV_BASE_ARGS = [
-  '--vo=drm',
-  '--hwdec=v4l2m2m-copy',
+  `--vo=${DEFAULT_VO}`,
+  `--hwdec=${DEFAULT_HWDEC}`,
   '--fs',
-  '--msg-level=all=v',
+  // Smooth frame pacing to 60Hz output
+  '--video-sync=display-resample',
+  '--msg-level=all=error',
   '--no-terminal',
-  '--no-input-default-bindings'
+  '--no-input-default-bindings',
+  ...ENV_EXTRA_ARGS,
 ];
 
 class MPVController {
@@ -35,6 +47,7 @@ class MPVController {
     const args = [...MPV_BASE_ARGS, ...this.extraArgs];
     if (options.loop) args.push('--loop');
     if (options.audioDevice) args.push(`--audio-device=${options.audioDevice}`);
+    if (options.displayFps) args.push(`--display-fps=${options.displayFps}`);
     const envConnector = process.env.GOBLIN_DRM_CONNECTOR;
     const envMode = process.env.GOBLIN_DRM_MODE;
     if (options.connector) args.push(`--drm-connector=${options.connector}`);

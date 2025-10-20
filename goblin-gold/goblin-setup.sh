@@ -33,5 +33,12 @@ chvt 1 2>/dev/null || true
 # Also clear via ANSI as a fallback
 printf "\033[2J\033[H" >/dev/tty1 2>/dev/null || true
 
+# Ensure CPU performance governor for smooth playback
+if ls /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor >/dev/null 2>&1; then
+  for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    echo performance > "$f" 2>/dev/null || true
+  done
+fi
+
 exit 0
 
