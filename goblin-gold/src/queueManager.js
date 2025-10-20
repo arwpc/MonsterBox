@@ -68,8 +68,7 @@ class QueueManager {
       this.queue.videos.push(video);
     }
     await this.save();
-    // Kick off background cache build (fire-and-forget)
-    try { this._ensureCachedSoon(filename); } catch (_) { }
+    // No transcoding needed - videos are pre-optimized 720p30
     return video;
   }
 
@@ -117,37 +116,12 @@ class QueueManager {
       }
     }
 
-    // Prefer cached 720p/60 CFR version if available; fallback to tmpfs/original
-    // Also kick off background cache builds for current and next
-    try { this._ensureCachedSoon(video.filename); } catch (_) { }
-    const currentPath = await this._resolvePlaybackPath(video.filename);
-
-    // Prefetch next item (prefer cached) to tmpfs in background
-    const next = this.queue.videos[this.queue.currentIndex + 1] || (this.queue.loopMode === 'queue' ? this.queue.videos[0] : null);
-    let nextResolved = null;
-    if (next) {
-      try { this._ensureCachedSoon(next.filename); } catch (_) { }
-      nextResolved = await this._resolvePlaybackPath(next.filename);
-      this._prefetchToTmpfs(nextResolved).catch(() => { });
-      // Keep only current/next tmpfs files to avoid growth
-      const keep = [];
-      const curTmp = await this._tmpfsCandidatePath(currentPath);
-      const nextTmp = await this._tmpfsCandidatePath(nextResolved);
-      keep.push(curTmp, nextTmp);
-      this._clearTmpfsExcept(keep).catch(() => { });
-    } else {
-      // No next; keep only current tmpfs
-      const curTmp = await this._tmpfsCandidatePath(currentPath);
-      this._clearTmpfsExcept([curTmp]).catch(() => { });
-    }
-
+    // All videos are pre-optimized 720p30 - play directly, no transcoding needed
+    const videoPath = await this._originalAbsolute(video.filename);
     const loop = this.queue.loopMode === 'single';
-    // Hint mpv about display fps based on cached variant
-    let displayFps = null;
-    let drmMode = null;
-    if (/720p59\.94\.mp4$/.test(currentPath)) { displayFps = '59.94'; drmMode = '1280x720@59.94'; }
-    else if (/720p60\.mp4$/.test(currentPath)) { displayFps = '60'; drmMode = '1280x720@60'; }
-    await this.mpv.play(currentPath, { loop, displayFps, mode: drmMode });
+
+    // Play directly - videos are already optimized for Pi3
+    await this.mpv.play(videoPath, { loop });
     video.playCount++;
     await this.save();
   }

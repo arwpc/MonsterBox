@@ -2,13 +2,15 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const DEFAULT_MEDIA_ROOT = '/home/remote/goblin/media/video';
+// Standardized 720p30 video directory for all Goblins
+const DEFAULT_MEDIA_ROOT = '/home/remote/media/video';
 const LOG_DIR = '/home/remote/goblin/logs';
 try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (_) { }
 
-// Proven-good MPV configuration for Raspberry Pi 3B+
-// Allow tuning via environment without code changes
-const DEFAULT_HWDEC = process.env.GOBLIN_HWDEC || 'v4l2m2m';
+// Optimized MPV configuration for Raspberry Pi 3B+ with 720p30 videos
+// Testing shows --vo=drm DOES work on Pi3, --vo=gpu --gpu-context=drm does NOT
+// All videos are standardized to 1280x720 @ 30fps H.264
+const DEFAULT_HWDEC = process.env.GOBLIN_HWDEC || 'v4l2m2m-copy';
 const ENV_EXTRA_ARGS = (process.env.GOBLIN_MPV_EXTRA_ARGS || '')
   .trim()
   .split(/\s+/)
@@ -20,11 +22,15 @@ const MPV_BASE_ARGS = [
   `--vo=${DEFAULT_VO}`,
   `--hwdec=${DEFAULT_HWDEC}`,
   '--fs',
-  // Smooth frame pacing to 60Hz output
+  '--no-audio',  // Disable audio for video displays
+  // Back to original working settings - slight judder is normal for 30fps on 60Hz
   '--video-sync=display-resample',
+  '--interpolation=no',
   '--msg-level=all=error',
   '--no-terminal',
   '--no-input-default-bindings',
+  '--no-osc',  // No on-screen controller
+  '--no-osd-bar',  // No OSD bar
   ...ENV_EXTRA_ARGS,
 ];
 

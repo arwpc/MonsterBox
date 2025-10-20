@@ -10,10 +10,11 @@ Group=video
 Environment=NODE_ENV=production
 Environment=GOBLIN_PORT=3001
 Environment=XDG_RUNTIME_DIR=/run/user/1000
+# Optimized for 720p30 H.264 videos on Pi3B+
 Environment=GOBLIN_DRM_CONNECTOR=HDMI-A-1
-# Environment=GOBLIN_DRM_MODE=1280x720
 Environment=GOBLIN_HWDEC=v4l2m2m-copy
 Environment=GOBLIN_VO=drm
+# All videos are standardized to 720p30, no transcoding needed
 # Extra MPV tuning flags (space-separated). Safe defaults for smooth playback
 # GPU DRM context + ES with cheap interpolation, plus caching/buffering
 Environment=GOBLIN_MPV_EXTRA_ARGS=--no-config --no-osc --no-osd-bar --no-sub --sub-auto=never --cache=yes --cache-secs=30 --demuxer-max-bytes=512MiB --demuxer-readahead-secs=30 --cache-on-disk=no --video-sync=display-resample --display-fps=59.94 --video-sync-max-video-change=0.008 --timing-window=0.25 --framedrop=no --vd-lavc-threads=1 --no-audio --scale=bilinear --dscale=bilinear --correct-downscaling=no --blend-subtitles=no
