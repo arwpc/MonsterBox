@@ -1,0 +1,19 @@
+{
+  "videos": [
+    {
+      "id": "1760903273994",
+      "filename": "a.mp4",
+      "addedAt": "2025-10-19T19:47:53.994Z",
+      "playCount": 1
+    },
+    {
+      "id": "1760903273995",
+      "filename": "b.mp4",
+      "addedAt": "2025-10-19T19:47:53.995Z",
+      "playCount": 1
+    }
+  ],
+  "currentIndex": 2,
+  "loopMode": "none",
+  "playing": false
+}

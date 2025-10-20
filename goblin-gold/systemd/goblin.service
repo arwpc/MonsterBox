@@ -1,0 +1,23 @@
+[Unit]
+Description=MonsterBox Goblin Gold Media Player
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=remote
+Group=video
+Environment=NODE_ENV=production
+Environment=GOBLIN_PORT=3001
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=GOBLIN_DRM_CONNECTOR=HDMI-A-1
+Environment=GOBLIN_DRM_MODE=1920x1080
+ExecStartPre=+/usr/local/bin/goblin-setup.sh
+ExecStart=/usr/bin/node /home/remote/goblin/server.js
+ExecStartPost=/usr/local/bin/goblin-autostart.sh
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
