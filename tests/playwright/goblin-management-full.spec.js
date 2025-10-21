@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 test.describe('Goblin Management - Full Functionality Test', () => {
     test.beforeEach(async ({ page }) => {
@@ -192,7 +192,7 @@ test.describe('Goblin Management - Full Functionality Test', () => {
         // Open Goblin Two queue
         await page.locator('.goblin-card:has-text("Goblin Two")').dblclick();
         await page.waitForSelector('#videoQueueModal.show', { timeout: 5000 });
-        
+
         let queueCount = await page.locator('#currentQueue .list-group-item').count();
         expect(queueCount).toBeGreaterThan(0);
 
@@ -202,7 +202,7 @@ test.describe('Goblin Management - Full Functionality Test', () => {
         // Open Goblin Three queue
         await page.locator('.goblin-card:has-text("Goblin Three")').dblclick();
         await page.waitForSelector('#videoQueueModal.show', { timeout: 5000 });
-        
+
         queueCount = await page.locator('#currentQueue .list-group-item').count();
         expect(queueCount).toBeGreaterThan(0);
     });
