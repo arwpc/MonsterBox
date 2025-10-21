@@ -1,15 +1,38 @@
 #!/bin/bash
 
-# MonsterBox Goblin - Pi3B Deployment Script
-# Deploy native Goblin service to Raspberry Pi 3B
+# MonsterBox Goblin Deployment Script
+# Deploy Goblin video system to Raspberry Pi
 
-echo "🎃 MonsterBox Goblin Pi3B Deployment"
-echo "===================================="
+echo "🎃 MonsterBox Goblin Deployment"
+echo "================================"
 
-PI_HOST="chestwound.local"
-PI_IP="192.168.8.160"
+# Accept IP address as parameter, default to Goblin1
+PI_IP="${1:-192.168.8.40}"
 PI_USER="remote"
 PI_PASS="klrklr89!"
+
+# Determine Goblin ID from IP
+case "$PI_IP" in
+    "192.168.8.40")
+        GOBLIN_ID="goblin-one"
+        GOBLIN_NAME="Goblin1"
+        ;;
+    "192.168.8.106")
+        GOBLIN_ID="goblin-two"
+        GOBLIN_NAME="Goblin2"
+        ;;
+    "192.168.8.14")
+        GOBLIN_ID="goblin-three"
+        GOBLIN_NAME="Goblin3"
+        ;;
+    *)
+        GOBLIN_ID="goblin-unknown"
+        GOBLIN_NAME="Unknown Goblin"
+        ;;
+esac
+
+echo "Target: $GOBLIN_NAME ($GOBLIN_ID) at $PI_IP"
+echo
 
 # Colors for output
 RED='\033[0;31m'
@@ -46,143 +69,154 @@ check_dependencies() {
     log_info "Dependencies OK"
 }
 
-# Test connection to Pi3B
+# Test connection to Goblin
 test_connection() {
-    log_info "Testing connection to Pi3B..."
-    
-    if sshpass -p "$PI_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$PI_USER@$PI_HOST" "echo 'Connected to Pi3B'" &>/dev/null; then
-        log_info "Connection to $PI_HOST successful"
+    log_info "Testing connection to $GOBLIN_NAME..."
+
+    if sshpass -p "$PI_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$PI_USER@$PI_IP" "echo 'Connected'" &>/dev/null; then
+        log_info "Connection to $PI_IP successful"
     else
-        log_warn "Connection to $PI_HOST failed, trying IP address..."
-        if sshpass -p "$PI_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 "$PI_USER@$PI_IP" "echo 'Connected to Pi3B'" &>/dev/null; then
-            log_info "Connection to $PI_IP successful"
-            PI_HOST="$PI_IP"
-        else
-            log_error "Cannot connect to Pi3B. Check network and credentials."
-            exit 1
-        fi
+        log_error "Cannot connect to $GOBLIN_NAME at $PI_IP. Check network and credentials."
+        exit 1
     fi
+}
+
+# Package Goblin files
+package_goblin() {
+    log_info "Packaging Goblin files..."
+
+    cd goblin-gold
+    tar czf /tmp/goblin-deploy.tar.gz server.js package.json src/ systemd/
+    cd ..
+
+    log_info "Goblin package created"
 }
 
 # Deploy Goblin files
 deploy_goblin() {
-    log_info "Deploying Goblin to Pi3B..."
-    
-    # Create directory structure on Pi
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "mkdir -p ~/goblin/{media/{video,audio},logs}"
-    
-    # Copy Goblin launcher
-    if scp -o StrictHostKeyChecking=no goblin-pi.js "$PI_USER@$PI_HOST:~/goblin/" 2>/dev/null; then
-        log_info "Goblin launcher deployed"
+    log_info "Deploying Goblin to $GOBLIN_NAME..."
+
+    # Copy package to Goblin
+    sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no /tmp/goblin-deploy.tar.gz "$PI_USER@$PI_IP:/tmp/goblin.tar.gz"
+    log_info "Package transferred"
+
+    # Copy setup scripts from Goblin3 (reference system)
+    log_info "Copying setup scripts..."
+    sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no remote@192.168.8.14:/usr/local/bin/goblin-setup.sh /tmp/goblin-setup.sh
+    sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no remote@192.168.8.14:/usr/local/bin/goblin-autostart.sh /tmp/goblin-autostart.sh
+
+    # Transfer setup scripts to target Goblin
+    sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no /tmp/goblin-setup.sh /tmp/goblin-autostart.sh "$PI_USER@$PI_IP:/tmp/"
+    log_info "Setup scripts transferred"
+}
+
+# Install Goblin on target
+install_goblin() {
+    log_info "Installing Goblin on $GOBLIN_NAME..."
+
+    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_IP" bash << 'EOFREMOTE'
+# Stop old service
+sudo systemctl stop goblin 2>/dev/null || true
+
+# Extract new files
+cd /home/remote
+rm -rf goblin
+mkdir -p goblin
+cd goblin
+tar xzf /tmp/goblin.tar.gz
+
+# Install dependencies
+npm install --production
+
+# Copy setup scripts
+sudo cp /tmp/goblin-setup.sh /usr/local/bin/
+sudo cp /tmp/goblin-autostart.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/goblin-setup.sh
+sudo chmod +x /usr/local/bin/goblin-autostart.sh
+
+# Install systemd service
+sudo cp systemd/goblin.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable goblin
+sudo systemctl start goblin
+
+echo "Installation complete"
+EOFREMOTE
+
+    log_info "Goblin installed and started"
+}
+
+# Verify deployment
+verify_deployment() {
+    log_info "Verifying deployment..."
+
+    # Wait for service to start
+    sleep 5
+
+    # Check systemd status
+    log_info "Checking service status..."
+    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_IP" "systemctl status goblin --no-pager" || true
+
+    # Check API health
+    log_info "Checking API health..."
+    sleep 2
+    HEALTH=$(curl -s http://$PI_IP:3001/health 2>/dev/null || echo "failed")
+
+    if echo "$HEALTH" | grep -q "healthy"; then
+        log_info "✅ Goblin API is healthy"
     else
-        # Fallback to sshpass
-        sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no goblin-pi.js "$PI_USER@$PI_HOST:~/goblin/"
-        log_info "Goblin launcher deployed (via sshpass)"
+        log_warn "⚠️  Goblin API health check failed"
     fi
-    
-    # Make executable
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "chmod +x ~/goblin/goblin-pi.js"
-    
-    # Copy test media files
-    log_info "Copying test media files..."
-    
-    if [ -f "docs/fire.mp4" ]; then
-        sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no "docs/fire.mp4" "$PI_USER@$PI_HOST:~/goblin/media/video/"
-        log_info "fire.mp4 deployed"
-    fi
-    
-    if [ -f "docs/water.mp4" ]; then
-        sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no "docs/water.mp4" "$PI_USER@$PI_HOST:~/goblin/media/video/"
-        log_info "water.mp4 deployed"
-    fi
-}
-
-# Install dependencies on Pi
-install_dependencies() {
-    log_info "Installing Node.js dependencies on Pi3B..."
-    
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "cd ~/goblin && npm init -y >/dev/null 2>&1 || true"
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "cd ~/goblin && npm install express axios >/dev/null 2>&1 || echo 'Express/Axios install failed'"
-    
-    log_info "Dependencies installed"
-}
-
-# Create systemd service
-create_service() {
-    log_info "Creating systemd service..."
-    
-    cat > goblin.service << 'EOF'
-[Unit]
-Description=MonsterBox Goblin - Pi3B Media Player
-After=network.target sound.target
-
-[Service]
-Type=simple
-User=remote
-WorkingDirectory=/home/remote/goblin
-ExecStart=/usr/bin/node goblin-pi.js
-Restart=always
-RestartSec=5
-Environment=NODE_ENV=production
-Environment=GOBLIN_ID=chestwound-window-1
-
-# Performance optimizations
-Nice=-5
-IOSchedulingClass=1
-IOSchedulingPriority=4
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sshpass -p "$PI_PASS" scp -o StrictHostKeyChecking=no goblin.service "$PI_USER@$PI_HOST:~/goblin/"
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "sudo mv ~/goblin/goblin.service /etc/systemd/system/"
-    sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "sudo systemctl daemon-reload"
-    
-    rm goblin.service
-    log_info "Systemd service created"
-}
-
-# Test deployment
-test_deployment() {
-    log_info "Testing Goblin deployment..."
-    
-    # Test direct run
-    log_info "Testing direct run (will timeout in 10 seconds)..."
-    timeout 10s sshpass -p "$PI_PASS" ssh "$PI_USER@$PI_HOST" "cd ~/goblin && node goblin-pi.js" || true
-    
-    log_info "Direct run test completed"
 }
 
 # Main deployment
 main() {
     echo
-    log_info "Starting MonsterBox Goblin deployment to Pi3B..."
-    
+    log_info "Starting MonsterBox Goblin deployment to $GOBLIN_NAME..."
+
     check_dependencies
     test_connection
+    package_goblin
     deploy_goblin
-    install_dependencies
-    create_service
-    test_deployment
-    
+    install_goblin
+    verify_deployment
+
     echo
     log_info "🎉 Deployment completed!"
     echo
-    echo "To start the Goblin service:"
-    echo "  sshpass -p '$PI_PASS' ssh $PI_USER@$PI_HOST 'sudo systemctl start goblin'"
+    echo "Goblin Details:"
+    echo "  Name: $GOBLIN_NAME"
+    echo "  ID: $GOBLIN_ID"
+    echo "  IP: $PI_IP"
+    echo "  API: http://$PI_IP:3001"
     echo
-    echo "To check status:"
-    echo "  sshpass -p '$PI_PASS' ssh $PI_USER@$PI_HOST 'sudo systemctl status goblin'"
-    echo
-    echo "To view logs:"
-    echo "  sshpass -p '$PI_PASS' ssh $PI_USER@$PI_HOST 'sudo journalctl -u goblin -f'"
-    echo
-    echo "To test manually:"
-    echo "  sshpass -p '$PI_PASS' ssh $PI_USER@$PI_HOST 'cd ~/goblin && node goblin-pi.js'"
-    echo
-    echo "Goblin will be available at: http://$PI_HOST:3001"
+    echo "Useful Commands:"
+    echo "  Check status:  sshpass -p '$PI_PASS' ssh $PI_USER@$PI_IP 'systemctl status goblin'"
+    echo "  View logs:     sshpass -p '$PI_PASS' ssh $PI_USER@$PI_IP 'journalctl -u goblin -f'"
+    echo "  Restart:       sshpass -p '$PI_PASS' ssh $PI_USER@$PI_IP 'sudo systemctl restart goblin'"
     echo
 }
+
+# Show usage if help requested
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "Usage: $0 [IP_ADDRESS]"
+    echo
+    echo "Deploy Goblin video system to a Raspberry Pi"
+    echo
+    echo "Arguments:"
+    echo "  IP_ADDRESS    IP address of target Goblin (default: 192.168.8.40)"
+    echo
+    echo "Known Goblins:"
+    echo "  192.168.8.40  - Goblin1 (goblin-one)"
+    echo "  192.168.8.106 - Goblin2 (goblin-two)"
+    echo "  192.168.8.14  - Goblin3 (goblin-three)"
+    echo
+    echo "Examples:"
+    echo "  $0                    # Deploy to Goblin1 (default)"
+    echo "  $0 192.168.8.106      # Deploy to Goblin2"
+    echo "  $0 192.168.8.14       # Deploy to Goblin3"
+    echo
+    exit 0
+fi
 
 main "$@"
