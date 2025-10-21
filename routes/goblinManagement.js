@@ -305,6 +305,7 @@ router.post('/api/goblin/:id/stop-all', async (req, res) => {
 
 /**
  * GET /api/goblin/:id/status - Get current Goblin status
+ * Always tests live connection regardless of stored status
  */
 router.get('/api/goblin/:id/status', async (req, res) => {
     try {
@@ -316,15 +317,7 @@ router.get('/api/goblin/:id/status', async (req, res) => {
 
         const goblin = goblinResult.goblin;
 
-        if (goblin.status !== 'online') {
-            return res.json({
-                success: true,
-                status: 'offline',
-                goblin: goblin
-            });
-        }
-
-        // Get live status from Goblin
+        // Always test live connection regardless of stored status
         try {
             const response = await fetch(`${goblin.endpoint}/health`, {
                 timeout: 5000
@@ -332,6 +325,14 @@ router.get('/api/goblin/:id/status', async (req, res) => {
 
             if (response.ok) {
                 const liveStatus = await response.json();
+
+                // Update goblin status to online if connection successful
+                if (goblin.status !== 'online') {
+                    goblin.status = 'online';
+                    goblin.lastSeen = new Date().toISOString();
+                    await goblinManagerService.heartbeat(goblin.id);
+                }
+
                 res.json({
                     success: true,
                     status: 'online',
@@ -339,16 +340,26 @@ router.get('/api/goblin/:id/status', async (req, res) => {
                     live: liveStatus
                 });
             } else {
+                // Update goblin status to offline if connection failed
+                if (goblin.status !== 'offline') {
+                    goblin.status = 'offline';
+                }
+
                 res.json({
                     success: true,
-                    status: 'unreachable',
+                    status: 'offline',
                     goblin: goblin
                 });
             }
         } catch (error) {
+            // Update goblin status to offline if connection failed
+            if (goblin.status !== 'offline') {
+                goblin.status = 'offline';
+            }
+
             res.json({
                 success: true,
-                status: 'unreachable',
+                status: 'offline',
                 goblin: goblin,
                 error: error.message
             });
