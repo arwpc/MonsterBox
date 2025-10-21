@@ -119,7 +119,20 @@ async function getVideoMetadata(filePath) {
   });
 
   // Queue endpoints
-  app.get('/queue', (_req, res) => res.json(status()));
+  app.get('/queue', (_req, res) => {
+    const queueStatus = status();
+    res.json({
+      success: true,
+      queue: {
+        videos: queueStatus.videos,
+        currentIndex: queueStatus.currentIndex,
+        loopMode: queueStatus.loopMode,
+        playing: queueStatus.playing
+      },
+      currentVideo: queueStatus.currentVideo,
+      mpvRunning: queueStatus.mpvRunning
+    });
+  });
 
   app.post('/queue/add', async (req, res) => {
     try {
@@ -211,6 +224,25 @@ async function getVideoMetadata(filePath) {
 
   app.post('/queue/skip', async (_req, res) => {
     try { await queue.skip(); res.json({ success: true }); }
+    catch (e) { res.status(500).json({ success: false, error: e.message }); }
+  });
+
+  app.post('/queue/pause', async (_req, res) => {
+    try {
+      // MPV doesn't support pause/resume in our current implementation
+      // Stop the queue instead
+      await queue.stop();
+      res.json({ success: true, paused: true });
+    }
+    catch (e) { res.status(500).json({ success: false, error: e.message }); }
+  });
+
+  app.post('/queue/resume', async (_req, res) => {
+    try {
+      // Resume by starting the queue again
+      await queue.start({ loopMode: queue.queue.loopMode || 'none' });
+      res.json({ success: true, resumed: true });
+    }
     catch (e) { res.status(500).json({ success: false, error: e.message }); }
   });
 
