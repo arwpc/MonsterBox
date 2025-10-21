@@ -133,8 +133,16 @@ curl http://GOBLIN_IP:3001/health
 - `goblinPlaylistService` - Playlist CRUD and deployment
 
 *Features:*
+- **Goblin Management UI** (`http://localhost:3000/goblin-management`):
+  - Real-time status monitoring for all Goblins
+  - Double-click any Goblin card to open video queue modal
+  - Browse and search 57+ videos from `/home/remote/media/video`
+  - Add videos to queue or play immediately
+  - Queue controls: Start, Stop, Clear, Skip
+  - Save/Load/Distribute playlists across all Goblins
+  - Real-time playback status updates
 - Scan video libraries from all Goblins (`/goblin-management/api/goblins/scan-all-videos`)
-- Create/edit/delete playlists
+- Create/edit/delete playlists (UI or API)
 - Deploy playlists to one or all Goblins
 - Trigger immediate video playback from Steps (e.g., fireball effect during spell-casting)
 
@@ -147,6 +155,12 @@ curl http://GOBLIN_IP:3001/health
   "returnToQueue": true
 }
 ```
+
+*Pre-configured Playlists:*
+- **Spinster**: Character videos for Spinster animatronic
+- **Fire**: Fire-themed videos (541-560 series)
+- **Poltergeist**: Character videos for Poltergeist animatronic
+- **Test**: Sample videos for testing playback
 
 **Deployment:**
 Goblin is deployed via "Facehugger" system in Goblin Management:
