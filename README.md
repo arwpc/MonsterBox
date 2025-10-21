@@ -88,44 +88,79 @@ Open: http://localhost:3000/setup/calibration
 
 Docs: docs/AI-Management-Feature.md, docs/development/ai-integration-guide.md
 
-## Goblin Gold - Reliable Video Playback
-Designed for Goblin displays (RPi 3B+/4B) with MPV + DRM/KMS and v4l2m2m-copy hardware decode.
+## Goblin Gold - Video Display System
 
-**Current Architecture (MonsterBox 5.3):**
-- Standardized video format: 720p @ 30fps H.264 MP4
-- Direct playback with hardware decoding (no transcoding)
-- Video directory: `/home/remote/media/video/` (standardized across all Goblins)
-- MPV settings optimized for smooth 30fps playback on 60Hz displays
+**Goblin Gold** is MonsterBox's video playback system for Raspberry Pi 3B+/4B units acting as dedicated video displays for Halloween effects and animatronic sequences.
 
-**API (on Goblin):**
+**Architecture:**
+- **MPV-based**: Direct video playback using MPV with DRM/KMS output
+- **Hardware Decoding**: v4l2m2m-copy for Pi3 hardware acceleration
+- **Queue Management**: Video queues with loop modes (single, queue, off)
+- **REST API**: HTTP API for remote control and immediate playback
+- **MonsterBox Integration**: Full integration with playlist management and Step execution
+
+**Video Format (Standardized):**
+- **Resolution**: 720p (1280x720) @ 30fps
+- **Codec**: H.264 in MP4 container
+- **Directory**: `/home/remote/media/video/` (all Goblins)
+- **Playback**: `--video-sync=display-vdrop` for smooth 30fps on 60Hz displays
+
+**Goblin Gold API:**
 ```bash
-# Play a video immediately (interrupts current playback)
-curl -X POST http://GOBLIN_IP:3001/play-video \
+# Immediate playback (for Steps - interrupts queue, returns after)
+curl -X POST http://GOBLIN_IP:3001/api/video/play-immediate \
   -H "Content-Type: application/json" \
-  -d '{"filename":"307 Jb Hd.mp4"}'
+  -d '{"filename":"fireball.mp4","returnToQueue":true}'
 
 # Queue management
-curl -X POST http://GOBLIN_IP:3001/queue/add \
-  -H "Content-Type: application/json" \
-  -d '{"filename":"312 Jb Hd.mp4"}'
-
-curl -X POST http://GOBLIN_IP:3001/queue/start \
-  -H "Content-Type: application/json" \
-  -d '{"loopMode":"queue"}'
-
+curl -X POST http://GOBLIN_IP:3001/queue/add -d '{"filename":"video.mp4"}'
+curl -X POST http://GOBLIN_IP:3001/queue/start -d '{"loopMode":"queue"}'
 curl -X POST http://GOBLIN_IP:3001/queue/stop
 
-# Health check
+# Video library scanning
+curl http://GOBLIN_IP:3001/api/videos/scan
+
+# Status
+curl http://GOBLIN_IP:3001/api/status
 curl http://GOBLIN_IP:3001/health
 ```
 
-**Integration with MonsterBox:**
-- Goblin video playback can be triggered from Steps (for animatronic sequences)
-- Playlist management through MonsterBox UI
-- Video library scanning and CRUD operations
-- Push playlists to one or all Goblins
+**MonsterBox Integration:**
 
-See: goblin-gold/systemd/goblin.service and goblin-gold/src/
+*Services:*
+- `goblinManagerService` - Registration, monitoring, playback control
+- `goblinVideoService` - Video scanning, metadata caching
+- `goblinPlaylistService` - Playlist CRUD and deployment
+
+*Features:*
+- Scan video libraries from all Goblins (`/goblin-management/api/goblins/scan-all-videos`)
+- Create/edit/delete playlists
+- Deploy playlists to one or all Goblins
+- Trigger immediate video playback from Steps (e.g., fireball effect during spell-casting)
+
+*Step Integration:*
+```javascript
+{
+  "type": "goblin-video",
+  "goblinId": "goblin-three",
+  "videoId": "fireball.mp4",
+  "returnToQueue": true
+}
+```
+
+**Deployment:**
+Goblin Gold is deployed via "Facehugger" system in Goblin Management:
+1. Package Goblin Gold files
+2. SCP to target Goblin
+3. Install systemd service
+4. Start playback automatically
+
+**Current Status:**
+- ✅ Goblin3 (192.168.8.14) - Operational, tested immediate playback
+- ⏳ Goblin1 (192.168.8.40) - Pending deployment
+- ⏳ Goblin2 (192.168.8.106) - Offline
+
+See: `goblin-gold/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
 - Coffin (controller): 192.168.8.140
