@@ -13,7 +13,7 @@ class GoblinManagerService {
         this.goblins = new Map(); // In-memory goblin registry
         this.lockTimeout = 3 * 60 * 1000; // 3 minutes in milliseconds
         this.heartbeatInterval = 30 * 1000; // 30 seconds
-        
+
         this.init();
         this.startHeartbeatMonitor();
     }
@@ -26,7 +26,7 @@ class GoblinManagerService {
 
             // Load existing goblins from file
             await this.loadGoblins();
-            
+
             console.log('✅ Goblin Manager Service initialized');
         } catch (error) {
             console.error('❌ Failed to initialize Goblin Manager Service:', error);
@@ -234,7 +234,7 @@ class GoblinManagerService {
     async getGoblin(goblinId) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
@@ -248,7 +248,7 @@ class GoblinManagerService {
     async updateGoblinSettings(goblinId, settings) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
@@ -283,7 +283,7 @@ class GoblinManagerService {
     async lockGoblin(goblinId, lockingEntity) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
@@ -295,8 +295,8 @@ class GoblinManagerService {
             if (goblin.lockedBy && goblin.lockedBy !== lockingEntity) {
                 const lockAge = Date.now() - new Date(goblin.lockedAt).getTime();
                 if (lockAge < this.lockTimeout) {
-                    return { 
-                        success: false, 
+                    return {
+                        success: false,
                         error: `Goblin is locked by ${goblin.lockedBy}`,
                         lockedBy: goblin.lockedBy,
                         lockedAt: goblin.lockedAt,
@@ -308,7 +308,7 @@ class GoblinManagerService {
 
             goblin.lockedBy = lockingEntity;
             goblin.lockedAt = new Date().toISOString();
-            
+
             this.goblins.set(goblinId, goblin);
             await this.saveGoblins();
 
@@ -322,16 +322,16 @@ class GoblinManagerService {
     async unlockGoblin(goblinId, unlockingEntity) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
 
             // Allow unlocking by the same entity or if lock expired
             const lockAge = goblin.lockedAt ? Date.now() - new Date(goblin.lockedAt).getTime() : 0;
-            const canUnlock = !goblin.lockedBy || 
-                             goblin.lockedBy === unlockingEntity || 
-                             lockAge >= this.lockTimeout;
+            const canUnlock = !goblin.lockedBy ||
+                goblin.lockedBy === unlockingEntity ||
+                lockAge >= this.lockTimeout;
 
             if (!canUnlock) {
                 return { success: false, error: 'Cannot unlock goblin' };
@@ -339,7 +339,7 @@ class GoblinManagerService {
 
             goblin.lockedBy = null;
             goblin.lockedAt = null;
-            
+
             this.goblins.set(goblinId, goblin);
             await this.saveGoblins();
 
@@ -353,7 +353,7 @@ class GoblinManagerService {
     async heartbeat(goblinId, statusUpdate = {}) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not registered' };
             }
@@ -361,7 +361,7 @@ class GoblinManagerService {
             // Update status
             goblin.status = 'online';
             goblin.lastSeen = new Date().toISOString();
-            
+
             // Update any provided status fields
             if (statusUpdate.memory) goblin.memory = statusUpdate.memory;
             if (statusUpdate.uptime) goblin.uptime = statusUpdate.uptime;
@@ -390,7 +390,7 @@ class GoblinManagerService {
     async deployVideoToGoblin(goblinId, videoData) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
@@ -412,7 +412,7 @@ class GoblinManagerService {
             }
 
             const result = await response.json();
-            
+
             if (result.success) {
                 console.log(`📹 Video deployed to goblin ${goblinId}: ${videoData.title}`);
             }
@@ -427,7 +427,7 @@ class GoblinManagerService {
     async playVideoOnGoblin(goblinId, filename, options = {}) {
         try {
             const goblin = this.goblins.get(goblinId);
-            
+
             if (!goblin) {
                 return { success: false, error: 'Goblin not found' };
             }
@@ -436,11 +436,14 @@ class GoblinManagerService {
                 return { success: false, error: 'Goblin is not online' };
             }
 
-            // Play video on Goblin
-            const response = await fetch(`${goblin.endpoint}/play-video`, {
+            // Play video immediately on Goblin using new API endpoint
+            const response = await fetch(`${goblin.endpoint}/api/video/play-immediate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename, ...options }),
+                body: JSON.stringify({
+                    filename,
+                    returnToQueue: options.returnToQueue !== false // Default true
+                }),
                 timeout: 10000
             });
 
@@ -490,7 +493,7 @@ class GoblinManagerService {
 
     getStats() {
         const goblins = Array.from(this.goblins.values());
-        
+
         return {
             total: goblins.length,
             online: goblins.filter(g => g.status === 'online').length,
