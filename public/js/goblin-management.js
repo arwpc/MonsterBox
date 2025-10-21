@@ -1079,7 +1079,8 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.goblinVideos = data.media.video || [];
+                // Handle both old format (data.media.video) and new format (data.videos)
+                this.goblinVideos = data.videos || data.media?.video || [];
                 this.renderAvailableVideos();
             } else {
                 this.goblinVideos = [];
