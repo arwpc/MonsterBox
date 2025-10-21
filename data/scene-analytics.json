@@ -1653,6 +1653,42 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "176100743178649jrgi4hp",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-21T00:43:51.786Z",
+      "startTime": "2025-10-21T00:43:51.781Z",
+      "endTime": "2025-10-21T00:43:51.781Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761007643200gywbc1hf9",
+      "sceneId": 20,
+      "characterId": 3,
+      "timestamp": "2025-10-21T00:47:23.200Z",
+      "startTime": "2025-10-21T00:47:23.198Z",
+      "endTime": "2025-10-21T00:47:23.198Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {

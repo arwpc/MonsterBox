@@ -26,7 +26,7 @@ Scope: Verify historical README (restored) vs current code/docs, and validate ne
 - README includes verification commands for headers and JPEG boundary/data
 
 4) Goblin video system
-- Goblin Gold present under goblin-gold/ with Express API on :3001
+- Goblin present under goblin-gold/ with Express API on :3001
 - Endpoints: /play-video, /stop-all, /queue/*
 - mpvController config: DRM vo, v4l2m2m/-copy hw decode; display FPS hints supported
 - Systemd unit: goblin-gold/systemd/goblin.service present with tuned env

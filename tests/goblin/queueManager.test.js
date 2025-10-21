@@ -19,7 +19,7 @@ function rmrf(dir) {
   }
 }
 
-describe('Goblin Gold QueueManager', function () {
+describe('Goblin QueueManager', function () {
   const baseDir = path.join(process.cwd(), 'tmp', 'goblin-gold-test');
 
   beforeEach(() => { rmrf(path.join(process.cwd(), 'tmp')); fs.mkdirSync(baseDir, { recursive: true }); });

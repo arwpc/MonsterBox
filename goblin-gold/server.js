@@ -269,7 +269,7 @@ async function getVideoMetadata(filePath) {
     });
   });
 
-  app.listen(PORT, () => console.log('Goblin Gold API listening on ' + PORT));
+  app.listen(PORT, () => console.log('Goblin API listening on ' + PORT));
 
   const cleanExit = async () => {
     try { await mpv.stop(); } catch (_e) { }

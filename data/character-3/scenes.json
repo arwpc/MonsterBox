@@ -70,5 +70,89 @@
     ],
     "created": "2025-10-18T23:38:50.045Z",
     "updated": "2025-10-18T23:43:29.892Z"
+  },
+  {
+    "id": 6,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:39:31.472Z"
+  },
+  {
+    "id": 8,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:39:35.021Z"
+  },
+  {
+    "id": 11,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:42:10.302Z"
+  },
+  {
+    "id": 13,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:42:13.722Z"
+  },
+  {
+    "id": 16,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:42:56.333Z"
+  },
+  {
+    "id": 18,
+    "name": "Goblin Execution Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "307 Jb Hd.mp4",
+        "returnToQueue": false,
+        "comment": "Single goblin step"
+      }
+    ],
+    "created": "2025-10-21T00:42:59.878Z"
   }
 ]

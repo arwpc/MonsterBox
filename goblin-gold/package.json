@@ -1,7 +1,7 @@
 {
   "name": "goblin-gold",
   "version": "1.0.0",
-  "description": "MonsterBox Goblin Gold Media Player (MPV + JSON)",
+  "description": "MonsterBox Goblin Media Player (MPV + JSON)",
   "private": true,
   "license": "MIT",
   "main": "server.js",
@@ -12,4 +12,3 @@
     "express": "^4.21.1"
   }
 }
-

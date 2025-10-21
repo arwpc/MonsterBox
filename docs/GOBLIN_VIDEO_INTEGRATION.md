@@ -11,7 +11,7 @@ This document defines the architecture for integrating Goblin video playback int
 
 ## Current State
 
-### Goblin Gold (Current Implementation)
+### Goblin (Current Implementation)
 - **Location**: `goblin-gold/` directory
 - **Video Format**: 720p @ 30fps H.264 MP4 (standardized)
 - **Video Directory**: `/home/remote/media/video/` on each Goblin
@@ -76,7 +76,7 @@ This document defines the architecture for integrating Goblin video playback int
 
 ### 2. API Endpoints
 
-#### Goblin Gold API (on each Goblin - Port 3001)
+#### Goblin API (on each Goblin - Port 3001)
 
 **Existing:**
 - `POST /play-video` - Play video immediately
@@ -280,7 +280,7 @@ async playVideoOnGoblin(goblinId, filename, options)
 
 ### 5. Implementation Plan
 
-#### Phase 1: Goblin Gold API Enhancement
+#### Phase 1: Goblin API Enhancement
 - [ ] Add `/api/videos/scan` endpoint
 - [ ] Add `/api/video/play-immediate` endpoint
 - [ ] Add `/api/status` endpoint
@@ -344,6 +344,6 @@ This architecture provides:
 - ✅ Deploy to one or all Goblins
 - ✅ Immediate video playback for Steps
 - ✅ Consistent with existing MonsterBox patterns
-- ✅ Minimal changes to Goblin Gold (stable)
+- ✅ Minimal changes to Goblin (stable)
 - ✅ Extensible for future features
 

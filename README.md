@@ -5,7 +5,7 @@ MonsterBox 5.3 is a single-node animatronic control system for Raspberry Pi 4B w
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
 - Real hardware control for servos, motors, linear actuators, lights, sensors, steppers
 - ElevenLabs AI integration for STT, Conversational AI, and TTS
-- Goblin Gold video display subsystem for Pi 3B+/4B signage playback
+- Goblin video display subsystem for Pi 3B+/4B signage playback
 
 This README provides an accurate quick-start and operational overview for 5.3 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
@@ -14,7 +14,7 @@ This README provides an accurate quick-start and operational overview for 5.3 an
 - Runtime banner currently prints 5.2; code will be bumped separately
 - Webcam stack standardized to MJPEG (mjpg-streamer) only
 - Audio stack standardized to PipeWire/WirePlumber with device-based routing
-- Goblin Gold MVP player added for rock-solid video playback on Goblins
+- Goblin MVP player added for rock-solid video playback on Goblins
 
 ## Quick Start (RPi4B)
 ```bash
@@ -36,7 +36,7 @@ Systemd service and production boot guidance: docs/deployment/README.md
 - MonsterBox app: :3000 (HTTP)
 - Real-time chat WS (conversation): :8795
 - Webcam (mjpg-streamer): :8090
-- Goblin Gold player API (on Goblins): :3001
+- Goblin player API (on Goblins): :3001
 
 ## Audio (PipeWire/WirePlumber)
 Goals: device-first routing (avoid hw: directly), VU meters, server-side microphone/STT and speaker/TTS per Character.
@@ -88,9 +88,9 @@ Open: http://localhost:3000/setup/calibration
 
 Docs: docs/AI-Management-Feature.md, docs/development/ai-integration-guide.md
 
-## Goblin Gold - Video Display System
+## Goblin - Video Display System
 
-**Goblin Gold** is MonsterBox's video playback system for Raspberry Pi 3B+/4B units acting as dedicated video displays for Halloween effects and animatronic sequences.
+**Goblin** is MonsterBox's video playback system for Raspberry Pi 3B+/4B units acting as dedicated video displays for Halloween effects and animatronic sequences.
 
 **Architecture:**
 - **MPV-based**: Direct video playback using MPV with DRM/KMS output
@@ -105,7 +105,7 @@ Docs: docs/AI-Management-Feature.md, docs/development/ai-integration-guide.md
 - **Directory**: `/home/remote/media/video/` (all Goblins)
 - **Playback**: `--video-sync=display-vdrop` for smooth 30fps on 60Hz displays
 
-**Goblin Gold API:**
+**Goblin API:**
 ```bash
 # Immediate playback (for Steps - interrupts queue, returns after)
 curl -X POST http://GOBLIN_IP:3001/api/video/play-immediate \
@@ -149,8 +149,8 @@ curl http://GOBLIN_IP:3001/health
 ```
 
 **Deployment:**
-Goblin Gold is deployed via "Facehugger" system in Goblin Management:
-1. Package Goblin Gold files
+Goblin is deployed via "Facehugger" system in Goblin Management:
+1. Package Goblin files
 2. SCP to target Goblin
 3. Install systemd service
 4. Start playback automatically
@@ -201,7 +201,7 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 ## Documentation Index
 - Deployment: docs/deployment/README.md
 - Technical Overview: docs/MonsterBox-Technical-Overview.md
-- Goblin Gold: goblin-gold/README.md (to be created)
+- Goblin: goblin-gold/README.md (to be created)
 - Orlok audio results: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md
 - Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
 - Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md
