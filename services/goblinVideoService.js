@@ -63,11 +63,12 @@ class GoblinVideoService {
      */
     async scanAllGoblinVideos() {
         try {
-            const goblins = goblinManagerService.getAllGoblins();
+            const result = await goblinManagerService.getGoblins();
+            const goblins = result.success ? result.goblins : [];
             const onlineGoblins = goblins.filter(g => g.status === 'online');
 
             const results = {};
-            
+
             // Scan all Goblins in parallel
             await Promise.all(
                 onlineGoblins.map(async (goblin) => {
@@ -115,7 +116,7 @@ class GoblinVideoService {
      */
     getAllGoblinVideos() {
         const result = {};
-        
+
         for (const [goblinId, data] of this.videoCache.entries()) {
             const age = Date.now() - new Date(data.scannedAt).getTime();
             if (age <= this.cacheTimeout) {

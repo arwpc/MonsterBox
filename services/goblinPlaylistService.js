@@ -6,7 +6,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import goblinManagerService from './goblinManagerService.js';
 
 class GoblinPlaylistService {
@@ -24,7 +24,7 @@ class GoblinPlaylistService {
 
             // Load existing playlists
             await this.loadPlaylists();
-            
+
             console.log('✅ Goblin Playlist Service initialized');
         } catch (error) {
             console.error('❌ Failed to initialize Goblin Playlist Service:', error);
@@ -67,7 +67,7 @@ class GoblinPlaylistService {
             }
 
             const playlist = {
-                id: uuidv4(),
+                id: randomUUID(),
                 name,
                 description: description || '',
                 goblinId,
@@ -115,7 +115,7 @@ class GoblinPlaylistService {
 
         if (filters.search) {
             const search = filters.search.toLowerCase();
-            result = result.filter(p => 
+            result = result.filter(p =>
                 p.name.toLowerCase().includes(search) ||
                 (p.description && p.description.toLowerCase().includes(search))
             );
@@ -147,7 +147,7 @@ class GoblinPlaylistService {
             if (updates.description !== undefined) playlist.description = updates.description;
             if (updates.goblinId) playlist.goblinId = updates.goblinId;
             if (updates.loopMode) playlist.loopMode = updates.loopMode;
-            
+
             if (updates.videos && Array.isArray(updates.videos)) {
                 playlist.videos = updates.videos.map((video, index) => ({
                     filename: typeof video === 'string' ? video : video.filename,
@@ -206,7 +206,9 @@ class GoblinPlaylistService {
             // Determine target Goblins
             let targets = [];
             if (goblinIds === 'all') {
-                targets = goblinManagerService.getAllGoblins()
+                const result = await goblinManagerService.getGoblins();
+                const goblins = result.success ? result.goblins : [];
+                targets = goblins
                     .filter(g => g.status === 'online')
                     .map(g => g.id);
             } else if (Array.isArray(goblinIds)) {
