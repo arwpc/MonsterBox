@@ -60,7 +60,7 @@ class GoblinManager {
         try {
             const response = await fetch('/goblin-management/api/goblins');
             const data = await response.json();
-            
+
             if (data.success) {
                 this.goblins = data.goblins;
                 this.updateLockTimers();
@@ -90,7 +90,7 @@ class GoblinManager {
         if (!filteredGoblins.length) {
             grid.innerHTML = '';
             emptyState.style.display = this.goblins.length === 0 ? 'block' : 'none';
-            
+
             if (this.goblins.length > 0 && this.statusFilter !== 'all') {
                 // Show filter message instead of empty state
                 grid.innerHTML = `
@@ -112,7 +112,7 @@ class GoblinManager {
 
         grid.innerHTML = filteredGoblins.map(goblin => {
             const lockTimeRemaining = this.getLockTimeRemaining(goblin);
-            const heartbeatAge = goblin.lastHeartbeat ? 
+            const heartbeatAge = goblin.lastHeartbeat ?
                 Math.floor((Date.now() - new Date(goblin.lastHeartbeat).getTime()) / 1000) : null;
 
             return `
@@ -163,9 +163,9 @@ class GoblinManager {
                             <!-- Capabilities -->
                             ${goblin.capabilities && goblin.capabilities.length ? `
                                 <div class="mb-2">
-                                    ${goblin.capabilities.map(cap => 
-                                        `<span class="badge bg-secondary capability-badge">${cap}</span>`
-                                    ).join('')}
+                                    ${goblin.capabilities.map(cap =>
+                `<span class="badge bg-secondary capability-badge">${cap}</span>`
+            ).join('')}
                                 </div>
                             ` : ''}
 
@@ -318,7 +318,7 @@ class GoblinManager {
                 // Refresh the Goblin list
                 await this.loadGoblins();
                 this.logActivity(`Registered new Goblin: ${goblinData.metadata.name}`, 'success');
-                
+
                 setTimeout(() => {
                     bootstrap.Modal.getInstance(document.getElementById('registerGoblinModal')).hide();
                     this.resetRegistrationForm();
@@ -331,7 +331,7 @@ class GoblinManager {
         } catch (error) {
             console.error('Registration error:', error);
             statusDiv.className = 'alert alert-danger mt-3';
-            
+
             if (error.name === 'AbortError' || error.message.includes('timeout')) {
                 statusMessage.textContent = 'Connection test timed out. Check the IP address and port.';
             } else if (error.message.includes('Connection test failed')) {
@@ -487,14 +487,14 @@ class GoblinManager {
 
     async unlockAll() {
         const lockedGoblins = this.goblins.filter(g => g.locked);
-        
+
         if (!lockedGoblins.length) {
             this.showInfo('No Goblins are currently locked');
             return;
         }
 
         try {
-            const promises = lockedGoblins.map(goblin => 
+            const promises = lockedGoblins.map(goblin =>
                 fetch(`/goblin-management/api/goblin/${goblin.id}/unlock`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -503,7 +503,7 @@ class GoblinManager {
             );
 
             const results = await Promise.allSettled(promises);
-            
+
             let successful = 0;
             let failed = 0;
 
@@ -561,10 +561,10 @@ class GoblinManager {
 
     async testAllConnections() {
         this.logActivity('Testing all Goblin connections...', 'info');
-        
+
         const promises = this.goblins.map(goblin => this.testConnection(goblin.id));
         await Promise.allSettled(promises);
-        
+
         this.logActivity('Connection test complete for all Goblins', 'info');
     }
 
@@ -594,10 +594,10 @@ class GoblinManager {
 
     async stopAllPlayback() {
         this.logActivity('Stopping playback on all online Goblins...', 'info');
-        
+
         const onlineGoblins = this.goblins.filter(g => g.status === 'online');
         const promises = onlineGoblins.map(goblin => this.stopGoblinPlayback(goblin.id));
-        
+
         await Promise.allSettled(promises);
         this.logActivity('Stop all playback complete', 'info');
     }
@@ -667,10 +667,10 @@ class GoblinManager {
                 <div class="col-md-6">
                     <h6>Capabilities</h6>
                     <div class="mb-3">
-                        ${goblin.capabilities && goblin.capabilities.length ? 
-                            goblin.capabilities.map(cap => `<span class="badge bg-primary me-1">${cap}</span>`).join('') :
-                            '<span class="text-muted">No capabilities specified</span>'
-                        }
+                        ${goblin.capabilities && goblin.capabilities.length ?
+                goblin.capabilities.map(cap => `<span class="badge bg-primary me-1">${cap}</span>`).join('') :
+                '<span class="text-muted">No capabilities specified</span>'
+            }
                     </div>
                     
                     ${goblin.locked ? `
@@ -771,7 +771,7 @@ class GoblinManager {
 
             if (result.success) {
                 resultsDiv.style.display = 'block';
-                
+
                 resultsList.innerHTML = result.results.map(r => `
                     <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
                         <span>${this.getGoblinName(r.goblinId)}</span>
@@ -781,8 +781,8 @@ class GoblinManager {
                     </div>
                 `).join('');
 
-                this.logActivity(`Broadcast complete: ${result.successful}/${result.totalGoblins} successful`, 
-                               result.successful === result.totalGoblins ? 'success' : 'warning');
+                this.logActivity(`Broadcast complete: ${result.successful}/${result.totalGoblins} successful`,
+                    result.successful === result.totalGoblins ? 'success' : 'warning');
             } else {
                 this.showError(`Broadcast failed: ${result.error}`);
             }
@@ -803,12 +803,12 @@ class GoblinManager {
     showSystemHealth() {
         const stats = this.getSystemStats();
         const healthModal = new bootstrap.Modal(document.createElement('div'));
-        
+
         // Create health modal content
         alert(`System Health Summary:
         
 Total Goblins: ${stats.total}
-Online: ${stats.online} (${((stats.online/stats.total)*100).toFixed(1)}%)
+Online: ${stats.online} (${((stats.online / stats.total) * 100).toFixed(1)}%)
 Offline: ${stats.offline}
 Locked: ${stats.locked}
 Average Response: ${stats.avgResponse}ms
@@ -818,12 +818,12 @@ Success Rate: ${stats.successRate}%`);
     // Utility methods
     updateStats() {
         const stats = this.getSystemStats();
-        
+
         document.getElementById('totalGoblins').textContent = stats.total;
         document.getElementById('onlineGoblins').textContent = stats.online;
         document.getElementById('lockedGoblins').textContent = stats.locked;
         document.getElementById('offlineGoblins').textContent = stats.offline;
-        
+
         document.getElementById('avgResponse').textContent = stats.avgResponse + 'ms';
         document.getElementById('successRate').textContent = stats.successRate + '%';
     }
@@ -833,7 +833,7 @@ Success Rate: ${stats.successRate}%`);
         const online = this.goblins.filter(g => g.status === 'online').length;
         const offline = this.goblins.filter(g => g.status === 'offline').length;
         const locked = this.goblins.filter(g => g.locked).length;
-        
+
         // Mock response time and success rate for now
         const avgResponse = Math.floor(Math.random() * 200) + 50;
         const successRate = total > 0 ? Math.floor((online / total) * 100) : 0;
@@ -860,7 +860,7 @@ Success Rate: ${stats.successRate}%`);
                         this.renderGoblinGrid();
                     }
                 }, 1000);
-                
+
                 this.lockTimers.set(goblin.id, timer);
             }
         });
@@ -880,7 +880,7 @@ Success Rate: ${stats.successRate}%`);
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
-        
+
         if (this.autoRefresh) {
             this.refreshInterval = setInterval(() => {
                 this.loadGoblins();
@@ -898,20 +898,20 @@ Success Rate: ${stats.successRate}%`);
     logActivity(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
         const logEntry = { timestamp, message, type };
-        
+
         this.activityLog.unshift(logEntry);
-        
+
         // Keep only last 50 entries
         if (this.activityLog.length > 50) {
             this.activityLog = this.activityLog.slice(0, 50);
         }
-        
+
         this.updateActivityLog();
     }
 
     updateActivityLog() {
         const logDiv = document.getElementById('activityLog');
-        
+
         if (this.activityLog.length === 0) {
             logDiv.innerHTML = '<div class="text-muted">Waiting for activity...</div>';
             return;
@@ -927,7 +927,7 @@ Success Rate: ${stats.successRate}%`);
 
             return `<div style="color: ${color};">[${entry.timestamp}] ${entry.message}</div>`;
         }).join('');
-        
+
         // Scroll to top
         logDiv.scrollTop = 0;
     }
@@ -955,7 +955,7 @@ Success Rate: ${stats.successRate}%`);
         if (diffInSeconds < 60) return 'Just now';
         if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        
+
         return date.toLocaleDateString();
     }
 
@@ -1035,13 +1035,34 @@ Success Rate: ${stats.successRate}%`);
         }, { once: true });
     }
 
+    // Helper to transform API queue response to frontend format
+    transformQueueData(data) {
+        if (!data || !data.success) {
+            return {
+                queue: [],
+                priorityQueue: [],
+                running: false,
+                mode: 'none',
+                currentVideo: null
+            };
+        }
+
+        return {
+            queue: data.queue?.videos || [],
+            priorityQueue: [], // Not implemented in current API
+            running: data.queue?.playing || false,
+            mode: data.queue?.loopMode || 'none',
+            currentVideo: data.currentVideo || null
+        };
+    }
+
     async loadVideoQueue(goblin) {
         try {
             const response = await fetch(`${goblin.endpoint}/queue`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
+                this.currentQueue = this.transformQueueData(data);
                 this.renderVideoQueue();
             } else {
                 this.showError('Failed to load video queue');
@@ -1383,8 +1404,7 @@ Success Rate: ${stats.successRate}%`);
                 const startData = await startResponse.json();
 
                 if (startData.success) {
-                    this.currentQueue = startData.queue;
-                    this.renderVideoQueue();
+                    await this.loadVideoQueue(this.currentQueueGoblin);
                     await this.updatePlaybackStatus();
                     this.showSuccess(`Now playing: ${filename}`);
                 } else {
@@ -1412,8 +1432,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 this.showSuccess(`Added ${filename} to ${priority ? 'priority ' : ''}queue`);
             } else {
                 this.showError('Failed to add video to queue');
@@ -1448,8 +1467,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 await this.updatePlaybackStatus();
                 this.showSuccess('Queue started');
             } else {
@@ -1470,8 +1488,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 this.showSuccess('Queue paused');
             }
         } catch (error) {
@@ -1488,8 +1505,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 await this.updatePlaybackStatus();
                 this.showSuccess('Queue resumed');
             } else {
@@ -1510,8 +1526,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 this.showSuccess('Skipped to next video');
             }
         } catch (error) {
@@ -1528,8 +1543,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 this.showSuccess('Queue stopped');
             }
         } catch (error) {
@@ -1548,8 +1562,7 @@ Success Rate: ${stats.successRate}%`);
             const data = await response.json();
 
             if (data.success) {
-                this.currentQueue = data.queue;
-                this.renderVideoQueue();
+                await this.loadVideoQueue(this.currentQueueGoblin);
                 this.showSuccess('Queue cleared');
             }
         } catch (error) {
