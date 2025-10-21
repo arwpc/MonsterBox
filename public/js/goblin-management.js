@@ -1280,7 +1280,7 @@ Success Rate: ${stats.successRate}%`);
                     <span class="badge bg-secondary me-2">${index + 1}</span>
                     <span>${item.filename}</span>
                 </div>
-                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue(${index}, ${isPriority})" title="Remove this video from the queue">
+                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue('${item.id}')" title="Remove this video from the queue">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -1444,9 +1444,28 @@ Success Rate: ${stats.successRate}%`);
         }
     }
 
-    async removeFromQueue(index, isPriority) {
-        // Note: This requires implementing a remove endpoint on the Goblin
-        this.showWarning('Remove from queue not yet implemented');
+    async removeFromQueue(videoId) {
+        if (!this.currentQueueGoblin) {
+            this.showError('No Goblin selected');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/remove/${videoId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess('Video removed from queue');
+                await this.loadVideoQueue(this.currentQueueGoblin);
+            } else {
+                this.showError('Failed to remove video: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error removing from queue:', error);
+            this.showError('Error removing from queue: ' + error.message);
+        }
     }
 
     async startQueue(mode = 'sequential') {
