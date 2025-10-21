@@ -53,6 +53,17 @@ async function getVideoMetadata(filePath) {
 (async () => {
   const app = express();
 
+  // CORS middleware - allow requests from MonsterBox
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   // JSON body for normal clients
   app.use(express.json({ limit: '1mb' }));
 
@@ -131,6 +142,42 @@ async function getVideoMetadata(filePath) {
     }
   });
 
+  // Enqueue endpoint (alias for add)
+  app.post('/queue/enqueue', async (req, res) => {
+    try {
+      const { filename } = req.body;
+      if (!filename || typeof filename !== 'string' || filename.length === 0) {
+        return res.status(400).json({ success: false, error: 'Missing filename' });
+      }
+      const video = await queue.add(filename, 'end');
+      res.json({ success: true, video });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
+  // Enqueue priority endpoint (add to front and start playing)
+  app.post('/queue/enqueue-priority', async (req, res) => {
+    try {
+      const { filename } = req.body;
+      if (!filename || typeof filename !== 'string' || filename.length === 0) {
+        return res.status(400).json({ success: false, error: 'Missing filename' });
+      }
+
+      // Add to front of queue
+      const video = await queue.add(filename, 'start');
+
+      // Start playing if not already playing
+      if (!queue.queue.playing) {
+        await queue.start({ loopMode: 'none' });
+      }
+
+      res.json({ success: true, video, playing: true });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
   app.delete('/queue/remove/:id', async (req, res) => {
     try { const removed = await queue.remove(req.params.id); res.json({ success: true, removed }); }
     catch (e) { res.status(500).json({ success: false, error: e.message }); }
@@ -168,6 +215,43 @@ async function getVideoMetadata(filePath) {
   });
 
   // New API endpoints for MonsterBox integration
+
+  // Scan local video directory (legacy endpoint for compatibility)
+  app.get('/media', async (_req, res) => {
+    try {
+      const videoDir = '/home/remote/media/video';
+      const files = await fs.readdir(videoDir);
+      const videos = [];
+
+      for (const file of files) {
+        if (!/\.(mp4|mov|avi|mkv)$/i.test(file)) continue;
+
+        try {
+          const filePath = path.join(videoDir, file);
+          const stats = await fs.stat(filePath);
+
+          // Get video metadata using ffprobe
+          const metadata = await getVideoMetadata(filePath);
+
+          videos.push({
+            filename: file,
+            path: file,  // Add path field for compatibility
+            size: stats.size,
+            duration: metadata.duration || 0,
+            resolution: metadata.resolution || 'unknown',
+            fps: metadata.fps || 0,
+            codec: metadata.codec || 'unknown'
+          });
+        } catch (err) {
+          console.error(`Error scanning ${file}:`, err);
+        }
+      }
+
+      res.json({ success: true, media: { video: videos } });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
 
   // Scan local video directory
   app.get('/api/videos/scan', async (_req, res) => {
@@ -251,6 +335,22 @@ async function getVideoMetadata(filePath) {
     } catch (e) {
       res.status(500).json({ success: false, error: e.message });
     }
+  });
+
+  // Get playback status (legacy endpoint for compatibility)
+  app.get('/playback-status', (_req, res) => {
+    res.json({
+      success: true,
+      playing: !!mpv.currentVideo,
+      currentVideo: mpv.currentVideo,
+      mpvRunning: !!mpv.process,
+      queue: {
+        videos: queue.queue.videos,
+        currentIndex: queue.queue.currentIndex,
+        loopMode: queue.queue.loopMode,
+        playing: queue.queue.playing
+      }
+    });
   });
 
   // Get detailed playback status
