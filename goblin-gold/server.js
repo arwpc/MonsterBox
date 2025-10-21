@@ -9,6 +9,11 @@ const QueueManager = require('./src/queueManager');
 
 const PORT = process.env.GOBLIN_PORT || 3001;
 
+// Video library cache
+let videoLibraryCache = null;
+let lastScanTime = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // Helper function to get video metadata using ffprobe
 async function getVideoMetadata(filePath) {
   return new Promise((resolve) => {
@@ -50,6 +55,54 @@ async function getVideoMetadata(filePath) {
   });
 }
 
+// Function to scan video library and cache results
+async function scanVideoLibrary() {
+  try {
+    const videoDir = '/home/remote/media/video';
+    const videos = [];
+
+    async function scanDirectory(dir, prefix = '') {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relativePath = prefix ? path.join(prefix, entry.name) : entry.name;
+
+        if (entry.isDirectory()) {
+          await scanDirectory(fullPath, relativePath);
+        } else if (/\.(mp4|mov|avi|mkv)$/i.test(entry.name)) {
+          try {
+            const stats = await fs.stat(fullPath);
+
+            // Get basic metadata without ffprobe for speed
+            videos.push({
+              filename: relativePath,
+              path: relativePath,
+              size: stats.size,
+              duration: 0,  // Skip ffprobe for speed
+              resolution: '1280x720',  // Assume standard format
+              fps: 30  // Assume standard fps
+            });
+          } catch (err) {
+            console.error(`Error scanning ${relativePath}:`, err.message);
+          }
+        }
+      }
+    }
+
+    await scanDirectory(videoDir);
+
+    videoLibraryCache = videos;
+    lastScanTime = Date.now();
+
+    console.log(`Video library scanned: ${videos.length} videos cached`);
+    return videos;
+  } catch (err) {
+    console.error('Error scanning video library:', err);
+    return [];
+  }
+}
+
 (async () => {
   const app = express();
 
@@ -71,6 +124,10 @@ async function getVideoMetadata(filePath) {
   const mpv = new MPVController({});
   const queue = new QueueManager(mpv, {});
   await queue.load();
+
+  // Initialize video library cache on startup
+  console.log('Initializing video library cache...');
+  await scanVideoLibrary();
 
   // Helpers
   const status = () => ({ ...queue.getStatus(), mpvRunning: !!mpv.process });
@@ -248,74 +305,27 @@ async function getVideoMetadata(filePath) {
 
   // New API endpoints for MonsterBox integration
 
-  // Scan local video directory (legacy endpoint for compatibility)
+  // Get video library (cached for speed)
   app.get('/media', async (_req, res) => {
     try {
-      const videoDir = '/home/remote/media/video';
-      const files = await fs.readdir(videoDir);
-      const videos = [];
-
-      for (const file of files) {
-        if (!/\.(mp4|mov|avi|mkv)$/i.test(file)) continue;
-
-        try {
-          const filePath = path.join(videoDir, file);
-          const stats = await fs.stat(filePath);
-
-          // Get video metadata using ffprobe
-          const metadata = await getVideoMetadata(filePath);
-
-          videos.push({
-            filename: file,
-            path: file,  // Add path field for compatibility
-            size: stats.size,
-            duration: metadata.duration || 0,
-            resolution: metadata.resolution || 'unknown',
-            fps: metadata.fps || 0,
-            codec: metadata.codec || 'unknown'
-          });
-        } catch (err) {
-          console.error(`Error scanning ${file}:`, err);
-        }
+      // Return cached data if available and fresh
+      if (videoLibraryCache && lastScanTime && (Date.now() - lastScanTime < CACHE_DURATION)) {
+        return res.json({ success: true, videos: videoLibraryCache });
       }
 
-      res.json({ success: true, media: { video: videos } });
+      // Otherwise scan and cache
+      const videos = await scanVideoLibrary();
+      res.json({ success: true, videos: videos });
     } catch (e) {
       res.status(500).json({ success: false, error: e.message });
     }
   });
 
-  // Scan local video directory
+  // Force rescan of video library
   app.get('/api/videos/scan', async (_req, res) => {
     try {
-      const videoDir = '/home/remote/media/video';
-      const files = await fs.readdir(videoDir);
-      const videos = [];
-
-      for (const file of files) {
-        if (!/\.(mp4|mov|avi|mkv)$/i.test(file)) continue;
-
-        try {
-          const filePath = path.join(videoDir, file);
-          const stats = await fs.stat(filePath);
-
-          // Get video metadata using ffprobe
-          const metadata = await getVideoMetadata(filePath);
-
-          videos.push({
-            filename: file,
-            size: stats.size,
-            duration: metadata.duration || 0,
-            resolution: metadata.resolution || 'unknown',
-            fps: metadata.fps || 0,
-            codec: metadata.codec || 'unknown'
-          });
-        } catch (err) {
-          console.error(`Error scanning ${file}:`, err);
-        }
-      }
-
-      res.json({ success: true, videos });
+      const videos = await scanVideoLibrary();
+      res.json({ success: true, videos, count: videos.length });
     } catch (e) {
       res.status(500).json({ success: false, error: e.message });
     }

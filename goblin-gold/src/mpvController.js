@@ -23,14 +23,19 @@ const MPV_BASE_ARGS = [
   `--hwdec=${DEFAULT_HWDEC}`,
   '--fs',
   '--no-audio',  // Disable audio for video displays
-  // Back to original working settings - slight judder is normal for 30fps on 60Hz
-  '--video-sync=display-resample',
+  // Optimized for smooth 30fps playback
+  '--video-sync=display-vdrop',  // Drop frames if needed for smooth playback
   '--interpolation=no',
+  '--cache=yes',
+  '--cache-secs=5',  // 5 second cache for smooth playback
+  '--demuxer-max-bytes=50M',  // Larger buffer
+  '--demuxer-readahead-secs=5',
   '--msg-level=all=error',
   '--no-terminal',
   '--no-input-default-bindings',
   '--no-osc',  // No on-screen controller
   '--no-osd-bar',  // No OSD bar
+  '--priority=high',  // High priority for smoother playback
   ...ENV_EXTRA_ARGS,
 ];
 
