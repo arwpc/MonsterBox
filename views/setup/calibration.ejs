@@ -441,57 +441,64 @@
       </div>
     </div>
 
-    <!-- Right Panel: Simple Calibration -->
+    <!-- Right Panel: Unified Calibration (Positions v1.5) -->
     <div class="col-12 col-xl-3">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-sliders"></i> Simple Calibration</span>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="lockMinMax">
-            <label class="form-check-label" for="lockMinMax">Lock Min/Max</label>
-          </div>
+      <div class="card h-100" id="unifiedCalPanel">
+        <div class="card-header">
+          <i class="bi bi-bullseye"></i> Calibration (Positions v1.5)
         </div>
         <div class="card-body">
+          
+          <!-- Current Position Display -->
           <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong>Min</strong>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" id="setMinBtn"
-                  title="Set Min to current position">Set</button>
-                <button class="btn btn-outline-primary" id="goMinBtn" title="Move to Min position">Go</button>
+            <label class="form-label small fw-bold">Current Position</label>
+            <div class="text-center">
+              <span id="calPositionDisplay" class="badge bg-primary fs-5">—</span>
+            </div>
+          </div>
+
+          <!-- Calibration Bounds -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Calibration Bounds</label>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <small class="text-muted">Min: <span id="calMinDisplay">—</span></small>
+              </div>
+              <div class="col-6 text-end">
+                <small class="text-muted">Max: <span id="calMaxDisplay">—</span></small>
               </div>
             </div>
-            <input id="minValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
-          </div>
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong>Center</strong>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" id="setMidBtn"
-                  title="Set Center to current position">Set</button>
-                <button class="btn btn-outline-primary" id="goMidBtn" title="Move to Center position">Go</button>
-              </div>
+            <div class="btn-group w-100">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')">Set Min</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')">Set Max</button>
             </div>
-            <input id="midValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
           </div>
-          <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong>Max</strong>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" id="setMaxBtn"
-                  title="Set Max to current position">Set</button>
-                <button class="btn btn-outline-primary" id="goMaxBtn" title="Move to Max position">Go</button>
-              </div>
-            </div>
-            <input id="maxValue" class="form-control form-control-sm" placeholder="deg / mm / counts / preset">
-          </div>
+
+          <!-- Position Presets -->
           <hr>
-          <div class="mb-2"><strong>Custom Positions</strong></div>
-          <div id="customMarkers" class="d-flex flex-wrap gap-2"></div>
-          <div class="input-group input-group-sm mt-2">
-            <input id="newMarkerName" class="form-control" placeholder="Position name">
-            <button id="addMarkerBtn" class="btn btn-outline-success" title="Add custom position"><i
-                class="bi bi-plus"></i> Add</button>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Position Presets</label>
+            <div class="input-group input-group-sm mb-2">
+              <input type="text" class="form-control" id="presetNameInput" placeholder="Preset name...">
+              <button type="button" class="btn btn-success" onclick="addPreset()">Set Here</button>
+            </div>
+            <div id="presetsContainer" class="d-flex flex-column gap-1">
+              <small class="text-muted">No presets yet</small>
+            </div>
+          </div>
+
+          <!-- Learn Movement (for openloop-linear parts only) -->
+          <div id="learnMovementSection" style="display: none;">
+            <hr>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Learn Movement</label>
+              <small class="text-muted d-block mb-2">Probe linear actuator speed</small>
+              <div class="d-grid gap-1">
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)">Run 30% PWM</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)">Run 50% PWM</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)">Run 70% PWM</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -523,6 +530,9 @@
     let modelsCache = {}; // by type
     let selectedIdsMulti = new Set();
     window.selectedIdsMulti = selectedIdsMulti;
+    
+    // Initialize jog scale for unified calibration
+    window.jogScale = 'medium';
 
     function getVisiblePartIds() { return (window.visiblePartIds || []).map(String); }
     function updateBulkUI() {
@@ -627,7 +637,356 @@
       // Enable Remove button when a part is selected
       const removeBtn = document.getElementById('btnRemove');
       if (removeBtn) removeBtn.disabled = false;
+
+      // Load unified calibration for this part
+      await loadUnifiedCalibration(selected.id, selected);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // UNIFIED CALIBRATION INTEGRATION
+    // ─────────────────────────────────────────────────────────────────────────
+    let currentCalProfile = null;
+
+    async function loadUnifiedCalibration(partId, partData) {
+      try {
+        const res = await fetch(`/api/calibration/${partId}/profile`);
+        const data = await res.json();
+        
+        if (!data.success) {
+          console.warn('No calibration profile for part', partId);
+          currentCalProfile = null;
+          updateCalibrationUI(null, partData);
+          return;
+        }
+
+        currentCalProfile = data.profile;
+        updateCalibrationUI(currentCalProfile, partData);
+        
+        // Also fetch current position
+        try {
+          const posRes = await fetch(`/api/calibration/${partId}/position`);
+          const posData = await posRes.json();
+          if (posData.success && posData.currentP != null) {
+            updateCurrentPositionDisplay(posData.currentP);
+          }
+        } catch (posErr) {
+          console.warn('Could not fetch current position:', posErr);
+        }
+      } catch (err) {
+        console.error('Failed to load calibration profile:', err);
+        currentCalProfile = null;
+        updateCalibrationUI(null, partData);
+      }
+    }
+
+    function updateCalibrationUI(profile, partData) {
+      const panel = document.getElementById('unifiedCalPanel');
+      if (!panel) return;
+
+      // Show/hide learn-movement section based on part capability
+      const learnSection = document.getElementById('learnMovementSection');
+      const isOpenloop = partData && partData.config && partData.config.capability === 'openloop-linear';
+      if (learnSection) {
+        learnSection.style.display = isOpenloop ? 'block' : 'none';
+      }
+
+      // Update bounds displays
+      const minDisplay = document.getElementById('calMinDisplay');
+      const maxDisplay = document.getElementById('calMaxDisplay');
+      if (profile) {
+        if (minDisplay) minDisplay.textContent = profile.bounds && profile.bounds.minP != null ? profile.bounds.minP.toFixed(3) : '—';
+        if (maxDisplay) maxDisplay.textContent = profile.bounds && profile.bounds.maxP != null ? profile.bounds.maxP.toFixed(3) : '—';
+      } else {
+        if (minDisplay) minDisplay.textContent = '—';
+        if (maxDisplay) maxDisplay.textContent = '—';
+      }
+
+      // Update presets list
+      renderPresetsUI(profile ? profile.presets : null);
+      
+      // Update position display (placeholder for now - API doesn't have status endpoint yet)
+      const posDisplay = document.getElementById('calPositionDisplay');
+      if (posDisplay) posDisplay.textContent = '—';
+    }
+
+    // Jog controls
+    async function jogPart(direction, scale) {
+      const partId = window.selectedPartId;
+      if (!partId) return;
+
+      // Convert UI direction names to API dir values
+      let dir;
+      if (direction === 'backward' || direction === 'min') dir = 'min';
+      else if (direction === 'forward' || direction === 'max') dir = 'max';
+      else if (direction === 'stop') {
+        // Handle stop separately
+        try {
+          const res = await fetch(`/api/calibration/${partId}/stop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const data = await res.json();
+          if (!data.success) {
+            alert('Stop failed: ' + (data.error || 'Unknown error'));
+          }
+        } catch (err) {
+          console.error('Stop error:', err);
+          alert('Stop error: ' + err.message);
+        }
+        return;
+      } else {
+        console.error('Invalid direction:', direction);
+        return;
+      }
+
+      // Normalize scale (medium -> med)
+      if (scale === 'medium') scale = 'med';
+
+      try {
+        const res = await fetch(`/api/calibration/${partId}/nudge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dir, scale })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert('Jog failed: ' + (data.error || 'Unknown error'));
+        } else {
+          // Update current position display if returned
+          if (typeof data.currentP === 'number') {
+            updateCurrentPositionDisplay(data.currentP);
+          }
+        }
+      } catch (err) {
+        console.error('Jog error:', err);
+        alert('Jog error: ' + err.message);
+      }
+    }
+
+    // Expose unified calibration functions to global scope for onclick handlers
+    window.jogPart = jogPart;
+
+    // Helper function to update current position display
+    function updateCurrentPositionDisplay(p) {
+      const el = document.getElementById('calPositionDisplay');
+      if (el) {
+        el.textContent = typeof p === 'number' ? p.toFixed(3) : '—';
+      }
+    }
+
+    // Helper function to fetch and update current position from server
+    async function refreshCurrentPosition(partId) {
+      if (!partId) partId = window.selectedPartId;
+      if (!partId) return;
+      
+      try {
+        const res = await fetch(`/api/calibration/${partId}/position`);
+        const data = await res.json();
+        if (data.success && data.currentP != null) {
+          updateCurrentPositionDisplay(data.currentP);
+        }
+      } catch (err) {
+        console.warn('Could not fetch current position:', err);
+      }
+    }
+
+    // Expose position refresh for use by control handlers
+    window.refreshCurrentPosition = refreshCurrentPosition;
+
+    // Bounds setting
+    async function setCalibrationBound(boundType) {
+      const partId = window.selectedPartId;
+      if (!partId) return;
+
+      if (!confirm(`Set ${boundType.toUpperCase()} bound at current position?`)) return;
+
+      try {
+        const res = await fetch(`/api/calibration/${partId}/set-${boundType}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert(`Set ${boundType} failed: ` + (data.error || 'Unknown error'));
+        } else {
+          // Reload profile to update UI
+          await loadUnifiedCalibration(partId, window.selectedPart);
+        }
+      } catch (err) {
+        console.error(`Set ${boundType} error:`, err);
+        alert(`Set ${boundType} error: ` + err.message);
+      }
+    }
+
+    window.setCalibrationBound = setCalibrationBound;
+
+    // Preset management
+    function renderPresetsUI(presets) {
+      const container = document.getElementById('presetsContainer');
+      if (!container) return;
+
+      if (!presets || presets.length === 0) {
+        container.innerHTML = '<em class="text-muted">No presets defined</em>';
+        return;
+      }
+
+      container.innerHTML = presets.map(p => `
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <button class="btn btn-sm btn-outline-primary flex-fill" onclick="gotoPreset('${p.name}')">
+            ${p.name}
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deletePreset('${p.name}')" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function addPreset() {
+      const partId = window.selectedPartId;
+      if (!partId || !currentCalProfile) return;
+
+      const nameInput = document.getElementById('presetNameInput');
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name) {
+        alert('Enter a preset name');
+        return;
+      }
+
+      // For now, prompt for position value since we don't have real-time position tracking yet
+      const posStr = prompt('Enter position value (0.0 to 1.0):', '0.5');
+      if (!posStr) return;
+      
+      const position = parseFloat(posStr);
+      if (isNaN(position) || position < 0 || position > 1) {
+        alert('Invalid position. Must be between 0.0 and 1.0');
+        return;
+      }
+
+      try {
+        // Update profile with new preset
+        const updatedPresets = [...(currentCalProfile.presets || [])];
+        const existingIndex = updatedPresets.findIndex(p => p.name === name);
+        if (existingIndex >= 0) {
+          updatedPresets[existingIndex].position = position;
+        } else {
+          updatedPresets.push({ name, position });
+        }
+
+        // Send complete updated profile
+        const updatedProfile = { ...currentCalProfile, presets: updatedPresets };
+        const updateRes = await fetch(`/api/calibration/${partId}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProfile)
+        });
+
+        const updateData = await updateRes.json();
+        if (!updateData.success) {
+          alert('Failed to save preset: ' + (updateData.error || 'Unknown error'));
+        } else {
+          nameInput.value = '';
+          await loadUnifiedCalibration(partId, window.selectedPart);
+        }
+      } catch (err) {
+        console.error('Add preset error:', err);
+        alert('Add preset error: ' + err.message);
+      }
+    }
+
+    async function deletePreset(name) {
+      const partId = window.selectedPartId;
+      if (!partId || !currentCalProfile) return;
+
+      if (!confirm(`Delete preset "${name}"?`)) return;
+
+      try {
+        const updatedPresets = (currentCalProfile.presets || []).filter(p => p.name !== name);
+
+        // Send complete updated profile
+        const updatedProfile = { ...currentCalProfile, presets: updatedPresets };
+        const res = await fetch(`/api/calibration/${partId}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProfile)
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Failed to delete preset: ' + (data.error || 'Unknown error'));
+        } else {
+          await loadUnifiedCalibration(partId, window.selectedPart);
+        }
+      } catch (err) {
+        console.error('Delete preset error:', err);
+        alert('Delete preset error: ' + err.message);
+      }
+    }
+
+    async function gotoPreset(name) {
+      const partId = window.selectedPartId;
+      if (!partId || !currentCalProfile) return;
+
+      const preset = currentCalProfile.presets.find(p => p.name === name);
+      if (!preset) {
+        alert('Preset not found: ' + name);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/calibration/${partId}/goto`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p: preset.position })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Goto preset failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Goto preset error:', err);
+        alert('Goto preset error: ' + err.message);
+      }
+    }
+
+    // Learn movement (for openloop-linear parts)
+    async function runLearnMovement(pwmPercent) {
+      const partId = window.selectedPartId;
+      if (!partId) return;
+
+      if (!confirm(`Run learn-openloop at ${pwmPercent}% PWM? This will move the part to learn speed/distance.`)) return;
+
+      try {
+        const res = await fetch(`/api/calibration/${partId}/learn-openloop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pwmPercent })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Learn movement failed: ' + (data.error || 'Unknown error'));
+        } else {
+          alert(`Learn complete!\nDistance: ${data.distanceMoved}\nTime: ${data.elapsedMs}ms`);
+          // Reload profile to get updated speed calibration
+          await loadUnifiedCalibration(partId, window.selectedPart);
+        }
+      } catch (err) {
+        console.error('Learn movement error:', err);
+        alert('Learn movement error: ' + err.message);
+      }
+    }
+
+    // Expose unified calibration functions to global scope for onclick handlers
+    window.addPreset = addPreset;
+    window.deletePreset = deletePreset;
+    window.gotoPreset = gotoPreset;
+    window.runLearnMovement = runLearnMovement;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // END UNIFIED CALIBRATION INTEGRATION
+    // ─────────────────────────────────────────────────────────────────────────
 
     async function ensureModelsLoaded(type) {
       if (modelsCache[type]) return;
@@ -769,14 +1128,24 @@
             if (st) st.textContent = `${part.name} (ID: ${part.id}) ${dir} at ${speed}%…`;
             console.log(`Continuous servo: ${part.name} (ID: ${part.id}) direction: ${dir}, speed: ${speed}%, duration: ${duration}ms`);
             try {
-              const response = await fetch(`/setup/calibration/api/continuous_servo/${encodeURIComponent(part.id)}/jog`, {
+              // Map direction to nudge delta
+              let delta = 0;
+              if (dir === 'cw') delta = 0.1;
+              else if (dir === 'ccw') delta = -0.1;
+              
+              const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ direction: dir, speed, duration })
+                body: JSON.stringify({ delta, speedPct: speed, durationMs: duration })
               });
-              if (response.ok) {
+              const data = await response.json();
+              if (response.ok && data.success) {
                 if (st) st.textContent = `${part.name} ${dir} complete`;
                 console.log(`Successfully jogged continuous servo ${part.name} ${dir}`);
+                // Update position display
+                if (data.currentP != null) {
+                  updateCurrentPositionDisplay(data.currentP);
+                }
               } else {
                 if (st) st.textContent = 'Jog failed';
                 console.log(`Failed to jog continuous servo ${part.name}:`, response.status);
@@ -804,27 +1173,35 @@
             if (st) st.textContent = `Moving ${part.name} (ID: ${part.id}) to ${angle}°…`;
             console.log(`Moving servo: ${part.name} (ID: ${part.id}) to angle: ${angle}°`);
             try {
+              // Convert angle (0-180°) to normalized position (0-1)
+              const p = angle / 180.0;
+              
               // Deterministic status in test mode
               if (window && window.MB_TEST_MODE) {
                 if (st) st.textContent = 'Done';
                 setTimeout(() => { if (st) st.textContent = ''; }, 2000);
                 // Fire-and-forget the request in test mode
-                fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(part.id)}/move`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle })
+                fetch(`/api/calibration/${encodeURIComponent(part.id)}/goto`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p })
                 }).catch(() => { });
                 return;
               }
-              const response = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(part.id)}/move`, {
+              const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/goto`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ angle })
+                body: JSON.stringify({ p })
               });
-              if (response.ok) {
+              const data = await response.json();
+              if (response.ok && data.success) {
                 if (st) st.textContent = `${part.name} moved to ${angle}°`;
                 console.log(`Successfully moved servo ${part.name} to ${angle}°`);
+                // Update position display with actual position
+                if (data.targetP != null) {
+                  updateCurrentPositionDisplay(data.targetP);
+                }
               } else {
-                if (st) st.textContent = 'Move failed';
-                console.log(`Failed to move servo ${part.name}:`, response.status);
+                if (st) st.textContent = 'Move failed: ' + (data.error || 'unknown');
+                console.log(`Failed to move servo ${part.name}:`, response.status, data);
               }
               setTimeout(() => { if (st) st.textContent = ''; }, 2000);
             } catch (e) {
@@ -845,9 +1222,87 @@
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
         const spd = () => parseInt(document.getElementById('laSpd').value || '50', 10);
         const dur = () => parseInt(document.getElementById('laDur').value || '500', 10);
-        el.querySelector('#extendBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); try { if (window && window.MB_TEST_MODE) { if (st) st.textContent = 'Done'; const d = 2000; setTimeout(() => { if (st) st.textContent = ''; }, d); fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'extend', speed: spd(), duration: dur() }) }).catch(() => { }); return; } if (st) st.textContent = 'Extending…'; await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'extend', speed: spd(), duration: dur() }) }); if (st) st.textContent = 'Done'; const d = 800; setTimeout(() => { if (st) st.textContent = ''; }, d); } catch (e) { if (st) st.textContent = 'Failed'; } });
-        el.querySelector('#retractBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); try { if (window && window.MB_TEST_MODE) { if (st) st.textContent = 'Done'; const d = 2000; setTimeout(() => { if (st) st.textContent = ''; }, d); fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'retract', speed: spd(), duration: dur() }) }).catch(() => { }); return; } if (st) st.textContent = 'Retracting…'; await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/jog`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'retract', speed: spd(), duration: dur() }) }); if (st) st.textContent = 'Done'; const d = 800; setTimeout(() => { if (st) st.textContent = ''; }, d); } catch (e) { if (st) st.textContent = 'Failed'; } });
-        el.querySelector('#stopBtn').addEventListener('click', async () => { const st = document.getElementById('ctrlStatus'); try { if (window && window.MB_TEST_MODE) { if (st) st.textContent = 'Stopped'; const d = 2000; setTimeout(() => { if (st) st.textContent = ''; }, d); fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { method: 'POST' }).catch(() => { }); return; } if (st) st.textContent = 'Stopping…'; await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { method: 'POST' }); if (st) st.textContent = 'Stopped'; const d = 800; setTimeout(() => { if (st) st.textContent = ''; }, d); } catch (e) { if (st) st.textContent = 'Failed'; } });
+        el.querySelector('#extendBtn').addEventListener('click', async () => { 
+          const st = document.getElementById('ctrlStatus'); 
+          try { 
+            if (window && window.MB_TEST_MODE) { 
+              if (st) st.textContent = 'Done'; 
+              const d = 2000; 
+              setTimeout(() => { if (st) st.textContent = ''; }, d); 
+              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() }) 
+              }).catch(() => { }); 
+              return; 
+            } 
+            if (st) st.textContent = 'Extending…'; 
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() }) 
+            }); 
+            const data = await response.json();
+            if (st) st.textContent = 'Done'; 
+            if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
+            const d = 800; 
+            setTimeout(() => { if (st) st.textContent = ''; }, d); 
+          } catch (e) { 
+            if (st) st.textContent = 'Failed'; 
+          } 
+        });
+        el.querySelector('#retractBtn').addEventListener('click', async () => { 
+          const st = document.getElementById('ctrlStatus'); 
+          try { 
+            if (window && window.MB_TEST_MODE) { 
+              if (st) st.textContent = 'Done'; 
+              const d = 2000; 
+              setTimeout(() => { if (st) st.textContent = ''; }, d); 
+              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() }) 
+              }).catch(() => { }); 
+              return; 
+            } 
+            if (st) st.textContent = 'Retracting…'; 
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() }) 
+            }); 
+            const data = await response.json();
+            if (st) st.textContent = 'Done'; 
+            if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
+            const d = 800; 
+            setTimeout(() => { if (st) st.textContent = ''; }, d); 
+          } catch (e) { 
+            if (st) st.textContent = 'Failed'; 
+          } 
+        });
+        el.querySelector('#stopBtn').addEventListener('click', async () => { 
+          const st = document.getElementById('ctrlStatus'); 
+          try { 
+            if (window && window.MB_TEST_MODE) { 
+              if (st) st.textContent = 'Stopped'; 
+              const d = 2000; 
+              setTimeout(() => { if (st) st.textContent = ''; }, d); 
+              fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { 
+                method: 'POST' 
+              }).catch(() => { }); 
+              return; 
+            } 
+            if (st) st.textContent = 'Stopping…'; 
+            await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { 
+              method: 'POST' 
+            }); 
+            if (st) st.textContent = 'Stopped'; 
+            const d = 800; 
+            setTimeout(() => { if (st) st.textContent = ''; }, d); 
+          } catch (e) { 
+            if (st) st.textContent = 'Failed'; 
+          } 
+        });
       } else if (part.type === 'motor') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
           '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +

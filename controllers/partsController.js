@@ -462,23 +462,8 @@ export const deletePart = async (req, res) => {
         const deletedPart = parts.splice(partIndex, 1)[0];
         await saveParts(parts);
 
-        // Best-effort: purge any calibration artifacts tied to this part id
-        try {
-            const { resetCalibration: resetLA } = await import('../services/linearActuatorCalibrationService.js');
-            const { resetCalibration: resetStd } = await import('../services/standardServoCalibrationService.js');
-            const { resetCalibration: resetCont } = await import('../services/continuousServoCalibrationService.js');
-            // Linear actuator
-            if (deletedPart.type === 'linear_actuator') {
-                await resetLA(String(id)).catch(() => { });
-            }
-            // Servo (both flavors share servo_calibrations.json)
-            if (deletedPart.type === 'servo') {
-                await resetStd(String(id)).catch(() => { });
-                await resetCont(String(id)).catch(() => { });
-            }
-        } catch (e) {
-            console.warn('⚠️ Calibration cleanup skipped:', e && e.message);
-        }
+        // TODO: Purge unified calibration profile when part is deleted
+        // Legacy calibration cleanup removed - needs migration to unified calibration store
 
         res.json({
             success: true,

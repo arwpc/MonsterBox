@@ -322,12 +322,22 @@
   },
   {
     "id": "23",
+    "name": "T Motion",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "Motion",
+    "config": {},
+    "created": "2025-10-22T21:01:39.218Z",
+    "enabled": true
+  },
+  {
+    "id": "24",
     "name": "T Act",
     "type": "linear_actuator",
     "pin": 19,
     "description": "Linear actuator",
     "config": {},
-    "created": "2025-10-22T18:11:53.132Z",
+    "created": "2025-10-22T21:02:18.335Z",
     "enabled": true,
     "controlBoard": "MDD10A",
     "directionPin": 19,

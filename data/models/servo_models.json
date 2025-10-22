@@ -1119,32 +1119,6 @@
     "meta": {}
   },
   {
-    "id": "1760412561738",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1760412614131",
-    "name": "Test Servo Model",
-    "description": "servo defaults for tests",
-    "defaults": {
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "neutral": 1500,
-      "rotationRangeDeg": 180
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
     "id": "1760412697982",
     "name": "E2E Servo Model",
     "description": "servo defaults",

@@ -8,12 +8,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { loadParts, saveParts, createPart, updatePart, deletePart } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
-import * as linearActuatorCalibration from '../../services/linearActuatorCalibrationService.js';
 import * as servoService from '../../services/hardwareService/servo.js';
-import * as continuousServoCalibration from '../../services/continuousServoCalibrationService.js';
 import hardwareService from '../../services/hardwareService/index.js';
-import * as standardServoCalibration from '../../services/standardServoCalibrationService.js';
-import * as simpleCal from '../../services/simpleCalibrationService.js';
 
 import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
@@ -87,7 +83,37 @@ async function saveCharacterParts(characterId, parts) {
     }
 }
 
-// Setup calibration main page
+// Unified Calibration v1.5 - NEW SYSTEM
+router.get('/unified', async (req, res) => {
+    try {
+        const { characterId } = req.query;
+        const parts = await loadCharacterParts(characterId);
+        
+        // Filter to positionable parts only
+        const positionableParts = parts.filter(p => 
+            ['servo', 'linear_actuator', 'motor', 'stepper'].includes(String(p.type).toLowerCase())
+        );
+
+        res.renderWithLayout('setup/unified-calibration', {
+            title: 'Unified Calibration - MonsterBox 5.3',
+            page: 'setup-calibration-unified',
+            config: { theme: 'dark' },
+            parts: positionableParts,
+            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
+        });
+    } catch (error) {
+        console.error('Error rendering unified calibration page:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            page: 'error',
+            config: { theme: 'dark' },
+            error: 'Failed to load unified calibration page',
+            message: error.message
+        });
+    }
+});
+
+// Setup calibration main page - Parts CRUD + Calibration Management
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/calibration', {
@@ -519,64 +545,6 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
         res.json({ success: true, markers });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to rename marker' });
-    }
-});
-
-// ===== Unified Simple Calibration (servo standard, motor, linear_actuator) =====
-router.get('/api/simple/:id', async (req, res) => {
-    try {
-        const data = await simpleCal.getForPart(req.params.id);
-        res.json({ success: true, calibration: data });
-    } catch (e) {
-        res.status(500).json({ success: false, error: 'Failed to load simple calibration', message: e.message });
-    }
-});
-
-router.post('/api/simple/:id/set-safe', express.json(), async (req, res) => {
-    try {
-        const { which, value } = req.body || {};
-        const data = await simpleCal.setSafe(req.params.id, which, value);
-        res.json({ success: true, calibration: data });
-    } catch (e) {
-        res.status(400).json({ success: false, error: 'Failed to set safe point', message: e.message });
-    }
-});
-
-router.post('/api/simple/:id/points', express.json(), async (req, res) => {
-    try {
-        const { name, value, description } = req.body || {};
-        const data = await simpleCal.upsertPoint(req.params.id, name, value, description);
-        res.json({ success: true, calibration: data });
-    } catch (e) {
-        res.status(400).json({ success: false, error: 'Failed to save point', message: e.message });
-    }
-});
-
-router.delete('/api/simple/:id/points/:name', async (req, res) => {
-    try {
-        const data = await simpleCal.deletePoint(req.params.id, req.params.name);
-        res.json({ success: true, calibration: data });
-    } catch (e) {
-        res.status(400).json({ success: false, error: 'Failed to delete point', message: e.message });
-    }
-});
-
-router.post('/api/simple/:id/points/:oldName/rename', express.json(), async (req, res) => {
-    try {
-        const { newName } = req.body || {};
-        const data = await simpleCal.renamePoint(req.params.id, req.params.oldName, newName);
-        res.json({ success: true, calibration: data });
-    } catch (e) {
-        res.status(400).json({ success: false, error: 'Failed to rename point', message: e.message });
-    }
-});
-
-router.post('/api/simple/:id/reset', async (req, res) => {
-    try {
-        await simpleCal.reset(req.params.id);
-        res.json({ success: true, message: 'Simple calibration reset' });
-    } catch (e) {
-        res.status(500).json({ success: false, error: 'Failed to reset simple calibration', message: e.message });
     }
 });
 

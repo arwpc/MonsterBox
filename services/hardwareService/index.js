@@ -14,7 +14,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
-import * as simpleCal from '../simpleCalibrationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1501,43 +1500,8 @@ export async function controlPart(partId, action, params = {}) {
             }
         }
 
-        // Apply simple safety limits where applicable (servo angle clamp)
-        if (type === 'servo' && action === 'moveToAngle') {
-            try {
-                const simp = await simpleCal.getForPart(part.id);
-                if (simp && typeof simp.safeMin === 'number' && typeof simp.safeMax === 'number') {
-                    const lo = Math.min(simp.safeMin, simp.safeMax);
-                    const hi = Math.max(simp.safeMin, simp.safeMax);
-                    if (typeof actionParams.angleDeg === 'number') {
-                        if (actionParams.angleDeg < lo) actionParams.angleDeg = lo;
-                        if (actionParams.angleDeg > hi) actionParams.angleDeg = hi;
-                    }
-                }
-            } catch (_) { /* ignore clamp errors */ }
-        }
-
-        // Apply simple safety limits for motor/actuator durations
-        if (actionParams && typeof actionParams === 'object') {
-            try {
-                const simp2 = await simpleCal.getForPart(part.id);
-                if (simp2 && typeof simp2.safeMin === 'number' && typeof simp2.safeMax === 'number') {
-                    const lo2 = Math.min(simp2.safeMin, simp2.safeMax);
-                    const hi2 = Math.max(simp2.safeMin, simp2.safeMax);
-                    if (type === 'motor' && action === 'control') {
-                        if (typeof actionParams.duration === 'number') {
-                            if (actionParams.duration < lo2) actionParams.duration = lo2;
-                            if (actionParams.duration > hi2) actionParams.duration = hi2;
-                        }
-                    }
-                    if (type === 'linear_actuator' && (action === 'extend' || action === 'retract')) {
-                        if (typeof actionParams.duration === 'number') {
-                            if (actionParams.duration < lo2) actionParams.duration = lo2;
-                            if (actionParams.duration > hi2) actionParams.duration = hi2;
-                        }
-                    }
-                }
-            } catch (_) { /* ignore clamp errors */ }
-        }
+        // TODO: Re-implement safety limits using unified calibration profiles
+        // Legacy simple calibration safety limits removed - needs migration to unified calibration
 
         const result = await actionFunction(actionParams);
 

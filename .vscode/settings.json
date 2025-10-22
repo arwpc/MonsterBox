@@ -12,12 +12,16 @@
   "github.copilot.chat.agent.autoFix": true,
   "chat.tools.global.autoApprove": true,
   "chat.tools.terminal.autoReplyToPrompts": true,
-  "chat.tools.terminal.terminalProfile.linux": "bash",
-  "chat.tools.terminal.terminalProfile.windows": "Command Prompt",
+  "chat.tools.shell.autoApprove": true,
+  "chat.tools.codeExecution.autoApprove": true,
+  "github.copilot.chat.runCommand.enabled": true,
+  "github.copilot.chat.executeCommand.enabled": true,
+  "github.copilot.chat.requireApproval": false,
+  "github.copilot.chat.terminalChatLocation": "terminal",
 
   // --- Workspace trust & prompts (reduce nags) ---
   "security.workspace.trust.enabled": false,
-  "terminal.integrated.enableMultiLinePasteWarning": false,
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
 
   // --- Search/Watch hygiene (big media & build dirs) ---
   "files.exclude": {

@@ -1215,26 +1215,6 @@
     "meta": {}
   },
   {
-    "id": "1760412569774",
-    "name": "Test Motor Model",
-    "description": "motor defaults for tests",
-    "defaults": {
-      "maxDutyPct": 100
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
-    "id": "1760412622614",
-    "name": "Test Motor Model",
-    "description": "motor defaults for tests",
-    "defaults": {
-      "maxDutyPct": 100
-    },
-    "controlsSchema": {},
-    "meta": {}
-  },
-  {
     "id": "1760412703327",
     "name": "E2E Motor Model",
     "description": "motor defaults",

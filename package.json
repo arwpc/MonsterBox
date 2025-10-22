@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "pretest": "node scripts/ensure-no-legacy-calibration.mjs",
     "playwright:browsers": "npx playwright install --with-deps chromium",
     "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
     "test": "npm run test:syntax && npm run test:unit",
@@ -36,7 +37,8 @@
     "check": "bash scripts/system-check.sh",
     "install:python": "python3 -m pip install --user -r utils/requirements.txt",
     "postinstall": "node scripts/post-install.js",
-    "migrate:models": "node scripts/migrate-models.js"
+    "migrate:models": "node scripts/migrate-models.js",
+    "migrate:calibration": "node scripts/migrate-calibration-v15.mjs"
   },
   "keywords": [
     "animatronic",

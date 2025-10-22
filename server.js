@@ -13,7 +13,7 @@ import fs from 'fs/promises';
 import os from 'os';
 
 // Route imports
-
+import calibrationApiRouter from './server/calibration/router.js';
 import setupCalibrationRoutes from './routes/setup/calibration.js';
 import setupAudioRoutes from './routes/setup/audio.js';
 import setupWebcamRoutes from './routes/setup/webcam.js';
@@ -183,6 +183,8 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
+// Mount Unified Calibration API v1.5
+app.use('/api/calibration', calibrationApiRouter);
 
 app.use('/setup/calibration', setupCalibrationRoutes);
 app.use('/setup/audio', setupAudioRoutes);
