@@ -41,10 +41,37 @@ class MPVController {
     this.mediaRoot = options.mediaRoot || DEFAULT_MEDIA_ROOT;
     this.extraArgs = Array.isArray(options.extraArgs) ? options.extraArgs : [];
     this.onEnd = null; // Callback when current video exits
+
+    // Periodic health check to ensure no zombie processes
+    this.healthCheckInterval = setInterval(() => {
+      this._healthCheck();
+    }, 30000); // Check every 30 seconds
+  }
+
+  _healthCheck() {
+    // If we think we have a process but it's actually dead, clean up
+    if (this.process && this.process.exitCode !== null) {
+      console.log('Health check: cleaning up dead MPV process reference');
+      this.process = null;
+      this.currentVideo = null;
+    }
+  }
+
+  destroy() {
+    // Clean shutdown of controller
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    return this.stop();
   }
 
   async play(filename, options = {}) {
-    await this.stop();
+    // Only stop if there's actually a running process
+    // Don't try to kill already-exited processes (causes kernel panic)
+    if (this.process && !this.process.killed) {
+      await this.stop();
+    }
 
     const videoPath = path.isAbsolute(filename)
       ? filename
@@ -100,15 +127,42 @@ class MPVController {
   }
 
   async stop() {
-    if (this.process) {
-      try { this.process.kill('SIGTERM'); } catch (_) { }
-      await new Promise(r => setTimeout(r, 400));
-      if (this.process) {
-        try { this.process.kill('SIGKILL'); } catch (_) { }
-      }
+    // CRITICAL: Only try to kill if process exists and hasn't been killed already
+    // Killing already-dead MPV processes causes kernel panic on some Pi systems
+    if (!this.process) {
+      return; // Already stopped
+    }
+
+    // Check if process is actually running
+    if (this.process.killed || this.process.exitCode !== null) {
       this.process = null;
       this.currentVideo = null;
+      return; // Process already exited
     }
+
+    try {
+      // Use SIGTERM only - never SIGKILL (causes kernel panic with DRM)
+      this.process.kill('SIGTERM');
+
+      // Wait for graceful shutdown
+      const timeout = 1000; // 1 second max wait
+      const start = Date.now();
+      while (this.process && this.process.exitCode === null && (Date.now() - start) < timeout) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // If still running after timeout, log warning but DON'T use SIGKILL
+      if (this.process && this.process.exitCode === null) {
+        console.warn('MPV did not exit gracefully within timeout, leaving it to exit naturally');
+        // Process will be cleaned up by exit handler
+      }
+    } catch (err) {
+      // Ignore errors from killing already-dead process
+      console.error('Error stopping MPV (non-fatal):', err.message);
+    }
+
+    this.process = null;
+    this.currentVideo = null;
   }
 }
 
