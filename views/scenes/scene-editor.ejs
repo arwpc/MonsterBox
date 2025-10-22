@@ -396,6 +396,7 @@
 
       // Attach event listeners
       attachStepEventListeners();
+      attachPartSelectorListeners();
     }
 
     function renderStepCard(step, index) {
@@ -512,20 +513,31 @@
     function renderServoForm(step, index) {
       const servoParts = parts.filter(p => p.type === 'servo');
       let html = '<div class="row g-3">';
-      html += '<div class="col-md-6">';
+      html += '<div class="col-md-12">';
       html += '<label class="form-label">Servo Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<select class="form-select step-input part-selector" data-index="' + index + '" data-field="partId" data-step-type="servo">';
       html += '<option value="">Select servo...</option>';
       servoParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
         html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
       });
       html += '</select></div>';
-      html += '<div class="col-md-3">';
-      html += '<label class="form-label">Angle (°)</label>';
-      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="angle" value="' + (step.angle || 90) + '" min="0" max="180">';
+      
+      // Position preset selector (populated via AJAX when part is selected)
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Position <small class="text-muted">(preset or custom angle)</small></label>';
+      html += '<select class="form-select step-input preset-selector" data-index="' + index + '" data-field="position" id="positionSelect' + index + '">';
+      html += '<option value="">Loading presets...</option>';
+      html += '</select></div>';
+      
+      // Fallback: manual angle input (hidden by default, shown if no presets)
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Or Custom Angle (°)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="angle" value="' + (step.angle || step.position || 90) + '" min="0" max="180" placeholder="Leave blank to use preset">';
+      html += '<small class="form-text text-muted">For safety, create presets in Calibration first</small>';
       html += '</div>';
-      html += '<div class="col-md-3">';
+      
+      html += '<div class="col-md-12">';
       html += '<label class="form-label">Duration (ms)</label>';
       html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0">';
       html += '</div>';
@@ -574,26 +586,39 @@
     function renderLinearActuatorForm(step, index) {
       const actuatorParts = parts.filter(p => p.type === 'linear_actuator');
       let html = '<div class="row g-3">';
-      html += '<div class="col-md-6">';
+      html += '<div class="col-md-12">';
       html += '<label class="form-label">Linear Actuator Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<select class="form-select step-input part-selector" data-index="' + index + '" data-field="partId" data-step-type="linear-actuator">';
       html += '<option value="">Select actuator...</option>';
       actuatorParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
         html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
       });
       html += '</select></div>';
-      html += '<div class="col-md-3">';
-      html += '<label class="form-label">Direction</label>';
+      
+      // Position preset selector (NEW: preferred method)
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Position <small class="text-muted">(recommended)</small></label>';
+      html += '<select class="form-select step-input preset-selector" data-index="' + index + '" data-field="position" id="positionSelect' + index + '">';
+      html += '<option value="">Loading presets...</option>';
+      html += '</select></div>';
+      
+      // Legacy direction mode (fallback)
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Or Direction <small class="text-muted">(legacy)</small></label>';
       html += '<select class="form-select step-input" data-index="' + index + '" data-field="direction">';
+      html += '<option value="">Use position preset</option>';
       html += '<option value="extend"' + (step.direction === 'extend' ? ' selected' : '') + '>Extend</option>';
       html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
-      html += '</select></div>';
-      html += '<div class="col-md-3">';
+      html += '</select>';
+      html += '<small class="form-text text-muted">For safety, use position presets instead</small>';
+      html += '</div>';
+      
+      html += '<div class="col-md-6">';
       html += '<label class="form-label">Speed (%)</label>';
       html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="speed" value="' + (step.speed || 75) + '" min="0" max="100">';
       html += '</div>';
-      html += '<div class="col-md-12">';
+      html += '<div class="col-md-6">';
       html += '<label class="form-label">Duration (ms)</label>';
       html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 3000) + '" min="0">';
       html += '</div>';
@@ -916,6 +941,71 @@
       } catch (e) {
         setHtml('editorStatus', alertBox('danger', 'Error testing scene: ' + (e.message || e)));
       }
+    }
+
+    // Load position presets for a part
+    async function loadPresetsForPart(partId, selectElementId, currentValue) {
+      const selectEl = document.getElementById(selectElementId);
+      if (!selectEl) return;
+
+      try {
+        const r = await fetch(`/api/presets/${partId}`);
+        const j = await r.json();
+
+        if (j.success && j.presets && j.presets.length > 0) {
+          // Clear and populate with presets
+          selectEl.innerHTML = '<option value="">Select position...</option>';
+          j.presets.forEach(preset => {
+            const opt = document.createElement('option');
+            opt.value = preset.name;
+            opt.textContent = `${preset.name} (${(preset.position * 100).toFixed(0)}%)`;
+            if (currentValue === preset.name) {
+              opt.selected = true;
+            }
+            selectEl.appendChild(opt);
+          });
+          
+          // Add custom value option
+          const customOpt = document.createElement('option');
+          customOpt.value = 'custom';
+          customOpt.textContent = '— Custom Value —';
+          selectEl.appendChild(customOpt);
+        } else {
+          // No presets available
+          selectEl.innerHTML = '<option value="">No presets (create in Calibration)</option>';
+        }
+      } catch (e) {
+        console.error('Failed to load presets:', e);
+        selectEl.innerHTML = '<option value="">Error loading presets</option>';
+      }
+    }
+
+    // Handle part selection change to load presets
+    function handlePartSelectionChange(e) {
+      const partId = e.target.value;
+      const index = e.target.dataset.index;
+      const stepType = e.target.dataset.stepType;
+      
+      if (!partId || !index) return;
+
+      // Load presets for the selected part
+      const presetSelectId = 'positionSelect' + index;
+      const currentPosition = steps[index] ? (steps[index].position || steps[index].angle) : null;
+      
+      loadPresetsForPart(partId, presetSelectId, currentPosition);
+    }
+
+    // Attach event listeners for part selectors
+    function attachPartSelectorListeners() {
+      document.querySelectorAll('.part-selector').forEach(select => {
+        select.removeEventListener('change', handlePartSelectionChange);
+        select.addEventListener('change', handlePartSelectionChange);
+        
+        // Trigger initial load if part is already selected
+        if (select.value) {
+          handlePartSelectionChange({ target: select });
+        }
+      });
     }
 
     window.addEventListener('DOMContentLoaded', init);

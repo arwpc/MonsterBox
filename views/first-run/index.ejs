@@ -2,13 +2,18 @@
   <div class="container py-5 first-run">
     <div class="text-center mb-4">
       <h1 class="neon">Welcome to MonsterBox 5.3</h1>
-      <p class="lead text-muted">Pick the animatronic you are setting up on this device.</p>
+      <p class="lead text-muted">Select the animatronic you are controlling on this device.</p>
+      <% if (suggestedCharacter) { %>
+        <div class="alert alert-info mt-3">
+          <i class="bi bi-lightbulb"></i> Based on your hostname, we suggest: <strong><%= suggestedCharacter.name %></strong>
+        </div>
+      <% } %>
     </div>
 
     <div class="row g-4">
       <% (characters || []).forEach(function(ch){ %>
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <div class="card skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>">
+          <div class="card skull-card <%= (selectedCharacter===ch.id || (suggestedCharacter && suggestedCharacter.id===ch.id)) ? 'suggested' : '' %>" data-id="<%= ch.id %>">
             <div class="skull thumb d-flex align-items-center justify-content-center p-4">
               <% if (ch.activeImage) { %>
                 <img src="/api/characters/<%= ch.id %>/images/<%= ch.activeImage %>" alt="<%= ch.name %>"
@@ -24,14 +29,17 @@
               <h5 class="card-title">
                 <%= ch.name %>
               </h5>
-              <button class="btn btn-primary btn-select" data-id="<%= ch.id %>">Use <%= ch.name %></button>
+              <p class="text-muted small">
+                <i class="bi bi-gear"></i> <%= ch.partsCount || 0 %> parts configured
+              </p>
+              <button class="btn btn-primary btn-select" data-id="<%= ch.id %>">Select <%= ch.name %></button>
             </div>
           </div>
         </div>
         <% }) %>
     </div>
 
-    <div class="text-center mt-4">
-      <a href="/" class="btn btn-outline-light">Skip for now</a>
+    <div class="text-center mt-4 text-muted">
+      <small><i class="bi bi-shield-check"></i> Character selection is required for hardware safety</small>
     </div>
   </div>
