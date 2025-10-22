@@ -31,7 +31,7 @@ describe('Calibration Planner', () => {
     it('should clamp speed cap to [0, 1]', () => {
       planner.setGlobalSpeedCap(-0.1);
       expect(planner.getGlobalSpeedCap()).to.equal(0);
-      
+
       planner.setGlobalSpeedCap(1.5);
       expect(planner.getGlobalSpeedCap()).to.equal(1);
     });

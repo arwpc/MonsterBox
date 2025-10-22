@@ -31,7 +31,7 @@ module.exports = {
 
     function checkIdentifier(node) {
       const name = node.name;
-      
+
       for (const pattern of BANNED_PATTERNS) {
         if (pattern.test(name)) {
           context.report({

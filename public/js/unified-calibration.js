@@ -1,4 +1,4 @@
-(function(){
+(function () {
   // Minimal client for Unified Calibration
   const partSelect = document.getElementById('partSelect');
   const presetsList = document.getElementById('presetsList');
@@ -76,7 +76,7 @@
   function gotoPosition(p) {
     if (!currentPartId) return;
     fetch(`/api/calibration/${currentPartId}/goto`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ p })
     }).then(r => r.json()).then(console.log).catch(console.error);
   }
@@ -84,7 +84,7 @@
   function nudge(dir, scale) {
     if (!currentPartId) return;
     fetch(`/api/calibration/${currentPartId}/nudge`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dir, scale })
     }).then(r => r.json()).then(console.log).catch(console.error);
   }
@@ -111,7 +111,7 @@
       { pwmPct: Number(document.getElementById('probe3Pwm').value), msRun: Number(document.getElementById('probe3Ms').value), fromP: 0.5, toP: 0.8 }
     ];
     fetch(`/api/calibration/${currentPartId}/learn-openloop`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ probes })
     }).then(r => r.json()).then(data => {
       document.getElementById('learnOutput').textContent = JSON.stringify(data, null, 2);
@@ -120,12 +120,12 @@
 
   // Event wiring
   partSelect.addEventListener('change', (e) => loadPartDetails(e.target.value));
-  document.getElementById('nudgeMinFine').addEventListener('click', () => nudge('min','fine'));
-  document.getElementById('nudgeMaxFine').addEventListener('click', () => nudge('max','fine'));
-  document.getElementById('nudgeMinMed').addEventListener('click', () => nudge('min','med'));
-  document.getElementById('nudgeMaxMed').addEventListener('click', () => nudge('max','med'));
-  document.getElementById('nudgeMinCoarse').addEventListener('click', () => nudge('min','coarse'));
-  document.getElementById('nudgeMaxCoarse').addEventListener('click', () => nudge('max','coarse'));
+  document.getElementById('nudgeMinFine').addEventListener('click', () => nudge('min', 'fine'));
+  document.getElementById('nudgeMaxFine').addEventListener('click', () => nudge('max', 'fine'));
+  document.getElementById('nudgeMinMed').addEventListener('click', () => nudge('min', 'med'));
+  document.getElementById('nudgeMaxMed').addEventListener('click', () => nudge('max', 'med'));
+  document.getElementById('nudgeMinCoarse').addEventListener('click', () => nudge('min', 'coarse'));
+  document.getElementById('nudgeMaxCoarse').addEventListener('click', () => nudge('max', 'coarse'));
   document.getElementById('stopBtn').addEventListener('click', stop);
   document.getElementById('setMin').addEventListener('click', setMin);
   document.getElementById('setMax').addEventListener('click', setMax);
@@ -133,7 +133,7 @@
   speedCap.addEventListener('input', (e) => {
     speedCapVal.textContent = e.target.value + '%';
     fetch('/api/calibration/global-speed-cap', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ speedPct: Number(e.target.value) })
     }).then(r => r.json()).then(console.log).catch(console.error);
   });

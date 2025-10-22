@@ -32,14 +32,14 @@
       "invert": false
     },
     "bounds": {
-      "minP": 0,
-      "maxP": 1
+      "minP": 0.3,
+      "maxP": 0.7
     },
     "presets": [],
     "motion": {
       "type": "direct-map"
     },
-    "lastCalibratedAt": "2025-10-22T21:26:29.798Z",
+    "lastCalibratedAt": "2025-10-22T21:48:34.381Z",
     "version": 1
   },
   "3": {

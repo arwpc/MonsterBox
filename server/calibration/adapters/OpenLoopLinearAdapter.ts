@@ -3,9 +3,9 @@
  * Uses time-at-speed motion model for position estimation
  */
 
-import type { PositionableAdapter } from './index.js';
-import type { CapabilityProfile, MotionModel, SensorReadings } from '../models.js';
 import hardwareService from '../../../services/hardwareService/index.js';
+import type { CapabilityProfile, MotionModel, SensorReadings } from '../models.js';
+import type { PositionableAdapter } from './index.js';
 
 const NUDGE_SCALES = {
   fine: 0.01, // 1% movement
@@ -45,7 +45,7 @@ export class OpenLoopLinearAdapter implements PositionableAdapter {
     const candidates = this.motion.bins
       .filter(b => b.pwmPct <= requestedPwmPct)
       .sort((a, b) => b.pwmPct - a.pwmPct);
-    
+
     return candidates[0] || this.motion.bins[0] || { pwmPct: 50, unitsPerSec: 0.2 };
   }
 
@@ -57,7 +57,7 @@ export class OpenLoopLinearAdapter implements PositionableAdapter {
 
   async nudge(dir: 'min' | 'max', scale: 'fine' | 'med' | 'coarse'): Promise<void> {
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
-    const newP = dir === 'max' 
+    const newP = dir === 'max'
       ? Math.min(1, this.currentP + delta)
       : Math.max(0, this.currentP - delta);
     await this.gotoNormalized(newP, { speedPct: 50 });
@@ -74,14 +74,14 @@ export class OpenLoopLinearAdapter implements PositionableAdapter {
   async gotoNormalized(p: number, opts?: { speedPct?: number; timeoutMs?: number }): Promise<void> {
     const clampedP = Math.max(0, Math.min(1, p));
     const deltaP = clampedP - this.currentP;
-    
+
     if (Math.abs(deltaP) < 0.001) {
       return; // Already at target
     }
 
     const direction = deltaP > 0 ? 'extend' : 'retract';
     const currentDir: 'min' | 'max' = deltaP > 0 ? 'max' : 'min';
-    
+
     // Apply reversal compensation if direction changed
     let compensatedDelta = Math.abs(deltaP);
     if (this.lastDir && this.lastDir !== currentDir && this.reversalCompensationBeta > 0) {

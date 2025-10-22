@@ -5,9 +5,9 @@
  */
 
 import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -66,7 +66,7 @@ const LEGACY_FILES = [
 
 async function checkForLegacyFiles() {
   const violations = [];
-  
+
   for (const legacyPath of LEGACY_FILES) {
     const fullPath = path.join(rootDir, legacyPath);
     try {
@@ -78,24 +78,24 @@ async function checkForLegacyFiles() {
       // Ignore errors (file doesn't exist, which is what we want)
     }
   }
-  
+
   return violations;
 }
 
 async function grepForPatterns() {
   const violations = [];
-  
+
   // Build grep command with exclusions
   const excludeArgs = EXCLUDE_PATTERNS
     .filter(p => !p.includes('.'))  // Only directory exclusions
     .map(p => `--exclude-dir="${p}"`)
     .join(' ');
-  
+
   for (const pattern of BANNED_PATTERNS) {
     try {
       const cmd = `cd "${rootDir}" && grep -r -i ${excludeArgs} --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --include="*.ejs" "${pattern}" . 2>/dev/null || true`;
       const { stdout } = await execAsync(cmd);
-      
+
       if (stdout.trim()) {
         const lines = stdout.trim().split('\n');
         // Filter out excluded files
@@ -108,7 +108,7 @@ async function grepForPatterns() {
             return false;
           });
         });
-        
+
         if (filteredLines.length > 0) {
           violations.push(`Found banned pattern "${pattern}" in ${filteredLines.length} location(s):`);
           filteredLines.slice(0, 5).forEach(line => {
@@ -123,18 +123,18 @@ async function grepForPatterns() {
       // grep returns non-zero if no matches, which is fine
     }
   }
-  
+
   return violations;
 }
 
 async function main() {
   console.log('🔍 Checking for legacy calibration code...\n');
-  
+
   const fileViolations = await checkForLegacyFiles();
   const patternViolations = await grepForPatterns();
-  
+
   const allViolations = [...fileViolations, ...patternViolations];
-  
+
   if (allViolations.length > 0) {
     console.error('❌ LEGACY CALIBRATION CODE DETECTED!\n');
     console.error('The following violations were found:\n');
@@ -143,7 +143,7 @@ async function main() {
     console.error('    The new Unified Positions v1.5 system should be used instead.\n');
     process.exit(1);
   }
-  
+
   console.log('✅ No legacy calibration code detected. Build can proceed.\n');
   process.exit(0);
 }

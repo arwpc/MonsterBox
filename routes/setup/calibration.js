@@ -6,9 +6,8 @@
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { loadParts, saveParts, createPart, updatePart, deletePart } from '../../controllers/partsController.js';
+import { createPart, deletePart, loadParts, saveParts } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
-import * as servoService from '../../services/hardwareService/servo.js';
 import hardwareService from '../../services/hardwareService/index.js';
 
 import { fileURLToPath } from 'url';
@@ -88,9 +87,9 @@ router.get('/unified', async (req, res) => {
     try {
         const { characterId } = req.query;
         const parts = await loadCharacterParts(characterId);
-        
+
         // Filter to positionable parts only
-        const positionableParts = parts.filter(p => 
+        const positionableParts = parts.filter(p =>
             ['servo', 'linear_actuator', 'motor', 'stepper'].includes(String(p.type).toLowerCase())
         );
 

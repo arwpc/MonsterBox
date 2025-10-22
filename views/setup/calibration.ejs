@@ -448,7 +448,7 @@
           <i class="bi bi-bullseye"></i> Calibration (Positions v1.5)
         </div>
         <div class="card-body">
-          
+
           <!-- Current Position Display -->
           <div class="mb-3">
             <label class="form-label small fw-bold">Current Position</label>
@@ -469,8 +469,10 @@
               </div>
             </div>
             <div class="btn-group w-100">
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')">Set Min</button>
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')">Set Max</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')">Set
+                Min</button>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')">Set
+                Max</button>
             </div>
           </div>
 
@@ -494,9 +496,12 @@
               <label class="form-label small fw-bold">Learn Movement</label>
               <small class="text-muted d-block mb-2">Probe linear actuator speed</small>
               <div class="d-grid gap-1">
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)">Run 30% PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)">Run 50% PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)">Run 70% PWM</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)">Run 30%
+                  PWM</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)">Run 50%
+                  PWM</button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)">Run 70%
+                  PWM</button>
               </div>
             </div>
           </div>
@@ -530,7 +535,7 @@
     let modelsCache = {}; // by type
     let selectedIdsMulti = new Set();
     window.selectedIdsMulti = selectedIdsMulti;
-    
+
     // Initialize jog scale for unified calibration
     window.jogScale = 'medium';
 
@@ -651,7 +656,7 @@
       try {
         const res = await fetch(`/api/calibration/${partId}/profile`);
         const data = await res.json();
-        
+
         if (!data.success) {
           console.warn('No calibration profile for part', partId);
           currentCalProfile = null;
@@ -661,7 +666,7 @@
 
         currentCalProfile = data.profile;
         updateCalibrationUI(currentCalProfile, partData);
-        
+
         // Also fetch current position
         try {
           const posRes = await fetch(`/api/calibration/${partId}/position`);
@@ -703,7 +708,7 @@
 
       // Update presets list
       renderPresetsUI(profile ? profile.presets : null);
-      
+
       // Update position display (placeholder for now - API doesn't have status endpoint yet)
       const posDisplay = document.getElementById('calPositionDisplay');
       if (posDisplay) posDisplay.textContent = '—';
@@ -778,7 +783,7 @@
     async function refreshCurrentPosition(partId) {
       if (!partId) partId = window.selectedPartId;
       if (!partId) return;
-      
+
       try {
         const res = await fetch(`/api/calibration/${partId}/position`);
         const data = await res.json();
@@ -856,7 +861,7 @@
       // For now, prompt for position value since we don't have real-time position tracking yet
       const posStr = prompt('Enter position value (0.0 to 1.0):', '0.5');
       if (!posStr) return;
-      
+
       const position = parseFloat(posStr);
       if (isNaN(position) || position < 0 || position > 1) {
         alert('Invalid position. Must be between 0.0 and 1.0');
@@ -1132,7 +1137,7 @@
               let delta = 0;
               if (dir === 'cw') delta = 0.1;
               else if (dir === 'ccw') delta = -0.1;
-              
+
               const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1175,7 +1180,7 @@
             try {
               // Convert angle (0-180°) to normalized position (0-1)
               const p = angle / 180.0;
-              
+
               // Deterministic status in test mode
               if (window && window.MB_TEST_MODE) {
                 if (st) st.textContent = 'Done';
@@ -1222,86 +1227,86 @@
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
         const spd = () => parseInt(document.getElementById('laSpd').value || '50', 10);
         const dur = () => parseInt(document.getElementById('laDur').value || '500', 10);
-        el.querySelector('#extendBtn').addEventListener('click', async () => { 
-          const st = document.getElementById('ctrlStatus'); 
-          try { 
-            if (window && window.MB_TEST_MODE) { 
-              if (st) st.textContent = 'Done'; 
-              const d = 2000; 
-              setTimeout(() => { if (st) st.textContent = ''; }, d); 
-              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() }) 
-              }).catch(() => { }); 
-              return; 
-            } 
-            if (st) st.textContent = 'Extending…'; 
-            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
-              method: 'POST', 
-              headers: { 'Content-Type': 'application/json' }, 
-              body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() }) 
-            }); 
+        el.querySelector('#extendBtn').addEventListener('click', async () => {
+          const st = document.getElementById('ctrlStatus');
+          try {
+            if (window && window.MB_TEST_MODE) {
+              if (st) st.textContent = 'Done';
+              const d = 2000;
+              setTimeout(() => { if (st) st.textContent = ''; }, d);
+              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() })
+              }).catch(() => { });
+              return;
+            }
+            if (st) st.textContent = 'Extending…';
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() })
+            });
             const data = await response.json();
-            if (st) st.textContent = 'Done'; 
+            if (st) st.textContent = 'Done';
             if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
-            const d = 800; 
-            setTimeout(() => { if (st) st.textContent = ''; }, d); 
-          } catch (e) { 
-            if (st) st.textContent = 'Failed'; 
-          } 
+            const d = 800;
+            setTimeout(() => { if (st) st.textContent = ''; }, d);
+          } catch (e) {
+            if (st) st.textContent = 'Failed';
+          }
         });
-        el.querySelector('#retractBtn').addEventListener('click', async () => { 
-          const st = document.getElementById('ctrlStatus'); 
-          try { 
-            if (window && window.MB_TEST_MODE) { 
-              if (st) st.textContent = 'Done'; 
-              const d = 2000; 
-              setTimeout(() => { if (st) st.textContent = ''; }, d); 
-              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() }) 
-              }).catch(() => { }); 
-              return; 
-            } 
-            if (st) st.textContent = 'Retracting…'; 
-            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, { 
-              method: 'POST', 
-              headers: { 'Content-Type': 'application/json' }, 
-              body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() }) 
-            }); 
+        el.querySelector('#retractBtn').addEventListener('click', async () => {
+          const st = document.getElementById('ctrlStatus');
+          try {
+            if (window && window.MB_TEST_MODE) {
+              if (st) st.textContent = 'Done';
+              const d = 2000;
+              setTimeout(() => { if (st) st.textContent = ''; }, d);
+              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() })
+              }).catch(() => { });
+              return;
+            }
+            if (st) st.textContent = 'Retracting…';
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() })
+            });
             const data = await response.json();
-            if (st) st.textContent = 'Done'; 
+            if (st) st.textContent = 'Done';
             if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
-            const d = 800; 
-            setTimeout(() => { if (st) st.textContent = ''; }, d); 
-          } catch (e) { 
-            if (st) st.textContent = 'Failed'; 
-          } 
+            const d = 800;
+            setTimeout(() => { if (st) st.textContent = ''; }, d);
+          } catch (e) {
+            if (st) st.textContent = 'Failed';
+          }
         });
-        el.querySelector('#stopBtn').addEventListener('click', async () => { 
-          const st = document.getElementById('ctrlStatus'); 
-          try { 
-            if (window && window.MB_TEST_MODE) { 
-              if (st) st.textContent = 'Stopped'; 
-              const d = 2000; 
-              setTimeout(() => { if (st) st.textContent = ''; }, d); 
-              fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { 
-                method: 'POST' 
-              }).catch(() => { }); 
-              return; 
-            } 
-            if (st) st.textContent = 'Stopping…'; 
-            await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, { 
-              method: 'POST' 
-            }); 
-            if (st) st.textContent = 'Stopped'; 
-            const d = 800; 
-            setTimeout(() => { if (st) st.textContent = ''; }, d); 
-          } catch (e) { 
-            if (st) st.textContent = 'Failed'; 
-          } 
+        el.querySelector('#stopBtn').addEventListener('click', async () => {
+          const st = document.getElementById('ctrlStatus');
+          try {
+            if (window && window.MB_TEST_MODE) {
+              if (st) st.textContent = 'Stopped';
+              const d = 2000;
+              setTimeout(() => { if (st) st.textContent = ''; }, d);
+              fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, {
+                method: 'POST'
+              }).catch(() => { });
+              return;
+            }
+            if (st) st.textContent = 'Stopping…';
+            await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(part.id)}/stop`, {
+              method: 'POST'
+            });
+            if (st) st.textContent = 'Stopped';
+            const d = 800;
+            setTimeout(() => { if (st) st.textContent = ''; }, d);
+          } catch (e) {
+            if (st) st.textContent = 'Failed';
+          }
         });
       } else if (part.type === 'motor') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +

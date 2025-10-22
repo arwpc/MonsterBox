@@ -27,10 +27,10 @@ export type CapabilityProfile =
 export type MotionModel =
   | { type: 'direct-map' } // For servos/steppers: p maps directly to hardware units
   | {
-      type: 'time-at-speed'; // For open-loop/DC: estimate position by time
-      bins: Array<{ pwmPct: number; unitsPerSec: number }>; // Speed calibration bins
-      settleMs: number; // Settling time after movement
-    };
+    type: 'time-at-speed'; // For open-loop/DC: estimate position by time
+    bins: Array<{ pwmPct: number; unitsPerSec: number }>; // Speed calibration bins
+    settleMs: number; // Settling time after movement
+  };
 
 // Safety constraints
 export interface SafetyConstraints {

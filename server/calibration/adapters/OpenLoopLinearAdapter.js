@@ -15,7 +15,7 @@ export class OpenLoopLinearAdapter {
   getCapabilities() { return { kind: 'openloop-linear', invert: this.invert }; }
 
   selectBin(requestedPwmPct) {
-    const candidates = (this.motion.bins || []).filter(b => b.pwmPct <= requestedPwmPct).sort((a,b)=>b.pwmPct-a.pwmPct);
+    const candidates = (this.motion.bins || []).filter(b => b.pwmPct <= requestedPwmPct).sort((a, b) => b.pwmPct - a.pwmPct);
     return candidates[0] || (this.motion.bins && this.motion.bins[0]) || { pwmPct: 50, unitsPerSec: 0.2 };
   }
 

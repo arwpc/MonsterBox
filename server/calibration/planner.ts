@@ -4,9 +4,8 @@
  */
 
 import type {
-  CalibrationProfile,
-  MotionModel,
   CalibrationBounds,
+  CalibrationProfile,
   MotionCommand
 } from './models.js';
 
@@ -121,7 +120,7 @@ export function planTimeAtSpeed(
 
   // Calculate time
   let compensatedDelta = Math.abs(deltaP);
-  
+
   // Add reversal compensation if direction changed (default β = 0.02)
   const reversalBeta = 0.02;
   if (lastDir && lastDir !== targetDir) {

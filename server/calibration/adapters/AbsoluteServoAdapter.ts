@@ -3,9 +3,9 @@
  * Maps normalized position [0..1] to microsecond pulse widths
  */
 
-import type { PositionableAdapter } from './index.js';
-import type { CapabilityProfile, SensorReadings } from '../models.js';
 import hardwareService from '../../../services/hardwareService/index.js';
+import type { CapabilityProfile, SensorReadings } from '../models.js';
+import type { PositionableAdapter } from './index.js';
 
 const NUDGE_SCALES = {
   fine: 0.01, // 1% movement
@@ -48,7 +48,7 @@ export class AbsoluteServoAdapter implements PositionableAdapter {
 
   async nudge(dir: 'min' | 'max', scale: 'fine' | 'med' | 'coarse'): Promise<void> {
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
-    const newP = dir === 'max' 
+    const newP = dir === 'max'
       ? Math.min(1, this.currentP + delta)
       : Math.max(0, this.currentP - delta);
     await this.gotoNormalized(newP);
@@ -64,7 +64,7 @@ export class AbsoluteServoAdapter implements PositionableAdapter {
     const clampedP = Math.max(0, Math.min(1, p));
     const us = this.pToUs(clampedP);
     const angleDeg = clampedP * 180; // Convert to angle for existing API
-    
+
     try {
       await hardwareService.controlPart(String(this.partId), 'moveToAngle', {
         angleDeg,

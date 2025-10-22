@@ -5,8 +5,6 @@
 
 import type {
   CapabilityProfile,
-  NudgeCommand,
-  MotionCommand,
   SensorReadings
 } from '../models.js';
 

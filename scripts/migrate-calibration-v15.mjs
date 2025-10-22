@@ -25,7 +25,7 @@ async function loadParts() {
 
 async function loadLegacyCalibrations() {
   const legacy = {};
-  
+
   // Try to load simple_calibrations.json
   try {
     const simplePath = path.resolve(rootDir, 'data/simple_calibrations.json');
@@ -41,7 +41,7 @@ async function loadLegacyCalibrations() {
 
 function getDefaultMotionModel(partType) {
   const type = String(partType).toLowerCase();
-  
+
   if (type === 'servo') {
     return { type: 'direct-map' };
   } else if (type === 'linear_actuator' || type === 'motor') {
@@ -60,7 +60,7 @@ function getDefaultMotionModel(partType) {
 
 function getDefaultCapability(partType, part) {
   const type = String(partType).toLowerCase();
-  
+
   if (type === 'servo') {
     const usMin = part.config?.minPulse || part.config?.min_pulse_us || 500;
     const usMax = part.config?.maxPulse || part.config?.max_pulse_us || 2500;
@@ -91,7 +91,7 @@ function getDefaultCapability(partType, part) {
 
 function migrateLegacyCalibration(partId, legacyData, part) {
   const presets = [];
-  
+
   // Convert legacy named points to presets
   if (legacyData.points && Array.isArray(legacyData.points)) {
     for (const point of legacyData.points) {
@@ -129,7 +129,7 @@ async function main() {
 
   const parts = await loadParts();
   const legacyCalibrations = await loadLegacyCalibrations();
-  
+
   const profiles = {};
   let migratedCount = 0;
   let createdCount = 0;

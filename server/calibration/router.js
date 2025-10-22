@@ -1,8 +1,8 @@
 import express from 'express';
-import { getCalibrationStore } from './store.js';
-import { clampP, setGlobalSpeedCap, getGlobalSpeedCap } from './planner.js';
 import AbsoluteServoAdapter from './adapters/AbsoluteServoAdapter.js';
 import OpenLoopLinearAdapter from './adapters/OpenLoopLinearAdapter.js';
+import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
+import { getCalibrationStore } from './store.js';
 
 const router = express.Router();
 const store = getCalibrationStore();
@@ -43,12 +43,12 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
     const profile = await store.get(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const adapter = getOrCreateAdapter(partId, profile);
-    
+
     // Support both old format (dir, scale) and new format (delta, speedPct, durationMs)
     if (req.body.dir && req.body.scale) {
       // Old format: { dir: 'min'|'max', scale: 'fine'|'med'|'coarse' }
       const { dir, scale } = req.body;
-      if (!['min','max'].includes(dir) || !['fine','med','coarse'].includes(scale)) {
+      if (!['min', 'max'].includes(dir) || !['fine', 'med', 'coarse'].includes(scale)) {
         console.error(`Invalid nudge request for part ${partId}:`, { dir, scale, body: req.body });
         return res.status(400).json({ success: false, error: 'Invalid dir or scale' });
       }
@@ -96,7 +96,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
     }
     const profile = await store.get(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
-    const clampedP = clampP(p, profile.bounds || { minP:0, maxP:1 });
+    const clampedP = clampP(p, profile.bounds || { minP: 0, maxP: 1 });
     const adapter = getOrCreateAdapter(partId, profile);
     await adapter.gotoNormalized(clampedP, { speedPct });
     positionState.set(partId, { currentP: clampedP, lastUpdated: new Date().toISOString() });
@@ -111,7 +111,7 @@ router.post('/:partId/set-min', express.json(), async (req, res) => {
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const state = positionState.get(partId);
     const currentP = (state && state.currentP) || 0;
-    profile.bounds = Object.assign({}, profile.bounds || { minP:0, maxP:1 }, { minP: currentP });
+    profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { minP: currentP });
     await store.upsert(profile);
     res.json({ success: true, message: `Min set to ${currentP}`, bounds: profile.bounds });
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to set min', message: String(err) }); }
@@ -124,7 +124,7 @@ router.post('/:partId/set-max', express.json(), async (req, res) => {
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const state = positionState.get(partId);
     const currentP = (state && state.currentP) || 1;
-    profile.bounds = Object.assign({}, profile.bounds || { minP:0, maxP:1 }, { maxP: currentP });
+    profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { maxP: currentP });
     await store.upsert(profile);
     res.json({ success: true, message: `Max set to ${currentP}`, bounds: profile.bounds });
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to set max', message: String(err) }); }

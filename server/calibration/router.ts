@@ -4,11 +4,11 @@
  */
 
 import express from 'express';
-import { getCalibrationStore } from './store.js';
-import { planMotion, clampP, setGlobalSpeedCap, getGlobalSpeedCap } from './planner.js';
 import { AbsoluteServoAdapter } from './adapters/AbsoluteServoAdapter.js';
 import { OpenLoopLinearAdapter } from './adapters/OpenLoopLinearAdapter.js';
 import type { CalibrationProfile, MotionModel } from './models.js';
+import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
+import { getCalibrationStore } from './store.js';
 
 const router = express.Router();
 const store = getCalibrationStore();
@@ -26,7 +26,7 @@ router.get('/:partId/profile', async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = await store.get(partId);
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Calibration profile not found' });
     }
@@ -52,7 +52,7 @@ router.post('/:partId/profile', express.json(), async (req, res) => {
     };
 
     await store.upsert(profile);
-    
+
     // Clear adapter cache for this part
     adapterCache.delete(partId);
 
@@ -97,7 +97,7 @@ router.post('/:partId/stop', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = await store.get(partId);
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Profile not found' });
     }
@@ -131,7 +131,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
 
     const clampedP = clampP(p, profile.bounds);
     const adapter = getOrCreateAdapter(partId, profile);
-    
+
     await adapter.gotoNormalized(clampedP, { speedPct });
 
     // Update position state
@@ -151,7 +151,7 @@ router.post('/:partId/set-min', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = await store.get(partId);
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Profile not found' });
     }
@@ -176,7 +176,7 @@ router.post('/:partId/set-max', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = await store.get(partId);
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Profile not found' });
     }
@@ -240,7 +240,7 @@ router.get('/:partId/sensors', async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = await store.get(partId);
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, error: 'Profile not found' });
     }
@@ -261,7 +261,7 @@ router.get('/:partId/sensors', async (req, res) => {
 router.post('/global-speed-cap', express.json(), async (req, res) => {
   try {
     const { speedPct } = req.body;
-    
+
     if (typeof speedPct !== 'number' || speedPct < 0 || speedPct > 100) {
       return res.status(400).json({ success: false, error: 'speedPct must be 0..100' });
     }

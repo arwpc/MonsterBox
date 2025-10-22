@@ -20,24 +20,24 @@ export function planTimeAtSpeed(motionModel, fromP, toP) {
   const clampedFromP = clampP(fromP);
   const clampedToP = clampP(toP);
   const deltaP = clampedToP - clampedFromP;
-  
+
   if (Math.abs(deltaP) < 0.001) {
     return { durationMs: 0 };
   }
-  
+
   const bins = motionModel.bins || [];
   const settleMs = motionModel.settleMs || 100;
   const beta = motionModel.reversalCompensationBeta || 0;
   const isReversal = (fromP > toP); // Moving backwards
-  
+
   let totalMs = 0;
   let currentP = clampedFromP;
   const targetP = clampedToP;
-  
+
   for (const bin of bins) {
     const binEnd = bin.pEnd || 1.0;
     const rate = bin.msPerNorm || 1000;
-    
+
     if (targetP > currentP && currentP < binEnd) {
       // Moving forward through this bin
       const segmentEnd = Math.min(targetP, binEnd);
@@ -59,10 +59,10 @@ export function planTimeAtSpeed(motionModel, fromP, toP) {
       currentP = Math.max(targetP, 0);
       break;
     }
-    
+
     if (Math.abs(currentP - targetP) < 0.001) break;
   }
-  
+
   return { durationMs: Math.round(totalMs + settleMs) };
 }
 

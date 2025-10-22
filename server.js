@@ -7,44 +7,44 @@
  */
 
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import os from 'os';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Route imports
-import calibrationApiRouter from './server/calibration/router.js';
-import setupCalibrationRoutes from './routes/setup/calibration.js';
 import setupAudioRoutes from './routes/setup/audio.js';
-import setupWebcamRoutes from './routes/setup/webcam.js';
+import setupCalibrationRoutes from './routes/setup/calibration.js';
+import setupCharactersRoutes from './routes/setup/characters.js';
 import setupModelsRoutes from './routes/setup/models.js';
+import setupPartsRoutes from './routes/setup/parts.js';
+import setupPosesRoutes from './routes/setup/poses.js';
 import setupSuperPowersRoutes from './routes/setup/super-powers.js';
 import setupSystemRoutes from './routes/setup/system.js';
-import setupPosesRoutes from './routes/setup/poses.js';
-import setupCharactersRoutes from './routes/setup/characters.js';
-import setupPartsRoutes from './routes/setup/parts.js';
+import setupWebcamRoutes from './routes/setup/webcam.js';
+import calibrationApiRouter from './server/calibration/router.js';
 
 import firstRunRoutes from './routes/firstRun.js';
 
-import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
+import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
+import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
+import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
+import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
+import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
+import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
-import videoLibraryRoutes from './routes/videoLibrary.js';
+import conversationRoutes from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
-import scenesRoutes from './routes/scenes/index.js';
+import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
-import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
-import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
-import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
-import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
-import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
-import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
-import pipewireService from './services/pipewireService.js';
+import scenesRoutes from './routes/scenes/index.js';
+import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
+import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
-import conversationRoutes from './routes/conversation.js';
-import orchestrationWebRoutes from './routes/orchestration.js';
-import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
+import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
+import pipewireService from './services/pipewireService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

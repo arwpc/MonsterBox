@@ -3,17 +3,16 @@
  * Unified interface for all 11 Part types with PipeWire integration
  */
 
-import servoService from './servo.js';
-import pca9685Service from './pca9685.js';
-import actuatorService from './actuator.js';
-import stepperService from './stepper.js';
-import { runWrapper } from './exec.js';
-import pipewireService from '../pipewireService.js';
-import streamRoutingService from '../streamRoutingService.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
+import pipewireService from '../pipewireService.js';
+import streamRoutingService from '../streamRoutingService.js';
+import actuatorService from './actuator.js';
+import { runWrapper } from './exec.js';
+import servoService from './servo.js';
+import stepperService from './stepper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
