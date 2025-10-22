@@ -189,16 +189,56 @@ See: `goblin-gold/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 SSH for RPi4B: remote / klrklr89!
 
 ## Testing
-- Unit tests and E2E live conversation simulations under /test
-- Playwright e2e with Firefox headless on RPi4b
 
+MonsterBox 5.3 uses a **multi-layered testing approach** optimized for Copilot-driven development:
+
+**Testing Layers:**
+1. **Unit tests** (Mocha) - Service logic, APIs, hardware abstraction
+2. **E2E tests** (Playwright) - Real user workflows, UI interactions
+3. **Browser MCP** - Live console validation, visual checks (via Copilot)
+4. **GitHub MCP** - CI/CD automation, PR workflows (via Copilot)
+
+**Quick Start:**
 ```bash
-# Unit tests
-npm test -- --run
+# Unit tests and E2E (recommended before commit)
+npm run verify
+
+# Unit tests only
+npm run test:unit
 
 # E2E (example)
 npx playwright test --project=firefox --headless
+
+# With Browser MCP validation info
+npm run test:mcp
 ```
+
+**VS Code Testing Tab:**
+- Open Testing view (beaker icon)
+- See all Mocha + Playwright tests in tree
+- Run/debug individual tests with breakpoints
+- View inline pass/fail results
+
+**Console Error Enforcement:**
+All Playwright tests automatically fail on:
+- Browser console errors/warnings
+- HTTP 5xx responses
+- Network failures
+- Invalid `/api/save` responses (must return `{success: true}`)
+
+**Browser MCP Validation:**
+For UI changes, ask Copilot to validate with Browser MCP:
+```
+"Navigate to /setup/calibration and check for console errors"
+```
+Copilot will use Browser MCP tools to:
+- Load page in real browser
+- Capture console messages
+- Check network requests
+- Take screenshots
+- Report any issues
+
+**Full Documentation:** `docs/testing/COPILOT-TESTING-STRATEGY.md`
 
 ## Troubleshooting Quick Commands
 ```bash

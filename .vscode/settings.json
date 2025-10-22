@@ -70,13 +70,20 @@
   // "[javascript]": { "editor.formatOnSave": true },
   // --- Testing (Mocha & Playwright) ---
   "testing.automaticallyOpenPeekView": "never",
-  "mochaExplorer.files": "test/**/*.spec.js",
+  "mochaExplorer.files": "tests/unit/**/*.test.js",
+  "mochaExplorer.require": "tests/test-setup.js",
   "mochaExplorer.env": {
+    "MB_TEST_MODE": "1",
     "NODE_ENV": "test"
   },
   "mochaExplorer.timeout": 20000,
   "playwright.reuseBrowser": true, // faster local e2e
   "playwright.trace": "on-first-retry", // useful but not noisy
+  "playwright.testDirectory": "tests",
+  "playwright.testMatch": [
+    "tests/playwright/**/*.{spec,test}.{js,ts}",
+    "tests/ui/**/*.{spec,test}.{js,ts}"
+  ],
   // --- Git (fewer interruptions, safer defaults) ---
   "git.autofetch": true,
   "git.pruneOnFetch": true,
