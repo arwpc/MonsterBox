@@ -1,7 +1,108 @@
 {
-    "editor.inlineSuggest.enabled": true,
-    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
-    "workbench.editor.enablePreview": false,
-    "diffEditor.ignoreTrimWhitespace": false,
-    "editor.formatOnSave": true
+  // --- your existing prefs ---
+  "editor.inlineSuggest.enabled": true,
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "workbench.editor.enablePreview": false,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.formatOnSave": true,
+
+  // --- Copilot Agent, full auto ---
+  "chat.agent.enabled": true,
+  "chat.agent.maxRequests": 999999,
+  "github.copilot.chat.agent.autoFix": true,
+  "chat.tools.global.autoApprove": true,
+  "chat.tools.terminal.autoReplyToPrompts": true,
+  "chat.tools.terminal.terminalProfile.linux": "bash",
+  "chat.tools.terminal.terminalProfile.windows": "Command Prompt",
+
+  // --- Workspace trust & prompts (reduce nags) ---
+  "security.workspace.trust.enabled": false,
+  "terminal.integrated.enableMultiLinePasteWarning": false,
+
+  // --- Search/Watch hygiene (big media & build dirs) ---
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.cache": true,
+    "**/.playwright": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.cache": true,
+    "**/.playwright": true,
+    "**/*.mp4": true,
+    "**/*.mov": true,
+    "**/*.mkv": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.playwright/**": true,
+    "**/coverage/**": true,
+    "**/*.mp4": true,
+    "**/*.mov": true,
+    "**/*.mkv": true,
+    "/home/remote/media/video/**": true
+  },
+
+  // --- Node/JS/TS quality of life ---
+  "npm.autoDetect": "on",
+  "npm.scriptExplorerAction": "run",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "json"],
+  // If you use Prettier, uncomment the next two lines:
+  // "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // "[javascript]": { "editor.formatOnSave": true },
+
+  // --- Testing (Mocha & Playwright) ---
+  "testing.automaticallyOpenPeekView": "never",
+  "mochaExplorer.files": "test/**/*.spec.js",
+  "mochaExplorer.env": { "NODE_ENV": "test" },
+  "mochaExplorer.timeout": 20000,
+  "playwright.reuseBrowser": true,        // faster local e2e
+  "playwright.trace": "on-first-retry",   // useful but not noisy
+
+  // --- Git (fewer interruptions, safer defaults) ---
+  "git.autofetch": true,
+  "git.pruneOnFetch": true,
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+
+  // --- Remote-SSH (Pi hosts) ---
+  "remote.SSH.remotePlatform": {
+    "orlok": "linux",
+    "coffin": "linux",
+    "skulltalker": "linux",
+    "groundbreaker": "linux",
+    "pumpkinhead": "linux",
+    "goblin-one": "linux",
+    "goblin-two": "linux",
+    "goblin-three": "linux"
+  },
+  "remote.SSH.useLocalServer": true,
+
+  // --- Python wrappers (used by your hardware scripts) ---
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "python.analysis.typeCheckingMode": "basic",
+
+  // --- Markdown/docs ergonomics ---
+  "markdown.validate.enabled": true,
+  "markdown.preview.doubleClickToSwitchToEditor": false,
+
+  // --- Misc editor ergonomics ---
+  "editor.stickyScroll.enabled": true,
+  "workbench.startupEditor": "none",
+  "extensions.ignoreRecommendations": true,
+
+  // --- (optional) Telemetry on home lab machines ---
+  "telemetry.telemetryLevel": "off"
 }
