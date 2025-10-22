@@ -64,7 +64,15 @@ class MPVController {
 
     this.process = spawn('mpv', args, {
       detached: false,
-      stdio: ['ignore', 'ignore', 'pipe'] // capture only stderr for diagnostics
+      stdio: ['ignore', 'ignore', 'pipe'], // capture only stderr for diagnostics
+      env: process.env // explicitly pass environment
+    });
+
+    // Handle spawn errors
+    this.process.on('error', (err) => {
+      console.error('MPV spawn error:', err);
+      this.process = null;
+      this.currentVideo = null;
     });
 
     try {
@@ -76,7 +84,10 @@ class MPVController {
 
     this.currentVideo = filename;
 
-    this.process.on('exit', () => {
+    this.process.on('exit', (code, signal) => {
+      if (code !== 0 && code !== null) {
+        console.error(`MPV exited with code ${code}, signal ${signal}`);
+      }
       this.process = null;
       const finished = this.currentVideo;
       this.currentVideo = null;
