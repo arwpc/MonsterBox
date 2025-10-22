@@ -2,9 +2,8 @@
  * STT Filter Validation Test
  * Tests all new filter controls and configuration persistence
  */
-
-const { expect } = require('chai');
-const fetch = require('node-fetch');
+import { expect } from 'chai';
+import fetch from 'node-fetch';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 

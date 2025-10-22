@@ -1,11 +1,9 @@
 {
     "recommendations": [
-        "saoudrizwan.claude-dev",
-        "ms-vscode-remote.remote-ssh",
-        "ms-vscode-remote.remote-ssh-edit",
-        "ms-python.python",
-        "ms-vscode.vscode-json",
-        "ms-vscode.live-server",
-        "ms-vscode.vscode-chrome-debug"
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-playwright.playwright",
+        "dbaeumer.vscode-eslint",
+        "ms-python.python"
     ]
 }

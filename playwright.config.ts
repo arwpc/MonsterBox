@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 const inTestMode = process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true';
 
@@ -33,16 +33,11 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'firefox',
-      use: { browserName: 'firefox' },
-    },
-    {
-      name: 'chromium',
-      use: { browserName: 'chromium' },
-      testIgnore: [
-        'tests/playwright/**/*',
-        'tests/ui/**/*',
-      ],
+      name: 'Chrome',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+      },
     },
   ],
   globalSetup: 'tests/playwright/global-setup.js',

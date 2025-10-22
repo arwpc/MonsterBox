@@ -1725,6 +1725,24 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1761157145654o2bwa038g",
+      "sceneId": 2,
+      "characterId": 1,
+      "timestamp": "2025-10-22T18:19:05.654Z",
+      "startTime": "2025-10-22T18:19:05.650Z",
+      "endTime": "2025-10-22T18:19:05.650Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {

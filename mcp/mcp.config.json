@@ -1,0 +1,40 @@
+{
+    "toolsets": [
+        {
+            "name": "monsterbox-dev",
+            "preferredOrder": [
+                "chrome-devtools-browser-mcp",
+                "github-mcp"
+            ],
+            "tools": {
+                "chrome-devtools-browser-mcp": {
+                    "purpose": "Run/build the app, inspect DOM/network/console, verify UI flows and latency.",
+                    "defaults": {
+                        "openUrls": [
+                            "http://localhost:3000",
+                            "http://localhost:3000/setup",
+                            "http://localhost:3000/live"
+                        ],
+                        "recordConsole": true,
+                        "networkCapture": true
+                    }
+                },
+                "github-mcp": {
+                    "purpose": "Branching, commits, PRs, code review notes.",
+                    "defaults": {
+                        "branchPrefix": "agent/",
+                        "openPrOnSuccess": true,
+                        "requestReviewers": [
+                            "@arwpc"
+                        ]
+                    }
+                }
+            },
+            "policies": {
+                "allowAgentMode": true,
+                "requireTestsBeforeCommit": true,
+                "blockSecretsInDiff": true
+            }
+        }
+    ]
+}

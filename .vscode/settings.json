@@ -1,74 +1,7 @@
 {
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "*_test.py"
-    ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
-
-    // Remote SSH Configuration for MonsterBox RPI Systems
-    "remote.SSH.configFile": "C:\\Users\\arwpe\\.ssh\\config",
-    "remote.SSH.showLoginTerminal": true,
-    "remote.SSH.remotePlatform": {
-        "orlok": "linux",
-        "coffin": "linux",
-        "skulltalker": "linux",
-        "pumpkinhead": "linux",
-        "192.168.8.120": "linux",
-        "192.168.8.130": "linux",
-        "192.168.8.140": "linux",
-        "192.168.1.101": "linux"
-    },
-    "remote.SSH.enableDynamicForwarding": false,
-    "remote.SSH.connectTimeout": 15,
-    "remote.SSH.useLocalServer": false,
-
-    // Port forwarding configuration
-    "remote.SSH.defaultForwardedPorts": [
-        {
-            "localPort": 3000,
-            "remotePort": 3000,
-            "name": "MonsterBox App"
-        },
-        {
-            "localPort": 8765,
-            "remotePort": 8765,
-            "name": "Jaw WebSocket"
-        },
-        {
-            "localPort": 8766,
-            "remotePort": 8766,
-            "name": "AI WebSocket"
-        }
-    ],
-    "remote.autoForwardPorts": false,
-    "remote.autoForwardPortsSource": "hybrid",
-
-    // Browser and preview configuration
-    "liveServer.settings.host": "skulltalker",
-    "preview.defaultUri": "http://skulltalker:3000",
-    "vscode-preview-server.defaultBrowser": "chrome",
-    "browser-preview.startUrl": "http://skulltalker:3000",
-
-    // Terminal configuration for remote connections
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "terminal.integrated.profiles.linux": {
-        "bash": {
-            "path": "/bin/bash",
-            "args": ["-l"]
-        }
-    },
-    "terminal.integrated.cwd": "/home/remote/MonsterBox",
-    "augment.nextEdit.enableGlobalBackgroundSuggestions": true,
-    "augment.nextEdit.showDiffInHover": false,
-    "augment.nextEdit.highlightSuggestionsInTheEditor": true
-    ,
-    "playwright.configPath": "playwright.config.ts",
-    "playwright.env": { "MB_TEST_MODE": "1" },
-    "playwright.showTrace": true,
-    "python.analysis.typeCheckingMode": "standard"
-
+    "editor.inlineSuggest.enabled": true,
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "workbench.editor.enablePreview": false,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnSave": true
 }
