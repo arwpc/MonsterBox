@@ -1479,8 +1479,7 @@ Success Rate: ${stats.successRate}%`);
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    videos: this.currentQueue.queue.map(item => item.filename),
-                    mode
+                    loopMode: mode === 'loop' ? 'queue' : 'none'
                 })
             });
 
