@@ -1,0 +1,17 @@
+[
+  {
+    "queue_id": "1761260105217",
+    "name": "Test Story 1",
+    "mode": "sequential",
+    "scenes": [
+      {
+        "scene_id": "26",
+        "lifecycle": null
+      },
+      {
+        "scene_id": "24",
+        "lifecycle": null
+      }
+    ]
+  }
+]

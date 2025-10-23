@@ -1,57 +1,154 @@
 <div class="container-fluid py-4">
-  <!-- Cache buster: v2.0 - 2025-10-17 -->
+  <!-- Cache buster: v3.0 - 2025-10-23 - Queue & Stories -->
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-film"></i> Scenes</h1>
-        <a href="/scenes/edit/new" class="btn btn-success"><i class="bi bi-plus-circle"></i> Create New Scene</a>
+        <h1><i class="bi bi-film"></i> Scenes & Stories</h1>
+        <div>
+          <button class="btn btn-info me-2" onclick="window.showStoriesModal()"><i class="bi bi-collection"></i>
+            Stories</button>
+          <a href="/scenes/edit/new" class="btn btn-success"><i class="bi bi-plus-circle"></i> Create New Scene</a>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="row">
-    <div class="col-12">
+    <!-- Scenes List -->
+    <div class="col-lg-7">
       <div class="card mb-3">
-        <div class="card-header"><i class="bi bi-list-ul"></i> Scenes</div>
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul"></i> Scenes</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.addSelectedToQueue()">
+              <i class="bi bi-plus-lg"></i> Add Selected to Queue
+            </button>
+          </div>
+        </div>
         <div class="card-body">
           <div id="scenesStatus" class="mb-2"></div>
           <div id="scenesList" class="list-group"></div>
         </div>
       </div>
     </div>
+
+    <!-- Queue Panel -->
+    <div class="col-lg-5">
+      <div class="card mb-3 sticky-top" style="top: 20px;">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-collection-play"></i> Scene Queue
+        </div>
+        <div class="card-body">
+          <div id="queueStatus" class="mb-2"></div>
+
+          <!-- Queue Controls -->
+          <div class="btn-group w-100 mb-3" role="group">
+            <button class="btn btn-success" onclick="window.playQueue(false)">
+              <i class="bi bi-play-fill"></i> Play Queue
+            </button>
+            <button class="btn btn-info" onclick="window.playQueue(true)">
+              <i class="bi bi-repeat"></i> Play Loop
+            </button>
+            <button class="btn btn-warning" onclick="window.stopQueue()">
+              <i class="bi bi-stop-fill"></i> Stop
+            </button>
+            <button class="btn btn-danger" onclick="window.clearQueue()">
+              <i class="bi bi-trash"></i> Clear
+            </button>
+          </div>
+
+          <!-- Save Queue as Story -->
+          <div class="input-group mb-3">
+            <input type="text" id="storyName" class="form-control" placeholder="Story name...">
+            <button class="btn btn-outline-secondary" onclick="window.saveQueueAsStory()">
+              <i class="bi bi-save"></i> Save as Story
+            </button>
+          </div>
+
+          <!-- Queue Items (Drag & Drop) -->
+          <div id="queueList" class="list-group" style="min-height: 200px;"></div>
+          <div id="emptyQueue" class="text-muted text-center py-4" style="display:none;">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p>No scenes in queue. Add scenes from the left.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Stories Modal -->
+<div class="modal fade" id="storiesModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-collection"></i> Stories</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="storiesStatus" class="mb-2"></div>
+        <div id="storiesList"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .queue-item {
+    cursor: move;
+  }
+
+  .queue-item:hover {
+    background-color: #f8f9fa;
+  }
+
+  .dragging {
+    opacity: 0.5;
+  }
+</style>
+
 <script>
   (function () {
+    let allScenes = [];
+    let selectedScenes = new Set();
+    let draggedElement = null;
+    let draggedIndex = -1;
+
     function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
     function alertBox(type, text) { return '<div class="alert alert-' + type + ' py-2 mb-2">' + text + '</div>'; }
+
     async function loadScenes() {
       setHtml('scenesStatus', '');
       try {
         var r = await fetch('/scenes/api'); var j = await r.json();
         if (!j.success) { setHtml('scenesStatus', alertBox('danger', j.error || 'Failed to load scenes')); return; }
+        allScenes = j.scenes || [];
         var list = document.getElementById('scenesList');
-        if (!j.scenes || j.scenes.length === 0) { list.innerHTML = '<div class="text-muted">No scenes yet</div>'; return; }
+        if (allScenes.length === 0) { list.innerHTML = '<div class="text-muted">No scenes yet</div>'; return; }
         var html = '';
-        for (var i = 0; i < j.scenes.length; i++) {
-          var s = j.scenes[i];
+        for (var i = 0; i < allScenes.length; i++) {
+          var s = allScenes[i];
           var stepCount = (s.steps && s.steps.length) || 0;
+          var checked = selectedScenes.has(s.id) ? 'checked' : '';
           html += '<div class="list-group-item">';
-          html += '<div class="d-flex justify-content-between align-items-center mb-2">';
-          html += '<div>';
+          html += '<div class="d-flex align-items-center mb-2">';
+          html += '<input class="form-check-input me-3" type="checkbox" ' + checked + ' onchange="window.toggleSceneSelection(' + s.id + ')">';
+          html += '<div class="flex-grow-1">';
           html += '<i class="bi bi-film"></i> <strong>' + (s.name || ('Scene ' + s.id)) + '</strong> ';
           html += '<span class="badge bg-secondary">' + stepCount + ' step' + (stepCount !== 1 ? 's' : '') + '</span>';
           html += '</div>';
           html += '<div class="btn-group btn-group-sm">';
-          html += '<button class="btn btn-outline-primary" onclick="window.editScene(' + s.id + ')"><i class="bi bi-pencil"></i> Edit</button>';
-          html += '<button class="btn btn-outline-success" onclick="window.playScene(' + s.id + ')"><i class="bi bi-play-fill"></i> Play</button>';
+          html += '<button class="btn btn-outline-primary" onclick="window.editScene(' + s.id + ')"><i class="bi bi-pencil"></i></button>';
+          html += '<button class="btn btn-outline-success" onclick="window.playScene(' + s.id + ')"><i class="bi bi-play-fill"></i></button>';
           html += '<button class="btn btn-outline-danger" onclick="window.deleteScene(' + s.id + ')"><i class="bi bi-trash"></i></button>';
           html += '</div>';
           html += '</div>';
           if (stepCount > 0) {
-            html += '<div class="text-muted small">';
-            html += '<i class="bi bi-list-ol"></i> Steps: ';
+            html += '<div class="text-muted small ms-5">';
+            html += '<i class="bi bi-list-ol"></i> ';
             var stepTypes = [];
             for (var k = 0; k < Math.min(s.steps.length, 5); k++) {
               stepTypes.push(s.steps[k].type);
@@ -65,6 +162,367 @@
         list.innerHTML = html;
       } catch (e) { setHtml('scenesStatus', alertBox('danger', 'Error: ' + (e.message || e))); }
     }
+
+    async function loadQueue() {
+      try {
+        var r = await fetch('/scenes/api/queue'); var j = await r.json();
+        if (!j.success) { setHtml('queueStatus', alertBox('danger', j.error)); return; }
+        var status = j.status || {};
+        var items = status.items || [];
+
+        // Update status message
+        if (status.running) {
+          var msg = '<span class="badge bg-success">Running</span>';
+          if (status.nowPlaying) {
+            msg += ' <strong>' + status.nowPlaying.name + '</strong>';
+          }
+          setHtml('queueStatus', alertBox('info', msg));
+        } else {
+          setHtml('queueStatus', '');
+        }
+
+        // Render queue
+        var list = document.getElementById('queueList');
+        var empty = document.getElementById('emptyQueue');
+        if (items.length === 0) {
+          list.style.display = 'none';
+          empty.style.display = 'block';
+          return;
+        }
+        list.style.display = 'block';
+        empty.style.display = 'none';
+
+        var html = '';
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          html += '<div class="list-group-item queue-item" draggable="true" data-index="' + i + '">';
+          html += '<div class="d-flex justify-content-between align-items-center">';
+          html += '<span><i class="bi bi-grip-vertical"></i> <strong>' + it.name + '</strong></span>';
+          html += '<button class="btn btn-sm btn-outline-danger" onclick="window.removeFromQueue(' + i + ')"><i class="bi bi-x"></i></button>';
+          html += '</div>';
+          html += '</div>';
+        }
+        list.innerHTML = html;
+        attachDragHandlers();
+      } catch (e) { setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e))); }
+    }
+
+    function attachDragHandlers() {
+      var items = document.querySelectorAll('.queue-item');
+      items.forEach(function (item) {
+        item.addEventListener('dragstart', function (e) {
+          draggedElement = this;
+          draggedIndex = parseInt(this.dataset.index, 10);
+          this.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        item.addEventListener('dragend', function (e) {
+          this.classList.remove('dragging');
+        });
+        item.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          var target = e.target.closest('.queue-item');
+          if (target && target !== draggedElement) {
+            var targetIndex = parseInt(target.dataset.index, 10);
+            var rect = target.getBoundingClientRect();
+            var midpoint = rect.top + rect.height / 2;
+            if (e.clientY < midpoint) {
+              target.style.borderTop = '2px solid #0d6efd';
+              target.style.borderBottom = '';
+            } else {
+              target.style.borderBottom = '2px solid #0d6efd';
+              target.style.borderTop = '';
+            }
+          }
+        });
+        item.addEventListener('dragleave', function (e) {
+          this.style.borderTop = '';
+          this.style.borderBottom = '';
+        });
+        item.addEventListener('drop', async function (e) {
+          e.preventDefault();
+          this.style.borderTop = '';
+          this.style.borderBottom = '';
+          var targetIndex = parseInt(this.dataset.index, 10);
+          if (draggedIndex !== targetIndex) {
+            await reorderQueue(draggedIndex, targetIndex);
+          }
+        });
+      });
+    }
+
+    async function reorderQueue(fromIndex, toIndex) {
+      try {
+        var r = await fetch('/scenes/api/queue/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fromIndex: fromIndex, toIndex: toIndex })
+        });
+        var j = await r.json();
+        if (j.success) {
+          await loadQueue();
+        } else {
+          setHtml('queueStatus', alertBox('danger', 'Reorder failed: ' + (j.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    }
+
+    window.toggleSceneSelection = function (sceneId) {
+      if (selectedScenes.has(sceneId)) {
+        selectedScenes.delete(sceneId);
+      } else {
+        selectedScenes.add(sceneId);
+      }
+    };
+
+    window.addSelectedToQueue = async function () {
+      if (selectedScenes.size === 0) {
+        setHtml('scenesStatus', alertBox('warning', 'No scenes selected'));
+        return;
+      }
+      try {
+        for (var id of selectedScenes) {
+          var r = await fetch('/scenes/api/queue/enqueue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sceneId: id })
+          });
+          var j = await r.json();
+          if (!j.success) throw new Error(j.error || 'Failed to add scene ' + id);
+        }
+        selectedScenes.clear();
+        setHtml('scenesStatus', alertBox('success', 'Scenes added to queue'));
+        await loadScenes();
+        await loadQueue();
+      } catch (e) {
+        setHtml('scenesStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.removeFromQueue = async function (index) {
+      try {
+        // Get current queue
+        var r = await fetch('/scenes/api/queue');
+        var j = await r.json();
+        if (!j.success) throw new Error(j.error);
+        var items = j.status.items || [];
+
+        // Remove item by clearing, then re-adding all except the removed one
+        await fetch('/scenes/api/queue/clear', { method: 'POST' });
+        for (var i = 0; i < items.length; i++) {
+          if (i !== index) {
+            await fetch('/scenes/api/queue/enqueue', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sceneId: items[i].id })
+            });
+          }
+        }
+        await loadQueue();
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.playQueue = async function (loop) {
+      setHtml('queueStatus', alertBox('info', 'Starting queue...'));
+      try {
+        // Get current queue
+        var r = await fetch('/scenes/api/queue');
+        var j = await r.json();
+        if (!j.success) throw new Error(j.error);
+        var items = j.status.items || [];
+        if (items.length === 0) {
+          setHtml('queueStatus', alertBox('warning', 'Queue is empty'));
+          return;
+        }
+
+        // Build config
+        var config = {
+          mode: loop ? 'loop_queue' : 'sequential',
+          scenes: items.map(function (it) { return { scene_id: it.id }; })
+        };
+
+        // Start queue with config
+        var r2 = await fetch('/scenes/api/queue/start-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        var j2 = await r2.json();
+        if (j2.success) {
+          setHtml('queueStatus', alertBox('success', 'Queue ' + (loop ? 'loop' : 'playback') + ' completed'));
+          await loadQueue();
+        } else {
+          setHtml('queueStatus', alertBox('danger', 'Failed: ' + (j2.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.stopQueue = async function () {
+      try {
+        var r = await fetch('/scenes/api/queue/stop', { method: 'POST' });
+        var j = await r.json();
+        if (j.success) {
+          setHtml('queueStatus', alertBox('success', 'Queue stopped'));
+          await loadQueue();
+        } else {
+          setHtml('queueStatus', alertBox('danger', 'Failed: ' + (j.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.clearQueue = async function () {
+      if (!confirm('Clear queue?')) return;
+      try {
+        var r = await fetch('/scenes/api/queue/clear', { method: 'POST' });
+        var j = await r.json();
+        if (j.success) {
+          await loadQueue();
+        } else {
+          setHtml('queueStatus', alertBox('danger', 'Failed: ' + (j.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.saveQueueAsStory = async function () {
+      var name = document.getElementById('storyName').value.trim();
+      if (!name) {
+        setHtml('queueStatus', alertBox('warning', 'Please enter a story name'));
+        return;
+      }
+      try {
+        // Get current queue
+        var r = await fetch('/scenes/api/queue');
+        var j = await r.json();
+        if (!j.success) throw new Error(j.error);
+        var items = j.status.items || [];
+        if (items.length === 0) {
+          setHtml('queueStatus', alertBox('warning', 'Queue is empty'));
+          return;
+        }
+
+        // Save as story (using queue library)
+        var story = {
+          name: name,
+          mode: 'sequential',
+          scenes: items.map(function (it) { return { scene_id: it.id }; })
+        };
+        var r2 = await fetch('/scenes/api/queue/library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(story)
+        });
+        var j2 = await r2.json();
+        if (j2.success) {
+          setHtml('queueStatus', alertBox('success', 'Saved as story: ' + name));
+          document.getElementById('storyName').value = '';
+        } else {
+          setHtml('queueStatus', alertBox('danger', 'Failed: ' + (j2.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('queueStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.showStoriesModal = async function () {
+      var modal = new bootstrap.Modal(document.getElementById('storiesModal'));
+      modal.show();
+      await loadStories();
+    };
+
+    async function loadStories() {
+      try {
+        var r = await fetch('/scenes/api/queue/library');
+        var j = await r.json();
+        if (!j.success) {
+          setHtml('storiesStatus', alertBox('danger', j.error));
+          return;
+        }
+        var stories = j.queues || [];
+        var list = document.getElementById('storiesList');
+        if (stories.length === 0) {
+          list.innerHTML = '<div class="text-muted text-center py-4">No stories saved yet</div>';
+          return;
+        }
+        var html = '<div class="list-group">';
+        for (var i = 0; i < stories.length; i++) {
+          var st = stories[i];
+          var sceneCount = (st.scenes && st.scenes.length) || 0;
+          html += '<div class="list-group-item">';
+          html += '<div class="d-flex justify-content-between align-items-center">';
+          html += '<div>';
+          html += '<i class="bi bi-collection"></i> <strong>' + st.name + '</strong> ';
+          html += '<span class="badge bg-secondary">' + sceneCount + ' scene' + (sceneCount !== 1 ? 's' : '') + '</span>';
+          html += '</div>';
+          html += '<div class="btn-group btn-group-sm">';
+          html += '<button class="btn btn-outline-primary" onclick="window.loadStory(\'' + st.queue_id + '\')"><i class="bi bi-play-circle"></i> Load</button>';
+          html += '<button class="btn btn-outline-danger" onclick="window.deleteStory(\'' + st.queue_id + '\')"><i class="bi bi-trash"></i></button>';
+          html += '</div>';
+          html += '</div>';
+          html += '</div>';
+        }
+        html += '</div>';
+        list.innerHTML = html;
+      } catch (e) {
+        setHtml('storiesStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    }
+
+    window.loadStory = async function (queueId) {
+      try {
+        // Load story
+        var r = await fetch('/scenes/api/queue/library');
+        var j = await r.json();
+        if (!j.success) throw new Error(j.error);
+        var story = j.queues.find(function (q) { return q.queue_id === queueId; });
+        if (!story) throw new Error('Story not found');
+
+        // Clear current queue
+        await fetch('/scenes/api/queue/clear', { method: 'POST' });
+
+        // Add all scenes from story
+        for (var i = 0; i < story.scenes.length; i++) {
+          var sceneId = story.scenes[i].scene_id;
+          await fetch('/scenes/api/queue/enqueue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sceneId: parseInt(sceneId, 10) })
+          });
+        }
+
+        setHtml('storiesStatus', alertBox('success', 'Story loaded to queue'));
+        await loadQueue();
+        bootstrap.Modal.getInstance(document.getElementById('storiesModal')).hide();
+      } catch (e) {
+        setHtml('storiesStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
+    window.deleteStory = async function (queueId) {
+      if (!confirm('Delete this story?')) return;
+      try {
+        var r = await fetch('/scenes/api/queue/library/' + queueId, { method: 'DELETE' });
+        var j = await r.json();
+        if (j.success) {
+          await loadStories();
+        } else {
+          setHtml('storiesStatus', alertBox('danger', 'Failed: ' + (j.error || 'Unknown')));
+        }
+      } catch (e) {
+        setHtml('storiesStatus', alertBox('danger', 'Error: ' + (e.message || e)));
+      }
+    };
+
     window.playScene = async function (id) {
       setHtml('scenesStatus', alertBox('info', 'Playing scene #' + id + '...'));
       try {
@@ -73,9 +531,11 @@
         else setHtml('scenesStatus', alertBox('danger', 'Failed: ' + (j.error || 'Unknown error')));
       } catch (e) { setHtml('scenesStatus', alertBox('danger', 'Error: ' + (e.message || e))); }
     };
+
     window.editScene = function (id) {
       window.location.href = '/scenes/edit/' + id;
     };
+
     window.deleteScene = async function (id) {
       if (!confirm('Delete scene #' + id + '?')) return;
       try {
@@ -84,6 +544,12 @@
         else setHtml('scenesStatus', alertBox('danger', 'Delete failed: ' + (j.error || 'Unknown')));
       } catch (e) { setHtml('scenesStatus', alertBox('danger', 'Error: ' + (e.message || e))); }
     };
+
+    // Initialize
     loadScenes();
+    loadQueue();
+
+    // Refresh queue status every 2 seconds when running
+    setInterval(loadQueue, 2000);
   })();
 </script>

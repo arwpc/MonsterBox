@@ -332,5 +332,32 @@
       }
     ],
     "created": "2025-10-23T21:57:00.000Z"
+  },
+  {
+    "id": 28,
+    "name": "Test Part-Based Steps",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "servo",
+        "partId": "10",
+        "angle": 90,
+        "duration": 1000
+      }
+    ],
+    "created": "2025-10-23T23:04:43.540Z"
   }
 ]
