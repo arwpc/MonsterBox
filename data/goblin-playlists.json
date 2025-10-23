@@ -846,5 +846,229 @@
     "createdAt": "2025-10-22T18:17:52.143Z",
     "updatedAt": "2025-10-22T18:17:52.143Z",
     "lastDeployed": null
+  },
+  {
+    "id": "5b838d2d-4eae-45e1-b7d6-277d663184ce",
+    "name": "Test Playlist",
+    "description": "Automated test playlist",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      },
+      {
+        "filename": "312 Jb Hd.mp4",
+        "order": 2,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:42:58.281Z",
+    "updatedAt": "2025-10-23T01:42:58.281Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "e4606da9-68f4-43b5-9221-a96a2fefd7cd",
+    "name": "Get Test Playlist",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "single",
+    "createdAt": "2025-10-23T01:42:58.984Z",
+    "updatedAt": "2025-10-23T01:42:58.984Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "97563303-2dd4-48e4-a034-8622be5bbc20",
+    "name": "Updated Playlist",
+    "description": "Updated description",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "single",
+    "createdAt": "2025-10-23T01:42:59.267Z",
+    "updatedAt": "2025-10-23T01:42:59.305Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "cec9cea4-18e1-4ec2-a2a9-cf9d43302203",
+    "name": "Searchable Fireball Playlist",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:00.336Z",
+    "updatedAt": "2025-10-23T01:43:00.336Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "f558f2e9-9e0d-4bf1-8d3f-06aaba4a240c",
+    "name": "Deploy Test",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      },
+      {
+        "filename": "312 Jb Hd.mp4",
+        "order": 2,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:00.589Z",
+    "updatedAt": "2025-10-23T01:43:00.589Z",
+    "lastDeployed": "2025-10-23T01:43:00.613Z"
+  },
+  {
+    "id": "aee21750-76a1-436c-8fe5-c7a5344f94b8",
+    "name": "Deploy Test 2",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:00.928Z",
+    "updatedAt": "2025-10-23T01:43:00.928Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "5e695369-7e18-4a45-b8a9-925471f3b620",
+    "name": "Test Playlist",
+    "description": "Automated test playlist",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      },
+      {
+        "filename": "312 Jb Hd.mp4",
+        "order": 2,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:27.931Z",
+    "updatedAt": "2025-10-23T01:43:27.931Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "201b7768-5cdf-4bd7-97a3-4e95f990985a",
+    "name": "Get Test Playlist",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "single",
+    "createdAt": "2025-10-23T01:43:28.439Z",
+    "updatedAt": "2025-10-23T01:43:28.439Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "1a892be6-1ca7-4be9-8ca7-42519d9f915b",
+    "name": "Updated Playlist",
+    "description": "Updated description",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "single",
+    "createdAt": "2025-10-23T01:43:28.581Z",
+    "updatedAt": "2025-10-23T01:43:28.610Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "9da15251-04ac-46b7-af24-2f3c78c280c4",
+    "name": "Searchable Fireball Playlist",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:29.129Z",
+    "updatedAt": "2025-10-23T01:43:29.129Z",
+    "lastDeployed": null
+  },
+  {
+    "id": "9293c753-0c0a-479e-9a2d-3e6d968935aa",
+    "name": "Deploy Test",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      },
+      {
+        "filename": "312 Jb Hd.mp4",
+        "order": 2,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:29.396Z",
+    "updatedAt": "2025-10-23T01:43:29.396Z",
+    "lastDeployed": "2025-10-23T01:43:29.430Z"
+  },
+  {
+    "id": "34a091b4-bac5-41e4-8ad9-f99eeb3915e3",
+    "name": "Deploy Test 2",
+    "description": "",
+    "goblinId": "goblin-three",
+    "videos": [
+      {
+        "filename": "307 Jb Hd.mp4",
+        "order": 1,
+        "duration": 0
+      }
+    ],
+    "loopMode": "queue",
+    "createdAt": "2025-10-23T01:43:29.638Z",
+    "updatedAt": "2025-10-23T01:43:29.638Z",
+    "lastDeployed": null
   }
 ]

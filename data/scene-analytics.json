@@ -1949,6 +1949,34 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1761183891990igogj4m7k",
+      "sceneId": 3,
+      "characterId": 1,
+      "timestamp": "2025-10-23T01:44:51.990Z",
+      "startTime": "2025-10-23T01:44:51.868Z",
+      "endTime": "2025-10-23T01:44:51.982Z",
+      "duration": 114,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761183924567q4ljteael",
+      "sceneId": 3,
+      "characterId": 1,
+      "timestamp": "2025-10-23T01:45:24.567Z",
+      "startTime": "2025-10-23T01:45:24.406Z",
+      "endTime": "2025-10-23T01:45:24.564Z",
+      "duration": 158,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -2069,6 +2097,14 @@
       "characterId": 3,
       "executionCount": 1,
       "lastExecuted": "2025-10-23T00:09:36.619Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "1_3": {
+      "sceneId": 3,
+      "characterId": 1,
+      "executionCount": 2,
+      "lastExecuted": "2025-10-23T01:45:24.574Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

@@ -1,1 +1,33 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Step Play Test Scene",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100,
+        "comment": "Wait step"
+      },
+      {
+        "type": "servo",
+        "partId": 11,
+        "angle": 90,
+        "duration": 500,
+        "comment": "Servo step"
+      },
+      {
+        "type": "light",
+        "partId": 8,
+        "state": "on",
+        "brightness": 100,
+        "comment": "Light step"
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "comment": "Pose step"
+      }
+    ],
+    "created": "2025-10-23T01:35:59.038Z"
+  }
+]
