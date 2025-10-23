@@ -233,5 +233,104 @@
       }
     ],
     "created": "2025-10-23T00:09:10.841Z"
+  },
+  {
+    "id": 23,
+    "name": "Orlok Complete Test - All Parts",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "I am Orlok, the ancient vampire. Welcome to my castle."
+      },
+      {
+        "type": "wait"
+      },
+      {
+        "type": "audio",
+        "audioId": "baec5665-a303-49fc-a4c2-48dfd0135a58.mp3"
+      }
+    ],
+    "created": "2025-10-23T21:48:27.203Z"
+  },
+  {
+    "id": 24,
+    "name": "Orlok Servo Test",
+    "steps": [
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 1000
+      }
+    ],
+    "created": "2025-10-23T21:52:12.446Z",
+    "updated": "2025-10-23T21:52:49.810Z"
+  },
+  {
+    "id": 25,
+    "name": "Orlok Linear Actuator Test",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      }
+    ],
+    "created": "2025-10-23T21:55:18.464Z"
+  },
+  {
+    "id": 26,
+    "name": "Orlok Light Test",
+    "steps": [
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2000
+      }
+    ],
+    "created": "2025-10-23T21:56:23.289Z"
+  },
+  {
+    "id": 27,
+    "name": "Orlok Hardware Combo Test",
+    "steps": [
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "All hardware systems functioning normally"
+      }
+    ],
+    "created": "2025-10-23T21:57:00.000Z"
   }
 ]

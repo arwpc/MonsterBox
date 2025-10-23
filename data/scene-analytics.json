@@ -1977,6 +1977,162 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1761255016577f6hm2yxmq",
+      "sceneId": 2,
+      "characterId": 1,
+      "timestamp": "2025-10-23T21:30:16.577Z",
+      "startTime": "2025-10-23T21:30:08.562Z",
+      "endTime": "2025-10-23T21:30:16.575Z",
+      "duration": 8013,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761255124721xo356uqo1",
+      "sceneId": 2,
+      "characterId": 1,
+      "timestamp": "2025-10-23T21:32:04.721Z",
+      "startTime": "2025-10-23T21:31:56.708Z",
+      "endTime": "2025-10-23T21:32:04.718Z",
+      "duration": 8010,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761255235619x8oj3sdcg",
+      "sceneId": 2,
+      "characterId": 1,
+      "timestamp": "2025-10-23T21:33:55.619Z",
+      "startTime": "2025-10-23T21:33:47.608Z",
+      "endTime": "2025-10-23T21:33:55.617Z",
+      "duration": 8009,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761256008993q0ziyrish",
+      "sceneId": 3,
+      "characterId": 1,
+      "timestamp": "2025-10-23T21:46:48.993Z",
+      "startTime": "2025-10-23T21:46:43.172Z",
+      "endTime": "2025-10-23T21:46:48.990Z",
+      "duration": 5818,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761256123930o1xyrtt7y",
+      "sceneId": 23,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:48:43.930Z",
+      "startTime": "2025-10-23T21:48:36.859Z",
+      "endTime": "2025-10-23T21:48:43.929Z",
+      "duration": 7070,
+      "stepsExecuted": 3,
+      "totalSteps": 3,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761256341159c2zup9ww8",
+      "sceneId": 24,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:52:21.159Z",
+      "startTime": "2025-10-23T21:52:21.158Z",
+      "endTime": "2025-10-23T21:52:21.158Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "servo.step requires angle"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761256489682idx2uc7sh",
+      "sceneId": 24,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:54:49.682Z",
+      "startTime": "2025-10-23T21:54:48.554Z",
+      "endTime": "2025-10-23T21:54:49.680Z",
+      "duration": 1126,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761256546825jab3rie3s",
+      "sceneId": 25,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:55:46.825Z",
+      "startTime": "2025-10-23T21:55:43.599Z",
+      "endTime": "2025-10-23T21:55:46.823Z",
+      "duration": 3224,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761256609207wgenogepo",
+      "sceneId": 26,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:56:49.208Z",
+      "startTime": "2025-10-23T21:56:46.974Z",
+      "endTime": "2025-10-23T21:56:49.205Z",
+      "duration": 2231,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761256652400wfc116ktq",
+      "sceneId": 27,
+      "characterId": 3,
+      "timestamp": "2025-10-23T21:57:32.400Z",
+      "startTime": "2025-10-23T21:57:25.788Z",
+      "endTime": "2025-10-23T21:57:32.397Z",
+      "duration": 6609,
+      "stepsExecuted": 6,
+      "totalSteps": 6,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -2103,8 +2259,48 @@
     "1_3": {
       "sceneId": 3,
       "characterId": 1,
-      "executionCount": 2,
-      "lastExecuted": "2025-10-23T01:45:24.574Z",
+      "executionCount": 3,
+      "lastExecuted": "2025-10-23T21:46:49.000Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_23": {
+      "sceneId": 23,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T21:48:43.933Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_24": {
+      "sceneId": 24,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T21:54:49.685Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_25": {
+      "sceneId": 25,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T21:55:46.828Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_26": {
+      "sceneId": 26,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T21:56:49.215Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_27": {
+      "sceneId": 27,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T21:57:32.405Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

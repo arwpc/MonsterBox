@@ -29,5 +29,27 @@
       }
     ],
     "created": "2025-10-23T01:35:59.038Z"
+  },
+  {
+    "id": 2,
+    "name": "Muzac Loop Halloween",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      }
+    ],
+    "created": "2025-10-23T21:30:05.579Z"
+  },
+  {
+    "id": 3,
+    "name": "Orlok Test - Audio Only",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "61cc1789-0214-4aa4-a42b-24fa0354e263.mp3"
+      }
+    ],
+    "created": "2025-10-23T21:46:34.503Z"
   }
 ]
