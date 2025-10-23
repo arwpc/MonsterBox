@@ -58,56 +58,46 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="row g-3">
+        <!-- Non-Part Step Types (Always Available) -->
+        <h6 class="text-muted mb-3">Actions</h6>
+        <div class="row g-3 mb-4">
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="pose">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="pose">
               <i class="bi bi-person-arms-up"></i><br>Pose
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="audio">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="audio">
               <i class="bi bi-music-note-beamed"></i><br>Audio
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="sayThis">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sayThis">
               <i class="bi bi-chat-quote"></i><br>Say This (AI Voice)
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="servo">
-              <i class="bi bi-gear"></i><br>Servo
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="motor">
-              <i class="bi bi-arrow-repeat"></i><br>Motor
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="linear-actuator">
-              <i class="bi bi-arrows-expand"></i><br>Linear Actuator
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="light">
-              <i class="bi bi-lightbulb"></i><br>Light/LED
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="sensor">
-              <i class="bi bi-radar"></i><br>Sensor (Wait for Motion)
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="goblin-video">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="goblin-video">
               <i class="bi bi-display"></i><br>Goblin Video
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-type-btn" data-type="wait">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="wait">
               <i class="bi bi-hourglass-split"></i><br>Wait/Pause
             </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sensor">
+              <i class="bi bi-radar"></i><br>Sensor (Wait for Motion)
+            </button>
+          </div>
+        </div>
+
+        <!-- Character Parts (Dynamically Populated) -->
+        <h6 class="text-muted mb-3">Character Parts</h6>
+        <div id="partsStepContainer" class="row g-3">
+          <div class="col-12 text-center text-muted py-3">
+            <i class="bi bi-hourglass-split"></i> Loading parts...
           </div>
         </div>
       </div>
@@ -199,8 +189,8 @@
       document.getElementById('saveSceneBtn').addEventListener('click', saveScene);
       document.getElementById('testSceneBtn').addEventListener('click', testScene);
 
-      // Step type button listeners
-      document.querySelectorAll('.step-type-btn').forEach(btn => {
+      // Step action button listeners (for non-part steps)
+      document.querySelectorAll('.step-action-btn').forEach(btn => {
         btn.addEventListener('click', function () {
           const type = this.getAttribute('data-type');
           addStep(type);
@@ -214,10 +204,82 @@
         const r = await fetch('/api/parts');
         const j = await r.json();
         parts = j.parts || [];
+        populatePartsModal();
       } catch (e) {
         console.error('Failed to load parts:', e);
         parts = [];
+        populatePartsModal();
       }
+    }
+
+    function populatePartsModal() {
+      const container = document.getElementById('partsStepContainer');
+      if (!container) return;
+
+      // Filter only enabled hardware parts (exclude speakers, microphones, webcams)
+      const hardwareParts = parts.filter(p => 
+        p.enabled && 
+        (p.type === 'servo' || p.type === 'motor' || p.type === 'linear_actuator' || 
+         p.type === 'light' || p.type === 'led' || p.type === 'motion_sensor' || p.type === 'sensor')
+      );
+
+      if (hardwareParts.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center text-muted py-3"><i class="bi bi-info-circle"></i> No hardware parts configured for this character.</div>';
+        return;
+      }
+
+      // Group parts by type
+      const grouped = {
+        'servo': [],
+        'motor': [],
+        'linear_actuator': [],
+        'light': [],
+        'sensor': []
+      };
+
+      hardwareParts.forEach(p => {
+        const type = p.type === 'led' ? 'light' : (p.type === 'motion_sensor' ? 'sensor' : p.type);
+        if (grouped[type]) {
+          grouped[type].push(p);
+        }
+      });
+
+      // Type metadata
+      const typeInfo = {
+        'servo': { icon: 'bi-gear', label: 'Servos' },
+        'motor': { icon: 'bi-arrow-repeat', label: 'Motors' },
+        'linear_actuator': { icon: 'bi-arrows-expand', label: 'Linear Actuators' },
+        'light': { icon: 'bi-lightbulb', label: 'Lights/LEDs' },
+        'sensor': { icon: 'bi-radar', label: 'Sensors' }
+      };
+
+      let html = '';
+      Object.keys(grouped).forEach(type => {
+        if (grouped[type].length > 0) {
+          const info = typeInfo[type];
+          grouped[type].forEach(part => {
+            html += '<div class="col-md-6">';
+            html += '<button class="btn btn-outline-success w-100 step-type-btn" data-type="' + type + '" data-part-id="' + part.id + '" data-part-name="' + part.name + '">';
+            html += '<i class="bi ' + info.icon + '"></i><br>';
+            html += '<strong>' + part.name + '</strong>';
+            html += '<br><small class="text-muted">' + info.label.slice(0, -1) + '</small>';
+            html += '</button>';
+            html += '</div>';
+          });
+        }
+      });
+
+      container.innerHTML = html;
+
+      // Attach event listeners to new part buttons
+      container.querySelectorAll('.step-type-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const type = this.getAttribute('data-type');
+          const partId = this.getAttribute('data-part-id');
+          addStepWithPart(type, partId);
+          addStepModal.hide();
+        });
+      });
     }
 
     async function loadPoses() {
@@ -288,6 +350,44 @@
 
     function addStep(type) {
       const step = { type: type };
+      steps.push(step);
+      renderSteps();
+    }
+
+    function addStepWithPart(type, partId) {
+      // Normalize type to match renderStepForm expectations (use hyphen not underscore)
+      const normalizedType = type === 'linear_actuator' ? 'linear-actuator' : type;
+      
+      const step = { 
+        type: normalizedType,
+        partId: partId
+      };
+      // Set sensible defaults based on type
+      switch(normalizedType) {
+        case 'servo':
+          step.angle = 90;
+          step.duration = 1000;
+          break;
+        case 'motor':
+          step.direction = 'forward';
+          step.speed = 50;
+          step.duration = 1000;
+          break;
+        case 'linear-actuator':
+          step.direction = 'extend';
+          step.speed = 75;
+          step.duration = 3000;
+          break;
+        case 'light':
+          step.state = 'on';
+          step.brightness = 100;
+          step.duration = 0;
+          break;
+        case 'sensor':
+          step.timeout = 5000;
+          step.threshold = 500;
+          break;
+      }
       steps.push(step);
       renderSteps();
     }
