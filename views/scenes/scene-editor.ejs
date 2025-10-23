@@ -810,21 +810,21 @@
           const index = parseInt(this.getAttribute('data-index'));
           const goblinId = this.value;
           const videoDropdown = document.querySelector(`.video-dropdown[data-goblin-index="${index}"]`);
-          
+
           if (!videoDropdown) return;
-          
+
           // Clear existing options except first
           videoDropdown.innerHTML = '<option value="">Loading videos...</option>';
-          
+
           if (!goblinId) {
             videoDropdown.innerHTML = '<option value="">Select goblin first</option>';
             return;
           }
-          
+
           try {
             const response = await fetch(`/goblin-management/api/goblins/${goblinId}/videos`);
             const data = await response.json();
-            
+
             if (data.success && data.videos) {
               videoDropdown.innerHTML = '<option value="">Select video...</option>';
               data.videos.forEach(video => {
@@ -845,7 +845,7 @@
             videoDropdown.innerHTML = '<option value="">Error loading videos</option>';
           }
         });
-        
+
         // Trigger load if goblin is already selected (editing existing scene)
         if (select.value) {
           select.dispatchEvent(new Event('change'));

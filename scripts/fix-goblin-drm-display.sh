@@ -17,8 +17,8 @@ echo "=== Fixing DRM Display on Goblin at $GOBLIN_IP ==="
 
 # Deploy updated goblin-setup.sh
 echo "Deploying updated goblin-setup.sh..."
-sshpass -p "$GOBLIN_PASS" scp -o StrictHostKeyChecking=no \
-    goblin-gold/goblin-setup.sh remote@$GOBLIN_IP:/tmp/goblin-setup.sh
+sshpass -p "$SSH_PASS" scp -q \
+    goblin/goblin-setup.sh remote@$GOBLIN_IP:/tmp/goblin-setup.sh
 
 # Install and configure
 sshpass -p "$GOBLIN_PASS" ssh -o StrictHostKeyChecking=no remote@$GOBLIN_IP << 'EOFREMOTE'

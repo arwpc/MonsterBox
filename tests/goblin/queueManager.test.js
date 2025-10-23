@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import QueueManager from '../../goblin-gold/src/queueManager.js';
+import QueueManager from '../../goblin/src/queueManager.js';
 
 class MockMPV {
   constructor() { this.currentVideo = null; this.calls = []; this.onEnd = null; }
@@ -20,7 +20,7 @@ function rmrf(dir) {
 }
 
 describe('Goblin QueueManager', function () {
-  const baseDir = path.join(process.cwd(), 'tmp', 'goblin-gold-test');
+  const baseDir = path.join(process.cwd(), 'tmp', 'goblin-test');
 
   beforeEach(() => { rmrf(path.join(process.cwd(), 'tmp')); fs.mkdirSync(baseDir, { recursive: true }); });
 

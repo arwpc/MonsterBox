@@ -12,7 +12,7 @@ This document defines the architecture for integrating Goblin video playback int
 ## Current State
 
 ### Goblin (Current Implementation)
-- **Location**: `goblin-gold/` directory
+- **Location**: `goblin/` directory
 - **Video Format**: 720p @ 30fps H.264 MP4 (standardized)
 - **Video Directory**: `/home/remote/media/video/` on each Goblin
 - **API Port**: 3001
@@ -313,7 +313,7 @@ async playVideoOnGoblin(goblinId, filename, options)
 
 ```
 MonsterBox/
-├── goblin-gold/
+├── goblin/
 │   ├── src/
 │   │   ├── mpvController.js (existing)
 │   │   ├── queueManager.js (existing)

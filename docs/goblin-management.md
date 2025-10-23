@@ -251,7 +251,7 @@ Response:
 
 ### Playlist Format
 
-Playlists are stored as JSON files in `goblin-gold/playlists/`:
+Playlists are stored as JSON files in `goblin/playlists/`:
 
 ```json
 {
@@ -335,7 +335,7 @@ Use the deployment script to deploy the Goblin system to any Raspberry Pi:
 
 The script:
 1. Detects Goblin ID from IP address
-2. Copies `goblin-gold/` directory to `/home/remote/goblin/`
+2. Copies `goblin/` directory to `/home/remote/goblin/`
 3. Installs Node.js dependencies
 4. Creates systemd service
 5. Starts the service
@@ -348,7 +348,7 @@ The script:
 ssh remote@192.168.8.40
 
 # Copy files
-scp -r goblin-gold/* remote@192.168.8.40:/home/remote/goblin/
+scp -r goblin/* remote@192.168.8.40:/home/remote/goblin/
 
 # Install dependencies
 cd /home/remote/goblin

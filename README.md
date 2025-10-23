@@ -174,7 +174,7 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 - ⏳ Goblin1 (192.168.8.40) - Pending deployment
 - ⏳ Goblin2 (192.168.8.106) - Offline
 
-See: `goblin-gold/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
+See: `goblin/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
 - Coffin (controller): 192.168.8.140
@@ -215,7 +215,7 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 ## Documentation Index
 - Deployment: docs/deployment/README.md
 - Technical Overview: docs/MonsterBox-Technical-Overview.md
-- Goblin: goblin-gold/README.md (to be created)
+- Goblin: goblin/README.md (to be created)
 - Orlok audio results: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md
 - Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
 - Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md

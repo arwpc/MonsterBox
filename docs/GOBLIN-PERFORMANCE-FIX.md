@@ -170,7 +170,7 @@ real    0m0.106s
 
 ### Cache Implementation
 
-**File**: `goblin-gold/server.js`
+**File**: `goblin/server.js`
 
 **Key Changes**:
 1. Added cache variables at module level
@@ -202,7 +202,7 @@ All subdirectories are scanned recursively and paths are stored as relative path
 
 ### MPV Optimization
 
-**File**: `goblin-gold/src/mpvController.js`
+**File**: `goblin/src/mpvController.js`
 
 **Key Changes**:
 1. Changed `--video-sync=display-resample` to `--video-sync=display-vdrop`
@@ -293,7 +293,7 @@ curl http://192.168.8.40:3001/api/videos/scan
 ```
 
 **Adjust cache duration**:
-Edit `goblin-gold/server.js`:
+Edit `goblin/server.js`:
 ```javascript
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 ```

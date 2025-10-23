@@ -85,7 +85,7 @@ test_connection() {
 package_goblin() {
     log_info "Packaging Goblin files..."
 
-    cd goblin-gold
+    cd goblin
     tar czf /tmp/goblin-deploy.tar.gz server.js package.json src/ systemd/
     cd ..
 

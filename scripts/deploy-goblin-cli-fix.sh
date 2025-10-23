@@ -12,7 +12,7 @@
 set -e
 
 GOBLIN_PASS="klrklr89!"
-SOURCE_FILE="goblin-gold/src/mpvController.js"
+SOURCE_FILE="goblin/src/mpvController.js"
 
 # Goblin IPs
 GOBLIN_ONE="192.168.8.40"

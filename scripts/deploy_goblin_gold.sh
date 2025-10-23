@@ -25,8 +25,8 @@ while [ $# -gt 0 ]; do
 done
 
 LOCAL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PKG_DIR="$LOCAL_ROOT/goblin-gold"
-TMP_TAR="/tmp/goblin-gold.tar.gz"
+PKG_DIR="$LOCAL_ROOT/goblin"
+TMP_TAR="/tmp/goblin.tar.gz"
 
 if [ ! -d "$PKG_DIR" ]; then
   echo "Missing $PKG_DIR" >&2
@@ -50,10 +50,10 @@ rm -f "$TMP_TAR"
 if [ -n "$SSH_PASS" ]; then
   command -v sshpass >/dev/null 2>&1 || { echo "sshpass is required for password auth" >&2; exit 1; }
   echo "Uploading package (password auth) to $GOBLIN_IP..."
-  sshpass -p "$SSH_PASS" scp -q "$TMP_TAR" remote@"$GOBLIN_IP":/home/remote/goblin-gold.tar.gz
+  sshpass -p "$SSH_PASS" scp -q "$TMP_TAR" remote@"$GOBLIN_IP":/home/remote/goblin.tar.gz
 else
   echo "Uploading package (key auth) to $GOBLIN_IP..."
-  scp -q "$TMP_TAR" remote@"$GOBLIN_IP":/home/remote/goblin-gold.tar.gz
+  scp -q "$TMP_TAR" remote@"$GOBLIN_IP":/home/remote/goblin.tar.gz
 fi
 
 # Remote install script
@@ -71,7 +71,7 @@ rm -rf /home/remote/goblin
 mkdir -p /home/remote/goblin
 cd /home/remote/goblin
 
-tar xzf ../goblin-gold.tar.gz
+tar xzf ../goblin.tar.gz
 mkdir -p media/video logs
 
 # Ensure dependencies via apt (mpv, nodejs, npm, jq, lsof)

@@ -43,7 +43,7 @@ echo ""
 # 1. Deploy console blanker script
 echo "📦 Deploying console blanker script..."
 sshpass -p "$GOBLIN_PASS" scp -o StrictHostKeyChecking=no \
-    goblin-gold/scripts/console-blanker.sh \
+    goblin/scripts/console-blanker.sh \
     remote@$GOBLIN_IP:/tmp/console-blanker.sh
 
 sshpass -p "$GOBLIN_PASS" ssh -o StrictHostKeyChecking=no remote@$GOBLIN_IP << 'EOF'
@@ -55,7 +55,7 @@ EOF
 # 2. Deploy console blanker systemd service
 echo "📦 Deploying console blanker service..."
 sshpass -p "$GOBLIN_PASS" scp -o StrictHostKeyChecking=no \
-    goblin-gold/systemd/console-blanker.service \
+    goblin/systemd/console-blanker.service \
     remote@$GOBLIN_IP:/tmp/console-blanker.service
 
 sshpass -p "$GOBLIN_PASS" ssh -o StrictHostKeyChecking=no remote@$GOBLIN_IP << 'EOF'
@@ -68,7 +68,7 @@ EOF
 # 3. Deploy updated mpvController.js with pre-playback blanking
 echo "📦 Deploying updated mpvController.js..."
 sshpass -p "$GOBLIN_PASS" scp -o StrictHostKeyChecking=no \
-    goblin-gold/src/mpvController.js \
+    goblin/src/mpvController.js \
     remote@$GOBLIN_IP:/home/remote/goblin/src/mpvController.js
 
 echo "✅ mpvController.js updated"
