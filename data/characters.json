@@ -1,8 +1,7 @@
 [
   {
     "id": 1,
-    "name": "PumpkinHead_Updated",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+    "name": "PumpkinHead"
   },
   {
     "id": 2,
@@ -19,6 +18,11 @@
   },
   {
     "id": 5,
+    "name": "PumpkinHead_Updated",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+  },
+  {
+    "id": 6,
     "name": "Groundbreaker",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   },

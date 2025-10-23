@@ -1,0 +1,15 @@
+[Unit]
+Description=Console Blanker for Goblin Display
+After=goblin-setup.service
+Before=goblin.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/console-blanker.sh
+Restart=always
+RestartSec=1
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

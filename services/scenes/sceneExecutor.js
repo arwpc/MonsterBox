@@ -30,86 +30,6 @@ async function loadParts() {
   }
 }
 
-async function loadCalibrationProfiles() {
-  try {
-    const dataDir = await getDataDir();
-    const profilesPath = path.resolve(dataDir, 'calibration_profiles.json');
-    const raw = await fs.readFile(profilesPath, 'utf8');
-    return JSON.parse(raw) || {};
-  } catch (_) {
-    return {};
-  }
-}
-
-async function resolvePositionPreset(partId, presetNameOrValue) {
-  // If it's a number, return as-is (backward compatibility with raw values)
-  if (typeof presetNameOrValue === 'number') {
-    return { value: presetNameOrValue, source: 'raw' };
-  }
-
-  // If it's a string that looks like a number, parse it
-  const asNumber = Number(presetNameOrValue);
-  if (!isNaN(asNumber)) {
-    return { value: asNumber, source: 'raw' };
-  }
-
-  // Otherwise, look up the preset by name
-  const profiles = await loadCalibrationProfiles();
-  const profile = profiles[String(partId)];
-  
-  if (!profile || !profile.presets) {
-    throw new Error(`No calibration profile found for part ${partId}`);
-  }
-
-  const preset = profile.presets.find(p => p.name === presetNameOrValue);
-  if (!preset) {
-    throw new Error(`Position preset "${presetNameOrValue}" not found for part ${partId}`);
-  }
-
-  // Return the normalized position (0-1) from the preset
-  return { value: preset.p, source: 'preset', presetName: presetNameOrValue };
-}
-
-async function convertNormalizedPositionToValue(partId, normalizedP, partType) {
-  // Convert 0-1 normalized position to actual value based on part type
-  const profiles = await loadCalibrationProfiles();
-  const profile = profiles[String(partId)];
-  
-  if (!profile) {
-    throw new Error(`No calibration profile found for part ${partId}`);
-  }
-
-  const bounds = profile.bounds || { minP: 0, maxP: 1 };
-  const capability = profile.capability || {};
-
-  // Clamp to calibrated bounds
-  const clampedP = Math.max(bounds.minP, Math.min(bounds.maxP, normalizedP));
-
-  switch (partType) {
-    case 'servo':
-      // For servos, convert to angle (0-180 degrees by default)
-      if (capability.kind === 'absolute-servo') {
-        const minAngle = capability.minAngle || 0;
-        const maxAngle = capability.maxAngle || 180;
-        return minAngle + (clampedP * (maxAngle - minAngle));
-      }
-      // Fallback: 0-180 range
-      return clampedP * 180;
-    
-    case 'linear_actuator':
-      // For linear actuators, return the normalized position (hardware service handles it)
-      return clampedP;
-    
-    case 'motor':
-      // For motors, normalized position doesn't directly apply
-      // Return clampedP for consistency
-      return clampedP;
-    
-    default:
-      return clampedP;
-  }
-}
-
 async function findSpeakerDeviceForCharacter(characterId) {
   const parts = await loadParts();
   const speaker = parts.find(p => String(p.type).toLowerCase() === 'speaker' && Number(p.characterId) === Number(characterId));
@@ -268,40 +188,12 @@ async function executeGoblinVideoStep(step, characterId, emit) {
 }
 
 async function executeServoStep(step, characterId, emit) {
-  const { partId, angle, position, duration = 1000 } = step;
+  const { partId, angle, duration = 1000 } = step;
   if (!partId) throw new Error('servo.step requires partId');
-  
-  // Support both legacy 'angle' and new 'position' (preset name or value)
-  const angleOrPosition = position !== undefined ? position : angle;
-  if (angleOrPosition == null) throw new Error('servo.step requires angle or position');
+  if (angle == null) throw new Error('servo.step requires angle');
 
-  let actualAngle;
-  let resolvedFrom = 'raw';
-  
-  try {
-    // Try to resolve as position preset first
-    const resolved = await resolvePositionPreset(partId, angleOrPosition);
-    if (resolved.source === 'preset') {
-      // Convert normalized position to angle
-      actualAngle = await convertNormalizedPositionToValue(partId, resolved.value, 'servo');
-      resolvedFrom = `preset:${resolved.presetName}`;
-    } else {
-      // Use raw value
-      actualAngle = resolved.value;
-      resolvedFrom = 'raw';
-    }
-  } catch (err) {
-    // If preset resolution fails, try to use as raw angle
-    console.warn(`Failed to resolve position preset for servo ${partId}, using raw value:`, err.message);
-    actualAngle = Number(angleOrPosition);
-    if (isNaN(actualAngle)) {
-      throw new Error(`Invalid angle/position for servo: ${angleOrPosition}`);
-    }
-    resolvedFrom = 'raw-fallback';
-  }
-
-  emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle: actualAngle, duration, resolvedFrom });
-  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: actualAngle, duration });
+  emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle, duration });
+  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: angle, duration });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'servo', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Servo move failed');
   return r;
@@ -311,82 +203,25 @@ async function executeMotorStep(step, characterId, emit) {
   const { partId, direction = 'forward', speed = 50, duration = 1000 } = step;
   if (!partId) throw new Error('motor.step requires partId');
 
-  // Motors are typically speed/direction based, not position-based
-  // Speed can be a raw value (0-100) or optionally a preset name for predefined speeds
-  let actualSpeed = speed;
-  let resolvedFrom = 'raw';
-
-  if (typeof speed === 'string' && isNaN(Number(speed))) {
-    // Try to resolve as preset (for predefined speed settings like "slow", "medium", "fast")
-    try {
-      const resolved = await resolvePositionPreset(partId, speed);
-      if (resolved.source === 'preset') {
-        // Convert normalized position to speed percentage (0-100)
-        actualSpeed = resolved.value * 100;
-        resolvedFrom = `preset:${resolved.presetName}`;
-      } else {
-        actualSpeed = resolved.value;
-      }
-    } catch (err) {
-      console.warn(`Failed to resolve speed preset for motor ${partId}, using default:`, err.message);
-      actualSpeed = 50;
-      resolvedFrom = 'default';
-    }
-  }
-
-  emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed: actualSpeed, duration, resolvedFrom });
-  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed: actualSpeed, duration });
+  emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed, duration });
+  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed, duration });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'motor', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Motor control failed');
   return r;
 }
 
 async function executeLinearActuatorStep(step, characterId, emit) {
-  const { partId, direction, position, speed = 50, duration = 1000 } = step;
+  const { partId, direction = 'extend', speed = 50, duration = 1000 } = step;
   if (!partId) throw new Error('linear-actuator.step requires partId');
 
-  // New preset-based system: if 'position' is provided, use it as preset name
-  // Legacy system: if 'direction' is provided, use extend/retract
-  if (position !== undefined) {
-    // Position preset mode
-    let actualPosition;
-    let resolvedFrom = 'raw';
-    
-    try {
-      const resolved = await resolvePositionPreset(partId, position);
-      if (resolved.source === 'preset') {
-        actualPosition = resolved.value; // Already normalized 0-1
-        resolvedFrom = `preset:${resolved.presetName}`;
-      } else {
-        actualPosition = resolved.value;
-        resolvedFrom = 'raw';
-      }
-    } catch (err) {
-      console.warn(`Failed to resolve position preset for actuator ${partId}, using raw value:`, err.message);
-      actualPosition = Number(position);
-      if (isNaN(actualPosition)) {
-        throw new Error(`Invalid position for actuator: ${position}`);
-      }
-      resolvedFrom = 'raw-fallback';
-    }
+  // Linear actuators use 'extend' or 'retract' actions, not 'control'
+  const action = direction === 'retract' ? 'retract' : 'extend';
 
-    // Use 'moveTo' action with normalized position
-    emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, position: actualPosition, speed, duration, resolvedFrom });
-    const r = await hardwareService.controlPart(String(partId), 'moveTo', { position: actualPosition, speed, duration });
-    emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
-    if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
-    return r;
-  } else if (direction) {
-    // Legacy direction mode (extend/retract)
-    const action = direction === 'retract' ? 'retract' : 'extend';
-    emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed, duration, mode: 'legacy-direction' });
-    const r = await hardwareService.controlPart(String(partId), action, { speed, duration });
-    emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
-    if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
-    return r;
-  } else {
-    throw new Error('linear-actuator.step requires either position (preset name) or direction (extend/retract)');
-  }
+  emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed, duration });
+  const r = await hardwareService.controlPart(String(partId), action, { speed, duration });
+  emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
+  if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
+  return r;
 }
 
 async function executeLightStep(step, characterId, emit) {

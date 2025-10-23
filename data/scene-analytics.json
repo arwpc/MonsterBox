@@ -1743,6 +1743,212 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1761173606629lzynklmw8",
+      "sceneId": 19,
+      "characterId": 3,
+      "timestamp": "2025-10-22T22:53:26.629Z",
+      "startTime": "2025-10-22T22:53:26.623Z",
+      "endTime": "2025-10-22T22:53:26.624Z",
+      "duration": 1,
+      "stepsExecuted": 0,
+      "totalSteps": 3,
+      "success": false,
+      "errors": [
+        {
+          "message": "servo.step requires angle or position"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761173774432zasyv751j",
+      "sceneId": 19,
+      "characterId": 3,
+      "timestamp": "2025-10-22T22:56:14.432Z",
+      "startTime": "2025-10-22T22:56:13.787Z",
+      "endTime": "2025-10-22T22:56:14.431Z",
+      "duration": 644,
+      "stepsExecuted": 1,
+      "totalSteps": 3,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17611742486089hnh1m4oy",
+      "sceneId": 20,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:04:08.608Z",
+      "startTime": "2025-10-22T23:04:00.361Z",
+      "endTime": "2025-10-22T23:04:08.605Z",
+      "duration": 8244,
+      "stepsExecuted": 5,
+      "totalSteps": 7,
+      "success": false,
+      "errors": [
+        {
+          "message": "audio.step requires audioId"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761174291131o67fbxt8x",
+      "sceneId": 20,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:04:51.131Z",
+      "startTime": "2025-10-22T23:04:42.886Z",
+      "endTime": "2025-10-22T23:04:51.130Z",
+      "duration": 8244,
+      "stepsExecuted": 5,
+      "totalSteps": 7,
+      "success": false,
+      "errors": [
+        {
+          "message": "Process exited with code 1"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761174485535iwsggcbzr",
+      "sceneId": 19,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:08:05.535Z",
+      "startTime": "2025-10-22T23:08:03.270Z",
+      "endTime": "2025-10-22T23:08:05.534Z",
+      "duration": 2264,
+      "stepsExecuted": 3,
+      "totalSteps": 3,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761175748769elc9fnlzu",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:29:08.769Z",
+      "startTime": "2025-10-22T23:29:08.767Z",
+      "endTime": "2025-10-22T23:29:08.768Z",
+      "duration": 1,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761175785731xbujenzas",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:29:45.731Z",
+      "startTime": "2025-10-22T23:29:45.390Z",
+      "endTime": "2025-10-22T23:29:45.728Z",
+      "duration": 338,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761176668976ikdcsdq6r",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:44:28.976Z",
+      "startTime": "2025-10-22T23:44:28.975Z",
+      "endTime": "2025-10-22T23:44:28.975Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin is not online: goblin-three"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761177083011k7kz08cbt",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:51:23.011Z",
+      "startTime": "2025-10-22T23:51:22.538Z",
+      "endTime": "2025-10-22T23:51:22.973Z",
+      "duration": 435,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17611771419585b4xii4gb",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:52:21.958Z",
+      "startTime": "2025-10-22T23:52:20.810Z",
+      "endTime": "2025-10-22T23:52:21.957Z",
+      "duration": 1147,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "176117723556250y1suhmu",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:53:55.562Z",
+      "startTime": "2025-10-22T23:53:55.124Z",
+      "endTime": "2025-10-22T23:53:55.560Z",
+      "duration": 436,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17611773526741hqjcxipi",
+      "sceneId": 21,
+      "characterId": 3,
+      "timestamp": "2025-10-22T23:55:52.674Z",
+      "startTime": "2025-10-22T23:55:52.376Z",
+      "endTime": "2025-10-22T23:55:52.672Z",
+      "duration": 295,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761178176613nlnzhqxxz",
+      "sceneId": 22,
+      "characterId": 3,
+      "timestamp": "2025-10-23T00:09:36.613Z",
+      "startTime": "2025-10-23T00:09:36.149Z",
+      "endTime": "2025-10-23T00:09:36.610Z",
+      "duration": 461,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -1839,6 +2045,30 @@
       "characterId": 3,
       "executionCount": 1,
       "lastExecuted": "2025-10-18T01:21:38.234Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_19": {
+      "sceneId": 19,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-22T23:08:05.540Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_21": {
+      "sceneId": 21,
+      "characterId": 3,
+      "executionCount": 5,
+      "lastExecuted": "2025-10-22T23:55:52.678Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_22": {
+      "sceneId": 22,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-23T00:09:36.619Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

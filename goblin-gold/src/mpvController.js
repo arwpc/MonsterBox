@@ -73,6 +73,17 @@ class MPVController {
       await this.stop();
     }
 
+    // CRITICAL FIX: Blank console before spawning MPV to prevent CLI visibility
+    // This ensures no terminal output leaks to tty1 during process spawn
+    // Issue: User reported seeing CLI briefly during video transitions
+    try {
+      const { exec } = require('child_process');
+      await new Promise((resolve) => {
+        exec('setterm -blank force -cursor off >/dev/tty1 2>/dev/null && printf "\\033[2J\\033[H\\033[?25l" >/dev/tty1 2>/dev/null', 
+          () => resolve());
+      });
+    } catch (e) { /* ignore blanking errors */ }
+
     const videoPath = path.isAbsolute(filename)
       ? filename
       : path.join(this.mediaRoot, filename);

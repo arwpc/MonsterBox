@@ -154,5 +154,84 @@
       }
     ],
     "created": "2025-10-21T00:42:59.878Z"
+  },
+  {
+    "id": 19,
+    "name": "Halloween Test Scene - All Steps",
+    "steps": [
+      {
+        "type": "servo",
+        "partId": "10"
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "halloween-spooky.mp4"
+      },
+      {
+        "type": "sayThis",
+        "text": "Welcome to the haunted mansion. I am Count Orlok, and I have been waiting for you!"
+      }
+    ],
+    "created": "2025-10-22T22:50:21.621Z"
+  },
+  {
+    "id": 20,
+    "name": "Complete Step Types Test - No Goblins",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "Welcome to my lair. I am Count Orlok, master of the night!"
+      },
+      {
+        "type": "servo",
+        "partId": "10",
+        "angle": 45
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend"
+      },
+      {
+        "type": "wait"
+      },
+      {
+        "type": "pose",
+        "poseId": "2"
+      },
+      {
+        "type": "audio"
+      },
+      {
+        "type": "light"
+      }
+    ],
+    "created": "2025-10-22T23:03:49.059Z"
+  },
+  {
+    "id": 21,
+    "name": "Spinster Video Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-three",
+        "videoId": "Pha Spinster Teafortwo Win H.mp4"
+      }
+    ],
+    "created": "2025-10-22T23:28:48.174Z"
+  },
+  {
+    "id": 22,
+    "name": "Goblin One Spinster Test",
+    "steps": [
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-one",
+        "videoId": "Pha Spinster Teafortwo Win H.mp4",
+        "loop": true
+      }
+    ],
+    "created": "2025-10-23T00:09:10.841Z"
   }
 ]
