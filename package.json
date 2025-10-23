@@ -1,7 +1,7 @@
 {
   "name": "monsterbox",
-  "version": "5.3.0",
-  "description": "MonsterBox 5.3 - Animatronic Control System with Conversation Mode, Poses, Random Poses on Boot, and Hardened Orchestration",
+  "version": "5.4.0",
+  "description": "MonsterBox 5.4 - Animatronic Control System with Conversation Mode, Poses, Random Poses on Boot, and Hardened Orchestration",
   "main": "server.js",
   "type": "module",
   "scripts": {
