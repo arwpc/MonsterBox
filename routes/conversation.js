@@ -8,15 +8,14 @@ import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readConfig } from '../services/configService.js';
-import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
-import serverPlaybackService from '../services/serverPlaybackService.js';
-import { getTTSConfig } from '../services/aiConfigStore.js';
-import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
-import jawAnimationService from '../services/jawAnimationService.js';
 import * as motionTrackingController from '../controllers/motionTrackingController.js';
+import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
+import { getTTSConfig } from '../services/aiConfigStore.js';
+import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
-import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
+import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
+import jawAnimationService from '../services/jawAnimationService.js';
+import serverPlaybackService from '../services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -212,7 +211,7 @@ router.post('/api/say', express.json(), async (req, res) => {
 });
 
 // POST /conversation/api/ask-ai { question, speakerPartId? }
-// Ask AI agent a question and play response through TTS
+// Ask AI agent a question - uses working agent-speak with audio
 router.post('/api/ask-ai', express.json(), async (req, res) => {
   try {
     const question = (req.body && req.body.question ? String(req.body.question) : '').trim();
@@ -225,191 +224,30 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       return res.json({ success: true, testMode: true, response: 'This is a test AI response.' });
     }
 
-    // Check if ElevenLabs is configured
-    if (!elevenLabsConfigService.isElevenLabsConfigured()) {
-      return res.status(400).json({ success: false, error: 'ElevenLabs not configured' });
-    }
-
-    // Get agent configuration
-    const ttsCfg = await getTTSConfig();
-    if (!ttsCfg.agent_id) {
-      return res.status(400).json({ success: false, error: 'No AI agent configured' });
-    }
-
-    // Get API key
-    const elevenLabsConfig = elevenLabsConfigService.getElevenLabsConfig();
-    const apiKey = elevenLabsConfig.apiKey;
-    if (!apiKey) {
-      return res.status(500).json({ success: false, error: 'ElevenLabs API key not configured' });
-    }
-
-    // Use ElevenLabs Conversational AI text mode
-    // Get signed URL for real-time WebSocket connection
-    const signedUrlResponse = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ttsCfg.agent_id}`,
-      {
-        method: 'GET',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (!signedUrlResponse.ok) {
-      throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
-    }
-
-    const { signed_url } = await signedUrlResponse.json();
-    
-    // Connect to ElevenLabs real-time WebSocket
-    const WebSocket = (await import('ws')).default;
-    const ws = new WebSocket(signed_url);
-
-    const responsePromise = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        ws.close();
-        reject(new Error('Agent response timeout'));
-      }, 30000); // 30 second timeout
-
-      let responseText = '';
-      let audioChunks = [];
-
-      let audioTimeout = null;
-      let conversationInitiated = false;
-
-      ws.on('open', () => {
-        console.log('✅ Connected to ElevenLabs agent:', ttsCfg.agent_id);
-        
-        // Send conversation initiation
-        ws.send(JSON.stringify({
-          type: 'conversation_initiation_client_data',
-          conversation_config_override: {
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 100,
-              silence_duration_ms: 500
-            }
-          }
-        }));
-      });
-
-      ws.on('message', async (data) => {
-        try {
-          const message = JSON.parse(data.toString());
-          console.log('📨 Ask AI WebSocket message:', message.type);
-          
-          switch (message.type) {
-            case 'conversation_initiation_metadata':
-              console.log('🎯 Conversation initiated, sending question');
-              conversationInitiated = true;
-              // Now send the user's question
-              ws.send(JSON.stringify({
-                type: 'user_message',
-                text: question
-              }));
-              break;
-
-            case 'audio':
-              if (message.audio_event && message.audio_event.audio_base_64) {
-                audioChunks.push(message.audio_event.audio_base_64);
-                // Get response text from audio_event
-                if (message.audio_event.agent_response || message.audio_event.text) {
-                  responseText = message.audio_event.agent_response || message.audio_event.text;
-                }
-                
-                // Reset audio completion timeout - agent is still speaking
-                if (audioTimeout) clearTimeout(audioTimeout);
-                audioTimeout = setTimeout(() => {
-                  // No more audio for 2 seconds, assume response complete
-                  console.log('✅ Audio stream completed, finalizing response');
-                  ws.close();
-                }, 2000);
-              }
-              break;
-
-            case 'agent_response':
-              responseText = message.agent_response_event?.agent_response || 
-                            message.agent_response || 
-                            message.text || 
-                            responseText;
-              console.log('💬 Agent response text:', responseText);
-              break;
-
-            case 'conversation_end':
-              console.log('🔚 Conversation ended by agent');
-              clearTimeout(timeout);
-              if (audioTimeout) clearTimeout(audioTimeout);
-              ws.close();
-              break;
-
-            case 'ping':
-              if (message.ping_event) {
-                ws.send(JSON.stringify({
-                  type: 'pong',
-                  event_id: message.ping_event.event_id
-                }));
-              }
-              break;
-          }
-        } catch (parseErr) {
-          console.error('Error parsing WebSocket message:', parseErr);
-        }
-      });
-
-      ws.on('error', (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
-
-      ws.on('close', () => {
-        clearTimeout(timeout);
-        if (audioTimeout) clearTimeout(audioTimeout);
-        console.log('🔌 WebSocket closed, audio chunks:', audioChunks.length, 'text:', !!responseText);
-        
-        // Play aggregated audio if we have any
-        if (audioChunks.length > 0 && characterId) {
-          // Combine all audio chunks into a single buffer
-          // ElevenLabs conversational AI sends MP3 frames in base64
-          const combinedBase64 = audioChunks.join('');
-          
-          // Play audio through character speaker (fire and forget)
-          try {
-            const audioBuffer = Buffer.from(combinedBase64, 'base64');
-            console.log('🔊 Playing combined audio:', audioBuffer.length, 'bytes from', audioChunks.length, 'chunks');
-            
-            serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-              contentType: 'audio/mpeg',
-              characterId,
-              speakerPartId: req.body.speakerPartId || undefined,
-              volume: 80
-            }).catch(err => console.error('Audio playback error:', err));
-
-            // Fire-and-forget jaw animation
-            if (responseText) {
-              jawAnimationService.driveFromText({ characterId, text: responseText })
-                .catch(() => {});
-            }
-          } catch (audioErr) {
-            console.error('Audio processing error:', audioErr);
-          }
-        }
-        
-        if (!responseText && audioChunks.length === 0) {
-          reject(new Error('Connection closed without response'));
-        } else {
-          resolve({ text: responseText || 'I heard your question.' });
-        }
-      });
+    // Use working agent-speak (TTS with audio playback)
+    const agentSpeakResponse = await fetch(`http://localhost:3000/api/elevenlabs/agent-speak`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: question,
+        characterId: characterId,
+        fallbackToTTS: true
+      })
     });
 
-    const response = await responsePromise;
-    res.json({ success: true, response: response.text });
-
-  } catch (e) {
-    console.error('Ask AI error:', e);
-    res.status(500).json({ success: false, error: e && e.message });
+    const result = await agentSpeakResponse.json();
+    
+    if (result.success) {
+      return res.json({ 
+        success: true, 
+        response: result.personalityText || result.originalText || question 
+      });
+    } else {
+      return res.status(500).json({ success: false, error: result.error || 'Failed' });
+    }
+  } catch (error) {
+    console.error('❌ Ask AI error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

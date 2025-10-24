@@ -3,19 +3,19 @@
  * Real-time streaming conversation with immediate responses
  */
 
-import WebSocket, { WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
-import fetch from 'node-fetch';
-import elevenLabsConfigService from './elevenLabsConfigService.js';
-import serverSTTListener from './serverSTTListener.js';
-import serverPlaybackService from './serverPlaybackService.js';
-import elevenLabsSTTService from './elevenLabsSTTService.js';
-import randomPoseService from './randomPoseService.js';
-import { getSTTConfig } from './aiConfigStore.js';
 import fs from 'fs/promises';
+import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import WebSocket, { WebSocketServer } from 'ws';
+import { getSTTConfig } from './aiConfigStore.js';
 import { readConfig } from './configService.js';
+import elevenLabsConfigService from './elevenLabsConfigService.js';
+import elevenLabsSTTService from './elevenLabsSTTService.js';
+import randomPoseService from './randomPoseService.js';
+import serverPlaybackService from './serverPlaybackService.js';
+import serverSTTListener from './serverSTTListener.js';
 
 // Minimal WAV encoder for PCM16LE mono (16kHz)
 function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
@@ -167,7 +167,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
             const expired = age > this.sessionTimeoutMs;
 
             if (expired || inactive) {
-                console.log(`🧹 Cleaning up session ${sessionId} (age=${Math.round(age/1000)}s, active=${connection.isActive})`);
+                console.log(`🧹 Cleaning up session ${sessionId} (age=${Math.round(age / 1000)}s, active=${connection.isActive})`);
 
                 // Close WebSocket connections
                 try {
@@ -229,7 +229,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     this._cleanupTimer = setInterval(() => {
                         this._cleanupOldSessions();
                     }, this.cleanupIntervalMs);
-                    console.log(`🧹 Session cleanup timer started (every ${this.cleanupIntervalMs/1000}s)`);
+                    console.log(`🧹 Session cleanup timer started (every ${this.cleanupIntervalMs / 1000}s)`);
 
                     resolve();
                 });
@@ -1114,6 +1114,166 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 });
             });
         }
+    }
+
+    /**
+     * Send a text question to an agent and play the response through character speaker
+     * @param {string} agentId - ElevenLabs agent ID
+     * @param {string} text - Question text
+     * @param {number} characterId - Character ID for audio playback
+     * @returns {Promise<{success: boolean, response: string}>}
+     */
+    async askAgentQuestion(agentId, text, characterId) {
+        return new Promise(async (resolve, reject) => {
+            let sessionId = null;
+            let responseText = '';
+            let connection = null;
+
+            try {
+                // Create a temporary connection
+                sessionId = this.generateSessionId();
+                connection = {
+                    sessionId,
+                    clientWs: null,
+                    elevenLabsWs: null,
+                    agentId,
+                    isActive: true,
+                    characterId,
+                    outputMode: 'server',
+                    micSource: 'server',
+                    audioBuffer: [],
+                    audioPlaying: false,
+                    suppressMicUntilMs: 0
+                };
+
+                this.activeConnections.set(sessionId, connection);
+
+                // Get signed URL for conversation
+                const signedUrlResponse = await fetch(
+                    `${this.config.baseUrl}/convai/conversation/get-signed-url?agent_id=${agentId}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'xi-api-key': this.config.apiKey,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!signedUrlResponse.ok) {
+                    throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
+                }
+
+                const { signed_url } = await signedUrlResponse.json();
+
+                // Connect to ElevenLabs WebSocket
+                const elevenLabsWs = new WebSocket(signed_url);
+                connection.elevenLabsWs = elevenLabsWs;
+
+                elevenLabsWs.on('open', () => {
+                    console.log(`🎯 Connected to agent ${agentId} for question`);
+                    // Send initialization
+                    elevenLabsWs.send(JSON.stringify({
+                        type: 'conversation_initiation_client_data',
+                        conversation_config_override: {}
+                    }));
+                });
+
+                elevenLabsWs.on('message', async (data) => {
+                    try {
+                        const message = JSON.parse(data.toString());
+
+                        if (message.type === 'conversation_initiation_metadata') {
+                            // Send the question
+                            elevenLabsWs.send(JSON.stringify({
+                                type: 'user_message',
+                                text
+                            }));
+                        } else if (message.type === 'audio' && message.audio_event) {
+                            // Collect audio chunks (will play all at once when connection closes)
+                            if (message.audio_event.audio_base_64) {
+                                connection.audioBuffer.push(message.audio_event.audio_base_64);
+                            }
+                            // Accumulate response text from audio events (like chat does)
+                            const textFragment = message.audio_event.agent_response || 
+                                               message.audio_event.text || 
+                                               message.agent_response || 
+                                               message.text;
+                            if (textFragment) {
+                                // Accumulate text, don't replace
+                                responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                            }
+                        } else if (message.type === 'agent_response' || message.type === 'agent_response_event') {
+                            const textFragment = message.agent_response || message.text;
+                            if (textFragment) {
+                                responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                            }
+                        } else if (message.type === 'ping' && message.ping_event) {
+                            elevenLabsWs.send(JSON.stringify({
+                                type: 'pong',
+                                event_id: message.ping_event.event_id
+                            }));
+                        }
+                    } catch (err) {
+                        console.error('❌ Message parse error:', err);
+                    }
+                });
+
+                elevenLabsWs.on('close', async () => {
+                    console.log(`🔌 Agent connection closed, playing all audio...`);
+
+                    // Stop the playback loop
+                    connection.isActive = false;
+
+                    // Wait a moment for any pending chunks
+                    await new Promise(r => setTimeout(r, 500));
+
+                    // Play ALL remaining audio in one go
+                    if (connection.audioBuffer && connection.audioBuffer.length > 0) {
+                        try {
+                            const combinedBase64 = connection.audioBuffer.join('');
+                            const audioBuffer = Buffer.from(combinedBase64, 'base64');
+                            console.log(`🔊 Playing complete response: ${audioBuffer.length} bytes from ${connection.audioBuffer.length} chunks`);
+
+                            const { default: serverPlaybackService } = await import('./serverPlaybackService.js');
+                            const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+                                characterId: connection.characterId,
+                                contentType: 'audio/mpeg',
+                                volume: 80
+                            });
+
+                            if (!result.success) {
+                                console.error(`❌ Final audio playback failed: ${result.error}`);
+                            } else {
+                                console.log(`✅ Complete audio played successfully`);
+                            }
+                        } catch (err) {
+                            console.error(`❌ Error playing final audio:`, err);
+                        }
+                    }
+
+                    this.activeConnections.delete(sessionId);
+                    resolve({ success: true, response: responseText });
+                });
+
+                elevenLabsWs.on('error', (error) => {
+                    console.error('❌ Agent WebSocket error:', error);
+                    this.activeConnections.delete(sessionId);
+                    reject(error);
+                });
+
+                // Timeout after 30 seconds
+                setTimeout(() => {
+                    if (elevenLabsWs.readyState === WebSocket.OPEN) {
+                        elevenLabsWs.close();
+                    }
+                }, 30000);
+
+            } catch (error) {
+                if (sessionId) this.activeConnections.delete(sessionId);
+                reject(error);
+            }
+        });
     }
 }
 
