@@ -359,5 +359,63 @@
       }
     ],
     "created": "2025-10-23T23:04:43.540Z"
+  },
+  {
+    "id": 29,
+    "name": "Orlok Mina Story Loop",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "2",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 2000
+      },
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      },
+      {
+        "type": "sayThis",
+        "text": "Mina was the light in my eternal darkness. Her beauty captivated me across the centuries."
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-two",
+        "videoId": "307 Jb Hd.mp4"
+      },
+      {
+        "type": "sayThis",
+        "text": "Now the castle burns"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 3000
+      }
+    ],
+    "created": "2025-10-24T01:38:29.998Z"
   }
 ]

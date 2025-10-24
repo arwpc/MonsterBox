@@ -2315,6 +2315,24 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "17612702553742460pshqr",
+      "sceneId": 29,
+      "characterId": 3,
+      "timestamp": "2025-10-24T01:44:15.374Z",
+      "startTime": "2025-10-24T01:43:59.680Z",
+      "endTime": "2025-10-24T01:44:15.371Z",
+      "duration": 15690,
+      "stepsExecuted": 3,
+      "totalSteps": 9,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {
