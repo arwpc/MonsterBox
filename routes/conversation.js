@@ -370,18 +370,20 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
         
         // Play aggregated audio if we have any
         if (audioChunks.length > 0 && characterId) {
-          // Use the largest chunk or concatenate
-          const largestChunk = audioChunks.reduce((prev, curr) => 
-            curr.length > prev.length ? curr : prev
-          );
+          // Combine all audio chunks into a single buffer
+          // ElevenLabs conversational AI sends MP3 frames in base64
+          const combinedBase64 = audioChunks.join('');
           
           // Play audio through character speaker (fire and forget)
           try {
-            const audioBuffer = Buffer.from(largestChunk, 'base64');
+            const audioBuffer = Buffer.from(combinedBase64, 'base64');
+            console.log('🔊 Playing combined audio:', audioBuffer.length, 'bytes from', audioChunks.length, 'chunks');
+            
             serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
               contentType: 'audio/mpeg',
               characterId,
-              speakerPartId: req.body.speakerPartId || undefined
+              speakerPartId: req.body.speakerPartId || undefined,
+              volume: 80
             }).catch(err => console.error('Audio playback error:', err));
 
             // Fire-and-forget jaw animation
