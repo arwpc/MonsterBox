@@ -165,14 +165,20 @@ async function runLoop(characterId){
       // Priority override first
       let next = q.priority.length > 0 ? q.priority.shift() : null;
       if (!next){
+        // Check if queue is empty
         if (q.items.length === 0){
           if (q.mode === 'loop_queue' && q.originalItems && q.originalItems.length > 0){
+            // Refill queue for loop mode
             q.items = q.originalItems.slice();
           } else {
-            break; // finished
+            // Sequential mode or no items - exit loop
+            break;
           }
         }
-        next = q.items.shift();
+        // Get next item only if queue has items
+        if (q.items.length > 0) {
+          next = q.items.shift();
+        }
       }
       q.skipRequested = false;
       if (!next) break;
@@ -190,7 +196,11 @@ async function runLoop(characterId){
 export async function start(characterId){
   const q = ensureQueue(characterId);
   if (!q.originalItems || q.originalItems.length === 0) q.originalItems = q.items.slice();
-  await runLoop(characterId);
+  // Start loop in background - don't await
+  runLoop(characterId).catch(err => {
+    console.error(`Queue loop error for character ${characterId}:`, err);
+    q.running = false;
+  });
   return getStatus(characterId);
 }
 
@@ -213,7 +223,11 @@ export async function startWithConfig(characterId, config){
     }
   }
   q.originalItems = q.items.slice();
-  await runLoop(characterId);
+  // Start loop in background - don't await
+  runLoop(characterId).catch(err => {
+    console.error(`Queue loop error for character ${characterId}:`, err);
+    q.running = false;
+  });
   return getStatus(characterId);
 }
 

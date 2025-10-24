@@ -1,5 +1,5 @@
 <div class="container-fluid py-4">
-  <!-- Cache buster: v3.0 - 2025-10-23 - Queue & Stories -->
+  <!-- Cache buster: v3.1 - 2025-10-23 - Fixed Loop Execution -->
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
@@ -354,7 +354,7 @@
         });
         var j2 = await r2.json();
         if (j2.success) {
-          setHtml('queueStatus', alertBox('success', 'Queue ' + (loop ? 'loop' : 'playback') + ' completed'));
+          setHtml('queueStatus', alertBox('success', 'Queue ' + (loop ? 'loop' : 'playback') + ' started'));
           await loadQueue();
         } else {
           setHtml('queueStatus', alertBox('danger', 'Failed: ' + (j2.error || 'Unknown')));
