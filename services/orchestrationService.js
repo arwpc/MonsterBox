@@ -4,11 +4,9 @@
  * Uses SSH and HTTP APIs - no new WebSocket systems
  */
 
+import axios from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
 
 const execAsync = promisify(exec);
 
@@ -382,14 +380,14 @@ class OrchestrationService {
 
                     // Clear queue
                     await axios.post(`http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/clear`, {}, { timeout: 5000 });
-                    
+
                     // Enqueue scene
                     await axios.post(
                         `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/enqueue`,
                         { sceneId },
                         { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
                     );
-                    
+
                     // Start queue
                     const response = await axios.post(
                         `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/start`,
