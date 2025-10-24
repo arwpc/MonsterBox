@@ -360,9 +360,9 @@ class OrchestrationService {
 
         const sceneMap = {
             'Skulltalker': 9,
-            'Groundbreaker': 9007,
-            'Orlok': 29,
-            'PumpkinHead': 2,
+            'Groundbreaker': 1,
+            'Orlok': 100,
+            'PumpkinHead': 100,
             'Coffin Breaker': 1
         };
 
@@ -388,11 +388,11 @@ class OrchestrationService {
                         { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
                     );
 
-                    // Start queue
+                    // Start queue in loop mode
                     const response = await axios.post(
                         `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/start`,
-                        {},
-                        { timeout: 5000 }
+                        { mode: 'loop_queue' },
+                        { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
                     );
 
                     return {
