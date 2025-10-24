@@ -61,16 +61,20 @@ describe('Ask AI Endpoint Tests', function () {
       expect(res.body.error).to.include('question');
     });
 
-    it('should return test response in test mode', async () => {
+    it('should return valid response', async () => {
+      this.timeout(35000); // Allow time for real AI if configured
+      
       const res = await request(BASE_URL)
         .post('/conversation/api/ask-ai')
         .send({ question: 'Hello, who are you?' });
 
       expect(res.status).to.equal(200);
       expect(res.body).to.have.property('success', true);
-      expect(res.body).to.have.property('testMode', true);
       expect(res.body).to.have.property('response');
       expect(res.body.response).to.be.a('string');
+      expect(res.body.response.length).to.be.greaterThan(0);
+      
+      console.log('  📝 Response:', res.body.response.substring(0, 100) + '...');
     });
 
     it('should accept optional speakerPartId parameter', async () => {
