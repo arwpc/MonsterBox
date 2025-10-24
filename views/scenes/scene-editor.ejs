@@ -217,10 +217,10 @@
       if (!container) return;
 
       // Filter only enabled hardware parts (exclude speakers, microphones, webcams)
-      const hardwareParts = parts.filter(p => 
-        p.enabled && 
-        (p.type === 'servo' || p.type === 'motor' || p.type === 'linear_actuator' || 
-         p.type === 'light' || p.type === 'led' || p.type === 'motion_sensor' || p.type === 'sensor')
+      const hardwareParts = parts.filter(p =>
+        p.enabled &&
+        (p.type === 'servo' || p.type === 'motor' || p.type === 'linear_actuator' ||
+          p.type === 'light' || p.type === 'led' || p.type === 'motion_sensor' || p.type === 'sensor')
       );
 
       if (hardwareParts.length === 0) {
@@ -357,13 +357,13 @@
     function addStepWithPart(type, partId) {
       // Normalize type to match renderStepForm expectations (use hyphen not underscore)
       const normalizedType = type === 'linear_actuator' ? 'linear-actuator' : type;
-      
-      const step = { 
+
+      const step = {
         type: normalizedType,
         partId: partId
       };
       // Set sensible defaults based on type
-      switch(normalizedType) {
+      switch (normalizedType) {
         case 'servo':
           step.angle = 90;
           step.duration = 1000;
