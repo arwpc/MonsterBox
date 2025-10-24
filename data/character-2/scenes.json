@@ -1,1 +1,111 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Coffin Story Loop",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "54ef9d8c-3c05-4394-b670-c1808774654c.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "4",
+        "direction": "extend",
+        "speed": 85,
+        "duration": 8500,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "2",
+        "angle": -30,
+        "duration": 3000,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 120,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": -20,
+        "duration": 4000,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Tell me a creepy story about how you got stuck in this coffin and who Orlok is. Make it scary and atmospheric, in first person."
+      },
+      {
+        "type": "sayThis",
+        "text": "Good night... in a creepy, ominous way"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "4",
+        "direction": "retract",
+        "speed": 85,
+        "duration": 8500
+      }
+    ],
+    "created": "2025-10-24T02:31:19.832Z"
+  },
+  {
+    "id": 2,
+    "name": "Orlok Mina Story",
+    "steps": [
+      {
+        "type": "servo",
+        "servo": "right-arm",
+        "position": 0,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "servo": "left-arm",
+        "position": 0,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "servo": "head-pan",
+        "position": 50,
+        "duration": 1000
+      },
+      {
+        "type": "audio",
+        "file": "Coffin 1.mp3"
+      },
+      {
+        "type": "sayThis",
+        "text": "Tell me the story of Mina"
+      },
+      {
+        "type": "servo",
+        "servo": "right-arm",
+        "position": 100,
+        "duration": 2000
+      },
+      {
+        "type": "delay",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "Now the castle burns"
+      },
+      {
+        "type": "servo",
+        "servo": "right-arm",
+        "position": 0,
+        "duration": 2000
+      }
+    ],
+    "created": "2025-10-24T02:44:08.078Z"
+  }
+]

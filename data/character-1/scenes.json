@@ -51,5 +51,32 @@
       }
     ],
     "created": "2025-10-23T21:46:34.503Z"
+  },
+  {
+    "id": 100,
+    "name": "PumpkinHead Scary Loop",
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 100,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "audio",
+        "audioId": "f8db8bdd-2ed5-4852-93be-9c5acf33fba8.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Fear me! I am the terror that walks in darkness!"
+      },
+      {
+        "type": "wait",
+        "duration": 5000
+      }
+    ],
+    "created": "2025-10-24T02:55:00.000Z"
   }
 ]

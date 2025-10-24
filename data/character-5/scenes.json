@@ -1,73 +1,24 @@
 [
   {
-    "id": 7,
-    "name": "Multi-Step Sensor Scene",
+    "id": 1,
+    "name": "Groundbreaker Insult Loop",
     "steps": [
       {
-        "type": "wait",
-        "duration": 100
+        "type": "motor",
+        "partId": "1",
+        "speed": 100,
+        "duration": 2000,
+        "concurrent": true
       },
       {
-        "type": "sensor",
-        "sensorId": "5",
-        "action": "read"
-      },
-      {
-        "type": "wait",
-        "duration": 100
-      }
-    ],
-    "created": "2025-10-14T22:07:53.852Z"
-  },
-  {
-    "id": 14,
-    "name": "Custom Duplicate Name",
-    "description": "",
-    "steps": [
-      {
-        "type": "wait",
-        "duration": 1000
+        "type": "sayThis",
+        "text": "You want some of this? I'll tear you apart and bury you in pieces!"
       },
       {
         "type": "wait",
-        "duration": 2000
+        "duration": 30000
       }
     ],
-    "created": "2025-10-14T22:11:58.040Z",
-    "duplicatedFrom": 12
-  },
-  {
-    "id": 9003,
-    "name": "New Scene",
-    "steps": [],
-    "imported": "2025-10-14T22:11:58.220Z"
-  },
-  {
-    "id": 9004,
-    "name": "Adv Scene 1",
-    "steps": [
-      {
-        "type": "wait",
-        "duration": 50
-      }
-    ],
-    "created": "2025-10-14T22:11:58.380Z"
-  },
-  {
-    "id": 9005,
-    "name": "Adv Scene 2",
-    "steps": [
-      {
-        "type": "wait",
-        "duration": 50
-      }
-    ],
-    "created": "2025-10-14T22:11:58.389Z"
-  },
-  {
-    "id": 9006,
-    "name": "Queueable Scene",
-    "steps": [],
-    "created": "2025-10-14T22:12:02.578Z"
+    "created": "2025-10-24T02:45:00.000Z"
   }
 ]

@@ -417,5 +417,63 @@
       }
     ],
     "created": "2025-10-24T01:38:29.998Z"
+  },
+  {
+    "id": 100,
+    "name": "Orlok Mina Story",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 100,
+        "duration": 2000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "2",
+        "direction": "retract",
+        "speed": 100,
+        "duration": 2000
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "audio",
+        "audioId": "1d52e14f-2c02-43ea-bdc1-6e19bec2eeaa.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Tell me the story of Mina, the woman who dared to love a vampire"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 100,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "Now the castle burns"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 100,
+        "duration": 2000
+      }
+    ],
+    "created": "2025-10-24T02:50:00.000Z"
   }
 ]
