@@ -77,6 +77,11 @@
             </button>
           </div>
           <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="askAI">
+              <i class="bi bi-question-circle"></i><br>Ask AI a Question
+            </button>
+          </div>
+          <div class="col-md-6">
             <button class="btn btn-outline-primary w-100 step-action-btn" data-type="goblin-video">
               <i class="bi bi-display"></i><br>Goblin Video
             </button>
@@ -520,6 +525,7 @@
         'pose': 'Pose',
         'audio': 'Audio',
         'sayThis': 'Say This (AI Voice)',
+        'askAI': 'Ask AI a Question',
         'servo': 'Servo',
         'motor': 'Motor',
         'linear-actuator': 'Linear Actuator',
@@ -537,6 +543,7 @@
         case 'pose': return renderPoseForm(step, index);
         case 'audio': return renderAudioForm(step, index);
         case 'sayThis': return renderSayThisForm(step, index);
+        case 'askAI': return renderAskAIForm(step, index);
         case 'servo': return renderServoForm(step, index);
         case 'motor': return renderMotorForm(step, index);
         case 'linear-actuator': return renderLinearActuatorForm(step, index);
@@ -600,6 +607,23 @@
       html += '<div class="col-md-12">';
       html += '<button class="btn btn-sm btn-outline-primary btn-preview-voice" data-index="' + index + '"><i class="bi bi-play-circle"></i> Preview Voice</button>';
       html += '<span class="ms-2 text-muted voice-preview-status" id="voiceStatus' + index + '"></span>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderAskAIForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Question to Ask AI</label>';
+      html += '<textarea class="form-control step-input" data-index="' + index + '" data-field="question" rows="2" placeholder="Enter question for AI agent...">' + (step.question || step.text || '') + '</textarea>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="alert alert-info mb-0"><small><i class="bi bi-info-circle"></i> The AI will respond and the response will be played through TTS.</small></div>';
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';

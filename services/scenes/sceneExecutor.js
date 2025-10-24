@@ -125,6 +125,30 @@ async function executeSayThisStep(step, characterId, emit) {
   return play;
 }
 
+async function executeAskAIStep(step, characterId, emit) {
+  const question = (step.question || step.text || '').trim();
+  if (!question) throw new Error('askAI.step requires question');
+  emit && emit({ type: 'step', status: 'start', stepType: 'askAI', question });
+
+  const ttsCfg = await getTTSConfig();
+  
+  // For now, use a simulated response until full conversational AI integration
+  // TODO: Integrate with elevenLabsWebSocketService for real conversational AI
+  const responseText = `I heard your question: "${question}". This is a placeholder response until full conversational AI integration is complete.`;
+  
+  const voiceId = step.voiceId || ttsCfg.voice_id;
+  const gen = await elevenLabsTTSService.generateSpeech(responseText, voiceId, ttsCfg);
+  if (!gen.success) {
+    emit && emit({ type: 'step', status: 'error', stepType: 'askAI', error: gen.error });
+    throw new Error(gen.error || 'TTS generation failed');
+  }
+
+  const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
+  emit && emit({ type: 'step', status: play.success ? 'complete' : 'error', stepType: 'askAI', result: play, response: responseText });
+  if (!play.success) throw new Error(play.error || 'TTS playback failed');
+  return { ...play, response: responseText };
+}
+
 async function executeGoblinVideoStep(step, characterId, emit) {
   const { goblinId, videoId, options = {} } = step;
 
@@ -356,6 +380,8 @@ export async function executeStep(step, characterId, emit, options) {
       return executeWaitStep(step, emit);
     case 'sayThis':
       return executeSayThisStep(step, characterId, emit);
+    case 'askAI':
+      return executeAskAIStep(step, characterId, emit);
     case 'goblin':
     case 'goblin-video':
       return executeGoblinVideoStep(step, characterId, emit);

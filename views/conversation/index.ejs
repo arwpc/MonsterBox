@@ -45,6 +45,31 @@
         </div>
       </div>
 
+      <!-- Ask AI a Question Panel -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-question-circle"></i> Ask <span id="charNameAI">Character</span> a Question</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="aiSpeakerSelect" class="form-label small text-muted">Speaker Output</label>
+            <select id="aiSpeakerSelect" class="form-select form-select-sm">
+              <option value="">Loading speakers...</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <input id="askInput" type="text" class="form-control" placeholder="Ask me anything..." 
+              onkeypress="if(event.key==='Enter') askAIQuestion()"/>
+            <button id="askBtn" class="btn btn-success"><i class="bi bi-send"></i> Ask</button>
+          </div>
+          <div id="askStatus" class="mt-2 small"></div>
+          <div id="aiResponse" class="mt-2 p-2 border rounded" style="display:none; background:#1a1a1a; min-height:60px;">
+            <div class="small text-muted mb-1">AI Response:</div>
+            <div id="aiResponseText" class="small"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Make Character Say Panel -->
       <div class="card mt-3">
         <div class="card-header">
@@ -187,9 +212,18 @@
         aiOnToggle: null,
         aiLatency: null,
         latencyMs: null,
+        // Ask AI panel
+        askInput: null,
+        askBtn: null,
+        askStatus: null,
+        aiResponse: null,
+        aiResponseText: null,
+        aiSpeakerSelect: null,
+        charNameAI: null,
       };
       let speakers = [];
       let selectedSpeakerPartId = null;
+      let selectedAISpeakerPartId = null;
       let listenInAudio = null;
       let aiOnInterval = null;
 
@@ -225,6 +259,14 @@
         ui.aiOnToggle = $('aiOnToggle');
         ui.aiLatency = $('aiLatency');
         ui.latencyMs = $('latencyMs');
+        // Ask AI panel
+        ui.askInput = $('askInput');
+        ui.askBtn = $('askBtn');
+        ui.askStatus = $('askStatus');
+        ui.aiResponse = $('aiResponse');
+        ui.aiResponseText = $('aiResponseText');
+        ui.aiSpeakerSelect = $('aiSpeakerSelect');
+        ui.charNameAI = $('charNameAI');
         setCharName();
         bindEvents();
         await loadSpeakers();
@@ -242,11 +284,14 @@
         const label = document.querySelector('#charLabel');
         const nameEl = $('charName');
         if (label && nameEl) nameEl.textContent = label.textContent || 'Character';
+        // Also set for Ask AI panel
+        if (label && ui.charNameAI) ui.charNameAI.textContent = label.textContent || 'Character';
       }
 
       function bindEvents() {
         ui.sayBtn.addEventListener('click', sendSay);
         ui.sayInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); sendSay(); } });
+        ui.askBtn && ui.askBtn.addEventListener('click', askAIQuestion);
         ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
         ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
         ui.listenInBtn && ui.listenInBtn.addEventListener('click', toggleListenIn);
@@ -317,6 +362,17 @@
         speakers.forEach(sp => { const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : ''); const opt = new Option(label, sp.id); sel.appendChild(opt); });
         selectedSpeakerPartId = speakers[0].id; sel.value = String(selectedSpeakerPartId); sel.disabled = false;
         sel.addEventListener('change', (e) => { selectedSpeakerPartId = e.target.value || null; });
+        
+        // Also populate AI speaker select
+        if (ui.aiSpeakerSelect) {
+          ui.aiSpeakerSelect.innerHTML = '';
+          if (!speakers.length) { ui.aiSpeakerSelect.appendChild(new Option('Default System Output', '')); ui.aiSpeakerSelect.disabled = true; }
+          else {
+            speakers.forEach(sp => { const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : ''); const opt = new Option(label, sp.id); ui.aiSpeakerSelect.appendChild(opt); });
+            selectedAISpeakerPartId = speakers[0].id; ui.aiSpeakerSelect.value = String(selectedAISpeakerPartId); ui.aiSpeakerSelect.disabled = false;
+            ui.aiSpeakerSelect.addEventListener('change', (e) => { selectedAISpeakerPartId = e.target.value || null; });
+          }
+        }
       }
 
       async function loadWebcam() {
@@ -357,6 +413,49 @@
           else { ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>'; }
         } catch (e) { ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>'; }
         finally { ui.sayBtn.disabled = false; ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak'; }
+      }
+
+      // Ask AI a Question - Send question to conversational AI agent
+      async function askAIQuestion() {
+        const question = (ui.askInput.value || '').trim(); 
+        if (!question) { 
+          ui.askStatus.innerHTML = '<span class="text-warning">Enter a question</span>'; 
+          return; 
+        }
+        
+        ui.askBtn.disabled = true; 
+        ui.askBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Asking...';
+        ui.askStatus.innerHTML = '<span class="text-info">Sending to AI agent...</span>';
+        ui.aiResponse.style.display = 'none';
+        
+        try {
+          const r = await fetch('/conversation/api/ask-ai', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+              question, 
+              speakerPartId: selectedAISpeakerPartId || undefined 
+            }) 
+          });
+          const j = await r.json();
+          
+          if (j && j.success) { 
+            ui.askStatus.innerHTML = '<span class="text-success">AI responded!</span>'; 
+            if (j.response) {
+              ui.aiResponseText.textContent = j.response;
+              ui.aiResponse.style.display = 'block';
+            }
+            // Clear input after successful send
+            ui.askInput.value = '';
+          } else { 
+            ui.askStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || 'Unknown error') + '</span>'; 
+          }
+        } catch (e) { 
+          ui.askStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>'; 
+        } finally { 
+          ui.askBtn.disabled = false; 
+          ui.askBtn.innerHTML = '<i class="bi bi-send"></i> Ask'; 
+        }
       }
 
       // Listen In - Stream server-side microphone to browser
@@ -489,5 +588,6 @@
 
       document.addEventListener('DOMContentLoaded', init);
       window.__conv = { loadSpeakers, loadWebcam, loadScenes };
+      window.askAIQuestion = askAIQuestion; // Expose for inline event handler
     })();
   </script>

@@ -79,6 +79,8 @@ export async function getTTSConfig() {
     use_speaker_boost: true,
   };
   return {
+    // agent_id is optional and indicates a conversational AI agent to use
+    agent_id: d && typeof d.agent_id === 'string' && d.agent_id.trim() ? d.agent_id : undefined,
     voice_id: d && typeof d.voice_id === 'string' && d.voice_id.trim() ? d.voice_id : base.voice_id,
     model: (d && d.model) || base.model,
     stability: d && typeof d.stability === 'number' ? d.stability : base.stability,
@@ -115,6 +117,8 @@ export async function getTTSConfigForCharacter(characterId) {
 
     // Merge with defaults to ensure all required fields exist
     return {
+      // include agent_id if specified for this character
+      agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
       voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : 'Tj9l48J9AJbry5yCP5eW',
       model: parsed.model || 'eleven_monolingual_v1',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,

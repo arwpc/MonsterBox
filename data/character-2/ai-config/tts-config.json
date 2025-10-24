@@ -1,6 +1,7 @@
 {
   "model": "eleven_monolingual_v1",
   "voice_id": "hkk1bPcdsxSQCLzLFMT2",
+  "agent_id": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n",
   "stability": 0.5,
   "similarity_boost": 0.5,
   "style": 0,
