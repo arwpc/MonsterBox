@@ -31,7 +31,7 @@ router.get('/status', async (req, res) => {
 router.post('/broadcast/animatronics', express.json(), async (req, res) => {
     try {
         const { command, params } = req.body;
-        
+
         if (!command) {
             return res.status(400).json({
                 success: false,
@@ -57,7 +57,7 @@ router.post('/broadcast/animatronics', express.json(), async (req, res) => {
 router.post('/broadcast/goblins', express.json(), async (req, res) => {
     try {
         const { command, params } = req.body;
-        
+
         if (!command) {
             return res.status(400).json({
                 success: false,
@@ -83,7 +83,7 @@ router.post('/broadcast/goblins', express.json(), async (req, res) => {
 router.post('/broadcast/all', express.json(), async (req, res) => {
     try {
         const { command, params } = req.body;
-        
+
         if (!command) {
             return res.status(400).json({
                 success: false,
@@ -153,7 +153,7 @@ router.post('/restart-services', async (req, res) => {
 router.post('/say-all', express.json(), async (req, res) => {
     try {
         const { text } = req.body;
-        
+
         if (!text) {
             return res.status(400).json({
                 success: false,
@@ -196,13 +196,13 @@ router.post('/say-all', express.json(), async (req, res) => {
 router.post('/enable-random-poses', express.json(), async (req, res) => {
     try {
         const { cooldownMs, minAmplitude, maxAmplitude } = req.body;
-        
+
         const results = await Promise.allSettled(
             orchestrationService.animatronics.map(async (animatronic) => {
                 return await orchestrationService.executeOnAnimatronic(
                     animatronic,
                     'enable-random-poses',
-                    { 
+                    {
                         characterId: animatronic.id,
                         options: { cooldownMs, minAmplitude, maxAmplitude }
                     }
@@ -250,7 +250,7 @@ router.post('/disable-random-poses', async (req, res) => {
 router.post('/update-config', express.json(), async (req, res) => {
     try {
         const { config } = req.body;
-        
+
         if (!config) {
             return res.status(400).json({
                 success: false,
@@ -282,6 +282,23 @@ router.post('/deploy-code', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to deploy code',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Start all queue loops on all animatronics
+ */
+router.post('/start-all-queue-loops', async (req, res) => {
+    try {
+        const result = await orchestrationService.startAllQueueLoops();
+        res.json(result);
+    } catch (error) {
+        console.error('Error starting queue loops:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start queue loops',
             message: error.message
         });
     }

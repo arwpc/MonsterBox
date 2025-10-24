@@ -2333,6 +2333,42 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1761270366893selegfhbs",
+      "sceneId": 29,
+      "characterId": 3,
+      "timestamp": "2025-10-24T01:46:06.893Z",
+      "startTime": "2025-10-24T01:45:51.220Z",
+      "endTime": "2025-10-24T01:46:06.890Z",
+      "duration": 15670,
+      "stepsExecuted": 3,
+      "totalSteps": 9,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761270761200zgf1tlymk",
+      "sceneId": 29,
+      "characterId": 3,
+      "timestamp": "2025-10-24T01:52:41.200Z",
+      "startTime": "2025-10-24T01:52:25.608Z",
+      "endTime": "2025-10-24T01:52:41.199Z",
+      "duration": 15591,
+      "stepsExecuted": 3,
+      "totalSteps": 9,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {

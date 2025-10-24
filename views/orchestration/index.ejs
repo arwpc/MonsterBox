@@ -182,6 +182,11 @@
                                 <i class="bi bi-power"></i> Reboot All (Disabled)
                             </button>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <button class="btn btn-success w-100" onclick="startAllQueueLoops()">
+                                <i class="bi bi-play-circle"></i> Start All Queue Loops
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -360,6 +365,35 @@
             })
             .catch(function (error) {
                 log('Health check failed: ' + error.message, 'error');
+            });
+    }
+
+    function startAllQueueLoops() {
+        if (!confirm('Start all animatronic queue loops? This will start their programmed scenes.')) return;
+        log('Starting all queue loops...');
+        fetch('/api/orchestration/start-all-queue-loops', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    log('✅ All queue loops started successfully', 'success');
+                    if (data.results) {
+                        data.results.forEach(function (result) {
+                            if (result.success) {
+                                log('  ✓ ' + result.name + ': ' + result.message, 'success');
+                            } else {
+                                log('  ✗ ' + result.name + ': ' + result.error, 'error');
+                            }
+                        });
+                    }
+                } else {
+                    log('Failed to start queue loops: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(function (error) {
+                log('Error starting queue loops: ' + error.message, 'error');
             });
     }
 

@@ -353,6 +353,75 @@ class OrchestrationService {
             throw new Error(`Stop video failed: ${error.message}`);
         }
     }
+
+    /**
+     * Start all queue loops on all animatronics
+     */
+    async startAllQueueLoops() {
+        console.log('🎬 Starting all queue loops...');
+
+        const sceneMap = {
+            'Skulltalker': 9,
+            'Groundbreaker': 9007,
+            'Orlok': 29,
+            'PumpkinHead': 2,
+            'Coffin Breaker': 1
+        };
+
+        const results = await Promise.allSettled(
+            this.animatronics.map(async (animatronic) => {
+                try {
+                    const sceneId = sceneMap[animatronic.name];
+                    if (!sceneId) {
+                        return {
+                            name: animatronic.name,
+                            success: false,
+                            error: 'No scene configured'
+                        };
+                    }
+
+                    // Clear queue
+                    await axios.post(`http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/clear`, {}, { timeout: 5000 });
+                    
+                    // Enqueue scene
+                    await axios.post(
+                        `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/enqueue`,
+                        { sceneId },
+                        { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
+                    );
+                    
+                    // Start queue
+                    const response = await axios.post(
+                        `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/start`,
+                        {},
+                        { timeout: 5000 }
+                    );
+
+                    return {
+                        name: animatronic.name,
+                        success: response.data.success || true,
+                        message: `Scene ${sceneId} started`
+                    };
+                } catch (error) {
+                    return {
+                        name: animatronic.name,
+                        success: false,
+                        error: error.message
+                    };
+                }
+            })
+        );
+
+        const processed = results.map(r => r.value || r.reason);
+        const successful = processed.filter(r => r.success).length;
+
+        return {
+            success: successful > 0,
+            total: this.animatronics.length,
+            successful,
+            results: processed
+        };
+    }
 }
 
 // Export singleton instance
