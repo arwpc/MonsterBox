@@ -191,6 +191,96 @@ router.post('/say-all', express.json(), async (req, res) => {
 });
 
 /**
+ * Make a specific animatronic say something (direct speech without AI processing)
+ */
+router.post('/animatronic/:id/say', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                error: 'text is required'
+            });
+        }
+
+        const animatronic = orchestrationService.animatronics.find(a => a.id === id);
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = await orchestrationService.executeOnAnimatronic(
+            animatronic,
+            'say-direct',
+            { text }
+        );
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            text,
+            result
+        });
+    } catch (error) {
+        console.error('Error making animatronic speak:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to make animatronic speak',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Ask AI on a specific animatronic using WebSocket conversation system
+ */
+router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                error: 'text is required'
+            });
+        }
+
+        const animatronic = orchestrationService.animatronics.find(a => a.id === id);
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = await orchestrationService.executeOnAnimatronic(
+            animatronic,
+            'ask-ai',
+            { text, characterId: animatronic.id }
+        );
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            text,
+            result
+        });
+    } catch (error) {
+        console.error('Error asking AI:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to ask AI',
+            message: error.message
+        });
+    }
+});
+
+/**
  * Enable random poses on all animatronics
  */
 router.post('/enable-random-poses', express.json(), async (req, res) => {

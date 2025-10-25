@@ -82,6 +82,12 @@ class OrchestrationService {
             case 'say':
                 return await this.sayText(ip, port, params.text, params.characterId);
 
+            case 'say-direct':
+                return await this.sayDirect(ip, port, params.text);
+
+            case 'ask-ai':
+                return await this.askAI(ip, port, params.text, params.characterId);
+
             case 'enable-random-poses':
                 return await this.enableRandomPoses(ip, port, params.characterId, params.options);
 
@@ -176,6 +182,44 @@ class OrchestrationService {
             return { success: true, data: response.data };
         } catch (error) {
             throw new Error(`Say text failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Ask AI on an animatronic using WebSocket conversation system
+     */
+    async askAI(ip, port, text, characterId) {
+        try {
+            const response = await axios.post(
+                `http://${ip}:${port}/conversation/api/ask-ai`,
+                { text, characterId },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 30000
+                }
+            );
+            return { success: true, data: response.data };
+        } catch (error) {
+            throw new Error(`Ask AI failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Make an animatronic say text directly (without AI processing)
+     */
+    async sayDirect(ip, port, text) {
+        try {
+            const response = await axios.post(
+                `http://${ip}:${port}/conversation/api/say`,
+                { text },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 30000
+                }
+            );
+            return { success: true, data: response.data };
+        } catch (error) {
+            throw new Error(`Say direct failed: ${error.message}`);
         }
     }
 

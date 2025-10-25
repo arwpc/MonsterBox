@@ -479,16 +479,17 @@
         
         log('Asking AI on ' + name + ': "' + question + '"');
         
-        var url = 'http://' + ip + ':' + port + '/conversation/api/ask-ai';
+        // Use local orchestration API proxy instead of direct cross-origin request
+        var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: question })
+            body: JSON.stringify({ text: question })
         })
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ ' + name + ' AI responded: "' + (data.response || 'Processing...') + '"', 'success');
+                    log('✅ ' + name + ' AI responded', 'success');
                     inputEl.value = '';
                 } else {
                     log('❌ ' + name + ' AI failed: ' + (data.error || 'Unknown error'), 'error');
@@ -510,7 +511,8 @@
         
         log('Making ' + name + ' say: "' + text + '"');
         
-        var url = 'http://' + ip + ':' + port + '/conversation/api/say';
+        // Use local orchestration API proxy instead of direct cross-origin request
+        var url = '/api/orchestration/animatronic/' + animId + '/say';
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
