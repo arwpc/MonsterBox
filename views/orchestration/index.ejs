@@ -76,6 +76,44 @@
         transform: translateY(-5px);
         box-shadow: 0 4px 15px rgba(247, 147, 30, 0.3);
     }
+
+    .webcam-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        background: #000;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .ai-input-group {
+        margin-top: 10px;
+    }
+
+    .ai-input-group input {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+    }
+
+    .ai-input-group .btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.5rem;
+    }
+
+    .animatronic-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .animatronic-card h5 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .character-name {
+        font-size: 0.8rem;
+        color: #aaa;
+        font-style: italic;
+    }
 </style>
 
 <div class="container-fluid mt-4">
@@ -249,17 +287,50 @@
             var statusClass = anim.online ? 'status-online' : 'status-offline';
             var statusText = anim.online ? 'ONLINE' : 'OFFLINE';
             var url = 'http://' + anim.ip + ':' + anim.port;
-            var cursorStyle = anim.online ? 'cursor: pointer;' : '';
-            var clickHandler = anim.online ? 'onclick="window.open(\'' + url + '\', \'_blank\')"' : '';
 
-            html += '<div class="col-md-3 mb-3">';
-            html += '  <div class="card animatronic-card" style="' + cursorStyle + '" ' + clickHandler + '>';
-            html += '    <div class="card-body text-center">';
-            html += '      <h5>' + anim.name + '</h5>';
-            html += '      <p class="' + statusClass + '">';
-            html += '        <i class="bi bi-circle-fill"></i> ' + statusText;
-            html += '      </p>';
-            html += '      <small class="text-muted">' + anim.ip + ':' + anim.port + '</small>';
+            html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
+            html += '  <div class="card animatronic-card">';
+            html += '    <div class="card-body">';
+            
+            // Header with name and status
+            html += '      <div class="d-flex justify-content-between align-items-center mb-2">';
+            html += '        <h5 class="mb-0" style="cursor: pointer;" onclick="window.open(\'' + url + '\', \'_blank\')">';
+            html += '          <i class="bi bi-box-arrow-up-right"></i> ' + anim.name;
+            html += '        </h5>';
+            html += '        <span class="' + statusClass + '">';
+            html += '          <i class="bi bi-circle-fill"></i> ' + statusText;
+            html += '        </span>';
+            html += '      </div>';
+            
+            // Character name if available
+            if (anim.characterName) {
+                html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
+            }
+
+            // Webcam stream if online
+            if (anim.online) {
+                var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/setup/webcam/api/parts/auto/stream';
+                html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Webcam feed" />';
+                
+                // AI interaction input group
+                html += '      <div class="ai-input-group">';
+                html += '        <input type="text" class="form-control form-control-sm mb-1" id="text-' + anim.id + '" placeholder="Type message...">';
+                html += '        <div class="btn-group w-100" role="group">';
+                html += '          <button class="btn btn-sm btn-primary" onclick="askAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+                html += '            <i class="bi bi-chat-dots"></i> Ask AI';
+                html += '          </button>';
+                html += '          <button class="btn btn-sm btn-success" onclick="makeSay(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+                html += '            <i class="bi bi-megaphone"></i> Say';
+                html += '          </button>';
+                html += '        </div>';
+                html += '      </div>';
+            } else {
+                html += '      <div class="text-center text-muted py-4">';
+                html += '        <i class="bi bi-exclamation-triangle"></i> Offline';
+                html += '      </div>';
+            }
+            
+            html += '      <small class="text-muted d-block text-center mt-2">' + anim.ip + ':' + anim.port + '</small>';
             html += '    </div>';
             html += '  </div>';
             html += '</div>';
@@ -394,6 +465,68 @@
             })
             .catch(function (error) {
                 log('Error starting queue loops: ' + error.message, 'error');
+            });
+    }
+
+    function askAI(animId, ip, port, name) {
+        var inputEl = document.getElementById('text-' + animId);
+        var question = inputEl.value.trim();
+        
+        if (!question) {
+            log('Please enter a question for ' + name, 'error');
+            return;
+        }
+        
+        log('Asking AI on ' + name + ': "' + question + '"');
+        
+        var url = 'http://' + ip + ':' + port + '/conversation/api/ask-ai';
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question })
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    log('✅ ' + name + ' AI responded: "' + (data.response || 'Processing...') + '"', 'success');
+                    inputEl.value = '';
+                } else {
+                    log('❌ ' + name + ' AI failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(function (error) {
+                log('❌ Error asking AI on ' + name + ': ' + error.message, 'error');
+            });
+    }
+
+    function makeSay(animId, ip, port, name) {
+        var inputEl = document.getElementById('text-' + animId);
+        var text = inputEl.value.trim();
+        
+        if (!text) {
+            log('Please enter text for ' + name + ' to say', 'error');
+            return;
+        }
+        
+        log('Making ' + name + ' say: "' + text + '"');
+        
+        var url = 'http://' + ip + ':' + port + '/conversation/api/say';
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text })
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    log('✅ ' + name + ' is speaking', 'success');
+                    inputEl.value = '';
+                } else {
+                    log('❌ ' + name + ' speech failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(function (error) {
+                log('❌ Error making ' + name + ' speak: ' + error.message, 'error');
             });
     }
 

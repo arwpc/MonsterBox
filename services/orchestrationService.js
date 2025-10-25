@@ -130,11 +130,25 @@ class OrchestrationService {
      */
     async healthCheck(ip, port) {
         try {
+            // Check if service is alive
             const response = await axios.get(`http://${ip}:${port}/`, { timeout: 5000 });
+            
+            // Try to get character information
+            let characterName = null;
+            try {
+                const charResponse = await axios.get(`http://${ip}:${port}/api/character/current`, { timeout: 3000 });
+                if (charResponse.data && charResponse.data.character) {
+                    characterName = charResponse.data.character.name || charResponse.data.character.title;
+                }
+            } catch (charError) {
+                // Character info not critical, continue without it
+            }
+            
             return {
                 success: true,
                 online: response.status === 200,
-                status: response.status
+                status: response.status,
+                characterName: characterName
             };
         } catch (error) {
             return {
