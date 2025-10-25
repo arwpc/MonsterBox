@@ -1,479 +1,75 @@
 [
   {
-    "id": 1,
-    "name": "Test1",
+    "id": 102,
+    "name": "Count Orlok reporting from coralville",
     "steps": [
       {
         "type": "sayThis",
-        "text": "I am a hot dog"
+        "text": "In Coralville.  Count Orlok, reporting for KCRG News from Warner Castle"
       }
     ],
-    "created": "2025-10-18T01:21:33.199Z"
+    "created": "2025-10-24T10:29:21.344Z",
+    "updated": "2025-10-24T11:39:32.919Z"
   },
   {
-    "id": 2,
-    "name": "t2",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "3"
-      },
-      {
-        "type": "sayThis",
-        "text": "Come closer.....embrace death"
-      }
-    ],
-    "created": "2025-10-18T01:22:01.770Z",
-    "updated": "2025-10-18T01:22:27.877Z"
-  },
-  {
-    "id": 3,
-    "name": "t3",
+    "id": 103,
+    "name": "transylvania fan 1400s",
     "steps": [
       {
         "type": "servo",
         "partId": "11",
-        "angle": 145
-      },
-      {
-        "type": "audio",
-        "audioId": "baec5665-a303-49fc-a4c2-48dfd0135a58.mp3"
-      }
-    ],
-    "created": "2025-10-18T01:23:18.077Z"
-  },
-  {
-    "id": 4,
-    "name": "Muzac Loop Halloween",
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "I am your master....welcome to Warner Castle in the Carpathian Mountains. "
-      },
-      {
-        "type": "audio",
-        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "retract"
-      },
-      {
-        "type": "audio",
-        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
-      },
-      {
-        "type": "audio",
-        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
-      }
-    ],
-    "created": "2025-10-18T23:38:50.045Z",
-    "updated": "2025-10-18T23:43:29.892Z"
-  },
-  {
-    "id": 6,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:39:31.472Z"
-  },
-  {
-    "id": 8,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:39:35.021Z"
-  },
-  {
-    "id": 11,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:42:10.302Z"
-  },
-  {
-    "id": 13,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:42:13.722Z"
-  },
-  {
-    "id": 16,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:42:56.333Z"
-  },
-  {
-    "id": 18,
-    "name": "Goblin Execution Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "307 Jb Hd.mp4",
-        "returnToQueue": false,
-        "comment": "Single goblin step"
-      }
-    ],
-    "created": "2025-10-21T00:42:59.878Z"
-  },
-  {
-    "id": 19,
-    "name": "Halloween Test Scene - All Steps",
-    "steps": [
-      {
-        "type": "servo",
-        "partId": "10"
-      },
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "halloween-spooky.mp4"
-      },
-      {
-        "type": "sayThis",
-        "text": "Welcome to the haunted mansion. I am Count Orlok, and I have been waiting for you!"
-      }
-    ],
-    "created": "2025-10-22T22:50:21.621Z"
-  },
-  {
-    "id": 20,
-    "name": "Complete Step Types Test - No Goblins",
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "Welcome to my lair. I am Count Orlok, master of the night!"
-      },
-      {
-        "type": "servo",
-        "partId": "10",
-        "angle": 45
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend"
-      },
-      {
-        "type": "wait"
-      },
-      {
-        "type": "pose",
-        "poseId": "2"
-      },
-      {
-        "type": "audio"
-      },
-      {
-        "type": "light"
-      }
-    ],
-    "created": "2025-10-22T23:03:49.059Z"
-  },
-  {
-    "id": 21,
-    "name": "Spinster Video Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-three",
-        "videoId": "Pha Spinster Teafortwo Win H.mp4"
-      }
-    ],
-    "created": "2025-10-22T23:28:48.174Z"
-  },
-  {
-    "id": 22,
-    "name": "Goblin One Spinster Test",
-    "steps": [
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-one",
-        "videoId": "Pha Spinster Teafortwo Win H.mp4",
-        "loop": true
-      }
-    ],
-    "created": "2025-10-23T00:09:10.841Z"
-  },
-  {
-    "id": 23,
-    "name": "Orlok Complete Test - All Parts",
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "I am Orlok, the ancient vampire. Welcome to my castle."
-      },
-      {
-        "type": "wait"
-      },
-      {
-        "type": "audio",
-        "audioId": "baec5665-a303-49fc-a4c2-48dfd0135a58.mp3"
-      }
-    ],
-    "created": "2025-10-23T21:48:27.203Z"
-  },
-  {
-    "id": 24,
-    "name": "Orlok Servo Test",
-    "steps": [
-      {
-        "type": "servo",
-        "partId": "11",
-        "angle": 90,
-        "duration": 1000
-      }
-    ],
-    "created": "2025-10-23T21:52:12.446Z",
-    "updated": "2025-10-23T21:52:49.810Z"
-  },
-  {
-    "id": 25,
-    "name": "Orlok Linear Actuator Test",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      }
-    ],
-    "created": "2025-10-23T21:55:18.464Z"
-  },
-  {
-    "id": 26,
-    "name": "Orlok Light Test",
-    "steps": [
-      {
-        "type": "light",
-        "partId": "8",
-        "state": "on",
-        "brightness": 100,
-        "duration": 2000
-      }
-    ],
-    "created": "2025-10-23T21:56:23.289Z"
-  },
-  {
-    "id": 27,
-    "name": "Orlok Hardware Combo Test",
-    "steps": [
-      {
-        "type": "light",
-        "partId": "8",
-        "state": "on",
-        "brightness": 100,
-        "duration": 1000
-      },
-      {
-        "type": "servo",
-        "partId": "11",
-        "angle": 90,
-        "duration": 1000
-      },
-      {
-        "type": "wait",
-        "duration": 500
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 50,
-        "duration": 2000
-      },
-      {
-        "type": "wait",
-        "duration": 500
-      },
-      {
-        "type": "sayThis",
-        "text": "All hardware systems functioning normally"
-      }
-    ],
-    "created": "2025-10-23T21:57:00.000Z"
-  },
-  {
-    "id": 28,
-    "name": "Test Part-Based Steps",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "light",
-        "partId": "8",
-        "state": "on",
-        "brightness": 100,
-        "duration": 0
-      },
-      {
-        "type": "servo",
-        "partId": "10",
-        "angle": 90,
-        "duration": 1000
-      }
-    ],
-    "created": "2025-10-23T23:04:43.540Z"
-  },
-  {
-    "id": 29,
-    "name": "Orlok Mina Story Loop",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "retract",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "2",
-        "direction": "retract",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "servo",
-        "partId": "11",
-        "angle": 90,
-        "duration": 2000
-      },
-      {
-        "type": "audio",
-        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
-      },
-      {
-        "type": "sayThis",
-        "text": "Mina was the light in my eternal darkness. Her beauty captivated me across the centuries."
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-two",
-        "videoId": "307 Jb Hd.mp4"
-      },
-      {
-        "type": "sayThis",
-        "text": "Now the castle burns"
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "retract",
-        "speed": 75,
-        "duration": 3000
-      }
-    ],
-    "created": "2025-10-24T01:38:29.998Z"
-  },
-  {
-    "id": 100,
-    "name": "Orlok Mina Story",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "retract",
-        "speed": 100,
-        "duration": 2000
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "2",
-        "direction": "retract",
-        "speed": 100,
-        "duration": 2000
-      },
-      {
-        "type": "servo",
-        "partId": "11",
-        "angle": 90,
-        "duration": 1000
-      },
-      {
-        "type": "audio",
-        "audioId": "1d52e14f-2c02-43ea-bdc1-6e19bec2eeaa.mp3",
+        "angle": -40,
+        "duration": 1000,
         "concurrent": true
       },
       {
         "type": "sayThis",
-        "text": "Tell me the story of Mina, the woman who dared to love a vampire"
+        "text": "I've been a fan of channel nine since the early 1400s. The fields of Transyvania and Iowa are so alike in the fall..."
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 60,
+        "duration": 1000,
+        "concurrent": true
+      }
+    ],
+    "created": "2025-10-24T11:32:40.486Z",
+    "updated": "2025-10-24T11:45:40.741Z"
+  },
+  {
+    "id": 104,
+    "name": "warning",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "sensor",
+        "partId": "14"
       },
       {
         "type": "linear-actuator",
         "partId": "1",
         "direction": "extend",
-        "speed": 100,
-        "duration": 2000
+        "speed": 75,
+        "duration": 3000
       },
       {
-        "type": "wait",
-        "duration": 500
-      },
-      {
-        "type": "sayThis",
-        "text": "Now the castle burns"
+        "type": "askAI",
+        "question": "What do you think visitors at the cemetery should be warned of? The skeletons? Groundbreaker?"
       },
       {
         "type": "linear-actuator",
         "partId": "1",
         "direction": "retract",
-        "speed": 100,
-        "duration": 2000
+        "speed": 75,
+        "duration": 3000
       }
     ],
-    "created": "2025-10-24T02:50:00.000Z"
+    "created": "2025-10-24T23:53:43.302Z",
+    "updated": "2025-10-25T01:25:25.400Z"
   }
 ]

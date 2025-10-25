@@ -5,303 +5,303 @@
  * Run with: MB_E2E=1 npx playwright test tests/playwright/ask-ai-conversation.spec.js
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 test.describe('Ask AI Conversation Feature', () => {
-  test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
+    test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
 
-  test.beforeEach(async ({ page }) => {
-    // Navigate to Conversation Mode page
-    await page.goto(`${BASE_URL}/conversation`);
-    await expect(page).toHaveTitle(/Conversation Mode/);
-    
-    // Wait for page to fully load
-    await page.waitForLoadState('networkidle');
-  });
+    test.beforeEach(async ({ page }) => {
+        // Navigate to Conversation Mode page
+        await page.goto(`${BASE_URL}/conversation`);
+        await expect(page).toHaveTitle(/Conversation Mode/);
 
-  test('Ask AI panel is visible on conversation page', async ({ page }) => {
-    // Check for the Ask AI panel heading
-    const askAIHeading = page.locator('h6:has-text("Ask")');
-    await expect(askAIHeading).toBeVisible();
+        // Wait for page to fully load
+        await page.waitForLoadState('networkidle');
+    });
 
-    // Check for input field
-    const askInput = page.locator('#askInput');
-    await expect(askInput).toBeVisible();
-    await expect(askInput).toHaveAttribute('placeholder', /question/i);
+    test('Ask AI panel is visible on conversation page', async ({ page }) => {
+        // Check for the Ask AI panel heading
+        const askAIHeading = page.locator('h6:has-text("Ask")');
+        await expect(askAIHeading).toBeVisible();
 
-    // Check for Ask button
-    const askBtn = page.locator('#askBtn');
-    await expect(askBtn).toBeVisible();
-    await expect(askBtn).toContainText('Ask');
+        // Check for input field
+        const askInput = page.locator('#askInput');
+        await expect(askInput).toBeVisible();
+        await expect(askInput).toHaveAttribute('placeholder', /question/i);
 
-    console.log('✅ Ask AI panel UI elements are visible');
-  });
+        // Check for Ask button
+        const askBtn = page.locator('#askBtn');
+        await expect(askBtn).toBeVisible();
+        await expect(askBtn).toContainText('Ask');
 
-  test('Ask AI panel is positioned above Make Character Say panel', async ({ page }) => {
-    const askAIPanel = page.locator('.card:has(#askInput)');
-    const makeCharacterSayPanel = page.locator('.card:has(#sayInput)');
+        console.log('✅ Ask AI panel UI elements are visible');
+    });
 
-    await expect(askAIPanel).toBeVisible();
-    await expect(makeCharacterSayPanel).toBeVisible();
+    test('Ask AI panel is positioned above Make Character Say panel', async ({ page }) => {
+        const askAIPanel = page.locator('.card:has(#askInput)');
+        const makeCharacterSayPanel = page.locator('.card:has(#sayInput)');
 
-    // Get bounding boxes to verify position
-    const askBox = await askAIPanel.boundingBox();
-    const sayBox = await makeCharacterSayPanel.boundingBox();
+        await expect(askAIPanel).toBeVisible();
+        await expect(makeCharacterSayPanel).toBeVisible();
 
-    expect(askBox.y).toBeLessThan(sayBox.y);
+        // Get bounding boxes to verify position
+        const askBox = await askAIPanel.boundingBox();
+        const sayBox = await makeCharacterSayPanel.boundingBox();
 
-    console.log('✅ Ask AI panel correctly positioned above Make Character Say panel');
-  });
+        expect(askBox.y).toBeLessThan(sayBox.y);
 
-  test('Cannot submit empty question', async ({ page }) => {
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
+        console.log('✅ Ask AI panel correctly positioned above Make Character Say panel');
+    });
 
-    // Click Ask button without entering question
-    await askBtn.click();
+    test('Cannot submit empty question', async ({ page }) => {
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
 
-    // Should show warning
-    await expect(askStatus).toContainText(/enter/i);
-    await expect(askStatus).toHaveClass(/text-warning/);
+        // Click Ask button without entering question
+        await askBtn.click();
 
-    console.log('✅ Empty question validation works');
-  });
+        // Should show warning
+        await expect(askStatus).toContainText(/enter/i);
+        await expect(askStatus).toHaveClass(/text-warning/);
 
-  test('Can type question in input field', async ({ page }) => {
-    const askInput = page.locator('#askInput');
+        console.log('✅ Empty question validation works');
+    });
 
-    const testQuestion = 'Who are you and what do you do?';
-    await askInput.fill(testQuestion);
+    test('Can type question in input field', async ({ page }) => {
+        const askInput = page.locator('#askInput');
 
-    await expect(askInput).toHaveValue(testQuestion);
+        const testQuestion = 'Who are you and what do you do?';
+        await askInput.fill(testQuestion);
 
-    console.log('✅ Question input field works');
-  });
+        await expect(askInput).toHaveValue(testQuestion);
 
-  test('Enter key submits question', async ({ page }) => {
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
+        console.log('✅ Question input field works');
+    });
 
-    await askInput.fill('Test question');
-    
-    // Pressing Enter should trigger submission
-    await askInput.press('Enter');
+    test('Enter key submits question', async ({ page }) => {
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
 
-    // Button should show loading state
-    await expect(askBtn).toBeDisabled();
-    await expect(askBtn).toContainText(/asking/i);
+        await askInput.fill('Test question');
 
-    console.log('✅ Enter key triggers question submission');
-  });
+        // Pressing Enter should trigger submission
+        await askInput.press('Enter');
 
-  test('Ask AI button shows loading state during request', async ({ page }) => {
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
+        // Button should show loading state
+        await expect(askBtn).toBeDisabled();
+        await expect(askBtn).toContainText(/asking/i);
 
-    await askInput.fill('Hello, who are you?');
-    await askBtn.click();
+        console.log('✅ Enter key triggers question submission');
+    });
 
-    // Check loading state
-    await expect(askBtn).toBeDisabled();
-    await expect(askBtn).toContainText(/asking/i);
-    await expect(askStatus).toContainText(/sending/i);
+    test('Ask AI button shows loading state during request', async ({ page }) => {
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
 
-    console.log('✅ Loading state displayed during request');
-  });
+        await askInput.fill('Hello, who are you?');
+        await askBtn.click();
 
-  test('Successful AI response displays in UI', async ({ page }) => {
-    test.setTimeout(45000); // Allow time for AI response
+        // Check loading state
+        await expect(askBtn).toBeDisabled();
+        await expect(askBtn).toContainText(/asking/i);
+        await expect(askStatus).toContainText(/sending/i);
 
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
-    const aiResponse = page.locator('#aiResponse');
-    const aiResponseText = page.locator('#aiResponseText');
+        console.log('✅ Loading state displayed during request');
+    });
 
-    // Submit question
-    await askInput.fill('Hello! What is your name?');
-    await askBtn.click();
+    test('Successful AI response displays in UI', async ({ page }) => {
+        test.setTimeout(45000); // Allow time for AI response
 
-    // Wait for response (max 35 seconds for AI)
-    await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
+        const aiResponse = page.locator('#aiResponse');
+        const aiResponseText = page.locator('#aiResponseText');
 
-    // Check success state
-    await expect(askStatus).toHaveClass(/text-success/);
-    
-    // Check response is displayed
-    await expect(aiResponse).toBeVisible();
-    await expect(aiResponseText).not.toBeEmpty();
+        // Submit question
+        await askInput.fill('Hello! What is your name?');
+        await askBtn.click();
 
-    // Button should be re-enabled
-    await expect(askBtn).not.toBeDisabled();
-    await expect(askBtn).toContainText('Ask');
+        // Wait for response (max 35 seconds for AI)
+        await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
 
-    // Input should be cleared
-    await expect(askInput).toHaveValue('');
+        // Check success state
+        await expect(askStatus).toHaveClass(/text-success/);
 
-    const responseText = await aiResponseText.textContent();
-    console.log('✅ AI Response received:', responseText.substring(0, 100) + '...');
-  });
+        // Check response is displayed
+        await expect(aiResponse).toBeVisible();
+        await expect(aiResponseText).not.toBeEmpty();
 
-  test('Multiple questions can be asked sequentially', async ({ page }) => {
-    test.setTimeout(90000); // Allow time for multiple AI responses
+        // Button should be re-enabled
+        await expect(askBtn).not.toBeDisabled();
+        await expect(askBtn).toContainText('Ask');
 
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
-    const aiResponseText = page.locator('#aiResponseText');
+        // Input should be cleared
+        await expect(askInput).toHaveValue('');
 
-    const questions = [
-      'Hello!',
-      'What is your name?',
-      'Tell me something scary.'
-    ];
+        const responseText = await aiResponseText.textContent();
+        console.log('✅ AI Response received:', responseText.substring(0, 100) + '...');
+    });
 
-    for (const question of questions) {
-      await askInput.fill(question);
-      await askBtn.click();
+    test('Multiple questions can be asked sequentially', async ({ page }) => {
+        test.setTimeout(90000); // Allow time for multiple AI responses
 
-      // Wait for response
-      await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
-      
-      // Verify response
-      await expect(aiResponseText).not.toBeEmpty();
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
+        const aiResponseText = page.locator('#aiResponseText');
 
-      const response = await aiResponseText.textContent();
-      console.log(`✅ Q: "${question}" -> A: "${response.substring(0, 50)}..."`);
+        const questions = [
+            'Hello!',
+            'What is your name?',
+            'Tell me something scary.'
+        ];
 
-      // Small delay between questions
-      await page.waitForTimeout(1000);
-    }
+        for (const question of questions) {
+            await askInput.fill(question);
+            await askBtn.click();
 
-    console.log('✅ Multiple sequential questions work');
-  });
+            // Wait for response
+            await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
 
-  test('Error handling when ElevenLabs not configured', async ({ page }) => {
-    test.skip(process.env.SKIP_ERROR_TESTS === '1', 'Error tests disabled');
+            // Verify response
+            await expect(aiResponseText).not.toBeEmpty();
 
-    // This test would need a special test environment without ElevenLabs
-    // For now, we just verify the error UI elements exist
-    const askStatus = page.locator('#askStatus');
-    await expect(askStatus).toBeDefined();
+            const response = await aiResponseText.textContent();
+            console.log(`✅ Q: "${question}" -> A: "${response.substring(0, 50)}..."`);
 
-    console.log('✅ Error handling UI elements present');
-  });
+            // Small delay between questions
+            await page.waitForTimeout(1000);
+        }
 
-  test('Speaker selection dropdown exists (if applicable)', async ({ page }) => {
-    // Check if speaker select exists (optional feature)
-    const speakerSelect = page.locator('#aiSpeakerSelect');
-    
-    if (await speakerSelect.isVisible()) {
-      await expect(speakerSelect).toBeVisible();
-      console.log('✅ Speaker selection dropdown present');
-    } else {
-      console.log('ℹ️  Speaker selection not available (character has single speaker)');
-    }
-  });
+        console.log('✅ Multiple sequential questions work');
+    });
 
-  test('AI response shows character personality', async ({ page }) => {
-    test.setTimeout(45000);
+    test('Error handling when ElevenLabs not configured', async ({ page }) => {
+        test.skip(process.env.SKIP_ERROR_TESTS === '1', 'Error tests disabled');
 
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
-    const aiResponseText = page.locator('#aiResponseText');
+        // This test would need a special test environment without ElevenLabs
+        // For now, we just verify the error UI elements exist
+        const askStatus = page.locator('#askStatus');
+        await expect(askStatus).toBeDefined();
 
-    // Ask a character-specific question
-    await askInput.fill('Who are you?');
-    await askBtn.click();
+        console.log('✅ Error handling UI elements present');
+    });
 
-    // Wait for response
-    await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
+    test('Speaker selection dropdown exists (if applicable)', async ({ page }) => {
+        // Check if speaker select exists (optional feature)
+        const speakerSelect = page.locator('#aiSpeakerSelect');
 
-    const response = await aiResponseText.textContent();
-    
-    // Response should have content (personality check is subjective)
-    expect(response.length).toBeGreaterThan(5);
-    
-    console.log('✅ Character personality response:', response.substring(0, 150) + '...');
-  });
+        if (await speakerSelect.isVisible()) {
+            await expect(speakerSelect).toBeVisible();
+            console.log('✅ Speaker selection dropdown present');
+        } else {
+            console.log('ℹ️  Speaker selection not available (character has single speaker)');
+        }
+    });
 
-  test('Page elements remain functional after AI interaction', async ({ page }) => {
-    test.setTimeout(50000);
+    test('AI response shows character personality', async ({ page }) => {
+        test.setTimeout(45000);
 
-    const askInput = page.locator('#askInput');
-    const askBtn = page.locator('#askBtn');
-    const askStatus = page.locator('#askStatus');
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
+        const aiResponseText = page.locator('#aiResponseText');
 
-    // Submit AI question
-    await askInput.fill('Hello!');
-    await askBtn.click();
-    await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
+        // Ask a character-specific question
+        await askInput.fill('Who are you?');
+        await askBtn.click();
 
-    // Verify other page elements still work
-    const sayInput = page.locator('#sayInput');
-    const sayBtn = page.locator('#sayBtn');
+        // Wait for response
+        await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
 
-    await expect(sayInput).toBeEnabled();
-    await expect(sayBtn).toBeEnabled();
+        const response = await aiResponseText.textContent();
 
-    // Try typing in Make Character Say
-    await sayInput.fill('Test text');
-    await expect(sayInput).toHaveValue('Test text');
+        // Response should have content (personality check is subjective)
+        expect(response.length).toBeGreaterThan(5);
 
-    console.log('✅ Other page elements remain functional after AI interaction');
-  });
+        console.log('✅ Character personality response:', response.substring(0, 150) + '...');
+    });
+
+    test('Page elements remain functional after AI interaction', async ({ page }) => {
+        test.setTimeout(50000);
+
+        const askInput = page.locator('#askInput');
+        const askBtn = page.locator('#askBtn');
+        const askStatus = page.locator('#askStatus');
+
+        // Submit AI question
+        await askInput.fill('Hello!');
+        await askBtn.click();
+        await expect(askStatus).toContainText(/responded/i, { timeout: 35000 });
+
+        // Verify other page elements still work
+        const sayInput = page.locator('#sayInput');
+        const sayBtn = page.locator('#sayBtn');
+
+        await expect(sayInput).toBeEnabled();
+        await expect(sayBtn).toBeEnabled();
+
+        // Try typing in Make Character Say
+        await sayInput.fill('Test text');
+        await expect(sayInput).toHaveValue('Test text');
+
+        console.log('✅ Other page elements remain functional after AI interaction');
+    });
 });
 
 test.describe('Ask AI Scene Step Integration', () => {
-  test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
+    test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
 
-  test.beforeEach(async ({ page }) => {
-    // Navigate to Scene Editor
-    await page.goto(`${BASE_URL}/scenes/editor`);
-    await expect(page).toHaveTitle(/Scene Editor/);
-    await page.waitForLoadState('networkidle');
-  });
+    test.beforeEach(async ({ page }) => {
+        // Navigate to Scene Editor
+        await page.goto(`${BASE_URL}/scenes/editor`);
+        await expect(page).toHaveTitle(/Scene Editor/);
+        await page.waitForLoadState('networkidle');
+    });
 
-  test('Ask AI step type is available in scene editor', async ({ page }) => {
-    // Look for "Ask AI a Question" button in step types
-    const askAIButton = page.locator('button:has-text("Ask AI")');
-    
-    await expect(askAIButton).toBeVisible();
-    await expect(askAIButton).toContainText(/ask ai/i);
+    test('Ask AI step type is available in scene editor', async ({ page }) => {
+        // Look for "Ask AI a Question" button in step types
+        const askAIButton = page.locator('button:has-text("Ask AI")');
 
-    console.log('✅ Ask AI step type available in scene editor');
-  });
+        await expect(askAIButton).toBeVisible();
+        await expect(askAIButton).toContainText(/ask ai/i);
 
-  test('Can add Ask AI step to scene', async ({ page }) => {
-    // Click Ask AI button
-    const askAIButton = page.locator('button:has-text("Ask AI")');
-    await askAIButton.click();
+        console.log('✅ Ask AI step type available in scene editor');
+    });
 
-    // Should show Ask AI form
-    const askAIForm = page.locator('text=Question to Ask');
-    await expect(askAIForm).toBeVisible({ timeout: 5000 });
+    test('Can add Ask AI step to scene', async ({ page }) => {
+        // Click Ask AI button
+        const askAIButton = page.locator('button:has-text("Ask AI")');
+        await askAIButton.click();
 
-    // Should have question textarea
-    const questionTextarea = page.locator('textarea[name*="question"]').first();
-    await expect(questionTextarea).toBeVisible();
+        // Should show Ask AI form
+        const askAIForm = page.locator('text=Question to Ask');
+        await expect(askAIForm).toBeVisible({ timeout: 5000 });
 
-    console.log('✅ Ask AI step form appears in scene editor');
-  });
+        // Should have question textarea
+        const questionTextarea = page.locator('textarea[name*="question"]').first();
+        await expect(questionTextarea).toBeVisible();
 
-  test('Ask AI step form has required fields', async ({ page }) => {
-    const askAIButton = page.locator('button:has-text("Ask AI")').first();
-    await askAIButton.click();
+        console.log('✅ Ask AI step form appears in scene editor');
+    });
 
-    // Wait for form
-    await page.waitForTimeout(500);
+    test('Ask AI step form has required fields', async ({ page }) => {
+        const askAIButton = page.locator('button:has-text("Ask AI")').first();
+        await askAIButton.click();
 
-    // Check for question textarea
-    const questionField = page.locator('textarea[placeholder*="question"], textarea[name*="question"]').first();
-    if (await questionField.isVisible()) {
-      await expect(questionField).toBeVisible();
-      console.log('✅ Ask AI step has question input field');
-    }
-  });
+        // Wait for form
+        await page.waitForTimeout(500);
+
+        // Check for question textarea
+        const questionField = page.locator('textarea[placeholder*="question"], textarea[name*="question"]').first();
+        if (await questionField.isVisible()) {
+            await expect(questionField).toBeVisible();
+            console.log('✅ Ask AI step has question input field');
+        }
+    });
 });

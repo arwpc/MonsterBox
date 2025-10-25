@@ -13,8 +13,8 @@
         <div class="mb-3">
           <label for="themeSelect" class="form-label">Bootstrap Theme</label>
           <select class="form-select" id="themeSelect">
-            <option value="dark" <%= (config?.theme === 'dark' || !config?.theme) ? 'selected' : '' %>>Dark Theme</option>
-            <option value="light" <%= (config?.theme === 'light') ? 'selected' : '' %>>Light Theme</option>
+            <option value="dark" <%=(config?.theme==='dark' || !config?.theme) ? 'selected' : '' %>>Dark Theme</option>
+            <option value="light" <%=(config?.theme==='light' ) ? 'selected' : '' %>>Light Theme</option>
           </select>
           <div class="form-text">Select the Bootstrap color scheme for the entire application</div>
         </div>
@@ -46,11 +46,30 @@
       </div>
     </div>
   </div>
+
+  <!-- System Control Card -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0"><i class="bi bi-power"></i> System Control</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-warning" role="alert">
+          <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Rebooting will temporarily interrupt all
+          animatronic operations.
+        </div>
+        <button type="button" class="btn btn-danger" id="rebootBtn">
+          <i class="bi bi-arrow-clockwise"></i> Reboot Animatronic
+        </button>
+        <div id="rebootMessage" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
   // Theme management
-  document.getElementById('saveThemeBtn').addEventListener('click', async function() {
+  document.getElementById('saveThemeBtn').addEventListener('click', async function () {
     const theme = document.getElementById('themeSelect').value;
     const messageEl = document.getElementById('themeMessage');
 
@@ -78,6 +97,37 @@
       }
     } catch (error) {
       messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error: ' + error.message + '</div>';
+    }
+  });
+
+  // Reboot system
+  document.getElementById('rebootBtn').addEventListener('click', async function () {
+    const messageEl = document.getElementById('rebootMessage');
+
+    if (!confirm('Are you sure you want to reboot this animatronic? This will interrupt all operations.')) {
+      return;
+    }
+
+    try {
+      messageEl.innerHTML = '<div class="alert alert-info"><i class="bi bi-arrow-clockwise"></i> Rebooting system... Please wait 30-60 seconds.</div>';
+      this.disabled = true;
+
+      const response = await fetch('/api/system/reboot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        messageEl.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Reboot initiated. The system will be unavailable for about a minute.</div>';
+      } else {
+        messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Failed to reboot: ' + (data.error || 'Unknown error') + '</div>';
+        this.disabled = false;
+      }
+    } catch (error) {
+      messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error: ' + error.message + '</div>';
+      this.disabled = false;
     }
   });
 

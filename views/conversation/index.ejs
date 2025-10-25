@@ -48,7 +48,8 @@
       <!-- Ask AI a Question Panel -->
       <div class="card mt-3">
         <div class="card-header">
-          <h5 class="card-title mb-0"><i class="bi bi-question-circle"></i> Ask <span id="charNameAI">Character</span> a Question</h5>
+          <h5 class="card-title mb-0"><i class="bi bi-question-circle"></i> Ask <span id="charNameAI">Character</span> a
+            Question</h5>
         </div>
         <div class="card-body">
           <div class="mb-3">
@@ -58,12 +59,13 @@
             </select>
           </div>
           <div class="input-group">
-            <input id="askInput" type="text" class="form-control" placeholder="Ask me anything..." 
-              onkeypress="if(event.key==='Enter') askAIQuestion()"/>
+            <input id="askInput" type="text" class="form-control" placeholder="Ask me anything..."
+              onkeypress="if(event.key==='Enter') askAIQuestion()" />
             <button id="askBtn" class="btn btn-success"><i class="bi bi-send"></i> Ask</button>
           </div>
           <div id="askStatus" class="mt-2 small"></div>
-          <div id="aiResponse" class="mt-2 p-2 border rounded" style="display:none; background:#1a1a1a; min-height:60px;">
+          <div id="aiResponse" class="mt-2 p-2 border rounded"
+            style="display:none; background:#1a1a1a; min-height:60px;">
             <div class="small text-muted mb-1">AI Response:</div>
             <div id="aiResponseText" class="small"></div>
           </div>
@@ -362,7 +364,7 @@
         speakers.forEach(sp => { const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : ''); const opt = new Option(label, sp.id); sel.appendChild(opt); });
         selectedSpeakerPartId = speakers[0].id; sel.value = String(selectedSpeakerPartId); sel.disabled = false;
         sel.addEventListener('change', (e) => { selectedSpeakerPartId = e.target.value || null; });
-        
+
         // Also populate AI speaker select
         if (ui.aiSpeakerSelect) {
           ui.aiSpeakerSelect.innerHTML = '';
@@ -417,44 +419,44 @@
 
       // Ask AI a Question - Send question to conversational AI agent
       async function askAIQuestion() {
-        const question = (ui.askInput.value || '').trim(); 
-        if (!question) { 
-          ui.askStatus.innerHTML = '<span class="text-warning">Enter a question</span>'; 
-          return; 
+        const question = (ui.askInput.value || '').trim();
+        if (!question) {
+          ui.askStatus.innerHTML = '<span class="text-warning">Enter a question</span>';
+          return;
         }
-        
-        ui.askBtn.disabled = true; 
+
+        ui.askBtn.disabled = true;
         ui.askBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Asking...';
         ui.askStatus.innerHTML = '<span class="text-info">Sending to AI agent...</span>';
         ui.aiResponse.style.display = 'none';
-        
+
         try {
-          const r = await fetch('/conversation/api/ask-ai', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-              question, 
-              speakerPartId: selectedAISpeakerPartId || undefined 
-            }) 
+          const r = await fetch('/conversation/api/ask-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question,
+              speakerPartId: selectedAISpeakerPartId || undefined
+            })
           });
           const j = await r.json();
-          
-          if (j && j.success) { 
-            ui.askStatus.innerHTML = '<span class="text-success">AI responded!</span>'; 
+
+          if (j && j.success) {
+            ui.askStatus.innerHTML = '<span class="text-success">AI responded!</span>';
             if (j.response) {
               ui.aiResponseText.textContent = j.response;
               ui.aiResponse.style.display = 'block';
             }
             // Clear input after successful send
             ui.askInput.value = '';
-          } else { 
-            ui.askStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || 'Unknown error') + '</span>'; 
+          } else {
+            ui.askStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || 'Unknown error') + '</span>';
           }
-        } catch (e) { 
-          ui.askStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>'; 
-        } finally { 
-          ui.askBtn.disabled = false; 
-          ui.askBtn.innerHTML = '<i class="bi bi-send"></i> Ask'; 
+        } catch (e) {
+          ui.askStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
+        } finally {
+          ui.askBtn.disabled = false;
+          ui.askBtn.innerHTML = '<i class="bi bi-send"></i> Ask';
         }
       }
 

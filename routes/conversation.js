@@ -236,11 +236,11 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
     });
 
     const result = await agentSpeakResponse.json();
-    
+
     if (result.success) {
-      return res.json({ 
-        success: true, 
-        response: result.personalityText || result.originalText || question 
+      return res.json({
+        success: true,
+        response: result.personalityText || result.originalText || question
       });
     } else {
       return res.status(500).json({ success: false, error: result.error || 'Failed' });

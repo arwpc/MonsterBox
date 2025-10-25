@@ -5,8 +5,8 @@
 
 import express from 'express';
 import multer from 'multer';
+import { getSTTConfig, getTTSConfig, saveSTTConfig, saveTTSConfig } from '../../services/aiConfigStore.js';
 import elevenLabsConfigService from '../../services/elevenLabsConfigService.js';
-import { getSTTConfig, saveSTTConfig, getTTSConfig, saveTTSConfig } from '../../services/aiConfigStore.js';
 
 const router = express.Router();
 
@@ -723,28 +723,38 @@ router.post('/agent-speak', async (req, res) => {
 
         console.log(`🎭 Agent-speak for ${character.name}: Processing "${text}" through agent ${character.elevenLabsAgentId}`);
 
-        // Try to process text through AI agent with timeout
+        // Get AI personality response using conversational AI WITH audio
         let personalityText = text;
         let usedAgent = false;
+        let audioPlayed = false;
 
         try {
-            const { default: elevenLabsAgentService } = await import('../../services/elevenLabsAgentService.js');
-            const agentResult = await elevenLabsAgentService.chatWithAgent(character.elevenLabsAgentId, text);
+            const { default: elevenLabsWebSocketService } = await import('../../services/elevenLabsWebSocketService.js');
+            console.log(`🎭 Getting conversational AI response for: "${text}"`);
+            const agentResult = await elevenLabsWebSocketService.askAgentQuestion(character.elevenLabsAgentId, text, characterId);
 
-            if (agentResult.success && agentResult.replyText) {
-                personalityText = agentResult.replyText;
+            if (agentResult.success) {
+                personalityText = agentResult.response || text;
                 usedAgent = true;
-                console.log(`🎭 Agent response: "${personalityText}"`);
+                audioPlayed = true; // Audio was played by askAgentQuestion
+                console.log(`🎭 AI response: "${personalityText}"`);
+
+                // Return immediately since audio already played
+                return res.json({
+                    success: true,
+                    played: true,
+                    device: 'character-speaker',
+                    message: `Conversational AI played on character ${characterId}`,
+                    originalText: text,
+                    personalityText: personalityText,
+                    usedAgent: true,
+                    agentId: character.elevenLabsAgentId
+                });
             } else {
-                console.log(`⚠️  Agent processing failed, using original text`);
+                console.log(`⚠️  Conversational AI failed, using TTS fallback`);
             }
         } catch (agentError) {
-            console.log(`⚠️  Agent API error (${agentError.message}), falling back to simple TTS`);
-            if (fallbackToTTS) {
-                return await generateAndPlaySimpleTTS(text, characterId, res);
-            } else {
-                throw agentError;
-            }
+            console.log(`⚠️  Conversational AI error (${agentError.message}), using TTS fallback`);
         }
 
         // Generate TTS from personality-infused text (or original if agent failed)

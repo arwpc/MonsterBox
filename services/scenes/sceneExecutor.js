@@ -1,13 +1,13 @@
-import path from 'path';
 import fs from 'fs/promises';
+import path from 'path';
 import { fileURLToPath } from 'url';
-import { readConfig } from '../configService.js';
-import poseEngine from '../poses/poseEngine.js';
-import hardwareService from '../hardwareService/index.js';
-import elevenLabsTTSService from '../elevenLabsTTSService.js';
-import serverPlaybackService from '../serverPlaybackService.js';
 import { getTTSConfig } from '../aiConfigStore.js';
+import { readConfig } from '../configService.js';
+import elevenLabsTTSService from '../elevenLabsTTSService.js';
 import goblinManagerService from '../goblinManagerService.js';
+import hardwareService from '../hardwareService/index.js';
+import poseEngine from '../poses/poseEngine.js';
+import serverPlaybackService from '../serverPlaybackService.js';
 import sceneAnalytics from './sceneAnalyticsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -131,11 +131,11 @@ async function executeAskAIStep(step, characterId, emit) {
   emit && emit({ type: 'step', status: 'start', stepType: 'askAI', question });
 
   const ttsCfg = await getTTSConfig();
-  
+
   // For now, use a simulated response until full conversational AI integration
   // TODO: Integrate with elevenLabsWebSocketService for real conversational AI
   const responseText = `I heard your question: "${question}". This is a placeholder response until full conversational AI integration is complete.`;
-  
+
   const voiceId = step.voiceId || ttsCfg.voice_id;
   const gen = await elevenLabsTTSService.generateSpeech(responseText, voiceId, ttsCfg);
   if (!gen.success) {

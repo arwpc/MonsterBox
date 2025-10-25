@@ -1194,14 +1194,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             if (message.audio_event.audio_base_64) {
                                 connection.audioBuffer.push(message.audio_event.audio_base_64);
                             }
-                            // Accumulate response text from audio events (like chat does)
-                            const textFragment = message.audio_event.agent_response || 
-                                               message.audio_event.text || 
-                                               message.agent_response || 
-                                               message.text;
+                            // Accumulate response text from audio events
+                            const textFragment = message.audio_event.agent_response ||
+                                message.audio_event.text ||
+                                message.agent_response ||
+                                message.text;
                             if (textFragment) {
-                                // Accumulate text, don't replace
                                 responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                                console.log(`📝 Captured text: "${textFragment}"`);
                             }
                         } else if (message.type === 'agent_response' || message.type === 'agent_response_event') {
                             const textFragment = message.agent_response || message.text;
@@ -1252,8 +1252,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         }
                     }
 
+                    console.log(`📝 Final response text: "${responseText}"`);
                     this.activeConnections.delete(sessionId);
-                    resolve({ success: true, response: responseText });
+                    resolve({ success: true, response: responseText || 'Response received' });
                 });
 
                 elevenLabsWs.on('error', (error) => {
