@@ -100,6 +100,26 @@
         padding: 0.35rem 0.5rem;
     }
 
+    .audio-control-group {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+    }
+
+    .audio-control-group select {
+        font-size: 0.85rem;
+    }
+
+    .audio-control-group .btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.5rem;
+    }
+
+    .audio-control-group .form-check-label {
+        cursor: pointer;
+    }
+
     .animatronic-card .card-body {
         padding: 0.75rem;
     }
@@ -123,6 +143,25 @@
                 <i class="bi bi-broadcast"></i> Orchestration Control Center
             </h1>
             <p class="text-center text-muted">Centralized control for all MonsterBox animatronics</p>
+        </div>
+    </div>
+
+    <!-- Command Log - Moved to Top -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-terminal"></i> Command Log
+                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
+                        <i class="bi bi-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="log-output" id="commandLog">
+                        <div>🎃 Orchestration Control Center initialized...</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -230,25 +269,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Command Log -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-terminal"></i> Command Log
-                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
-                        <i class="bi bi-trash"></i> Clear
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="log-output" id="commandLog">
-                        <div>🎃 Orchestration Control Center initialized...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -307,10 +327,29 @@
                 html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
             }
 
-            // Webcam stream if online
+            // Webcam stream if online - using proper MJPEG streaming URL
             if (anim.online) {
-                var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/setup/webcam/api/parts/auto/stream';
-                html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Webcam feed" />';
+                var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/video_feed';
+                html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.src=\'/images/no-camera.png\'" alt="Live webcam feed" />';
+                
+                // Audio file selector with Play/Loop controls
+                html += '      <div class="audio-control-group mb-2">';
+                html += '        <select class="form-select form-select-sm mb-1" id="audio-' + anim.id + '">';
+                html += '          <option value="">Select audio file...</option>';
+                html += '        </select>';
+                html += '        <div class="btn-group w-100 mb-1" role="group">';
+                html += '          <button class="btn btn-sm btn-success" onclick="playAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+                html += '            <i class="bi bi-play-fill"></i> Play';
+                html += '          </button>';
+                html += '          <button class="btn btn-sm btn-danger" onclick="stopAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+                html += '            <i class="bi bi-stop-fill"></i> Stop';
+                html += '          </button>';
+                html += '        </div>';
+                html += '        <div class="form-check form-check-sm">';
+                html += '          <input class="form-check-input" type="checkbox" id="loop-' + anim.id + '">';
+                html += '          <label class="form-check-label" for="loop-' + anim.id + '" style="font-size: 0.8rem;">Loop continuously</label>';
+                html += '        </div>';
+                html += '      </div>';
                 
                 // AI interaction input group
                 html += '      <div class="ai-input-group">';
@@ -336,6 +375,13 @@
             html += '</div>';
         });
         document.getElementById('animatronicsStatus').innerHTML = html;
+        
+        // Load audio files for each online animatronic
+        animatronics.forEach(function (anim) {
+            if (anim.online) {
+                loadAudioFiles(anim.id, anim.ip, anim.port);
+            }
+        });
     }
 
     function sayAll() {
@@ -529,6 +575,83 @@
             })
             .catch(function (error) {
                 log('❌ Error making ' + name + ' speak: ' + error.message, 'error');
+            });
+    }
+
+    function loadAudioFiles(animId, ip, port) {
+        // Use proxy endpoint to get audio files from animatronic
+        var url = '/api/orchestration/animatronic/' + animId + '/audio-files';
+        fetch(url)
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success && data.files) {
+                    var selectEl = document.getElementById('audio-' + animId);
+                    if (selectEl) {
+                        data.files.forEach(function (file) {
+                            var option = document.createElement('option');
+                            option.value = file.id;
+                            option.textContent = file.title || file.fileName;
+                            selectEl.appendChild(option);
+                        });
+                    }
+                }
+            })
+            .catch(function (error) {
+                console.error('Error loading audio files:', error);
+            });
+    }
+
+    function playAudio(animId, ip, port, name) {
+        var selectEl = document.getElementById('audio-' + animId);
+        var audioId = selectEl.value;
+        var loopEl = document.getElementById('loop-' + animId);
+        var loop = loopEl.checked;
+        
+        if (!audioId) {
+            log('Please select an audio file for ' + name, 'error');
+            return;
+        }
+        
+        var audioName = selectEl.options[selectEl.selectedIndex].text;
+        log('Playing audio on ' + name + ': "' + audioName + '"' + (loop ? ' (looping)' : ''));
+        
+        var url = '/api/orchestration/animatronic/' + animId + '/play-audio';
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ audioId: audioId, loop: loop })
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    log('✅ ' + name + ' is playing audio' + (loop ? ' (looping)' : ''), 'success');
+                } else {
+                    log('❌ ' + name + ' audio playback failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(function (error) {
+                log('❌ Error playing audio on ' + name + ': ' + error.message, 'error');
+            });
+    }
+
+    function stopAudio(animId, ip, port, name) {
+        log('Stopping audio on ' + name);
+        
+        var url = '/api/orchestration/animatronic/' + animId + '/stop-audio';
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    log('✅ ' + name + ' audio stopped', 'success');
+                } else {
+                    log('❌ ' + name + ' audio stop failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(function (error) {
+                log('❌ Error stopping audio on ' + name + ': ' + error.message, 'error');
             });
     }
 

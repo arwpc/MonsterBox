@@ -394,5 +394,111 @@ router.post('/start-all-queue-loops', async (req, res) => {
     }
 });
 
+/**
+ * Get audio files from a specific animatronic
+ */
+router.get('/animatronic/:id/audio-files', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const animatronic = orchestrationService.animatronics.find(a => a.id === parseInt(id));
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = await orchestrationService.getAudioFiles(animatronic.ip, animatronic.port);
+        res.json(result);
+    } catch (error) {
+        console.error('Error getting audio files:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get audio files',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Play audio on a specific animatronic
+ */
+router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { audioId, loop } = req.body;
+
+        if (!audioId) {
+            return res.status(400).json({
+                success: false,
+                error: 'audioId is required'
+            });
+        }
+
+        const animatronic = orchestrationService.animatronics.find(a => a.id === parseInt(id));
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = await orchestrationService.playAudio(
+            animatronic.ip,
+            animatronic.port,
+            audioId,
+            loop || false
+        );
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            audioId,
+            loop,
+            result
+        });
+    } catch (error) {
+        console.error('Error playing audio:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to play audio',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Stop audio on a specific animatronic
+ */
+router.post('/animatronic/:id/stop-audio', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const animatronic = orchestrationService.animatronics.find(a => a.id === parseInt(id));
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = await orchestrationService.stopAudio(animatronic.ip, animatronic.port);
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            result
+        });
+    } catch (error) {
+        console.error('Error stopping audio:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop audio',
+            message: error.message
+        });
+    }
+});
+
 export default router;
 

@@ -224,6 +224,62 @@ class OrchestrationService {
     }
 
     /**
+     * Get audio files from an animatronic's audio library
+     */
+    async getAudioFiles(ip, port) {
+        try {
+            const response = await axios.get(
+                `http://${ip}:${port}/api/library`,
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 5000
+                }
+            );
+            return { success: true, files: response.data.files || [] };
+        } catch (error) {
+            throw new Error(`Get audio files failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Play audio file on an animatronic
+     */
+    async playAudio(ip, port, audioId, loop = false) {
+        try {
+            const response = await axios.post(
+                `http://${ip}:${port}/api/library/${audioId}/play`,
+                { loop },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 5000
+                }
+            );
+            return { success: true, data: response.data };
+        } catch (error) {
+            throw new Error(`Play audio failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Stop audio playback on an animatronic
+     */
+    async stopAudio(ip, port) {
+        try {
+            const response = await axios.post(
+                `http://${ip}:${port}/api/audio/stop`,
+                {},
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 5000
+                }
+            );
+            return { success: true, data: response.data };
+        } catch (error) {
+            throw new Error(`Stop audio failed: ${error.message}`);
+        }
+    }
+
+    /**
      * Enable random poses on an animatronic
      */
     async enableRandomPoses(ip, port, characterId, options = {}) {
