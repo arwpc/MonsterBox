@@ -205,7 +205,7 @@ router.post('/animatronic/:id/say', express.json(), async (req, res) => {
             });
         }
 
-        const animatronic = orchestrationService.animatronics.find(a => a.id === id);
+        const animatronic = orchestrationService.animatronics.find(a => a.id === parseInt(id));
         if (!animatronic) {
             return res.status(404).json({
                 success: false,
@@ -250,7 +250,7 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
             });
         }
 
-        const animatronic = orchestrationService.animatronics.find(a => a.id === id);
+        const animatronic = orchestrationService.animatronics.find(a => a.id === parseInt(id));
         if (!animatronic) {
             return res.status(404).json({
                 success: false,
@@ -261,7 +261,7 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
         const result = await orchestrationService.executeOnAnimatronic(
             animatronic,
             'ask-ai',
-            { text, characterId: animatronic.id }
+            { text }
         );
 
         res.json({

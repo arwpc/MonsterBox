@@ -86,7 +86,7 @@ class OrchestrationService {
                 return await this.sayDirect(ip, port, params.text);
 
             case 'ask-ai':
-                return await this.askAI(ip, port, params.text, params.characterId);
+                return await this.askAI(ip, port, params.text);
 
             case 'enable-random-poses':
                 return await this.enableRandomPoses(ip, port, params.characterId, params.options);
@@ -188,11 +188,11 @@ class OrchestrationService {
     /**
      * Ask AI on an animatronic using WebSocket conversation system
      */
-    async askAI(ip, port, text, characterId) {
+    async askAI(ip, port, text) {
         try {
             const response = await axios.post(
                 `http://${ip}:${port}/conversation/api/ask-ai`,
-                { text, characterId },
+                { question: text },
                 {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
