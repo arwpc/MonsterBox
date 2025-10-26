@@ -2,14 +2,17 @@
  * Auto AI Service
  * Server-side persistent Auto AI that continues running even when users leave the orchestration page
  * Integrates with AI Prompt Generator for personalized, character-specific prompts
+ * NOW WITH LIVE LISTENING: Between automated prompts, listens for user speech via STT/VAD
  */
 
 import axios from 'axios';
 import aiPromptGeneratorService from './aiPromptGeneratorService.js';
+import serverSTTListener from './serverSTTListener.js';
+import { readFile } from 'fs/promises';
 
 class AutoAIService {
     constructor() {
-        // Active Auto AI states: { animId: { active, timerId, characterName, characterId, ip, port, interval } }
+        // Active Auto AI states: { animId: { active, timerId, characterName, characterId, ip, port, interval, listening, sttSessionId, microphoneDevice } }
         this.autoAIStates = {};
 
         // Track last prompt asked per animatronic to avoid immediate repeats
@@ -17,6 +20,164 @@ class AutoAIService {
 
         // Character prompt cache
         this.characterPrompts = {};
+    }
+
+    /**
+     * Get microphone device for character
+     */
+    async getMicrophoneDevice(characterId) {
+        try {
+            const partsPath = `/home/remote/data/character-${characterId}/parts.json`;
+            const partsData = await readFile(partsPath, 'utf8');
+            const parts = JSON.parse(partsData);
+            const micPart = parts.find(p => String(p.type).toLowerCase() === 'microphone');
+            if (micPart && micPart.deviceId) {
+                return micPart.deviceId;
+            }
+        } catch (error) {
+            console.error(`[Auto AI] Error loading microphone for character ${characterId}:`, error.message);
+        }
+        return 'default';
+    }
+
+    /**
+     * Start listening session for user input (between Auto AI prompts)
+     */
+    async startListening(animId) {
+        const state = this.autoAIStates[animId];
+        if (!state || !state.active) {
+            return;
+        }
+
+        if (state.listening || state.sttSessionId) {
+            // Already listening
+            return;
+        }
+
+        try {
+            const deviceId = state.microphoneDevice || 'default';
+            const sessionId = serverSTTListener.startSession({
+                deviceId,
+                model: 'eleven_multilingual_v2',
+                language: 'auto'
+            });
+
+            state.sttSessionId = sessionId;
+            state.listening = true;
+
+            console.log(`🎧 [Auto AI] Started listening for ${state.characterName} (session: ${sessionId})`);
+
+            // Poll for transcript every 2 seconds
+            state.listeningPollTimer = setInterval(async () => {
+                await this.checkForUserInput(animId);
+            }, 2000);
+
+        } catch (error) {
+            console.error(`[Auto AI] Error starting listening for ${state.characterName}:`, error.message);
+        }
+    }
+
+    /**
+     * Stop listening session
+     */
+    stopListening(animId) {
+        const state = this.autoAIStates[animId];
+        if (!state) {
+            return;
+        }
+
+        if (state.listeningPollTimer) {
+            clearInterval(state.listeningPollTimer);
+            state.listeningPollTimer = null;
+        }
+
+        if (state.sttSessionId) {
+            try {
+                serverSTTListener.stopSession(state.sttSessionId);
+            } catch (error) {
+                console.error(`[Auto AI] Error stopping STT session:`, error.message);
+            }
+            state.sttSessionId = null;
+        }
+
+        state.listening = false;
+        console.log(`🔇 [Auto AI] Stopped listening for ${state.characterName}`);
+    }
+
+    /**
+     * Check for user input from STT session
+     */
+    async checkForUserInput(animId) {
+        const state = this.autoAIStates[animId];
+        if (!state || !state.sttSessionId) {
+            return;
+        }
+
+        try {
+            const status = serverSTTListener.getSessionStatus(state.sttSessionId);
+            
+            if (status && status.transcript && status.transcript.trim().length > 0) {
+                const userInput = status.transcript.trim();
+                console.log(`🗣️ [Auto AI] User input detected for ${state.characterName}: "${userInput}"`);
+
+                // Stop listening
+                this.stopListening(animId);
+
+                // Pause Auto AI timer temporarily
+                if (state.timerId) {
+                    clearInterval(state.timerId);
+                    state.timerPaused = true;
+                }
+
+                // Send user input to conversation API
+                await this.handleUserInput(animId, userInput);
+
+                // Resume Auto AI timer after response
+                if (state.timerPaused && state.active) {
+                    state.timerId = setInterval(async () => {
+                        await this.autoAITick(animId, state.ip, state.port, state.characterName, state.characterId);
+                    }, state.interval * 1000);
+                    state.timerPaused = false;
+                }
+
+                // Restart listening for next input
+                setTimeout(() => {
+                    this.startListening(animId);
+                }, 3000); // Wait 3s before listening again
+            }
+        } catch (error) {
+            console.error(`[Auto AI] Error checking user input for ${state.characterName}:`, error.message);
+        }
+    }
+
+    /**
+     * Handle user input via conversation API
+     */
+    async handleUserInput(animId, userInput) {
+        const state = this.autoAIStates[animId];
+        if (!state) {
+            return;
+        }
+
+        try {
+            console.log(`🤖 [Auto AI] Processing user input for ${state.characterName}: "${userInput}"`);
+
+            const response = await axios.post(
+                `http://${state.ip}:${state.port}/conversation/api/ask-ai`,
+                { question: userInput },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 30000
+                }
+            );
+
+            if (response.data && response.data.success) {
+                const aiResponse = response.data.response || response.data.personalityText || '';
+                console.log(`🤖 [Auto AI] ${state.characterName} responded to user: "${aiResponse.substring(0, 100)}${aiResponse.length > 100 ? '...' : ''}"`);
+            }
+        } catch (error) {
+            console.error(`[Auto AI] Error handling user input for ${state.characterName}:`, error.message);
+        }
     }
 
     /**
@@ -87,6 +248,9 @@ class AutoAIService {
      */
     async autoAITick(animId, ip, port, characterName, characterId) {
         try {
+            // Stop listening during automated prompt
+            this.stopListening(animId);
+
             const prompt = await this.getRandomPrompt(characterId, characterName, characterName, animId);
 
             console.log(`🤖 [Auto AI] Prompting ${characterName}: "${prompt}"`);
@@ -112,6 +276,11 @@ class AutoAIService {
                     console.log(`⚠️ [Auto AI] ${characterName} echoed prompt or gave no response`);
                 }
 
+                // Start listening for user input after automated prompt
+                setTimeout(() => {
+                    this.startListening(animId);
+                }, 2000); // Wait 2s after response before listening
+
                 return {
                     success: true,
                     prompt,
@@ -120,6 +289,12 @@ class AutoAIService {
                 };
             } else {
                 console.error(`❌ [Auto AI] ${characterName} API returned failure`);
+                
+                // Still start listening even if automated prompt failed
+                setTimeout(() => {
+                    this.startListening(animId);
+                }, 2000);
+
                 return {
                     success: false,
                     prompt,
@@ -128,6 +303,12 @@ class AutoAIService {
             }
         } catch (error) {
             console.error(`❌ [Auto AI] Error for ${characterName}:`, error.message);
+            
+            // Start listening even on error
+            setTimeout(() => {
+                this.startListening(animId);
+            }, 2000);
+
             return {
                 success: false,
                 prompt: '',
@@ -144,6 +325,9 @@ class AutoAIService {
         this.stopAutoAI(animId);
 
         console.log(`🚀 [Auto AI] Starting for ${characterName} (character ${characterId}) at ${ip}:${port} with ${intervalSeconds}s interval`);
+
+        // Get microphone device for this character
+        const microphoneDevice = await this.getMicrophoneDevice(characterId);
 
         // Fire first prompt immediately
         await this.autoAITick(animId, ip, port, characterName, characterId);
@@ -162,12 +346,17 @@ class AutoAIService {
             ip,
             port,
             interval: intervalSeconds,
-            startedAt: new Date().toISOString()
+            startedAt: new Date().toISOString(),
+            microphoneDevice,
+            listening: false,
+            sttSessionId: null,
+            listeningPollTimer: null,
+            timerPaused: false
         };
 
         return {
             success: true,
-            message: `Auto AI started for ${characterName}`,
+            message: `Auto AI started for ${characterName} with live listening`,
             interval: intervalSeconds
         };
     }
@@ -179,7 +368,12 @@ class AutoAIService {
         const state = this.autoAIStates[animId];
 
         if (state && state.timerId) {
+            // Stop Auto AI timer
             clearInterval(state.timerId);
+            
+            // Stop listening
+            this.stopListening(animId);
+            
             console.log(`🛑 [Auto AI] Stopped for ${state.characterName}`);
             delete this.autoAIStates[animId];
             delete this.lastPrompts[animId]; // Clear last prompt cache
@@ -210,7 +404,9 @@ class AutoAIService {
                 interval: state.interval,
                 startedAt: state.startedAt,
                 ip: state.ip,
-                port: state.port
+                port: state.port,
+                listening: state.listening || false,
+                microphoneDevice: state.microphoneDevice
             };
         }
 
@@ -234,7 +430,9 @@ class AutoAIService {
                     interval: state.interval,
                     startedAt: state.startedAt,
                     ip: state.ip,
-                    port: state.port
+                    port: state.port,
+                    listening: state.listening || false,
+                    microphoneDevice: state.microphoneDevice
                 };
             }
         }

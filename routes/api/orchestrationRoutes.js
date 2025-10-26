@@ -435,11 +435,29 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
             });
         }
 
-        // Import axios for streaming
+        // Import axios and fs for streaming
         const axios = (await import('axios')).default;
+        const { readFile } = await import('fs/promises');
+
+        // Get the webcam part ID for this animatronic's character
+        let webcamPartId = null;
+        try {
+            const partsPath = `/home/remote/data/character-${animatronic.characterId}/parts.json`;
+            const partsData = await readFile(partsPath, 'utf8');
+            const parts = JSON.parse(partsData);
+            const webcamPart = parts.find(p => String(p.type).toLowerCase() === 'webcam');
+            if (webcamPart) {
+                webcamPartId = webcamPart.id;
+            }
+        } catch (error) {
+            console.error(`Error loading parts for character ${animatronic.characterId}:`, error.message);
+        }
+
+        // Use 'auto' if no specific part found
+        const partId = webcamPartId || 'auto';
 
         // Stream the webcam feed from the animatronic
-        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}/video_feed`;
+        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}/setup/webcam/api/parts/${partId}/stream`;
         
         const response = await axios({
             method: 'get',
