@@ -154,7 +154,7 @@ class OrchestrationService {
                     }
                     
                     // Get webcam part ID from parts.json
-                    const partsResponse = await axios.get(`http://${ip}:${port}/setup/models/api/parts`, { timeout: 3000 });
+                    const partsResponse = await axios.get(`http://${ip}:${port}/setup/parts/api/parts`, { timeout: 3000 });
                     if (partsResponse.data && partsResponse.data.parts) {
                         const webcamPart = partsResponse.data.parts.find(p => p.type === 'webcam');
                         if (webcamPart) {
