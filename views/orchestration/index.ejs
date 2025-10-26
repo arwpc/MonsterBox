@@ -415,6 +415,99 @@
             });
     }
 
+    // Auto AI Functions
+    async function loadAutoAIStatuses() {
+        try {
+            const response = await fetch('/api/orchestration/auto-ai/status');
+            const data = await response.json();
+            
+            if (data.success && data.statuses) {
+                Object.keys(data.statuses).forEach(animId => {
+                    const status = data.statuses[animId];
+                    if (status.active) {
+                        updateAutoAIButton(parseInt(animId), true, status.interval);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading Auto AI statuses:', error);
+        }
+    }
+
+    async function toggleAutoAI(animId) {
+        const btn = document.getElementById('autoai-btn-' + animId);
+        const btnText = document.getElementById('autoai-text-' + animId);
+        const intervalInput = document.getElementById('autoai-interval-' + animId);
+        
+        if (!btn || !btnText) return;
+        
+        // Check if Auto AI is currently active
+        const isActive = btn.classList.contains('btn-danger');
+        
+        try {
+            if (isActive) {
+                // Stop Auto AI
+                log('Stopping Auto AI for animatronic ' + animId + '...');
+                const response = await fetch('/api/orchestration/animatronic/' + animId + '/auto-ai/stop', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('✅ Auto AI stopped for animatronic ' + animId, 'success');
+                    updateAutoAIButton(animId, false);
+                } else {
+                    log('Failed to stop Auto AI: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } else {
+                // Start Auto AI
+                const interval = parseInt(intervalInput.value) || 30;
+                log('Starting Auto AI for animatronic ' + animId + ' with ' + interval + 's interval...');
+                
+                const response = await fetch('/api/orchestration/animatronic/' + animId + '/auto-ai/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ interval: interval })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('✅ Auto AI started for animatronic ' + animId, 'success');
+                    updateAutoAIButton(animId, true, interval);
+                } else {
+                    log('Failed to start Auto AI: ' + (data.error || 'Unknown error'), 'error');
+                }
+            }
+        } catch (error) {
+            log('Error toggling Auto AI: ' + error.message, 'error');
+        }
+    }
+
+    function updateAutoAIButton(animId, isActive, interval) {
+        const btn = document.getElementById('autoai-btn-' + animId);
+        const btnText = document.getElementById('autoai-text-' + animId);
+        const intervalInput = document.getElementById('autoai-interval-' + animId);
+        
+        if (!btn || !btnText) return;
+        
+        if (isActive) {
+            btn.classList.remove('btn-halloween');
+            btn.classList.add('btn-danger');
+            btnText.textContent = 'Stop Auto AI';
+            if (intervalInput && interval) {
+                intervalInput.value = interval;
+                intervalInput.disabled = true;
+            }
+        } else {
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-halloween');
+            btnText.textContent = 'Auto AI';
+            if (intervalInput) {
+                intervalInput.disabled = false;
+            }
+        }
+    }
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
         refreshStatus();
