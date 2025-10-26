@@ -455,6 +455,61 @@ class GoblinManagerService {
         }
     }
 
+    async pingGoblin(goblinId) {
+        try {
+            const goblin = this.goblins.get(goblinId);
+            if (!goblin) {
+                return { success: false, error: 'Goblin not found' };
+            }
+
+            const axios = (await import('axios')).default;
+            const response = await axios.get(`${goblin.endpoint}/health`, {
+                timeout: 5000
+            });
+
+            if (response.status === 200) {
+                // Goblin is responsive, update status
+                goblin.status = 'online';
+                goblin.lastSeen = new Date().toISOString();
+                await this.saveGoblins();
+                return { success: true, online: true, goblin };
+            }
+
+            return { success: true, online: false };
+        } catch (error) {
+            return { success: true, online: false, error: error.message };
+        }
+    }
+
+    async attemptReconnectAll() {
+        const offlineGoblins = Array.from(this.goblins.values())
+            .filter(g => g.status === 'offline' && g.endpoint);
+
+        if (offlineGoblins.length === 0) {
+            return { success: true, attempted: 0, reconnected: 0 };
+        }
+
+        console.log(`🔄 Attempting to reconnect ${offlineGoblins.length} offline goblins...`);
+
+        const results = await Promise.allSettled(
+            offlineGoblins.map(goblin => this.pingGoblin(goblin.id))
+        );
+
+        const reconnected = results.filter(r => 
+            r.status === 'fulfilled' && r.value.success && r.value.online
+        ).length;
+
+        if (reconnected > 0) {
+            console.log(`✅ Reconnected ${reconnected} goblin(s)`);
+        }
+
+        return {
+            success: true,
+            attempted: offlineGoblins.length,
+            reconnected
+        };
+    }
+
     startHeartbeatMonitor() {
         setInterval(async () => {
             const now = Date.now();
@@ -486,6 +541,10 @@ class GoblinManagerService {
             if (changed) {
                 await this.saveGoblins();
             }
+
+            // Attempt to reconnect offline goblins every 30 seconds
+            await this.attemptReconnectAll();
+
         }, this.heartbeatInterval);
 
         console.log('💓 Goblin heartbeat monitor started');
