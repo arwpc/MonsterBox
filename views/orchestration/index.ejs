@@ -839,7 +839,7 @@
     async function refreshGoblins() {
         log('Refreshing Goblin status...');
         try {
-            const response = await fetch('/goblin-management/api/list');
+            const response = await fetch('/goblin-management/api/goblins');
             const data = await response.json();
 
             if (data.success) {
@@ -880,13 +880,17 @@
                 html += '      </div>';
 
                 // Currently Playing section
-                if (goblin.status === 'online' && goblin.currentlyPlaying) {
+                if (goblin.status === 'online' && (goblin.currentVideo || goblin.currentAudio)) {
                     html += '      <div class="currently-playing">';
                     html += '        <strong><i class="bi bi-play-circle"></i> Currently Playing:</strong><br>';
-                    html += '        <span class="text-truncate d-block">' + (goblin.currentlyPlaying.title || goblin.currentlyPlaying.playlist || goblin.currentlyPlaying.filename || 'Unknown') + '</span>';
-                    if (goblin.currentlyPlaying.duration) {
-                        html += '        <small class="text-muted">' + goblin.currentlyPlaying.duration + '</small>';
+                    
+                    if (goblin.currentVideo) {
+                        html += '        <span class="text-truncate d-block"><i class="bi bi-film"></i> ' + (goblin.currentVideo.title || goblin.currentVideo.filename || 'Video') + '</span>';
                     }
+                    if (goblin.currentAudio) {
+                        html += '        <span class="text-truncate d-block"><i class="bi bi-music-note"></i> ' + (goblin.currentAudio.title || goblin.currentAudio.filename || 'Audio') + '</span>';
+                    }
+                    
                     html += '      </div>';
                 } else if (goblin.status === 'online') {
                     html += '      <div class="currently-playing text-muted">';
