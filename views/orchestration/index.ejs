@@ -329,8 +329,15 @@
 
             // Webcam stream if online - using proper MJPEG streaming URL
             if (anim.online) {
-                var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/video_feed';
-                html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.src=\'/images/no-camera.png\'" alt="Live webcam feed" />';
+                // Use webcam part ID if available, otherwise hide the webcam preview
+                if (anim.webcamPartId) {
+                    var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/setup/webcam/api/parts/' + anim.webcamPartId + '/stream';
+                    html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Live webcam feed" />';
+                } else {
+                    html += '      <div class="webcam-preview d-flex align-items-center justify-content-center text-muted" style="background: #1a1a1a;">';
+                    html += '        <small><i class="bi bi-camera-video-off"></i> No camera</small>';
+                    html += '      </div>';
+                }
                 
                 // Audio file selector with Play/Loop controls
                 html += '      <div class="audio-control-group mb-2">';

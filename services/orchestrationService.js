@@ -141,10 +141,26 @@ class OrchestrationService {
             
             // Try to get character information
             let characterName = null;
+            let webcamPartId = null;
             try {
-                const charResponse = await axios.get(`http://${ip}:${port}/api/character/current`, { timeout: 3000 });
-                if (charResponse.data && charResponse.data.character) {
-                    characterName = charResponse.data.character.name || charResponse.data.character.title;
+                const charResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/current`, { timeout: 3000 });
+                if (charResponse.data && charResponse.data.selectedCharacter) {
+                    const charId = charResponse.data.selectedCharacter;
+                    
+                    // Get character details including name
+                    const charDetailResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/characters/${charId}`, { timeout: 3000 });
+                    if (charDetailResponse.data && charDetailResponse.data.character) {
+                        characterName = charDetailResponse.data.character.name || charDetailResponse.data.character.title;
+                    }
+                    
+                    // Get webcam part ID from parts.json
+                    const partsResponse = await axios.get(`http://${ip}:${port}/setup/models/api/parts`, { timeout: 3000 });
+                    if (partsResponse.data && partsResponse.data.parts) {
+                        const webcamPart = partsResponse.data.parts.find(p => p.type === 'webcam');
+                        if (webcamPart) {
+                            webcamPartId = webcamPart.id;
+                        }
+                    }
                 }
             } catch (charError) {
                 // Character info not critical, continue without it
@@ -154,7 +170,8 @@ class OrchestrationService {
                 success: true,
                 online: response.status === 200,
                 status: response.status,
-                characterName: characterName
+                characterName: characterName,
+                webcamPartId: webcamPartId
             };
         } catch (error) {
             return {
