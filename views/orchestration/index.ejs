@@ -332,13 +332,13 @@
         var logDiv = document.getElementById('commandLog');
         var timestamp = new Date().toLocaleTimeString();
         var icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-        
+
         // Limit to 15 lines
         var lines = logDiv.querySelectorAll('div');
         if (lines.length >= 15) {
             logDiv.removeChild(lines[0]);
         }
-        
+
         logDiv.innerHTML += '<div>' + icon + ' [' + timestamp + '] ' + message + '</div>';
         logDiv.scrollTop = logDiv.scrollHeight;
     }
@@ -394,7 +394,7 @@
             html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
             html += '  <div class="card animatronic-card">';
             html += '    <div class="card-body" ondblclick="window.open(\'' + conversationUrl + '\', \'_blank\')" style="cursor: pointer;">';
-            
+
             // Header with name and status
             html += '      <div class="d-flex justify-content-between align-items-center mb-2">';
             html += '        <h5 class="mb-0" onclick="event.stopPropagation(); window.open(\'' + adminUrl + '\', \'_blank\')" style="cursor: pointer;">';
@@ -404,7 +404,7 @@
             html += '          <i class="bi bi-circle-fill"></i> ONLINE';
             html += '        </span>';
             html += '      </div>';
-            
+
             // Character name if available
             if (anim.characterName) {
                 html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
@@ -415,7 +415,7 @@
             html += '      <div onclick="event.stopPropagation();">';
             html += '        <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Live webcam feed" />';
             html += '      </div>';
-            
+
             // Audio file selector with Play/Loop controls
             html += '      <div class="audio-control-group mb-2" onclick="event.stopPropagation();">';
             html += '        <select class="form-select form-select-sm mb-1" id="audio-' + anim.id + '">';
@@ -434,7 +434,7 @@
             html += '          <label class="form-check-label" for="loop-' + anim.id + '" style="font-size: 0.8rem;">Loop continuously</label>';
             html += '        </div>';
             html += '      </div>';
-            
+
             // AI interaction input group
             html += '      <div class="ai-input-group mb-2" onclick="event.stopPropagation();">';
             html += '        <input type="text" class="form-control form-control-sm mb-1" id="text-' + anim.id + '" placeholder="Type message...">';
@@ -457,14 +457,14 @@
             html += '          <i class="bi bi-robot"></i> <span id="autoai-text-' + anim.id + '">Auto AI</span>';
             html += '        </button>';
             html += '      </div>';
-            
+
             html += '      <small class="text-muted d-block text-center mt-2" onclick="event.stopPropagation();">' + anim.ip + ':' + anim.port + '</small>';
             html += '    </div>';
             html += '  </div>';
             html += '</div>';
         });
         document.getElementById('animatronicsStatus').innerHTML = html;
-        
+
         // Load audio files for each online animatronic
         onlineAnimatronics.forEach(function (anim) {
             loadAudioFiles(anim.id, anim.ip, anim.port);
@@ -607,14 +607,14 @@
     function askAI(animId, ip, port, name) {
         var inputEl = document.getElementById('text-' + animId);
         var question = inputEl.value.trim();
-        
+
         if (!question) {
             log('Please enter a question for ' + name, 'error');
             return;
         }
-        
+
         log('Asking AI on ' + name + ': "' + question + '"');
-        
+
         var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
         fetch(url, {
             method: 'POST',
@@ -638,14 +638,14 @@
     function makeSay(animId, ip, port, name) {
         var inputEl = document.getElementById('text-' + animId);
         var text = inputEl.value.trim();
-        
+
         if (!text) {
             log('Please enter text for ' + name + ' to say', 'error');
             return;
         }
-        
+
         log('Making ' + name + ' say: "' + text + '"');
-        
+
         var url = '/api/orchestration/animatronic/' + animId + '/say';
         fetch(url, {
             method: 'POST',
@@ -693,15 +693,15 @@
         var audioId = selectEl.value;
         var loopEl = document.getElementById('loop-' + animId);
         var loop = loopEl.checked;
-        
+
         if (!audioId) {
             log('Please select an audio file for ' + name, 'error');
             return;
         }
-        
+
         var audioName = selectEl.options[selectEl.selectedIndex].text;
         log('Playing audio on ' + name + ': "' + audioName + '"' + (loop ? ' (looping)' : ''));
-        
+
         var url = '/api/orchestration/animatronic/' + animId + '/play-audio';
         fetch(url, {
             method: 'POST',
@@ -723,7 +723,7 @@
 
     function stopAudio(animId, ip, port, name) {
         log('Stopping audio on ' + name);
-        
+
         var url = '/api/orchestration/animatronic/' + animId + '/stop-audio';
         fetch(url, {
             method: 'POST',
@@ -883,14 +883,14 @@
                 if (goblin.status === 'online' && (goblin.currentVideo || goblin.currentAudio)) {
                     html += '      <div class="currently-playing">';
                     html += '        <strong><i class="bi bi-play-circle"></i> Currently Playing:</strong><br>';
-                    
+
                     if (goblin.currentVideo) {
                         html += '        <span class="text-truncate d-block"><i class="bi bi-film"></i> ' + (goblin.currentVideo.title || goblin.currentVideo.filename || 'Video') + '</span>';
                     }
                     if (goblin.currentAudio) {
                         html += '        <span class="text-truncate d-block"><i class="bi bi-music-note"></i> ' + (goblin.currentAudio.title || goblin.currentAudio.filename || 'Audio') + '</span>';
                     }
-                    
+
                     html += '      </div>';
                 } else if (goblin.status === 'online') {
                     html += '      <div class="currently-playing text-muted">';

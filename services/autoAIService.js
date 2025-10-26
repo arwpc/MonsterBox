@@ -8,7 +8,6 @@
 import axios from 'axios';
 import aiPromptGeneratorService from './aiPromptGeneratorService.js';
 import serverSTTListener from './serverSTTListener.js';
-import { readFile } from 'fs/promises';
 
 class AutoAIService {
     constructor() {
@@ -23,20 +22,28 @@ class AutoAIService {
     }
 
     /**
-     * Get microphone device for character
+     * Get microphone device for animatronic from its API
      */
-    async getMicrophoneDevice(characterId) {
+    async getMicrophoneDevice(ip, port) {
         try {
-            const partsPath = `/home/remote/data/character-${characterId}/parts.json`;
-            const partsData = await readFile(partsPath, 'utf8');
-            const parts = JSON.parse(partsData);
-            const micPart = parts.find(p => String(p.type).toLowerCase() === 'microphone');
-            if (micPart && micPart.deviceId) {
-                return micPart.deviceId;
+            const partsResponse = await axios.get(
+                `http://${ip}:${port}/setup/models/api/parts`,
+                { timeout: 5000 }
+            );
+            
+            if (partsResponse.data && partsResponse.data.parts) {
+                const micPart = partsResponse.data.parts.find(p => 
+                    String(p.type).toLowerCase() === 'microphone'
+                );
+                if (micPart && micPart.deviceId) {
+                    console.log(`[Auto AI] Found microphone device: ${micPart.deviceId}`);
+                    return micPart.deviceId;
+                }
             }
         } catch (error) {
-            console.error(`[Auto AI] Error loading microphone for character ${characterId}:`, error.message);
+            console.error(`[Auto AI] Error loading microphone from ${ip}:${port}:`, error.message);
         }
+        console.log(`[Auto AI] No microphone found, using default`);
         return 'default';
     }
 
@@ -115,7 +122,7 @@ class AutoAIService {
 
         try {
             const status = serverSTTListener.getSessionStatus(state.sttSessionId);
-            
+
             if (status && status.transcript && status.transcript.trim().length > 0) {
                 const userInput = status.transcript.trim();
                 console.log(`🗣️ [Auto AI] User input detected for ${state.characterName}: "${userInput}"`);
@@ -289,7 +296,7 @@ class AutoAIService {
                 };
             } else {
                 console.error(`❌ [Auto AI] ${characterName} API returned failure`);
-                
+
                 // Still start listening even if automated prompt failed
                 setTimeout(() => {
                     this.startListening(animId);
@@ -303,7 +310,7 @@ class AutoAIService {
             }
         } catch (error) {
             console.error(`❌ [Auto AI] Error for ${characterName}:`, error.message);
-            
+
             // Start listening even on error
             setTimeout(() => {
                 this.startListening(animId);
@@ -326,8 +333,8 @@ class AutoAIService {
 
         console.log(`🚀 [Auto AI] Starting for ${characterName} (character ${characterId}) at ${ip}:${port} with ${intervalSeconds}s interval`);
 
-        // Get microphone device for this character
-        const microphoneDevice = await this.getMicrophoneDevice(characterId);
+        // Get microphone device from animatronic's API
+        const microphoneDevice = await this.getMicrophoneDevice(ip, port);
 
         // Fire first prompt immediately
         await this.autoAITick(animId, ip, port, characterName, characterId);
@@ -370,10 +377,10 @@ class AutoAIService {
         if (state && state.timerId) {
             // Stop Auto AI timer
             clearInterval(state.timerId);
-            
+
             // Stop listening
             this.stopListening(animId);
-            
+
             console.log(`🛑 [Auto AI] Stopped for ${state.characterName}`);
             delete this.autoAIStates[animId];
             delete this.lastPrompts[animId]; // Clear last prompt cache
