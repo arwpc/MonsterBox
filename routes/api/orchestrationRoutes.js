@@ -444,10 +444,25 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
             });
         }
 
+        // Get character ID from the animatronic (fetch it if not cached)
+        let characterId = animatronic.characterId;
+        if (!characterId) {
+            try {
+                const health = await orchestrationService.healthCheck(animatronic.ip, animatronic.port);
+                characterId = health.characterId || 1;
+                // Cache it for next time
+                animatronic.characterId = characterId;
+            } catch (error) {
+                // Default to 1 if we can't fetch it
+                characterId = 1;
+            }
+        }
+
         const result = await orchestrationService.playAudio(
             animatronic.ip,
             animatronic.port,
             audioId,
+            characterId,
             loop || false
         );
 
@@ -455,6 +470,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
             success: true,
             animatronic: animatronic.name,
             audioId,
+            characterId,
             loop,
             result
         });

@@ -141,11 +141,13 @@ class OrchestrationService {
             
             // Try to get character information
             let characterName = null;
+            let characterId = null;
             let webcamPartId = null;
             try {
                 const charResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/current`, { timeout: 3000 });
                 if (charResponse.data && charResponse.data.selectedCharacter) {
-                    const charId = charResponse.data.selectedCharacter;
+                    characterId = charResponse.data.selectedCharacter;
+                    const charId = characterId;
                     
                     // Get character details including name
                     const charDetailResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/characters/${charId}`, { timeout: 3000 });
@@ -171,6 +173,7 @@ class OrchestrationService {
                 online: response.status === 200,
                 status: response.status,
                 characterName: characterName,
+                characterId: characterId,
                 webcamPartId: webcamPartId
             };
         } catch (error) {
@@ -246,13 +249,13 @@ class OrchestrationService {
     async getAudioFiles(ip, port) {
         try {
             const response = await axios.get(
-                `http://${ip}:${port}/api/library`,
+                `http://${ip}:${port}/audio-library/api/library`,
                 {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 5000
                 }
             );
-            return { success: true, files: response.data.files || [] };
+            return { success: true, files: response.data.audio || [] };
         } catch (error) {
             throw new Error(`Get audio files failed: ${error.message}`);
         }
@@ -261,11 +264,11 @@ class OrchestrationService {
     /**
      * Play audio file on an animatronic
      */
-    async playAudio(ip, port, audioId, loop = false) {
+    async playAudio(ip, port, audioId, characterId, loop = false) {
         try {
             const response = await axios.post(
-                `http://${ip}:${port}/api/library/${audioId}/play`,
-                { loop },
+                `http://${ip}:${port}/audio-library/api/audio/${audioId}/play`,
+                { characterId, loop },
                 {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 5000
@@ -283,7 +286,7 @@ class OrchestrationService {
     async stopAudio(ip, port) {
         try {
             const response = await axios.post(
-                `http://${ip}:${port}/api/audio/stop`,
+                `http://${ip}:${port}/audio-library/api/audio/stop-all`,
                 {},
                 {
                     headers: { 'Content-Type': 'application/json' },
