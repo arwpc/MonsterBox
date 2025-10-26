@@ -435,30 +435,28 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
             });
         }
 
-        // Import axios and fs for streaming
+        // Import axios for streaming
         const axios = (await import('axios')).default;
-        const { readFile } = await import('fs/promises');
 
-        // Get the webcam part ID for this animatronic's character
-        let webcamPartId = null;
-        try {
-            const partsPath = `/home/remote/data/character-${animatronic.characterId}/parts.json`;
-            const partsData = await readFile(partsPath, 'utf8');
-            const parts = JSON.parse(partsData);
-            const webcamPart = parts.find(p => String(p.type).toLowerCase() === 'webcam');
-            if (webcamPart) {
-                webcamPartId = webcamPart.id;
-            }
-        } catch (error) {
-            console.error(`Error loading parts for character ${animatronic.characterId}:`, error.message);
+        // Get the webcam stream URL from the animatronic's conversation API
+        const streamUrlResponse = await axios.get(
+            `http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`,
+            { timeout: 5000 }
+        );
+
+        if (!streamUrlResponse.data || !streamUrlResponse.data.url) {
+            return res.status(404).json({
+                success: false,
+                error: 'Webcam stream URL not available'
+            });
         }
 
-        // Use 'auto' if no specific part found
-        const partId = webcamPartId || 'auto';
+        const webcamPath = streamUrlResponse.data.url;
+        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}${webcamPath}`;
 
-        // Stream the webcam feed from the animatronic
-        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}/setup/webcam/api/parts/${partId}/stream`;
-        
+        console.log(`📹 Streaming webcam for ${animatronic.name} from ${webcamUrl}`);
+
+        // Stream the webcam feed
         const response = await axios({
             method: 'get',
             url: webcamUrl,
@@ -488,7 +486,7 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error proxying webcam stream:', error);
+        console.error('Error proxying webcam stream:', error.message);
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
