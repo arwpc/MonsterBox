@@ -14,11 +14,11 @@ class OrchestrationService {
     constructor() {
         // Animatronic network map with characterId for AI Prompt Generator
         this.animatronics = [
-            { id: 1, name: 'PumpkinHead', ip: '192.168.8.150', port: 3000, characterId: 27 },      // character-27
-            { id: 2, name: 'Coffin Breaker', ip: '192.168.8.140', port: 3000, characterId: 2 },    // character-2 (has agent)
-            { id: 3, name: 'Orlok', ip: '192.168.8.120', port: 3000, characterId: 1 },             // character-1
-            { id: 4, name: 'Skulltalker', ip: '192.168.8.130', port: 3000, characterId: 3 },       // character-3
-            { id: 5, name: 'Groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 25 }     // character-25
+            { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 27 },      // character-27
+            { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2 },    // character-2 (has agent)
+            { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 1 },             // character-1
+            { id: 4, name: 'Skulltalker', hostname: 'skulltalker', ip: '192.168.8.130', port: 3000, characterId: 3 },       // character-3
+            { id: 5, name: 'Groundbreaker', hostname: 'groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 25 }     // character-25
         ];
 
         // Goblin network map

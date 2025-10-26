@@ -4,8 +4,8 @@
  */
 
 import express from 'express';
-import orchestrationService from '../../services/orchestrationService.js';
 import autoAIService from '../../services/autoAIService.js';
+import orchestrationService from '../../services/orchestrationService.js';
 
 const router = express.Router();
 
@@ -316,7 +316,7 @@ router.post('/animatronic/:id/auto-ai/start', express.json(), async (req, res) =
     try {
         const animId = parseInt(req.params.id);
         const { interval } = req.body;
-        
+
         const animatronic = orchestrationService.getAnimatronicById(animId);
         if (!animatronic) {
             return res.status(404).json({
@@ -326,7 +326,7 @@ router.post('/animatronic/:id/auto-ai/start', express.json(), async (req, res) =
         }
 
         const intervalSeconds = interval || 30; // Default 30 seconds
-        
+
         const result = await autoAIService.startAutoAI(
             animId,
             animatronic.ip,
@@ -417,6 +417,67 @@ router.post('/auto-ai/stop-all', async (req, res) => {
             error: 'Failed to stop all Auto AI',
             message: error.message
         });
+    }
+});
+
+/**
+ * Proxy webcam stream from specific animatronic
+ */
+router.get('/animatronic/:id/webcam-stream', async (req, res) => {
+    try {
+        const animId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animId);
+
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        // Import axios for streaming
+        const axios = (await import('axios')).default;
+
+        // Stream the webcam feed from the animatronic
+        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}/video_feed`;
+        
+        const response = await axios({
+            method: 'get',
+            url: webcamUrl,
+            responseType: 'stream',
+            timeout: 30000
+        });
+
+        // Set headers for MJPEG stream
+        res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
+        // Pipe the stream
+        response.data.pipe(res);
+
+        // Handle errors
+        response.data.on('error', (error) => {
+            console.error(`Webcam stream error for ${animatronic.name}:`, error.message);
+            if (!res.headersSent) {
+                res.status(500).end();
+            }
+        });
+
+        req.on('close', () => {
+            response.data.destroy();
+        });
+
+    } catch (error) {
+        console.error('Error proxying webcam stream:', error);
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                error: 'Failed to proxy webcam stream',
+                message: error.message
+            });
+        }
     }
 });
 
