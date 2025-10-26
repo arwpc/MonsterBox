@@ -410,8 +410,8 @@
                 html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
             }
 
-            // Webcam stream - Use proxy through orchestration server
-            var streamUrl = '/api/orchestration/animatronic/' + anim.id + '/webcam-stream';
+            // Webcam stream - Direct connection to animatronic's video feed
+            var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/video_feed';
             html += '      <div onclick="event.stopPropagation();">';
             html += '        <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Live webcam feed" />';
             html += '      </div>';
