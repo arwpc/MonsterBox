@@ -263,19 +263,31 @@ class OrchestrationService {
 
     /**
      * Play audio file on an animatronic
+     * Note: loop parameter is currently not implemented in audio library
      */
     async playAudio(ip, port, audioId, characterId, loop = false) {
         try {
+            // Use 127.0.0.1 for local host to avoid network loops
+            const host = ip === '192.168.8.120' ? '127.0.0.1' : ip;
+            
             const response = await axios.post(
-                `http://${ip}:${port}/audio-library/api/audio/${audioId}/play`,
-                { characterId, loop },
+                `http://${host}:${port}/audio-library/api/audio/${audioId}/play`,
+                { characterId },
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000
+                    timeout: 30000 // 30 second timeout for long audio files
                 }
             );
             return { success: true, data: response.data };
         } catch (error) {
+            console.error('Play audio error:', {
+                ip,
+                port,
+                audioId,
+                characterId,
+                error: error.message,
+                response: error.response?.data
+            });
             throw new Error(`Play audio failed: ${error.message}`);
         }
     }
