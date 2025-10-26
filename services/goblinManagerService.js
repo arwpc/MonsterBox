@@ -55,6 +55,7 @@ class GoblinManagerService {
             console.log(`📡 Loaded ${savedGoblins.length} goblins from registry`);
         } catch (error) {
             // File doesn't exist or is invalid, start with empty registry
+            console.error('❌ Error loading goblins:', error.message);
             console.log('📡 Starting with empty goblin registry');
             this.goblins.clear();
         }
