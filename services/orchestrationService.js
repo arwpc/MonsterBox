@@ -82,12 +82,6 @@ class OrchestrationService {
             case 'say':
                 return await this.sayText(ip, port, params.text, params.characterId);
 
-            case 'say-direct':
-                return await this.sayDirect(ip, port, params.text);
-
-            case 'ask-ai':
-                return await this.askAI(ip, port, params.text);
-
             case 'enable-random-poses':
                 return await this.enableRandomPoses(ip, port, params.characterId, params.options);
 
@@ -136,45 +130,11 @@ class OrchestrationService {
      */
     async healthCheck(ip, port) {
         try {
-            // Check if service is alive
             const response = await axios.get(`http://${ip}:${port}/`, { timeout: 5000 });
-            
-            // Try to get character information
-            let characterName = null;
-            let characterId = null;
-            let webcamPartId = null;
-            try {
-                const charResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/current`, { timeout: 3000 });
-                if (charResponse.data && charResponse.data.selectedCharacter) {
-                    characterId = charResponse.data.selectedCharacter;
-                    const charId = characterId;
-                    
-                    // Get character details including name
-                    const charDetailResponse = await axios.get(`http://${ip}:${port}/setup/characters/api/characters/${charId}`, { timeout: 3000 });
-                    if (charDetailResponse.data && charDetailResponse.data.character) {
-                        characterName = charDetailResponse.data.character.name || charDetailResponse.data.character.title;
-                    }
-                    
-                    // Get webcam part ID from parts.json
-                    const partsResponse = await axios.get(`http://${ip}:${port}/setup/parts/api/parts`, { timeout: 3000 });
-                    if (partsResponse.data && partsResponse.data.parts) {
-                        const webcamPart = partsResponse.data.parts.find(p => p.type === 'webcam');
-                        if (webcamPart) {
-                            webcamPartId = webcamPart.id;
-                        }
-                    }
-                }
-            } catch (charError) {
-                // Character info not critical, continue without it
-            }
-            
             return {
                 success: true,
                 online: response.status === 200,
-                status: response.status,
-                characterName: characterName,
-                characterId: characterId,
-                webcamPartId: webcamPartId
+                status: response.status
             };
         } catch (error) {
             return {
@@ -202,112 +162,6 @@ class OrchestrationService {
             return { success: true, data: response.data };
         } catch (error) {
             throw new Error(`Say text failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Ask AI on an animatronic using WebSocket conversation system
-     */
-    async askAI(ip, port, text) {
-        try {
-            const response = await axios.post(
-                `http://${ip}:${port}/conversation/api/ask-ai`,
-                { question: text },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000
-                }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            throw new Error(`Ask AI failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Make an animatronic say text directly (without AI processing)
-     */
-    async sayDirect(ip, port, text) {
-        try {
-            const response = await axios.post(
-                `http://${ip}:${port}/conversation/api/say`,
-                { text },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000
-                }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            throw new Error(`Say direct failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Get audio files from an animatronic's audio library
-     */
-    async getAudioFiles(ip, port) {
-        try {
-            const response = await axios.get(
-                `http://${ip}:${port}/audio-library/api/library`,
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000
-                }
-            );
-            return { success: true, files: response.data.audio || [] };
-        } catch (error) {
-            throw new Error(`Get audio files failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Play audio file on an animatronic
-     * Note: loop parameter is currently not implemented in audio library
-     */
-    async playAudio(ip, port, audioId, characterId, loop = false) {
-        try {
-            // Use 127.0.0.1 for local host to avoid network loops
-            const host = ip === '192.168.8.120' ? '127.0.0.1' : ip;
-            
-            const response = await axios.post(
-                `http://${host}:${port}/audio-library/api/audio/${audioId}/play`,
-                { characterId },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000 // 30 second timeout for long audio files
-                }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            console.error('Play audio error:', {
-                ip,
-                port,
-                audioId,
-                characterId,
-                error: error.message,
-                response: error.response?.data
-            });
-            throw new Error(`Play audio failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Stop audio playback on an animatronic
-     */
-    async stopAudio(ip, port) {
-        try {
-            const response = await axios.post(
-                `http://${ip}:${port}/audio-library/api/audio/stop-all`,
-                {},
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000
-                }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            throw new Error(`Stop audio failed: ${error.message}`);
         }
     }
 
@@ -565,13 +419,6 @@ class OrchestrationService {
             successful,
             results: processed
         };
-    }
-
-    /**
-     * Get animatronic by ID
-     */
-    getAnimatronicById(id) {
-        return this.animatronics.find(a => a.id === id);
     }
 }
 

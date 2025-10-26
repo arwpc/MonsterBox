@@ -76,64 +76,6 @@
         transform: translateY(-5px);
         box-shadow: 0 4px 15px rgba(247, 147, 30, 0.3);
     }
-
-    .webcam-preview {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-        background: #000;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
-
-    .ai-input-group {
-        margin-top: 10px;
-    }
-
-    .ai-input-group input {
-        font-size: 0.85rem;
-        padding: 0.4rem;
-    }
-
-    .ai-input-group .btn {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.5rem;
-    }
-
-    .audio-control-group {
-        margin-top: 10px;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 5px;
-    }
-
-    .audio-control-group select {
-        font-size: 0.85rem;
-    }
-
-    .audio-control-group .btn {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.5rem;
-    }
-
-    .audio-control-group .form-check-label {
-        cursor: pointer;
-    }
-
-    .animatronic-card .card-body {
-        padding: 0.75rem;
-    }
-
-    .animatronic-card h5 {
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .character-name {
-        font-size: 0.8rem;
-        color: #aaa;
-        font-style: italic;
-    }
 </style>
 
 <div class="container-fluid mt-4">
@@ -143,25 +85,6 @@
                 <i class="bi bi-broadcast"></i> Orchestration Control Center
             </h1>
             <p class="text-center text-muted">Centralized control for all MonsterBox animatronics</p>
-        </div>
-    </div>
-
-    <!-- Command Log - Moved to Top -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-terminal"></i> Command Log
-                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
-                        <i class="bi bi-trash"></i> Clear
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="log-output" id="commandLog">
-                        <div>🎃 Orchestration Control Center initialized...</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -269,6 +192,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Command Log -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-terminal"></i> Command Log
+                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
+                        <i class="bi bi-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="log-output" id="commandLog">
+                        <div>🎃 Orchestration Control Center initialized...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -307,91 +249,22 @@
             var statusClass = anim.online ? 'status-online' : 'status-offline';
             var statusText = anim.online ? 'ONLINE' : 'OFFLINE';
             var url = 'http://' + anim.ip + ':' + anim.port;
+            var cursorStyle = anim.online ? 'cursor: pointer;' : '';
+            var clickHandler = anim.online ? 'onclick="window.open(\'' + url + '\', \'_blank\')"' : '';
 
-            html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
-            html += '  <div class="card animatronic-card">';
-            html += '    <div class="card-body">';
-            
-            // Header with name and status
-            html += '      <div class="d-flex justify-content-between align-items-center mb-2">';
-            html += '        <h5 class="mb-0" style="cursor: pointer;" onclick="window.open(\'' + url + '\', \'_blank\')">';
-            html += '          <i class="bi bi-box-arrow-up-right"></i> ' + anim.name;
-            html += '        </h5>';
-            html += '        <span class="' + statusClass + '">';
-            html += '          <i class="bi bi-circle-fill"></i> ' + statusText;
-            html += '        </span>';
-            html += '      </div>';
-            
-            // Character name if available
-            if (anim.characterName) {
-                html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
-            }
-
-            // Webcam stream if online - using proper MJPEG streaming URL
-            if (anim.online) {
-                // Use webcam part ID if available, otherwise hide the webcam preview
-                if (anim.webcamPartId) {
-                    var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/setup/webcam/api/parts/' + anim.webcamPartId + '/stream';
-                    html += '      <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Live webcam feed" />';
-                } else {
-                    html += '      <div class="webcam-preview d-flex align-items-center justify-content-center text-muted" style="background: #1a1a1a;">';
-                    html += '        <small><i class="bi bi-camera-video-off"></i> No camera</small>';
-                    html += '      </div>';
-                }
-                
-                // Audio file selector with Play/Loop controls
-                html += '      <div class="audio-control-group mb-2">';
-                html += '        <select class="form-select form-select-sm mb-1" id="audio-' + anim.id + '">';
-                html += '          <option value="">Select audio file...</option>';
-                html += '        </select>';
-                html += '        <div class="btn-group w-100 mb-1" role="group">';
-                html += '          <button class="btn btn-sm btn-success" onclick="playAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
-                html += '            <i class="bi bi-play-fill"></i> Play';
-                html += '          </button>';
-                html += '          <button class="btn btn-sm btn-danger" onclick="stopAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
-                html += '            <i class="bi bi-stop-fill"></i> Stop';
-                html += '          </button>';
-                html += '        </div>';
-                html += '        <div class="form-check form-check-sm">';
-                html += '          <input class="form-check-input" type="checkbox" id="loop-' + anim.id + '">';
-                html += '          <label class="form-check-label" for="loop-' + anim.id + '" style="font-size: 0.8rem;">Loop continuously</label>';
-                html += '        </div>';
-                html += '      </div>';
-                
-                // AI interaction input group
-                html += '      <div class="ai-input-group">';
-                html += '        <input type="text" class="form-control form-control-sm mb-1" id="text-' + anim.id + '" placeholder="Type message...">';
-                html += '        <div class="btn-group w-100 mb-1" role="group">';
-                html += '          <button class="btn btn-sm btn-primary" onclick="askAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
-                html += '            <i class="bi bi-chat-dots"></i> Ask AI';
-                html += '          </button>';
-                html += '          <button class="btn btn-sm btn-success" onclick="makeSay(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
-                html += '            <i class="bi bi-megaphone"></i> Say';
-                html += '          </button>';
-                html += '        </div>';
-                html += '        <button class="btn btn-sm btn-outline-warning w-100" id="auto-ai-' + anim.id + '" onclick="toggleAutoAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\', \'' + (anim.characterName || anim.name) + '\')">';
-                html += '          <i class="bi bi-robot"></i> <span id="auto-ai-text-' + anim.id + '">Auto AI: OFF</span>';
-                html += '        </button>';
-                html += '      </div>';
-            } else {
-                html += '      <div class="text-center text-muted py-4">';
-                html += '        <i class="bi bi-exclamation-triangle"></i> Offline';
-                html += '      </div>';
-            }
-            
-            html += '      <small class="text-muted d-block text-center mt-2">' + anim.ip + ':' + anim.port + '</small>';
+            html += '<div class="col-md-3 mb-3">';
+            html += '  <div class="card animatronic-card" style="' + cursorStyle + '" ' + clickHandler + '>';
+            html += '    <div class="card-body text-center">';
+            html += '      <h5>' + anim.name + '</h5>';
+            html += '      <p class="' + statusClass + '">';
+            html += '        <i class="bi bi-circle-fill"></i> ' + statusText;
+            html += '      </p>';
+            html += '      <small class="text-muted">' + anim.ip + ':' + anim.port + '</small>';
             html += '    </div>';
             html += '  </div>';
             html += '</div>';
         });
         document.getElementById('animatronicsStatus').innerHTML = html;
-        
-        // Load audio files for each online animatronic
-        animatronics.forEach(function (anim) {
-            if (anim.online) {
-                loadAudioFiles(anim.id, anim.ip, anim.port);
-            }
-        });
     }
 
     function sayAll() {
@@ -524,248 +397,9 @@
             });
     }
 
-    function askAI(animId, ip, port, name) {
-        var inputEl = document.getElementById('text-' + animId);
-        var question = inputEl.value.trim();
-        
-        if (!question) {
-            log('Please enter a question for ' + name, 'error');
-            return;
-        }
-        
-        log('Asking AI on ' + name + ': "' + question + '"');
-        
-        // Use local orchestration API proxy instead of direct cross-origin request
-        var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: question })
-        })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    // Display the AI's response in the log
-                    var aiResponse = data.result && data.result.data && data.result.data.response;
-                    if (aiResponse) {
-                        log('🤖 ' + name + ' AI: "' + aiResponse + '"', 'success');
-                    } else {
-                        log('✅ ' + name + ' AI responded', 'success');
-                    }
-                    inputEl.value = '';
-                } else {
-                    log('❌ ' + name + ' AI failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function (error) {
-                log('❌ Error asking AI on ' + name + ': ' + error.message, 'error');
-            });
-    }
-
-    function makeSay(animId, ip, port, name) {
-        var inputEl = document.getElementById('text-' + animId);
-        var text = inputEl.value.trim();
-        
-        if (!text) {
-            log('Please enter text for ' + name + ' to say', 'error');
-            return;
-        }
-        
-        log('Making ' + name + ' say: "' + text + '"');
-        
-        // Use local orchestration API proxy instead of direct cross-origin request
-        var url = '/api/orchestration/animatronic/' + animId + '/say';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text })
-        })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    log('✅ ' + name + ' is speaking', 'success');
-                    inputEl.value = '';
-                } else {
-                    log('❌ ' + name + ' speech failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function (error) {
-                log('❌ Error making ' + name + ' speak: ' + error.message, 'error');
-            });
-    }
-
-    // Auto AI functionality - Server-side persistent Auto AI
-    // This Auto AI runs on the server and continues even if you leave the page
-    
-    function toggleAutoAI(animId, ip, port, name, characterName) {
-        var buttonEl = document.getElementById('auto-ai-' + animId);
-        var textEl = document.getElementById('auto-ai-text-' + animId);
-        
-        // Check current state from button
-        var isCurrentlyOn = buttonEl.classList.contains('btn-warning');
-        
-        if (!isCurrentlyOn) {
-            // Enable Auto AI on server
-            log('🤖 Enabling Auto AI for ' + name + ' - will ask questions every 30 seconds', 'info');
-            
-            var url = '/api/orchestration/animatronic/' + animId + '/auto-ai/start';
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ interval: 30 })
-            })
-                .then(function (response) { return response.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        log('✅ Auto AI started for ' + name, 'success');
-                        
-                        // Update button appearance
-                        buttonEl.classList.remove('btn-outline-warning');
-                        buttonEl.classList.add('btn-warning');
-                        textEl.textContent = 'Auto AI: ON';
-                    } else {
-                        log('❌ Failed to start Auto AI for ' + name + ': ' + (data.error || 'Unknown error'), 'error');
-                    }
-                })
-                .catch(function (error) {
-                    log('❌ Auto AI error for ' + name + ': ' + error.message, 'error');
-                });
-            
-        } else {
-            // Disable Auto AI on server
-            log('🤖 Disabling Auto AI for ' + name, 'info');
-            
-            var url = '/api/orchestration/animatronic/' + animId + '/auto-ai/stop';
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-                .then(function (response) { return response.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        log('✅ Auto AI stopped for ' + name, 'success');
-                        
-                        // Update button appearance
-                        buttonEl.classList.remove('btn-warning');
-                        buttonEl.classList.add('btn-outline-warning');
-                        textEl.textContent = 'Auto AI: OFF';
-                    } else {
-                        log('❌ Failed to stop Auto AI for ' + name + ': ' + (data.error || 'Unknown error'), 'error');
-                    }
-                })
-                .catch(function (error) {
-                    log('❌ Auto AI error for ' + name + ': ' + error.message, 'error');
-                });
-        }
-    }
-    
-    // Load Auto AI status on page load
-    function loadAutoAIStatuses() {
-        fetch('/api/orchestration/auto-ai/status')
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success && data.autoAI) {
-                    Object.keys(data.autoAI).forEach(function(animId) {
-                        var state = data.autoAI[animId];
-                        if (state && state.active) {
-                            // Update button to show it's active
-                            var buttonEl = document.getElementById('auto-ai-' + animId);
-                            var textEl = document.getElementById('auto-ai-text-' + animId);
-                            if (buttonEl && textEl) {
-                                buttonEl.classList.remove('btn-outline-warning');
-                                buttonEl.classList.add('btn-warning');
-                                textEl.textContent = 'Auto AI: ON';
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(function (error) {
-                console.error('Failed to load Auto AI statuses:', error);
-            });
-    }
-
-    function loadAudioFiles(animId, ip, port) {
-        // Use proxy endpoint to get audio files from animatronic
-        var url = '/api/orchestration/animatronic/' + animId + '/audio-files';
-        fetch(url)
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success && data.files) {
-                    var selectEl = document.getElementById('audio-' + animId);
-                    if (selectEl) {
-                        data.files.forEach(function (file) {
-                            var option = document.createElement('option');
-                            option.value = file.id;
-                            option.textContent = file.title || file.fileName;
-                            selectEl.appendChild(option);
-                        });
-                    }
-                }
-            })
-            .catch(function (error) {
-                console.error('Error loading audio files:', error);
-            });
-    }
-
-    function playAudio(animId, ip, port, name) {
-        var selectEl = document.getElementById('audio-' + animId);
-        var audioId = selectEl.value;
-        var loopEl = document.getElementById('loop-' + animId);
-        var loop = loopEl.checked;
-        
-        if (!audioId) {
-            log('Please select an audio file for ' + name, 'error');
-            return;
-        }
-        
-        var audioName = selectEl.options[selectEl.selectedIndex].text;
-        log('Playing audio on ' + name + ': "' + audioName + '"' + (loop ? ' (looping)' : ''));
-        
-        var url = '/api/orchestration/animatronic/' + animId + '/play-audio';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ audioId: audioId, loop: loop })
-        })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    log('✅ ' + name + ' is playing audio' + (loop ? ' (looping)' : ''), 'success');
-                } else {
-                    log('❌ ' + name + ' audio playback failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function (error) {
-                log('❌ Error playing audio on ' + name + ': ' + error.message, 'error');
-            });
-    }
-
-    function stopAudio(animId, ip, port, name) {
-        log('Stopping audio on ' + name);
-        
-        var url = '/api/orchestration/animatronic/' + animId + '/stop-audio';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    log('✅ ' + name + ' audio stopped', 'success');
-                } else {
-                    log('❌ ' + name + ' audio stop failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function (error) {
-                log('❌ Error stopping audio on ' + name + ': ' + error.message, 'error');
-            });
-    }
-
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
         refreshStatus();
-        loadAutoAIStatuses(); // Load Auto AI states from server
         // Auto-refresh every 30 seconds
         setInterval(refreshStatus, 30000);
     });
