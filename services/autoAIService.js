@@ -1,144 +1,100 @@
 /**
  * Auto AI Service
  * Server-side persistent Auto AI that continues running even when users leave the orchestration page
+ * Integrates with AI Prompt Generator for personalized, character-specific prompts
  */
 
 import axios from 'axios';
+import aiPromptGeneratorService from './aiPromptGeneratorService.js';
 
 class AutoAIService {
     constructor() {
-        // Active Auto AI states: { animId: { active, timerId, characterName, ip, port, interval } }
+        // Active Auto AI states: { animId: { active, timerId, characterName, characterId, ip, port, interval } }
         this.autoAIStates = {};
-        
-        // Character-specific question banks
-        this.characterQuestions = {
-            orlok: [
-                "What is it like to live forever?",
-                "Do you miss the sunlight?",
-                "Tell me about your castle in Transylvania",
-                "What is your favorite type of blood?",
-                "How do you pass the endless nights?",
-                "What do you think of modern technology?",
-                "Do you have any vampire friends?",
-                "What was the world like 500 years ago?",
-                "Are you afraid of crosses and garlic?",
-                "What is your greatest power?"
-            ],
-            coffin: [
-                "How long have you been in that coffin?",
-                "What does it feel like to be undead?",
-                "Do you dream while you rest?",
-                "Tell me about your life before death",
-                "What scares an undead creature?",
-                "Do you remember your funeral?",
-                "What's the worst thing about being trapped?",
-                "Can you feel the passage of time?",
-                "What would you do if you were free?",
-                "Do you have any regrets?"
-            ],
-            pumpkin: [
-                "How did you become a living pumpkin?",
-                "What's your favorite Halloween tradition?",
-                "Do you like being carved?",
-                "Tell me about the pumpkin patch you came from",
-                "What's it like having a candle inside you?",
-                "Are you friends with other pumpkins?",
-                "What's your scariest Halloween memory?",
-                "Do you rot like other pumpkins?",
-                "What do you think about Thanksgiving?",
-                "Can you grow new vines?"
-            ],
-            ground: [
-                "What lurks beneath the earth?",
-                "How deep can you dig?",
-                "Tell me about the creatures you've met underground",
-                "What does the soil taste like?",
-                "Do you feel earthquakes coming?",
-                "What's the darkest place you've been?",
-                "Can you sense people walking above you?",
-                "What treasures have you found buried?",
-                "Are you afraid of drowning in underground water?",
-                "What's your favorite thing about living below?"
-            ],
-            skull: [
-                "What do you remember from when you had flesh?",
-                "Does it hurt to be just bones?",
-                "Who were you before you became a skull?",
-                "Do your bones ache in the cold?",
-                "What's the oldest memory in your skull?",
-                "Can you hear without ears?",
-                "What would you tell your living self?",
-                "Do you miss having a heartbeat?",
-                "What's it like to grin forever?",
-                "Are you lonely being just bones?"
-            ],
-            default: [
-                "What is your purpose?",
-                "Tell me your story",
-                "What brings you joy?",
-                "What do you fear most?",
-                "If you could change one thing, what would it be?",
-                "What is your greatest memory?",
-                "Do you believe in magic?",
-                "What would you like humans to know about you?",
-                "What makes you different from others?",
-                "What is your secret wish?"
-            ]
-        };
 
-        // Track last question asked per animatronic to avoid immediate repeats
-        this.lastQuestions = {};
+        // Track last prompt asked per animatronic to avoid immediate repeats
+        this.lastPrompts = {};
+
+        // Character prompt cache
+        this.characterPrompts = {};
     }
 
     /**
-     * Get character type from animatronic name
+     * Get prompts for a character (uses AI Prompt Generator Service)
      */
-    getCharacterType(name) {
-        const nameLower = name.toLowerCase();
-        if (nameLower.includes('orlok')) return 'orlok';
-        if (nameLower.includes('coffin')) return 'coffin';
-        if (nameLower.includes('pumpkin')) return 'pumpkin';
-        if (nameLower.includes('ground')) return 'ground';
-        if (nameLower.includes('skull')) return 'skull';
-        return 'default';
-    }
-
-    /**
-     * Get random question for character, avoiding the last question asked
-     */
-    getRandomQuestion(characterType, animId) {
-        const questions = this.characterQuestions[characterType] || this.characterQuestions.default;
-        const lastQuestion = this.lastQuestions[animId];
-        
-        // Filter out the last question if there's more than one option
-        let availableQuestions = questions;
-        if (lastQuestion && questions.length > 1) {
-            availableQuestions = questions.filter(q => q !== lastQuestion);
+    async getCharacterPrompts(characterId, characterName, animatronicName) {
+        // Check if we have prompts cached for this character
+        if (this.characterPrompts[characterId]) {
+            return this.characterPrompts[characterId];
         }
-        
-        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-        const selectedQuestion = availableQuestions[randomIndex];
-        
-        // Store this as the last question for this animatronic
-        this.lastQuestions[animId] = selectedQuestion;
-        
-        return selectedQuestion;
+
+        try {
+            // Get AI-generated prompts from the prompt generator service
+            const prompts = await aiPromptGeneratorService.getPromptsForCharacter(
+                characterId,
+                characterName,
+                animatronicName
+            );
+
+            // Cache the prompts
+            this.characterPrompts[characterId] = prompts;
+
+            console.log(`[Auto AI] Loaded ${prompts.length} prompts for character ${characterId} (${animatronicName})`);
+            return prompts;
+        } catch (error) {
+            console.error(`[Auto AI] Error loading prompts for character ${characterId}:`, error.message);
+
+            // Fallback to generic prompts
+            return [
+                "Tell me about yourself",
+                "What's your story?",
+                "I want to know more about you",
+                "What makes you unique?",
+                "Tell me something interesting",
+                "I heard you have secrets",
+                "You seem mysterious",
+                "What do you do here?",
+                "Tell me about this place",
+                "I'm curious about you"
+            ];
+        }
     }
 
     /**
-     * Execute Auto AI tick - ask a question and get response
+     * Get random prompt for character, avoiding the last prompt asked
      */
-    async autoAITick(animId, ip, port, name) {
+    async getRandomPrompt(characterId, characterName, animatronicName, animId) {
+        const prompts = await this.getCharacterPrompts(characterId, characterName, animatronicName);
+        const lastPrompt = this.lastPrompts[animId];
+
+        // Filter out the last prompt if there's more than one option
+        let availablePrompts = prompts;
+        if (lastPrompt && prompts.length > 1) {
+            availablePrompts = prompts.filter(p => p !== lastPrompt);
+        }
+
+        const randomIndex = Math.floor(Math.random() * availablePrompts.length);
+        const selectedPrompt = availablePrompts[randomIndex];
+
+        // Store this as the last prompt for this animatronic
+        this.lastPrompts[animId] = selectedPrompt;
+
+        return selectedPrompt;
+    }
+
+    /**
+     * Execute Auto AI tick - ask a question/make a statement and get response
+     */
+    async autoAITick(animId, ip, port, characterName, characterId) {
         try {
-            const characterType = this.getCharacterType(name);
-            const question = this.getRandomQuestion(characterType, animId);
-            
-            console.log(`🤖 [Auto AI] Asking ${name}: "${question}"`);
-            
+            const prompt = await this.getRandomPrompt(characterId, characterName, characterName, animId);
+
+            console.log(`🤖 [Auto AI] Prompting ${characterName}: "${prompt}"`);
+
             // Ask AI via conversation API
             const response = await axios.post(
                 `http://${ip}:${port}/conversation/api/ask-ai`,
-                { question },
+                { question: prompt }, // API still uses 'question' parameter
                 {
                     headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
@@ -146,35 +102,35 @@ class AutoAIService {
             );
 
             if (response.data && response.data.success) {
-                // Extract the actual AI response (personalityText is the AI's response)
+                // Extract the actual AI response
                 const aiResponse = response.data.response || response.data.personalityText || '';
-                
-                // Log the response (trim to avoid logging the question echo)
-                if (aiResponse && aiResponse !== question) {
-                    console.log(`🤖 [Auto AI] ${name} responded: "${aiResponse.substring(0, 100)}${aiResponse.length > 100 ? '...' : ''}"`);
+
+                // Log the response (trim to avoid logging the prompt echo)
+                if (aiResponse && aiResponse !== prompt) {
+                    console.log(`🤖 [Auto AI] ${characterName} responded: "${aiResponse.substring(0, 100)}${aiResponse.length > 100 ? '...' : ''}"`);
                 } else {
-                    console.log(`⚠️ [Auto AI] ${name} echoed question or gave no response`);
+                    console.log(`⚠️ [Auto AI] ${characterName} echoed prompt or gave no response`);
                 }
-                
+
                 return {
                     success: true,
-                    question,
+                    prompt,
                     response: aiResponse,
                     timestamp: new Date().toISOString()
                 };
             } else {
-                console.error(`❌ [Auto AI] ${name} API returned failure`);
+                console.error(`❌ [Auto AI] ${characterName} API returned failure`);
                 return {
                     success: false,
-                    question,
+                    prompt,
                     error: 'API returned failure'
                 };
             }
         } catch (error) {
-            console.error(`❌ [Auto AI] Error for ${name}:`, error.message);
+            console.error(`❌ [Auto AI] Error for ${characterName}:`, error.message);
             return {
                 success: false,
-                question: '',
+                prompt: '',
                 error: error.message
             };
         }
@@ -183,25 +139,26 @@ class AutoAIService {
     /**
      * Start Auto AI for an animatronic
      */
-    async startAutoAI(animId, ip, port, name, intervalSeconds = 30) {
+    async startAutoAI(animId, ip, port, characterName, characterId, intervalSeconds = 30) {
         // Stop existing Auto AI if running
         this.stopAutoAI(animId);
 
-        console.log(`🚀 [Auto AI] Starting for ${name} (${ip}:${port}) with ${intervalSeconds}s interval`);
+        console.log(`🚀 [Auto AI] Starting for ${characterName} (character ${characterId}) at ${ip}:${port} with ${intervalSeconds}s interval`);
 
-        // Fire first question immediately
-        await this.autoAITick(animId, ip, port, name);
+        // Fire first prompt immediately
+        await this.autoAITick(animId, ip, port, characterName, characterId);
 
         // Set up recurring interval
         const timerId = setInterval(async () => {
-            await this.autoAITick(animId, ip, port, name);
+            await this.autoAITick(animId, ip, port, characterName, characterId);
         }, intervalSeconds * 1000);
 
         // Store state
         this.autoAIStates[animId] = {
             active: true,
             timerId,
-            characterName: name,
+            characterName,
+            characterId,
             ip,
             port,
             interval: intervalSeconds,
@@ -210,7 +167,7 @@ class AutoAIService {
 
         return {
             success: true,
-            message: `Auto AI started for ${name}`,
+            message: `Auto AI started for ${characterName}`,
             interval: intervalSeconds
         };
     }
@@ -220,13 +177,13 @@ class AutoAIService {
      */
     stopAutoAI(animId) {
         const state = this.autoAIStates[animId];
-        
+
         if (state && state.timerId) {
             clearInterval(state.timerId);
             console.log(`🛑 [Auto AI] Stopped for ${state.characterName}`);
             delete this.autoAIStates[animId];
-            delete this.lastQuestions[animId]; // Clear last question cache
-            
+            delete this.lastPrompts[animId]; // Clear last prompt cache
+
             return {
                 success: true,
                 message: `Auto AI stopped for ${state.characterName}`
@@ -244,11 +201,12 @@ class AutoAIService {
      */
     getStatus(animId) {
         const state = this.autoAIStates[animId];
-        
+
         if (state && state.active) {
             return {
                 active: true,
                 characterName: state.characterName,
+                characterId: state.characterId,
                 interval: state.interval,
                 startedAt: state.startedAt,
                 ip: state.ip,
@@ -266,12 +224,13 @@ class AutoAIService {
      */
     getAllStatuses() {
         const statuses = {};
-        
+
         for (const [animId, state] of Object.entries(this.autoAIStates)) {
             if (state && state.active) {
                 statuses[animId] = {
                     active: true,
                     characterName: state.characterName,
+                    characterId: state.characterId,
                     interval: state.interval,
                     startedAt: state.startedAt,
                     ip: state.ip,
@@ -288,7 +247,7 @@ class AutoAIService {
      */
     stopAll() {
         console.log('🛑 [Auto AI] Stopping all Auto AI instances');
-        
+
         for (const animId of Object.keys(this.autoAIStates)) {
             this.stopAutoAI(animId);
         }
@@ -297,6 +256,22 @@ class AutoAIService {
             success: true,
             message: 'All Auto AI instances stopped'
         };
+    }
+
+    /**
+     * Refresh prompts for a character (clears cache and reloads from AI Prompt Generator)
+     */
+    async refreshPromptsForCharacter(characterId) {
+        delete this.characterPrompts[characterId];
+        console.log(`[Auto AI] Cleared prompt cache for character ${characterId}`);
+    }
+
+    /**
+     * Refresh all prompts (useful when AI Prompt Generator cache is cleared)
+     */
+    refreshAllPrompts() {
+        this.characterPrompts = {};
+        console.log('[Auto AI] Cleared all prompt caches');
     }
 }
 
