@@ -429,13 +429,6 @@ class OrchestrationService {
     }
 
     /**
-     * Get animatronic by ID
-     */
-    getAnimatronicById(id) {
-        return this.animatronics.find(a => a.id === parseInt(id));
-    }
-
-    /**
      * Get all animatronics
      */
     getAllAnimatronics() {
