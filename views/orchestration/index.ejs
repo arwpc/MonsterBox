@@ -486,7 +486,8 @@
       const loadingId = 'webcam-loading-' + anim.id;
       
       try {
-        const response = await fetch('http://' + anim.ip + ':' + anim.port + '/conversation/api/webcam-stream-url');
+        // Call Orlok's proxy endpoint to avoid CORS issues
+        const response = await fetch('/api/orchestration/animatronic/' + anim.id + '/webcam-url');
         const data = await response.json();
         
         if (data && data.success && data.url) {
@@ -494,7 +495,7 @@
           const loading = document.getElementById(loadingId);
           
           if (img && loading) {
-            img.src = 'http://' + anim.ip + ':' + anim.port + data.url + '?_=' + Date.now();
+            img.src = data.url + '?_=' + Date.now();
             img.style.display = 'block';
             img.onerror = function() {
               this.style.display = 'none';

@@ -497,5 +497,80 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
     }
 });
 
+/**
+ * Get audio files from an animatronic (proxy to animatronic's API)
+ */
+router.get('/animatronic/:id/audio-files', async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+        
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        // Proxy request to animatronic's audio files API
+        const axios = (await import('axios')).default;
+        const response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, {
+            timeout: 5000
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error(`Error getting audio files for animatronic ${req.params.id}:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get audio files',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Get webcam stream URL from an animatronic (proxy to animatronic's API)
+ */
+router.get('/animatronic/:id/webcam-url', async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+        
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        // Proxy request to animatronic's webcam URL API (will fail if offline)
+        const axios = (await import('axios')).default;
+        const response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`, {
+            timeout: 5000
+        });
+
+        // Return the webcam URL prefixed with animatronic's base URL
+        if (response.data && response.data.success && response.data.url) {
+            res.json({
+                success: true,
+                url: `http://${animatronic.ip}:${animatronic.port}${response.data.url}`
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                error: 'Webcam URL not available'
+            });
+        }
+    } catch (error) {
+        console.error(`Error getting webcam URL for animatronic ${req.params.id}:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get webcam URL',
+            message: error.message
+        });
+    }
+});
+
 export default router;
 
