@@ -410,10 +410,12 @@
                 html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
             }
 
-            // Webcam stream - Direct connection to animatronic's video feed
-            var streamUrl = 'http://' + anim.ip + ':' + anim.port + '/video_feed';
+            // Webcam stream - Fetch URL from animatronic's API
             html += '      <div onclick="event.stopPropagation();">';
-            html += '        <img src="' + streamUrl + '" class="webcam-preview" onerror="this.style.display=\'none\'" alt="Live webcam feed" />';
+            html += '        <img id="webcam-' + anim.id + '" class="webcam-preview" alt="Live webcam feed" style="display:none;" />';
+            html += '        <div id="webcam-loading-' + anim.id + '" class="text-muted text-center py-3">';
+            html += '          <div class="spinner-border spinner-border-sm"></div> Loading webcam...';
+            html += '        </div>';
             html += '      </div>';
 
             // Audio file selector with Play/Loop controls
@@ -465,6 +467,11 @@
         });
         document.getElementById('animatronicsStatus').innerHTML = html;
 
+        // Load webcam streams asynchronously
+        onlineAnimatronics.forEach(anim => {
+          loadWebcamForAnimatronic(anim);
+        });
+
         // Load audio files for each online animatronic
         onlineAnimatronics.forEach(function (anim) {
             loadAudioFiles(anim.id, anim.ip, anim.port);
@@ -472,6 +479,39 @@
 
         // Load Auto AI statuses
         loadAutoAIStatuses();
+    }
+    
+    async function loadWebcamForAnimatronic(anim) {
+      const imgId = 'webcam-' + anim.id;
+      const loadingId = 'webcam-loading-' + anim.id;
+      
+      try {
+        const response = await fetch('http://' + anim.ip + ':' + anim.port + '/conversation/api/webcam-stream-url');
+        const data = await response.json();
+        
+        if (data && data.success && data.url) {
+          const img = document.getElementById(imgId);
+          const loading = document.getElementById(loadingId);
+          
+          if (img && loading) {
+            img.src = 'http://' + anim.ip + ':' + anim.port + data.url + '?_=' + Date.now();
+            img.style.display = 'block';
+            img.onerror = function() {
+              this.style.display = 'none';
+              loading.innerHTML = '<small class="text-muted">Webcam unavailable</small>';
+            };
+            loading.style.display = 'none';
+          }
+        } else {
+          throw new Error('Invalid webcam URL response');
+        }
+      } catch (err) {
+        console.error('Error loading webcam for ' + anim.id + ':', err);
+        const loading = document.getElementById(loadingId);
+        if (loading) {
+          loading.innerHTML = '<small class="text-muted">Webcam unavailable</small>';
+        }
+      }
     }
 
     function sayAll() {
