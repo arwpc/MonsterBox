@@ -12,13 +12,13 @@ const execAsync = promisify(exec);
 
 class OrchestrationService {
     constructor() {
-        // Animatronic network map
+        // Animatronic network map with characterId for AI Prompt Generator
         this.animatronics = [
-            { id: 1, name: 'PumpkinHead', ip: '192.168.8.150', port: 3000 },
-            { id: 2, name: 'Coffin Breaker', ip: '192.168.8.140', port: 3000 },
-            { id: 3, name: 'Orlok', ip: '192.168.8.120', port: 3000 },
-            { id: 4, name: 'Skulltalker', ip: '192.168.8.130', port: 3000 },
-            { id: 5, name: 'Groundbreaker', ip: '192.168.8.200', port: 3000 }
+            { id: 1, name: 'PumpkinHead', ip: '192.168.8.150', port: 3000, characterId: 27 },      // character-27
+            { id: 2, name: 'Coffin Breaker', ip: '192.168.8.140', port: 3000, characterId: 2 },    // character-2 (has agent)
+            { id: 3, name: 'Orlok', ip: '192.168.8.120', port: 3000, characterId: 1 },             // character-1
+            { id: 4, name: 'Skulltalker', ip: '192.168.8.130', port: 3000, characterId: 3 },       // character-3
+            { id: 5, name: 'Groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 25 }     // character-25
         ];
 
         // Goblin network map
@@ -419,6 +419,27 @@ class OrchestrationService {
             successful,
             results: processed
         };
+    }
+
+    /**
+     * Get animatronic by ID
+     */
+    getAnimatronicById(id) {
+        return this.animatronics.find(a => a.id === parseInt(id));
+    }
+
+    /**
+     * Get animatronic by ID
+     */
+    getAnimatronicById(id) {
+        return this.animatronics.find(a => a.id === parseInt(id));
+    }
+
+    /**
+     * Get all animatronics
+     */
+    getAllAnimatronics() {
+        return this.animatronics;
     }
 }
 
