@@ -5,6 +5,7 @@
 
 import express from 'express';
 import orchestrationService from '../../services/orchestrationService.js';
+import autoAIService from '../../services/autoAIService.js';
 
 const router = express.Router();
 
@@ -511,6 +512,158 @@ router.post('/animatronic/:id/stop-audio', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to stop audio',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Start Auto AI for an animatronic
+ * POST /api/orchestration/animatronic/:id/auto-ai/start
+ */
+router.post('/animatronic/:id/auto-ai/start', express.json(), async (req, res) => {
+    try {
+        const animId = parseInt(req.params.id);
+        const { interval } = req.body; // Optional: interval in seconds (default 30)
+
+        const animatronic = orchestrationService.getAnimatronicById(animId);
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const intervalSeconds = interval && Number.isInteger(interval) && interval > 0 ? interval : 30;
+        
+        const result = await autoAIService.startAutoAI(
+            animId,
+            animatronic.ip,
+            animatronic.port,
+            animatronic.name,
+            intervalSeconds
+        );
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            result
+        });
+    } catch (error) {
+        console.error('Error starting Auto AI:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to start Auto AI',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Stop Auto AI for an animatronic
+ * POST /api/orchestration/animatronic/:id/auto-ai/stop
+ */
+router.post('/animatronic/:id/auto-ai/stop', express.json(), async (req, res) => {
+    try {
+        const animId = parseInt(req.params.id);
+
+        const animatronic = orchestrationService.getAnimatronicById(animId);
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const result = autoAIService.stopAutoAI(animId);
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            result
+        });
+    } catch (error) {
+        console.error('Error stopping Auto AI:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop Auto AI',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Get Auto AI status for an animatronic
+ * GET /api/orchestration/animatronic/:id/auto-ai/status
+ */
+router.get('/animatronic/:id/auto-ai/status', async (req, res) => {
+    try {
+        const animId = parseInt(req.params.id);
+
+        const animatronic = orchestrationService.getAnimatronicById(animId);
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: 'Animatronic not found'
+            });
+        }
+
+        const status = autoAIService.getStatus(animId);
+
+        res.json({
+            success: true,
+            animatronic: animatronic.name,
+            autoAI: status
+        });
+    } catch (error) {
+        console.error('Error getting Auto AI status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get Auto AI status',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Get all Auto AI statuses
+ * GET /api/orchestration/auto-ai/status
+ */
+router.get('/auto-ai/status', async (req, res) => {
+    try {
+        const statuses = autoAIService.getAllStatuses();
+
+        res.json({
+            success: true,
+            autoAI: statuses
+        });
+    } catch (error) {
+        console.error('Error getting all Auto AI statuses:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get Auto AI statuses',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Stop all Auto AI instances
+ * POST /api/orchestration/auto-ai/stop-all
+ */
+router.post('/auto-ai/stop-all', express.json(), async (req, res) => {
+    try {
+        const result = autoAIService.stopAll();
+
+        res.json({
+            success: true,
+            result
+        });
+    } catch (error) {
+        console.error('Error stopping all Auto AI:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop all Auto AI',
             message: error.message
         });
     }

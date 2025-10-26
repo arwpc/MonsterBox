@@ -594,194 +594,96 @@
             });
     }
 
-    // Auto AI functionality - state tracking
-    var autoAIStates = {}; // Stores {animId: {active: bool, timerId: int, characterName: string}}
-    
-    // Character-specific question banks
-    var characterQuestions = {
-        'orlok': [
-            "What do you think about modern vampires in movies?",
-            "Tell me about your castle in the Carpathian mountains",
-            "How do you feel about garlic?",
-            "What was it like in the old country?",
-            "Do you prefer night or day and why?",
-            "What's your favorite thing about being immortal?",
-            "Tell me a scary story from your past",
-            "What do you think of humans these days?",
-            "How do you feel about crosses and holy water?",
-            "What's your opinion on drinking blood?"
-        ],
-        'coffin': [
-            "How did you end up in that coffin?",
-            "What's it like breaking out every night?",
-            "Tell me about the graveyard you came from",
-            "What's the scariest thing about being undead?",
-            "Do you have any friends in the cemetery?",
-            "What do you think about Halloween?",
-            "Tell me about your coffin - is it comfortable?",
-            "What's your favorite time of night?",
-            "How do you feel about gravediggers?",
-            "What's the weirdest thing you've seen in the graveyard?"
-        ],
-        'pumpkin': [
-            "How did you become a talking pumpkin?",
-            "What's your favorite thing about Halloween?",
-            "Tell me about the pumpkin patch you came from",
-            "Do you like being carved into a jack-o-lantern?",
-            "What's your opinion on pumpkin pie?",
-            "Tell me a spooky Halloween story",
-            "What do you think about trick-or-treaters?",
-            "How do you feel about autumn and harvest time?",
-            "What's the best costume you've ever seen?",
-            "Do you have any pumpkin friends?"
-        ],
-        'ground': [
-            "What's it like breaking through the ground?",
-            "Tell me about what's under the earth",
-            "How long were you buried?",
-            "What do you think about zombies?",
-            "What's the scariest thing underground?",
-            "Tell me about the soil and roots around you",
-            "How do you feel about earthworms?",
-            "What's your favorite thing about rising from the grave?",
-            "Do you remember being buried?",
-            "What sounds do you hear underground?"
-        ],
-        'skull': [
-            "What happened to the rest of you?",
-            "Tell me about being just a skull",
-            "What's it like having no body?",
-            "Do you miss having hands?",
-            "What's your favorite bone fact?",
-            "Tell me about the skeleton you used to be",
-            "How do you talk without lungs?",
-            "What do you think about archaeologists?",
-            "Tell me a spooky story",
-            "What's it like being animated bones?"
-        ],
-        'default': [
-            "Tell me something spooky",
-            "What's your favorite Halloween tradition?",
-            "Tell me a scary story",
-            "What do you think about monsters?",
-            "How do you like to scare people?",
-            "What's the creepiest thing you've ever seen?",
-            "Tell me about your haunting abilities",
-            "What's your opinion on Halloween decorations?",
-            "Do you have any monster friends?",
-            "What's your favorite time of year?"
-        ]
-    };
-    
-    function getCharacterType(characterName) {
-        var name = (characterName || '').toLowerCase();
-        if (name.includes('orlok') || name.includes('vampire')) return 'orlok';
-        if (name.includes('coffin') || name.includes('breaker')) return 'coffin';
-        if (name.includes('pumpkin') || name.includes('head')) return 'pumpkin';
-        if (name.includes('ground') || name.includes('breaker')) return 'ground';
-        if (name.includes('skull') || name.includes('talker')) return 'skull';
-        return 'default';
-    }
-    
-    function getRandomQuestion(characterName) {
-        var charType = getCharacterType(characterName);
-        var questions = characterQuestions[charType];
-        var randomIndex = Math.floor(Math.random() * questions.length);
-        return questions[randomIndex];
-    }
+    // Auto AI functionality - Server-side persistent Auto AI
+    // This Auto AI runs on the server and continues even if you leave the page
     
     function toggleAutoAI(animId, ip, port, name, characterName) {
-        var state = autoAIStates[animId];
         var buttonEl = document.getElementById('auto-ai-' + animId);
         var textEl = document.getElementById('auto-ai-text-' + animId);
         
-        if (!state || !state.active) {
-            // Enable Auto AI
-            log('🤖 Auto AI enabled for ' + name + ' - will ask questions every 30 seconds', 'info');
+        // Check current state from button
+        var isCurrentlyOn = buttonEl.classList.contains('btn-warning');
+        
+        if (!isCurrentlyOn) {
+            // Enable Auto AI on server
+            log('🤖 Enabling Auto AI for ' + name + ' - will ask questions every 30 seconds', 'info');
             
-            // Create state object
-            autoAIStates[animId] = {
-                active: true,
-                characterName: characterName,
-                animId: animId,
-                ip: ip,
-                port: port,
-                name: name
-            };
-            
-            // Update button appearance
-            buttonEl.classList.remove('btn-outline-warning');
-            buttonEl.classList.add('btn-warning');
-            textEl.textContent = 'Auto AI: ON';
-            
-            // Fire first question immediately
-            autoAITick(animId);
-            
-            // Set up 30-second interval
-            autoAIStates[animId].timerId = setInterval(function() {
-                autoAITick(animId);
-            }, 30000); // 30 seconds
+            var url = '/api/orchestration/animatronic/' + animId + '/auto-ai/start';
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ interval: 30 })
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        log('✅ Auto AI started for ' + name, 'success');
+                        
+                        // Update button appearance
+                        buttonEl.classList.remove('btn-outline-warning');
+                        buttonEl.classList.add('btn-warning');
+                        textEl.textContent = 'Auto AI: ON';
+                    } else {
+                        log('❌ Failed to start Auto AI for ' + name + ': ' + (data.error || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(function (error) {
+                    log('❌ Auto AI error for ' + name + ': ' + error.message, 'error');
+                });
             
         } else {
-            // Disable Auto AI
-            log('🤖 Auto AI disabled for ' + name, 'info');
+            // Disable Auto AI on server
+            log('🤖 Disabling Auto AI for ' + name, 'info');
             
-            // Clear interval
-            if (state.timerId) {
-                clearInterval(state.timerId);
-            }
-            
-            // Update state
-            autoAIStates[animId].active = false;
-            
-            // Update button appearance
-            buttonEl.classList.remove('btn-warning');
-            buttonEl.classList.add('btn-outline-warning');
-            textEl.textContent = 'Auto AI: OFF';
+            var url = '/api/orchestration/animatronic/' + animId + '/auto-ai/stop';
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        log('✅ Auto AI stopped for ' + name, 'success');
+                        
+                        // Update button appearance
+                        buttonEl.classList.remove('btn-warning');
+                        buttonEl.classList.add('btn-outline-warning');
+                        textEl.textContent = 'Auto AI: OFF';
+                    } else {
+                        log('❌ Failed to stop Auto AI for ' + name + ': ' + (data.error || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(function (error) {
+                    log('❌ Auto AI error for ' + name + ': ' + error.message, 'error');
+                });
         }
     }
     
-    function autoAITick(animId) {
-        var state = autoAIStates[animId];
-        if (!state || !state.active) return;
-        
-        // Generate random question based on character
-        var question = getRandomQuestion(state.characterName);
-        
-        log('🤖 Auto AI asking ' + state.name + ': "' + question + '"', 'info');
-        
-        // Use existing askAI infrastructure but with generated question
-        var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: question })
-        })
+    // Load Auto AI status on page load
+    function loadAutoAIStatuses() {
+        fetch('/api/orchestration/auto-ai/status')
             .then(function (response) { return response.json(); })
             .then(function (data) {
-                if (data.success && data.result && data.result.data && data.result.data.response) {
-                    var aiResponse = data.result.data.response;
-                    log('🤖 ' + state.name + ' AI: ' + aiResponse, 'success');
-                } else if (data.success) {
-                    log('✅ ' + state.name + ' responded to Auto AI question', 'success');
-                } else {
-                    log('❌ Auto AI failed for ' + state.name + ': ' + (data.error || 'Unknown error'), 'error');
+                if (data.success && data.autoAI) {
+                    Object.keys(data.autoAI).forEach(function(animId) {
+                        var state = data.autoAI[animId];
+                        if (state && state.active) {
+                            // Update button to show it's active
+                            var buttonEl = document.getElementById('auto-ai-' + animId);
+                            var textEl = document.getElementById('auto-ai-text-' + animId);
+                            if (buttonEl && textEl) {
+                                buttonEl.classList.remove('btn-outline-warning');
+                                buttonEl.classList.add('btn-warning');
+                                textEl.textContent = 'Auto AI: ON';
+                            }
+                        }
+                    });
                 }
             })
             .catch(function (error) {
-                log('❌ Auto AI error for ' + state.name + ': ' + error.message, 'error');
+                console.error('Failed to load Auto AI statuses:', error);
             });
     }
-    
-    // Cleanup intervals on page unload
-    window.addEventListener('beforeunload', function() {
-        Object.keys(autoAIStates).forEach(function(animId) {
-            var state = autoAIStates[animId];
-            if (state && state.timerId) {
-                clearInterval(state.timerId);
-            }
-        });
-    });
 
     function loadAudioFiles(animId, ip, port) {
         // Use proxy endpoint to get audio files from animatronic
@@ -863,6 +765,7 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
         refreshStatus();
+        loadAutoAIStatuses(); // Load Auto AI states from server
         // Auto-refresh every 30 seconds
         setInterval(refreshStatus, 30000);
     });

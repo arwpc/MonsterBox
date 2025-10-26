@@ -566,6 +566,13 @@ class OrchestrationService {
             results: processed
         };
     }
+
+    /**
+     * Get animatronic by ID
+     */
+    getAnimatronicById(id) {
+        return this.animatronics.find(a => a.id === id);
+    }
 }
 
 // Export singleton instance
