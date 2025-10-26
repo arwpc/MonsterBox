@@ -30,9 +30,9 @@ class AutoAIService {
                 `http://${ip}:${port}/setup/models/api/parts`,
                 { timeout: 5000 }
             );
-            
+
             if (partsResponse.data && partsResponse.data.parts) {
-                const micPart = partsResponse.data.parts.find(p => 
+                const micPart = partsResponse.data.parts.find(p =>
                     String(p.type).toLowerCase() === 'microphone'
                 );
                 if (micPart && micPart.deviceId) {

@@ -495,7 +495,7 @@ class GoblinManagerService {
             offlineGoblins.map(goblin => this.pingGoblin(goblin.id))
         );
 
-        const reconnected = results.filter(r => 
+        const reconnected = results.filter(r =>
             r.status === 'fulfilled' && r.value.success && r.value.online
         ).length;
 

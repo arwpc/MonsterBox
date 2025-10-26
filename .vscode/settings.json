@@ -15,8 +15,11 @@
   "chat.tools.codeExecution.autoApprove": true,
   "github.copilot.chat.runCommand.enabled": true,
   "github.copilot.chat.executeCommand.enabled": true,
+  "github.copilot.chat.executeCommands": "always",
+  "github.copilot.chat.terminalAutoExecution": "enabled",
   "github.copilot.chat.requireApproval": false,
   "github.copilot.chat.terminalChatLocation": "terminal",
+  "terminal.integrated.confirmBeforeExecutingCommands": false,
   // --- Workspace trust & prompts (reduce nags) ---
   "security.workspace.trust.enabled": false,
   "terminal.integrated.enableMultiLinePasteWarning": "never",
