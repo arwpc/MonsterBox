@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Comprehensive Navigation Test for MonsterBox 4.0
- * Tests every single link and route in the updated navigation structure
+ * Comprehensive Navigation Test for MonsterBox (current)
+ * Uses Playwright baseURL and avoids deprecated routes
  */
-
-const BASE_URL = 'http://localhost:3000';
 
 // All routes to test based on the updated navigation structure
 const ROUTES = {
@@ -35,28 +33,29 @@ const ROUTES = {
     models: '/setup/models',
     system: '/setup/system',
     
-    // Activities
-    live: '/live',
+    // Activities (current)
+    conversation: '/conversation',
+    orchestration: '/orchestration',
     poses: '/setup/poses',
     scenes: '/scenes'
 };
 
 test.describe('MonsterBox Navigation Complete Test', () => {
     test.beforeEach(async ({ page }) => {
-        // Start from dashboard
-        await page.goto(BASE_URL);
+        // Start from dashboard (relative navigation uses baseURL)
+        await page.goto('/');
         await expect(page).toHaveTitle(/MonsterBox/);
     });
 
     test('Dashboard loads correctly', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.dashboard}`);
+    await page.goto(`${ROUTES.dashboard}`);
         
         // Check page loads
-        await expect(page.locator('nav.navbar')).toBeVisible();
-        await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 4.0');
+    await expect(page.locator('nav.navbar')).toBeVisible();
+    await expect(page.locator('.navbar-brand')).toContainText('MonsterBox');
         
         // Check for webcam stream or placeholder
-        const hasWebcamStream = await page.locator('img[src*="8090"]').count() > 0;
+    const hasWebcamStream = await page.locator('img[src*="8090"]').count() > 0;
         const hasWebcamPlaceholder = await page.locator('text=/webcam/i').count() > 0;
         expect(hasWebcamStream || hasWebcamPlaceholder).toBeTruthy();
         
@@ -64,7 +63,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Hardware > Parts & Calibration', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.parts}`);
+    await page.goto(`${ROUTES.parts}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/parts/i);
@@ -77,7 +76,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Hardware > Webcam', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.webcam}`);
+    await page.goto(`${ROUTES.webcam}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/webcam/i);
@@ -86,7 +85,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Media > Audio Configuration', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.audioConfig}`);
+    await page.goto(`${ROUTES.audioConfig}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/audio/i);
@@ -95,7 +94,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Media > Audio Library', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.audioLibrary}`);
+    await page.goto(`${ROUTES.audioLibrary}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/audio.*library/i);
@@ -104,7 +103,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > AI Settings > Overview', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.aiOverview}`);
+    await page.goto(`${ROUTES.aiOverview}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/ai.*settings/i);
@@ -113,7 +112,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > AI Settings > Speech-to-Text', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.aiStt}`);
+    await page.goto(`${ROUTES.aiStt}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/speech.*text|stt/i);
@@ -122,7 +121,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > AI Settings > AI Agents', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.aiAgents}`);
+    await page.goto(`${ROUTES.aiAgents}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/agents/i);
@@ -131,7 +130,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > AI Settings > Text-to-Speech', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.aiTts}`);
+    await page.goto(`${ROUTES.aiTts}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/text.*speech|tts/i);
@@ -140,7 +139,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Character Management > Characters', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.characters}`);
+    await page.goto(`${ROUTES.characters}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/characters/i);
@@ -149,7 +148,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Character Management > Character Audio', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.characterAudio}`);
+    await page.goto(`${ROUTES.characterAudio}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/character.*audio/i);
@@ -158,7 +157,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Character Management > Character AI Assignment', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.characterAssignment}`);
+    await page.goto(`${ROUTES.characterAssignment}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/character.*assignment|assignment/i);
@@ -167,7 +166,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > Character Management > Super Powers', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.superPowers}`);
+    await page.goto(`${ROUTES.superPowers}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/super.*powers/i);
@@ -176,7 +175,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > System > Models', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.models}`);
+    await page.goto(`${ROUTES.models}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/models/i);
@@ -185,7 +184,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Setup > System > System', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.system}`);
+    await page.goto(`${ROUTES.system}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/system/i);
@@ -193,17 +192,15 @@ test.describe('MonsterBox Navigation Complete Test', () => {
         console.log('✅ System: Page loads correctly');
     });
 
-    test('Activities > Live Mode', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.live}`);
-        
+    test('Activities > Orchestration', async ({ page }) => {
+        await page.goto(`${ROUTES.orchestration}`);
         await expect(page.locator('nav.navbar')).toBeVisible();
-        await expect(page.locator('h1, h2, h3')).toContainText(/live.*mode/i);
-        
-        console.log('✅ Live Mode: Page loads correctly');
+        await expect(page.locator('h1, h2, h3')).toContainText(/orchestration/i);
+        console.log('✅ Orchestration: Page loads correctly');
     });
 
     test('Activities > Poses', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.poses}`);
+    await page.goto(`${ROUTES.poses}`);
         
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/poses/i);
@@ -212,7 +209,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Activities > Scenes', async ({ page }) => {
-        await page.goto(`${BASE_URL}${ROUTES.scenes}`);
+    await page.goto(`${ROUTES.scenes}`);
 
         await expect(page.locator('nav.navbar')).toBeVisible();
         await expect(page.locator('h1, h2, h3')).toContainText(/scenes/i);
@@ -221,7 +218,7 @@ test.describe('MonsterBox Navigation Complete Test', () => {
     });
 
     test('Navigation Links - Setup Dropdown Navigation', async ({ page }) => {
-        await page.goto(`${BASE_URL}`);
+    await page.goto(`/`);
 
         // Test Setup dropdown
         await page.locator('a:has-text("Setup")').click();
@@ -229,41 +226,41 @@ test.describe('MonsterBox Navigation Complete Test', () => {
 
         // Test Hardware section
         await page.locator('a:has-text("Parts & Calibration")').click();
-        await expect(page).toHaveURL(`${BASE_URL}/setup/parts`);
+    await expect(page).toHaveURL(/\/setup\/parts$/);
         await expect(page.locator('nav.navbar')).toBeVisible();
 
         // Go back and test another link
-        await page.goto(`${BASE_URL}`);
+    await page.goto(`/`);
         await page.locator('a:has-text("Setup")').click();
         await page.locator('a:has-text("Webcam")').click();
-        await expect(page).toHaveURL(`${BASE_URL}/setup/webcam`);
+    await expect(page).toHaveURL(/\/setup\/webcam$/);
 
         console.log('✅ Setup dropdown navigation works correctly');
     });
 
     test('Navigation Links - Activities Dropdown Navigation', async ({ page }) => {
-        await page.goto(`${BASE_URL}`);
+    await page.goto(`/`);
 
-        // Test Activities dropdown
+        // Test Activities dropdown (Conversation + Orchestration + Poses + Scenes)
         await page.locator('a:has-text("Activities")').click();
         await expect(page.locator('.dropdown-menu')).toBeVisible();
 
-        // Test Live Mode
-        await page.locator('a:has-text("Live Mode")').click();
-        await expect(page).toHaveURL(`${BASE_URL}/live`);
+        // Test Orchestration
+        await page.locator('a:has-text("Orchestration")').click();
+        await expect(page).toHaveURL(/\/orchestration$/);
         await expect(page.locator('nav.navbar')).toBeVisible();
 
         // Go back and test Poses
-        await page.goto(`${BASE_URL}`);
+        await page.goto(`/`);
         await page.locator('a:has-text("Activities")').click();
         await page.locator('a:has-text("Poses")').click();
-        await expect(page).toHaveURL(`${BASE_URL}/setup/poses`);
+        await expect(page).toHaveURL(/\/setup\/poses$/);
 
         console.log('✅ Activities dropdown navigation works correctly');
     });
 
     test('Navigation Links - Character Selector', async ({ page }) => {
-        await page.goto(`${BASE_URL}`);
+    await page.goto(`/`);
 
         // Test Character Selector dropdown
         const characterDropdown = page.locator('a:has-text("No Character"), a:has-text("Character")').first();
@@ -279,22 +276,23 @@ test.describe('MonsterBox Navigation Complete Test', () => {
 
     test('Complete Navigation Flow Test', async ({ page }) => {
         // Start at dashboard
-        await page.goto(`${BASE_URL}`);
+    await page.goto(`/`);
         await expect(page.locator('.navbar-brand')).toContainText('MonsterBox 4.0');
+    await expect(page.locator('.navbar-brand')).toContainText('MonsterBox');
 
         // Navigate through each major section
         const navigationFlow = [
             { section: 'Setup', link: 'Parts & Calibration', expectedUrl: '/setup/parts' },
             { section: 'Setup', link: 'AI Settings', expectedUrl: '/ai-settings' },
-            { section: 'Activities', link: 'Live Mode', expectedUrl: '/live' },
+            { section: 'Activities', link: 'Orchestration', expectedUrl: '/orchestration' },
             { section: 'Activities', link: 'Scenes', expectedUrl: '/scenes' }
         ];
 
         for (const nav of navigationFlow) {
-            await page.goto(`${BASE_URL}`);
+            await page.goto(`/`);
             await page.locator(`a:has-text("${nav.section}")`).click();
             await page.locator(`a:has-text("${nav.link}")`).click();
-            await expect(page).toHaveURL(`${BASE_URL}${nav.expectedUrl}`);
+            await expect(page).toHaveURL(new RegExp(`${nav.expectedUrl.replace(/\//g, '\\/')}$`));
             await expect(page.locator('nav.navbar')).toBeVisible();
             console.log(`✅ Navigation flow: ${nav.section} > ${nav.link} works`);
         }

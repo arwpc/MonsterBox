@@ -4187,6 +4187,42 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "17615456617272iq4lb9pz",
+      "sceneId": 102,
+      "characterId": 1,
+      "timestamp": "2025-10-27T06:14:21.727Z",
+      "startTime": "2025-10-27T06:14:21.723Z",
+      "endTime": "2025-10-27T06:14:21.723Z",
+      "duration": 0,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin not found: goblin-three"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17615870179628p9tato74",
+      "sceneId": 102,
+      "characterId": 1,
+      "timestamp": "2025-10-27T17:43:37.962Z",
+      "startTime": "2025-10-27T17:43:37.959Z",
+      "endTime": "2025-10-27T17:43:37.960Z",
+      "duration": 1,
+      "stepsExecuted": 0,
+      "totalSteps": 1,
+      "success": false,
+      "errors": [
+        {
+          "message": "Goblin not found: goblin-three"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {

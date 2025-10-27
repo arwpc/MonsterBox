@@ -9,27 +9,27 @@ import posesController from '../../controllers/posesController.js';
 const router = express.Router();
 
 function wantsJson(req) {
-	if ((req.query.format || '').toLowerCase() === 'json') {
-		return true;
-	}
-	const accept = (req.headers.accept || '').toLowerCase();
-	return accept.includes('application/json');
+    if ((req.query.format || '').toLowerCase() === 'json') {
+        return true;
+    }
+    const accept = (req.headers.accept || '').toLowerCase();
+    return accept.includes('application/json');
 }
 
 // Get all poses / poses dashboard
 router.get('/', async (req, res, next) => {
-	if (wantsJson(req)) {
-		return posesController.getAllPoses(req, res);
-	}
-	try {
-		res.renderWithLayout('poses/index', {
-			title: 'Poses - MonsterBox 5.3',
-			page: 'poses',
-			pageHeading: 'Poses'
-		});
-	} catch (error) {
-		next(error);
-	}
+    if (wantsJson(req)) {
+        return posesController.getAllPoses(req, res);
+    }
+    try {
+        res.renderWithLayout('poses/index', {
+            title: 'Poses - MonsterBox 5.5',
+            page: 'poses',
+            pageHeading: 'Poses'
+        });
+    } catch (error) {
+        next(error);
+    }
 });
 
 router.get('/api/poses', posesController.getAllPoses);

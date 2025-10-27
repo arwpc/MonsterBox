@@ -5,7 +5,7 @@
   "sampleRate": 16000,
   "channels": 1,
   "microphonePartId": "9",
-  "microphoneDeviceId": "pulse",
+  "microphoneDeviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback",
   "vadEnabled": true,
   "vadThreshold": 0.35,
   "vadSilenceDuration": 500,
@@ -17,5 +17,5 @@
   "validateEnglish": true,
   "minLetterRatio": 55,
   "requireVowels": true,
-  "deviceId": "pulse"
+  "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
 }

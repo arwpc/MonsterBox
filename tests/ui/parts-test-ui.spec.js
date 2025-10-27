@@ -5,10 +5,10 @@
 
 import { test, expect } from '../test.setup';
 
-const BASE_URL = 'http://localhost:3000';
+// Use Playwright baseURL
 
 async function createServoViaAPI(request, name) {
-  const res = await request.post(`${BASE_URL}/setup/parts/api/parts`, {
+  const res = await request.post('/setup/parts/api/parts', {
     data: {
       name,
       type: 'servo',
@@ -29,7 +29,7 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     const part = await createServoViaAPI(request, uniqueName);
     const partId = part.id;
 
-    await page.goto(`${BASE_URL}/setup/parts`);
+  await page.goto('/setup/parts');
 
     // Wait for parts to load and our newly created servo to appear
     await expect(page.locator('#parts-list')).toBeVisible();
@@ -53,7 +53,7 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     await expect(alert).toContainText(/Test|Action/);
 
     // Cleanup: remove the created test part immediately
-    const del = await request.delete(`${BASE_URL}/setup/parts/api/parts/${partId}`);
+  const del = await request.delete(`/setup/parts/api/parts/${partId}`);
     expect(del.ok()).toBeTruthy();
   });
 });

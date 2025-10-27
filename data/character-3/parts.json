@@ -19,7 +19,7 @@
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2025-10-27T03:12:28.968Z"
+    "updated": "2025-10-27T05:40:05.108Z"
   },
   {
     "id": "2",
@@ -317,5 +317,42 @@
     },
     "created": "2025-10-11T10:16:18.791Z",
     "enabled": false
+  },
+  {
+    "id": "29",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-27T05:52:27.892Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "updated": "2025-10-27T05:52:31.551Z"
+  },
+  {
+    "id": "30",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-27T05:52:34.320Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
   }
 ]

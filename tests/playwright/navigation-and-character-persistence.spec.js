@@ -37,14 +37,13 @@ const PAGES = [
   '/setup/poses',
   '/setup/characters',
   // removed unsupported/404 for stability: '/setup/character-audio', '/ai-settings*'
-  '/live',
   '/scenes',
 ];
 
 async function verifyNavigationShell(page) {
   // Navbar exists
   await expect(page.locator('nav.navbar')).toBeVisible();
-  await expect(page.locator('a.navbar-brand', { hasText: 'MonsterBox 4.0' })).toBeVisible();
+  await expect(page.locator('a.navbar-brand')).toContainText('MonsterBox');
   // Setup and Activities dropdown triggers exist
   await expect(page.locator('a.nav-link.dropdown-toggle', { hasText: 'Setup' })).toBeVisible();
   await expect(page.locator('a.nav-link.dropdown-toggle', { hasText: 'Activities' })).toBeVisible();
@@ -66,7 +65,7 @@ async function verifySetupLinksPresent(page) {
 }
 
 async function verifyActivitiesLinksPresent(page) {
-  const links = ['/live', '/setup/poses', '/scenes'];
+  const links = ['/orchestration', '/setup/poses', '/scenes'];
   for (const href of links) {
     const linkLoc = page.locator(`a[href="${href}"]`).first();
     const count = await linkLoc.count();

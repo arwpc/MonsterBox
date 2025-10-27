@@ -188,7 +188,7 @@
                 </div>
                 <div class="card-body p-2">
                     <div class="log-output" id="commandLog">
-                        <div>🎃 Orchestration Control Center initialized...</div>
+                        <div class="log-entry">🎃 Orchestration Control Center initialized...</div>
                     </div>
                 </div>
             </div>
@@ -339,12 +339,12 @@
             logDiv.removeChild(lines[0]);
         }
 
-        logDiv.innerHTML += '<div>' + icon + ' [' + timestamp + '] ' + message + '</div>';
+        logDiv.innerHTML += '<div class="log-entry">' + icon + ' [' + timestamp + '] ' + message + '</div>';
         logDiv.scrollTop = logDiv.scrollHeight;
     }
 
     function clearLog() {
-        document.getElementById('commandLog').innerHTML = '<div>🎃 Log cleared...</div>';
+        document.getElementById('commandLog').innerHTML = '<div class="log-entry">🎃 Log cleared...</div>';
     }
 
     function refreshStatus() {
@@ -400,7 +400,7 @@
             html += '        <h5 class="mb-0" onclick="event.stopPropagation(); window.open(\'' + adminUrl + '\', \'_blank\')" style="cursor: pointer;">';
             html += '          <i class="bi bi-box-arrow-up-right"></i> ' + anim.name;
             html += '        </h5>';
-            html += '        <span class="status-online">';
+            html += '        <span class="badge bg-success status-online">';
             html += '          <i class="bi bi-circle-fill"></i> ONLINE';
             html += '        </span>';
             html += '      </div>';
@@ -654,7 +654,8 @@
             return;
         }
 
-        log('Asking AI on ' + name + ': "' + question + '"');
+        // Include robot emoji so tests can reliably detect AI interactions
+        log('🤖 Asking AI on ' + name + ': "' + question + '"');
 
         var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
         fetch(url, {
@@ -665,7 +666,8 @@
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ ' + name + ' AI responded', 'success');
+                    // Include robot emoji in success message for visibility in logs/tests
+                    log('🤖 ' + name + ' AI responded', 'success');
                     inputEl.value = '';
                 } else {
                     log('❌ ' + name + ' AI failed: ' + (data.error || 'Unknown error'), 'error');

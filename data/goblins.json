@@ -37,7 +37,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-18T03:43:03.816Z",
-    "lastSeen": "2025-10-27T04:17:07.968Z",
+    "lastSeen": "2025-10-27T05:37:25.746Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "Halloween Display",
@@ -61,7 +61,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-18T03:46:06.311Z",
-    "lastSeen": "2025-10-27T04:17:08.079Z",
+    "lastSeen": "2025-10-27T05:37:25.753Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "Halloween Display",
@@ -73,4 +73,4 @@
       "autoLock": false
     }
   }
-]
+]]

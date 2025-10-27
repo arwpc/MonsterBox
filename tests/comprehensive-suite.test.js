@@ -3,11 +3,14 @@
  * Mocha-based test orchestrator for all MonsterBox systems
  */
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-describe('MonsterBox 5.4 - Comprehensive Test Suite', function () {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+describe('MonsterBox 5.5 - Comprehensive Test Suite', function () {
     this.timeout(300000); // 5 minutes for full suite
 
     let testResults = {
@@ -18,7 +21,7 @@ describe('MonsterBox 5.4 - Comprehensive Test Suite', function () {
     };
 
     before(function () {
-        console.log('\n🎃 MonsterBox 5.4 Comprehensive Test Suite');
+        console.log('\n🎃 MonsterBox 5.5 Comprehensive Test Suite');
         console.log('============================================\n');
     });
 

@@ -67,7 +67,6 @@ const PAGES = [
   '/setup/audio',
   '/setup/webcam',
   '/audio-library',
-  '/live',
   '/scenes',
   '/ai-settings',
   '/ai-settings/stt',

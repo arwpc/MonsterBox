@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+// Use Playwright baseURL
 
 async function startServerIfNeeded() {
   // server should already be running from our earlier step in this session.
@@ -9,7 +9,7 @@ async function startServerIfNeeded() {
 test.describe('Debug VU toggle', () => {
   test('log before/after click', async ({ page }) => {
     await startServerIfNeeded();
-    await page.goto(`${baseURL}/setup/audio`);
+  await page.goto('/setup/audio');
 
     const toggleButtonIn = page.locator('button:has-text("Input Monitoring")').first();
     await expect(toggleButtonIn).toBeVisible();

@@ -5,9 +5,9 @@ const router = express.Router();
  * Orchestration Management UI
  * GET /orchestration - Main orchestration control interface
  */
-router.get('/', function(req, res) {
+router.get('/', function (req, res) {
     res.renderWithLayout('orchestration/index', {
-        title: 'Orchestration Control - MonsterBox 5.3',
+        title: 'Orchestration Control - MonsterBox 5.5',
         page: 'orchestration'
     });
 });

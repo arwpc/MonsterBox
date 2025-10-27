@@ -240,10 +240,11 @@ STTManager.prototype.applySavedConfigIfReady = function () {
     var vadT = document.getElementById('vadThreshold');
     var vadLbl = document.getElementById('vadThresholdLabel');
     if (vadT) {
-        var pct = Math.round(((cfg.vadThreshold != null ? cfg.vadThreshold : 0.03) * 100));
-        if (!(pct >= 1 && pct <= 30)) pct = 3;
-        vadT.value = String(pct);
-        if (vadLbl) vadLbl.textContent = pct + '%';
+        // New UI uses decimal slider 0.05..0.95; maintain label percent for compatibility
+        var vt = (typeof cfg.vadThreshold === 'number') ? cfg.vadThreshold : 0.40;
+        vadT.value = String(vt);
+        var pct = Math.round(vt * 100);
+        if (vadLbl) { vadLbl.textContent = pct + '%'; vadLbl.style.display = ''; }
     }
 
     // Microphone
@@ -338,14 +339,14 @@ STTManager.prototype.savePartialConfig = function (patch) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(merged)
         })
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            if (j && j.success) {
-                self.savedConfig = j.config;
-                self.currentConfig = j.config;
-            }
-        })
-        .catch(function () { /* ignore */ });
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (j && j.success) {
+                    self.savedConfig = j.config;
+                    self.currentConfig = j.config;
+                }
+            })
+            .catch(function () { /* ignore */ });
     }, self.saveDebounceDelay);
 };
 
@@ -480,10 +481,12 @@ STTManager.prototype.bindEvents = function () {
     // Range slider value display updates + auto-save
     var vadThresholdEl = document.getElementById('vadThreshold');
     var vadThresholdValue = document.getElementById('vadThresholdValue');
-    if (vadThresholdEl && vadThresholdValue) {
+    var vadThresholdLabel = document.getElementById('vadThresholdLabel');
+    if (vadThresholdEl) {
         vadThresholdEl.addEventListener('input', function () {
             var val = parseFloat(vadThresholdEl.value);
-            vadThresholdValue.textContent = val.toFixed(2);
+            if (vadThresholdValue) vadThresholdValue.textContent = val.toFixed(2);
+            if (vadThresholdLabel) { var p = Math.round(val * 100); vadThresholdLabel.textContent = p + '%'; vadThresholdLabel.style.display = ''; }
             self.savePartialConfig({ vadThreshold: val });
         });
     }

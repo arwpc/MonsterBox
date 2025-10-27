@@ -5,12 +5,12 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+// Use Playwright baseURL
 
 test.describe('Character Setup - Page Load and UI', () => {
 
   test('Page loads with all elements', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     // Check title
     await expect(page.locator('h1')).toContainText('Setup Characters');
@@ -26,7 +26,7 @@ test.describe('Character Setup - Page Load and UI', () => {
   });
 
   test('Characters table displays correctly', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     // Wait for characters to load
     await page.waitForFunction(() => {
@@ -53,7 +53,7 @@ test.describe('Character Setup - Page Load and UI', () => {
 test.describe('Character Setup - Create Character', () => {
 
   test('Create character modal opens', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     // Click create button
     await page.click('#createCharBtn');
@@ -76,7 +76,7 @@ test.describe('Character Setup - Create Character', () => {
   });
 
   test('Agent dropdown populates', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -92,7 +92,7 @@ test.describe('Character Setup - Create Character', () => {
   });
 
   test('Create character without agent', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -120,7 +120,7 @@ test.describe('Character Setup - Create Character', () => {
   });
 
   test('Create character with agent', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -164,7 +164,7 @@ test.describe('Character Setup - Create Character', () => {
 test.describe('Character Setup - Edit Character', () => {
 
   test('Edit modal opens with character data', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     // Wait for characters to load
     await page.waitForFunction(() => {
@@ -194,7 +194,7 @@ test.describe('Character Setup - Edit Character', () => {
   });
 
   test('Update character name', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     await page.waitForFunction(() => {
       const container = document.getElementById('charactersContainer');
@@ -232,7 +232,7 @@ test.describe('Character Setup - Edit Character', () => {
   });
 
   test('Assign agent to existing character', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     await page.waitForFunction(() => {
       const container = document.getElementById('charactersContainer');
@@ -276,7 +276,7 @@ test.describe('Character Setup - Edit Character', () => {
 test.describe('Character Setup - Test Agent', () => {
 
   test('Test agent button disabled when no agent selected', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -287,7 +287,7 @@ test.describe('Character Setup - Test Agent', () => {
   });
 
   test('Test agent button enabled when agent selected', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -307,7 +307,7 @@ test.describe('Character Setup - Test Agent', () => {
   });
 
   test('Test agent modal opens', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
     await page.click('#createCharBtn');
     await page.waitForSelector('#characterModal.show', { timeout: 5000 });
 
@@ -339,7 +339,7 @@ test.describe('Character Setup - Test Agent', () => {
 test.describe('Character Setup - Delete Character', () => {
 
   test('Delete character with confirmation', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
 
     await page.waitForFunction(() => {
       const container = document.getElementById('charactersContainer');
@@ -380,7 +380,7 @@ test.describe('Character Setup - Delete Character', () => {
 test.describe('Character Setup - Select Current Character', () => {
 
   test('Select character as current', async ({ page }) => {
-    await page.goto(`${BASE_URL}/setup/characters`);
+    await page.goto('/setup/characters');
 
     await page.waitForFunction(() => {
       const container = document.getElementById('charactersContainer');

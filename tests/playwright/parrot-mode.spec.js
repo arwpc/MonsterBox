@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
  * Run with: MB_E2E=1 npx playwright test -c playwright.config.ts tests/playwright/parrot-mode.spec.js --project=firefox
  */
 
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+// Use Playwright baseURL
 
 test.describe('Conversation Parrot Mode', () => {
   test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping e2e');
@@ -21,7 +21,7 @@ test.describe('Conversation Parrot Mode', () => {
       // eslint-disable-next-line no-console
       console.log('[pageerror]', String(err));
     });
-    await page.goto(`${BASE_URL}/conversation`);
+  await page.goto('/conversation');
 
     // Wait for scripts to initialize
     await page.waitForFunction(() => !!window.__conv, null, { timeout: 15000 });

@@ -7,14 +7,14 @@
 
 import { expect, test } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+// Use Playwright baseURL
 
 test.describe('Ask AI Conversation Feature', () => {
     test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
 
     test.beforeEach(async ({ page }) => {
         // Navigate to Conversation Mode page
-        await page.goto(`${BASE_URL}/conversation`);
+    await page.goto('/conversation');
         await expect(page).toHaveTitle(/Conversation Mode/);
 
         // Wait for page to fully load
@@ -259,7 +259,7 @@ test.describe('Ask AI Scene Step Integration', () => {
 
     test.beforeEach(async ({ page }) => {
         // Navigate to Scene Editor
-        await page.goto(`${BASE_URL}/scenes/editor`);
+    await page.goto('/scenes/editor');
         await expect(page).toHaveTitle(/Scene Editor/);
         await page.waitForLoadState('networkidle');
     });

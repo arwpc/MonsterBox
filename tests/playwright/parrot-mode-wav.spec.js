@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { exec } from 'child_process';
 
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+// Use Playwright baseURL
 
 function playFrontCenterWav() {
     return new Promise((resolve) => {
@@ -14,7 +14,7 @@ function playFrontCenterWav() {
 
 test.describe('Conversation Parrot Mode (WAV feed)', () => {
     test('Detects speech from WAV and triggers /conversation/api/say', async ({ page }) => {
-        await page.goto(`${BASE_URL}/conversation`);
+    await page.goto('/conversation');
         await page.waitForFunction(() => !!window.__conv, null, { timeout: 20000 });
 
         const toggle = page.locator('#parrotToggle');

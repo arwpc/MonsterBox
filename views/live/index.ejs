@@ -1,0 +1,85 @@
+<div class="container-fluid">
+  <div class="row mb-3">
+    <div class="col-12 d-flex align-items-center justify-content-between">
+      <h1 class="mb-0"><i class="bi bi-broadcast"></i> Live Dashboard</h1>
+      <span class="badge bg-success fs-6"><i class="bi bi-lightning-charge"></i> Live Mode Active</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-lg-8 mb-3">
+      <div class="card">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-person-arms-up"></i> Quick Poses</h5></div>
+        <div class="card-body" id="posesContainer">
+          <div class="text-center text-muted">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <div>Loading quick poses…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4 mb-3">
+      <div class="card">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-activity"></i> System</h5></div>
+        <div class="card-body">
+          <button class="btn btn-outline-secondary w-100" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          <div id="posesStatus" class="mt-2 small"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async function () {
+    try {
+      const resp = await fetch('/poses?format=json');
+      const data = await resp.json();
+      const container = document.getElementById('posesContainer');
+
+      if (!data || !data.success) {
+        container.innerHTML = '<div class="alert alert-warning">No poses available</div>';
+        document.getElementById('posesStatus').textContent = 'No poses available';
+        return;
+      }
+
+      const poses = (data.poses || []).slice(0, 12);
+      if (poses.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No poses defined. Create some in Setup → Poses.</div>';
+        return;
+      }
+
+      container.innerHTML = poses.map(p => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+          <span class="text-truncate me-2">${p.name}</span>
+          <button class="btn btn-sm btn-primary" onclick="execPose(${p.id})">
+            <i class="bi bi-play-fill"></i>
+          </button>
+        </div>
+      `).join('');
+    } catch (e) {
+      // Keep logging gentle to avoid flaking tests
+      console.log('Issue loading quick poses:', (e && e.message) || e);
+      const st = document.getElementById('posesStatus');
+      if (st) st.textContent = 'Issue loading quick poses';
+    }
+  });
+
+  async function execPose(id) {
+    try {
+      const resp = await fetch(`/poses/${id}/execute`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const res = await resp.json();
+      const st = document.getElementById('posesStatus');
+      if (res.success) {
+        if (st) st.textContent = 'Pose executed successfully';
+      } else {
+        if (st) st.textContent = 'Pose execution failed';
+        console.log('Failed to execute pose:', res.error || 'Unknown');
+      }
+    } catch (e) {
+      const st = document.getElementById('posesStatus');
+      if (st) st.textContent = 'Exec pose error';
+      console.log('Exec pose error:', (e && e.message) || e);
+    }
+  }
+</script>

@@ -5,7 +5,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+// Use Playwright baseURL
 
 test.describe('Goblin Management E2E', () => {
     test.beforeEach(async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should load Goblin Management page and display Goblins', async ({ page }) => {
-        await page.goto(`${BASE_URL}/goblin-management`);
+    await page.goto('/goblin-management');
         
         // Wait for page to load
         await expect(page.locator('h1, h2')).toContainText('Goblin Management');
@@ -28,7 +28,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should display Goblin status indicators', async ({ page }) => {
-        await page.goto(`${BASE_URL}/goblin-management`);
+    await page.goto('/goblin-management');
         
         // Wait for status indicators
         await page.waitForSelector('.goblin-status, .status-indicator, [data-status]', { timeout: 10000 });
@@ -47,7 +47,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should navigate to Video Library', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await expect(page.locator('h1, h2')).toContainText('Video Library');
@@ -58,7 +58,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should display videos in Video Library', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for videos to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -71,7 +71,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should open Goblin deployment modal from Video Library', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -91,7 +91,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should populate Goblin list in deployment modal', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -112,7 +112,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should populate video list in deployment modal', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -133,7 +133,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should select ghost video for deployment', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -164,7 +164,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should select all Goblins for deployment', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -188,7 +188,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should execute deployment to Goblins', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -242,7 +242,7 @@ test.describe('Goblin Management E2E', () => {
 
     test('should verify Goblin health endpoints', async ({ page, request }) => {
         // First get list of Goblins
-        const response = await request.get(`${BASE_URL}/goblin-management/api/goblins`);
+    const response = await request.get('/goblin-management/api/goblins');
         const data = await response.json();
         
         expect(data.success).toBe(true);
@@ -267,7 +267,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should display video playback controls on Goblin cards', async ({ page }) => {
-        await page.goto(`${BASE_URL}/goblin-management`);
+    await page.goto('/goblin-management');
         
         // Wait for Goblin cards
         await page.waitForSelector('[data-goblin-id], .goblin-card', { timeout: 10000 });
@@ -285,7 +285,7 @@ test.describe('Goblin Management E2E', () => {
     });
 
     test('should search for videos in Video Library', async ({ page }) => {
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         
         // Wait for page to load
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
@@ -313,7 +313,7 @@ test.describe('Goblin Management E2E', () => {
 test.describe('Goblin Video Playback E2E', () => {
     test('should play video on Goblin from Video Library', async ({ page, request }) => {
         // Get available Goblins
-        const goblinsResponse = await request.get(`${BASE_URL}/goblin-management/api/goblins`);
+    const goblinsResponse = await request.get('/goblin-management/api/goblins');
         const goblinsData = await goblinsResponse.json();
         const onlineGoblin = goblinsData.goblins.find(g => g.status === 'online');
         
@@ -323,7 +323,7 @@ test.describe('Goblin Video Playback E2E', () => {
         }
         
         // Get available videos
-        const videosResponse = await request.get(`${BASE_URL}/video-library/api/videos`);
+    const videosResponse = await request.get('/video-library/api/videos');
         const videosData = await videosResponse.json();
         const testVideo = videosData.videos[0];
         
@@ -335,7 +335,7 @@ test.describe('Goblin Video Playback E2E', () => {
         console.log(`Testing playback of "${testVideo.title}" on ${onlineGoblin.metadata.name}...`);
         
         // Navigate to Video Library
-        await page.goto(`${BASE_URL}/video-library`);
+    await page.goto('/video-library');
         await page.waitForSelector('.video-card, .video-item', { timeout: 10000 });
         
         // Find the video card and click play

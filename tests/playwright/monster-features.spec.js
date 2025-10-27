@@ -8,13 +8,11 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-
 test.describe('Monster Features - Comprehensive Tests', () => {
   test.skip(!process.env.MB_E2E, 'MB_E2E not set; skipping E2E test');
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
+    await page.goto(`/conversation`);
     await expect(page).toHaveTitle(/Conversation Mode/);
   });
 

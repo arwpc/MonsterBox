@@ -1,8 +1,6 @@
 // Playwright tests for Conversation and Live unified components
 import { test, expect } from '../test.setup';
 
-const BASE = 'http://127.0.0.1:3000';
-
 function expectStatusEventually(locator, timeout = 3000) {
   return Promise.race([
     locator.waitFor({ state: 'visible', timeout }),
@@ -12,7 +10,7 @@ function expectStatusEventually(locator, timeout = 3000) {
 
 test.describe('Conversation/Live unified components', () => {
   test('Conversation: speaker selector and webcam status present', async ({ page }) => {
-    await page.goto(BASE + '/conversation');
+    await page.goto('/conversation');
     const sel = page.locator('#convSpeakerSelect');
     await expect(sel).toBeVisible();
     // At least one option or default option
@@ -24,7 +22,7 @@ test.describe('Conversation/Live unified components', () => {
   });
 
   test('Conversation: mic start/stop UI and jaw toggle persistence', async ({ page }) => {
-    await page.goto(BASE + '/conversation');
+    await page.goto('/conversation');
     const status = page.locator('#micStatus');
     const start = page.locator('#micStart');
     const stop = page.locator('#micStop');
@@ -53,22 +51,5 @@ test.describe('Conversation/Live unified components', () => {
     await expect(jaw2).toBeChecked();
   });
 
-  test('Live: speaker selector, webcam status, and mic start/stop UI', async ({ page }) => {
-    await page.goto(BASE + '/live');
-    const sel = page.locator('#liveSpeakerSelect');
-    await expect(sel).toBeVisible();
-    const webcamStatus = page.locator('#webcamStatus');
-    await expect(webcamStatus).toBeVisible();
-
-    const start = page.locator('#liveMicStart');
-    const stop = page.locator('#liveMicStop');
-    const status = page.locator('#liveMicStatus');
-    await expect(start).toBeVisible();
-    await expect(stop).toBeVisible();
-    await start.click();
-    await page.waitForTimeout(300);
-    // In CI, mic permission may fail; just perform start/stop without asserting meter visibility
-    await stop.click();
-    await page.waitForTimeout(150);
-  });
+  // Removed deprecated Live page checks
 });

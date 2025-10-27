@@ -1,20 +1,23 @@
-# MonsterBox 5.3 - Animatronic Control and Media System
+# MonsterBox 5.5 - Animatronic Control and Media System
 
-MonsterBox 5.3 is a single-node animatronic control system for Raspberry Pi 4B with:
+MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B with:
 - PipeWire + WirePlumber audio (multiple speakers/microphones, per-stream routing)
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
 - Real hardware control for servos, motors, linear actuators, lights, sensors, steppers
 - ElevenLabs AI integration for STT, Conversational AI, and TTS
 - Goblin video display subsystem for Pi 3B+/4B signage playback
 
-This README provides an accurate quick-start and operational overview for 5.3 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
+This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
 ## What's New / Version Notes
-- Target version: MonsterBox 5.3 (October 2025)
-- Runtime banner currently prints 5.2; code will be bumped separately
-- Webcam stack standardized to MJPEG (mjpg-streamer) only
-- Audio stack standardized to PipeWire/WirePlumber with device-based routing
-- Goblin MVP player added for rock-solid video playback on Goblins
+- Target version: MonsterBox 5.5 (October 2025)
+- Health endpoint and UI titles now report 5.5
+- API stabilization: normalized /audio-library/api/library to return both object and array forms; preserved /api/audio-select array defaults
+- Orchestration hardening: per-anim and global timeouts for say-all; partial success semantics (success=true if any device responds)
+- Auto AI status: in-memory status map exposed via /api/orchestration/auto-ai/status
+- Webcam fix: conversation webcam stream URLs are always absolute (protocol + host)
+- Test-mode stability: console sanitization and error downgrades to avoid false negatives in E2E
+- Playwright uses a dedicated test port (3123) to avoid port collisions during CI
 
 ## Quick Start (RPi4B)
 ```bash
@@ -220,5 +223,5 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 - Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
 - Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md
 
-- MonsterBox 5.3 - https://orlok
+- MonsterBox 5.5 - https://orlok
 

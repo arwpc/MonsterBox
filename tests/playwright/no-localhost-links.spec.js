@@ -9,7 +9,7 @@ const PATHS = [
   '/setup',
   '/setup/calibration',
   '/setup/webcam',
-  '/live'
+  '/conversation'
 ];
 
 async function findBadLinks(page) {

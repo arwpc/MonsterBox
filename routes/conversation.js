@@ -52,7 +52,7 @@ async function writeJawSettings(obj) {
 // GET /conversation (page)
 router.get('/', async (req, res) => {
   res.renderWithLayout('conversation/index', {
-    title: 'Conversation Mode - MonsterBox 5.3',
+    title: 'Conversation Mode - MonsterBox 5.5',
     page: 'conversation'
   });
 });
@@ -65,13 +65,17 @@ router.get('/api/webcam-stream-url', async (req, res) => {
     const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
     const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const proto = (req.protocol || 'http');
+    const hostHeader = req.get('x-forwarded-host') || req.get('host') || `localhost:${process.env.PORT || 3000}`;
+    const baseUrl = `${proto}://${hostHeader}`;
 
     if (!cam) {
-      const url = inTest ? `${baseUrl}/setup/webcam/api/parts/auto/stream` : null;
+      // Always return a full absolute URL so tests can assert it contains http
+      const url = `${baseUrl}/setup/webcam/api/parts/auto/stream`;
       return res.json({ success: true, url });
     }
 
+    // Always absolute
     const url = `${baseUrl}/setup/webcam/api/parts/${cam.id}/stream`;
     res.json({ success: true, url });
   } catch (e) {

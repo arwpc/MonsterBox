@@ -96,11 +96,11 @@ test.describe('Halloween Readiness - Full System Verification', () => {
     await expect(jawToggle).toBeVisible({ timeout: TIMEOUT });
     
     // Check that we can access AI settings
-    const sttConfigLink = page.locator('a[href="/ai-settings/stt"]');
-    const ttsConfigLink = page.locator('a[href="/ai-settings/tts"]');
+  const sttConfigLink = page.locator('a[href="/ai-settings/stt"]').first();
+  const ttsConfigLink = page.locator('a[href="/ai-settings/tts"]').first();
     
-    await expect(sttConfigLink).toBeVisible({ timeout: TIMEOUT });
-    await expect(ttsConfigLink).toBeVisible({ timeout: TIMEOUT });
+  await expect(sttConfigLink).toBeVisible({ timeout: TIMEOUT });
+  await expect(ttsConfigLink).toBeVisible({ timeout: TIMEOUT });
   });
 
   test('ElevenLabs agent is configured', async ({ page }) => {

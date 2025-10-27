@@ -37,7 +37,7 @@ const upload = multer({
 // Main audio library page
 router.get('/', (req, res) => {
     res.renderWithLayout('audio-library/index', {
-        title: 'Audio Library - MonsterBox 5.3',
+        title: 'Audio Library - MonsterBox 5.5',
         page: 'audio-library',
         pageTitle: 'Audio Library'
     });
@@ -61,7 +61,13 @@ router.get('/api/library', async (req, res) => {
 
         const result = await audioLibraryService.getAudioFiles(filters);
         const files = result.audio || [];
+        const responseFormat = (req.query.format || '').toLowerCase();
+        if (responseFormat === 'array') {
+            // Some tests expect a bare array payload
+            return res.json(files);
+        }
 
+        // Default: object shape with files and data.files for compatibility
         res.json({
             success: true,
             files,

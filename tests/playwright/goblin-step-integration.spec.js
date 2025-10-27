@@ -4,8 +4,6 @@
  */
 
 import { test, expect } from '@playwright/test';
-
-const BASE_URL = 'http://localhost:3000';
 const GOBLIN_ID = 'goblin-three';
 const TEST_VIDEO = '307 Jb Hd.mp4';
 
@@ -14,7 +12,7 @@ test.describe('Goblin Step Integration', () => {
 
   test.beforeAll(async ({ request }) => {
     // Create a test scene with goblin-video step
-    const response = await request.post(`${BASE_URL}/scenes/api`, {
+  const response = await request.post(`/scenes/api`, {
       data: {
         name: 'Goblin Step Test Scene',
         characterId: 3, // Orlok
@@ -49,12 +47,12 @@ test.describe('Goblin Step Integration', () => {
   test.afterAll(async ({ request }) => {
     // Clean up test scene
     if (testSceneId) {
-      await request.delete(`${BASE_URL}/scenes/api/${testSceneId}`);
+  await request.delete(`/scenes/api/${testSceneId}`);
     }
   });
 
   test('scene with goblin-video step is created correctly', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/scenes/api/${testSceneId}`);
+  const response = await request.get(`/scenes/api/${testSceneId}`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -70,7 +68,7 @@ test.describe('Goblin Step Integration', () => {
   });
 
   test('test-step endpoint handles goblin-video step', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/scenes/api/test-step`, {
+  const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'goblin-video',
         goblinId: GOBLIN_ID,
@@ -97,7 +95,7 @@ test.describe('Goblin Step Integration', () => {
   });
 
   test('goblin-video step requires goblinId', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/scenes/api/test-step`, {
+  const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'goblin-video',
         videoId: TEST_VIDEO,
@@ -112,7 +110,7 @@ test.describe('Goblin Step Integration', () => {
   });
 
   test('goblin-video step requires videoId', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/scenes/api/test-step`, {
+  const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'goblin-video',
         goblinId: GOBLIN_ID,
@@ -128,7 +126,7 @@ test.describe('Goblin Step Integration', () => {
 
   test('scene execution includes goblin-video step', async ({ request }) => {
     // Create a simple scene with just goblin step
-    const createResponse = await request.post(`${BASE_URL}/scenes/api`, {
+  const createResponse = await request.post(`/scenes/api`, {
       data: {
         name: 'Goblin Execution Test',
         steps: [
@@ -149,7 +147,7 @@ test.describe('Goblin Step Integration', () => {
     const sceneId = createData.scene.id;
 
     // Execute the scene - may fail if goblin offline
-    const execResponse = await request.post(`${BASE_URL}/scenes/api/${sceneId}/play`);
+  const execResponse = await request.post(`/scenes/api/${sceneId}/play`);
     // Accept both success and failure (goblin may be offline)
     expect([200, 500]).toContain(execResponse.status());
 
@@ -157,11 +155,11 @@ test.describe('Goblin Step Integration', () => {
     expect(execData).toHaveProperty('success');
 
     // Clean up
-    await request.delete(`${BASE_URL}/scenes/api/${sceneId}`);
+  await request.delete(`/scenes/api/${sceneId}`);
   });
 
   test('goblin step with returnToQueue=false', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/scenes/api/test-step`, {
+  const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'goblin-video',
         goblinId: GOBLIN_ID,
@@ -178,7 +176,7 @@ test.describe('Goblin Step Integration', () => {
   });
 
   test('goblin step with options', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/scenes/api/test-step`, {
+  const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'goblin-video',
         goblinId: GOBLIN_ID,
@@ -196,7 +194,7 @@ test.describe('Goblin Step Integration', () => {
   });
 
   test('multiple goblin steps in sequence', async ({ request }) => {
-    const createResponse = await request.post(`${BASE_URL}/scenes/api`, {
+  const createResponse = await request.post(`/scenes/api`, {
       data: {
         name: 'Multiple Goblin Steps',
         characterId: 3,
@@ -233,11 +231,11 @@ test.describe('Goblin Step Integration', () => {
     expect(goblinSteps[1].videoId).toBe('312 Jb Hd.mp4');
 
     // Clean up
-    await request.delete(`${BASE_URL}/scenes/api/${createData.scene.id}`);
+  await request.delete(`/scenes/api/${createData.scene.id}`);
   });
 
   test('goblin step in complex scene', async ({ request }) => {
-    const createResponse = await request.post(`${BASE_URL}/scenes/api`, {
+  const createResponse = await request.post(`/scenes/api`, {
       data: {
         name: 'Complex Goblin Scene',
         characterId: 3,
@@ -261,7 +259,7 @@ test.describe('Goblin Step Integration', () => {
     expect(goblinStep.goblinId).toBe(GOBLIN_ID);
 
     // Clean up
-    await request.delete(`${BASE_URL}/scenes/api/${createData.scene.id}`);
+  await request.delete(`/scenes/api/${createData.scene.id}`);
   });
 });
 

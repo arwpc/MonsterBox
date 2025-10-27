@@ -2,14 +2,14 @@ import { test, expect } from '../test.setup';
 import { spawn } from 'child_process';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000';
+// Use Playwright baseURL
 let child = null;
 
 async function waitForServer(timeoutMs = 10000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
-      const res = await axios.get(BASE_URL);
+  const res = await axios.get('/');
       if (res && res.status >= 200 && res.status < 500) return true;
     } catch (_) { }
     await new Promise(r => setTimeout(r, 200));
@@ -38,7 +38,7 @@ test.afterAll(async () => {
 // This relies on MB_TEST_MODE so that ElevenLabs TTS is stubbed out.
 test.describe('AI Settings - quick actions', () => {
   test('Test Conversation shows a success alert', async ({ page }) => {
-    await page.goto(`${BASE_URL}/ai-settings`);
+  await page.goto('/ai-settings');
 
     // Handle the prompt with a test phrase
     page.once('dialog', dialog => dialog.accept('Hello Halloween'));

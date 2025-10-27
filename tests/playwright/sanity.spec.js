@@ -1,3 +1,4 @@
+// @smoke
 import { test, expect } from '../test.setup';
 
 test('sanity check - page loads', async ({ page }) => {

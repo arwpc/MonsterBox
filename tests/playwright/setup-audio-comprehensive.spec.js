@@ -1,16 +1,14 @@
-/**
+/** @audio
  * Comprehensive Setup Audio Page Test
  * Tests ALL buttons and functionality on /setup/audio
  */
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-
 test.describe('Setup Audio - Comprehensive Button Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to Setup Audio page
-    await page.goto(`${BASE_URL}/setup/audio`);
+    await page.goto(`/setup/audio`);
     await page.waitForLoadState('networkidle');
 
     // Wait for page to be fully loaded
@@ -245,14 +243,14 @@ test.describe('Setup Audio - Comprehensive Button Tests', () => {
 
   test('API endpoints should respond correctly', async ({ page }) => {
     // Test audio-levels endpoint for input
-    const inputResponse = await page.request.get(`${BASE_URL}/setup/audio/api/audio-levels?deviceId=default&deviceType=input`);
+    const inputResponse = await page.request.get(`/setup/audio/api/audio-levels?deviceId=default&deviceType=input`);
     expect(inputResponse.ok()).toBeTruthy();
     const inputData = await inputResponse.json();
     expect(inputData.success).toBe(true);
     expect(typeof inputData.level).toBe('number');
 
     // Test audio-levels endpoint for output
-    const outputResponse = await page.request.get(`${BASE_URL}/setup/audio/api/audio-levels?deviceId=default&deviceType=output`);
+  const outputResponse = await page.request.get(`/setup/audio/api/audio-levels?deviceId=default&deviceType=output`);
     expect(outputResponse.ok()).toBeTruthy();
     const outputData = await outputResponse.json();
     expect(outputData.success).toBe(true);

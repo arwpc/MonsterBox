@@ -4,10 +4,15 @@
     "name": "Wiper Motor",
     "type": "motor",
     "pin": null,
-    "description": "Main wiper motor for movement",
+    "description": "Test updated via comprehensive tests",
     "config": {
       "testFlag": true,
-      "minPulse": 600
+      "minPulse": 600,
+      "simpleCalibration": {
+        "safeMin": 200,
+        "safeMax": 1200,
+        "points": []
+      }
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
@@ -16,7 +21,7 @@
     "pwmPin": 13,
     "maxDuration": 10000,
     "modelId": "motor_jeep_wagoneer_wiper",
-    "updated": "2025-10-14T03:31:58.395Z",
+    "updated": "2025-10-27T19:55:34.583Z",
     "markers": [
       {
         "name": "Min",
@@ -104,7 +109,9 @@
       "deviceId": "video0"
     },
     "created": "2025-10-14T02:20:17.009Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "default-uvc-1",
+    "updated": "2025-10-27T07:19:48.892Z"
   },
   {
     "id": "7",
@@ -119,7 +126,9 @@
       "sensitivity": 1
     },
     "created": "2025-10-14T02:20:17.036Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "mic_generic_usb",
+    "updated": "2025-10-27T07:19:50.015Z"
   },
   {
     "id": "8",
@@ -136,179 +145,6 @@
     "modelId": "default_speaker"
   },
   {
-    "id": "9",
-    "name": "Servo-Std-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 0
-    },
-    "created": "2025-10-14T03:32:26.224Z",
-    "enabled": true,
-    "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2025-10-14T03:32:47.253Z",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 12,
-        "unit": "deg"
-      }
-    ]
-  },
-  {
-    "id": "10",
-    "name": "Servo-Cont-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "continuous",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 1
-    },
-    "created": "2025-10-14T03:32:26.402Z",
-    "enabled": true
-  },
-  {
-    "id": "11",
-    "name": "Servo-Fb-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "feedback",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 2
-    },
-    "created": "2025-10-14T03:32:26.549Z",
-    "enabled": true
-  },
-  {
-    "id": "12",
-    "name": "LinearAct-PumpkinHead",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-14T03:32:26.726Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 18,
-    "pwmPin": 13,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "13",
-    "name": "Motor-PumpkinHead",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {},
-    "created": "2025-10-14T03:32:26.859Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 22,
-    "pwmPin": 12,
-    "maxDuration": 10000
-  },
-  {
-    "id": "14",
-    "name": "LED-PumpkinHead",
-    "type": "led",
-    "pin": 17,
-    "description": "PWM-controlled with brightness",
-    "config": {},
-    "created": "2025-10-14T03:32:26.999Z",
-    "enabled": true
-  },
-  {
-    "id": "15",
-    "name": "Light-PumpkinHead",
-    "type": "light",
-    "pin": 18,
-    "description": "basic on/off lighting",
-    "config": {},
-    "created": "2025-10-14T03:32:27.123Z",
-    "enabled": true
-  },
-  {
-    "id": "16",
-    "name": "Sensor-PumpkinHead",
-    "type": "sensor",
-    "pin": 19,
-    "description": "generic GPIO sensor",
-    "config": {},
-    "created": "2025-10-14T03:32:27.209Z",
-    "enabled": true
-  },
-  {
-    "id": "17",
-    "name": "Motion-PumpkinHead",
-    "type": "motion_sensor",
-    "pin": 20,
-    "description": "PIR motion detection",
-    "config": {},
-    "created": "2025-10-14T03:32:27.303Z",
-    "enabled": true
-  },
-  {
-    "id": "18",
-    "name": "Webcam-PumpkinHead",
-    "type": "webcam",
-    "pin": null,
-    "description": "video capture devices",
-    "config": {
-      "device": "/dev/video0"
-    },
-    "created": "2025-10-14T03:32:27.390Z",
-    "enabled": true
-  },
-  {
-    "id": "19",
-    "name": "Microphone-PumpkinHead",
-    "type": "microphone",
-    "pin": null,
-    "description": "audio input devices",
-    "config": {
-      "deviceId": "default"
-    },
-    "created": "2025-10-14T03:32:27.471Z",
-    "enabled": true
-  },
-  {
-    "id": "20",
-    "name": "Speaker-PumpkinHead",
-    "type": "speaker",
-    "pin": null,
-    "description": "audio output devices",
-    "config": {
-      "device": "default",
-      "volume": 50
-    },
-    "created": "2025-10-14T03:32:27.608Z",
-    "enabled": true,
-    "modelId": "default_speaker"
-  },
-  {
-    "id": "21",
-    "name": "HeadTrack-PumpkinHead",
-    "type": "head_tracking",
-    "pin": null,
-    "description": "computer vision tracking",
-    "config": {},
-    "created": "2025-10-14T03:32:27.748Z",
-    "enabled": true
-  },
-  {
     "id": "22",
     "name": "Auto Mic",
     "type": "microphone",
@@ -318,7 +154,9 @@
       "deviceId": "pulse"
     },
     "created": "2025-10-14T03:49:47.879Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "mic_generic_usb",
+    "updated": "2025-10-27T18:52:11.532Z"
   },
   {
     "id": "23",
@@ -404,5 +242,297 @@
     "config": {},
     "created": "2025-10-23T01:33:54.308Z",
     "enabled": true
+  },
+  {
+    "id": "29",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-27T06:17:45.534Z",
+    "enabled": true
+  },
+  {
+    "id": "30",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-27T06:18:55.693Z",
+    "enabled": true
+  },
+  {
+    "id": "44",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-27T17:21:00.728Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000,
+    "updated": "2025-10-27T20:08:35.697Z"
+  },
+  {
+    "id": "45",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-27T17:21:07.637Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "46",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-27T17:47:07.806Z",
+    "enabled": true
+  },
+  {
+    "id": "47",
+    "name": "Auto Mic",
+    "type": "microphone",
+    "pin": null,
+    "description": "autotune mic",
+    "config": {
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
+    },
+    "created": "2025-10-27T17:48:20.150Z",
+    "enabled": true
+  },
+  {
+    "id": "48",
+    "name": "Servo-Std-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 0,
+      "simpleCalibration": {
+        "safeMin": 40,
+        "safeMax": 140,
+        "points": [
+          {
+            "name": "Hand Up",
+            "value": 120
+          }
+        ]
+      }
+    },
+    "created": "2025-10-27T18:53:28.632Z",
+    "enabled": true,
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2025-10-27T19:53:29.422Z"
+  },
+  {
+    "id": "49",
+    "name": "Servo-Cont-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 1
+    },
+    "created": "2025-10-27T18:53:28.685Z",
+    "enabled": true
+  },
+  {
+    "id": "50",
+    "name": "Servo-Fb-PumpkinHead",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "feedback",
+      "controllerType": "pca9685",
+      "pcaAddress": "0x40",
+      "pcaChannel": 2
+    },
+    "created": "2025-10-27T18:53:28.727Z",
+    "enabled": true
+  },
+  {
+    "id": "51",
+    "name": "LinearAct-PumpkinHead",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-27T18:53:28.786Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
+  },
+  {
+    "id": "52",
+    "name": "Motor-PumpkinHead",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-10-27T18:53:28.841Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 22,
+    "pwmPin": 12,
+    "maxDuration": 10000
+  },
+  {
+    "id": "53",
+    "name": "LED-PumpkinHead",
+    "type": "led",
+    "pin": 17,
+    "description": "PWM-controlled with brightness",
+    "config": {},
+    "created": "2025-10-27T18:53:28.903Z",
+    "enabled": true
+  },
+  {
+    "id": "54",
+    "name": "Light-PumpkinHead",
+    "type": "light",
+    "pin": 18,
+    "description": "basic on/off lighting",
+    "config": {},
+    "created": "2025-10-27T18:53:28.958Z",
+    "enabled": true
+  },
+  {
+    "id": "55",
+    "name": "Sensor-PumpkinHead",
+    "type": "sensor",
+    "pin": 19,
+    "description": "generic GPIO sensor",
+    "config": {},
+    "created": "2025-10-27T18:53:29.017Z",
+    "enabled": true
+  },
+  {
+    "id": "56",
+    "name": "Motion-PumpkinHead",
+    "type": "motion_sensor",
+    "pin": 20,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-10-27T18:53:29.057Z",
+    "enabled": true
+  },
+  {
+    "id": "57",
+    "name": "Webcam-PumpkinHead",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "device": "/dev/video0"
+    },
+    "created": "2025-10-27T18:53:29.101Z",
+    "enabled": true
+  },
+  {
+    "id": "58",
+    "name": "Microphone-PumpkinHead",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-27T18:53:29.170Z",
+    "enabled": true
+  },
+  {
+    "id": "59",
+    "name": "Speaker-PumpkinHead",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "device": "default",
+      "volume": 50
+    },
+    "created": "2025-10-27T18:53:29.210Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "60",
+    "name": "HeadTrack-PumpkinHead",
+    "type": "head_tracking",
+    "pin": null,
+    "description": "computer vision tracking",
+    "config": {},
+    "created": "2025-10-27T18:53:29.252Z",
+    "enabled": true
+  },
+  {
+    "id": "61",
+    "name": "Test Motor BTS7960",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-10-27T20:08:32.332Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxDuration": 10000
+  },
+  {
+    "id": "62",
+    "name": "Test Actuator BTS7960",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "extending/retracting movements",
+    "config": {},
+    "created": "2025-10-27T20:08:38.941Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000
   }
 ]

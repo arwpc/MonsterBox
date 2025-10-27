@@ -422,6 +422,116 @@ router.get('/api/parts/:id/effective', async (req, res) => {
     }
 });
 
+// Simple Calibration (Unified minimal API) for tests and quick flows
+// Stores data under part.config.simpleCalibration = { safeMin, safeMax, points: [{ name, value }] }
+router.get('/api/simple/:id', async (req, res) => {
+    try {
+        let characterId = null;
+        try {
+            const cfg = await readConfig();
+            characterId = cfg.selectedCharacter || null;
+        } catch (_) { }
+
+        let parts = await loadCharacterParts(characterId);
+        let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) {
+            // Seed from global if missing in per-character file
+            try {
+                const globalParts = await loadParts();
+                const src = globalParts.find(p => String(p.id) === String(req.params.id));
+                if (src) { parts = parts.concat([{ ...src }]); idx = parts.length - 1; }
+            } catch (_) { /* ignore */ }
+        }
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+
+        const cfg = parts[idx].config || {};
+        const simple = cfg.simpleCalibration || { safeMin: null, safeMax: null, points: [] };
+        res.json({ success: true, calibration: simple, partId: String(parts[idx].id) });
+    } catch (e) {
+        console.error('simple calibration GET failed', e);
+        res.status(500).json({ success: false, error: 'Failed to load simple calibration' });
+    }
+});
+
+router.post('/api/simple/:id/set-safe', express.json(), async (req, res) => {
+    try {
+        const { which, value } = req.body || {};
+        const w = String(which || '').toLowerCase();
+        if (!['min', 'max'].includes(w)) {
+            return res.status(400).json({ success: false, error: 'which must be "min" or "max"' });
+        }
+        const v = Number(value);
+        if (!isFinite(v)) {
+            return res.status(400).json({ success: false, error: 'value must be a number' });
+        }
+        let characterId = null;
+        try {
+            const cfg = await readConfig();
+            characterId = cfg.selectedCharacter || null;
+        } catch (_) { }
+        let parts = await loadCharacterParts(characterId);
+        let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) {
+            try {
+                const globalParts = await loadParts();
+                const src = globalParts.find(p => String(p.id) === String(req.params.id));
+                if (src) { parts = parts.concat([{ ...src }]); idx = parts.length - 1; }
+            } catch (_) { }
+        }
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const config = parts[idx].config || {};
+        const simple = config.simpleCalibration || { safeMin: null, safeMax: null, points: [] };
+        if (w === 'min') simple.safeMin = v; else simple.safeMax = v;
+        config.simpleCalibration = simple;
+        parts[idx].config = config;
+        parts[idx].updated = new Date().toISOString();
+        await saveCharacterParts(characterId, parts);
+        res.json({ success: true, calibration: simple });
+    } catch (e) {
+        console.error('simple set-safe failed', e);
+        res.status(500).json({ success: false, error: 'Failed to set safe value' });
+    }
+});
+
+router.post('/api/simple/:id/points', express.json(), async (req, res) => {
+    try {
+        const { name, value } = req.body || {};
+        if (!name || !String(name).trim()) return res.status(400).json({ success: false, error: 'name required' });
+        const v = Number(value);
+        if (!isFinite(v)) return res.status(400).json({ success: false, error: 'value must be a number' });
+        let characterId = null;
+        try {
+            const cfg = await readConfig();
+            characterId = cfg.selectedCharacter || null;
+        } catch (_) { }
+        let parts = await loadCharacterParts(characterId);
+        let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
+        if (idx === -1) {
+            try {
+                const globalParts = await loadParts();
+                const src = globalParts.find(p => String(p.id) === String(req.params.id));
+                if (src) { parts = parts.concat([{ ...src }]); idx = parts.length - 1; }
+            } catch (_) { }
+        }
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
+        const config = parts[idx].config || {};
+        const simple = config.simpleCalibration || { safeMin: null, safeMax: null, points: [] };
+        const pts = Array.isArray(simple.points) ? simple.points : [];
+        const i = pts.findIndex(p => p.name === String(name));
+        const entry = { name: String(name), value: v };
+        if (i === -1) pts.push(entry); else pts[i] = entry;
+        simple.points = pts;
+        config.simpleCalibration = simple;
+        parts[idx].config = config;
+        parts[idx].updated = new Date().toISOString();
+        await saveCharacterParts(characterId, parts);
+        res.json({ success: true, calibration: simple });
+    } catch (e) {
+        console.error('simple points save failed', e);
+        res.status(500).json({ success: false, error: 'Failed to save point' });
+    }
+});
+
 /**
  * Helper function to get markers for a part (can be imported by other modules)
  */

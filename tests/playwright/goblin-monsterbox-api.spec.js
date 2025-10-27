@@ -5,14 +5,14 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:3000';
+// Use Playwright baseURL
 const GOBLIN_ID = 'goblin-three';
 const TEST_VIDEO = '307 Jb Hd.mp4';
 
 test.describe('MonsterBox Goblin API Routes', () => {
 
   test('get all goblins', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/goblin-management/api/goblins`);
+  const response = await request.get('/goblin-management/api/goblins');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -30,7 +30,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
   });
 
   test('get specific goblin', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/goblin-management/api/goblin/${GOBLIN_ID}`);
+  const response = await request.get(`/goblin-management/api/goblin/${GOBLIN_ID}`);
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -40,7 +40,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
   });
 
   test('scan videos from all goblins', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/goblin-management/api/goblins/scan-all-videos`, {
+  const response = await request.post('/goblin-management/api/goblins/scan-all-videos', {
       timeout: 120000 // 2 minutes for scanning all
     });
     expect(response.ok()).toBeTruthy();
@@ -53,7 +53,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
   });
 
   test('get all cached videos', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/goblin-management/api/videos/all`);
+  const response = await request.get('/goblin-management/api/videos/all');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -65,7 +65,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
     let testPlaylistId;
 
     test('create playlist', async ({ request }) => {
-      const response = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const response = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Test Playlist',
           description: 'Automated test playlist',
@@ -87,7 +87,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
     });
 
     test('get all playlists', async ({ request }) => {
-      const response = await request.get(`${BASE_URL}/goblin-management/api/playlists`);
+  const response = await request.get('/goblin-management/api/playlists');
       expect(response.ok()).toBeTruthy();
 
       const data = await response.json();
@@ -98,7 +98,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
 
     test('get specific playlist', async ({ request }) => {
       // First create a playlist
-      const createResponse = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const createResponse = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Get Test Playlist',
           goblinId: GOBLIN_ID,
@@ -110,7 +110,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
       const playlistId = createData.playlist.id;
 
       // Now get it
-      const response = await request.get(`${BASE_URL}/goblin-management/api/playlists/${playlistId}`);
+  const response = await request.get(`/goblin-management/api/playlists/${playlistId}`);
       expect(response.ok()).toBeTruthy();
 
       const data = await response.json();
@@ -122,7 +122,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
 
     test('update playlist', async ({ request }) => {
       // Create playlist
-      const createResponse = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const createResponse = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Update Test',
           goblinId: GOBLIN_ID,
@@ -134,7 +134,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
       const playlistId = createData.playlist.id;
 
       // Update it
-      const response = await request.put(`${BASE_URL}/goblin-management/api/playlists/${playlistId}`, {
+  const response = await request.put(`/goblin-management/api/playlists/${playlistId}`, {
         data: {
           name: 'Updated Playlist',
           description: 'Updated description',
@@ -152,7 +152,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
 
     test('delete playlist', async ({ request }) => {
       // Create playlist
-      const createResponse = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const createResponse = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Delete Test',
           goblinId: GOBLIN_ID,
@@ -164,19 +164,19 @@ test.describe('MonsterBox Goblin API Routes', () => {
       const playlistId = createData.playlist.id;
 
       // Delete it
-      const response = await request.delete(`${BASE_URL}/goblin-management/api/playlists/${playlistId}`);
+  const response = await request.delete(`/goblin-management/api/playlists/${playlistId}`);
       expect(response.ok()).toBeTruthy();
 
       const data = await response.json();
       expect(data.success).toBe(true);
 
       // Verify it's gone
-      const getResponse = await request.get(`${BASE_URL}/goblin-management/api/playlists/${playlistId}`);
+  const getResponse = await request.get(`/goblin-management/api/playlists/${playlistId}`);
       expect(getResponse.status()).toBe(404);
     });
 
     test('filter playlists by goblin', async ({ request }) => {
-      const response = await request.get(`${BASE_URL}/goblin-management/api/playlists?goblinId=${GOBLIN_ID}`);
+  const response = await request.get(`/goblin-management/api/playlists?goblinId=${GOBLIN_ID}`);
       expect(response.ok()).toBeTruthy();
 
       const data = await response.json();
@@ -191,7 +191,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
 
     test('search playlists', async ({ request }) => {
       // Create a playlist with searchable name
-      await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Searchable Fireball Playlist',
           goblinId: GOBLIN_ID,
@@ -200,7 +200,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
         }
       });
 
-      const response = await request.get(`${BASE_URL}/goblin-management/api/playlists?search=fireball`);
+  const response = await request.get('/goblin-management/api/playlists?search=fireball');
       expect(response.ok()).toBeTruthy();
 
       const data = await response.json();
@@ -215,7 +215,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
   test.describe('Playlist Deployment', () => {
     test('deploy playlist returns proper structure', async ({ request }) => {
       // Create playlist
-      const createResponse = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const createResponse = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Deploy Test',
           goblinId: GOBLIN_ID,
@@ -227,7 +227,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
       const playlistId = createData.playlist.id;
 
       // Deploy it (will fail if goblin offline, but we test the structure)
-      const response = await request.post(`${BASE_URL}/goblin-management/api/playlists/${playlistId}/deploy`, {
+  const response = await request.post(`/goblin-management/api/playlists/${playlistId}/deploy`, {
         data: {
           goblinIds: [GOBLIN_ID],
           startImmediately: true
@@ -244,7 +244,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
     });
 
     test('deploy playlist requires goblinIds', async ({ request }) => {
-      const createResponse = await request.post(`${BASE_URL}/goblin-management/api/playlists`, {
+  const createResponse = await request.post('/goblin-management/api/playlists', {
         data: {
           name: 'Deploy Test 2',
           goblinId: GOBLIN_ID,
@@ -255,7 +255,7 @@ test.describe('MonsterBox Goblin API Routes', () => {
       const createData = await createResponse.json();
       const playlistId = createData.playlist.id;
 
-      const response = await request.post(`${BASE_URL}/goblin-management/api/playlists/${playlistId}/deploy`, {
+  const response = await request.post(`/goblin-management/api/playlists/${playlistId}/deploy`, {
         data: {
           startImmediately: true
         }

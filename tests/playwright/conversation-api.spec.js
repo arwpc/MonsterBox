@@ -5,16 +5,16 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+// Use Playwright baseURL
 
 test.describe('Conversation Mode - Backend API Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure we have a character selected
-    await page.goto(`${BASE_URL}/setup/characters`);
+  await page.goto('/setup/characters');
   });
 
   test('GET /conversation/api/webcam-stream-url returns valid stream URL', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/webcam-stream-url`);
+  const response = await request.get('/conversation/api/webcam-stream-url');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -25,7 +25,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /conversation/api/speakers returns speaker list', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/speakers`);
+  const response = await request.get('/conversation/api/speakers');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -36,7 +36,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /conversation/api/jaw-settings returns jaw animation state', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/jaw-settings`);
+  const response = await request.get('/conversation/api/jaw-settings');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -48,7 +48,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
 
   test('POST /conversation/api/jaw-settings enables/disables jaw animation', async ({ request }) => {
     // Enable jaw animation
-    let response = await request.post(`${BASE_URL}/conversation/api/jaw-settings`, {
+  let response = await request.post('/conversation/api/jaw-settings', {
       data: { enabled: true }
     });
     expect(response.ok()).toBeTruthy();
@@ -58,12 +58,12 @@ test.describe('Conversation Mode - Backend API Tests', () => {
     expect(data.enabled).toBe(true);
 
     // Verify it was enabled
-    response = await request.get(`${BASE_URL}/conversation/api/jaw-settings`);
+  response = await request.get('/conversation/api/jaw-settings');
     data = await response.json();
     expect(data.enabled).toBe(true);
 
     // Disable jaw animation
-    response = await request.post(`${BASE_URL}/conversation/api/jaw-settings`, {
+  response = await request.post('/conversation/api/jaw-settings', {
       data: { enabled: false }
     });
     data = await response.json();
@@ -74,7 +74,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /conversation/api/head-tracking-status returns head tracking state', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/head-tracking-status`);
+  const response = await request.get('/conversation/api/head-tracking-status');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -89,7 +89,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
 
   test('POST /conversation/api/head-tracking enables/disables head tracking', async ({ request }) => {
     // Enable head tracking
-    let response = await request.post(`${BASE_URL}/conversation/api/head-tracking`, {
+  let response = await request.post('/conversation/api/head-tracking', {
       data: { enabled: true }
     });
     expect(response.ok()).toBeTruthy();
@@ -103,7 +103,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
     expect(enabledValue).toBe(true);
 
     // Disable head tracking
-    response = await request.post(`${BASE_URL}/conversation/api/head-tracking`, {
+  response = await request.post('/conversation/api/head-tracking', {
       data: { enabled: false }
     });
     data = await response.json();
@@ -116,7 +116,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /conversation/api/listen-in-url returns microphone stream URL', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/listen-in-url`);
+  const response = await request.get('/conversation/api/listen-in-url');
 
     const data = await response.json();
 
@@ -132,7 +132,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
 
   test('POST /conversation/api/ai-on enables/disables AI agent', async ({ request }) => {
     // Enable AI agent
-    let response = await request.post(`${BASE_URL}/conversation/api/ai-on`, {
+  let response = await request.post('/conversation/api/ai-on', {
       data: { enabled: true }
     });
 
@@ -144,7 +144,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
       expect(data.enabled).toBe(true);
 
       // Disable AI agent
-      response = await request.post(`${BASE_URL}/conversation/api/ai-on`, {
+  response = await request.post('/conversation/api/ai-on', {
         data: { enabled: false }
       });
       data = await response.json();
@@ -158,7 +158,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /conversation/api/ai-status returns AI agent status and latency', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/conversation/api/ai-status`);
+  const response = await request.get('/conversation/api/ai-status');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -176,7 +176,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('POST /conversation/api/say generates and plays speech', async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/conversation/api/say`, {
+  const response = await request.post('/conversation/api/say', {
       data: {
         text: 'Test speech for automated testing',
         speakerPartId: null // Use character's default speaker
@@ -197,7 +197,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
 
   test('POST /conversation/api/jaw-drive accepts amplitude values', async ({ request }) => {
     // Test valid amplitude
-    let response = await request.post(`${BASE_URL}/conversation/api/jaw-drive`, {
+  let response = await request.post('/conversation/api/jaw-drive', {
       data: { amplitude: 0.5 }
     });
     expect(response.ok()).toBeTruthy();
@@ -206,20 +206,20 @@ test.describe('Conversation Mode - Backend API Tests', () => {
     expect(data.success).toBeTruthy();
 
     // Test boundary values
-    response = await request.post(`${BASE_URL}/conversation/api/jaw-drive`, {
+  response = await request.post('/conversation/api/jaw-drive', {
       data: { amplitude: 0.0 }
     });
     data = await response.json();
     expect(data.success).toBeTruthy();
 
-    response = await request.post(`${BASE_URL}/conversation/api/jaw-drive`, {
+  response = await request.post('/conversation/api/jaw-drive', {
       data: { amplitude: 1.0 }
     });
     data = await response.json();
     expect(data.success).toBeTruthy();
 
     // Test invalid amplitude (should fail)
-    response = await request.post(`${BASE_URL}/conversation/api/jaw-drive`, {
+  response = await request.post('/conversation/api/jaw-drive', {
       data: { amplitude: 'invalid' }
     });
     expect(response.status()).toBe(400);
@@ -228,7 +228,7 @@ test.describe('Conversation Mode - Backend API Tests', () => {
   });
 
   test('GET /scenes/api returns scenes list for Scenes panel', async ({ request }) => {
-    const response = await request.get(`${BASE_URL}/scenes/api`);
+  const response = await request.get('/scenes/api');
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
@@ -240,14 +240,14 @@ test.describe('Conversation Mode - Backend API Tests', () => {
 
   test('POST /scenes/api/play/:id plays a scene', async ({ request }) => {
     // First get available scenes
-    const scenesResponse = await request.get(`${BASE_URL}/scenes/api`);
+  const scenesResponse = await request.get('/scenes/api');
     const scenesData = await scenesResponse.json();
 
     if (scenesData.scenes && scenesData.scenes.length > 0) {
       const sceneId = scenesData.scenes[0].id;
 
       try {
-        const response = await request.post(`${BASE_URL}/scenes/api/play/${sceneId}`, {
+  const response = await request.post(`/scenes/api/play/${sceneId}`, {
           maxRedirects: 0 // Don't follow redirects
         });
 

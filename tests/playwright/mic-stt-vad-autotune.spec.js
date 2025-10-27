@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 const execp = promisify(exec);
 
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+// Use Playwright baseURL
 
 function sh(cmd) {
   return new Promise((resolve) => {
@@ -34,7 +34,7 @@ async function pickNonMonitorMicId(page) {
     const phys = await discoverPhysicalMicId();
     if (phys) return phys;
   } catch (_) { }
-  const resp = await page.request.get(`${BASE_URL}/setup/audio/api/inputs`);
+  const resp = await page.request.get('/setup/audio/api/inputs');
   const json = await resp.json();
   const inputs = (json && json.inputs) || [];
   // Prefer PulseAudio input alias when present, then default, else first non-monitor
@@ -47,21 +47,21 @@ async function pickNonMonitorMicId(page) {
 }
 
 async function setDefaultSource(page, id) {
-  await page.request.post(`${BASE_URL}/setup/audio/api/system-config`, {
+  await page.request.post('/setup/audio/api/system-config', {
     data: { defaultSource: id }
   });
 }
 
 async function setInputGain(page, deviceId, percent) {
-  await page.request.post(`${BASE_URL}/setup/audio/api/set-input-gain`, {
+  await page.request.post('/setup/audio/api/set-input-gain', {
     data: { deviceId, gainPercent: percent }
   });
 }
 
 async function saveSTTConfig(page, patch) {
-  const cur = await (await page.request.get(`${BASE_URL}/api/elevenlabs/stt/config`)).json();
+  const cur = await (await page.request.get('/api/elevenlabs/stt/config')).json();
   const cfg = Object.assign({}, (cur && cur.config) || {}, patch || {});
-  await page.request.post(`${BASE_URL}/api/elevenlabs/stt/config`, { data: cfg });
+  await page.request.post('/api/elevenlabs/stt/config', { data: cfg });
 }
 
 function playFrontCenterWav() {
@@ -80,7 +80,7 @@ function setSpeakerVolume(percent) {
 }
 
 async function getCurrentCharacterId(page) {
-  await page.goto(`${BASE_URL}/conversation`);
+  await page.goto('/conversation');
   const id = await page.evaluate(() => {
     var el = document.getElementById('charLabel');
     var cid = el && el.getAttribute('data-char-id');
@@ -91,15 +91,15 @@ async function getCurrentCharacterId(page) {
 
 async function ensureCharacterMicPart(page, characterId, micDeviceId) {
   // Find existing mic part for this character
-  const list = await (await page.request.get(`${BASE_URL}/setup/parts/api/parts`)).json();
+  const list = await (await page.request.get('/setup/parts/api/parts')).json();
   const parts = Array.isArray(list) ? list : (list.parts || []);
   const existing = parts.find((p) => String(p.type).toLowerCase() === 'microphone' && Number(p.characterId) === Number(characterId));
   if (existing) {
     const cfg = Object.assign({}, existing.config || {}, { deviceId: micDeviceId });
-    await page.request.put(`${BASE_URL}/setup/parts/api/parts/${existing.id}`, { data: { config: cfg, characterId: characterId } });
+  await page.request.put(`/setup/parts/api/parts/${existing.id}`, { data: { config: cfg, characterId: characterId } });
     return existing.id;
   }
-  const created = await (await page.request.post(`${BASE_URL}/setup/parts/api/parts`, {
+  const created = await (await page.request.post('/setup/parts/api/parts', {
     data: { name: 'Auto Mic', type: 'microphone', description: 'autotune mic', characterId: characterId, config: { deviceId: micDeviceId } }
   })).json();
   return (created && created.id) || null;
@@ -107,7 +107,7 @@ async function ensureCharacterMicPart(page, characterId, micDeviceId) {
 
 
 async function ensureParrotEnabled(page) {
-  await page.goto(`${BASE_URL}/conversation`);
+  await page.goto('/conversation');
   await page.waitForFunction(() => !!document.getElementById('parrotToggle'), null, { timeout: 20000 });
   const toggle = page.locator('#parrotToggle');
   await expect(toggle).toBeVisible();

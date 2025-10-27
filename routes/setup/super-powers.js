@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
 
     if (!currentCharacter) {
       return res.renderWithLayout('setup/super-powers', {
-        title: 'Setup Super Powers - MonsterBox 5.3',
+        title: 'Setup Super Powers - MonsterBox 5.5',
         page: 'setup-super-powers',
         pageTitle: 'Super Powers',
         error: 'No character selected. Please select a character from the navigation menu.',
@@ -73,7 +73,7 @@ router.get('/', async (req, res) => {
 
     if (!character) {
       return res.renderWithLayout('setup/super-powers', {
-        title: 'Setup Super Powers - MonsterBox 5.3',
+        title: 'Setup Super Powers - MonsterBox 5.5',
         page: 'setup-super-powers',
         pageTitle: 'Super Powers',
         error: 'Selected character not found. Please select a valid character.',
@@ -83,7 +83,7 @@ router.get('/', async (req, res) => {
     }
 
     res.renderWithLayout('setup/super-powers', {
-      title: 'Setup Super Powers - MonsterBox 5.3',
+      title: 'Setup Super Powers - MonsterBox 5.5',
       page: 'setup-super-powers',
       pageTitle: 'Super Powers',
       currentCharacter: currentCharacter,

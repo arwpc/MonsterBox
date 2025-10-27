@@ -1,3 +1,4 @@
+// @calibration
 import { test, expect, request as api } from '@playwright/test';
 
 async function selectByName(page, name: string) {

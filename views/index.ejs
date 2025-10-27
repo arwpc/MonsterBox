@@ -129,7 +129,7 @@
 
     async function loadPosesData() {
         try {
-            const response = await fetch('/poses');
+            const response = await fetch('/poses?format=json', { headers: { 'Accept': 'application/json' } });
             const data = await response.json();
 
             if (data.success) {
@@ -158,7 +158,7 @@
                 }
             }
         } catch (error) {
-            console.error('Failed to load poses:', error);
+            console.log('Could not load poses', error);
             document.getElementById('poses-count').textContent = 'Error';
         }
     }

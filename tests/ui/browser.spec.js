@@ -1,21 +1,20 @@
 /**
- * MonsterBox 4.0 Browser/UI Tests using Playwright
+ * MonsterBox 5.5 Browser/UI Tests using Playwright
  * Tests the web interface functionality in a real browser environment
  */
 
-import { test, expect } from '../test.setup';
+import { expect, test } from '../test.setup';
 
-const BASE_URL = 'http://localhost:3000';
-
-test.describe('MonsterBox 4.0 Web Interface', () => {
+// @smoke @core
+test.describe('MonsterBox 5.5 Web Interface', () => {
 
     test.beforeAll(async () => {
         // Ensure server is running before tests
-        console.log('Testing MonsterBox 4.0 web interface at:', BASE_URL);
+        console.log('Testing MonsterBox 5.5 web interface using Playwright baseURL');
     });
 
     test('Main Dashboard loads correctly', async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto('/');
 
         // Check page title
         await expect(page).toHaveTitle(/MonsterBox/);
@@ -32,7 +31,7 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
     });
 
     test('Setup → Poses page loads and functions', async ({ page }) => {
-        await page.goto(`${BASE_URL}/setup/poses`);
+        await page.goto('/setup/poses');
 
         // Check page loads
         await expect(page.locator('h1')).toContainText('Setup Poses');
@@ -50,7 +49,7 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
     });
 
     test('Setup → Parts page loads and functions', async ({ page }) => {
-        await page.goto(`${BASE_URL}/setup/parts`);
+        await page.goto('/setup/parts');
 
         // Check page loads
         await expect(page.locator('h1')).toContainText('Parts');
@@ -62,28 +61,23 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
         await expect(page.locator('#refreshBtn')).toBeVisible();
     });
 
-    test('Live Dashboard loads and functions', async ({ page }) => {
-        await page.goto(`${BASE_URL}/live`);
+    test('Dashboard shows Quick Poses and basic UI', async ({ page }) => {
+        await page.goto('/');
 
-        // Check page loads
-        await expect(page.locator('h1')).toContainText('Live Dashboard');
-
-        // Check live mode badge is present
-        await expect(page.locator('span.badge.bg-success.fs-6')).toContainText('Live Mode Active');
-
-        // Check poses container is present
-        await expect(page.locator('#posesContainer')).toBeVisible();
-
-        // Check refresh button works
-        await expect(page.locator('button[onclick="location.reload()"]')).toBeVisible();
+        // Check page title and heading
+        await expect(page).toHaveTitle(/MonsterBox/);
+        await expect(page.locator('h5.card-title:has-text("Quick Poses")')).toBeVisible();
+        // Manage button should link to setup/poses
+        const manageBtn = page.locator('a.btn.btn-sm.btn-outline-primary[href="/setup/poses"]').first();
+        await expect(manageBtn).toBeVisible();
     });
 
     test('Navigation links work correctly', async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto('/');
 
         // Test Dashboard link
         await page.locator('a.navbar-brand[href="/"]').first().click();
-        await expect(page).toHaveURL(BASE_URL + '/');
+        await expect(page).toHaveURL(/\/$/);
 
         // Test Setup dropdown
         await page.click('.dropdown-toggle:has-text("Setup")');
@@ -91,15 +85,15 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
 
         // Test Setup → System link (stable, no external API calls)
         await page.click('#navbarNav .dropdown-menu a[href="/setup/system"]');
-        await page.waitForURL(BASE_URL + '/setup/system');
+        await page.waitForURL(/\/setup\/system$/);
 
-        // Test Live Mode page (navigate directly to avoid navbar overlap flakiness)
-        await page.goto(BASE_URL + '/live');
-        await expect(page.locator('h1')).toContainText('Live Dashboard');
+        // Navigate to Orchestration instead of deprecated Live
+        await page.goto('/orchestration');
+        await expect(page.locator('h1')).toContainText('Orchestration Control Center');
     });
 
     test('Bootstrap 5 styling and dark theme are applied', async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto('/');
 
         // Check Bootstrap CSS is loaded
         const bootstrapCSS = await page.locator('link[href*="bootstrap"]').count();
@@ -122,7 +116,7 @@ test.describe('MonsterBox 4.0 Web Interface', () => {
 
     test('Error handling works correctly', async ({ page }) => {
         // Test 404 page
-        const response = await page.goto(`${BASE_URL}/non-existent-page`);
+        const response = await page.goto('/non-existent-page');
         expect(response.status()).toBe(404);
 
         // Check error page content

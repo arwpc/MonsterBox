@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Goblin Management - Full Functionality Test', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:3000/goblin-management');
+    await page.goto('/goblin-management');
         await page.waitForLoadState('networkidle');
         // Wait for Goblin cards to load
         await page.waitForSelector('.goblin-card', { timeout: 10000 });

@@ -105,13 +105,8 @@ const EXTRA_PAGES = [
   // Add non-setup dialog-heavy pages for deeper modal coverage
   '/scenes',
   '/audio-library',
-  '/live',
-  '/ai-settings',
-  '/ai-settings/stt',
-  '/ai-settings/tts',
-  '/ai-settings/agents',
-  // Demo and conversation deep links
-  '/demo',
+    // deprecated: '/live', '/ai-settings', '/ai-settings/stt', '/ai-settings/tts', '/ai-settings/agents',
+  // Conversation deep link
   '/conversation'
 ];
 
