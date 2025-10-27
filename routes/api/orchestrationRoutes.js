@@ -504,7 +504,7 @@ router.get('/animatronic/:id/audio-files', async (req, res) => {
     try {
         const animatronicId = parseInt(req.params.id);
         const animatronic = orchestrationService.getAnimatronicById(animatronicId);
-        
+
         if (!animatronic) {
             return res.status(404).json({
                 success: false,
@@ -536,7 +536,7 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
     try {
         const animatronicId = parseInt(req.params.id);
         const animatronic = orchestrationService.getAnimatronicById(animatronicId);
-        
+
         if (!animatronic) {
             return res.status(404).json({
                 success: false,

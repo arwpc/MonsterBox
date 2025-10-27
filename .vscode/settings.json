@@ -110,7 +110,6 @@
   // --- (optional) Telemetry on home lab machines ---
   "telemetry.telemetryLevel": "off",
   "chat.tools.terminal.autoApprove": {
-    
     "cd": true,
     "echo": true,
     "ls": true,
