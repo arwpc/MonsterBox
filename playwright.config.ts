@@ -8,6 +8,7 @@ export default defineConfig({
   testMatch: [
     'tests/playwright/**/*.{spec,test}.{js,ts}',
     'tests/ui/**/*.{spec,test}.{js,ts}',
+    'tests/comprehensive/**/*.{spec,test}.{js,ts}',
   ],
   retries: 1,
   fullyParallel: true,
@@ -33,10 +34,9 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'Chrome',
+      name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        channel: 'chrome',
       },
     },
   ],

@@ -4,7 +4,7 @@
     "name": "Right Arm of Orlok",
     "type": "linear_actuator",
     "pin": null,
-    "description": "MDD10A Control Board - Right arm linear actuator (GPIO 23=DIR, 12=PWM)",
+    "description": "Test updated via comprehensive tests",
     "config": {
       "controlBoard": "MDD10A",
       "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse",
@@ -19,7 +19,7 @@
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2025-10-12T00:28:46.311Z"
+    "updated": "2025-10-27T00:51:13.745Z"
   },
   {
     "id": "2",
