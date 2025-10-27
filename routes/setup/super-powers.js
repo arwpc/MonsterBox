@@ -1,7 +1,7 @@
 import express from 'express';
-import * as jawAnimationService from '../../services/jawAnimationSuperPowerService.js';
-import { loadCharacters, getCharacterById } from '../../services/characterService.js';
+import { getCharacterById, loadCharacters } from '../../services/characterService.js';
 import * as configService from '../../services/configService.js';
+import * as jawAnimationService from '../../services/jawAnimationSuperPowerService.js';
 
 const router = express.Router();
 
@@ -9,6 +9,46 @@ const router = express.Router();
  * Super Powers Setup Routes
  * Handles jaw animation and other super power configurations
  */
+
+router.get('/api/list', async (req, res) => {
+  try {
+    const config = await configService.readConfig();
+    const characterId = parseInt(config.selectedCharacter, 10) || 1;
+
+    const [jawConfig, availableServos, monitoringState] = await Promise.all([
+      jawAnimationService.readJawConfig(characterId),
+      jawAnimationService.getAvailableServos(characterId),
+      Promise.resolve(jawAnimationService.getAudioMonitoringState(characterId))
+    ]);
+
+    res.json({
+      success: true,
+      characterId,
+      superpowers: [
+        {
+          id: 'jaw-animation',
+          name: 'Jaw Animation',
+          description: 'Synchronize jaw servo movement with live audio amplitude.',
+          enabled: !!jawConfig.enabled,
+          configurable: true,
+          available: availableServos.length > 0,
+          config: jawConfig,
+          stats: {
+            candidateServos: availableServos.length,
+            monitoring: !!monitoringState?.isMonitoring
+          }
+        }
+      ]
+    });
+  } catch (error) {
+    console.error('Error listing super powers:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load super powers',
+      message: error.message
+    });
+  }
+});
 
 // Main super powers page
 router.get('/', async (req, res) => {

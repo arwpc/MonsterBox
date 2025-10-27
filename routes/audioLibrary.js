@@ -4,9 +4,9 @@
  */
 
 import express from 'express';
+import { promises as fs } from 'fs';
 import multer from 'multer';
 import path from 'path';
-import { promises as fs } from 'fs';
 import audioLibraryService from '../services/audioLibraryService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 
@@ -60,9 +60,26 @@ router.get('/api/library', async (req, res) => {
         };
 
         const result = await audioLibraryService.getAudioFiles(filters);
+        const files = result.audio || [];
+
         res.json({
             success: true,
-            ...result
+            files,
+            audio: files,
+            categories: result.categories,
+            totalFiles: result.totalFiles,
+            totalSize: result.totalSize,
+            filteredSize: result.filteredSize,
+            totals: {
+                totalFiles: result.totalFiles,
+                totalSize: result.totalSize,
+                filteredSize: result.filteredSize
+            },
+            data: {
+                files,
+                categories: result.categories,
+                totalFiles: result.totalFiles
+            }
         });
     } catch (error) {
         console.error('Error getting audio library:', error);
@@ -396,8 +413,7 @@ router.get('/api/audio-select', async (req, res) => {
 
         const result = await audioLibraryService.getAudioFiles(filters);
 
-        // Return simplified format for selection dropdowns
-        const audioOptions = result.audio.map(audio => ({
+        const audioOptions = (result.audio || []).map(audio => ({
             id: audio.id,
             title: audio.title,
             description: audio.description,
@@ -407,11 +423,17 @@ router.get('/api/audio-select', async (req, res) => {
             filename: audio.filename
         }));
 
-        res.json({
-            success: true,
-            audio: audioOptions,
-            totalFiles: result.totalFiles
-        });
+        const responseFormat = (req.query.format || '').toLowerCase();
+        if (responseFormat === 'legacy') {
+            return res.json({
+                success: true,
+                audio: audioOptions,
+                files: audioOptions,
+                totalFiles: result.totalFiles
+            });
+        }
+
+        res.json(audioOptions);
     } catch (error) {
         console.error('Error getting audio selection:', error);
         res.status(500).json({

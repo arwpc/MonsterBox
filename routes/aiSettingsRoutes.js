@@ -4,7 +4,26 @@
  */
 
 import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function readJsonIfExists(filePath) {
+    try {
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return null;
+        }
+        throw error;
+    }
+}
 
 const router = express.Router();
 
@@ -84,6 +103,66 @@ router.get('/tts', async (req, res) => {
 
 
 // API Routes for AJAX operations
+
+router.get('/api/settings', async (req, res) => {
+    try {
+        const appRoot = path.resolve(__dirname, '..');
+        const appConfig = await readConfig();
+        const characterId = parseInt(appConfig.selectedCharacter, 10) || 1;
+        const dataPath = appConfig.dataPath
+            ? path.resolve(appRoot, appConfig.dataPath)
+            : path.resolve(appRoot, 'data', `character-${characterId}`);
+        const aiConfigDir = path.join(dataPath, 'ai-config');
+
+        const [sttConfigRaw, ttsConfigRaw] = await Promise.all([
+            readJsonIfExists(path.join(aiConfigDir, 'stt-config.json')),
+            readJsonIfExists(path.join(aiConfigDir, 'tts-config.json'))
+        ]);
+
+        const sttConfig = sttConfigRaw || {};
+        const ttsConfig = ttsConfigRaw || {};
+
+        const configured = elevenLabsConfigService.isElevenLabsConfigured();
+        const maskedApiKey = elevenLabsConfigService.getMaskedApiKey();
+        const audioConfig = elevenLabsConfigService.getAudioConfig();
+
+        const envProvider = (process.env.AI_PROVIDER || '').toLowerCase();
+        const sttProvider = (sttConfig.provider || '').toLowerCase();
+        const preferredProvider = envProvider || sttProvider;
+        const supportedProviders = ['openai', 'anthropic', 'google'];
+        const aiProvider = supportedProviders.includes(preferredProvider)
+            ? preferredProvider
+            : 'openai';
+
+        const relativeDataPath = path.relative(appRoot, dataPath) || dataPath;
+
+        res.json({
+            success: true,
+            settings: {
+                aiProvider,
+                elevenLabs: {
+                    configured,
+                    apiKeyMasked: maskedApiKey,
+                    audio: audioConfig
+                },
+                stt: sttConfig,
+                tts: ttsConfig
+            },
+            metadata: {
+                characterId,
+                dataPath: relativeDataPath,
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('Error getting AI settings:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load AI settings',
+            message: error.message
+        });
+    }
+});
 
 // Test API connection
 router.post('/test-connection', async (req, res) => {

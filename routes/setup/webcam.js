@@ -4,9 +4,9 @@
  */
 
 import express from 'express';
+import * as motionTrackingController from '../../controllers/motionTrackingController.js';
 import webcamController from '../../controllers/webcamController.js';
 import webcamModelsController from '../../controllers/webcamModelsController.js';
-import * as motionTrackingController from '../../controllers/motionTrackingController.js';
 
 const router = express.Router();
 
@@ -27,6 +27,8 @@ router.get('/', async (req, res) => {
         });
     }
 });
+
+router.get('/api/health', webcamController.getHealthStatus);
 
 // Webcam device controls (per webcam part)
 router.get('/api/parts/:id/controls/list', webcamController.listControls);

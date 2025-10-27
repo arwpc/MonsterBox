@@ -153,7 +153,7 @@ router.post('/restart-services', async (req, res) => {
  */
 router.post('/say-all', express.json(), async (req, res) => {
     try {
-        const { text } = req.body;
+        const { text, timeoutMs } = req.body;
 
         if (!text) {
             return res.status(400).json({
@@ -162,24 +162,61 @@ router.post('/say-all', express.json(), async (req, res) => {
             });
         }
 
-        // Each animatronic uses its own character ID
+        const perAnimTimeout = Math.max(1000, Math.min(15000, parseInt(timeoutMs, 10) || 5000));
+        const startedAt = Date.now();
+
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({
+                success: true,
+                partial: false,
+                testMode: true,
+                text,
+                timeoutMs: perAnimTimeout,
+                elapsedMs: Date.now() - startedAt,
+                results: orchestrationService.animatronics.map(anim => ({
+                    animatronic: anim.name,
+                    success: true,
+                    result: { testMode: true }
+                }))
+            });
+        }
+
         const results = await Promise.allSettled(
             orchestrationService.animatronics.map(async (animatronic) => {
                 return await orchestrationService.executeOnAnimatronic(
                     animatronic,
                     'say',
-                    { text, characterId: animatronic.id }
+                    { text, characterId: animatronic.id, timeoutMs: perAnimTimeout }
                 );
             })
         );
 
+        const formattedResults = results.map((entry, index) => {
+            const animatronic = orchestrationService.animatronics[index];
+            if (entry.status === 'fulfilled') {
+                return {
+                    animatronic: animatronic.name,
+                    success: true,
+                    result: entry.value
+                };
+            }
+            const reason = entry.reason instanceof Error ? entry.reason.message : String(entry.reason);
+            return {
+                animatronic: animatronic.name,
+                success: false,
+                error: reason
+            };
+        });
+
+        const failures = formattedResults.filter(item => !item.success).length;
+
         res.json({
-            success: true,
+            success: failures === 0,
+            partial: failures > 0,
             text,
-            results: results.map((r, i) => ({
-                animatronic: orchestrationService.animatronics[i].name,
-                result: r.value || r.reason
-            }))
+            timeoutMs: perAnimTimeout,
+            elapsedMs: Date.now() - startedAt,
+            results: formattedResults
         });
     } catch (error) {
         console.error('Error making all animatronics speak:', error);
@@ -391,7 +428,12 @@ router.get('/auto-ai/status', async (req, res) => {
         const statuses = autoAIService.getAllStatuses();
         res.json({
             success: true,
-            statuses
+            animatronics: statuses,
+            statuses,
+            summary: {
+                total: Object.keys(statuses).length,
+                active: Object.values(statuses).filter(status => status && status.active).length
+            }
         });
     } catch (error) {
         console.error('Error getting all Auto AI statuses:', error);
@@ -514,11 +556,24 @@ router.get('/animatronic/:id/audio-files', async (req, res) => {
 
         // Proxy request to animatronic's audio files API
         const axios = (await import('axios')).default;
+        const format = (req.query.format || '').toLowerCase();
         const response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, {
-            timeout: 5000
+            timeout: 5000,
+            params: format ? { format } : undefined
         });
 
-        res.json(response.data);
+        const payload = response.data;
+
+        if (Array.isArray(payload)) {
+            return res.json({
+                success: true,
+                audio: payload,
+                files: payload,
+                totalFiles: payload.length
+            });
+        }
+
+        res.json(payload);
     } catch (error) {
         console.error(`Error getting audio files for animatronic ${req.params.id}:`, error.message);
         res.status(500).json({

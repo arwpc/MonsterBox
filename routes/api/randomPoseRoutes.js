@@ -11,6 +11,27 @@ const router = express.Router();
 /**
  * Get current random pose configuration
  */
+router.get('/settings', (req, res) => {
+    try {
+        const config = randomPoseService.getConfig();
+        res.json({
+            success: true,
+            enabled: !!config.enabled,
+            cooldownMs: config.cooldownMs,
+            minAmplitude: config.minAmplitude,
+            maxAmplitude: config.maxAmplitude,
+            settings: config
+        });
+    } catch (error) {
+        console.error('Error getting random pose settings:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get random pose settings',
+            message: error.message
+        });
+    }
+});
+
 router.get('/config', (req, res) => {
     try {
         const config = randomPoseService.getConfig();
@@ -50,22 +71,17 @@ router.post('/config', express.json(), (req, res) => {
  */
 router.post('/enable', express.json(), async (req, res) => {
     try {
-        const { characterId, cooldownMs, minAmplitude, maxAmplitude } = req.body;
-        
-        if (!characterId) {
-            return res.status(400).json({
-                success: false,
-                error: 'characterId is required'
-            });
-        }
+        const { characterId, cooldownMs, minAmplitude, maxAmplitude } = req.body || {};
 
-        const result = await randomPoseService.enable(characterId, {
+        const resolvedCharacterId = characterId || req.app?.locals?.config?.selectedCharacter || 1;
+
+        const result = await randomPoseService.enable(resolvedCharacterId, {
             cooldownMs,
             minAmplitude,
             maxAmplitude
         });
 
-        res.json(result);
+        res.json(Object.assign({}, result, { characterId: resolvedCharacterId }));
     } catch (error) {
         console.error('Error enabling random poses:', error);
         res.status(500).json({
@@ -99,7 +115,7 @@ router.post('/disable', (req, res) => {
 router.post('/trigger', express.json(), async (req, res) => {
     try {
         const { characterId } = req.body;
-        
+
         if (!characterId) {
             return res.status(400).json({
                 success: false,
@@ -125,7 +141,7 @@ router.post('/trigger', express.json(), async (req, res) => {
 router.post('/ensure-defaults', express.json(), async (req, res) => {
     try {
         const { characterId } = req.body;
-        
+
         if (!characterId) {
             return res.status(400).json({
                 success: false,

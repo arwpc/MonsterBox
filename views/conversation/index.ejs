@@ -15,6 +15,21 @@
 
   <div class="row g-3">
     <div class="col-xl-6">
+      <!-- Character Selection Panel -->
+      <div class="card mb-3" id="character-selection-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0"><i class="bi bi-person-badge"></i> Character Selection</h5>
+          <small class="text-muted">Choose active performer</small>
+        </div>
+        <div class="card-body">
+          <label for="character-select" class="form-label small text-muted">Active Character</label>
+          <select id="character-select" name="character" class="form-select form-select-sm" data-testid="character-selector">
+            <option value="">Loading characters...</option>
+          </select>
+          <div id="character-select-status" class="form-text text-muted mt-2"></div>
+        </div>
+      </div>
+
       <!-- Live Audio Panel -->
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -214,6 +229,8 @@
         aiOnToggle: null,
         aiLatency: null,
         latencyMs: null,
+        characterSelect: null,
+        characterSelectStatus: null,
         // Ask AI panel
         askInput: null,
         askBtn: null,
@@ -223,6 +240,9 @@
         aiSpeakerSelect: null,
         charNameAI: null,
       };
+      let characters = [];
+      let currentCharacterId = null;
+      let isSwitchingCharacter = false;
       let speakers = [];
       let selectedSpeakerPartId = null;
       let selectedAISpeakerPartId = null;
@@ -261,6 +281,9 @@
         ui.aiOnToggle = $('aiOnToggle');
         ui.aiLatency = $('aiLatency');
         ui.latencyMs = $('latencyMs');
+        ui.characterSelect = $('character-select');
+        ui.characterSelectStatus = $('character-select-status');
+        currentCharacterId = getCurrentCharacterIdFromLabel();
         // Ask AI panel
         ui.askInput = $('askInput');
         ui.askBtn = $('askBtn');
@@ -271,6 +294,7 @@
         ui.charNameAI = $('charNameAI');
         setCharName();
         bindEvents();
+        await loadCharacters();
         await loadSpeakers();
         // Initialize shared microphone panel with WS-backed transcripts
         try { MicPanel.init({ levelBarId: 'audioLevel', startBtnId: 'micStart', stopBtnId: 'micStop', statusId: 'micStatus', transcriptId: 'transcript', jawToggleId: 'jawToggle', enableStt: true }); } catch (_) { }
@@ -290,6 +314,100 @@
         if (label && ui.charNameAI) ui.charNameAI.textContent = label.textContent || 'Character';
       }
 
+      function getCurrentCharacterIdFromLabel() {
+        const label = document.querySelector('#charLabel');
+        if (!label) return null;
+        const idAttr = label.getAttribute('data-char-id');
+        const parsed = parseInt(idAttr, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      async function loadCharacters() {
+        if (!ui.characterSelect) return;
+        ui.characterSelect.disabled = true;
+        ui.characterSelectStatus.textContent = 'Loading characters...';
+        try {
+          const r = await fetch('/setup/characters/api/characters');
+          const j = await r.json();
+          if (j && j.success && Array.isArray(j.characters)) {
+            characters = j.characters;
+            renderCharacterOptions();
+          } else {
+            throw new Error('Invalid response');
+          }
+        } catch (error) {
+          console.error('Failed to load characters for conversation selector:', error);
+          ui.characterSelectStatus.textContent = 'Failed to load characters.';
+        }
+      }
+
+      function renderCharacterOptions() {
+        if (!ui.characterSelect) return;
+        ui.characterSelect.innerHTML = '';
+        if (!characters.length) {
+          ui.characterSelect.appendChild(new Option('No characters available', ''));
+          ui.characterSelect.disabled = true;
+          ui.characterSelectStatus.textContent = 'No characters configured.';
+          return;
+        }
+        characters.forEach(char => {
+          const opt = new Option(char.name || ('Character ' + char.id), String(char.id));
+          ui.characterSelect.appendChild(opt);
+        });
+        const match = characters.find(c => Number(c.id) === Number(currentCharacterId));
+        if (match) {
+          ui.characterSelect.value = String(match.id);
+        } else {
+          currentCharacterId = characters[0].id;
+          ui.characterSelect.value = String(currentCharacterId);
+        }
+        ui.characterSelect.disabled = false;
+        ui.characterSelectStatus.textContent = 'Active character controls audio and pose commands.';
+      }
+
+      async function handleCharacterChange() {
+        if (!ui.characterSelect || isSwitchingCharacter) return;
+        const selected = parseInt(ui.characterSelect.value, 10);
+        if (!Number.isFinite(selected) || selected === currentCharacterId) return;
+        isSwitchingCharacter = true;
+        ui.characterSelect.disabled = true;
+        ui.characterSelectStatus.textContent = 'Switching character...';
+        try {
+          const resp = await fetch('/setup/characters/api/select', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: selected })
+          });
+          const payload = await resp.json().catch(() => ({}));
+          if (resp.ok && payload && payload.success) {
+            currentCharacterId = selected;
+            await refreshPageState();
+            ui.characterSelectStatus.textContent = 'Character updated.';
+          } else {
+            throw new Error(payload && payload.error ? payload.error : 'Unknown error');
+          }
+        } catch (error) {
+          console.error('Character switch failed:', error);
+          ui.characterSelectStatus.textContent = 'Failed to switch character. Please try again.';
+          if (ui.characterSelect && currentCharacterId !== null) {
+            ui.characterSelect.value = String(currentCharacterId);
+          }
+        } finally {
+          ui.characterSelect.disabled = false;
+          isSwitchingCharacter = false;
+        }
+      }
+
+      async function refreshPageState() {
+        setCharName();
+        await loadSpeakers();
+        await loadWebcam();
+        await loadJawSettings();
+        await loadHeadTrackStatus();
+        await loadScenes();
+        await loadAiStatus();
+      }
+
       function bindEvents() {
         ui.sayBtn.addEventListener('click', sendSay);
         ui.sayInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); sendSay(); } });
@@ -298,6 +416,7 @@
         ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
         ui.listenInBtn && ui.listenInBtn.addEventListener('click', toggleListenIn);
         ui.aiOnToggle && ui.aiOnToggle.addEventListener('change', toggleAiOn);
+        ui.characterSelect && ui.characterSelect.addEventListener('change', handleCharacterChange);
         ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
           parrotEnabled = !!ui.parrotToggle.checked;
           try { window.__setParrotEnabled = function (v) { parrotEnabled = !!v; }; } catch (e) { }

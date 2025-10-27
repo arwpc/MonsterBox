@@ -80,7 +80,7 @@ class OrchestrationService {
                 return await this.healthCheck(ip, port);
 
             case 'say':
-                return await this.sayText(ip, port, params.text, params.characterId);
+                return await this.sayText(ip, port, params.text, params.characterId, { timeoutMs: params.timeoutMs });
 
             case 'enable-random-poses':
                 return await this.enableRandomPoses(ip, port, params.characterId, params.options);
@@ -149,19 +149,29 @@ class OrchestrationService {
      * Make an animatronic say text using AI agent (personality-infused speech)
      * This processes text through the character's AI agent for authentic personality
      */
-    async sayText(ip, port, text, characterId) {
+    async sayText(ip, port, text, characterId, options = {}) {
+        const timeoutMs = Math.max(1000, Math.min(15000, options.timeoutMs || 5000));
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+
         try {
             const response = await axios.post(
                 `http://${ip}:${port}/api/elevenlabs/agent-speak`,
                 { text, characterId },
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000
+                    timeout: timeoutMs,
+                    signal: controller.signal
                 }
             );
             return { success: true, data: response.data };
         } catch (error) {
+            if (error?.code === 'ECONNABORTED' || error?.message?.includes('aborted')) {
+                throw new Error(`Timed out after ${timeoutMs}ms`);
+            }
             throw new Error(`Say text failed: ${error.message}`);
+        } finally {
+            clearTimeout(timer);
         }
     }
 

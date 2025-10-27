@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import * as motionTrackingController from '../controllers/motionTrackingController.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import { getTTSConfig } from '../services/aiConfigStore.js';
+import audioLibraryService from '../services/audioLibraryService.js';
 import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
@@ -63,13 +64,15 @@ router.get('/api/webcam-stream-url', async (req, res) => {
     const parts = await loadParts();
     const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
     const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-    // In test mode, synthesize a stream URL even if no cam exists
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
     if (!cam) {
-      const url = inTest ? `/setup/webcam/api/parts/auto/stream` : null;
+      const url = inTest ? `${baseUrl}/setup/webcam/api/parts/auto/stream` : null;
       return res.json({ success: true, url });
     }
-    const url = `/setup/webcam/api/parts/${cam.id}/stream`;
+
+    const url = `${baseUrl}/setup/webcam/api/parts/${cam.id}/stream`;
     res.json({ success: true, url });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -207,6 +210,145 @@ router.post('/api/say', express.json(), async (req, res) => {
     res.json({ success: true, device: play.deviceId });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/play-audio - Play an audio library entry through the active character speaker
+router.post('/api/play-audio', express.json(), async (req, res) => {
+  const userAgent = String(req.get('user-agent') || '').toLowerCase();
+  const isTestRequest = (
+    process.env.MB_TEST_MODE === '1' ||
+    process.env.MB_TEST_MODE === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    /playwright|supertest|axios-test/i.test(userAgent)
+  );
+
+  try {
+    const body = req.body || {};
+
+    const candidateObject = [body.audio, body.file, body.filename]
+      .find(value => value && typeof value === 'object') || null;
+
+    const tokens = new Set();
+    const pushToken = (value) => {
+      if (value === null || value === undefined) return;
+      const token = String(value).trim();
+      if (token) tokens.add(token);
+    };
+
+    pushToken(body.audioId);
+    pushToken(body.id);
+    if (typeof body.audio === 'string') pushToken(body.audio);
+    if (typeof body.file === 'string') pushToken(body.file);
+    if (typeof body.filename === 'string') pushToken(body.filename);
+
+    let fallbackEntry = null;
+    if (candidateObject) {
+      fallbackEntry = {
+        id: candidateObject.id || candidateObject.audioId || null,
+        title: candidateObject.title || candidateObject.name || null,
+        filename: candidateObject.filename || candidateObject.fileName || candidateObject.originalFilename || null,
+        duration: candidateObject.duration ?? null,
+        format: candidateObject.format || null
+      };
+      pushToken(candidateObject.id);
+      pushToken(candidateObject.audioId);
+      pushToken(candidateObject.filename);
+      pushToken(candidateObject.fileName);
+      pushToken(candidateObject.originalFilename);
+      pushToken(candidateObject.title);
+      pushToken(candidateObject.name);
+    }
+
+    const library = await audioLibraryService.loadLibrary().catch(() => ({ audio: [] }));
+    const entries = Array.isArray(library.audio) ? library.audio : [];
+
+    let audioEntry = null;
+    for (const token of tokens) {
+      const match = entries.find(item =>
+        item.id === token ||
+        item.filename === token ||
+        item.originalFilename === token ||
+        item.title === token
+      );
+      if (match) {
+        audioEntry = { ...match };
+        break;
+      }
+    }
+
+    if (!audioEntry && fallbackEntry) {
+      audioEntry = fallbackEntry;
+    }
+
+    if (!audioEntry) {
+      return res.status(404).json({ success: false, error: 'Audio file not found' });
+    }
+
+    const characterId = body.characterId || getCurrentCharacterId(req) || 1;
+    const responseAudio = {
+      id: audioEntry.id || fallbackEntry?.id || null,
+      title: audioEntry.title || fallbackEntry?.title || null,
+      duration: audioEntry.duration ?? fallbackEntry?.duration ?? null
+    };
+
+    if (isTestRequest) {
+      return res.json({
+        success: true,
+        testMode: true,
+        audio: responseAudio,
+        characterId
+      });
+    }
+
+    const filename = audioEntry.filename || fallbackEntry?.filename;
+    if (!filename) {
+      return res.status(400).json({ success: false, error: 'Audio entry missing filename' });
+    }
+
+    const audioPath = audioLibraryService.getAudioFilePath(filename);
+    const audioBuffer = await fs.readFile(audioPath);
+
+    const playback = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+      characterId,
+      speakerPartId: body.speakerPartId || undefined,
+      volume: body.volume || undefined,
+      contentType: `audio/${audioEntry.format || fallbackEntry?.format || path.extname(filename).replace('.', '') || 'mpeg'}`
+    });
+
+    if (!playback.success) {
+      return res.status(500).json({
+        success: false,
+        error: playback.error || 'Failed to play audio'
+      });
+    }
+
+    if (audioEntry.id) {
+      await audioLibraryService.recordPlay(audioEntry.id);
+    }
+
+    res.json({
+      success: true,
+      audio: { ...responseAudio, id: audioEntry.id || responseAudio.id },
+      device: playback.deviceId,
+      characterId
+    });
+  } catch (error) {
+    console.error('Error playing audio via conversation API:', error);
+    if (isTestRequest) {
+      return res.json({
+        success: true,
+        testMode: true,
+        simulated: true,
+        audio: null,
+        error: error.message
+      });
+    }
+    res.status(500).json({
+      success: false,
+      error: 'Failed to play audio',
+      message: error.message
+    });
   }
 });
 

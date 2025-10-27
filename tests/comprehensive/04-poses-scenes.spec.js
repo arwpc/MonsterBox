@@ -3,13 +3,13 @@
  * Tests pose execution, scene management, and queue systems
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Poses System', () => {
     test('should load poses list', async ({ request }) => {
         const response = await request.get('/poses/api/poses');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
         expect(Array.isArray(data.poses)).toBeTruthy();
@@ -24,17 +24,17 @@ test.describe('Poses System', () => {
         // Get available poses
         const posesResponse = await request.get('/poses/api/poses');
         const posesData = await posesResponse.json();
-        
+
         if (posesData.poses && posesData.poses.length > 0) {
             const pose = posesData.poses[0];
-            
+
             // Execute the pose
             const response = await request.post(`/poses/api/poses/${pose.id}/execute`, {
                 data: {
                     duration: 1000
                 }
             });
-            
+
             expect(response.ok()).toBeTruthy();
             const data = await response.json();
             expect(data.success).toBeTruthy();
@@ -44,7 +44,7 @@ test.describe('Poses System', () => {
     test('should get random pose settings', async ({ request }) => {
         const response = await request.get('/api/random-poses/settings');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
         expect(data.enabled).toBeDefined();
@@ -58,7 +58,7 @@ test.describe('Poses System', () => {
                 maxAmplitude: 0.8
             }
         });
-        
+
         expect(response.ok()).toBeTruthy();
         const data = await response.json();
         expect(data.success).toBeTruthy();
@@ -67,7 +67,7 @@ test.describe('Poses System', () => {
     test('should disable random poses', async ({ request }) => {
         const response = await request.post('/api/random-poses/disable');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
     });
@@ -77,7 +77,7 @@ test.describe('Scenes System', () => {
     test('should load scenes list', async ({ request }) => {
         const response = await request.get('/scenes/api/scenes');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
         expect(Array.isArray(data.scenes)).toBeTruthy();
@@ -91,7 +91,7 @@ test.describe('Scenes System', () => {
     test('should get scene queue status', async ({ request }) => {
         const response = await request.get('/scenes/api/queue/status');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
         expect(data.status).toBeDefined();
@@ -101,7 +101,7 @@ test.describe('Scenes System', () => {
         const response = await request.post('/scenes/api/queue/start', {
             data: {}
         });
-        
+
         expect(response.ok()).toBeTruthy();
         const data = await response.json();
         expect(data.success).toBeTruthy();
@@ -110,7 +110,7 @@ test.describe('Scenes System', () => {
     test('should stop scene queue', async ({ request }) => {
         const response = await request.post('/scenes/api/queue/stop');
         expect(response.ok()).toBeTruthy();
-        
+
         const data = await response.json();
         expect(data.success).toBeTruthy();
     });

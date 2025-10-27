@@ -17,17 +17,20 @@ function getCurrentCharacterId(req) {
   return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || 1;
 }
 
-router.get('/', async (req, res) => {
+async function respondWithScenes(req, res) {
   try {
     const scenes = await scenesService.loadScenes();
     res.json({ success: true, scenes });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
-});
+}
+
+router.get('/', respondWithScenes);
+router.get('/scenes', respondWithScenes);
 
 // === Queue Endpoints (MUST BE BEFORE /:id routes) ===
-router.get('/queue', async (req, res) => {
+async function respondWithQueueStatus(req, res) {
   try {
     const characterId = getCurrentCharacterId(req);
     const status = sceneQueue.getStatus(characterId);
@@ -35,7 +38,10 @@ router.get('/queue', async (req, res) => {
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
-});
+}
+
+router.get('/queue', respondWithQueueStatus);
+router.get('/queue/status', respondWithQueueStatus);
 
 router.post('/queue/enqueue', express.json(), async (req, res) => {
   try {

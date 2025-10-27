@@ -7,7 +7,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-describe('MonsterBox 5.4 - Comprehensive Test Suite', function() {
+describe('MonsterBox 5.4 - Comprehensive Test Suite', function () {
     this.timeout(300000); // 5 minutes for full suite
 
     let testResults = {
@@ -17,12 +17,12 @@ describe('MonsterBox 5.4 - Comprehensive Test Suite', function() {
         suites: {}
     };
 
-    before(function() {
+    before(function () {
         console.log('\n🎃 MonsterBox 5.4 Comprehensive Test Suite');
         console.log('============================================\n');
     });
 
-    it('should run all Playwright comprehensive tests', function(done) {
+    it('should run all Playwright comprehensive tests', function (done) {
         const playwright = spawn('npx', [
             'playwright',
             'test',
@@ -58,7 +58,7 @@ describe('MonsterBox 5.4 - Comprehensive Test Suite', function() {
         });
     });
 
-    after(function() {
+    after(function () {
         console.log('\n============================================');
         console.log('🎃 Test Suite Complete!\n');
     });

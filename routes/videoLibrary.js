@@ -4,11 +4,11 @@
  */
 
 import express from 'express';
+import { promises as fs } from 'fs';
 import multer from 'multer';
 import path from 'path';
-import { promises as fs } from 'fs';
-import videoLibraryService from '../services/videoLibraryService.js';
 import goblinManagerService from '../services/goblinManagerService.js';
+import videoLibraryService from '../services/videoLibraryService.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const upload = multer({
         files: 5 // Max 5 files at once
     },
     fileFilter: (req, file, cb) => {
-        if (videoLibraryService.isValidVideoMime(file.mimetype) || 
+        if (videoLibraryService.isValidVideoMime(file.mimetype) ||
             videoLibraryService.isValidVideoFormat(file.originalname)) {
             cb(null, true);
         } else {
@@ -56,7 +56,7 @@ router.get('/api/library', async (req, res) => {
         };
 
         const result = await videoLibraryService.getLibrary(filters);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -64,6 +64,30 @@ router.get('/api/library', async (req, res) => {
         }
     } catch (error) {
         console.error('Error getting video library:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+router.get('/api/videos', async (req, res) => {
+    try {
+        const filters = {
+            search: req.query.search,
+            category: req.query.category,
+            format: req.query.format,
+            sortBy: req.query.sortBy,
+            favorite: req.query.favorite,
+            minDuration: req.query.minDuration ? parseFloat(req.query.minDuration) : undefined,
+            maxDuration: req.query.maxDuration ? parseFloat(req.query.maxDuration) : undefined
+        };
+
+        const result = await videoLibraryService.getLibrary(filters);
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(500).json(result);
+        }
+    } catch (error) {
+        console.error('Error getting video list:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
@@ -131,7 +155,7 @@ router.post('/api/upload', upload.array('videoFiles', 5), async (req, res) => {
             };
 
             const result = await videoLibraryService.addVideo(file.buffer, metadata);
-            
+
             if (result.success) {
                 results.push(result.video);
             } else {
@@ -161,7 +185,7 @@ router.post('/api/upload', upload.array('videoFiles', 5), async (req, res) => {
 router.get('/api/video/:id', async (req, res) => {
     try {
         const result = await videoLibraryService.getVideo(req.params.id);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -187,12 +211,12 @@ router.put('/api/video/:id', async (req, res) => {
         };
 
         // Remove undefined values
-        Object.keys(updates).forEach(key => 
+        Object.keys(updates).forEach(key =>
             updates[key] === undefined && delete updates[key]
         );
 
         const result = await videoLibraryService.updateVideo(req.params.id, updates);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -210,7 +234,7 @@ router.put('/api/video/:id', async (req, res) => {
 router.delete('/api/video/:id', async (req, res) => {
     try {
         const result = await videoLibraryService.deleteVideo(req.params.id);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -228,7 +252,7 @@ router.delete('/api/video/:id', async (req, res) => {
 router.get('/api/video/:id/stream', async (req, res) => {
     try {
         const result = await videoLibraryService.getVideoStream(req.params.id);
-        
+
         if (!result.success) {
             return res.status(404).json(result);
         }
@@ -277,16 +301,16 @@ router.get('/api/video/:id/stream', async (req, res) => {
 router.get('/api/video/:id/download', async (req, res) => {
     try {
         const result = await videoLibraryService.getVideoStream(req.params.id);
-        
+
         if (!result.success) {
             return res.status(404).json(result);
         }
 
         const { filePath, video } = result;
-        
+
         res.setHeader('Content-Disposition', `attachment; filename="${video.originalName}"`);
         res.setHeader('Content-Type', `video/${video.format}`);
-        
+
         const stream = require('fs').createReadStream(filePath);
         stream.pipe(res);
     } catch (error) {
@@ -301,14 +325,14 @@ router.get('/api/video/:id/download', async (req, res) => {
 router.get('/api/video/:id/thumbnail', async (req, res) => {
     try {
         const result = await videoLibraryService.getThumbnail(req.params.id);
-        
+
         if (!result.success) {
             return res.status(404).json(result);
         }
 
         res.setHeader('Content-Type', 'image/jpeg');
         res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-        
+
         const stream = require('fs').createReadStream(result.thumbnailPath);
         stream.pipe(res);
     } catch (error) {
@@ -363,7 +387,7 @@ router.post('/api/video/:id/deploy', async (req, res) => {
 router.post('/api/video/:id/play-on-goblin', async (req, res) => {
     try {
         const { goblinId, loop = true } = req.body;
-        
+
         if (!goblinId) {
             return res.status(400).json({ success: false, error: 'Goblin ID is required' });
         }
@@ -399,7 +423,7 @@ router.post('/api/search', async (req, res) => {
     try {
         const filters = req.body;
         const result = await videoLibraryService.getLibrary(filters);
-        
+
         if (result.success) {
             res.json(result);
         } else {
@@ -439,7 +463,7 @@ router.use((error, req, res, next) => {
             });
         }
     }
-    
+
     res.status(400).json({
         success: false,
         error: error.message || 'Upload failed'

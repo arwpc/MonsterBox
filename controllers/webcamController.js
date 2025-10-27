@@ -1,13 +1,12 @@
-import fs from 'fs/promises';
+import { spawn } from 'child_process';
 import fsSync from 'fs';
+import fs from 'fs/promises';
+import nodeFetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
-import { Readable } from 'stream';
-import nodeFetch from 'node-fetch';
 
-import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
+import hardwareService from '../services/hardwareService/index.js';
 
 // mjpg-streamer service configuration
 // Use 127.0.0.1 instead of localhost to avoid DNS resolution issues
@@ -270,6 +269,39 @@ async function checkMjpgStreamerHealth() {
   }
 }
 
+export const getHealthStatus = async (req, res) => {
+  try {
+    const [isRunning, devices] = await Promise.all([
+      checkMjpgStreamerHealth(),
+      listVideoDevices()
+    ]);
+
+    const usage = scanVideoUsage();
+
+    res.json({
+      success: true,
+      mjpgStreamer: {
+        running: isRunning,
+        url: MJPG_STREAMER_URL,
+        pid: usage.find(item => /mjpg-streamer/i.test(item.cmd || ''))?.pid || null
+      },
+      devices: {
+        total: devices.length,
+        entries: devices
+      },
+      processes: usage,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error retrieving webcam health:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get webcam health',
+      message: error.message
+    });
+  }
+};
+
 export const streamMJPEG = async (req, res) => {
   try {
     // In test mode, avoid touching hardware or external services; return OK JSON to prevent 5xx
@@ -531,5 +563,14 @@ export const applyDeviceToService = async (req, res) => {
 };
 
 
-export default { listControls, setControls, streamMJPEG, listDevices, probeDevices, devicesInUse, applyDeviceToService };
+export default {
+  listControls,
+  setControls,
+  streamMJPEG,
+  listDevices,
+  probeDevices,
+  devicesInUse,
+  applyDeviceToService,
+  getHealthStatus
+};
 
