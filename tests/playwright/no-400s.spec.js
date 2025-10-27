@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // Helper to capture any HTTP 400/500 responses during a scoped action
 async function assertNo400s(page, action, { label = '' } = {}) {
@@ -48,8 +48,8 @@ async function tryClickSomeButtons(page, maxClicks = 6) {
       const key = `${await el.evaluate((n) => n.outerHTML).catch(() => '')}`.slice(0, 200);
       if (clicked.has(key)) continue;
       try {
-        await el.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => {});
-        await el.click({ timeout: 1500 }).catch(() => {});
+        await el.scrollIntoViewIfNeeded({ timeout: 1000 }).catch(() => { });
+        await el.click({ timeout: 1500 }).catch(() => { });
         clicked.add(key);
         await page.waitForTimeout(150);
       } catch { /* ignore */ }

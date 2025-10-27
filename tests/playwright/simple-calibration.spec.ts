@@ -1,5 +1,5 @@
 // @calibration
-import { test, expect, request as api } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 async function selectByName(page, name: string) {
   await page.goto('/setup/calibration');

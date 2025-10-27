@@ -14,7 +14,7 @@ test.describe('Ask AI Conversation Feature', () => {
 
     test.beforeEach(async ({ page }) => {
         // Navigate to Conversation Mode page
-    await page.goto('/conversation');
+        await page.goto('/conversation');
         await expect(page).toHaveTitle(/Conversation Mode/);
 
         // Wait for page to fully load
@@ -259,7 +259,7 @@ test.describe('Ask AI Scene Step Integration', () => {
 
     test.beforeEach(async ({ page }) => {
         // Navigate to Scene Editor
-    await page.goto('/scenes/editor');
+        await page.goto('/scenes/editor');
         await expect(page).toHaveTitle(/Scene Editor/);
         await page.waitForLoadState('networkidle');
     });

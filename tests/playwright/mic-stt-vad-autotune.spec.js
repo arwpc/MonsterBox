@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 const execp = promisify(exec);
@@ -96,7 +96,7 @@ async function ensureCharacterMicPart(page, characterId, micDeviceId) {
   const existing = parts.find((p) => String(p.type).toLowerCase() === 'microphone' && Number(p.characterId) === Number(characterId));
   if (existing) {
     const cfg = Object.assign({}, existing.config || {}, { deviceId: micDeviceId });
-  await page.request.put(`/setup/parts/api/parts/${existing.id}`, { data: { config: cfg, characterId: characterId } });
+    await page.request.put(`/setup/parts/api/parts/${existing.id}`, { data: { config: cfg, characterId: characterId } });
     return existing.id;
   }
   const created = await (await page.request.post('/setup/parts/api/parts', {

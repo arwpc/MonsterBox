@@ -1,4 +1,4 @@
-/**
+/** @core
  * Orchestration UI E2E Tests
  * Tests the complete orchestration control panel UI including:
  * - Command log display
@@ -186,16 +186,16 @@ test.describe('Orchestration Control Panel', () => {
         const onlineCard = page.locator('.card:has(.badge:has-text("ONLINE"))').first();
 
         // Verify Play button
-    const playButton = onlineCard.locator(':scope button:has-text("Play")').first();
-    await expect(playButton).toBeVisible();
+        const playButton = onlineCard.locator(':scope button:has-text("Play")').first();
+        await expect(playButton).toBeVisible();
 
         // Verify Stop button
-    const stopButton = onlineCard.locator(':scope button:has-text("Stop")').first();
-    await expect(stopButton).toBeVisible();
+        const stopButton = onlineCard.locator(':scope button:has-text("Stop")').first();
+        await expect(stopButton).toBeVisible();
 
         // Verify Loop checkbox
-    const loopCheckbox = onlineCard.locator(':scope input[type="checkbox"]').first();
-    await expect(loopCheckbox).toBeVisible();
+        const loopCheckbox = onlineCard.locator(':scope input[type="checkbox"]').first();
+        await expect(loopCheckbox).toBeVisible();
     });
 
     test('AI chat controls should be visible on online animatronics', async ({ page }) => {
@@ -203,16 +203,16 @@ test.describe('Orchestration Control Panel', () => {
         const onlineCard = page.locator('.card:has(.badge:has-text("ONLINE"))').first();
 
         // Verify Ask AI button
-    const askButton = onlineCard.locator(':scope button:has-text("Ask AI")').first();
-    await expect(askButton).toBeVisible();
+        const askButton = onlineCard.locator(':scope button:has-text("Ask AI")').first();
+        await expect(askButton).toBeVisible();
 
         // Verify Say button
-    const sayButton = onlineCard.locator(':scope button:has-text("Say")').first();
-    await expect(sayButton).toBeVisible();
+        const sayButton = onlineCard.locator(':scope button:has-text("Say")').first();
+        await expect(sayButton).toBeVisible();
 
         // Verify text input
-    const textInput = onlineCard.locator(':scope input[type="text"]').first();
-    await expect(textInput).toBeVisible();
+        const textInput = onlineCard.locator(':scope input[type="text"]').first();
+        await expect(textInput).toBeVisible();
     });
 
     test('broadcast controls should be visible', async ({ page }) => {

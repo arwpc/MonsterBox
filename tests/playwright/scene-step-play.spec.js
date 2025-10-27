@@ -11,7 +11,7 @@
  * - Visual feedback (loading, success, error states)
  */
 
-import { test, expect } from '../test.setup';
+import { expect, test } from '../test.setup';
 
 // Use Playwright baseURL
 
@@ -20,7 +20,7 @@ test.describe('Scene Step Play Button', () => {
 
   test.beforeAll(async ({ request }) => {
     // Create a test scene with multiple step types
-  const response = await request.post(`/scenes/api`, {
+    const response = await request.post(`/scenes/api`, {
       data: {
         name: 'Step Play Test Scene',
         steps: [
@@ -41,7 +41,7 @@ test.describe('Scene Step Play Button', () => {
   test.afterAll(async ({ request }) => {
     // Clean up test scene
     if (testSceneId) {
-  await request.delete(`/scenes/api/${testSceneId}`);
+      await request.delete(`/scenes/api/${testSceneId}`);
     }
   });
 
@@ -98,7 +98,7 @@ test.describe('Scene Step Play Button', () => {
   });
 
   test('API endpoint /scenes/api/test-step returns 200 for valid step', async ({ request }) => {
-  const response = await request.post(`/scenes/api/test-step`, {
+    const response = await request.post(`/scenes/api/test-step`, {
       data: {
         type: 'wait',
         duration: 100
@@ -116,7 +116,7 @@ test.describe('Scene Step Play Button', () => {
   });
 
   test('API endpoint returns 400 for invalid step (missing type)', async ({ request }) => {
-  const response = await request.post(`/scenes/api/test-step`, {
+    const response = await request.post(`/scenes/api/test-step`, {
       data: {
         duration: 100
         // Missing 'type' field
@@ -142,7 +142,7 @@ test.describe('Scene Step Play Button', () => {
     ];
 
     for (const step of stepTypes) {
-  const response = await request.post(`/scenes/api/test-step`, {
+      const response = await request.post(`/scenes/api/test-step`, {
         data: step
       });
 
@@ -156,7 +156,7 @@ test.describe('Scene Step Play Button', () => {
   });
 
   test('Dry-run mode works correctly', async ({ request }) => {
-  const response = await request.post(`/scenes/api/test-step?dryRun=true`, {
+    const response = await request.post(`/scenes/api/test-step?dryRun=true`, {
       data: {
         type: 'servo',
         partId: 11,
@@ -218,7 +218,7 @@ test.describe('Scene Step Play Button', () => {
 
   test('API endpoint validates step type requirement', async ({ request }) => {
     // Test that the API properly validates required fields
-  const response = await request.post(`/scenes/api/test-step`, {
+    const response = await request.post(`/scenes/api/test-step`, {
       data: {
         duration: 100
         // Missing required 'type' field

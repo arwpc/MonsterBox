@@ -28,7 +28,7 @@ export default async function globalSetup() {
         }
         // small settle delay
         await new Promise(r => setTimeout(r, 400));
-      } catch (_) {}
+      } catch (_) { }
     }
   } catch (_) {
     // baseURL not reachable; nothing to kill

@@ -2,7 +2,7 @@
 // Runs against the web server started by playwright.config.ts
 // Checks a representative set of pages for any elements with href/src/action attributes that include localhost/127.0.0.1
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const PATHS = [
   '/',

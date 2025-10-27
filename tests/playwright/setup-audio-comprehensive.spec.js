@@ -3,7 +3,7 @@
  * Tests ALL buttons and functionality on /setup/audio
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Setup Audio - Comprehensive Button Tests', () => {
   test.beforeEach(async ({ page }) => {
@@ -250,7 +250,7 @@ test.describe('Setup Audio - Comprehensive Button Tests', () => {
     expect(typeof inputData.level).toBe('number');
 
     // Test audio-levels endpoint for output
-  const outputResponse = await page.request.get(`/setup/audio/api/audio-levels?deviceId=default&deviceType=output`);
+    const outputResponse = await page.request.get(`/setup/audio/api/audio-levels?deviceId=default&deviceType=output`);
     expect(outputResponse.ok()).toBeTruthy();
     const outputData = await outputResponse.json();
     expect(outputData.success).toBe(true);

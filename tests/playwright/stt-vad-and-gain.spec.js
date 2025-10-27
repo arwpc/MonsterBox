@@ -1,4 +1,4 @@
-import { test, expect } from '../test.setup';
+import { expect, test } from '../test.setup';
 
 // Verifies STT page exposes Input Gain + VAD controls and fires the expected network calls
 
@@ -32,7 +32,7 @@ test.describe('AI Settings - STT: VAD + Input Gain', () => {
     const gain = page.locator('#inputGain');
     const gainLabel = page.locator('#inputGainLabel');
     const vadToggle = page.locator('#vadEnabled').first();
-  // Use the VAD slider (decimal 0.05..0.95)
+    // Use the VAD slider (decimal 0.05..0.95)
     const vadThr = page.locator('#vadThreshold').last();
     const vadThrLabel = page.locator('#vadThresholdLabel');
 
@@ -55,9 +55,9 @@ test.describe('AI Settings - STT: VAD + Input Gain', () => {
     await vadToggle.check();
     await configReq1;
 
-  // Move threshold to 5% (0.05) -> expect another config POST and label update
+    // Move threshold to 5% (0.05) -> expect another config POST and label update
     const configReq2 = page.waitForRequest((req) => req.method() === 'POST' && req.url().includes('/api/elevenlabs/stt/config'));
-  await vadThr.fill('0.05');
+    await vadThr.fill('0.05');
     await vadThr.dispatchEvent('input');
     await expect(vadThrLabel).toHaveText('5%');
     await configReq2;

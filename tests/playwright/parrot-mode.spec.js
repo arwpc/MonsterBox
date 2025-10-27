@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Parrot Mode E2E smoke test (no new packages)
@@ -21,7 +21,7 @@ test.describe('Conversation Parrot Mode', () => {
       // eslint-disable-next-line no-console
       console.log('[pageerror]', String(err));
     });
-  await page.goto('/conversation');
+    await page.goto('/conversation');
 
     // Wait for scripts to initialize
     await page.waitForFunction(() => !!window.__conv, null, { timeout: 15000 });

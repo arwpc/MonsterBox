@@ -1,5 +1,6 @@
+// @core
 // Playwright tests for Conversation and Live unified components
-import { test, expect } from '../test.setup';
+import { expect, test } from '../test.setup';
 
 function expectStatusEventually(locator, timeout = 3000) {
   return Promise.race([

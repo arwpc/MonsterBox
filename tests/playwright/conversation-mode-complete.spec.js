@@ -6,7 +6,7 @@
  * Run with: MB_E2E=1 npx playwright test test/e2e/conversation-mode-complete.spec.js
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // Use Playwright baseURL
 
@@ -15,7 +15,7 @@ test.describe('Conversation Mode - Complete E2E Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     // Navigate to Conversation Mode page
-  await page.goto('/conversation');
+    await page.goto('/conversation');
     await expect(page).toHaveTitle(/Conversation Mode/);
   });
 

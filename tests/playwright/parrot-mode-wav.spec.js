@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { exec } from 'child_process';
 
 // Use Playwright baseURL
@@ -14,7 +14,7 @@ function playFrontCenterWav() {
 
 test.describe('Conversation Parrot Mode (WAV feed)', () => {
     test('Detects speech from WAV and triggers /conversation/api/say', async ({ page }) => {
-    await page.goto('/conversation');
+        await page.goto('/conversation');
         await page.waitForFunction(() => !!window.__conv, null, { timeout: 20000 });
 
         const toggle = page.locator('#parrotToggle');

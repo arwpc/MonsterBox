@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 // Use Playwright baseURL
 
@@ -9,7 +9,7 @@ async function startServerIfNeeded() {
 test.describe('Debug VU toggle', () => {
   test('log before/after click', async ({ page }) => {
     await startServerIfNeeded();
-  await page.goto('/setup/audio');
+    await page.goto('/setup/audio');
 
     const toggleButtonIn = page.locator('button:has-text("Input Monitoring")').first();
     await expect(toggleButtonIn).toBeVisible();

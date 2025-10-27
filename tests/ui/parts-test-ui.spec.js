@@ -3,7 +3,7 @@
  * Runs on WebKit to satisfy ARM64 constraints.
  */
 
-import { test, expect } from '../test.setup';
+import { expect, test } from '../test.setup';
 
 // Use Playwright baseURL
 
@@ -29,7 +29,7 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     const part = await createServoViaAPI(request, uniqueName);
     const partId = part.id;
 
-  await page.goto('/setup/parts');
+    await page.goto('/setup/parts');
 
     // Wait for parts to load and our newly created servo to appear
     await expect(page.locator('#parts-list')).toBeVisible();
@@ -53,7 +53,7 @@ test.describe('Setup → Parts: per-type testing (servo)', () => {
     await expect(alert).toContainText(/Test|Action/);
 
     // Cleanup: remove the created test part immediately
-  const del = await request.delete(`/setup/parts/api/parts/${partId}`);
+    const del = await request.delete(`/setup/parts/api/parts/${partId}`);
     expect(del.ok()).toBeTruthy();
   });
 });
