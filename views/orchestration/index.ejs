@@ -201,6 +201,12 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-activity"></i> System Status
+                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="disableAllWebcams()">
+                        <i class="bi bi-camera-video-off"></i> Disable All Webcams
+                    </button>
+                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="enableAllWebcams()">
+                        <i class="bi bi-camera-video"></i> Enable All Webcams
+                    </button>
                     <button class="btn btn-sm btn-halloween float-end" onclick="refreshStatus()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
@@ -347,6 +353,10 @@
         document.getElementById('commandLog').innerHTML = '<div class="log-entry">🎃 Log cleared...</div>';
     }
 
+    // Webcam state management
+    var webcamStates = {}; // { [animId]: boolean }
+    var currentOnlineAnimatronics = []; // cache of online anims from last refresh
+
     function refreshStatus() {
         log('Refreshing system status...');
         fetch('/api/orchestration/status')
@@ -366,7 +376,8 @@
 
     function displayAnimatronics(animatronics) {
         var html = '';
-        var onlineAnimatronics = animatronics.filter(function (a) { return a.online; });
+    var onlineAnimatronics = animatronics.filter(function (a) { return a.online; });
+    currentOnlineAnimatronics = onlineAnimatronics;
         var offlineAnimatronics = animatronics.filter(function (a) { return !a.online; });
 
         // Display offline animatronics as compact list
@@ -410,11 +421,16 @@
                 html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
             }
 
-            // Webcam stream - Fetch URL from animatronic's API
+            // Webcam controls and stream (default OFF for performance)
+            html += '      <div class="d-flex justify-content-between align-items-center mb-2" onclick="event.stopPropagation();">';
+            html += '        <button id="webcam-toggle-' + anim.id + '" class="btn btn-sm btn-outline-light" onclick="toggleWebcam(' + anim.id + '); event.stopPropagation();">';
+            html += '          <i class="bi bi-camera-video-off"></i> Webcam Off';
+            html += '        </button>';
+            html += '      </div>';
             html += '      <div onclick="event.stopPropagation();">';
             html += '        <img id="webcam-' + anim.id + '" class="webcam-preview" alt="Live webcam feed" style="display:none;" />';
             html += '        <div id="webcam-loading-' + anim.id + '" class="text-muted text-center py-3">';
-            html += '          <div class="spinner-border spinner-border-sm"></div> Loading webcam...';
+            html += '          <i class="bi bi-camera-video-off"></i> Webcam off';
             html += '        </div>';
             html += '      </div>';
 
@@ -467,9 +483,13 @@
         });
         document.getElementById('animatronicsStatus').innerHTML = html;
 
-        // Load webcam streams asynchronously
-        onlineAnimatronics.forEach(anim => {
-            loadWebcamForAnimatronic(anim);
+        // Re-apply webcam state after DOM re-render
+        onlineAnimatronics.forEach(function (anim) {
+            updateWebcamToggleUI(anim.id);
+            if (webcamStates[anim.id]) {
+                // Ensure enabled webcams are (re)loaded
+                enableWebcam(anim.id);
+            }
         });
 
         // Load audio files for each online animatronic
@@ -513,6 +533,88 @@
                 loading.innerHTML = '<small class="text-muted">Webcam unavailable</small>';
             }
         }
+    }
+
+    // Webcam control helpers
+    function updateWebcamToggleUI(animId) {
+        var btn = document.getElementById('webcam-toggle-' + animId);
+        var img = document.getElementById('webcam-' + animId);
+        var loading = document.getElementById('webcam-loading-' + animId);
+        var isOn = !!webcamStates[animId];
+
+        if (btn) {
+            if (isOn) {
+                btn.classList.remove('btn-outline-light');
+                btn.classList.add('btn-warning');
+                btn.innerHTML = '<i class="bi bi-camera-video"></i> Webcam On';
+            } else {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-outline-light');
+                btn.innerHTML = '<i class="bi bi-camera-video-off"></i> Webcam Off';
+            }
+        }
+
+        if (!isOn) {
+            if (img) {
+                img.style.display = 'none';
+                try { img.src = ''; } catch (e) {}
+            }
+            if (loading) {
+                loading.style.display = 'block';
+                loading.innerHTML = '<i class="bi bi-camera-video-off"></i> Webcam off';
+            }
+        }
+    }
+
+    function toggleWebcam(animId) {
+        if (webcamStates[animId]) {
+            disableWebcam(animId);
+        } else {
+            enableWebcam(animId);
+        }
+    }
+
+    function enableWebcam(animId) {
+        webcamStates[animId] = true;
+        var loading = document.getElementById('webcam-loading-' + animId);
+        var img = document.getElementById('webcam-' + animId);
+        if (loading) {
+            loading.style.display = 'block';
+            loading.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Loading webcam...';
+        }
+        if (img) {
+            try { img.src = ''; } catch (e) {}
+        }
+        updateWebcamToggleUI(animId);
+        // Reuse existing loader to fetch URL and attach stream
+        loadWebcamForAnimatronic({ id: animId });
+    }
+
+    function disableWebcam(animId) {
+        webcamStates[animId] = false;
+        var img = document.getElementById('webcam-' + animId);
+        var loading = document.getElementById('webcam-loading-' + animId);
+        if (img) {
+            try { img.src = ''; } catch (e) {}
+            img.style.display = 'none';
+        }
+        if (loading) {
+            loading.style.display = 'block';
+            loading.innerHTML = '<i class="bi bi-camera-video-off"></i> Webcam off';
+        }
+        updateWebcamToggleUI(animId);
+    }
+
+    function enableAllWebcams() {
+        if (!currentOnlineAnimatronics || currentOnlineAnimatronics.length === 0) return;
+        log('Enabling webcams for all online animatronics...');
+        currentOnlineAnimatronics.forEach(function (anim) { enableWebcam(anim.id); });
+    }
+
+    function disableAllWebcams() {
+        if (!currentOnlineAnimatronics || currentOnlineAnimatronics.length === 0) return;
+        log('Disabling webcams for all online animatronics...');
+        currentOnlineAnimatronics.forEach(function (anim) { disableWebcam(anim.id); });
     }
 
     function sayAll() {
@@ -709,26 +811,35 @@
             });
     }
 
-    function loadAudioFiles(animId, ip, port) {
-        var url = '/api/orchestration/animatronic/' + animId + '/audio-files';
-        fetch(url)
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
+    async function loadAudioFiles(animId, ip, port) {
+        const url = '/api/orchestration/animatronic/' + animId + '/audio-files';
+        const maxAttempts = 3;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
                 if (data.success && data.audio && data.audio.length > 0) {
-                    var selectEl = document.getElementById('audio-' + animId);
+                    const selectEl = document.getElementById('audio-' + animId);
                     if (selectEl) {
+                        // Clear any existing (keep placeholder)
+                        selectEl.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
                         data.audio.forEach(function (file) {
-                            var option = document.createElement('option');
+                            const option = document.createElement('option');
                             option.value = file.id;
                             option.textContent = file.title || file.filename;
                             selectEl.appendChild(option);
                         });
                     }
                 }
-            })
-            .catch(function (error) {
-                console.error('Error loading audio files:', error);
-            });
+                return; // success or empty; stop retrying
+            } catch (err) {
+                if (attempt >= maxAttempts) {
+                    console.error('Error loading audio files for', animId, err);
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 200 * attempt));
+            }
+        }
     }
 
     function playAudio(animId, ip, port, name) {
