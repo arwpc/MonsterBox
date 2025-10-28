@@ -1,44 +1,32 @@
 [
   {
-    "id": 1,
-    "name": "PumpkinHead"
-  },
-  {
     "id": 2,
     "name": "Coffin Breaker",
-    "elevenLabsAgentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n"
+    "elevenLabsAgentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n",
+    "activeImage": "helen.jpg"
   },
   {
     "id": 3,
-    "name": "Orlok"
+    "name": "Orlok",
+    "elevenLabsAgentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n",
+    "activeImage": "1orlok.png"
   },
   {
     "id": 4,
-    "name": "Skulltalker"
-  },
-  {
-    "id": 5,
-    "name": "PumpkinHead_Updated",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
-  },
-  {
-    "id": 6,
-    "name": "PumpkinHead_Updated",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
-  },
-  {
-    "id": 7,
-    "name": "PumpkinHead_Updated",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+    "name": "Skulltalker",
+    "elevenLabsAgentId": "agent_7901k3f1dza1ee68w1257zh3s9x6",
+    "activeImage": "John_Hunyadi__Chronica_Hungarorum_.jpg"
   },
   {
     "id": 8,
-    "name": "PumpkinHead_Updated",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+    "name": "PumpkinHead",
+    "elevenLabsAgentId": "agent_0801k3f1dybkecj88sta18gwwrv5",
+    "activeImage": "pumpkinhead.jpg"
   },
   {
     "id": 9,
     "name": "Groundbreaker",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
+    "activeImage": "groundbreaker.jpg"
   }
 ]

@@ -1,1 +1,76 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Body Swing",
+    "type": "motor",
+    "pin": null,
+    "description": "DC motors for movement",
+    "config": {},
+    "created": "2025-10-28T20:43:30.850Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 6,
+    "pwmPin": 13,
+    "maxDuration": 10000,
+    "modelId": "motor_jeep_wagoneer_wiper",
+    "updated": "2025-10-28T20:43:38.034Z"
+  },
+  {
+    "id": "2",
+    "name": "PumpkinHead Vision",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "modelId": "default-uvc-1",
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "created": "2025-10-28T20:44:02.690Z",
+    "enabled": true,
+    "modelId": "default-uvc-1",
+    "updated": "2025-10-28T20:45:51.467Z"
+  },
+  {
+    "id": "3",
+    "name": "Pumpkinhead Speaker",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 100,
+      "bass": 5,
+      "treble": 0
+    },
+    "created": "2025-10-28T20:44:48.223Z",
+    "enabled": true,
+    "modelId": "default_speaker"
+  },
+  {
+    "id": "4",
+    "name": "Pumpkinhead Ears",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-28T20:45:03.852Z",
+    "enabled": true,
+    "modelId": "mic_generic_usb",
+    "updated": "2025-10-28T20:45:55.826Z"
+  },
+  {
+    "id": "5",
+    "name": "Pumpkin Motion Sensor",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-10-28T20:45:41.099Z",
+    "enabled": true,
+    "modelId": "pir_generic",
+    "updated": "2025-10-28T20:46:00.541Z"
+  }
+]

@@ -126,43 +126,8 @@
     "description": "PIR motion detection",
     "config": {},
     "created": "2025-10-12T06:00:08.000Z",
-    "enabled": true
-  },
-  {
-    "id": "10",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {
-      "maxDuration": 5000,
-      "controlBoard": "BTS7960"
-    },
-    "created": "2025-10-14T03:46:35.973Z",
     "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000,
-    "updated": "2025-10-14T03:46:42.180Z"
-  },
-  {
-    "id": "11",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-14T03:46:49.753Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
+    "modelId": "pir_generic",
+    "updated": "2025-10-28T20:46:54.708Z"
   }
 ]

@@ -28,8 +28,10 @@
     "pin": null,
     "description": "MDD10A Control Board - Left arm linear actuator (GPIO 18=DIR, 13=PWM)",
     "config": {
+      "maxExtension": 15000,
+      "maxRetraction": 15000,
       "controlBoard": "MDD10A",
-      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse"
+      "modelId": "1759010196402"
     },
     "created": "2025-10-05T18:11:05.207Z",
     "enabled": true,
@@ -39,7 +41,7 @@
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2025-10-05T18:13:11.295Z"
+    "updated": "2025-10-28T20:35:58.221Z"
   },
   {
     "id": "3",
@@ -134,7 +136,7 @@
     "id": "8",
     "name": "Hand of Azura",
     "type": "light",
-    "pin": 16,
+    "pin": 26,
     "description": "basic on/off lighting",
     "config": {
       "brightness": 100
@@ -142,7 +144,7 @@
     "created": "2025-10-05T22:59:52.554Z",
     "enabled": true,
     "modelId": "light_generic_12v",
-    "updated": "2025-10-10T18:20:43.638Z"
+    "updated": "2025-10-28T20:36:52.505Z"
   },
   {
     "id": "9",
@@ -157,7 +159,8 @@
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2025-10-09T18:30:54.119Z"
+    "updated": "2025-10-28T20:38:03.267Z",
+    "modelId": "default-uvc-1"
   },
   {
     "id": "10",
@@ -216,7 +219,8 @@
     },
     "created": "2025-10-06T02:24:37.393Z",
     "enabled": true,
-    "updated": "2025-10-06T02:27:05.846Z"
+    "updated": "2025-10-28T20:36:32.329Z",
+    "modelId": "servo_gobilda_stingray2"
   },
   {
     "id": "14",
@@ -226,133 +230,8 @@
     "description": "PIR motion detection",
     "config": {},
     "created": "2025-10-07T00:53:34.885Z",
-    "enabled": true
-  },
-  {
-    "id": "15",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-10T22:45:19.202Z",
-    "enabled": false
-  },
-  {
-    "id": "16",
-    "name": "Demo Webcam",
-    "type": "webcam",
-    "pin": null,
-    "description": "video capture devices",
-    "config": {
-      "resolution": "640x480"
-    },
-    "created": "2025-10-10T23:08:52.918Z",
-    "enabled": false,
-    "characterId": 3
-  },
-  {
-    "id": "17",
-    "name": "Head Pan",
-    "type": "servo",
-    "pin": 18,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "minPulse": 500,
-      "maxPulse": 2500,
-      "minAngle": 0,
-      "maxAngle": 180
-    },
-    "created": "2025-10-10T23:08:52.919Z",
     "enabled": true,
-    "characterId": 3
-  },
-  {
-    "id": "20",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T08:49:23.709Z",
-    "enabled": false
-  },
-  {
-    "id": "24",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T09:47:34.782Z",
-    "enabled": false
-  },
-  {
-    "id": "25",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T09:49:17.622Z",
-    "enabled": false
-  },
-  {
-    "id": "28",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-11T10:16:18.791Z",
-    "enabled": false
-  },
-  {
-    "id": "29",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {
-      "maxDuration": 5000,
-      "controlBoard": "BTS7960"
-    },
-    "created": "2025-10-27T05:52:27.892Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000,
-    "updated": "2025-10-27T05:52:31.551Z"
-  },
-  {
-    "id": "30",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-27T05:52:34.320Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
+    "modelId": "pir_generic",
+    "updated": "2025-10-28T20:38:11.352Z"
   }
 ]
