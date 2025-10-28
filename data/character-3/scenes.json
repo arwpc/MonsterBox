@@ -6,10 +6,25 @@
       {
         "type": "sayThis",
         "text": "In Coralville.  Count Orlok, reporting for KCRG News from Warner Castle"
+      },
+      {
+        "type": "sensor",
+        "partId": "14"
+      },
+      {
+        "type": "audio",
+        "audioId": "6a170297-5395-4b87-b4f3-33e814341980.mp3"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
       }
     ],
     "created": "2025-10-24T10:29:21.344Z",
-    "updated": "2025-10-24T11:39:32.919Z"
+    "updated": "2025-10-28T19:38:39.796Z"
   },
   {
     "id": 103,

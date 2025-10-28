@@ -43,6 +43,7 @@ import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
+import goblinManagerService from './services/goblinManagerService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import pipewireService from './services/pipewireService.js';
 
@@ -276,6 +277,42 @@ app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
 app.use('/api', sceneEditorApiRoutes);
+
+// --- Goblin device compatibility API (for native Goblin auto-registration) ---
+// Some Goblin builds post to /api/goblins/register and /api/goblins/:id/heartbeat
+// Provide these aliases to the main Goblin Manager service so devices can self-register.
+app.post('/api/goblins/register', async (req, res) => {
+    try {
+        const result = await goblinManagerService.registerGoblin(req.body || {});
+        if (result.success) return res.json(result);
+        return res.status(400).json(result);
+    } catch (err) {
+        console.error('Error in /api/goblins/register:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Internal error' });
+    }
+});
+
+app.post('/api/goblins/:id/heartbeat', async (req, res) => {
+    try {
+        const result = await goblinManagerService.heartbeat(req.params.id, req.body || {});
+        if (result.success) return res.json(result);
+        return res.status(404).json(result);
+    } catch (err) {
+        console.error('Error in /api/goblins/:id/heartbeat:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Internal error' });
+    }
+});
+
+// Lightweight list endpoint for debugging or device discovery
+app.get('/api/goblins', async (req, res) => {
+    try {
+        const result = await goblinManagerService.getGoblins({});
+        return res.json(result);
+    } catch (err) {
+        console.error('Error in GET /api/goblins:', err);
+        return res.status(500).json({ success: false, error: err.message || 'Internal error' });
+    }
+});
 
 // Audio Health Monitor API endpoints
 app.get('/api/audio/health', (req, res) => {

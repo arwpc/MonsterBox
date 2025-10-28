@@ -376,8 +376,8 @@
 
     function displayAnimatronics(animatronics) {
         var html = '';
-    var onlineAnimatronics = animatronics.filter(function (a) { return a.online; });
-    currentOnlineAnimatronics = onlineAnimatronics;
+        var onlineAnimatronics = animatronics.filter(function (a) { return a.online; });
+        currentOnlineAnimatronics = onlineAnimatronics;
         var offlineAnimatronics = animatronics.filter(function (a) { return !a.online; });
 
         // Display offline animatronics as compact list
@@ -557,7 +557,7 @@
         if (!isOn) {
             if (img) {
                 img.style.display = 'none';
-                try { img.src = ''; } catch (e) {}
+                try { img.src = ''; } catch (e) { }
             }
             if (loading) {
                 loading.style.display = 'block';
@@ -583,7 +583,7 @@
             loading.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Loading webcam...';
         }
         if (img) {
-            try { img.src = ''; } catch (e) {}
+            try { img.src = ''; } catch (e) { }
         }
         updateWebcamToggleUI(animId);
         // Reuse existing loader to fetch URL and attach stream
@@ -595,7 +595,7 @@
         var img = document.getElementById('webcam-' + animId);
         var loading = document.getElementById('webcam-loading-' + animId);
         if (img) {
-            try { img.src = ''; } catch (e) {}
+            try { img.src = ''; } catch (e) { }
             img.style.display = 'none';
         }
         if (loading) {
@@ -827,6 +827,7 @@
                             const option = document.createElement('option');
                             option.value = file.id;
                             option.textContent = file.title || file.filename;
+                            if (file.filename) option.setAttribute('data-filename', file.filename);
                             selectEl.appendChild(option);
                         });
                     }
@@ -857,10 +858,13 @@
         log('Playing audio on ' + name + ': "' + audioName + '"' + (loop ? ' (looping)' : ''));
 
         var url = '/api/orchestration/animatronic/' + animId + '/play-audio';
+        var audioTitle = audioName;
+        var selectedOption = selectEl.options[selectEl.selectedIndex];
+        var filename = selectedOption && selectedOption.getAttribute('data-filename') ? selectedOption.getAttribute('data-filename') : undefined;
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ audioId: audioId, loop: loop })
+            body: JSON.stringify({ audioId: audioId, loop: loop, audioTitle: audioTitle, filename: filename })
         })
             .then(function (response) { return response.json(); })
             .then(function (data) {

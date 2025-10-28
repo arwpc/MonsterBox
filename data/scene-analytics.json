@@ -4223,6 +4223,70 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1761607659767bdjlgta3h",
+      "sceneId": 102,
+      "characterId": 3,
+      "timestamp": "2025-10-27T23:27:39.767Z",
+      "startTime": "2025-10-27T23:27:38.469Z",
+      "endTime": "2025-10-27T23:27:39.762Z",
+      "duration": 1293,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761607675496e7oubj9p6",
+      "sceneId": 104,
+      "characterId": 3,
+      "timestamp": "2025-10-27T23:27:55.496Z",
+      "startTime": "2025-10-27T23:27:47.460Z",
+      "endTime": "2025-10-27T23:27:55.486Z",
+      "duration": 8026,
+      "stepsExecuted": 2,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 0"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761610323657iaj5c6lw7",
+      "sceneId": 102,
+      "characterId": 3,
+      "timestamp": "2025-10-28T00:12:03.657Z",
+      "startTime": "2025-10-28T00:12:01.948Z",
+      "endTime": "2025-10-28T00:12:03.653Z",
+      "duration": 1705,
+      "stepsExecuted": 1,
+      "totalSteps": 1,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "17616803311960gbpegibk",
+      "sceneId": 104,
+      "characterId": 3,
+      "timestamp": "2025-10-28T19:38:51.196Z",
+      "startTime": "2025-10-28T19:38:43.151Z",
+      "endTime": "2025-10-28T19:38:51.191Z",
+      "duration": 8040,
+      "stepsExecuted": 2,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Concurrent step failed at group 0"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4413,8 +4477,8 @@
     "3_102": {
       "sceneId": 102,
       "characterId": 3,
-      "executionCount": 8,
-      "lastExecuted": "2025-10-25T22:53:20.489Z",
+      "executionCount": 10,
+      "lastExecuted": "2025-10-28T00:12:03.662Z",
       "totalDuration": 0,
       "averageDuration": 0
     },

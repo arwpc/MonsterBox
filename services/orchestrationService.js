@@ -388,28 +388,57 @@ class OrchestrationService {
                         };
                     }
 
+                    const base = `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue`;
+                    const postJSON = async (url, body, timeout) => axios.post(url, body, { headers: { 'Content-Type': 'application/json' }, timeout });
+
                     // Clear queue
-                    await axios.post(`http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/clear`, {}, { timeout: 5000 });
+                    try {
+                        await postJSON(`${base}/clear`, {}, 8000);
+                    } catch (e) {
+                        const status = e?.response?.status;
+                        const data = e?.response?.data;
+                        console.error(`Queue clear failed for ${animatronic.name} -> ${base}/clear [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        // Continue anyway to try enqueue/start
+                    }
 
                     // Enqueue scene
-                    await axios.post(
-                        `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/enqueue`,
-                        { sceneId },
-                        { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
-                    );
+                    try {
+                        await postJSON(`${base}/enqueue`, { sceneId }, 8000);
+                    } catch (e) {
+                        const status = e?.response?.status;
+                        const data = e?.response?.data;
+                        console.error(`Queue enqueue failed for ${animatronic.name} -> ${base}/enqueue [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        return {
+                            name: animatronic.name,
+                            success: false,
+                            error: `enqueue failed: ${e.message}`,
+                            status,
+                            endpoint: `${base}/enqueue`,
+                            details: data && (data.error || data.message)
+                        };
+                    }
 
-                    // Start queue in loop mode
-                    const response = await axios.post(
-                        `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue/start`,
-                        { mode: 'loop_queue' },
-                        { headers: { 'Content-Type': 'application/json' }, timeout: 5000 }
-                    );
-
-                    return {
-                        name: animatronic.name,
-                        success: response.data.success || true,
-                        message: `Scene ${sceneId} started`
-                    };
+                    // Start queue in loop mode (body is currently ignored by device but harmless)
+                    try {
+                        const response = await postJSON(`${base}/start`, { mode: 'loop_queue' }, 8000);
+                        return {
+                            name: animatronic.name,
+                            success: !!(response.data && response.data.success),
+                            message: `Scene ${sceneId} started`
+                        };
+                    } catch (e) {
+                        const status = e?.response?.status;
+                        const data = e?.response?.data;
+                        console.error(`Queue start failed for ${animatronic.name} -> ${base}/start [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        return {
+                            name: animatronic.name,
+                            success: false,
+                            error: `start failed: ${e.message}`,
+                            status,
+                            endpoint: `${base}/start`,
+                            details: data && (data.error || data.message)
+                        };
+                    }
                 } catch (error) {
                     return {
                         name: animatronic.name,

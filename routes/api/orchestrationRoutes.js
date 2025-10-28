@@ -612,10 +612,28 @@ router.get('/animatronic/:id/audio-files', async (req, res) => {
         // Proxy request to animatronic's audio files API
         const axios = (await import('axios')).default;
         const format = (req.query.format || '').toLowerCase();
-        const response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, {
-            timeout: 5000,
-            params: format ? { format } : undefined
-        });
+
+        // Simple retry with backoff to avoid transient 500s when page loads many cards at once
+        const maxAttempts = 3;
+        const baseDelay = 250;
+        let lastErr;
+        let response;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, {
+                    timeout: 8000,
+                    params: format ? { format } : undefined
+                });
+                break; // success
+            } catch (e) {
+                lastErr = e;
+                if (attempt < maxAttempts) {
+                    await new Promise(r => setTimeout(r, baseDelay * attempt));
+                    continue;
+                }
+                throw e;
+            }
+        }
 
         const payload = response.data;
 
@@ -656,9 +674,20 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
 
         // Proxy request to animatronic's webcam URL API (will fail if offline)
         const axios = (await import('axios')).default;
-        const response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`, {
-            timeout: 5000
-        });
+        // Retry webcam URL too, slightly longer timeout
+        const maxAttempts = 2;
+        let response;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`, {
+                    timeout: 8000
+                });
+                break;
+            } catch (e) {
+                if (attempt >= maxAttempts) throw e;
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
 
         // Return the webcam URL prefixed with animatronic's base URL
         if (response.data && response.data.success && response.data.url) {
@@ -677,6 +706,274 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to get webcam URL',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Make a specific animatronic say text (TTS)
+ */
+router.post('/animatronic/:id/say', express.json(), async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+        const { text } = req.body;
+
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                error: 'text is required'
+            });
+        }
+
+        // Proxy to animatronic's generate-and-play API
+        const axios = (await import('axios')).default;
+        const response = await axios.post(
+            `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`,
+            { text, characterId: animatronic.characterId },
+            { timeout: 30000 }
+        );
+
+        res.json({
+            success: true,
+            message: `${animatronic.name} is speaking`,
+            data: response.data
+        });
+    } catch (error) {
+        console.error(`Error making animatronic ${req.params.id} say:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to make animatronic speak',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Ask AI on a specific animatronic
+ */
+router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+        const { text } = req.body;
+
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        if (!text) {
+            return res.status(400).json({
+                success: false,
+                error: 'text is required'
+            });
+        }
+
+        // Prefer device agent-speak API with explicit characterId to avoid reliance on device-selected character
+        const axios = (await import('axios')).default;
+        const url = `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/agent-speak`;
+        try {
+            const response = await axios.post(
+                url,
+                { text, characterId: animatronic.characterId, fallbackToTTS: true },
+                { timeout: 60000 }
+            );
+
+            if (response.data && response.data.success) {
+                return res.json({
+                    success: true,
+                    message: `AI responded from ${animatronic.name}`,
+                    data: response.data
+                });
+            }
+
+            // Fallback to simple TTS generate-and-play if agent fails
+            const details = response.data && (response.data.error || response.data.message);
+            console.warn(`Ask-AI primary failed for ${animatronic.name} -> ${url}: ${details || 'unknown error'}, trying generate-and-play`);
+        } catch (e) {
+            const status = e?.response?.status;
+            const data = e?.response?.data;
+            console.warn(`Ask-AI proxy error -> ${url} [${status || 'no-status'}]:`, e.message, data ? `payload: ${JSON.stringify(data).slice(0,500)}` : '', 'Using TTS fallback...');
+        }
+
+        // Fallback path: use generate-and-play which is widely available across device versions
+        try {
+            const ttsUrl = `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`;
+            const tts = await axios.post(ttsUrl, { text, characterId: animatronic.characterId }, { timeout: 60000 });
+            if (tts.data && tts.data.success) {
+                return res.json({ success: true, message: `AI (TTS) responded from ${animatronic.name}`, data: tts.data, fallback: 'generate-and-play' });
+            }
+            const d = tts.data && (tts.data.error || tts.data.message);
+            return res.status(500).json({ success: false, error: 'Ask AI failed', message: d || 'TTS fallback failed', device: { url: ttsUrl } });
+        } catch (fbErr) {
+            const fbs = fbErr?.response?.status;
+            const fbd = fbErr?.response?.data;
+            console.error(`Ask-AI TTS fallback error for ${animatronic.name} -> generate-and-play [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0,500)}` : '');
+            return res.status(500).json({ success: false, error: 'Failed to ask AI', message: fbErr.message, status: fbs, details: fbd && (fbd.error || fbd.message) });
+        }
+    } catch (error) {
+        console.error(`Error asking AI on animatronic ${req.params.id}:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to ask AI',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Play audio on a specific animatronic
+ */
+router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+        const { audioId, volume, audioTitle, filename } = req.body;
+
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        if (!audioId) {
+            return res.status(400).json({
+                success: false,
+                error: 'audioId is required'
+            });
+        }
+
+        // First try animatronic's audio playback API (exact ID): /audio-library/api/audio/:id/play
+        const axios = (await import('axios')).default;
+        const url = `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/${encodeURIComponent(audioId)}/play`;
+        try {
+            const response = await axios.post(
+                url,
+                { characterId: animatronic.characterId, volume: Number.isFinite(volume) ? volume : 80 },
+                { timeout: 30000 }
+            );
+
+            if (!response.data || response.data.success === false) {
+                const details = response.data && (response.data.error || response.data.message);
+                // Fallback to conversation play-audio which supports flexible identifiers
+                throw new Error(details || 'Device returned failure');
+            }
+
+            return res.json({
+                success: true,
+                message: `Playing audio on ${animatronic.name}`,
+                data: response.data
+            });
+        } catch (e) {
+            const status = e?.response?.status;
+            const data = e?.response?.data;
+            console.warn(`Play-audio primary failed for ${animatronic.name} -> ${url} [${status || 'no-status'}]:`, (e && e.message) || 'error');
+            // Attempt fallback A: device conversation API can resolve by multiple fields (newer builds)
+            try {
+                const fallbackUrl = `http://${animatronic.ip}:${animatronic.port}/conversation/api/play-audio`;
+                const body = {
+                    audioId,
+                    audio: { id: audioId, title: audioTitle || undefined, filename: filename || undefined },
+                    text: audioTitle || undefined,
+                    characterId: animatronic.characterId,
+                    volume: Number.isFinite(volume) ? volume : 80
+                };
+                const fb = await axios.post(fallbackUrl, body, { timeout: 30000 });
+                if (fb.data && fb.data.success) {
+                    return res.json({ success: true, message: `Playing audio on ${animatronic.name} (fallback)`, data: fb.data, fallback: true });
+                }
+                const det = fb.data && (fb.data.error || fb.data.message);
+                console.warn(`Play-audio conversation fallback failed for ${animatronic.name}: ${det || 'unknown'}, trying stop-gap...`);
+            } catch (fbErr) {
+                const fbs = fbErr?.response?.status;
+                const fbd = fbErr?.response?.data;
+                console.warn(`Play-audio fallback error -> ${animatronic.name} conversation/play-audio [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0,500)}` : '');
+            }
+
+            // Attempt fallback B: try to resolve by filename via audio-library directly (older builds)
+            try {
+                if (filename) {
+                    const altUrl = `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/play-by-filename`;
+                    const altBody = { filename, characterId: animatronic.characterId, volume: Number.isFinite(volume) ? volume : 80 };
+                    const alt = await axios.post(altUrl, altBody, { timeout: 30000 }).catch(() => null);
+                    if (alt && alt.data && alt.data.success) {
+                        return res.json({ success: true, message: `Playing audio on ${animatronic.name} (filename)`, data: alt.data, fallback: 'filename' });
+                    }
+                }
+            } catch (_) { /* ignore */ }
+
+            return res.status(500).json({ success: false, error: 'Failed to play audio', message: (data && (data.error || data.message)) || e.message });
+        }
+    } catch (error) {
+        console.error(`Error playing audio on animatronic ${req.params.id}:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to play audio',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Stop audio on a specific animatronic
+ */
+router.post('/animatronic/:id/stop-audio', async (req, res) => {
+    try {
+        const animatronicId = parseInt(req.params.id);
+        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+
+        if (!animatronic) {
+            return res.status(404).json({
+                success: false,
+                error: `Animatronic ${animatronicId} not found`
+            });
+        }
+
+        // Try multiple known endpoints across versions
+        const axios = (await import('axios')).default;
+
+        // A) Newer: audio-library mounted route
+        const tryStop = async (endpoint) => {
+            try {
+                const resp = await axios.post(endpoint, {}, { timeout: 8000 });
+                if (resp.data && resp.data.success) return { ok: true, data: resp.data };
+                return { ok: false, error: resp.data && (resp.data.error || resp.data.message) };
+            } catch (err) {
+                return { ok: false, error: err.message, status: err?.response?.status };
+            }
+        };
+
+        const endpoints = [
+            `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/stop-all`,
+            `http://${animatronic.ip}:${animatronic.port}/api/audio/stop-all`
+        ];
+
+        for (const ep of endpoints) {
+            const r = await tryStop(ep);
+            if (r.ok) {
+                return res.json({ success: true, message: `Stopped audio on ${animatronic.name}`, data: r.data, device: { url: ep } });
+            }
+            console.warn(`Stop-audio attempt failed for ${animatronic.name} -> ${ep}: ${r.error || 'unknown error'}${r.status ? ` [${r.status}]` : ''}`);
+        }
+
+        return res.status(500).json({ success: false, error: 'Failed to stop audio', message: 'All stop endpoints failed' });
+    } catch (error) {
+        console.error(`Error stopping audio on animatronic ${req.params.id}:`, error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to stop audio',
             message: error.message
         });
     }
