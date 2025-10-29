@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
 import { runWrapper } from './hardwareService/exec.js';
+import { spawnSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,6 +83,16 @@ class ServerPlaybackService {
     // Streaming players keyed by characterId
     this._streams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
+    this._mpg123Available = this._detectMpg123();
+  }
+
+  _detectMpg123() {
+    try {
+      const r = spawnSync('mpg123', ['--version'], { encoding: 'utf8' });
+      return r && r.status === 0;
+    } catch (_) {
+      return false;
+    }
   }
 
   async _resolveDeviceId(opts = {}) {
@@ -98,6 +109,9 @@ class ServerPlaybackService {
   }
 
   async _ensureMp3Stream(opts = {}) {
+    if (!this._mpg123Available) {
+      throw new Error('mpg123_not_available');
+    }
     const key = String(opts.characterId || 'default');
     let rec = this._streams.get(key);
     if (rec && rec.proc && !rec.proc.killed) {
@@ -148,6 +162,9 @@ class ServerPlaybackService {
 
   async writeMp3Stream(buffer, opts = {}) {
     if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    if (!this._mpg123Available) {
+      return { success: false, error: 'mpg123_not_available' };
+    }
     const rec = await this._ensureMp3Stream(opts);
     console.log(`🔊 Writing ${buffer.length} bytes to mpg123 stream (device: ${rec.deviceId})`);
     return new Promise((resolve) => {
@@ -210,8 +227,8 @@ class ServerPlaybackService {
         return { success: true, deviceId, player: this._lastPlay.player, simulated: true };
       }
 
-      // Streaming fast-path for MP3 chunks
-      if ((contentType || '').toLowerCase().includes('mpeg') || (contentType || '').toLowerCase().includes('mp3')) {
+      // Streaming fast-path for MP3 chunks (only if mpg123 available)
+      if (this._mpg123Available && ((contentType || '').toLowerCase().includes('mpeg') || (contentType || '').toLowerCase().includes('mp3'))) {
         const res = await this.writeMp3Stream(buffer, { characterId, volume, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
         if (res && res.success) return { success: true, streamed: buffer.length, deviceId: res.deviceId, player: 'mpg123' };
         // if streaming failed, fall through to file-based
@@ -240,7 +257,7 @@ class ServerPlaybackService {
         ts: Date.now(),
         characterId,
         deviceId,
-        player: result.player || (String(contentType).toLowerCase().includes('wav') ? 'pw-play' : 'unknown'),
+        player: result.player || (String(contentType).toLowerCase().includes('wav') ? 'pw-play' : (this._mpg123Available ? 'mpg123' : 'pw-play')),
         contentType,
         streamed: 0,
         volume,
