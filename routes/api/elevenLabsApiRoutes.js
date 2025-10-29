@@ -656,10 +656,12 @@ router.post('/generate-and-play', async (req, res) => {
 
         // Play the generated audio through character's speaker
         const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
-        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
+        // Use preemptive AI path: own stream, no waiting on any queues
+        const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 80
+            volume: 85,
+            kind: 'ai'
         });
 
         if (playResult.success) {
@@ -766,10 +768,11 @@ router.post('/agent-speak', async (req, res) => {
 
         // Play the generated audio through character's speaker
         const { default: serverPlaybackService } = await import('../../services/serverPlaybackService.js');
-        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
+        const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 80
+            volume: 85,
+            kind: 'ai'
         });
 
         if (playResult.success) {

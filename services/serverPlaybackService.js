@@ -84,6 +84,8 @@ class ServerPlaybackService {
     this._streams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
     this._mpg123Available = this._detectMpg123();
+    this._ffmpegAvailable = this._detectCmd('ffmpeg');
+    this._pwplayAvailable = this._detectCmd('pw-play');
   }
 
   _detectMpg123() {
@@ -92,6 +94,20 @@ class ServerPlaybackService {
       return r && r.status === 0;
     } catch (_) {
       return false;
+    }
+  }
+
+  _detectCmd(cmd) {
+    try {
+      const r = spawnSync(cmd, ['-version'], { encoding: 'utf8' });
+      return r && r.status === 0;
+    } catch (_) {
+      try {
+        const r2 = spawnSync(cmd, ['--version'], { encoding: 'utf8' });
+        return r2 && r2.status === 0;
+      } catch {
+        return false;
+      }
     }
   }
 
@@ -179,13 +195,185 @@ class ServerPlaybackService {
           contentType: 'audio/mpeg',
           streamed: buffer.length,
           volume: typeof opts.volume === 'number' ? opts.volume : 80,
-          simulated: false
+          simulated: false,
+          kind: opts.kind || 'general'
         };
         resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
       };
       if (ok) return done();
       rec.proc.stdin.once('drain', done);
     });
+  }
+
+  /**
+   * Play AI audio immediately with its own stream so it never waits for other audio.
+   * Uses mpg123 for MP3 streaming when available, otherwise falls back to ffmpeg->pw-play pipeline.
+   */
+  async playAIOnCharacterSpeaker(buffer, opts = {}) {
+    try {
+      if (!buffer || !buffer.length) return { success: false, error: 'No audio buffer provided' };
+      const characterId = opts.characterId || null;
+      const contentType = (opts.contentType || 'audio/mpeg').toLowerCase();
+      const volume = typeof opts.volume === 'number' ? opts.volume : 85;
+      const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
+
+      // Test mode: record telemetry only
+      if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+        this._lastPlay = {
+          ts: Date.now(),
+          characterId,
+          deviceId,
+          player: contentType.includes('mpeg') ? 'mpg123' : (this._pwplayAvailable ? 'pw-play' : 'unknown'),
+          contentType,
+          streamed: buffer.length,
+          volume,
+          simulated: true,
+          kind: 'ai'
+        };
+        return { success: true, simulated: true, deviceId };
+      }
+
+      // Prefer direct MP3 stream via mpg123
+      if (contentType.includes('mpeg') || contentType.includes('mp3')) {
+        if (this._mpg123Available) {
+          const { spawn } = await import('child_process');
+          const env = { ...process.env };
+          if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
+          const scale = this._calcMpg123Scale(volume);
+          const args = ['--quiet', '-o', 'pulse', '-f', String(scale), '-'];
+          const proc = spawn('mpg123', args, { env });
+          return await new Promise((resolve) => {
+            let started = false;
+            proc.stdin.on('error', (err) => {
+              console.error('mpg123(ai) stdin error:', err.message);
+            });
+            proc.stderr.on('data', (d) => {
+              const msg = String(d || '').trim();
+              if (msg && !/ALSA lib|Playing MPEG/.test(msg)) console.error('mpg123(ai) stderr:', msg);
+            });
+            proc.on('spawn', () => {
+              started = true;
+              // Telemetry at start
+              this._lastPlay = {
+                ts: Date.now(),
+                characterId,
+                deviceId,
+                player: 'mpg123',
+                contentType: 'audio/mpeg',
+                streamed: 0,
+                volume,
+                simulated: false,
+                kind: 'ai'
+              };
+            });
+            proc.on('exit', (code, sig) => {
+              // Record telemetry at exit to capture full stream bytes
+              this._lastPlay = {
+                ts: Date.now(),
+                characterId,
+                deviceId,
+                player: 'mpg123',
+                contentType: 'audio/mpeg',
+                streamed: buffer.length,
+                volume,
+                simulated: false,
+                kind: 'ai'
+              };
+              resolve({ success: true, player: 'mpg123', code, signal: sig, deviceId });
+            });
+            // Write and end to play immediately
+            try {
+              proc.stdin.write(buffer);
+              proc.stdin.end();
+            } catch (e) {
+              console.error('mpg123(ai) write failed:', e.message);
+            }
+          });
+        }
+      }
+
+      // Fallbacks: if ffmpeg and pw-play available, pipe MP3/WAV to pw-play with target
+      if (this._ffmpegAvailable && this._pwplayAvailable) {
+        const { spawn } = await import('child_process');
+        const env = { ...process.env };
+        if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId; // for pw-play target may still be passed
+
+        const ffArgs = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-f', 'wav', 'pipe:1'];
+        const ff = spawn('ffmpeg', ffArgs, { env });
+        const pwArgs = ['--target', deviceId, '-'];
+        const pw = spawn('pw-play', pwArgs, { env });
+
+        // Pipe ffmpeg PCM to pw-play
+        ff.stdout.pipe(pw.stdin);
+        ff.stdin.on('error', () => { });
+        pw.stdin.on('error', () => { });
+
+        // Telemetry at start
+        this._lastPlay = {
+          ts: Date.now(),
+          characterId,
+          deviceId,
+          player: 'ffmpeg|pw-play',
+          contentType,
+          streamed: 0,
+          volume,
+          simulated: false,
+          kind: 'ai'
+        };
+
+        return await new Promise((resolve) => {
+          let finished = false;
+          const finish = (playerName) => {
+            if (finished) return;
+            finished = true;
+            this._lastPlay = {
+              ts: Date.now(),
+              characterId,
+              deviceId,
+              player: playerName,
+              contentType,
+              streamed: buffer.length,
+              volume,
+              simulated: false,
+              kind: 'ai'
+            };
+            resolve({ success: true, player: playerName, deviceId });
+          };
+
+          ff.on('exit', () => { /* wait for pw-play */ });
+          pw.on('exit', () => finish('ffmpeg|pw-play'));
+
+          try {
+            ff.stdin.write(buffer);
+            ff.stdin.end();
+          } catch (e) {
+            console.error('ffmpeg write failed:', e.message);
+          }
+        });
+      }
+
+      // Last resort: write temp file and invoke speaker_cli (synchronous play)
+      const tmpFile = await writeTempAudio(buffer, contentType);
+      const args = ['play', tmpFile, String(volume), '--device', deviceId];
+      let raw = await runWrapper('speaker_cli.py', args, { enableLogging: false, timeoutMs: 15000 });
+      let parsed = null; try { parsed = JSON.parse(raw); } catch { }
+      const ok = parsed ? parsed.status === 'success' : true;
+      this._lastPlay = {
+        ts: Date.now(),
+        characterId,
+        deviceId,
+        player: (parsed && parsed.player) || 'speaker_cli',
+        contentType,
+        streamed: 0,
+        volume,
+        simulated: false,
+        kind: 'ai'
+      };
+      return ok ? { success: true, player: parsed && parsed.player, deviceId } : { success: false, error: parsed && parsed.message };
+    } catch (error) {
+      console.error('ServerPlaybackService AI error:', error);
+      return { success: false, error: error.message };
+    }
   }
 
   async stopStream(opts = {}) {
@@ -261,7 +449,8 @@ class ServerPlaybackService {
         contentType,
         streamed: 0,
         volume,
-        simulated: false
+        simulated: false,
+        kind: opts.kind || 'general'
       };
       return result;
     } catch (error) {
