@@ -213,6 +213,16 @@ app.get('/__audio/last-play', (req, res) => {
     }
 });
 
+// Last AI playback telemetry for validation
+app.get('/__audio/last-ai', (req, res) => {
+    try {
+        const info = serverPlaybackService.getLastAIPlay();
+        res.json({ success: true, lastAI: info });
+    } catch (e) {
+        res.json({ success: false, error: e && e.message });
+    }
+});
+
 // Routes
 // Mount Unified Calibration API v1.5
 app.use('/api/calibration', calibrationApiRouter);

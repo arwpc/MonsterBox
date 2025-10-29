@@ -83,6 +83,7 @@ class ServerPlaybackService {
     // Streaming players keyed by characterId
     this._streams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
+    this._lastAIPlay = null; // dedicated telemetry for AI playback
     this._mpg123Available = this._detectMpg123();
     this._ffmpegAvailable = this._detectCmd('ffmpeg');
     this._pwplayAvailable = this._detectCmd('pw-play');
@@ -198,6 +199,10 @@ class ServerPlaybackService {
           simulated: false,
           kind: opts.kind || 'general'
         };
+        // If this was AI, mirror to lastAI telemetry as well
+        if ((opts.kind || '').toLowerCase() === 'ai') {
+          this._lastAIPlay = { ...this._lastPlay };
+        }
         resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
       };
       if (ok) return done();
@@ -265,6 +270,7 @@ class ServerPlaybackService {
                 simulated: false,
                 kind: 'ai'
               };
+              this._lastAIPlay = { ...this._lastPlay };
             });
             proc.on('exit', (code, sig) => {
               // Record telemetry at exit to capture full stream bytes
@@ -279,6 +285,7 @@ class ServerPlaybackService {
                 simulated: false,
                 kind: 'ai'
               };
+              this._lastAIPlay = { ...this._lastPlay };
               resolve({ success: true, player: 'mpg123', code, signal: sig, deviceId });
             });
             // Write and end to play immediately
@@ -320,6 +327,7 @@ class ServerPlaybackService {
           simulated: false,
           kind: 'ai'
         };
+        this._lastAIPlay = { ...this._lastPlay };
 
         return await new Promise((resolve) => {
           let finished = false;
@@ -337,6 +345,7 @@ class ServerPlaybackService {
               simulated: false,
               kind: 'ai'
             };
+            this._lastAIPlay = { ...this._lastPlay };
             resolve({ success: true, player: playerName, deviceId });
           };
 
@@ -369,6 +378,7 @@ class ServerPlaybackService {
         simulated: false,
         kind: 'ai'
       };
+      this._lastAIPlay = { ...this._lastPlay };
       return ok ? { success: true, player: parsed && parsed.player, deviceId } : { success: false, error: parsed && parsed.message };
     } catch (error) {
       console.error('ServerPlaybackService AI error:', error);
@@ -506,6 +516,11 @@ class ServerPlaybackService {
   // Expose last playback telemetry for diagnostics/tests
   getLastPlay() {
     return this._lastPlay ? { ...this._lastPlay } : null;
+  }
+
+  // Expose last AI playback telemetry
+  getLastAIPlay() {
+    return this._lastAIPlay ? { ...this._lastAIPlay } : null;
   }
 }
 

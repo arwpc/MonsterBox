@@ -27,12 +27,12 @@ test.describe('LIVE AI audible (preemptive)', () => {
     await input.fill(q);
     await orlok.locator('button:has-text("Ask AI")').first().click();
 
-    // Poll last-play telemetry until AI kind appears (allow up to 45s)
+    // Poll last-AI telemetry until AI event appears (allow up to 45s)
     let lp = {};
     const start = Date.now();
     while (Date.now() - start < 45000) {
-      const info = await getJson(page, '/__audio/last-play');
-      lp = info.lastPlay || {};
+      const info = await getJson(page, '/__audio/last-ai');
+      lp = info.lastAI || {};
       if (lp && lp.kind === 'ai' && Date.now() - (lp.ts || 0) < 60000) break;
       await page.waitForTimeout(2000);
     }
