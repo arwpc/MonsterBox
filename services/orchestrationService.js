@@ -12,13 +12,13 @@ const execAsync = promisify(exec);
 
 class OrchestrationService {
     constructor() {
-        // Animatronic network map with characterId for AI Prompt Generator
+        // Animatronic network map with characterId and agentId for AI features
         this.animatronics = [
-            { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 27 },      // character-27
-            { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2 },    // character-2 (has agent)
-            { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 1 },             // character-1
-            { id: 4, name: 'Skulltalker', hostname: 'skulltalker', ip: '192.168.8.130', port: 3000, characterId: 3 },       // character-3
-            { id: 5, name: 'Groundbreaker', hostname: 'groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 25 }     // character-25
+            { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 8, agentId: 'agent_0801k3f1dybkecj88sta18gwwrv5' },
+            { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n' },
+            { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 3, agentId: 'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n' },
+            { id: 4, name: 'Skulltalker', hostname: 'skulltalker', ip: '192.168.8.130', port: 3000, characterId: 4, agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6' },
+            { id: 5, name: 'Groundbreaker', hostname: 'groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 9, agentId: 'agent_4201k6s9y384f9v9hqmg67ygc645' }
         ];
 
         // Goblin network map
@@ -313,6 +313,9 @@ class OrchestrationService {
         const { ip, port } = goblin;
 
         switch (command) {
+            case 'reboot':
+                return await this.rebootDevice(ip);
+
             case 'play-video':
                 return await this.playGoblinVideo(ip, port, params.filename);
 
@@ -397,7 +400,7 @@ class OrchestrationService {
                     } catch (e) {
                         const status = e?.response?.status;
                         const data = e?.response?.data;
-                        console.error(`Queue clear failed for ${animatronic.name} -> ${base}/clear [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        console.error(`Queue clear failed for ${animatronic.name} -> ${base}/clear [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0, 300) : '');
                         // Continue anyway to try enqueue/start
                     }
 
@@ -407,7 +410,7 @@ class OrchestrationService {
                     } catch (e) {
                         const status = e?.response?.status;
                         const data = e?.response?.data;
-                        console.error(`Queue enqueue failed for ${animatronic.name} -> ${base}/enqueue [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        console.error(`Queue enqueue failed for ${animatronic.name} -> ${base}/enqueue [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0, 300) : '');
                         return {
                             name: animatronic.name,
                             success: false,
@@ -429,7 +432,7 @@ class OrchestrationService {
                     } catch (e) {
                         const status = e?.response?.status;
                         const data = e?.response?.data;
-                        console.error(`Queue start failed for ${animatronic.name} -> ${base}/start [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0,300) : '');
+                        console.error(`Queue start failed for ${animatronic.name} -> ${base}/start [${status || 'no-status'}]:`, e.message, data ? JSON.stringify(data).slice(0, 300) : '');
                         return {
                             name: animatronic.name,
                             success: false,

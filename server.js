@@ -46,6 +46,7 @@ import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js
 import goblinManagerService from './services/goblinManagerService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import pipewireService from './services/pipewireService.js';
+import serverPlaybackService from './services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -181,6 +182,35 @@ app.use(async (req, res, next) => {
         res.locals.currentCharacterName = null;
     }
     next();
+});
+
+// Minimal diagnostics to validate Ask AI -> speaker routing for current character
+app.get('/__audio/active-device', async (req, res) => {
+    try {
+        const characterId = (req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null;
+        if (!characterId) return res.json({ success: true, characterId: null, device: 'default' });
+        // Resolve without playing
+        const device = await (async () => {
+            try {
+                // Leverage internal resolution helper indirectly via a no-op stop which returns device
+                const r = await serverPlaybackService.stopForCharacter(characterId);
+                return r && r.deviceId ? r.deviceId : 'default';
+            } catch (_) { return 'default'; }
+        })();
+        res.json({ success: true, characterId, device });
+    } catch (e) {
+        res.json({ success: true, characterId: null, device: 'default', error: e && e.message });
+    }
+});
+
+// Last playback telemetry for validation
+app.get('/__audio/last-play', (req, res) => {
+    try {
+        const info = serverPlaybackService.getLastPlay();
+        res.json({ success: true, lastPlay: info });
+    } catch (e) {
+        res.json({ success: false, error: e && e.message });
+    }
 });
 
 // Routes

@@ -317,8 +317,8 @@
                             </button>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <button class="btn btn-danger w-100" onclick="rebootAll()" disabled>
-                                <i class="bi bi-power"></i> Reboot All (Disabled)
+                            <button class="btn btn-danger w-100" onclick="rebootAll()">
+                                <i class="bi bi-power"></i> Reboot All
                             </button>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -404,7 +404,7 @@
 
             html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
             html += '  <div class="card animatronic-card">';
-            html += '    <div class="card-body" ondblclick="window.open(\'' + conversationUrl + '\', \'_blank\')" style="cursor: pointer;">';
+            html += '    <div class="card-body" data-agent-id="' + (anim.agentId || '') + '" data-character-id="' + (anim.characterId || '') + '" ondblclick="window.open(\'' + conversationUrl + '\', \'_blank\')" style="cursor: pointer;">';
 
             // Header with name and status
             html += '      <div class="d-flex justify-content-between align-items-center mb-2">';
@@ -506,25 +506,19 @@
         const loadingId = 'webcam-loading-' + anim.id;
 
         try {
-            // Call Orlok's proxy endpoint to avoid CORS issues
-            const response = await fetch('/api/orchestration/animatronic/' + anim.id + '/webcam-url');
-            const data = await response.json();
+            // Prefer direct proxy stream endpoint to simplify client and avoid CORS
+            const proxyUrl = '/api/orchestration/animatronic/' + anim.id + '/webcam-stream';
+            const img = document.getElementById(imgId);
+            const loading = document.getElementById(loadingId);
 
-            if (data && data.success && data.url) {
-                const img = document.getElementById(imgId);
-                const loading = document.getElementById(loadingId);
-
-                if (img && loading) {
-                    img.src = data.url + '?_=' + Date.now();
-                    img.style.display = 'block';
-                    img.onerror = function () {
-                        this.style.display = 'none';
-                        loading.innerHTML = '<small class="text-muted">Webcam unavailable</small>';
-                    };
-                    loading.style.display = 'none';
-                }
-            } else {
-                throw new Error('Invalid webcam URL response');
+            if (img && loading) {
+                img.src = proxyUrl + '?_=' + Date.now();
+                img.style.display = 'block';
+                img.onerror = function () {
+                    this.style.display = 'none';
+                    loading.innerHTML = '<small class="text-muted">Webcam unavailable</small>';
+                };
+                loading.style.display = 'none';
             }
         } catch (err) {
             console.error('Error loading webcam for ' + anim.id + ':', err);
@@ -682,11 +676,13 @@
             });
     }
 
+    // Restart all services on animatronics
     function restartServices() {
         if (!confirm('Restart all animatronic services? This will take about 30 seconds.')) return;
         log('Restarting all services...');
         fetch('/api/orchestration/restart-services', {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         })
             .then(function (response) { return response.json(); })
             .then(function (data) {
@@ -694,12 +690,82 @@
                     log('All services restarted successfully', 'success');
                     setTimeout(refreshStatus, 5000);
                 } else {
-                    log('Service restart failed', 'error');
+                    log('Service restart failed: ' + (data.error || 'Unknown error'), 'error');
                 }
             })
             .catch(function (error) {
                 log('Error: ' + error.message, 'error');
             });
+    }
+
+    // Reboot only currently online animatronics and goblins
+    function rebootAll() {
+        if (!confirm('Reboot all online animatronics and goblins? Devices will be unavailable for ~90 seconds.')) return;
+
+        var onlineAnimIds = (window.currentOnlineAnimatronics || []).map(function (a) { return a.id; });
+        var onlineGoblinIds = (Array.isArray(window.currentGoblins) ? window.currentGoblins : [])
+            .filter(function (g) { return g.status === 'online'; })
+            .map(function (g) { return g.id; });
+
+        if ((!onlineAnimIds || onlineAnimIds.length === 0) && (!onlineGoblinIds || onlineGoblinIds.length === 0)) {
+            log('No online devices detected to reboot.', 'error');
+            return;
+        }
+
+        log('Rebooting ' + (onlineAnimIds.length) + ' animatronics and ' + (onlineGoblinIds.length) + ' goblins...');
+
+        var requests = [];
+
+        if (onlineAnimIds && onlineAnimIds.length > 0) {
+            requests.push(
+                fetch('/api/orchestration/reboot/animatronics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: onlineAnimIds })
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('✅ Reboot command sent to animatronics', 'success');
+                        } else {
+                            log('❌ Failed to reboot animatronics: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('❌ Error rebooting animatronics: ' + error.message, 'error');
+                    })
+            );
+        }
+
+        if (onlineGoblinIds && onlineGoblinIds.length > 0) {
+            requests.push(
+                fetch('/api/orchestration/reboot/goblins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: onlineGoblinIds })
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            log('✅ Reboot command sent to goblins', 'success');
+                        } else {
+                            log('❌ Failed to reboot goblins: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(function (error) {
+                        log('❌ Error rebooting goblins: ' + error.message, 'error');
+                    })
+            );
+        }
+
+        Promise.allSettled(requests).then(function () {
+            log('⏳ Devices will be back online in ~90 seconds. Auto-refreshing in 2 minutes...');
+            setTimeout(function () {
+                refreshStatus();
+                refreshGoblins();
+                log('♻️ Auto-refresh complete', 'success');
+            }, 120000);
+        });
     }
 
     function healthCheck() {
@@ -747,6 +813,107 @@
             });
     }
 
+    // WebSocket connections for AI chat per animatronic
+    var aiWebSockets = {}; // { [animId]: { ws, agentId, characterId, name, ready, pendingMessage } }
+
+    function connectAIWebSocket(animId, ip, port, name, agentId, characterId) {
+        // Don't reconnect if already connected
+        if (aiWebSockets[animId] && aiWebSockets[animId].ws && aiWebSockets[animId].ws.readyState === WebSocket.OPEN) {
+            return aiWebSockets[animId];
+        }
+
+        var wsUrl = 'ws://' + ip + ':8795';
+        console.log('🔌 Connecting to AI WebSocket for ' + name + ':', wsUrl);
+
+        var ws = new WebSocket(wsUrl);
+        var wsData = {
+            ws: ws,
+            agentId: agentId,
+            characterId: characterId,
+            name: name,
+            ready: false,
+            pendingMessage: null
+        };
+
+        ws.onopen = function () {
+            console.log('✅ AI WebSocket opened for ' + name + ', waiting for server confirmation...');
+        };
+
+        ws.onmessage = function (event) {
+            var message = JSON.parse(event.data);
+
+            if (message.type === 'connected') {
+                // Now we can start the conversation
+                console.log('✅ AI WebSocket connected for ' + name);
+                // Send configuration messages with slight delays to ensure processing
+                setTimeout(function () {
+                    console.log('Setting character ID:', characterId);
+                    ws.send(JSON.stringify({
+                        type: 'set_character',
+                        characterId: characterId
+                    }));
+                }, 50);
+                setTimeout(function () {
+                    console.log('Setting output mode to server');
+                    ws.send(JSON.stringify({
+                        type: 'set_output_mode',
+                        mode: 'server' // Play on animatronic's speaker
+                    }));
+                }, 100);
+                setTimeout(function () {
+                    console.log('Starting conversation with agent:', agentId);
+                    ws.send(JSON.stringify({
+                        type: 'start_conversation',
+                        agentId: agentId
+                    }));
+                }, 150);
+            } else if (message.type === 'conversation_started') {
+                console.log('✅ Conversation started with agent for ' + name);
+                wsData.ready = true;
+                // Send any pending message now that conversation is ready
+                if (wsData.pendingMessage) {
+                    console.log('Sending pending message:', wsData.pendingMessage);
+                    ws.send(JSON.stringify({
+                        type: 'send_message',
+                        text: wsData.pendingMessage
+                    }));
+                    wsData.pendingMessage = null;
+                }
+            } else if (message.type === 'agent_response') {
+                // Got AI response with text and audio
+                var responseText = message.text || 'Audio response';
+
+                // Only log if we have actual text (not just "Audio response")
+                if (responseText && responseText !== 'Audio response') {
+                    var displayText = responseText.length > 150 ? responseText.substring(0, 150) + '...' : responseText;
+                    log('🤖 ' + name + ' AI responded: "' + displayText + '"', 'success');
+                }
+
+                // Audio should be playing automatically on the server speaker
+            } else if (message.type === 'error') {
+                console.error('❌ WebSocket error from ' + name + ':', message);
+                log('❌ ' + name + ' AI error: ' + (message.message || JSON.stringify(message)), 'error');
+            } else {
+                // Suppress excessive debug logging
+                if (message.type !== 'debug') {
+                    console.log('WebSocket message from ' + name + ':', message.type, message);
+                }
+            }
+        };
+
+        ws.onerror = function (error) {
+            console.error('❌ AI WebSocket error for ' + name + ':', error);
+        };
+
+        ws.onclose = function () {
+            console.log('🔌 AI WebSocket closed for ' + name);
+            delete aiWebSockets[animId];
+        };
+
+        aiWebSockets[animId] = wsData;
+        return wsData;
+    }
+
     function askAI(animId, ip, port, name) {
         var inputEl = document.getElementById('text-' + animId);
         var question = inputEl.value.trim();
@@ -756,28 +923,35 @@
             return;
         }
 
-        // Include robot emoji so tests can reliably detect AI interactions
         log('🤖 Asking AI on ' + name + ': "' + question + '"');
 
-        var url = '/api/orchestration/animatronic/' + animId + '/ask-ai';
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: question })
-        })
-            .then(function (response) { return response.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    // Include robot emoji in success message for visibility in logs/tests
-                    log('🤖 ' + name + ' AI responded', 'success');
-                    inputEl.value = '';
-                } else {
-                    log('❌ ' + name + ' AI failed: ' + (data.error || 'Unknown error'), 'error');
-                }
-            })
-            .catch(function (error) {
-                log('❌ Error asking AI on ' + name + ': ' + error.message, 'error');
-            });
+        // Get agent ID and character ID from the card
+        var card = inputEl.closest('.card-body');
+        var agentId = card.getAttribute('data-agent-id');
+        var characterId = card.getAttribute('data-character-id');
+
+        if (!agentId) {
+            log('❌ ' + name + ' has no AI agent configured', 'error');
+            return;
+        }
+
+        // Connect or reuse WebSocket
+        var wsData = aiWebSockets[animId];
+        if (!wsData || !wsData.ws || wsData.ws.readyState !== WebSocket.OPEN) {
+            wsData = connectAIWebSocket(animId, ip, port, name, agentId, characterId);
+            wsData.pendingMessage = question;
+        } else if (!wsData.ready) {
+            // Connection is open but conversation not started yet, queue the message
+            wsData.pendingMessage = question;
+        } else {
+            // Already connected and ready, send immediately
+            wsData.ws.send(JSON.stringify({
+                type: 'send_message',
+                text: question
+            }));
+        }
+
+        inputEl.value = '';
     }
 
     function makeSay(animId, ip, port, name) {
@@ -813,29 +987,51 @@
 
     async function loadAudioFiles(animId, ip, port) {
         const url = '/api/orchestration/animatronic/' + animId + '/audio-files';
+        const selectEl = document.getElementById('audio-' + animId);
+
+        if (!selectEl) {
+            console.error('Audio select element not found for animId:', animId);
+            return;
+        }
+
         const maxAttempts = 3;
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
                 const data = await response.json();
                 if (data.success && data.audio && data.audio.length > 0) {
-                    const selectEl = document.getElementById('audio-' + animId);
-                    if (selectEl) {
-                        // Clear any existing (keep placeholder)
-                        selectEl.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
-                        data.audio.forEach(function (file) {
+                    // Clear ALL options including placeholder
+                    selectEl.innerHTML = '';
+
+                    // Add placeholder option
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = 'Select audio file...';
+                    selectEl.appendChild(placeholder);
+
+                    // Create a Set to track unique audio IDs and prevent duplicates
+                    const seenIds = new Set();
+
+                    // Add audio files (filter out duplicates by ID)
+                    data.audio.forEach(function (file) {
+                        if (!seenIds.has(file.id)) {
+                            seenIds.add(file.id);
                             const option = document.createElement('option');
                             option.value = file.id;
                             option.textContent = file.title || file.filename;
                             if (file.filename) option.setAttribute('data-filename', file.filename);
                             selectEl.appendChild(option);
-                        });
-                    }
+                        }
+                    });
                 }
                 return; // success or empty; stop retrying
             } catch (err) {
+                console.error('Attempt ' + attempt + ' failed loading audio files for animId ' + animId + ':', err.message);
                 if (attempt >= maxAttempts) {
-                    console.error('Error loading audio files for', animId, err);
+                    log('❌ Failed to load audio files for animatronic ' + animId + ' after ' + maxAttempts + ' attempts', 'error');
                     return;
                 }
                 await new Promise(r => setTimeout(r, 200 * attempt));
@@ -1001,6 +1197,8 @@
             const data = await response.json();
 
             if (data.success) {
+                // cache goblins globally for actions like rebootAll
+                window.currentGoblins = data.goblins || [];
                 displayGoblins(data.goblins);
                 log('✅ Goblin status refreshed (' + data.goblins.length + ' total)', 'success');
             } else {

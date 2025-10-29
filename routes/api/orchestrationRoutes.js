@@ -127,15 +127,68 @@ router.post('/broadcast/all', express.json(), async (req, res) => {
 /**
  * Reboot all animatronics
  */
-router.post('/reboot/animatronics', async (req, res) => {
+router.post('/reboot/animatronics', express.json(), async (req, res) => {
     try {
+        const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(n => parseInt(n)).filter(n => Number.isInteger(n)) : null;
+
+        if (ids && ids.length > 0) {
+            // Reboot only specified animatronics
+            const selected = orchestrationService.getAllAnimatronics().filter(a => ids.includes(a.id));
+            const results = await Promise.allSettled(
+                selected.map(async (anim) => {
+                    try {
+                        const result = await orchestrationService.executeOnAnimatronic(anim, 'reboot');
+                        return { animatronic: anim.name, success: true, result };
+                    } catch (e) {
+                        return { animatronic: anim.name, success: false, error: e.message };
+                    }
+                })
+            );
+            return res.json({ success: true, command: 'reboot', results: results.map(r => r.value || r.reason) });
+        }
+
+        // Default: reboot all
         const result = await orchestrationService.broadcastToAnimatronics('reboot');
-        res.json(result);
+        return res.json(result);
     } catch (error) {
         console.error('Error rebooting animatronics:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to reboot animatronics',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * Reboot all goblins
+ */
+router.post('/reboot/goblins', express.json(), async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body?.ids) ? req.body.ids : null; // goblin IDs are strings
+
+        if (ids && ids.length > 0) {
+            const selected = orchestrationService.goblins.filter(g => ids.includes(g.id));
+            const results = await Promise.allSettled(
+                selected.map(async (g) => {
+                    try {
+                        const result = await orchestrationService.executeOnGoblin(g, 'reboot');
+                        return { goblin: g.name, success: true, result };
+                    } catch (e) {
+                        return { goblin: g.name, success: false, error: e.message };
+                    }
+                })
+            );
+            return res.json({ success: true, command: 'reboot', results: results.map(r => r.value || r.reason) });
+        }
+
+        const result = await orchestrationService.broadcastToGoblins('reboot');
+        return res.json(result);
+    } catch (error) {
+        console.error('Error rebooting goblins:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reboot goblins',
             message: error.message
         });
     }
@@ -609,44 +662,53 @@ router.get('/animatronic/:id/audio-files', async (req, res) => {
             });
         }
 
-        // Proxy request to animatronic's audio files API
+        // Proxy request to animatronic's audio files API with robust fallbacks
         const axios = (await import('axios')).default;
-        const format = (req.query.format || '').toLowerCase();
 
-        // Simple retry with backoff to avoid transient 500s when page loads many cards at once
-        const maxAttempts = 3;
-        const baseDelay = 250;
-        let lastErr;
-        let response;
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, {
-                    timeout: 8000,
-                    params: format ? { format } : undefined
-                });
-                break; // success
-            } catch (e) {
-                lastErr = e;
-                if (attempt < maxAttempts) {
-                    await new Promise(r => setTimeout(r, baseDelay * attempt));
-                    continue;
+        const tryEndpoints = async () => {
+            const endpoints = [
+                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, type: 'array' },
+                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/library?format=legacy`, type: 'object-legacy' },
+                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/library`, type: 'object' }
+            ];
+
+            let lastError;
+            for (const ep of endpoints) {
+                try {
+                    const resp = await axios.get(ep.url, { timeout: 8000 });
+                    let files = [];
+                    if (Array.isArray(resp.data)) {
+                        files = resp.data;
+                    } else if (resp.data && (resp.data.audio || resp.data.files)) {
+                        files = resp.data.audio || resp.data.files || [];
+                    }
+                    if (files && files.length >= 0) {
+                        return files;
+                    }
+                } catch (e) {
+                    lastError = e;
+                    // try next endpoint
                 }
-                throw e;
+            }
+            if (lastError) throw lastError;
+            return [];
+        };
+
+        let files = await tryEndpoints();
+
+        // Deduplicate by filename (case-insensitive) to avoid duplicates across migrations
+        const seen = new Set();
+        const unique = [];
+        for (const f of files) {
+            const key = (f.filename || f.title || f.id || '').toString().trim().toLowerCase();
+            if (!key) continue;
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(f);
             }
         }
 
-        const payload = response.data;
-
-        if (Array.isArray(payload)) {
-            return res.json({
-                success: true,
-                audio: payload,
-                files: payload,
-                totalFiles: payload.length
-            });
-        }
-
-        res.json(payload);
+        return res.json({ success: true, audio: unique, files: unique, totalFiles: unique.length });
     } catch (error) {
         console.error(`Error getting audio files for animatronic ${req.params.id}:`, error.message);
         res.status(500).json({
@@ -689,11 +751,23 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
             }
         }
 
-        // Return the webcam URL prefixed with animatronic's base URL
+        // Return the webcam stream URL
+        // The animatronic returns an absolute URL, but we need to ensure it points to the correct IP
         if (response.data && response.data.success && response.data.url) {
+            let webcamUrl = response.data.url;
+
+            // If the URL is absolute (starts with http), extract the path and rebuild it
+            if (webcamUrl.startsWith('http')) {
+                const urlObj = new URL(webcamUrl);
+                webcamUrl = urlObj.pathname;
+            }
+
+            // Build the full URL with the animatronic's IP
+            const fullUrl = `http://${animatronic.ip}:${animatronic.port}${webcamUrl}`;
+
             res.json({
                 success: true,
-                url: `http://${animatronic.ip}:${animatronic.port}${response.data.url}`
+                url: fullUrl
             });
         } else {
             res.status(404).json({
@@ -791,10 +865,16 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
             );
 
             if (response.data && response.data.success) {
+                // Extract the actual AI response text
+                const aiResponseText = response.data.personalityText || response.data.text || response.data.response || response.data.agentResponse || 'Response generated';
+
                 return res.json({
                     success: true,
                     message: `AI responded from ${animatronic.name}`,
-                    data: response.data
+                    data: {
+                        ...response.data,
+                        text: aiResponseText  // Always include the actual response text
+                    }
                 });
             }
 
@@ -804,7 +884,7 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
         } catch (e) {
             const status = e?.response?.status;
             const data = e?.response?.data;
-            console.warn(`Ask-AI proxy error -> ${url} [${status || 'no-status'}]:`, e.message, data ? `payload: ${JSON.stringify(data).slice(0,500)}` : '', 'Using TTS fallback...');
+            console.warn(`Ask-AI proxy error -> ${url} [${status || 'no-status'}]:`, e.message, data ? `payload: ${JSON.stringify(data).slice(0, 500)}` : '', 'Using TTS fallback...');
         }
 
         // Fallback path: use generate-and-play which is widely available across device versions
@@ -812,14 +892,22 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
             const ttsUrl = `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`;
             const tts = await axios.post(ttsUrl, { text, characterId: animatronic.characterId }, { timeout: 60000 });
             if (tts.data && tts.data.success) {
-                return res.json({ success: true, message: `AI (TTS) responded from ${animatronic.name}`, data: tts.data, fallback: 'generate-and-play' });
+                return res.json({
+                    success: true,
+                    message: `AI (TTS) responded from ${animatronic.name}`,
+                    data: {
+                        ...tts.data,
+                        text: text,  // Return the original text as the response for TTS fallback
+                        fallback: 'generate-and-play'
+                    }
+                });
             }
             const d = tts.data && (tts.data.error || tts.data.message);
             return res.status(500).json({ success: false, error: 'Ask AI failed', message: d || 'TTS fallback failed', device: { url: ttsUrl } });
         } catch (fbErr) {
             const fbs = fbErr?.response?.status;
             const fbd = fbErr?.response?.data;
-            console.error(`Ask-AI TTS fallback error for ${animatronic.name} -> generate-and-play [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0,500)}` : '');
+            console.error(`Ask-AI TTS fallback error for ${animatronic.name} -> generate-and-play [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0, 500)}` : '');
             return res.status(500).json({ success: false, error: 'Failed to ask AI', message: fbErr.message, status: fbs, details: fbd && (fbd.error || fbd.message) });
         }
     } catch (error) {
@@ -839,7 +927,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
     try {
         const animatronicId = parseInt(req.params.id);
         const animatronic = orchestrationService.getAnimatronicById(animatronicId);
-        const { audioId, volume, audioTitle, filename } = req.body;
+        const { audioId, volume, audioTitle, filename, loop } = req.body;
 
         if (!animatronic) {
             return res.status(404).json({
@@ -861,7 +949,11 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
         try {
             const response = await axios.post(
                 url,
-                { characterId: animatronic.characterId, volume: Number.isFinite(volume) ? volume : 80 },
+                {
+                    characterId: animatronic.characterId,
+                    volume: Number.isFinite(volume) ? volume : 80,
+                    loop: loop === true  // Pass loop parameter to the device
+                },
                 { timeout: 30000 }
             );
 
@@ -888,7 +980,8 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                     audio: { id: audioId, title: audioTitle || undefined, filename: filename || undefined },
                     text: audioTitle || undefined,
                     characterId: animatronic.characterId,
-                    volume: Number.isFinite(volume) ? volume : 80
+                    volume: Number.isFinite(volume) ? volume : 80,
+                    loop: loop === true  // Include loop in fallback
                 };
                 const fb = await axios.post(fallbackUrl, body, { timeout: 30000 });
                 if (fb.data && fb.data.success) {
@@ -899,14 +992,19 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
             } catch (fbErr) {
                 const fbs = fbErr?.response?.status;
                 const fbd = fbErr?.response?.data;
-                console.warn(`Play-audio fallback error -> ${animatronic.name} conversation/play-audio [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0,500)}` : '');
+                console.warn(`Play-audio fallback error -> ${animatronic.name} conversation/play-audio [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0, 500)}` : '');
             }
 
             // Attempt fallback B: try to resolve by filename via audio-library directly (older builds)
             try {
                 if (filename) {
                     const altUrl = `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/play-by-filename`;
-                    const altBody = { filename, characterId: animatronic.characterId, volume: Number.isFinite(volume) ? volume : 80 };
+                    const altBody = {
+                        filename,
+                        characterId: animatronic.characterId,
+                        volume: Number.isFinite(volume) ? volume : 80,
+                        loop: loop === true  // Include loop in filename fallback
+                    };
                     const alt = await axios.post(altUrl, altBody, { timeout: 30000 }).catch(() => null);
                     if (alt && alt.data && alt.data.success) {
                         return res.json({ success: true, message: `Playing audio on ${animatronic.name} (filename)`, data: alt.data, fallback: 'filename' });

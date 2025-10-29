@@ -81,6 +81,7 @@ class ServerPlaybackService {
   constructor() {
     // Streaming players keyed by characterId
     this._streams = new Map();
+    this._lastPlay = null; // telemetry for tests/diagnostics
   }
 
   async _resolveDeviceId(opts = {}) {
@@ -151,8 +152,22 @@ class ServerPlaybackService {
     console.log(`🔊 Writing ${buffer.length} bytes to mpg123 stream (device: ${rec.deviceId})`);
     return new Promise((resolve) => {
       const ok = rec.proc.stdin.write(buffer);
-      if (ok) return resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
-      rec.proc.stdin.once('drain', () => resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId }));
+      const done = () => {
+        // Record last-play telemetry
+        this._lastPlay = {
+          ts: Date.now(),
+          characterId: opts.characterId || null,
+          deviceId: rec.deviceId,
+          player: 'mpg123',
+          contentType: 'audio/mpeg',
+          streamed: buffer.length,
+          volume: typeof opts.volume === 'number' ? opts.volume : 80,
+          simulated: false
+        };
+        resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
+      };
+      if (ok) return done();
+      rec.proc.stdin.once('drain', done);
     });
   }
 
@@ -179,6 +194,22 @@ class ServerPlaybackService {
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : 80;
 
+      // In automated test mode, avoid invoking system audio; just record telemetry
+      if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+        const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
+        this._lastPlay = {
+          ts: Date.now(),
+          characterId,
+          deviceId,
+          player: (String(contentType).toLowerCase().includes('mpeg') ? 'mpg123' : 'pw-play'),
+          contentType,
+          streamed: (String(contentType).toLowerCase().includes('mpeg') ? buffer.length : 0),
+          volume,
+          simulated: true
+        };
+        return { success: true, deviceId, player: this._lastPlay.player, simulated: true };
+      }
+
       // Streaming fast-path for MP3 chunks
       if ((contentType || '').toLowerCase().includes('mpeg') || (contentType || '').toLowerCase().includes('mp3')) {
         const res = await this.writeMp3Stream(buffer, { characterId, volume, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
@@ -196,7 +227,7 @@ class ServerPlaybackService {
       let raw = await runWrapper('speaker_cli.py', args, { enableLogging: false, timeoutMs: 15000 });
       let parsed = null; try { parsed = JSON.parse(raw); } catch (_) { }
 
-      return {
+      const result = {
         success: parsed ? (parsed.status === 'success') : true,
         deviceId,
         file: tmpFile,
@@ -204,6 +235,18 @@ class ServerPlaybackService {
         volume,
         message: parsed && parsed.message
       };
+      // Record telemetry
+      this._lastPlay = {
+        ts: Date.now(),
+        characterId,
+        deviceId,
+        player: result.player || (String(contentType).toLowerCase().includes('wav') ? 'pw-play' : 'unknown'),
+        contentType,
+        streamed: 0,
+        volume,
+        simulated: false
+      };
+      return result;
     } catch (error) {
       console.error('ServerPlaybackService error:', error);
       return { success: false, error: error.message };
@@ -252,6 +295,11 @@ class ServerPlaybackService {
     } catch (error) {
       return { success: false, error: error.message };
     }
+  }
+
+  // Expose last playback telemetry for diagnostics/tests
+  getLastPlay() {
+    return this._lastPlay ? { ...this._lastPlay } : null;
   }
 }
 

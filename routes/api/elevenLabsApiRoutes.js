@@ -721,41 +721,13 @@ router.post('/agent-speak', async (req, res) => {
             }
         }
 
-        console.log(`🎭 Agent-speak for ${character.name}: Processing "${text}" through agent ${character.elevenLabsAgentId}`);
+        console.log(`🎭 Agent-speak for ${character.name}: Using fast TTS for "${text}"`);
 
-        // Get AI personality response using conversational AI WITH audio
-        let personalityText = text;
-        let usedAgent = false;
-        let audioPlayed = false;
-
-        try {
-            const { default: elevenLabsWebSocketService } = await import('../../services/elevenLabsWebSocketService.js');
-            console.log(`🎭 Getting conversational AI response for: "${text}"`);
-            const agentResult = await elevenLabsWebSocketService.askAgentQuestion(character.elevenLabsAgentId, text, characterId);
-
-            if (agentResult.success) {
-                personalityText = agentResult.response || text;
-                usedAgent = true;
-                audioPlayed = true; // Audio was played by askAgentQuestion
-                console.log(`🎭 AI response: "${personalityText}"`);
-
-                // Return immediately since audio already played
-                return res.json({
-                    success: true,
-                    played: true,
-                    device: 'character-speaker',
-                    message: `Conversational AI played on character ${characterId}`,
-                    originalText: text,
-                    personalityText: personalityText,
-                    usedAgent: true,
-                    agentId: character.elevenLabsAgentId
-                });
-            } else {
-                console.log(`⚠️  Conversational AI failed, using TTS fallback`);
-            }
-        } catch (agentError) {
-            console.log(`⚠️  Conversational AI error (${agentError.message}), using TTS fallback`);
-        }
+        // For orchestration "Ask AI", use fast TTS instead of slow WebSocket conversational AI
+        // The "Say" feature and this should have similar response times (< 1 second)
+        // True conversational AI (which generates responses) is reserved for conversation mode
+        const personalityText = text; // Fast mode just speaks the input text
+        const usedAgent = false; // Not using slow agent mode for orchestration
 
         // Generate TTS from personality-infused text (or original if agent failed)
         const { default: elevenLabsTTSService } = await import('../../services/elevenLabsTTSService.js');

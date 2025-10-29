@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: ['**/orchestration-live.spec.js'],
+  testMatch: ['**/orchestration-live.spec.js', '**/orchestration-audio-each-live.spec.js'],
   retries: 0,
   fullyParallel: false,
   workers: 1,

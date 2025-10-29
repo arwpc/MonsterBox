@@ -600,11 +600,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 c.suppressMicUntilMs = Date.now() + 1200; // extend on each chunk
                                 if (!Array.isArray(c.audioBuffer)) c.audioBuffer = [];
                                 c.audioBuffer.push(audioData);
+                                console.log(`🔊 Audio chunk added to buffer (char ${c.characterId}, buffer size: ${c.audioBuffer.length}, playing: ${c.audioPlaying})`);
                                 if (!c.audioPlaying) {
-                                    this._startAudioPlayback(sessionId).catch(function () { /* noop */ });
+                                    console.log(`🎵 Starting audio playback for session ${sessionId}`);
+                                    this._startAudioPlayback(sessionId).catch(function (e) { console.error('Audio playback error:', e); });
                                 }
+                            } else {
+                                console.log(`⚠️ Output mode is ${c?.outputMode}, skipping server playback`);
                             }
-                        } catch (_) { }
+                        } catch (e) { console.error('Error in audio handling:', e); }
 
                         // Always also send to client so UI can display text and/or play locally if selected
                         this.sendToClient(sessionId, {
@@ -1177,11 +1181,19 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         type: 'conversation_initiation_client_data',
                         conversation_config_override: {}
                     }));
+                    
+                    // Start streaming audio playback
+                    this._startAudioPlayback(sessionId);
                 });
 
                 elevenLabsWs.on('message', async (data) => {
                     try {
                         const message = JSON.parse(data.toString());
+
+                        // Log all message types to understand structure
+                        if (message.type !== 'ping' && message.type !== 'audio') {
+                            console.log(`🔍 WebSocket message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
+                        }
 
                         if (message.type === 'conversation_initiation_metadata') {
                             // Send the question
@@ -1194,19 +1206,26 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             if (message.audio_event.audio_base_64) {
                                 connection.audioBuffer.push(message.audio_event.audio_base_64);
                             }
-                            // Accumulate response text from audio events
+                            // Accumulate response text from audio events - check all possible fields
                             const textFragment = message.audio_event.agent_response ||
+                                message.audio_event.agent_response_text ||
                                 message.audio_event.text ||
+                                message.audio_event.message ||
                                 message.agent_response ||
                                 message.text;
                             if (textFragment) {
                                 responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
-                                console.log(`📝 Captured text: "${textFragment}"`);
+                                console.log(`📝 Captured text fragment: "${textFragment}"`);
                             }
                         } else if (message.type === 'agent_response' || message.type === 'agent_response_event') {
-                            const textFragment = message.agent_response || message.text;
+                            // Extract text from agent_response_event wrapper
+                            const textFragment = message.agent_response_event?.agent_response || 
+                                                message.agent_response || 
+                                                message.text || 
+                                                message.message;
                             if (textFragment) {
                                 responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                                console.log(`📝 Captured agent response: "${textFragment.substring(0, 100)}${textFragment.length > 100 ? '...' : ''}"`);
                             }
                         } else if (message.type === 'ping' && message.ping_event) {
                             elevenLabsWs.send(JSON.stringify({
@@ -1220,39 +1239,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 });
 
                 elevenLabsWs.on('close', async () => {
-                    console.log(`🔌 Agent connection closed, playing all audio...`);
+                    console.log(`🔌 Agent connection closed`);
 
-                    // Stop the playback loop
+                    // Stop the streaming playback loop
                     connection.isActive = false;
 
-                    // Wait a moment for any pending chunks
-                    await new Promise(r => setTimeout(r, 500));
+                    // Give streaming a moment to finish any remaining chunks
+                    await new Promise(r => setTimeout(r, 1000));
 
-                    // Play ALL remaining audio in one go
-                    if (connection.audioBuffer && connection.audioBuffer.length > 0) {
-                        try {
-                            const combinedBase64 = connection.audioBuffer.join('');
-                            const audioBuffer = Buffer.from(combinedBase64, 'base64');
-                            console.log(`🔊 Playing complete response: ${audioBuffer.length} bytes from ${connection.audioBuffer.length} chunks`);
-
-                            const { default: serverPlaybackService } = await import('./serverPlaybackService.js');
-                            const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-                                characterId: connection.characterId,
-                                contentType: 'audio/mpeg',
-                                volume: 80
-                            });
-
-                            if (!result.success) {
-                                console.error(`❌ Final audio playback failed: ${result.error}`);
-                            } else {
-                                console.log(`✅ Complete audio played successfully`);
-                            }
-                        } catch (err) {
-                            console.error(`❌ Error playing final audio:`, err);
-                        }
-                    }
-
-                    console.log(`📝 Final response text: "${responseText}"`);
+                    console.log(`📝 Final response text: "${responseText || 'Response received'}"`);
                     this.activeConnections.delete(sessionId);
                     resolve({ success: true, response: responseText || 'Response received' });
                 });

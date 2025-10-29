@@ -367,6 +367,15 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
     // In test mode, bypass external AI and return success
     if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
       try { jawAnimationService.driveFromText({ characterId, text: question }).catch(() => { }); } catch (_) { }
+      // Also simulate a short audio playback on the character speaker so tests can validate routing
+      try {
+        const serverPlaybackService = (await import('../services/serverPlaybackService.js')).default;
+        // Provide a tiny buffer and mark as MP3 so playback service records mpg123 path in telemetry (simulated in test mode)
+        const dummy = Buffer.from([0xff, 0xfb, 0x90, 0x64]); // looks like an MP3 frame header-ish
+        await serverPlaybackService.playBufferOnCharacterSpeaker(dummy, { characterId, contentType: 'audio/mpeg', volume: 75 });
+      } catch (e) {
+        // non-fatal in tests
+      }
       return res.json({ success: true, testMode: true, response: 'This is a test AI response.' });
     }
 
