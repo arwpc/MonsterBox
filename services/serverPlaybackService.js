@@ -33,7 +33,24 @@ async function getSpeakerDeviceForCharacter(characterId) {
       if (speaker) {
         // Try various common fields
         const cfg = speaker.config || {};
-        return cfg.outputDevice || cfg.audioDeviceId || speaker.outputDevice || 'default';
+        // Support several historical/variant fields used in parts definitions
+        const candidates = [
+          cfg.outputDevice,
+          cfg.audioDeviceId,
+          cfg.deviceName,
+          cfg.pulseSink,
+          cfg.sink,
+          cfg.outputSink,
+          speaker.outputDevice,
+          speaker.deviceName,
+          speaker.pulseSink,
+          speaker.sink,
+          speaker.outputSink
+        ];
+        for (const c of candidates) {
+          if (c && String(c).trim()) return String(c).trim();
+        }
+        return 'default';
       }
     }
   } catch (e) {
@@ -51,7 +68,23 @@ async function getSpeakerDeviceForPartId(speakerPartId) {
       const speaker = parts.find(p => String(p.id) === String(speakerPartId) && String(p.type).toLowerCase() === 'speaker');
       if (speaker) {
         const cfg = speaker.config || {};
-        return cfg.outputDevice || cfg.audioDeviceId || speaker.outputDevice || 'default';
+        const candidates = [
+          cfg.outputDevice,
+          cfg.audioDeviceId,
+          cfg.deviceName,
+          cfg.pulseSink,
+          cfg.sink,
+          cfg.outputSink,
+          speaker.outputDevice,
+          speaker.deviceName,
+          speaker.pulseSink,
+          speaker.sink,
+          speaker.outputSink
+        ];
+        for (const c of candidates) {
+          if (c && String(c).trim()) return String(c).trim();
+        }
+        return 'default';
       }
     }
   } catch (e) {
@@ -222,7 +255,10 @@ class ServerPlaybackService {
       const volume = typeof opts.volume === 'number' ? opts.volume : 85;
       const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
-      // Test mode: record telemetry only
+  // Stop any managed stream for this character so AI gets exclusive path
+  try { await this.stopStream({ characterId }); } catch (_) { /* best-effort */ }
+
+  // Test mode: record telemetry only
       if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
         this._lastPlay = {
           ts: Date.now(),
@@ -238,17 +274,83 @@ class ServerPlaybackService {
         return { success: true, simulated: true, deviceId };
       }
 
-      // Prefer direct MP3 stream via mpg123
-      if (contentType.includes('mpeg') || contentType.includes('mp3')) {
-        if (this._mpg123Available) {
-          const { spawn } = await import('child_process');
+      // Prefer using pw-play when available (more reliable sink targeting on PipeWire)
+      const { spawn } = await import('child_process');
+      // Best-effort: stop any external players on the target device so AI preempts other audio
+      try {
+        await runWrapper('speaker_cli.py', ['stop', '--device', deviceId], { enableLogging: false, timeoutMs: 3000 });
+      } catch (e) {
+        // ignore - best-effort
+      }
+      if (this._pwplayAvailable) {
+        try {
+          const env = { ...process.env };
+          if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
+          const pwArgs = deviceId && deviceId !== 'default' ? ['--target', deviceId, '-'] : ['-'];
+          const pw = spawn('pw-play', pwArgs, { env });
+
+          pw.stdin.on('error', (err) => {
+            console.error('pw-play(ai) stdin error:', err.message);
+          });
+          pw.stderr.on('data', (d) => {
+            const msg = String(d || '').trim();
+            if (msg) console.error('pw-play(ai) stderr:', msg);
+          });
+
+          // Telemetry at start
+          this._lastPlay = {
+            ts: Date.now(),
+            characterId,
+            deviceId,
+            player: 'pw-play',
+            contentType,
+            streamed: 0,
+            volume,
+            simulated: false,
+            kind: 'ai'
+          };
+          this._lastAIPlay = { ...this._lastPlay };
+
+          return await new Promise((resolve) => {
+            pw.on('exit', (code, sig) => {
+              this._lastPlay = {
+                ts: Date.now(),
+                characterId,
+                deviceId,
+                player: 'pw-play',
+                contentType,
+                streamed: buffer.length,
+                volume,
+                simulated: false,
+                kind: 'ai'
+              };
+              this._lastAIPlay = { ...this._lastPlay };
+              resolve({ success: true, player: 'pw-play', code, signal: sig, deviceId });
+            });
+            try { pw.stdin.write(buffer); pw.stdin.end(); } catch (e) { console.error('pw-play write failed:', e.message); }
+          });
+        } catch (err) {
+          console.error('pw-play(ai) failed, falling back:', err && err.message);
+          // continue to other fallbacks
+        }
+      }
+
+      // Next fallback: mpg123 for MP3 data
+      if (this._mpg123Available && (contentType.includes('mpeg') || contentType.includes('mp3'))) {
+        try {
           const env = { ...process.env };
           if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
           const scale = this._calcMpg123Scale(volume);
           const args = ['--quiet', '-o', 'pulse', '-f', String(scale), '-'];
           const proc = spawn('mpg123', args, { env });
+
           return await new Promise((resolve) => {
             let started = false;
+            proc.on('error', (e) => {
+              console.error('mpg123(ai) spawn error:', e && e.message);
+              this._lastAIPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType, streamed: 0, volume, simulated: false, kind: 'ai', error: e && e.message };
+              resolve({ success: false, error: e && e.message });
+            });
             proc.stdin.on('error', (err) => {
               console.error('mpg123(ai) stdin error:', err.message);
             });
@@ -258,44 +360,18 @@ class ServerPlaybackService {
             });
             proc.on('spawn', () => {
               started = true;
-              // Telemetry at start
-              this._lastPlay = {
-                ts: Date.now(),
-                characterId,
-                deviceId,
-                player: 'mpg123',
-                contentType: 'audio/mpeg',
-                streamed: 0,
-                volume,
-                simulated: false,
-                kind: 'ai'
-              };
+              this._lastPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType: 'audio/mpeg', streamed: 0, volume, simulated: false, kind: 'ai' };
               this._lastAIPlay = { ...this._lastPlay };
             });
             proc.on('exit', (code, sig) => {
-              // Record telemetry at exit to capture full stream bytes
-              this._lastPlay = {
-                ts: Date.now(),
-                characterId,
-                deviceId,
-                player: 'mpg123',
-                contentType: 'audio/mpeg',
-                streamed: buffer.length,
-                volume,
-                simulated: false,
-                kind: 'ai'
-              };
+              this._lastPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType: 'audio/mpeg', streamed: buffer.length, volume, simulated: false, kind: 'ai' };
               this._lastAIPlay = { ...this._lastPlay };
               resolve({ success: true, player: 'mpg123', code, signal: sig, deviceId });
             });
-            // Write and end to play immediately
-            try {
-              proc.stdin.write(buffer);
-              proc.stdin.end();
-            } catch (e) {
-              console.error('mpg123(ai) write failed:', e.message);
-            }
+            try { proc.stdin.write(buffer); proc.stdin.end(); } catch (e) { console.error('mpg123(ai) write failed:', e.message); }
           });
+        } catch (e) {
+          console.error('mpg123(ai) failed:', e && e.message);
         }
       }
 

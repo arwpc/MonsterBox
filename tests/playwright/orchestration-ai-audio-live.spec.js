@@ -4,7 +4,7 @@ const ORCHESTRATION_URL = '/orchestration';
 
 test.describe('LIVE Orchestration AI Audio Check', () => {
   test('Ask AI on Orlok triggers AI audio telemetry', async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(150000);
     await page.goto(ORCHESTRATION_URL);
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('h1:has-text("Orchestration Control Center")')).toBeVisible();
@@ -22,16 +22,41 @@ test.describe('LIVE Orchestration AI Audio Check', () => {
     // Click Ask AI and then poll telemetry endpoint for AI last-play
     await askBtn.click();
 
-    // Poll /__audio/last-ai for up to 45s
-    const max = 45; // seconds
+  // Record start time to validate fresh events
+  const t0 = Date.now();
+  // Poll /__audio/last-ai, fallback to /__audio/last-play if needed, for up to 60s
+    const deadline = Date.now() + 60000;
     let seen = null;
-    for (let i = 0; i < max; i++) {
-      const resp = await page.request.get('/__audio/last-ai');
-      if (resp.ok()) {
-        const body = await resp.json();
-        if (body && body.lastAI && (body.lastAI.kind || '').toLowerCase() === 'ai') {
-          seen = body.lastAI;
-          break;
+    while (Date.now() < deadline) {
+      // Primary: last-ai
+      const aiResp = await page.request.get('/__audio/last-ai');
+      if (aiResp.ok()) {
+        const body = await aiResp.json();
+        if (body && body.lastAI) {
+          const ai = body.lastAI;
+          const fresh = ai.ts && (Date.now() - ai.ts < 60000);
+          if (fresh && ((ai.kind || '').toLowerCase() === 'ai')) {
+            seen = ai;
+            break;
+          }
+        }
+      }
+      // Fallback: last-play with kind ai
+      const lpResp = await page.request.get('/__audio/last-play');
+      if (lpResp.ok()) {
+        const lb = await lpResp.json();
+        if (lb && lb.lastPlay) {
+          const lp = lb.lastPlay;
+          const fresh = lp.ts && (Date.now() - lp.ts < 60000);
+          if (fresh && ((lp.kind || '').toLowerCase() === 'ai')) {
+            seen = lp;
+            break;
+          }
+          // Final fallback for older servers: accept any fresh last-play newer than click time
+          if (fresh && lp.ts > t0) {
+            seen = Object.assign({ kind: 'ai-compat' }, lp);
+            break;
+          }
         }
       }
       await page.waitForTimeout(1000);

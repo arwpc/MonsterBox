@@ -223,6 +223,20 @@ app.get('/__audio/last-ai', (req, res) => {
     }
 });
 
+// Audio tooling diagnostics
+app.get('/__audio/tools', (req, res) => {
+    try {
+        const tools = {
+            mpg123: serverPlaybackService._mpg123Available || false,
+            ffmpeg: serverPlaybackService._ffmpegAvailable || false,
+            pwplay: serverPlaybackService._pwplayAvailable || false
+        };
+        res.json({ success: true, tools });
+    } catch (e) {
+        res.json({ success: false, error: e && e.message });
+    }
+});
+
 // Routes
 // Mount Unified Calibration API v1.5
 app.use('/api/calibration', calibrationApiRouter);
