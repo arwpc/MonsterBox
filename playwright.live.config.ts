@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 0,
   fullyParallel: false,
   workers: 1,
-  
+
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: 'playwright-report-live' }]

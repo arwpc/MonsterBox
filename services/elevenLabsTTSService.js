@@ -4,9 +4,9 @@
  */
 
 import axios from 'axios';
+import { spawnSync } from 'child_process';
 import FormData from 'form-data';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
-import { spawnSync } from 'child_process';
 
 class ElevenLabsTTSService {
     constructor() {

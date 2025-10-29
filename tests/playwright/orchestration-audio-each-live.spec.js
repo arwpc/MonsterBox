@@ -3,7 +3,7 @@
  * Uses the live server configured in playwright.live.config.ts
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const ORCHESTRATION_URL = '/orchestration';
 

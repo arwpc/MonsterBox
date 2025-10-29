@@ -1,10 +1,10 @@
+import { spawnSync } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
 import { runWrapper } from './hardwareService/exec.js';
-import { spawnSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -255,10 +255,10 @@ class ServerPlaybackService {
       const volume = typeof opts.volume === 'number' ? opts.volume : 85;
       const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
-  // Stop any managed stream for this character so AI gets exclusive path
-  try { await this.stopStream({ characterId }); } catch (_) { /* best-effort */ }
+      // Stop any managed stream for this character so AI gets exclusive path
+      try { await this.stopStream({ characterId }); } catch (_) { /* best-effort */ }
 
-  // Test mode: record telemetry only
+      // Test mode: record telemetry only
       if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
         this._lastPlay = {
           ts: Date.now(),

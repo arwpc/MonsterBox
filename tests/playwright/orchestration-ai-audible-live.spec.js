@@ -1,7 +1,7 @@
 /**
  * LIVE: Verify Ask AI produces immediate audible playback via preemptive stream
  */
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const ORCH_URL = '/orchestration';
 
@@ -28,8 +28,8 @@ test.describe('LIVE AI audible (preemptive)', () => {
     await orlok.locator('button:has-text("Ask AI")').first().click();
 
     // Poll last-AI telemetry until AI event appears (allow up to 60s), fallback to last-play if needed
-  let seen = null;
-  const start = Date.now();
+    let seen = null;
+    const start = Date.now();
     while (Date.now() - start < 60000) {
       try {
         const info = await getJson(page, '/__audio/last-ai');
@@ -38,7 +38,7 @@ test.describe('LIVE AI audible (preemptive)', () => {
           seen = ai;
           break;
         }
-      } catch {}
+      } catch { }
       try {
         const lp = await getJson(page, '/__audio/last-play');
         const last = lp.lastPlay || null;
@@ -47,7 +47,7 @@ test.describe('LIVE AI audible (preemptive)', () => {
           seen = Object.assign({ kind: (last.kind || 'ai') }, last);
           break;
         }
-      } catch {}
+      } catch { }
       await page.waitForTimeout(2000);
     }
     expect(seen).not.toBeNull();
