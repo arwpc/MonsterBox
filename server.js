@@ -66,6 +66,17 @@ let shuttingDown = false;
 const config = await loadConfig();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3000);
 
+// Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident
+try {
+    const isTestEnv = (process.env.NODE_ENV === 'test') || (PORT === 3123);
+    const mbTestMode = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+    const hwAvail = (process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1');
+    if (mbTestMode && !isTestEnv && !hwAvail) {
+        process.env.MONSTERBOX_HARDWARE_AVAILABLE = '1';
+        console.warn('⚠️  MB_TEST_MODE detected on a production port; enabling MONSTERBOX_HARDWARE_AVAILABLE=1 so hardware control is real.');
+    }
+} catch (_) { /* ignore */ }
+
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

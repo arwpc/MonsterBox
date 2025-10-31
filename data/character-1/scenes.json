@@ -76,5 +76,22 @@
       }
     ],
     "created": "2025-10-24T02:55:00.000Z"
+  },
+  {
+    "id": 101,
+    "name": "Halloween Audio Loop - PumpkinHead",
+    "loop": true,
+    "steps": [
+      {
+        "type": "audio",
+        "audioFile": "d17bbe2f-203a-429d-bb37-501c4f64ffb4.mp3",
+        "volume": 80
+      },
+      {
+        "type": "delay",
+        "duration": 236000
+      }
+    ],
+    "created": "2025-10-31T21:45:00.000Z"
   }
 ]

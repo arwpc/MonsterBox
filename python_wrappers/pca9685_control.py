@@ -27,41 +27,52 @@ def validate_channel(channel):
     return channel
 
 def pca9685_init(i2c_address=PCA9685_DEFAULT_ADDRESS):
-    """Initialize PCA9685 device"""
+    """Initialize PCA9685 device, preferring I2C bus 1 but falling back to common alternatives.
+
+    Honors optional env MB_I2C_BUS to force a specific bus number.
+    """
     try:
+        import os
         import smbus
-        bus = smbus.SMBus(1)  # Use bus 1 for Raspberry Pi 4B I2C
-        
-        # Reset
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
-        
-        # Set sleep mode to allow prescale change
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x10)
-        
-        # Set prescale for 50Hz PWM frequency
-        # prescale = round(osc_clock / (4096 * freq)) - 1  with osc_clock=25MHz
-        desired_freq_hz = 50
-        prescale_val = int(round(25000000.0 / (4096.0 * desired_freq_hz)) - 1)
-        if prescale_val < 3:
-            prescale_val = 3
-        if prescale_val > 255:
-            prescale_val = 255
-        bus.write_byte_data(i2c_address, PCA9685_PRESCALE, prescale_val)
-        
-        # Wake up (turn off sleep mode)
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
-        time.sleep(0.005)  # Wait for oscillator
-        
-        # Enable auto increment
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x20)
-        
-        log_message({
-            "status": "success",
-            "message": f"PCA9685 initialized at address 0x{i2c_address:02x}"
-        })
-        
-        return bus
-        
+
+        # Determine candidate I2C buses
+        env_bus = os.environ.get('MB_I2C_BUS')
+        if env_bus is not None:
+            candidates = [int(env_bus)]
+        else:
+            # Common Raspberry Pi buses: 1 (primary), 0 (older), 20/21 (some overlays)
+            candidates = [1, 0, 20, 21]
+
+        last_err = None
+        for bus_num in candidates:
+            try:
+                bus = smbus.SMBus(bus_num)
+                # Basic init sequence
+                bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)  # Reset
+                bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x10)  # Sleep for prescale
+
+                desired_freq_hz = 50
+                prescale_val = int(round(25000000.0 / (4096.0 * desired_freq_hz)) - 1)
+                prescale_val = max(3, min(255, prescale_val))
+                bus.write_byte_data(i2c_address, PCA9685_PRESCALE, prescale_val)
+
+                bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)  # Wake
+                time.sleep(0.005)
+                bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x20)  # Auto-increment
+
+                log_message({
+                    "status": "success",
+                    "message": f"PCA9685 initialized at address 0x{i2c_address:02x} on I2C bus {bus_num}"
+                })
+                return bus
+            except Exception as e:
+                last_err = e
+                # Try next bus
+                continue
+
+        # If all candidates failed, raise the last error
+        raise last_err if last_err else RuntimeError("No usable I2C bus candidates")
+
     except ImportError:
         log_message({
             "status": "error",

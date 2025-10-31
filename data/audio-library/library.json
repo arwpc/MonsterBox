@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "createdAt": "2025-09-23T05:39:19.673Z",
-  "lastModified": "2025-10-30T23:43:25.160Z",
+  "lastModified": "2025-10-31T23:32:54.284Z",
   "categories": [
     "monster-sounds",
     "ambient",
@@ -14,7 +14,7 @@
     "nature",
     "other"
   ],
-  "totalSize": 175959016,
+  "totalSize": 182370752,
   "audio": [
     {
       "id": "ba5adb09-7e25-49bd-80d8-12bb9aff1f35",
@@ -42,8 +42,8 @@
       "lastModified": "2025-09-23T15:27:24.570Z",
       "waveformGenerated": true,
       "favorite": false,
-      "playCount": 10,
-      "lastPlayed": "2025-10-26T00:47:17.849Z"
+      "playCount": 12,
+      "lastPlayed": "2025-10-31T23:19:05.251Z"
     },
     {
       "id": "54ef9d8c-3c05-4394-b670-c1808774654c",
@@ -72,8 +72,8 @@
       "lastModified": "2025-09-23T15:27:24.583Z",
       "waveformGenerated": true,
       "favorite": false,
-      "playCount": 4,
-      "lastPlayed": "2025-10-25T22:49:09.109Z"
+      "playCount": 5,
+      "lastPlayed": "2025-10-31T22:45:24.443Z"
     },
     {
       "id": "faa40a1e-9f84-4347-a043-2e137ed8a441",
@@ -1091,8 +1091,8 @@
       "lastModified": "2025-10-28T20:58:40.654Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2025-10-31T23:32:54.284Z"
     },
     {
       "id": "f51e6d54-690b-4f8a-adec-6602c84b9c5e",
@@ -1334,8 +1334,8 @@
       "lastModified": "2025-10-28T21:09:25.043Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2025-10-31T22:21:29.663Z"
     },
     {
       "id": "e6514170-2b0f-4785-915a-89f604778ed2",
@@ -2194,7 +2194,36 @@
       "favorite": false,
       "playCount": 0,
       "lastPlayed": null
+    },
+    {
+      "id": "517cf2ec-b17b-418e-9c8f-e4d0751ef063",
+      "title": "HalloweenImport",
+      "description": "By Halloween Sound Effects",
+      "filename": "517cf2ec-b17b-418e-9c8f-e4d0751ef063.mp3",
+      "originalFilename": "08 - Midnight In The Cemetery.mp3",
+      "format": "mp3",
+      "duration": 277.23755102040815,
+      "fileSize": 6411736,
+      "sampleRate": 44100,
+      "channels": 2,
+      "bitrate": 184899.62781494396,
+      "tags": [
+        "Halloween Sound Effects",
+        "Terror",
+        "2006"
+      ],
+      "category": "other",
+      "artist": "Halloween Sound Effects",
+      "album": "Halloween NIghtmare",
+      "genre": "Terror",
+      "year": 2006,
+      "uploadedAt": "2025-10-31T22:04:25.911Z",
+      "lastModified": "2025-10-31T22:04:25.911Z",
+      "waveformGenerated": true,
+      "favorite": false,
+      "playCount": 1,
+      "lastPlayed": "2025-10-31T22:09:03.033Z"
     }
   ],
-  "totalFiles": 80
+  "totalFiles": 81
 }

@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 // Default configuration
 const DEFAULT_CONFIG = {
-    timeoutMs: 8000,
+    timeoutMs: 30000,  // 30 seconds to allow long-duration hardware movements
     pythonPath: '/usr/bin/python3',
     scriptsPath: path.resolve(__dirname, '../../../../scripts/hardware'),
     enableLogging: true
@@ -28,6 +28,7 @@ export function runPy(args, options = {}) {
     const config = { ...DEFAULT_CONFIG, ...options };
 
     return new Promise((resolve, reject) => {
+        const startTime = Date.now();
         if (config.enableLogging) {
             console.log(`🔧 Hardware Command: ${config.pythonPath} ${args.join(' ')}`);
         }
@@ -57,6 +58,8 @@ export function runPy(args, options = {}) {
         // Handle process completion
         childProcess.on('exit', (code) => {
             clearTimeout(timeout);
+
+            console.log(`🔧 Process exited with code ${code} after ${((Date.now() - startTime) / 1000).toFixed(2)}s`);
 
             if (code === 0) {
                 // Success - log stdout as success, stderr as info (not error)
@@ -113,7 +116,10 @@ export function runPy(args, options = {}) {
  */
 export function runWrapper(wrapperScript, scriptArgs = [], options = {}) {
     // In CI or UI tests, short-circuit hardware calls to avoid I/O errors
-    if (String(process.env.MB_TEST_MODE || '') === '1') {
+    // Allow explicit override when running on real hardware by setting MONSTERBOX_HARDWARE_AVAILABLE=1
+    const inTestMode = String(process.env.MB_TEST_MODE || '') === '1';
+    const hardwareAvailable = String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1';
+    if (inTestMode && !hardwareAvailable) {
         const payload = {
             status: 'success',
             message: `Simulated ${wrapperScript}`,

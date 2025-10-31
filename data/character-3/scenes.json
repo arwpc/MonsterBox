@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": 100,
+    "name": "Halloween Audio Loop - Orlok",
+    "loop": true,
+    "steps": [
+      {
+        "type": "audio",
+        "audioFile": "206c8836-bc34-4ac9-a426-f773eaf943c8.mp3",
+        "volume": 80
+      },
+      {
+        "type": "delay",
+        "duration": 277000
+      }
+    ],
+    "created": "2025-10-31T21:45:00.000Z"
+  }
+]

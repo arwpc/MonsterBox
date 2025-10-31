@@ -163,13 +163,32 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦴 Linear Actuator - extending/retracting movements (real hardware via Python wrapper)
     linear_actuator: {
+        async jog({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, direction, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+            console.log(`🦴 linear_actuator.jog: direction=${direction}, speed=${speed}%, duration=${duration}ms`);
+            // Unified jog action that routes to extend/retract based on direction
+            if (direction === 'extend') {
+                const result = await this.extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
+                console.log(`🦴 linear_actuator.jog: extend completed`);
+                return result;
+            } else if (direction === 'retract') {
+                const result = await this.retract({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
+                console.log(`🦴 linear_actuator.jog: retract completed`);
+                return result;
+            } else {
+                throw new Error(`Invalid direction for jog: ${direction}. Must be 'extend' or 'retract'.`);
+            }
+        },
+
         async extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+            console.log(`🦴 extend() called: board=${controlBoard}, dirPin=${directionPin}, pwmPin=${pwmPin}, speed=${speed}, duration=${duration}`);
             try {
                 const dur = typeof duration === 'number' ? duration : 1000; // safe default
                 const board = controlBoard || 'MDD10A';
+                console.log(`🦴 extend() normalized: board=${board}, dur=${dur}`);
 
                 let out;
                 if (board === 'BTS7960' && rpwmPin !== undefined && lpwmPin !== undefined) {
+                    console.log(`🦴 extend() using BTS7960 path...`);
                     // Use new v2 script for BTS7960
                     const config = JSON.stringify({
                         controlBoard: 'BTS7960',
@@ -183,10 +202,12 @@ const HARDWARE_CONTROLLERS = {
                     });
                     out = await runWrapper('linear_actuator_control_v2.py', [config]);
                 } else {
+                    console.log(`🦴 extend() using MDD10A/Cytron path...`);
                     // Use legacy script for MDD10A/Cytron
                     const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                     const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
+                    console.log(`🦴 extend() calling actuatorService.controlActuator with dirPin=${dirPin}, pwm=${pwm}, speed=${speed}, duration=${dur}`);
                     out = await actuatorService.controlActuator({
                         directionPin: dirPin,
                         pwmPin: pwm,
@@ -196,8 +217,10 @@ const HARDWARE_CONTROLLERS = {
                         maxExtension: maxExtension,
                         maxRetraction: maxRetraction
                     });
+                    console.log(`🦴 extend() actuatorService.controlActuator completed, out length=${String(out).length}`);
                 }
 
+                console.log(`🦴 extend() parsing output...`);
                 // Parse output
                 const parsed = (() => {
                     try {
@@ -473,7 +496,9 @@ const HARDWARE_CONTROLLERS = {
     servo: {
         async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard' }) {
             try {
-                if (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true') {
+                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
+                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
+                if (inTest && !hwAvailable) {
                     const st = String(servoType || '').toLowerCase();
                     return {
                         success: true,
@@ -561,7 +586,9 @@ const HARDWARE_CONTROLLERS = {
 
         async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address, servoType = 'continuous', duration = 1000, invertDirection = false }) {
             try {
-                if (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true') {
+                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
+                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
+                if (inTest && !hwAvailable) {
                     const effectiveDirection = invertDirection
                         ? (direction === 'cw' ? 'ccw' : (direction === 'ccw' ? 'cw' : direction))
                         : direction;
@@ -633,7 +660,9 @@ const HARDWARE_CONTROLLERS = {
 
         async stop({ pin, channel, controllerType = 'gpio', address, servoType = 'continuous' }) {
             try {
-                if (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true') {
+                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
+                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
+                if (inTest && !hwAvailable) {
                     return {
                         success: true,
                         partType: 'servo',
@@ -1502,7 +1531,9 @@ export async function controlPart(partId, action, params = {}) {
         // TODO: Re-implement safety limits using unified calibration profiles
         // Legacy simple calibration safety limits removed - needs migration to unified calibration
 
-        const result = await actionFunction(actionParams);
+        console.log(`🔧 Calling ${action} on ${type} controller with params:`, { speed: actionParams.speed, duration: actionParams.duration, direction: actionParams.direction });
+        const result = await actionFunction.call(controller, actionParams);
+        console.log(`🔧 Controller ${action} completed`);
 
         return {
             ...result,

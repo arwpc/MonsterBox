@@ -117,5 +117,22 @@
     ],
     "created": "2025-10-30T04:13:21.743Z",
     "updated": "2025-10-31T16:25:45.552Z"
+  },
+  {
+    "id": 100,
+    "name": "Halloween Audio Loop - Coffin",
+    "loop": true,
+    "steps": [
+      {
+        "type": "audio",
+        "audioFile": "ea647464-07a7-43ed-8693-e324d63e0e81.mp3",
+        "volume": 80
+      },
+      {
+        "type": "delay",
+        "duration": 277000
+      }
+    ],
+    "created": "2025-10-31T21:45:00.000Z"
   }
 ]

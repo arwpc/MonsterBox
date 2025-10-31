@@ -208,6 +208,10 @@ echo ""
 echo "Press Ctrl+C to stop MonsterBox"
 echo ""
 
+# Ensure real hardware is enabled and test mode is not accidentally inherited
+unset MB_TEST_MODE
+export MONSTERBOX_HARDWARE_AVAILABLE=1
+
 # Start the server
 exec node server.js
 

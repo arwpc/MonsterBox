@@ -68,18 +68,17 @@ export async function controlActuator({
     // Handle MDD10A control board (legacy)
     validateArgs([directionPin, pwmPin, direction], 3);
 
-    const args = [
-        'control',
-        String(directionPin),
-        String(pwmPin),
-        direction,
-        String(speed),
-        String(duration),
-        String(maxExtension),
-        String(maxRetraction)
-    ];
+    // Use linear_actuator_control_v2.py for consistency
+    const config = {
+        controlBoard: 'MDD10A',
+        directionPin: Number(directionPin),
+        pwmPin: Number(pwmPin),
+        direction: direction === 'extend' ? 'forward' : 'backward',
+        speed: Number(speed),
+        duration: Number(duration)
+    };
 
-    return await runWrapper('actuator_cli.py', args);
+    return await runWrapper('linear_actuator_control_v2.py', [JSON.stringify(config)]);
 }
 
 /**

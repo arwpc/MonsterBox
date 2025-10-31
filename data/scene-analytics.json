@@ -4355,6 +4355,24 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1761942705276fmidymohb",
+      "sceneId": 1,
+      "characterId": 2,
+      "timestamp": "2025-10-31T20:31:45.276Z",
+      "startTime": "2025-10-31T20:31:37.254Z",
+      "endTime": "2025-10-31T20:31:45.267Z",
+      "duration": 8013,
+      "stepsExecuted": 0,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {

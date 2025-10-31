@@ -35,6 +35,7 @@ export class OpenLoopLinearAdapter {
     if (this.lastDir && this.lastDir !== currentDir && this.reversalCompensationBeta > 0) compensatedDelta += this.reversalCompensationBeta;
     const speedPct = (opts && opts.speedPct) || 50;
     const duration = (opts && opts.timeoutMs) || this.calculateMoveTime(compensatedDelta, speedPct);
+    console.log(`🔧 OpenLoopLinearAdapter: partId=${this.partId}, direction=${direction}, speed=${speedPct}%, duration=${duration}ms, deltaP=${deltaP.toFixed(3)}`);
     try {
       await hardwareService.controlPart(String(this.partId), 'jog', { direction, speed: speedPct, duration });
       this.currentP = clampedP;
