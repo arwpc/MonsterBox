@@ -1591,4 +1591,21 @@ router.post('/api/continuous_servo/:id/reset', async (req, res) => {
     }
 });
 
+// Get all calibration profiles for scene editor
+router.get('/api/calibration/profiles', async (req, res) => {
+    try {
+        const { getCalibrationStore } = await import('../../server/calibration/store.js');
+        const store = getCalibrationStore();
+        const profiles = await store.load();
+        res.json(profiles || {});
+    } catch (error) {
+        console.error('Error loading calibration profiles:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load calibration profiles',
+            message: error.message
+        });
+    }
+});
+
 export default router;

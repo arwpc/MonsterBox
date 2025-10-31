@@ -117,5 +117,6 @@
     "/^\\s*dd\\b.*\\bof=\\s*\\/dev\\//i": false,
     "/^\\s*tune2fs\\b/i": false,
     "/^\\s*fsck\\b/i": false
-  }
+  },
+  "chat.agent.maxRequests": 100
 }
