@@ -496,22 +496,6 @@ const HARDWARE_CONTROLLERS = {
     servo: {
         async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard' }) {
             try {
-                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
-                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
-                if (inTest && !hwAvailable) {
-                    const st = String(servoType || '').toLowerCase();
-                    return {
-                        success: true,
-                        partType: 'servo',
-                        pin: pin,
-                        channel: channel,
-                        angleDeg: angleDeg,
-                        servoType: st || 'standard',
-                        controllerType: controllerType,
-                        rawOutput: 'test-mode',
-                        message: 'Test mode: skipped servo move'
-                    };
-                }
                 // Normalize servoType to robustly route commands
                 const st = String(servoType || '').toLowerCase();
                 const normType = (st === 'cont' || st === 'cr') ? 'continuous'
@@ -586,26 +570,6 @@ const HARDWARE_CONTROLLERS = {
 
         async rotateContinuous({ pin, channel, direction, speed, controllerType = 'gpio', address, servoType = 'continuous', duration = 1000, invertDirection = false }) {
             try {
-                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
-                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
-                if (inTest && !hwAvailable) {
-                    const effectiveDirection = invertDirection
-                        ? (direction === 'cw' ? 'ccw' : (direction === 'ccw' ? 'cw' : direction))
-                        : direction;
-                    return {
-                        success: true,
-                        partType: 'servo',
-                        pin: pin,
-                        channel: channel,
-                        direction: effectiveDirection,
-                        speed: speed,
-                        duration: duration,
-                        servoType: servoType,
-                        controllerType: controllerType,
-                        rawOutput: 'test-mode',
-                        message: 'Test mode: skipped servo rotate'
-                    };
-                }
                 // Normalize direction based on optional invert flag
                 const effectiveDirection = invertDirection
                     ? (direction === 'cw' ? 'ccw' : (direction === 'ccw' ? 'cw' : direction))
@@ -619,7 +583,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speedInt), String(durInt)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = String(process.env.MB_TEST_MODE || '') === '1' ? true : (typeof result === 'string' && result.includes('success'));
+                    const success = typeof result === 'string' && result.includes('success');
                     return {
                         success,
                         partType: 'servo',
@@ -635,7 +599,7 @@ const HARDWARE_CONTROLLERS = {
                 } else {
                     const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed });
 
-                    const success = String(process.env.MB_TEST_MODE || '') === '1' ? true : (typeof result === 'string' && result.includes('success'));
+                    const success = typeof result === 'string' && result.includes('success');
 
                     return {
                         success: success,
@@ -660,26 +624,12 @@ const HARDWARE_CONTROLLERS = {
 
         async stop({ pin, channel, controllerType = 'gpio', address, servoType = 'continuous' }) {
             try {
-                const inTest = (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true');
-                const hwAvailable = (String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1');
-                if (inTest && !hwAvailable) {
-                    return {
-                        success: true,
-                        partType: 'servo',
-                        pin: pin,
-                        channel: channel,
-                        servoType: servoType,
-                        controllerType: controllerType,
-                        rawOutput: 'test-mode',
-                        message: 'Test mode: skipped servo stop'
-                    };
-                }
                 if (controllerType === 'pca9685') {
                     // Use stop command which sets neutral pulse and optionally turns off PWM
                     const args = ['rotate_continuous_pca', String(channel), 'stop', '0', '100'];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = String(process.env.MB_TEST_MODE || '') === '1' ? true : (typeof result === 'string' && result.includes('success'));
+                    const success = typeof result === 'string' && result.includes('success');
                     return {
                         success,
                         partType: 'servo',
@@ -692,7 +642,7 @@ const HARDWARE_CONTROLLERS = {
                 } else {
                     const result = await servoService.stop({ channel: pin });
 
-                    const success = String(process.env.MB_TEST_MODE || '') === '1' ? true : (typeof result === 'string' && result.includes('success'));
+                    const success = typeof result === 'string' && result.includes('success');
 
                     return {
                         success: success,
