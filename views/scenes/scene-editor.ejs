@@ -1,0 +1,1222 @@
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-pencil"></i> <span id="editorTitle">Edit Scene</span></h1>
+        <a href="/scenes" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Scenes</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><i class="bi bi-info-circle"></i> Scene Details</div>
+        <div class="card-body">
+          <div id="editorStatus" class="mb-3"></div>
+          <div class="mb-3">
+            <label for="sceneName" class="form-label">Scene Name</label>
+            <input type="text" id="sceneName" class="form-control" placeholder="Enter scene name">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-list-ol"></i> Steps</span>
+          <button id="addStepBtn" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i> Add Step</button>
+        </div>
+        <div class="card-body">
+          <div id="stepsList" class="sortable-steps">
+            <div class="text-muted text-center py-4">No steps yet. Click "Add Step" to begin.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <button id="saveSceneBtn" class="btn btn-primary btn-lg"><i class="bi bi-save"></i> Save Scene</button>
+      <button id="testSceneBtn" class="btn btn-outline-success btn-lg ms-2"><i class="bi bi-play-fill"></i> Test
+        Scene</button>
+      <a href="/scenes" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
+    </div>
+  </div>
+</div>
+
+<!-- Add Step Modal -->
+<div class="modal fade" id="addStepModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Step</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Non-Part Step Types (Always Available) -->
+        <h6 class="text-muted mb-3">Actions</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="pose">
+              <i class="bi bi-person-arms-up"></i><br>Pose
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="audio">
+              <i class="bi bi-music-note-beamed"></i><br>Audio
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sayThis">
+              <i class="bi bi-chat-quote"></i><br>Say This (AI Voice)
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="askAI">
+              <i class="bi bi-question-circle"></i><br>Ask AI a Question
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="goblin-video">
+              <i class="bi bi-display"></i><br>Goblin Video
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="wait">
+              <i class="bi bi-hourglass-split"></i><br>Wait/Pause
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sensor">
+              <i class="bi bi-radar"></i><br>Sensor (Wait for Motion)
+            </button>
+          </div>
+        </div>
+
+        <!-- Character Parts (Dynamically Populated) -->
+        <h6 class="text-muted mb-3">Character Parts</h6>
+        <div id="partsStepContainer" class="row g-3">
+          <div class="col-12 text-center text-muted py-3">
+            <i class="bi bi-hourglass-split"></i> Loading parts...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sortable-steps {
+    min-height: 100px;
+  }
+
+  .step-card {
+    cursor: move;
+    transition: all 0.2s;
+  }
+
+  .step-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+
+  .step-card.dragging {
+    opacity: 0.5;
+  }
+
+  .step-type-btn {
+    padding: 1.5rem;
+    font-size: 1rem;
+  }
+
+  .step-type-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+  (function () {
+    let sceneId = null;
+    let steps = [];
+    let parts = [];
+    let calibrationProfiles = {};
+    let poses = [];
+    let sounds = [];
+    let goblins = [];
+    let addStepModal = null;
+
+    function setHtml(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
+    function alertBox(type, text) {
+      return '<div class="alert alert-' + type + ' py-2 mb-2">' + text + '</div>';
+    }
+
+    // Initialize
+    async function init() {
+      // Get scene ID from URL
+      const pathParts = window.location.pathname.split('/');
+      sceneId = pathParts[pathParts.length - 1];
+
+      if (sceneId === 'new') {
+        sceneId = null;
+        document.getElementById('editorTitle').textContent = 'Create New Scene';
+      }
+
+      // Initialize modal
+      addStepModal = new bootstrap.Modal(document.getElementById('addStepModal'));
+
+      // Load resources
+      await Promise.all([
+        loadParts(),
+        loadCalibrationProfiles(),
+        loadPoses(),
+        loadSounds(),
+        loadGoblins()
+      ]);
+
+      // Load scene if editing
+      if (sceneId) {
+        await loadScene();
+      }
+
+      // Initialize sortable
+      initSortable();
+
+      // Event listeners
+      document.getElementById('addStepBtn').addEventListener('click', () => addStepModal.show());
+      document.getElementById('saveSceneBtn').addEventListener('click', saveScene);
+      document.getElementById('testSceneBtn').addEventListener('click', testScene);
+
+      // Step action button listeners (for non-part steps)
+      document.querySelectorAll('.step-action-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const type = this.getAttribute('data-type');
+          addStep(type);
+          addStepModal.hide();
+        });
+      });
+    }
+
+    async function loadParts() {
+      try {
+        const r = await fetch('/api/parts');
+        const j = await r.json();
+        parts = j.parts || [];
+        populatePartsModal();
+      } catch (e) {
+        console.error('Failed to load parts:', e);
+        parts = [];
+        populatePartsModal();
+      }
+    }
+
+    async function loadCalibrationProfiles() {
+      try {
+        const r = await fetch('/api/calibration/profiles');
+        const j = await r.json();
+        calibrationProfiles = j || {};
+      } catch (e) {
+        console.error('Failed to load calibration profiles:', e);
+        calibrationProfiles = {};
+      }
+    }
+
+    function populatePartsModal() {
+      const container = document.getElementById('partsStepContainer');
+      if (!container) return;
+
+      // Filter only enabled hardware parts (exclude speakers, microphones, webcams)
+      const hardwareParts = parts.filter(p =>
+        p.enabled &&
+        (p.type === 'servo' || p.type === 'motor' || p.type === 'linear_actuator' ||
+          p.type === 'light' || p.type === 'led' || p.type === 'motion_sensor' || p.type === 'sensor')
+      );
+
+      if (hardwareParts.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center text-muted py-3"><i class="bi bi-info-circle"></i> No hardware parts configured for this character.</div>';
+        return;
+      }
+
+      // Group parts by type
+      const grouped = {
+        'servo': [],
+        'motor': [],
+        'linear_actuator': [],
+        'light': [],
+        'sensor': []
+      };
+
+      hardwareParts.forEach(p => {
+        const type = p.type === 'led' ? 'light' : (p.type === 'motion_sensor' ? 'sensor' : p.type);
+        if (grouped[type]) {
+          grouped[type].push(p);
+        }
+      });
+
+      // Type metadata
+      const typeInfo = {
+        'servo': { icon: 'bi-gear', label: 'Servos' },
+        'motor': { icon: 'bi-arrow-repeat', label: 'Motors' },
+        'linear_actuator': { icon: 'bi-arrows-expand', label: 'Linear Actuators' },
+        'light': { icon: 'bi-lightbulb', label: 'Lights/LEDs' },
+        'sensor': { icon: 'bi-radar', label: 'Sensors' }
+      };
+
+      let html = '';
+      Object.keys(grouped).forEach(type => {
+        if (grouped[type].length > 0) {
+          const info = typeInfo[type];
+          grouped[type].forEach(part => {
+            html += '<div class="col-md-6">';
+            html += '<button class="btn btn-outline-success w-100 step-type-btn" data-type="' + type + '" data-part-id="' + part.id + '" data-part-name="' + part.name + '">';
+            html += '<i class="bi ' + info.icon + '"></i><br>';
+            html += '<strong>' + part.name + '</strong>';
+            html += '<br><small class="text-muted">' + info.label.slice(0, -1) + '</small>';
+            html += '</button>';
+            html += '</div>';
+          });
+        }
+      });
+
+      container.innerHTML = html;
+
+      // Attach event listeners to new part buttons
+      container.querySelectorAll('.step-type-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const type = this.getAttribute('data-type');
+          const partId = this.getAttribute('data-part-id');
+          addStepWithPart(type, partId);
+          addStepModal.hide();
+        });
+      });
+    }
+
+    async function loadPoses() {
+      try {
+        const r = await fetch('/api/poses');
+        const j = await r.json();
+        poses = j.poses || [];
+      } catch (e) {
+        console.error('Failed to load poses:', e);
+        poses = [];
+      }
+    }
+
+    async function loadSounds() {
+      try {
+        const r = await fetch('/api/sounds');
+        const j = await r.json();
+        sounds = j.sounds || [];
+      } catch (e) {
+        console.error('Failed to load sounds:', e);
+        sounds = [];
+      }
+    }
+
+    async function loadGoblins() {
+      try {
+        const r = await fetch('/api/goblins');
+        const j = await r.json();
+        goblins = j.goblins || [];
+      } catch (e) {
+        console.error('Failed to load goblins:', e);
+        goblins = [];
+      }
+    }
+
+    async function loadScene() {
+      try {
+        const r = await fetch('/scenes/api/' + sceneId);
+        const j = await r.json();
+        if (!j.success) {
+          setHtml('editorStatus', alertBox('danger', 'Failed to load scene: ' + (j.error || 'Unknown error')));
+          return;
+        }
+        const scene = j.scene;
+        if (!scene) {
+          setHtml('editorStatus', alertBox('danger', 'Scene not found'));
+          return;
+        }
+        document.getElementById('sceneName').value = scene.name || '';
+        steps = scene.steps || [];
+        renderSteps();
+      } catch (e) {
+        setHtml('editorStatus', alertBox('danger', 'Error loading scene: ' + (e.message || e)));
+      }
+    }
+
+    function initSortable() {
+      const el = document.getElementById('stepsList');
+      new Sortable(el, {
+        animation: 150,
+        handle: '.step-card',
+        ghostClass: 'dragging',
+        onEnd: function () {
+          updateStepsFromDOM();
+        }
+      });
+    }
+
+    function addStep(type) {
+      const step = { type: type };
+      steps.push(step);
+      renderSteps();
+    }
+
+    function addStepWithPart(type, partId) {
+      // Normalize type to match renderStepForm expectations (use hyphen not underscore)
+      const normalizedType = type === 'linear_actuator' ? 'linear-actuator' : type;
+
+      const step = {
+        type: normalizedType,
+        partId: partId
+      };
+      // Set sensible defaults based on type
+      switch (normalizedType) {
+        case 'servo':
+          step.angle = 90;
+          step.duration = 1000;
+          break;
+        case 'motor':
+          step.direction = 'forward';
+          step.speed = 50;
+          step.duration = 1000;
+          break;
+        case 'linear-actuator':
+          step.direction = 'extend';
+          step.speed = 75;
+          step.duration = 3000;
+          break;
+        case 'light':
+          step.state = 'on';
+          step.brightness = 100;
+          step.duration = 0;
+          break;
+        case 'sensor':
+          step.timeout = 5000;
+          step.threshold = 500;
+          break;
+      }
+      steps.push(step);
+      renderSteps();
+    }
+
+    function removeStep(index) {
+      if (confirm('Remove this step?')) {
+        steps.splice(index, 1);
+        renderSteps();
+      }
+    }
+
+    function duplicateStep(index) {
+      const copy = JSON.parse(JSON.stringify(steps[index]));
+      steps.splice(index + 1, 0, copy);
+      renderSteps();
+    }
+
+    async function playStep(index) {
+      const step = steps[index];
+      if (!step) {
+        alert('Step not found');
+        return;
+      }
+
+      const btn = document.querySelector(`.btn-play-step[data-index="${index}"]`);
+      const originalHtml = btn.innerHTML;
+
+      try {
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+
+        // Call the test-step API
+        const response = await fetch('/scenes/api/test-step', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(step)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Show success feedback
+          btn.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+          btn.classList.remove('btn-outline-success');
+          btn.classList.add('btn-success');
+
+          // Reset button after 2 seconds
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          // Show error feedback
+          btn.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+          btn.classList.remove('btn-outline-success');
+          btn.classList.add('btn-danger');
+          alert('Step test failed: ' + (data.error || 'Unknown error'));
+
+          // Reset button after 2 seconds
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-outline-success');
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error testing step:', error);
+        alert('Error testing step: ' + error.message);
+
+        // Reset button
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    function updateStepsFromDOM() {
+      const newSteps = [];
+      document.querySelectorAll('.step-card').forEach((card, index) => {
+        const stepIndex = parseInt(card.getAttribute('data-index'));
+        if (!isNaN(stepIndex) && steps[stepIndex]) {
+          newSteps.push(steps[stepIndex]);
+        }
+      });
+      steps = newSteps;
+      renderSteps();
+    }
+
+    function renderSteps() {
+      const container = document.getElementById('stepsList');
+      if (steps.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center py-4">No steps yet. Click "Add Step" to begin.</div>';
+        return;
+      }
+
+      let html = '';
+      steps.forEach((step, index) => {
+        html += renderStepCard(step, index);
+      });
+      container.innerHTML = html;
+
+      // Attach event listeners
+      attachStepEventListeners();
+    }
+
+    function renderStepCard(step, index) {
+      const stepNum = index + 1;
+      let html = '<div class="card step-card mb-3" data-index="' + index + '">';
+      html += '<div class="card-header">';
+      html += '<div class="d-flex justify-content-between align-items-center">';
+      html += '<h6 class="mb-0"><i class="bi bi-grip-vertical"></i> Step ' + stepNum + ': ' + getStepTypeName(step.type) + '</h6>';
+      html += '<div class="btn-group btn-group-sm">';
+      html += '<button class="btn btn-outline-success btn-play-step" data-index="' + index + '" title="Test Step"><i class="bi bi-play-fill"></i></button>';
+      html += '<button class="btn btn-outline-secondary btn-duplicate" data-index="' + index + '" title="Duplicate Step"><i class="bi bi-files"></i></button>';
+      html += '<button class="btn btn-outline-danger btn-remove" data-index="' + index + '" title="Remove Step"><i class="bi bi-trash"></i></button>';
+      html += '</div></div></div>';
+      html += '<div class="card-body">';
+      html += renderStepForm(step, index);
+      html += '</div></div>';
+      return html;
+    }
+
+    function getStepTypeName(type) {
+      const names = {
+        'pose': 'Pose',
+        'audio': 'Audio',
+        'sayThis': 'Say This (AI Voice)',
+        'askAI': 'Ask AI a Question',
+        'servo': 'Servo',
+        'motor': 'Motor',
+        'linear-actuator': 'Linear Actuator',
+        'light': 'Light/LED',
+        'sensor': 'Sensor',
+        'goblin-video': 'Goblin Video',
+        'wait': 'Wait/Pause',
+        'part': 'Part Control (Legacy)'
+      };
+      return names[type] || type;
+    }
+
+    function renderStepForm(step, index) {
+      switch (step.type) {
+        case 'pose': return renderPoseForm(step, index);
+        case 'audio': return renderAudioForm(step, index);
+        case 'sayThis': return renderSayThisForm(step, index);
+        case 'askAI': return renderAskAIForm(step, index);
+        case 'servo': return renderServoForm(step, index);
+        case 'motor': return renderMotorForm(step, index);
+        case 'linear-actuator': return renderLinearActuatorForm(step, index);
+        case 'light': return renderLightForm(step, index);
+        case 'sensor': return renderSensorForm(step, index);
+        case 'goblin-video': return renderGoblinVideoForm(step, index);
+        case 'wait': return renderWaitForm(step, index);
+        case 'part': return renderPartForm(step, index);
+        default: return '<div class="alert alert-warning mb-0"><small>Unknown step type: ' + step.type + '</small></div>';
+      }
+    }
+
+    function renderPoseForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Pose</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="poseId">';
+      html += '<option value="">Select a pose...</option>';
+      poses.forEach(p => {
+        const sel = (step.poseId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + (p.name || 'Pose ' + p.id) + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderAudioForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-8">';
+      html += '<label class="form-label">Audio File</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="audioId">';
+      html += '<option value="">Select audio...</option>';
+      sounds.forEach(s => {
+        const sel = (step.audioId == s.id || step.audioId == s.filename) ? ' selected' : '';
+        html += '<option value="' + (s.filename || s.id) + '"' + sel + '>' + (s.name || s.filename) + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-4">';
+      html += '<label class="form-label">Volume (%)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderSayThisForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Text to Speak</label>';
+      html += '<textarea class="form-control step-input" data-index="' + index + '" data-field="text" rows="2" placeholder="Enter text for AI to speak...">' + (step.text || '') + '</textarea>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<button class="btn btn-sm btn-outline-primary btn-preview-voice" data-index="' + index + '"><i class="bi bi-play-circle"></i> Preview Voice</button>';
+      html += '<span class="ms-2 text-muted voice-preview-status" id="voiceStatus' + index + '"></span>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderAskAIForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Question to Ask AI</label>';
+      html += '<textarea class="form-control step-input" data-index="' + index + '" data-field="question" rows="2" placeholder="Enter question for AI agent...">' + (step.question || step.text || '') + '</textarea>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="alert alert-info mb-0"><small><i class="bi bi-info-circle"></i> The AI will respond and the response will be played through TTS.</small></div>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderServoForm(step, index) {
+      const servoParts = parts.filter(p => p.type === 'servo');
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Servo Part</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'servo\')">';
+      html += '<option value="">Select servo...</option>';
+      servoParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Control Mode</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'servo\')">';
+      html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
+      html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
+      html += '</select></div>';
+      // Preset dropdown (only visible when usePreset=true)
+      if (step.usePreset && step.partId && calibrationProfiles[step.partId]) {
+        const profile = calibrationProfiles[step.partId];
+        html += '<div class="col-md-12 preset-container">';
+        html += '<label class="form-label">Position Preset</label>';
+        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<option value="">Select preset...</option>';
+        html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
+        html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
+        if (profile.presets && profile.presets.length > 0) {
+          profile.presets.forEach(preset => {
+            const sel = (step.presetName === preset.name) ? ' selected' : '';
+            html += '<option value="' + preset.name + '"' + sel + '>' + preset.name + '</option>';
+          });
+        }
+        html += '</select></div>';
+      }
+      // Manual controls (only visible when usePreset=false)
+      if (!step.usePreset) {
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Angle (°)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="angle" value="' + (step.angle || 90) + '" min="0" max="180">';
+        html += '</div>';
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Duration (ms)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0">';
+        html += '</div>';
+      }
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderMotorForm(step, index) {
+      const motorParts = parts.filter(p => p.type === 'motor');
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Motor Part</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'motor\')">';
+      html += '<option value="">Select motor...</option>';
+      motorParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Control Mode</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'motor\')">';
+      html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
+      html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
+      html += '</select></div>';
+      // Preset dropdown (only visible when usePreset=true)
+      if (step.usePreset && step.partId && calibrationProfiles[step.partId]) {
+        const profile = calibrationProfiles[step.partId];
+        html += '<div class="col-md-12 preset-container">';
+        html += '<label class="form-label">Position Preset</label>';
+        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<option value="">Select preset...</option>';
+        html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
+        html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
+        if (profile.presets && profile.presets.length > 0) {
+          profile.presets.forEach(preset => {
+            const sel = (step.presetName === preset.name) ? ' selected' : '';
+            html += '<option value="' + preset.name + '"' + sel + '>' + preset.name + '</option>';
+          });
+        }
+        html += '</select></div>';
+      }
+      // Manual controls (only visible when usePreset=false)
+      if (!step.usePreset) {
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Direction</label>';
+        html += '<select class="form-select step-input" data-index="' + index + '" data-field="direction">';
+        html += '<option value="forward"' + (step.direction === 'forward' ? ' selected' : '') + '>Forward</option>';
+        html += '<option value="backward"' + (step.direction === 'backward' ? ' selected' : '') + '>Backward</option>';
+        html += '</select></div>';
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Speed (%)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="speed" value="' + (step.speed || 50) + '" min="0" max="100">';
+        html += '</div>';
+        html += '<div class="col-md-12 manual-container">';
+        html += '<label class="form-label">Duration (ms)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0">';
+        html += '</div>';
+      }
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderLinearActuatorForm(step, index) {
+      const actuatorParts = parts.filter(p => p.type === 'linear_actuator');
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Linear Actuator Part</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'linear_actuator\')">';
+      html += '<option value="">Select actuator...</option>';
+      actuatorParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Control Mode</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'linear_actuator\')">';
+      html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
+      html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
+      html += '</select></div>';
+      // Preset dropdown (only visible when usePreset=true)
+      if (step.usePreset && step.partId && calibrationProfiles[step.partId]) {
+        const profile = calibrationProfiles[step.partId];
+        html += '<div class="col-md-12 preset-container">';
+        html += '<label class="form-label">Position Preset</label>';
+        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<option value="">Select preset...</option>';
+        html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
+        html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
+        if (profile.presets && profile.presets.length > 0) {
+          profile.presets.forEach(preset => {
+            const sel = (step.presetName === preset.name) ? ' selected' : '';
+            html += '<option value="' + preset.name + '"' + sel + '>' + preset.name + '</option>';
+          });
+        }
+        html += '</select></div>';
+      }
+      // Manual controls (only visible when usePreset=false)
+      if (!step.usePreset) {
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Direction</label>';
+        html += '<select class="form-select step-input" data-index="' + index + '" data-field="direction">';
+        html += '<option value="extend"' + (step.direction === 'extend' ? ' selected' : '') + '>Extend</option>';
+        html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
+        html += '</select></div>';
+        html += '<div class="col-md-6 manual-container">';
+        html += '<label class="form-label">Speed (%)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="speed" value="' + (step.speed || 75) + '" min="0" max="100">';
+        html += '</div>';
+        html += '<div class="col-md-12 manual-container">';
+        html += '<label class="form-label">Duration (ms)</label>';
+        html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 3000) + '" min="0">';
+        html += '</div>';
+      }
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderLightForm(step, index) {
+      const lightParts = parts.filter(p => p.type === 'light' || p.type === 'led');
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Light/LED Part</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<option value="">Select light...</option>';
+      lightParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-3">';
+      html += '<label class="form-label">State</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="state">';
+      html += '<option value="on"' + (step.state === 'on' ? ' selected' : '') + '>On</option>';
+      html += '<option value="off"' + (step.state === 'off' ? ' selected' : '') + '>Off</option>';
+      html += '</select></div>';
+      html += '<div class="col-md-3">';
+      html += '<label class="form-label">Brightness (%)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="brightness" value="' + (step.brightness || 100) + '" min="0" max="100">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Duration (ms, 0=instant)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 0) + '" min="0">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderSensorForm(step, index) {
+      const sensorParts = parts.filter(p => p.type === 'motion_sensor' || p.type === 'sensor');
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Sensor Part (PIR Motion)</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<option value="">Select sensor...</option>';
+      sensorParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Timeout (ms)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="timeout" value="' + (step.timeout || 5000) + '" min="0">';
+      html += '</div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Threshold</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="threshold" value="' + (step.threshold || 500) + '" min="0">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="alert alert-info py-2 mb-0"><small>Step will wait for motion detection or timeout</small></div>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderGoblinVideoForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Goblin Device</label>';
+      html += '<select class="form-select step-input goblin-selector" data-index="' + index + '" data-field="goblinId">';
+      html += '<option value="">Select goblin...</option>';
+      goblins.forEach(g => {
+        const sel = (step.goblinId == g.id) ? ' selected' : '';
+        html += '<option value="' + g.id + '"' + sel + '>' + (g.name || g.id) + '</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Video File</label>';
+      html += '<select class="form-select step-input video-dropdown" data-index="' + index + '" data-field="videoId" data-goblin-index="' + index + '">';
+      html += '<option value="">Select video...</option>';
+      html += '</select>';
+      html += '</div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Volume (%)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100">';
+      html += '</div>';
+      html += '<div class="col-md-6">';
+      html += '<div class="form-check mt-4">';
+      html += '<input type="checkbox" class="form-check-input step-input" data-index="' + index + '" data-field="loop" id="loop' + index + '"' + (step.loop ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="loop' + index + '">Loop Video</label>';
+      html += '</div></div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderWaitForm(step, index) {
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Duration (milliseconds)</label>';
+      html += '<input type="number" class="form-control step-input" data-index="' + index + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="alert alert-secondary py-2 mb-0"><small>' + ((step.duration || 1000) / 1000).toFixed(1) + ' seconds</small></div>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function renderPartForm(step, index) {
+      // Legacy "part" step type - generic part control
+      const allParts = parts;
+      let html = '<div class="row g-3">';
+      html += '<div class="col-md-12">';
+      html += '<div class="alert alert-info py-2 mb-2"><small><i class="bi bi-info-circle"></i> Legacy part control step</small></div>';
+      html += '</div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Part</label>';
+      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<option value="">Select part...</option>';
+      allParts.forEach(p => {
+        const sel = (step.partId == p.id) ? ' selected' : '';
+        html += '<option value="' + p.id + '"' + sel + '>' + p.name + ' (' + p.type + ')</option>';
+      });
+      html += '</select></div>';
+      html += '<div class="col-md-6">';
+      html += '<label class="form-label">Action</label>';
+      html += '<input type="text" class="form-control step-input" data-index="' + index + '" data-field="action" value="' + (step.action || '') + '" placeholder="e.g., turnOn, turnOff">';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<label class="form-label">Parameters (JSON)</label>';
+      html += '<textarea class="form-control step-input font-monospace" data-index="' + index + '" data-field="params" rows="2" placeholder=\'{"duration": 500}\'>' + (step.params ? JSON.stringify(step.params) : '') + '</textarea>';
+      html += '</div>';
+      html += '<div class="col-md-12">';
+      html += '<div class="form-check">';
+      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    function attachStepEventListeners() {
+      // Remove step buttons
+      document.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          removeStep(index);
+        });
+      });
+
+      // Play step buttons
+      document.querySelectorAll('.btn-play-step').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          playStep(index);
+        });
+      });
+
+      // Duplicate step buttons
+      document.querySelectorAll('.btn-duplicate').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          duplicateStep(index);
+        });
+      });
+
+      // Step input changes
+      document.querySelectorAll('.step-input').forEach(input => {
+        input.addEventListener('change', function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          const field = this.getAttribute('data-field');
+          let value = this.value;
+
+          if (this.type === 'number') {
+            value = parseFloat(value);
+          } else if (this.type === 'checkbox') {
+            value = this.checked;
+          } else if (field === 'params') {
+            // Parse JSON for params field
+            try {
+              value = value.trim() ? JSON.parse(value) : {};
+            } catch (e) {
+              console.error('Invalid JSON in params field:', e);
+              value = {};
+            }
+          }
+
+          if (!steps[index]) steps[index] = {};
+          steps[index][field] = value;
+        });
+      });
+
+      // Load goblin videos when goblin is selected
+      document.querySelectorAll('.goblin-selector').forEach(select => {
+        select.addEventListener('change', async function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          const goblinId = this.value;
+          const videoDropdown = document.querySelector(`.video-dropdown[data-goblin-index="${index}"]`);
+
+          if (!videoDropdown) return;
+
+          // Clear existing options except first
+          videoDropdown.innerHTML = '<option value="">Loading videos...</option>';
+
+          if (!goblinId) {
+            videoDropdown.innerHTML = '<option value="">Select goblin first</option>';
+            return;
+          }
+
+          try {
+            const response = await fetch(`/goblin-management/api/goblins/${goblinId}/videos`);
+            const data = await response.json();
+
+            if (data.success && data.videos) {
+              videoDropdown.innerHTML = '<option value="">Select video...</option>';
+              data.videos.forEach(video => {
+                const option = document.createElement('option');
+                option.value = video.filename;
+                option.textContent = video.filename;
+                // Pre-select if this was the saved value
+                if (steps[index] && steps[index].videoId === video.filename) {
+                  option.selected = true;
+                }
+                videoDropdown.appendChild(option);
+              });
+            } else {
+              videoDropdown.innerHTML = '<option value="">No videos found</option>';
+            }
+          } catch (error) {
+            console.error('Error loading goblin videos:', error);
+            videoDropdown.innerHTML = '<option value="">Error loading videos</option>';
+          }
+        });
+
+        // Trigger load if goblin is already selected (editing existing scene)
+        if (select.value) {
+          select.dispatchEvent(new Event('change'));
+        }
+      });
+
+      // Voice preview buttons
+      document.querySelectorAll('.btn-preview-voice').forEach(btn => {
+        btn.addEventListener('click', async function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          await previewVoice(index);
+        });
+      });
+    }
+
+    async function previewVoice(index) {
+      const step = steps[index];
+      const text = step.text;
+      const statusEl = document.getElementById('voiceStatus' + index);
+
+      if (!text) {
+        statusEl.textContent = 'Please enter text first';
+        return;
+      }
+
+      statusEl.textContent = 'Generating voice...';
+
+      try {
+        const r = await fetch('/api/tts/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const j = await r.json();
+
+        if (j.success && j.audioUrl) {
+          statusEl.textContent = 'Playing preview...';
+          const audio = new Audio(j.audioUrl);
+          audio.play();
+          audio.onended = () => {
+            statusEl.textContent = 'Preview complete';
+          };
+        } else {
+          statusEl.textContent = 'Failed: ' + (j.error || 'Unknown error');
+        }
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + (e.message || e);
+      }
+    }
+
+    async function saveScene() {
+      const name = document.getElementById('sceneName').value.trim();
+      if (!name) {
+        setHtml('editorStatus', alertBox('warning', 'Please enter a scene name'));
+        return;
+      }
+
+      setHtml('editorStatus', alertBox('info', 'Saving scene...'));
+
+      try {
+        const sceneData = { name: name, steps: steps };
+        let url, method;
+
+        if (sceneId) {
+          url = '/scenes/api/' + sceneId;
+          method = 'PUT';
+        } else {
+          url = '/scenes/api';
+          method = 'POST';
+        }
+
+        const r = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sceneData)
+        });
+        const j = await r.json();
+
+        if (j.success) {
+          setHtml('editorStatus', alertBox('success', 'Scene saved successfully!'));
+          setTimeout(() => {
+            window.location.href = '/scenes';
+          }, 1000);
+        } else {
+          setHtml('editorStatus', alertBox('danger', 'Save failed: ' + (j.error || 'Unknown error')));
+        }
+      } catch (e) {
+        setHtml('editorStatus', alertBox('danger', 'Error saving scene: ' + (e.message || e)));
+      }
+    }
+
+    async function testScene() {
+      const name = document.getElementById('sceneName').value.trim();
+      if (!name) {
+        setHtml('editorStatus', alertBox('warning', 'Please enter a scene name first'));
+        return;
+      }
+
+      setHtml('editorStatus', alertBox('info', 'Testing scene...'));
+
+      try {
+        // Save first if editing
+        if (sceneId) {
+          await saveScene();
+          await new Promise(r => setTimeout(r, 500));
+        }
+
+        const r = await fetch('/scenes/api/' + (sceneId || 'test') + '/play?dryRun=true', {
+          method: 'POST'
+        });
+        const j = await r.json();
+
+        if (j.success) {
+          setHtml('editorStatus', alertBox('success', 'Test complete! Executed ' + j.steps + ' steps (dry run)'));
+        } else {
+          setHtml('editorStatus', alertBox('danger', 'Test failed: ' + (j.error || 'Unknown error')));
+        }
+      } catch (e) {
+        setHtml('editorStatus', alertBox('danger', 'Error testing scene: ' + (e.message || e)));
+      }
+    }
+
+    // Handle control mode change between Manual Control and Position Preset
+    function handleModeChange(index, stepType) {
+      const step = steps[index];
+      const modeSelect = document.querySelector(`[data-index="${index}"][data-field="usePreset"]`);
+      const usePreset = modeSelect.value === 'true';
+      
+      // Update step data
+      step.usePreset = usePreset;
+      if (usePreset) {
+        step.presetName = '__MIN__'; // Default to Min position
+      } else {
+        delete step.presetName;
+      }
+      
+      // Re-render the form
+      renderSteps();
+    }
+
+    // Handle part selection change - update presets dropdown
+    function handlePartChange(index, stepType) {
+      const step = steps[index];
+      const partSelect = document.querySelector(`[data-index="${index}"][data-field="partId"]`);
+      step.partId = parseInt(partSelect.value);
+      
+      // If using preset mode, re-render to update preset dropdown
+      if (step.usePreset) {
+        renderSteps();
+      }
+    }
+
+    // Expose functions to window scope for inline event handlers
+    window.handleModeChange = handleModeChange;
+    window.handlePartChange = handlePartChange;
+
+    window.addEventListener('DOMContentLoaded', init);
+  })();
+</script>
