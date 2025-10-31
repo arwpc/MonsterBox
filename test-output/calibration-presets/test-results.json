@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-10-31T18:37:53.667Z",
+  "characters": [
+    {
+      "character": "Coffin Breaker",
+      "partTypes": {
+        "servo": {
+          "type": "servo",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "1",
+              "name": "Jaw of Coffin",
+              "hasCalibration": true
+            },
+            {
+              "id": "2",
+              "name": "Neck Movement",
+              "hasCalibration": true
+            },
+            {
+              "id": "3",
+              "name": "Eye Servos",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/servo-step.png",
+          "error": null
+        },
+        "motor": {
+          "type": "motor",
+          "tested": false,
+          "hasControlMode": false,
+          "hasPresetDropdown": false,
+          "presetOptions": [],
+          "parts": [],
+          "screenshot": null,
+          "error": "No motor parts"
+        },
+        "linear_actuator": {
+          "type": "linear_actuator",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "4",
+              "name": "Coffin Door",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/linear_actuator-step.png",
+          "error": null
+        }
+      }
+    }
+  ]
+}
