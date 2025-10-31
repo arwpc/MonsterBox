@@ -1,0 +1,4 @@
+
+> monsterbox@5.5.0 test:ui:calibration
+> PW_CLEAN_SERVER=1 MB_TEST_MODE=1 playwright test -c playwright.config.ts tests/playwright/calibration-*.spec.js tests/playwright/simple-calibration.spec.ts
+

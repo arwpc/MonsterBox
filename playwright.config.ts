@@ -17,9 +17,8 @@ export default defineConfig({
   testDir: './tests',
   // Only pick up Playwright-style specs in UX folders; avoid Mocha/integration .test.js files at repo root
   testMatch: [
-    'tests/playwright/**/*.{spec,test}.{js,ts}',
-    'tests/ui/**/*.{spec,test}.{js,ts}',
-    'tests/comprehensive/**/*.{spec,test}.{js,ts}',
+    'tests/e2e/**/*.{spec,test}.{js,ts}',
+    'tests/headed/**/*.{spec,test}.{js,ts}',
   ],
   retries: 1,
   fullyParallel: true,

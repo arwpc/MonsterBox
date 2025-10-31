@@ -1,6 +1,6 @@
 # Deployment Documentation
 
-This directory contains deployment guides, status reports, and procedures for MonsterBox 5.3 deployments.
+This directory contains deployment guides, status reports, and procedures for MonsterBox 5.5 deployments.
 
 ## Quick Links
 
@@ -19,14 +19,14 @@ This directory contains deployment guides, status reports, and procedures for Mo
 
 ## Deployment Overview
 
-MonsterBox 5.3 supports deployment to multiple animatronic characters across a network.
+MonsterBox 5.5 supports deployment to multiple animatronic characters across a network.
 
 ### Supported Characters
-1. **PumpkinHead** (Character 1) - 192.168.8.150
-2. **Coffin Breaker** (Character 2) - 192.168.8.140
-3. **Orlok** (Character 3) - 192.168.8.120
-4. **Groundbreaker** (Character 4) - 192.168.8.130
-5. **Goblin** (Character 5) - TBD
+1. **PumpkinHead** (Character 1) - 192.168.8.150 ✅
+2. **Coffin Breaker** (Character 2) - 192.168.8.140 ✅ (Controller)
+3. **Orlok** (Character 3) - 192.168.8.120 ✅
+4. **Skulltalker** (Character 4) - 192.168.8.130 ⚠️ Currently offline
+5. **Groundbreaker** (Character 5) - 192.168.8.200 ✅
 
 ---
 
@@ -93,9 +93,10 @@ Example:
 ### Character IP Addresses
 ```
 192.168.8.150 - PumpkinHead (Character 1)
-192.168.8.140 - Coffin Breaker (Character 2)
+192.168.8.140 - Coffin Breaker (Character 2, Controller)
 192.168.8.120 - Orlok (Character 3)
-192.168.8.130 - Groundbreaker (Character 4)
+192.168.8.130 - Skulltalker (Character 4) - Currently offline
+192.168.8.200 - Groundbreaker (Character 5)
 ```
 
 ---
@@ -168,18 +169,20 @@ arecord -D hw:3,0 -f S16_LE -r 16000 -c 1 -d 3 /tmp/test.wav
   - Goblin video display integration
   - Complete audio pipeline
 
-### MonsterBox 5.3 Release
+### MonsterBox 5.5 Release
 - **Date:** October 2025
 - **Status:** ✅ Production Ready
-- **Test Results:** 63/63 unit tests passing
+- **Current Commit:** f2f11caf
 - **Key Features:**
   - Single-node architecture
   - Character isolation
   - Hardware abstraction layer
   - Real-time WebSocket communication
+  - Test stabilization and audio improvements
+  - Dedicated AI telemetry endpoints
 
 ---
 
-**Last Updated:** October 14, 2025  
-**Current Version:** MonsterBox 5.3
+**Last Updated:** October 30, 2025  
+**Current Version:** MonsterBox 5.5
 

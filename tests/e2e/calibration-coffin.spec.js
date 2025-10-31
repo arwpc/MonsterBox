@@ -1,13 +1,13 @@
 /**
  * E2E tests for Unified Calibration System (Positions v1.5)
- * Tests calibration controls, position tracking, and bounds setting with Character Orlok
+ * Tests calibration controls, position tracking, and bounds setting with Character Coffin Breaker
  */
 
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:3000';
 
-test.describe('Parts & Calibration - Character Orlok', () => {
+test.describe('Parts & Calibration - Character Coffin Breaker', () => {
   test.beforeEach(async ({ page }) => {
     // Enable test mode for deterministic behavior
     await page.addInitScript(() => {
@@ -27,9 +27,9 @@ test.describe('Parts & Calibration - Character Orlok', () => {
     console.log('✅ Calibration page loaded');
   });
 
-  test('should select Character Orlok and display parts', async ({ page }) => {
-    // Select Orlok character
-    await page.selectOption('#characterSelect', '1'); // Character Orlok is ID 1
+  test('should select Character Coffin Breaker and display parts', async ({ page }) => {
+    // Select Coffin Breaker character
+    await page.selectOption('#characterSelect', '2'); // Character Coffin Breaker is ID 2
     
     // Wait for parts to load
     await page.waitForTimeout(500);
@@ -38,12 +38,12 @@ test.describe('Parts & Calibration - Character Orlok', () => {
     const partOptions = await page.locator('#partSelect option').count();
     expect(partOptions).toBeGreaterThan(1); // At least "Select a part" + actual parts
     
-    console.log(`✅ Orlok character selected with ${partOptions - 1} parts`);
+    console.log(`✅ Coffin Breaker character selected with ${partOptions - 1} parts`);
   });
 
   test('should display unified calibration panel', async ({ page }) => {
-    // Select Orlok
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     // Check for calibration panel sections
@@ -56,11 +56,11 @@ test.describe('Parts & Calibration - Character Orlok', () => {
   });
 
   test('should NOT display redundant Jog Controls', async ({ page }) => {
-    // Select Orlok and a part
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker and a part
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
-    // Select first available part (should be Jaw of Orlok)
+    // Select first available part (should be Jaw of Coffin)
     const partValue = await page.locator('#partSelect option').nth(1).getAttribute('value');
     if (partValue) {
       await page.selectOption('#partSelect', partValue);
@@ -74,12 +74,12 @@ test.describe('Parts & Calibration - Character Orlok', () => {
     console.log('✅ No redundant jog controls (consolidation successful)');
   });
 
-  test('should display servo controls for Jaw of Orlok', async ({ page }) => {
-    // Select Orlok
-    await page.selectOption('#characterSelect', '1');
+  test('should display servo controls for Jaw of Coffin', async ({ page }) => {
+    // Select Coffin Breaker
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
-    // Find and select Jaw of Orlok (servo type)
+    // Find and select Jaw of Coffin (servo type)
     const jawOption = await page.locator('#partSelect option:has-text("Jaw")').first();
     const jawValue = await jawOption.getAttribute('value');
     
@@ -92,13 +92,13 @@ test.describe('Parts & Calibration - Character Orlok', () => {
       await expect(page.locator('#angNum')).toBeVisible(); // Angle number input
       await expect(page.locator('#goAng')).toBeVisible(); // Move button
       
-      console.log('✅ Servo controls displayed for Jaw of Orlok');
+      console.log('✅ Servo controls displayed for Jaw of Coffin');
     }
   });
 
   test('should update position display after servo movement', async ({ page }) => {
-    // Select Orlok and Jaw
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker and Jaw
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     const jawOption = await page.locator('#partSelect option:has-text("Jaw")').first();
@@ -128,17 +128,17 @@ test.describe('Parts & Calibration - Character Orlok', () => {
     }
   });
 
-  test('should display linear actuator controls for Right Arm', async ({ page }) => {
-    // Select Orlok
-    await page.selectOption('#characterSelect', '1');
+  test('should display linear actuator controls for Coffin Door', async ({ page }) => {
+    // Select Coffin Breaker
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
-    // Find and select Right Arm (linear actuator)
-    const armOption = await page.locator('#partSelect option:has-text("Right Arm")').first();
-    const armValue = await armOption.getAttribute('value');
+    // Find and select Coffin Door (linear actuator)
+    const doorOption = await page.locator('#partSelect option:has-text("Coffin Door")').first();
+    const doorValue = await doorOption.getAttribute('value');
     
-    if (armValue) {
-      await page.selectOption('#partSelect', armValue);
+    if (doorValue) {
+      await page.selectOption('#partSelect', doorValue);
       await page.waitForTimeout(500);
       
       // Check for linear actuator controls
@@ -148,20 +148,20 @@ test.describe('Parts & Calibration - Character Orlok', () => {
       await expect(page.locator('#laSpd')).toBeVisible(); // Speed input
       await expect(page.locator('#laDur')).toBeVisible(); // Duration input
       
-      console.log('✅ Linear actuator controls displayed for Right Arm');
+      console.log('✅ Linear actuator controls displayed for Coffin Door');
     }
   });
 
   test('should update position after linear actuator movement', async ({ page }) => {
-    // Select Orlok and Right Arm
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker and Coffin Door
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
-    const armOption = await page.locator('#partSelect option:has-text("Right Arm")').first();
-    const armValue = await armOption.getAttribute('value');
+    const doorOption = await page.locator('#partSelect option:has-text("Coffin Door")').first();
+    const doorValue = await doorOption.getAttribute('value');
     
-    if (armValue) {
-      await page.selectOption('#partSelect', armValue);
+    if (doorValue) {
+      await page.selectOption('#partSelect', doorValue);
       await page.waitForTimeout(500);
       
       // Get initial position
@@ -182,8 +182,8 @@ test.describe('Parts & Calibration - Character Orlok', () => {
   });
 
   test('should set minimum calibration bound', async ({ page }) => {
-    // Select Orlok and Jaw
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker and Jaw
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     const jawOption = await page.locator('#partSelect option:has-text("Jaw")').first();
@@ -211,8 +211,8 @@ test.describe('Parts & Calibration - Character Orlok', () => {
   });
 
   test('should set maximum calibration bound', async ({ page }) => {
-    // Select Orlok and Jaw
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker and Jaw
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     const jawOption = await page.locator('#partSelect option:has-text("Jaw")').first();
@@ -248,8 +248,8 @@ test.describe('Parts & Calibration - Character Orlok', () => {
       }
     });
     
-    // Select Orlok
-    await page.selectOption('#characterSelect', '1');
+    // Select Coffin Breaker
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     // Select Jaw
@@ -283,9 +283,9 @@ test.describe('Parts & Calibration - Character Orlok', () => {
     console.log('✅ No console errors detected');
   });
 
-  test('should test all Orlok part types', async ({ page }) => {
-    // Select Orlok
-    await page.selectOption('#characterSelect', '1');
+  test('should test all Coffin Breaker part types', async ({ page }) => {
+    // Select Coffin Breaker
+    await page.selectOption('#characterSelect', '2');
     await page.waitForTimeout(500);
     
     // Get all part options
@@ -310,7 +310,7 @@ test.describe('Parts & Calibration - Character Orlok', () => {
       }
     }
     
-    console.log(`✅ Tested ${testedCount} parts on Character Orlok`);
+    console.log(`✅ Tested ${testedCount} parts on Character Coffin Breaker`);
     expect(testedCount).toBeGreaterThan(0);
   });
 });

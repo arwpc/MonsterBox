@@ -1,1 +1,121 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Coffin Awakening",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "4",
+        "direction": "extend",
+        "speed": 100,
+        "duration": 8500
+      },
+      {
+        "type": "sayThis",
+        "text": "I have risen from eternal slumber. The darkness calls, and I answer!"
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "2",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "4",
+        "direction": "retract",
+        "speed": 100,
+        "duration": 8500
+      }
+    ],
+    "created": "2025-10-30T04:03:34.845Z"
+  },
+  {
+    "id": 2,
+    "name": "Interactive Conversation",
+    "steps": [
+      {
+        "type": "askAI",
+        "question": "What ancient curse binds you to this coffin, and what must be done to set you free?"
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "sayThis",
+        "text": "Thank you for asking. My story is long and filled with sorrow."
+      }
+    ],
+    "created": "2025-10-30T04:05:06.388Z",
+    "updated": "2025-10-31T16:24:22.434Z"
+  },
+  {
+    "id": 3,
+    "name": "Full Performance Spectacular",
+    "steps": [
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "4",
+        "direction": "extend",
+        "speed": 100,
+        "duration": 8500
+      },
+      {
+        "type": "sayThis",
+        "text": "Behold! The full power of the Coffin Breaker awakens! Witness the spectacle of darkness!"
+      },
+      {
+        "type": "servo",
+        "partId": "2",
+        "angle": 80,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "2",
+        "angle": 110,
+        "duration": 1000
+      },
+      {
+        "type": "askAI",
+        "question": "Tell me about your most terrifying Halloween memory."
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0,
+        "concurrent": true
+      },
+      {
+        "type": "askAI",
+        "question": "Who is Orlok and what has he done to you? "
+      }
+    ],
+    "created": "2025-10-30T04:13:21.743Z",
+    "updated": "2025-10-31T16:25:45.552Z"
+  }
+]

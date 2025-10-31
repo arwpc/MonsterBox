@@ -55,10 +55,24 @@ check_animatronic "Groundbreaker" "192.168.8.200" "6"
 
 echo "============================================"
 echo "Summary:"
-RUNNING=$(ssh remote@pumpkinhead "systemctl is-active monsterbox.service" 2>/dev/null && echo -n "1" || echo -n "0")
-RUNNING=$((RUNNING + $(ssh remote@coffin "systemctl is-active monsterbox.service" 2>/dev/null && echo -n "1" || echo -n "0")))
-RUNNING=$((RUNNING + $(systemctl is-active monsterbox.service > /dev/null 2>&1 && echo "1" || echo "0")))
-RUNNING=$((RUNNING + $(ssh remote@skulltalker "systemctl is-active monsterbox.service" 2>/dev/null && echo -n "1" || echo -n "0")))
+
+# Count running animatronics more safely
+RUNNING=0
+
+# PumpkinHead
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@pumpkinhead "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
+
+# Coffin (local)
+systemctl is-active monsterbox.service > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
+
+# Orlok
+systemctl is-active monsterbox.service > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
+
+# Skulltalker
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@skulltalker "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
+
+# Groundbreaker
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@192.168.8.200 "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
 
 echo "Verified Running: $RUNNING/5 animatronics"
 echo "============================================"

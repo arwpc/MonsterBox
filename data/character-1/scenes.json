@@ -1,45 +1,43 @@
 [
   {
-    "id": 1,
-    "name": "Step Play Test Scene",
-    "steps": [
-      {
-        "type": "wait",
-        "duration": 100,
-        "comment": "Wait step"
-      },
-      {
-        "type": "servo",
-        "partId": 11,
-        "angle": 90,
-        "duration": 500,
-        "comment": "Servo step"
-      },
-      {
-        "type": "light",
-        "partId": 8,
-        "state": "on",
-        "brightness": 100,
-        "comment": "Light step"
-      },
-      {
-        "type": "pose",
-        "poseId": 1,
-        "comment": "Pose step"
-      }
-    ],
-    "created": "2025-10-23T01:35:59.038Z"
-  },
-  {
     "id": 2,
     "name": "Muzac Loop Halloween",
     "steps": [
       {
         "type": "audio",
         "audioId": "e8fc04ac-76a5-46d3-9c84-69c7c8e43ee4.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "0378bcb2-9d42-426f-b897-9e6a1fd86265.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "5b3a3177-5e77-48b1-b95b-fdff713fb5c9.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "ae9e1890-e929-495d-8348-983926e8aaf5.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "54ef9d8c-3c05-4394-b670-c1808774654c.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "853a96c6-4156-45a8-9815-3545be892b1b.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "d9212095-0d76-42d1-a375-41c0e3f026fb.mp3"
+      },
+      {
+        "type": "audio",
+        "audioId": "3d01503f-a1ce-4e3f-b664-efd58b2644aa.mp3"
       }
     ],
-    "created": "2025-10-23T21:30:05.579Z"
+    "created": "2025-10-23T21:30:05.579Z",
+    "updated": "2025-10-31T16:23:15.451Z"
   },
   {
     "id": 3,

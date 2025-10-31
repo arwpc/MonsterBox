@@ -4,7 +4,7 @@
     "name": "Jaw of Coffin",
     "type": "servo",
     "pin": null,
-    "description": "Jaw movement servo",
+    "description": "Test updated via comprehensive tests",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -14,7 +14,8 @@
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
-    "modelId": "servo_miuzei_mg90s"
+    "modelId": "servo_miuzei_mg90s",
+    "updated": "2025-10-30T04:17:48.655Z"
   },
   {
     "id": "2",

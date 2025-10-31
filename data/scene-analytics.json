@@ -4287,6 +4287,74 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "17617976664474vzh60e90",
+      "sceneId": 1,
+      "characterId": 2,
+      "timestamp": "2025-10-30T04:14:26.447Z",
+      "startTime": "2025-10-30T04:14:18.430Z",
+      "endTime": "2025-10-30T04:14:26.443Z",
+      "duration": 8013,
+      "stepsExecuted": 0,
+      "totalSteps": 5,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "176179773827381ylfaabn",
+      "sceneId": 2,
+      "characterId": 2,
+      "timestamp": "2025-10-30T04:15:38.273Z",
+      "startTime": "2025-10-30T04:15:21.962Z",
+      "endTime": "2025-10-30T04:15:38.271Z",
+      "duration": 16309,
+      "stepsExecuted": 3,
+      "totalSteps": 3,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1761797787172ii4yfis7n",
+      "sceneId": 3,
+      "characterId": 2,
+      "timestamp": "2025-10-30T04:16:27.172Z",
+      "startTime": "2025-10-30T04:16:19.054Z",
+      "endTime": "2025-10-30T04:16:27.170Z",
+      "duration": 8116,
+      "stepsExecuted": 1,
+      "totalSteps": 6,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1761927956564n1ia8begx",
+      "sceneId": 3,
+      "characterId": 2,
+      "timestamp": "2025-10-31T16:25:56.564Z",
+      "startTime": "2025-10-31T16:25:48.400Z",
+      "endTime": "2025-10-31T16:25:56.556Z",
+      "duration": 8156,
+      "stepsExecuted": 1,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "Hardware command timed out after 8000ms"
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4487,6 +4555,14 @@
       "characterId": 3,
       "executionCount": 4,
       "lastExecuted": "2025-10-24T11:52:14.241Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "2_2": {
+      "sceneId": 2,
+      "characterId": 2,
+      "executionCount": 1,
+      "lastExecuted": "2025-10-30T04:15:38.279Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

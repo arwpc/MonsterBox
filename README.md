@@ -180,14 +180,17 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 See: `goblin/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
-- Coffin (controller): 192.168.8.140
-- Orlok: 192.168.8.120
-- Skulltalker: 192.168.8.130
-- Groundbreaker: 192.168.8.200
-- PumpkinHead: 192.168.8.150
-- Goblin One: 192.168.8.40:3001
-- Goblin Two: 192.168.8.106:3001
-- Goblin Three: 192.168.8.14:3001 (focus first)
+**Animatronics:**
+- PumpkinHead (Character 1): 192.168.8.150
+- Coffin Breaker (Character 2, controller): 192.168.8.140
+- Orlok (Character 3): 192.168.8.120
+- Skulltalker (Character 4): 192.168.8.130 ⚠️ Currently offline
+- Groundbreaker (Character 5): 192.168.8.200
+
+**Goblins (Video Display):**
+- Goblin One: 192.168.8.40:3001 ⏳ Pending deployment
+- Goblin Two: 192.168.8.106:3001 ⏳ Offline
+- Goblin Three: 192.168.8.14:3001 ✅ Operational
 
 SSH for RPi4B: remote / klrklr89!
 
