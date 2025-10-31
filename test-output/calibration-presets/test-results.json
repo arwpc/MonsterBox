@@ -1,8 +1,10 @@
 {
-  "timestamp": "2025-10-31T18:37:53.667Z",
+  "timestamp": "2025-10-31T18:52:50.818Z",
   "characters": [
     {
-      "character": "Coffin Breaker",
+      "id": 1,
+      "name": "PumpkinHead",
+      "uiName": "Coffin Breaker",
       "partTypes": {
         "servo": {
           "type": "servo",
@@ -40,7 +42,7 @@
               "hasCalibration": true
             }
           ],
-          "screenshot": "test-output/calibration-presets/servo-step.png",
+          "screenshot": "test-output/calibration-presets/PumpkinHead-servo.png",
           "error": null
         },
         "motor": {
@@ -79,7 +81,347 @@
               "hasCalibration": true
             }
           ],
-          "screenshot": "test-output/calibration-presets/linear_actuator-step.png",
+          "screenshot": "test-output/calibration-presets/PumpkinHead-linear_actuator.png",
+          "error": null
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "Coffin Breaker",
+      "uiName": "Coffin Breaker",
+      "partTypes": {
+        "servo": {
+          "type": "servo",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "1",
+              "name": "Jaw of Coffin",
+              "hasCalibration": true
+            },
+            {
+              "id": "2",
+              "name": "Neck Movement",
+              "hasCalibration": true
+            },
+            {
+              "id": "3",
+              "name": "Eye Servos",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Coffin-Breaker-servo.png",
+          "error": null
+        },
+        "motor": {
+          "type": "motor",
+          "tested": false,
+          "hasControlMode": false,
+          "hasPresetDropdown": false,
+          "presetOptions": [],
+          "parts": [],
+          "screenshot": null,
+          "error": "No motor parts"
+        },
+        "linear_actuator": {
+          "type": "linear_actuator",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "4",
+              "name": "Coffin Door",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Coffin-Breaker-linear_actuator.png",
+          "error": null
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "uiName": "Coffin Breaker",
+      "partTypes": {
+        "servo": {
+          "type": "servo",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "1",
+              "name": "Jaw of Coffin",
+              "hasCalibration": true
+            },
+            {
+              "id": "2",
+              "name": "Neck Movement",
+              "hasCalibration": true
+            },
+            {
+              "id": "3",
+              "name": "Eye Servos",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Orlok-servo.png",
+          "error": null
+        },
+        "motor": {
+          "type": "motor",
+          "tested": false,
+          "hasControlMode": false,
+          "hasPresetDropdown": false,
+          "presetOptions": [],
+          "parts": [],
+          "screenshot": null,
+          "error": "No motor parts"
+        },
+        "linear_actuator": {
+          "type": "linear_actuator",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "4",
+              "name": "Coffin Door",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Orlok-linear_actuator.png",
+          "error": null
+        }
+      }
+    },
+    {
+      "id": 4,
+      "name": "Skulltalker",
+      "uiName": "Coffin Breaker",
+      "partTypes": {
+        "servo": {
+          "type": "servo",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "1",
+              "name": "Jaw of Coffin",
+              "hasCalibration": true
+            },
+            {
+              "id": "2",
+              "name": "Neck Movement",
+              "hasCalibration": true
+            },
+            {
+              "id": "3",
+              "name": "Eye Servos",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Skulltalker-servo.png",
+          "error": null
+        },
+        "motor": {
+          "type": "motor",
+          "tested": false,
+          "hasControlMode": false,
+          "hasPresetDropdown": false,
+          "presetOptions": [],
+          "parts": [],
+          "screenshot": null,
+          "error": "No motor parts"
+        },
+        "linear_actuator": {
+          "type": "linear_actuator",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "4",
+              "name": "Coffin Door",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Skulltalker-linear_actuator.png",
+          "error": null
+        }
+      }
+    },
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "uiName": "Coffin Breaker",
+      "partTypes": {
+        "servo": {
+          "type": "servo",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "1",
+              "name": "Jaw of Coffin",
+              "hasCalibration": true
+            },
+            {
+              "id": "2",
+              "name": "Neck Movement",
+              "hasCalibration": true
+            },
+            {
+              "id": "3",
+              "name": "Eye Servos",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Groundbreaker-servo.png",
+          "error": null
+        },
+        "motor": {
+          "type": "motor",
+          "tested": false,
+          "hasControlMode": false,
+          "hasPresetDropdown": false,
+          "presetOptions": [],
+          "parts": [],
+          "screenshot": null,
+          "error": "No motor parts"
+        },
+        "linear_actuator": {
+          "type": "linear_actuator",
+          "tested": true,
+          "hasControlMode": true,
+          "hasPresetDropdown": true,
+          "presetOptions": [
+            {
+              "value": "",
+              "text": "Select preset..."
+            },
+            {
+              "value": "__MIN__",
+              "text": "Min Position"
+            },
+            {
+              "value": "__MAX__",
+              "text": "Max Position"
+            }
+          ],
+          "parts": [
+            {
+              "id": "4",
+              "name": "Coffin Door",
+              "hasCalibration": true
+            }
+          ],
+          "screenshot": "test-output/calibration-presets/Groundbreaker-linear_actuator.png",
           "error": null
         }
       }

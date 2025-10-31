@@ -78,19 +78,39 @@ async function main() {
 
     console.log(`Loaded ${allParts.length} parts and ${Object.keys(allProfiles).length} calibration profiles`);
 
-    // Get current character from UI
-    const currentCharName = await page.textContent('.navbar .character-avatar-wrapper + span, .navbar [id*="charLabel"]').catch(() => 'Current Character');
-    console.log(`\nTesting with character: ${currentCharName}`);
-    console.log('='.repeat(60));
+    // Test each character
+    for (const character of CHARACTERS) {
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`Testing Character: ${character.name} (ID: ${character.id})`);
+      console.log('='.repeat(60));
 
-    const testResult = {
-      character: currentCharName,
-      partTypes: {}
-    };
+      // Switch to this character
+      await page.evaluate((charId) => {
+        return fetch('/api/character/select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId: charId })
+        });
+      }, character.id);
 
-    // Test each part type
-    for (const partType of PART_TYPES) {
-      console.log(`\nTesting ${partType}...`);
+      // Reload page to ensure character switch takes effect
+      await page.goto(`${BASE_URL}/scenes/edit/new`);
+      await page.waitForLoadState('networkidle');
+
+      // Verify character switched in UI
+      const currentCharName = await page.textContent('.navbar .character-avatar-wrapper + span, .navbar [id*="charLabel"]').catch(() => 'Unknown');
+      console.log(`UI shows: ${currentCharName}`);
+
+      const testResult = {
+        id: character.id,
+        name: character.name,
+        uiName: currentCharName,
+        partTypes: {}
+      };
+
+      // Test each part type
+      for (const partType of PART_TYPES) {
+        console.log(`\nTesting ${partType}...`);
       
       const partTypeResult = {
         type: partType,
@@ -178,7 +198,7 @@ async function main() {
         }
 
         // Take screenshot
-        const screenshotPath = path.join(OUTPUT_DIR, `${partType}-step.png`);
+        const screenshotPath = path.join(OUTPUT_DIR, `${character.name.replace(/\s+/g, '-')}-${partType}.png`);
         await page.screenshot({ path: screenshotPath });
         partTypeResult.screenshot = screenshotPath;
         console.log(`📸 Screenshot: ${screenshotPath}`);
@@ -203,6 +223,7 @@ async function main() {
     }
 
     results.characters.push(testResult);
+  }
 
     // Write results JSON
     const resultsPath = path.join(OUTPUT_DIR, 'test-results.json');
@@ -214,12 +235,14 @@ async function main() {
     console.log('TEST SUMMARY');
     console.log('='.repeat(60));
 
-    console.log(`\n${testResult.character}:`);
-    for (const [type, result] of Object.entries(testResult.partTypes)) {
-      const status = result.tested && result.hasControlMode && result.hasPresetDropdown ? '✓' : '✗';
-      console.log(`  ${status} ${type}: ${result.tested ? 'tested' : 'not tested'}${result.error ? ` (${result.error})` : ''}`);
-      if (result.tested && result.parts.length > 0) {
-        console.log(`     Parts: ${result.parts.map(p => `${p.name}${p.hasCalibration ? ' ✓' : ' ✗'}`).join(', ')}`);
+    for (const char of results.characters) {
+      console.log(`\n${char.name} (UI: ${char.uiName}):`);
+      for (const [type, result] of Object.entries(char.partTypes)) {
+        const status = result.tested && result.hasControlMode && result.hasPresetDropdown ? '✓' : '✗';
+        console.log(`  ${status} ${type}: ${result.tested ? 'tested' : 'not tested'}${result.error ? ` (${result.error})` : ''}`);
+        if (result.tested && result.parts.length > 0) {
+          console.log(`     Parts: ${result.parts.map(p => `${p.name}${p.hasCalibration ? ' ✓' : ' ✗'}`).join(', ')}`);
+        }
       }
     }
 
