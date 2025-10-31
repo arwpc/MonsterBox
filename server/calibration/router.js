@@ -177,4 +177,15 @@ function getOrCreateAdapter(partId, profile) {
   return adapter;
 }
 
+// Get all calibration profiles for scene editor
+router.get('/profiles', async (req, res) => {
+  try {
+    const profiles = await store.load();
+    res.json(profiles || {});
+  } catch (err) {
+    console.error('Error loading calibration profiles:', err);
+    res.status(500).json({ success: false, error: 'Failed to load calibration profiles', message: String(err) });
+  }
+});
+
 export default router;

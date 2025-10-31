@@ -9,6 +9,7 @@ import hardwareService from '../hardwareService/index.js';
 import poseEngine from '../poses/poseEngine.js';
 import serverPlaybackService from '../serverPlaybackService.js';
 import sceneAnalytics from './sceneAnalyticsService.js';
+import { getCalibrationStore } from '../../server/calibration/store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +37,81 @@ async function findSpeakerDeviceForCharacter(characterId) {
   if (!speaker) return 'default';
   const cfg = speaker.config || {};
   return cfg.audioDeviceId || cfg.outputDevice || 'default';
+}
+
+/**
+ * Resolve a preset name to an angle for servos
+ */
+async function resolvePresetToAngle(partId, presetName) {
+  const store = getCalibrationStore();
+  const profile = await store.get(partId);
+  
+  if (!profile) {
+    console.warn(`No calibration profile for part ${partId}, using default angle`);
+    return 90;
+  }
+  
+  let targetP;
+  if (presetName === '__MIN__') {
+    targetP = profile.bounds?.minP ?? 0;
+  } else if (presetName === '__MAX__') {
+    targetP = profile.bounds?.maxP ?? 1;
+  } else {
+    const preset = profile.presets?.find(p => p.name === presetName);
+    if (!preset) {
+      console.warn(`Preset "${presetName}" not found for part ${partId}, using min position`);
+      targetP = profile.bounds?.minP ?? 0;
+    } else {
+      targetP = preset.p;
+    }
+  }
+  
+  // Convert normalized position (0-1) to angle (0-180)
+  return Math.round(targetP * 180);
+}
+
+/**
+ * Resolve a preset name to motor parameters (speed, duration)
+ */
+async function resolvePresetToMotorParams(partId, presetName) {
+  const store = getCalibrationStore();
+  const profile = await store.get(partId);
+  
+  if (!profile || !profile.motion || profile.motion.type !== 'time-at-speed') {
+    console.warn(`No valid motion model for motor part ${partId}, using defaults`);
+    return { speed: 50, duration: 2000 };
+  }
+  
+  let targetP;
+  if (presetName === '__MIN__') {
+    targetP = profile.bounds?.minP ?? 0;
+  } else if (presetName === '__MAX__') {
+    targetP = profile.bounds?.maxP ?? 1;
+  } else {
+    const preset = profile.presets?.find(p => p.name === presetName);
+    if (!preset) {
+      console.warn(`Preset "${presetName}" not found for motor part ${partId}, using min position`);
+      targetP = profile.bounds?.minP ?? 0;
+    } else {
+      targetP = preset.p;
+    }
+  }
+  
+  // Calculate duration based on motion model
+  const motion = profile.motion;
+  const bin = motion.bins?.[0] || { pwmPct: 50, unitsPerSec: 0.2 };
+  const deltaP = Math.abs(targetP - 0.5); // Assume we're moving from center
+  const duration = Math.round((deltaP / bin.unitsPerSec) * 1000);
+  
+  return { speed: bin.pwmPct, duration: Math.max(100, duration) };
+}
+
+/**
+ * Resolve a preset name to linear actuator parameters (speed, duration)
+ */
+async function resolvePresetToActuatorParams(partId, presetName) {
+  // Linear actuators use the same motion model as motors
+  return resolvePresetToMotorParams(partId, presetName);
 }
 
 async function resolveAudioFile(audioId) {
@@ -212,37 +288,65 @@ async function executeGoblinVideoStep(step, characterId, emit) {
 }
 
 async function executeServoStep(step, characterId, emit) {
-  const { partId, angle, duration = 1000 } = step;
+  const { partId, angle, duration = 1000, usePreset, presetName } = step;
   if (!partId) throw new Error('servo.step requires partId');
-  if (angle == null) throw new Error('servo.step requires angle');
+  
+  let targetAngle = angle;
+  
+  // If using preset, resolve the preset to an angle
+  if (usePreset && presetName) {
+    targetAngle = await resolvePresetToAngle(partId, presetName);
+  }
+  
+  if (targetAngle == null) throw new Error('servo.step requires angle or valid preset');
 
-  emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle, duration });
-  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: angle, duration });
+  emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle: targetAngle, duration, usePreset, presetName });
+  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: targetAngle, duration });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'servo', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Servo move failed');
   return r;
 }
 
 async function executeMotorStep(step, characterId, emit) {
-  const { partId, direction = 'forward', speed = 50, duration = 1000 } = step;
+  const { partId, direction = 'forward', speed = 50, duration = 1000, usePreset, presetName } = step;
   if (!partId) throw new Error('motor.step requires partId');
 
-  emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed, duration });
-  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed, duration });
+  let effectiveSpeed = speed;
+  let effectiveDuration = duration;
+  
+  // If using preset, resolve the preset to movement parameters
+  if (usePreset && presetName) {
+    const presetParams = await resolvePresetToMotorParams(partId, presetName);
+    effectiveSpeed = presetParams.speed || speed;
+    effectiveDuration = presetParams.duration || duration;
+  }
+
+  emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
+  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed: effectiveSpeed, duration: effectiveDuration });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'motor', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Motor control failed');
   return r;
 }
 
 async function executeLinearActuatorStep(step, characterId, emit) {
-  const { partId, direction = 'extend', speed = 50, duration = 1000 } = step;
+  const { partId, direction = 'extend', speed = 50, duration = 1000, usePreset, presetName } = step;
   if (!partId) throw new Error('linear-actuator.step requires partId');
+
+  let effectiveSpeed = speed;
+  let effectiveDuration = duration;
+  
+  // If using preset, resolve the preset to movement parameters
+  if (usePreset && presetName) {
+    const presetParams = await resolvePresetToActuatorParams(partId, presetName);
+    effectiveSpeed = presetParams.speed || speed;
+    effectiveDuration = presetParams.duration || duration;
+  }
 
   // Linear actuators use 'extend' or 'retract' actions, not 'control'
   const action = direction === 'retract' ? 'retract' : 'extend';
 
-  emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed, duration });
-  const r = await hardwareService.controlPart(String(partId), action, { speed, duration });
+  emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
+  const r = await hardwareService.controlPart(String(partId), action, { speed: effectiveSpeed, duration: effectiveDuration });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
   return r;
