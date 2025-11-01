@@ -104,25 +104,35 @@ class LinearActuatorController:
             duty_cycle = int((speed / 100.0) * 255)
             log_info(f"Speed: {speed}%, Duty cycle: {duty_cycle}/255, PWM: {pwm_hz} Hz")
 
-            # Software PWM
-            cycle_time = max(1.0/float(pwm_hz or 100), 0.0002)
-            start_time = time.time()
-            end_time = start_time + (duration / 1000.0)
+            # For high speeds (>80%), use simple digital HIGH for better motor drive
+            # MDD10A boards work better with strong digital signals than software PWM
+            if speed >= 80:
+                log_info(f"Using digital HIGH mode for speed {speed}% (better for MDD10A)")
+                lgpio.gpio_write(self.h, pwm_pin, 1)
+                time.sleep(duration / 1000.0)
+                lgpio.gpio_write(self.h, pwm_pin, 0)
+                log_info("Motor stopped")
+            else:
+                # Software PWM for lower speeds
+                # Increased minimum frequency for better motor response
+                cycle_time = max(1.0/float(pwm_hz or 1000), 0.0002)
+                start_time = time.time()
+                end_time = start_time + (duration / 1000.0)
 
-            while time.time() < end_time:
-                if duty_cycle > 0:
-                    on_time = cycle_time * (duty_cycle / 255.0)
-                    off_time = cycle_time - on_time
-                    lgpio.gpio_write(self.h, pwm_pin, 1)
-                    time.sleep(on_time)
-                    lgpio.gpio_write(self.h, pwm_pin, 0)
-                    time.sleep(off_time)
-                else:
-                    time.sleep(cycle_time)
+                while time.time() < end_time:
+                    if duty_cycle > 0:
+                        on_time = cycle_time * (duty_cycle / 255.0)
+                        off_time = cycle_time - on_time
+                        lgpio.gpio_write(self.h, pwm_pin, 1)
+                        time.sleep(on_time)
+                        lgpio.gpio_write(self.h, pwm_pin, 0)
+                        time.sleep(off_time)
+                    else:
+                        time.sleep(cycle_time)
 
-            # Stop motor
-            lgpio.gpio_write(self.h, pwm_pin, 0)
-            log_info("Motor stopped")
+                # Stop motor
+                lgpio.gpio_write(self.h, pwm_pin, 0)
+                log_info("Motor stopped")
             return True
 
         except Exception as e:
@@ -226,7 +236,8 @@ def main():
         direction = config.get('direction', 'forward')
         speed = float(config.get('speed', 50))
         duration = int(config.get('duration', 1000))
-        pwm_hz = int(config.get('pwmFrequency', 2000 if board_type == BOARD_BTS7960 else 100))
+        # Higher default PWM for MDD10A (1000Hz), BTS7960 uses 2000Hz
+        pwm_hz = int(config.get('pwmFrequency', 2000 if board_type == BOARD_BTS7960 else 1000))
 
         log_info(f"Configuration: board={board_type}, direction={direction}, speed={speed}, duration={duration}, pwm={pwm_hz}Hz")
         
