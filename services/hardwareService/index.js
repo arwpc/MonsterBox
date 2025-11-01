@@ -1348,13 +1348,10 @@ export async function controlPart(partId, action, params = {}) {
         let characterId = null;
         try {
             const characterDataPath = path.resolve(appRoot, dataDir, 'current-character.json');
-            console.log('[DEBUG] Loading current character from:', characterDataPath);
             const characterData = await fs.readFile(characterDataPath, 'utf8');
             const characterInfo = JSON.parse(characterData);
             characterId = characterInfo.selectedCharacter;
-            console.log('[DEBUG] Current character ID:', characterId);
         } catch (e) {
-            console.log('[DEBUG] No current character file:', e.message);
             // No current character set, will try global parts.json
         }
 
@@ -1362,13 +1359,10 @@ export async function controlPart(partId, action, params = {}) {
         if (characterId) {
             try {
                 const characterPartsPath = path.resolve(appRoot, dataDir, `character-${characterId}`, 'parts.json');
-                console.log(`[DEBUG] Loading character-${characterId} parts from:`, characterPartsPath);
                 const partsData = await fs.readFile(characterPartsPath, 'utf8');
                 parts = JSON.parse(partsData);
                 part = parts.find(p => String(p.id) === String(partId));
-                console.log(`[DEBUG] Found part ${partId} in character-${characterId}:`, part ? `${part.name} (${part.type})` : 'NOT FOUND');
             } catch (e) {
-                console.log(`[DEBUG] Error loading character-${characterId} parts:`, e.message);
                 // Character parts file doesn't exist, will try global
             }
         }
