@@ -97,10 +97,11 @@ class LinearActuatorController:
             else:
                 dir_norm = 'reverse'
             # Set direction (0=forward, 1=backward)
-            dir_value = 0 if dir_norm == 'forward' else 1
+            # NOTE: Direction is inverted - HIGH=forward, LOW=reverse for this wiring
+            dir_value = 1 if dir_norm == 'forward' else 0
             lgpio.gpio_write(self.h, dir_pin, dir_value)
             time.sleep(0.05)  # Let direction settle before PWM
-            log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value})")
+            log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value} - inverted)")
 
             # Calculate duty cycle
             duty_cycle = int((speed / 100.0) * 255)
