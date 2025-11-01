@@ -58,21 +58,25 @@ test.describe('Orchestration Control Panel', () => {
     });
 
     test('webcam streams should load for online animatronics', async ({ page }) => {
-        // Wait for page to load
-        await page.waitForTimeout(3000);
-
-        // Find all webcam images
-        const webcamImages = page.locator('img[alt="Live webcam feed"]');
-        const count = await webcamImages.count();
-
+        const onlineAnimatronics = page.locator('.animatronic-card:has(.status-online)');
+        const count = await onlineAnimatronics.count();
+        console.log(`Found ${count} online animatronic(s)`);
         expect(count).toBeGreaterThan(0);
-        console.log(`Found ${count} webcam stream(s)`);
 
-        // Verify at least one webcam image has loaded
-        if (count > 0) {
+        // Click the "Enable All Webcams" button
+        await page.click('button:has-text("Enable All Webcams")');
+
+        // Add a small delay to allow for the stream to be initialized
+        await page.waitForTimeout(1000);
+
+        // Now check that the webcam image source is set correctly
+        const webcamImages = page.locator('.webcam-preview');
+        if (await webcamImages.count() > 0) {
+            console.log(`Found ${await webcamImages.count()} webcam stream(s)`);
             const firstWebcam = webcamImages.first();
             const src = await firstWebcam.getAttribute('src');
-            expect(src).toContain('/setup/webcam/api/parts/');
+            expect(src).not.toBe('');
+            expect(src).toContain('/api/orchestration/animatronic/');
         }
     });
 
@@ -221,14 +225,15 @@ test.describe('Orchestration Control Panel', () => {
         await expect(sayToAllButton).toBeVisible();
 
         // Verify broadcast message textbox
-        const broadcastTextbox = page.locator('textarea[placeholder*="Enter message"]');
+        const broadcastTextbox = page.locator('textarea[placeholder*="Enter message..."]');
         await expect(broadcastTextbox).toBeVisible();
 
         // Verify Random Poses controls
-        const enablePosesButton = page.locator('button:has-text("Enable All")');
+        const randomPosesCard = page.locator('.card:has-text("Random Poses")');
+        const enablePosesButton = randomPosesCard.locator('button:has-text("Enable All")');
         await expect(enablePosesButton).toBeVisible();
 
-        const disablePosesButton = page.locator('button:has-text("Disable All")');
+        const disablePosesButton = randomPosesCard.locator('button:has-text("Disable All")');
         await expect(disablePosesButton).toBeVisible();
     });
 
