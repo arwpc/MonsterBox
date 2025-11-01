@@ -154,11 +154,16 @@
 <main class="container-fluid py-3">
   <!-- Mode Toggle and Add Part Button -->
   <div class="mb-3 d-flex justify-content-between align-items-center">
-    <div class="btn-group" role="group">
-      <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
-      <label class="btn btn-outline-warning" for="modeCal">CALIBRATE</label>
-      <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
-      <label class="btn btn-outline-info" for="modeOperate">OPERATE</label>
+    <div class="d-flex gap-2">
+      <div class="btn-group" role="group">
+        <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
+        <label class="btn btn-outline-warning" for="modeCal">CALIBRATE</label>
+        <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
+        <label class="btn btn-outline-info" for="modeOperate">OPERATE</label>
+      </div>
+      <button class="btn btn-outline-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()">
+        <i class="bi bi-eraser"></i> Clear All Calibrations
+      </button>
     </div>
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal">
       <i class="bi bi-plus-circle"></i> Add Part
@@ -468,12 +473,15 @@
                 <small class="text-muted">Max: <span id="calMaxDisplay">—</span></small>
               </div>
             </div>
-            <div class="btn-group w-100">
+            <div class="btn-group w-100 mb-2">
               <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')">Set
                 Min</button>
               <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')">Set
                 Max</button>
             </div>
+            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearCalibration()">
+              <i class="bi bi-eraser"></i> Clear
+            </button>
           </div>
 
           <!-- Position Presets -->
@@ -988,6 +996,114 @@
     window.deletePreset = deletePreset;
     window.gotoPreset = gotoPreset;
     window.runLearnMovement = runLearnMovement;
+
+    // Clear calibration for current part
+    async function clearCalibration() {
+      const partId = window.selectedPartId;
+      if (!partId) {
+        alert('No part selected');
+        return;
+      }
+
+      const partName = window.selectedPart ? window.selectedPart.name : `Part ${partId}`;
+      if (!confirm(`Clear calibration data for "${partName}"?\n\nThis will remove:\n• Min/Max bounds\n• Position presets\n• Calibration settings\n\nThis action cannot be undone.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/calibration/${partId}/profile`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Failed to clear calibration: ' + (data.error || 'Unknown error'));
+        } else {
+          // Reload calibration UI to reflect cleared state
+          await loadUnifiedCalibration(partId, window.selectedPart);
+          if (window.showToast) {
+            window.showToast(`Calibration cleared for ${partName}`, 'success');
+          } else {
+            alert(`Calibration cleared for ${partName}`);
+          }
+        }
+      } catch (err) {
+        console.error('Clear calibration error:', err);
+        alert('Clear calibration error: ' + err.message);
+      }
+    }
+
+    // Clear all calibrations for current character
+    async function clearAllCalibrations() {
+      try {
+        // Get current character
+        const currentRes = await fetch('/setup/characters/api/current');
+        const currentData = await currentRes.json();
+        const characterId = currentData.selectedCharacter;
+
+        if (!characterId) {
+          alert('No character selected');
+          return;
+        }
+
+        // Get all parts for current character
+        const partsRes = await fetch(`/setup/calibration/api/parts?characterId=${characterId}`);
+        const partsData = await partsRes.json();
+        if (!partsData.success) {
+          alert('Failed to load parts');
+          return;
+        }
+
+        const parts = partsData.parts || [];
+        const calibratableParts = parts.filter(p => 
+          ['servo', 'linear_actuator', 'motor', 'stepper'].includes(String(p.type).toLowerCase())
+        );
+
+        if (calibratableParts.length === 0) {
+          alert('No calibratable parts found for current character');
+          return;
+        }
+
+        const partNames = calibratableParts.map(p => p.name).join('\n• ');
+        if (!confirm(`Clear ALL calibrations for current character?\n\nThis will clear calibration data for ${calibratableParts.length} part(s):\n• ${partNames}\n\nThis action cannot be undone.`)) {
+          return;
+        }
+
+        const partIds = calibratableParts.map(p => parseInt(p.id, 10));
+        const res = await fetch('/api/calibration/clear-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId, partIds })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Failed to clear calibrations: ' + (data.error || 'Unknown error'));
+        } else {
+          // Reload current part calibration if one is selected
+          if (window.selectedPartId && window.selectedPart) {
+            await loadUnifiedCalibration(window.selectedPartId, window.selectedPart);
+          }
+          
+          // Reload parts list to update calibration status badges
+          await loadParts();
+
+          if (window.showToast) {
+            window.showToast(`Cleared ${data.cleared} calibration profile(s)`, 'success');
+          } else {
+            alert(`Cleared ${data.cleared} calibration profile(s)`);
+          }
+        }
+      } catch (err) {
+        console.error('Clear all calibrations error:', err);
+        alert('Clear all calibrations error: ' + err.message);
+      }
+    }
+
+    // Expose clear functions to global scope
+    window.clearCalibration = clearCalibration;
+    window.clearAllCalibrations = clearAllCalibrations;
 
     // ─────────────────────────────────────────────────────────────────────────
     // END UNIFIED CALIBRATION INTEGRATION

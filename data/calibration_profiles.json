@@ -1,25 +1,4 @@
 {
-  "1": {
-    "partId": 1,
-    "capability": {
-      "kind": "absolute-servo",
-      "usMin": 500,
-      "usMax": 2500,
-      "invert": false
-    },
-    "bounds": {
-      "minP": 0.30000000000000004,
-      "maxP": 0.7999999999999999
-    },
-    "presets": [],
-    "motion": {
-      "type": "direct-map",
-      "defaultSpeedPct": 90,
-      "defaultDurationMs": 2500
-    },
-    "lastCalibratedAt": "2025-10-22T21:31:30.653Z",
-    "version": 1
-  },
   "2": {
     "partId": 2,
     "capability": {
@@ -55,27 +34,6 @@
       "type": "direct-map"
     },
     "lastCalibratedAt": "2025-10-22T21:26:45.124Z",
-    "version": 1
-  },
-  "4": {
-    "partId": 4,
-    "capability": {
-      "kind": "absolute-servo",
-      "usMin": 500,
-      "usMax": 2500,
-      "invert": false
-    },
-    "bounds": {
-      "minP": 0,
-      "maxP": 1
-    },
-    "presets": [],
-    "motion": {
-      "type": "direct-map",
-      "defaultSpeedPct": 90,
-      "defaultDurationMs": 2500
-    },
-    "lastCalibratedAt": "2025-10-31T21:18:34.717Z",
     "version": 1
   },
   "9": {

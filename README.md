@@ -81,6 +81,9 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 - Simple Calibration panels for servos, motors, linear actuators, steppers
 - Guardrails: Jaw Animation and Head Tracking respect Min/Max
 - Modal guidelines: use data-bs-toggle/data-bs-target; populate via JS only
+- **Clear Calibration**: Remove calibration data for individual parts or all parts of current character
+  - Individual Clear: Click "Clear" button in calibration panel (removes min/max/presets for selected part)
+  - Clear All: Click "Clear All Calibrations" button next to mode toggle (clears all parts of current character)
 
 Open: http://localhost:3000/setup/calibration
 

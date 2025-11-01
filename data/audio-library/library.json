@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "createdAt": "2025-09-23T05:39:19.673Z",
-  "lastModified": "2025-11-01T00:17:23.497Z",
+  "lastModified": "2025-11-01T01:35:55.566Z",
   "categories": [
     "monster-sounds",
     "ambient",
@@ -563,8 +563,8 @@
       "lastModified": "2025-10-28T20:58:37.525Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2025-11-01T00:36:37.827Z"
     },
     {
       "id": "ae9e1890-e929-495d-8348-983926e8aaf5",
@@ -2221,9 +2221,11 @@
       "lastModified": "2025-10-31T22:04:25.911Z",
       "waveformGenerated": true,
       "favorite": false,
-      "playCount": 1,
-      "lastPlayed": "2025-10-31T22:09:03.033Z"
+      "playCount": 2,
+      "lastPlayed": "2025-11-01T01:35:55.566Z"
     }
   ],
+  "totalFiles": 81
+},
   "totalFiles": 81
 }

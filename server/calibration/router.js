@@ -188,4 +188,45 @@ router.get('/profiles', async (req, res) => {
   }
 });
 
+// Clear calibration profile for a specific part
+router.delete('/:partId/profile', async (req, res) => {
+  try {
+    const partId = parseInt(req.params.partId, 10);
+    await store.delete(partId);
+    adapterCache.delete(partId);
+    positionState.delete(partId);
+    res.json({ success: true, message: 'Calibration cleared' });
+  } catch (err) {
+    console.error('Error clearing calibration profile:', err);
+    res.status(500).json({ success: false, error: 'Failed to clear calibration', message: String(err) });
+  }
+});
+
+// Clear all calibration profiles for current character
+router.post('/clear-all', express.json(), async (req, res) => {
+  try {
+    const { characterId, partIds } = req.body;
+    if (!Array.isArray(partIds) || partIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'Must provide array of partIds to clear' });
+    }
+
+    let cleared = 0;
+    for (const partId of partIds) {
+      try {
+        await store.delete(parseInt(partId, 10));
+        adapterCache.delete(parseInt(partId, 10));
+        positionState.delete(parseInt(partId, 10));
+        cleared++;
+      } catch (err) {
+        console.warn(`Failed to clear calibration for part ${partId}:`, err);
+      }
+    }
+
+    res.json({ success: true, message: `Cleared ${cleared} calibration profile(s)`, cleared });
+  } catch (err) {
+    console.error('Error clearing all calibrations:', err);
+    res.status(500).json({ success: false, error: 'Failed to clear calibrations', message: String(err) });
+  }
+});
+
 export default router;

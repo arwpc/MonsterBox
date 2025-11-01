@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency Hardware Test - Halloween 2025</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #444;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+        }
+        button:hover { background: #45a049; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #da190b; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #333;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .info { border-left: 4px solid #2196F3; }
+        h1 { color: #ff6b35; }
+        h2 { color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <h1>🎃 Emergency Hardware Test - Halloween 2025</h1>
+    
+    <div class="test-section">
+        <h2>📚 Audio Library Test</h2>
+        <button onclick="testAudioLibrary()">Test Audio Library</button>
+        <button onclick="playTestAudio()">Play Test Audio</button>
+        <div id="audioStatus" class="status info">Ready to test</div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Linear Actuator Tests (Orlok)</h2>
+        <h3>Right Arm (Part 1)</h3>
+        <button onclick="testActuator(1, 0.1, 3000)">Extend 3s</button>
+        <button onclick="testActuator(1, -0.1, 3000)">Retract 3s</button>
+        <button onclick="stopActuator(1)" class="danger">STOP</button>
+        <div id="actuator1Status" class="status info">Ready</div>
+
+        <h3>Left Arm (Part 2)</h3>
+        <button onclick="testActuator(2, 0.1, 3000)">Extend 3s</button>
+        <button onclick="testActuator(2, -0.1, 3000)">Retract 3s</button>
+        <button onclick="stopActuator(2)" class="danger">STOP</button>
+        <div id="actuator2Status" class="status info">Ready</div>
+
+        <h3>Bow At The Waist (Part 3)</h3>
+        <button onclick="testActuator(3, 0.1, 3000)">Extend 3s</button>
+        <button onclick="testActuator(3, -0.1, 3000)">Retract 3s</button>
+        <button onclick="stopActuator(3)" class="danger">STOP</button>
+        <div id="actuator3Status" class="status info">Ready</div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 System Status</h2>
+        <button onclick="checkSystemStatus()">Check System Status</button>
+        <div id="systemStatus" class="status info">Click to check</div>
+    </div>
+
+    <script>
+        async function testAudioLibrary() {
+            const statusEl = document.getElementById('audioStatus');
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Fetching audio library...';
+            
+            try {
+                const response = await fetch('/audio-library/api/library');
+                const data = await response.json();
+                statusEl.className = 'status success';
+                statusEl.textContent = `✅ Success! Found ${data.totalFiles} files (${Math.round(data.totalSize / 1024 / 1024)}MB total)`;
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function playTestAudio() {
+            const statusEl = document.getElementById('audioStatus');
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Playing test audio...';
+            
+            try {
+                const response = await fetch('/api/elevenlabs/generate-and-play', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: 'Halloween test audio. If you can hear this, the audio system is working.',
+                        characterId: 3
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '✅ Audio playing...';
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = `❌ Failed: ${data.error}`;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function testActuator(partId, delta, duration) {
+            const statusEl = document.getElementById(`actuator${partId}Status`);
+            statusEl.className = 'status info';
+            statusEl.textContent = `Moving ${delta > 0 ? 'forward' : 'backward'}...`;
+            
+            try {
+                const response = await fetch(`/api/calibration/${partId}/nudge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        delta: delta,
+                        speedPct: 100,
+                        durationMs: duration
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = `✅ Moved ${delta > 0 ? 'forward' : 'backward'} for ${duration}ms. Position: ${data.currentP.toFixed(3)}`;
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = `❌ Failed: ${data.error}`;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function stopActuator(partId) {
+            const statusEl = document.getElementById(`actuator${partId}Status`);
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Stopping...';
+            
+            try {
+                const response = await fetch(`/api/calibration/${partId}/stop`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '⏹️ Stopped';
+                } else {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = `❌ Failed: ${data.error}`;
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function checkSystemStatus() {
+            const statusEl = document.getElementById('systemStatus');
+            statusEl.className = 'status info';
+            statusEl.textContent = 'Checking system...';
+            
+            try {
+                // Check audio
+                const audioRes = await fetch('/audio-library/api/library');
+                const audioData = await audioRes.json();
+                
+                // Check parts
+                const partsRes = await fetch('/setup/calibration/api/parts?characterId=3');
+                const partsData = await partsRes.json();
+                
+                const actuators = partsData.parts.filter(p => p.type === 'linear_actuator');
+                
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `
+                    <strong>✅ System Status:</strong><br>
+                    Audio Files: ${audioData.totalFiles}<br>
+                    Linear Actuators: ${actuators.length} found<br>
+                    Enabled: ${actuators.filter(a => a.enabled).length}<br>
+                    Server: Running
+                `;
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+
+        // Auto-check status on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkSystemStatus, 500);
+        });
+    </script>
+</body>
+</html>
