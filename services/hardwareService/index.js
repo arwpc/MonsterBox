@@ -1373,7 +1373,10 @@ export async function controlPart(partId, action, params = {}) {
                 const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
                 const partsData = await fs.readFile(partsPath, 'utf8');
                 parts = JSON.parse(partsData);
-                part = parts.find(p => String(p.id) === String(partId));
+                // Filter by characterId if available to avoid wrong character parts
+                part = characterId 
+                    ? parts.find(p => String(p.id) === String(partId) && String(p.characterId) === String(characterId))
+                    : parts.find(p => String(p.id) === String(partId));
             } catch (e) {
                 // Global parts file doesn't exist
             }
