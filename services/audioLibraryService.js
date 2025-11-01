@@ -23,25 +23,38 @@ class AudioLibraryService {
     /**
      * Load the audio library database
      */
+    createDefaultLibrary() {
+        return {
+            version: "1.0.0",
+            created: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            totalFiles: 0,
+            totalSize: 0,
+            categories: [
+                "monster-sounds", "ambient", "music", "voice", "effects",
+                "halloween", "scary", "mechanical", "nature", "other"
+            ],
+            audio: []
+        };
+    }
+
+    /**
+     * Load the audio library database
+     */
     async loadLibrary() {
         try {
             const data = await fs.readFile(this.libraryPath, 'utf8');
-            return JSON.parse(data);
+            try {
+                return JSON.parse(data);
+            } catch (parseError) {
+                console.error(`Error parsing audio library JSON at ${this.libraryPath}:`, parseError);
+                // Return a default structure to prevent crash
+                return this.createDefaultLibrary();
+            }
         } catch (error) {
             if (error.code === 'ENOENT') {
                 // Create default library if it doesn't exist
-                const defaultLibrary = {
-                    version: "1.0.0",
-                    created: new Date().toISOString(),
-                    lastModified: new Date().toISOString(),
-                    totalFiles: 0,
-                    totalSize: 0,
-                    categories: [
-                        "monster-sounds", "ambient", "music", "voice", "effects",
-                        "halloween", "scary", "mechanical", "nature", "other"
-                    ],
-                    audio: []
-                };
+                const defaultLibrary = this.createDefaultLibrary();
                 await this.saveLibrary(defaultLibrary);
                 return defaultLibrary;
             }

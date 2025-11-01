@@ -17,7 +17,7 @@ describe('MonsterBox 4.0 Basic Tests', () => {
                 .get('/')
                 .expect(200);
 
-            expect(response.text).to.include('MonsterBox 4.0');
+            expect(response.text).to.include('MonsterBox 5.5');
         });
 
         it('should serve the setup poses page', async () => {

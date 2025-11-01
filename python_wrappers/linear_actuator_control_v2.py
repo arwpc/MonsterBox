@@ -86,10 +86,9 @@ class LinearActuatorController:
             dir_pin = self.pins['dir']
             pwm_pin = self.pins['pwm']
 
-            # Stop motor first - ensure both pins are LOW
+            # Stop motor first
             lgpio.gpio_write(self.h, pwm_pin, 0)
-            lgpio.gpio_write(self.h, dir_pin, 0)
-            time.sleep(0.1)  # Longer initialization delay
+            time.sleep(0.05)
 
             # Normalize direction
             if direction in ('extend', 'forward'):
@@ -97,47 +96,33 @@ class LinearActuatorController:
             else:
                 dir_norm = 'reverse'
             # Set direction (0=forward, 1=backward)
-            # NOTE: Direction is inverted - HIGH=forward, LOW=reverse for this wiring
-            dir_value = 1 if dir_norm == 'forward' else 0
+            dir_value = 0 if dir_norm == 'forward' else 1
             lgpio.gpio_write(self.h, dir_pin, dir_value)
-            time.sleep(0.05)  # Let direction settle before PWM
-            log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value} - inverted)")
+            log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value})")
 
             # Calculate duty cycle
             duty_cycle = int((speed / 100.0) * 255)
             log_info(f"Speed: {speed}%, Duty cycle: {duty_cycle}/255, PWM: {pwm_hz} Hz")
 
-            # For high speeds (>80%), use simple digital HIGH for better motor drive
-            # MDD10A boards work better with strong digital signals than software PWM
-            if speed >= 80:
-                log_info(f"Using digital HIGH mode for speed {speed}% (better for MDD10A)")
-                lgpio.gpio_write(self.h, pwm_pin, 1)
-                log_info(f"PWM pin {pwm_pin} set HIGH, running for {duration}ms")
-                time.sleep(duration / 1000.0)
-                lgpio.gpio_write(self.h, pwm_pin, 0)
-                lgpio.gpio_write(self.h, dir_pin, 0)  # Also reset direction
-                log_info("Motor stopped, pins reset to LOW")
-            else:
-                # Software PWM for lower speeds
-                # Increased minimum frequency for better motor response
-                cycle_time = max(1.0/float(pwm_hz or 1000), 0.0002)
-                start_time = time.time()
-                end_time = start_time + (duration / 1000.0)
+            # Software PWM
+            cycle_time = max(1.0/float(pwm_hz or 100), 0.0002)
+            start_time = time.time()
+            end_time = start_time + (duration / 1000.0)
 
-                while time.time() < end_time:
-                    if duty_cycle > 0:
-                        on_time = cycle_time * (duty_cycle / 255.0)
-                        off_time = cycle_time - on_time
-                        lgpio.gpio_write(self.h, pwm_pin, 1)
-                        time.sleep(on_time)
-                        lgpio.gpio_write(self.h, pwm_pin, 0)
-                        time.sleep(off_time)
-                    else:
-                        time.sleep(cycle_time)
+            while time.time() < end_time:
+                if duty_cycle > 0:
+                    on_time = cycle_time * (duty_cycle / 255.0)
+                    off_time = cycle_time - on_time
+                    lgpio.gpio_write(self.h, pwm_pin, 1)
+                    time.sleep(on_time)
+                    lgpio.gpio_write(self.h, pwm_pin, 0)
+                    time.sleep(off_time)
+                else:
+                    time.sleep(cycle_time)
 
-                # Stop motor
-                lgpio.gpio_write(self.h, pwm_pin, 0)
-                log_info("Motor stopped")
+            # Stop motor
+            lgpio.gpio_write(self.h, pwm_pin, 0)
+            log_info("Motor stopped")
             return True
 
         except Exception as e:
@@ -241,8 +226,7 @@ def main():
         direction = config.get('direction', 'forward')
         speed = float(config.get('speed', 50))
         duration = int(config.get('duration', 1000))
-        # Higher default PWM for MDD10A (1000Hz), BTS7960 uses 2000Hz
-        pwm_hz = int(config.get('pwmFrequency', 2000 if board_type == BOARD_BTS7960 else 1000))
+        pwm_hz = int(config.get('pwmFrequency', 2000 if board_type == BOARD_BTS7960 else 100))
 
         log_info(f"Configuration: board={board_type}, direction={direction}, speed={speed}, duration={duration}, pwm={pwm_hz}Hz")
         
