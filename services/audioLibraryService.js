@@ -12,6 +12,38 @@ import { parseBuffer } from 'music-metadata';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Simple file-based lock to prevent race conditions
+const lockfilePath = path.join(__dirname, '..', 'data', 'audio-library', 'library.lock');
+let isLocked = false;
+
+async function acquireLock() {
+    const timeout = 5000; // 5 seconds
+    const waitInterval = 100; // 100 ms
+    const startTime = Date.now();
+
+    while (isLocked || await fs.access(lockfilePath).then(() => true).catch(() => false)) {
+        if (Date.now() - startTime > timeout) {
+            throw new Error('Failed to acquire lock on audio library within 5 seconds.');
+        }
+        await new Promise(resolve => setTimeout(resolve, waitInterval));
+    }
+    isLocked = true;
+    await fs.writeFile(lockfilePath, process.pid.toString());
+}
+
+async function releaseLock() {
+    try {
+        await fs.unlink(lockfilePath);
+    } catch (error) {
+        // Ignore if lock file doesn't exist
+        if (error.code !== 'ENOENT') {
+            console.error('Error releasing lock:', error);
+        }
+    }
+    isLocked = false;
+}
+
+
 class AudioLibraryService {
     constructor() {
         this.libraryPath = path.join(__dirname, '..', 'data', 'audio-library', 'library.json');
@@ -66,8 +98,14 @@ class AudioLibraryService {
      * Save the audio library database
      */
     async saveLibrary(library) {
+        if (!isLocked) {
+            throw new Error('Must acquire lock before saving audio library.');
+        }
         library.lastModified = new Date().toISOString();
-        await fs.writeFile(this.libraryPath, JSON.stringify(library, null, 2));
+        // Write to a temporary file first, then rename to avoid corruption on partial writes
+        const tempPath = this.libraryPath + '.tmp';
+        await fs.writeFile(tempPath, JSON.stringify(library, null, 2));
+        await fs.rename(tempPath, this.libraryPath);
     }
 
     /**
@@ -143,75 +181,80 @@ class AudioLibraryService {
             throw new Error(`Unsupported audio format: ${path.extname(originalFilename)}`);
         }
 
-        const library = await this.loadLibrary();
-        const audioId = this.generateAudioId();
-        const ext = path.extname(originalFilename);
-        const filename = `${audioId}${ext}`;
-        const filePath = path.join(this.filesDir, filename);
+        await acquireLock();
+        try {
+            const library = await this.loadLibrary();
+            const audioId = this.generateAudioId();
+            const ext = path.extname(originalFilename);
+            const filename = `${audioId}${ext}`;
+            const filePath = path.join(this.filesDir, filename);
 
-        // Save the audio file
-        await fs.writeFile(filePath, fileBuffer);
+            // Save the audio file
+            await fs.writeFile(filePath, fileBuffer);
 
-        // Extract metadata
-        const extractedMetadata = await this.extractMetadata(filePath, fileBuffer);
+            // Extract metadata
+            const extractedMetadata = await this.extractMetadata(filePath, fileBuffer);
 
-        // Auto-detect category based on metadata
-        let autoCategory = metadata.category || 'other';
-        if (extractedMetadata.genre) {
-            const genre = extractedMetadata.genre.toLowerCase();
-            if (genre.includes('horror') || genre.includes('scary') || genre.includes('dark')) {
-                autoCategory = 'scary';
-            } else if (genre.includes('ambient') || genre.includes('atmosphere')) {
-                autoCategory = 'ambient';
-            } else if (genre.includes('music') || genre.includes('song')) {
-                autoCategory = 'music';
+            // Auto-detect category based on metadata
+            let autoCategory = metadata.category || 'other';
+            if (extractedMetadata.genre) {
+                const genre = extractedMetadata.genre.toLowerCase();
+                if (genre.includes('horror') || genre.includes('scary') || genre.includes('dark')) {
+                    autoCategory = 'scary';
+                } else if (genre.includes('ambient') || genre.includes('atmosphere')) {
+                    autoCategory = 'ambient';
+                } else if (genre.includes('music') || genre.includes('song')) {
+                    autoCategory = 'music';
+                }
             }
+
+            // Auto-generate tags from metadata
+            const autoTags = [...(metadata.tags || [])];
+            if (extractedMetadata.artist) autoTags.push(extractedMetadata.artist);
+            if (extractedMetadata.genre) autoTags.push(extractedMetadata.genre);
+            if (extractedMetadata.year) autoTags.push(extractedMetadata.year.toString());
+
+            // Create audio entry
+            const audioEntry = {
+                id: audioId,
+                title: metadata.title || extractedMetadata.title || path.basename(originalFilename, ext),
+                description: metadata.description || (extractedMetadata.artist ? `By ${extractedMetadata.artist}` : ''),
+                filename: filename,
+                originalFilename: originalFilename,
+                format: extractedMetadata.format,
+                duration: extractedMetadata.duration,
+                fileSize: extractedMetadata.fileSize,
+                sampleRate: extractedMetadata.sampleRate,
+                channels: extractedMetadata.channels,
+                bitrate: extractedMetadata.bitrate,
+                tags: [...new Set(autoTags)], // Remove duplicates
+                category: autoCategory,
+                artist: extractedMetadata.artist,
+                album: extractedMetadata.album,
+                genre: extractedMetadata.genre,
+                year: extractedMetadata.year,
+                uploadedAt: new Date().toISOString(),
+                lastModified: new Date().toISOString(),
+                waveformGenerated: false,
+                favorite: false,
+                playCount: 0,
+                lastPlayed: null
+            };
+
+            // Add to library
+            library.audio.push(audioEntry);
+            library.totalFiles = library.audio.length;
+            library.totalSize = library.audio.reduce((sum, audio) => sum + audio.fileSize, 0);
+
+            await this.saveLibrary(library);
+
+            // Generate waveform asynchronously (don't wait for it)
+            this.generateWaveform(audioId).catch(console.error);
+
+            return audioEntry;
+        } finally {
+            await releaseLock();
         }
-
-        // Auto-generate tags from metadata
-        const autoTags = [...(metadata.tags || [])];
-        if (extractedMetadata.artist) autoTags.push(extractedMetadata.artist);
-        if (extractedMetadata.genre) autoTags.push(extractedMetadata.genre);
-        if (extractedMetadata.year) autoTags.push(extractedMetadata.year.toString());
-
-        // Create audio entry
-        const audioEntry = {
-            id: audioId,
-            title: metadata.title || extractedMetadata.title || path.basename(originalFilename, ext),
-            description: metadata.description || (extractedMetadata.artist ? `By ${extractedMetadata.artist}` : ''),
-            filename: filename,
-            originalFilename: originalFilename,
-            format: extractedMetadata.format,
-            duration: extractedMetadata.duration,
-            fileSize: extractedMetadata.fileSize,
-            sampleRate: extractedMetadata.sampleRate,
-            channels: extractedMetadata.channels,
-            bitrate: extractedMetadata.bitrate,
-            tags: [...new Set(autoTags)], // Remove duplicates
-            category: autoCategory,
-            artist: extractedMetadata.artist,
-            album: extractedMetadata.album,
-            genre: extractedMetadata.genre,
-            year: extractedMetadata.year,
-            uploadedAt: new Date().toISOString(),
-            lastModified: new Date().toISOString(),
-            waveformGenerated: false,
-            favorite: false,
-            playCount: 0,
-            lastPlayed: null
-        };
-
-        // Add to library
-        library.audio.push(audioEntry);
-        library.totalFiles = library.audio.length;
-        library.totalSize = library.audio.reduce((sum, audio) => sum + audio.fileSize, 0);
-
-        await this.saveLibrary(library);
-
-        // Generate waveform asynchronously (don't wait for it)
-        this.generateWaveform(audioId).catch(console.error);
-
-        return audioEntry;
     }
 
     /**
@@ -353,73 +396,88 @@ class AudioLibraryService {
      * Update audio metadata
      */
     async updateAudio(audioId, updates) {
-        const library = await this.loadLibrary();
-        const audioIndex = library.audio.findIndex(audio => audio.id === audioId);
-        
-        if (audioIndex === -1) {
-            throw new Error('Audio file not found');
-        }
+        await acquireLock();
+        try {
+            const library = await this.loadLibrary();
+            const audioIndex = library.audio.findIndex(audio => audio.id === audioId);
 
-        // Update allowed fields
-        const allowedFields = ['title', 'description', 'tags', 'category', 'favorite'];
-        allowedFields.forEach(field => {
-            if (updates[field] !== undefined) {
-                library.audio[audioIndex][field] = updates[field];
+            if (audioIndex === -1) {
+                throw new Error('Audio file not found');
             }
-        });
 
-        library.audio[audioIndex].lastModified = new Date().toISOString();
-        await this.saveLibrary(library);
+            // Update allowed fields
+            const allowedFields = ['title', 'description', 'tags', 'category', 'favorite'];
+            allowedFields.forEach(field => {
+                if (updates[field] !== undefined) {
+                    library.audio[audioIndex][field] = updates[field];
+                }
+            });
 
-        return library.audio[audioIndex];
+            library.audio[audioIndex].lastModified = new Date().toISOString();
+            await this.saveLibrary(library);
+
+            return library.audio[audioIndex];
+        } finally {
+            await releaseLock();
+        }
     }
 
     /**
      * Delete audio file
      */
     async deleteAudio(audioId) {
-        const library = await this.loadLibrary();
-        const audioIndex = library.audio.findIndex(audio => audio.id === audioId);
-        
-        if (audioIndex === -1) {
-            throw new Error('Audio file not found');
-        }
-
-        const audio = library.audio[audioIndex];
-        
-        // Delete physical files
+        await acquireLock();
         try {
-            await fs.unlink(path.join(this.filesDir, audio.filename));
-        } catch (error) {
-            console.warn('Failed to delete audio file:', error.message);
+            const library = await this.loadLibrary();
+            const audioIndex = library.audio.findIndex(audio => audio.id === audioId);
+
+            if (audioIndex === -1) {
+                throw new Error('Audio file not found');
+            }
+
+            const audio = library.audio[audioIndex];
+
+            // Delete physical files
+            try {
+                await fs.unlink(path.join(this.filesDir, audio.filename));
+            } catch (error) {
+                console.warn('Failed to delete audio file:', error.message);
+            }
+
+            try {
+                await fs.unlink(path.join(this.waveformsDir, `${audioId}.png`));
+            } catch (error) {
+                // Waveform might not exist, ignore
+            }
+
+            // Remove from library
+            library.audio.splice(audioIndex, 1);
+            library.totalFiles = library.audio.length;
+            library.totalSize = library.audio.reduce((sum, audio) => sum + audio.fileSize, 0);
+
+            await this.saveLibrary(library);
+            return true;
+        } finally {
+            await releaseLock();
         }
-
-        try {
-            await fs.unlink(path.join(this.waveformsDir, `${audioId}.png`));
-        } catch (error) {
-            // Waveform might not exist, ignore
-        }
-
-        // Remove from library
-        library.audio.splice(audioIndex, 1);
-        library.totalFiles = library.audio.length;
-        library.totalSize = library.audio.reduce((sum, audio) => sum + audio.fileSize, 0);
-
-        await this.saveLibrary(library);
-        return true;
     }
 
     /**
      * Record play event
      */
     async recordPlay(audioId) {
-        const library = await this.loadLibrary();
-        const audio = library.audio.find(audio => audio.id === audioId);
-        
-        if (audio) {
-            audio.playCount = (audio.playCount || 0) + 1;
-            audio.lastPlayed = new Date().toISOString();
-            await this.saveLibrary(library);
+        await acquireLock();
+        try {
+            const library = await this.loadLibrary();
+            const audio = library.audio.find(audio => audio.id === audioId);
+
+            if (audio) {
+                audio.playCount = (audio.playCount || 0) + 1;
+                audio.lastPlayed = new Date().toISOString();
+                await this.saveLibrary(library);
+            }
+        } finally {
+            await releaseLock();
         }
     }
 
@@ -429,12 +487,17 @@ class AudioLibraryService {
     async generateWaveform(audioId) {
         // This would use a library like wavesurfer.js or ffmpeg to generate waveform
         // For now, just mark as generated
-        const library = await this.loadLibrary();
-        const audio = library.audio.find(audio => audio.id === audioId);
-        
-        if (audio) {
-            audio.waveformGenerated = true;
-            await this.saveLibrary(library);
+        await acquireLock();
+        try {
+            const library = await this.loadLibrary();
+            const audio = library.audio.find(audio => audio.id === audioId);
+
+            if (audio) {
+                audio.waveformGenerated = true;
+                await this.saveLibrary(library);
+            }
+        } finally {
+            await releaseLock();
         }
     }
 

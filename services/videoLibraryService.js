@@ -7,6 +7,41 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID as uuidv4 } from 'crypto';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Simple file-based lock to prevent race conditions
+const lockfilePath = path.join(__dirname, '..', 'data', 'video-library', 'library.lock');
+let isLocked = false;
+
+async function acquireLock() {
+    const timeout = 5000; // 5 seconds
+    const waitInterval = 100; // 100 ms
+    const startTime = Date.now();
+
+    while (isLocked || await fs.access(lockfilePath).then(() => true).catch(() => false)) {
+        if (Date.now() - startTime > timeout) {
+            throw new Error('Failed to acquire lock on video library within 5 seconds.');
+        }
+        await new Promise(resolve => setTimeout(resolve, waitInterval));
+    }
+    isLocked = true;
+    await fs.writeFile(lockfilePath, process.pid.toString());
+}
+
+async function releaseLock() {
+    try {
+        await fs.unlink(lockfilePath);
+    } catch (error) {
+        // Ignore if lock file doesn't exist
+        if (error.code !== 'ENOENT') {
+            console.error('Error releasing lock:', error);
+        }
+    }
+    isLocked = false;
+}
 
 class VideoLibraryService {
     constructor() {
@@ -26,6 +61,7 @@ class VideoLibraryService {
     }
 
     async init() {
+        await acquireLock();
         try {
             // Create directories
             await fs.mkdir(this.videoDir, { recursive: true });
@@ -48,6 +84,8 @@ class VideoLibraryService {
         } catch (error) {
             console.error('❌ Failed to initialize Video Library Service:', error);
             throw error;
+        } finally {
+            await releaseLock();
         }
     }
 
@@ -124,6 +162,7 @@ class VideoLibraryService {
     }
 
     async addVideo(fileBuffer, metadata) {
+        await acquireLock();
         try {
             const id = uuidv4();
             const originalName = metadata.originalname || 'unknown.mp4';
@@ -173,6 +212,8 @@ class VideoLibraryService {
         } catch (error) {
             console.error('Error adding video:', error);
             return { success: false, error: error.message };
+        } finally {
+            await releaseLock();
         }
     }
 
@@ -256,6 +297,7 @@ class VideoLibraryService {
     }
 
     async updateVideo(videoId, updates) {
+        await acquireLock();
         try {
             const libraryData = await this.loadLibraryData();
             const videoIndex = libraryData.videos.findIndex(v => v.id === videoId);
@@ -277,10 +319,13 @@ class VideoLibraryService {
             return { success: true, video };
         } catch (error) {
             return { success: false, error: error.message };
+        } finally {
+            await releaseLock();
         }
     }
 
     async deleteVideo(videoId) {
+        await acquireLock();
         try {
             const libraryData = await this.loadLibraryData();
             const videoIndex = libraryData.videos.findIndex(v => v.id === videoId);
@@ -317,6 +362,8 @@ class VideoLibraryService {
             return { success: true, message: 'Video deleted successfully' };
         } catch (error) {
             return { success: false, error: error.message };
+        } finally {
+            await releaseLock();
         }
     }
 
@@ -436,13 +483,14 @@ class VideoLibraryService {
     }
 
     async saveLibraryData(data) {
-        try {
-            await fs.writeFile(this.libraryFile, JSON.stringify(data, null, 2), 'utf-8');
-            return true;
-        } catch (error) {
-            console.error('Error saving library data:', error);
-            return false;
+        if (!isLocked) {
+            throw new Error('Must acquire lock before saving video library.');
         }
+        // Write to a temporary file first, then rename to avoid corruption on partial writes
+        const tempPath = this.libraryFile + '.tmp';
+        await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+        await fs.rename(tempPath, this.libraryFile);
+        return true;
     }
 
     async getStorageStats() {

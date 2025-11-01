@@ -12,7 +12,7 @@
     "playwright:browsers:firefox": "npx playwright install --with-deps firefox",
     "test": "npm run test:syntax && npm run test:unit",
     "test:syntax": "mocha tests/syntax-validation.test.js --timeout 5000",
-    "test:unit": "mocha --recursive tests/unit --reporter spec",
+    "test:unit": "mocha --recursive tests/unit --reporter spec --exit",
     "test:hardware": "mocha --recursive tests/hardware --reporter spec",
     "test:e2e": "playwright test",
     "test:headed": "playwright test --headed",

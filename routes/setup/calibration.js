@@ -405,7 +405,8 @@ function deepMerge(a = {}, b = {}) {
 
 router.get('/api/parts/:id/effective', async (req, res) => {
     try {
-        const parts = await loadParts();
+        const { characterId } = req.query;
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(req.params.id));
         if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
         const type = part.type;
@@ -657,12 +658,12 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
     }
 });
 
-
 // Linear actuator calibration page
 router.get('/linear_actuator/:id', async (req, res) => {
     try {
         const partId = req.params.id;
-        const parts = await loadParts();
+        const { characterId } = req.query;
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part) {
@@ -715,7 +716,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
 router.post('/api/linear_actuator/:id/jog', express.json(), async (req, res) => {
     try {
         const partId = req.params.id;
-        const { direction, speed = 50, duration = 500 } = req.body;
+        const { direction, speed = 50, duration = 500, characterId } = req.body;
 
         if (!['extend', 'retract'].includes(direction)) {
             return res.status(400).json({
@@ -724,7 +725,7 @@ router.post('/api/linear_actuator/:id/jog', express.json(), async (req, res) => 
             });
         }
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part || part.type !== 'linear_actuator') {
@@ -786,7 +787,8 @@ router.post('/api/linear_actuator/:id/jog', express.json(), async (req, res) => 
 router.post('/api/linear_actuator/:id/stop', express.json(), async (req, res) => {
     try {
         const partId = req.params.id;
-        const parts = await loadParts();
+        const { characterId } = req.body;
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part || part.type !== 'linear_actuator') {
@@ -838,7 +840,7 @@ router.post('/api/linear_actuator/:id/stop', express.json(), async (req, res) =>
 router.post('/api/linear_actuator/:id/save-position', express.json(), async (req, res) => {
     try {
         const partId = req.params.id;
-        const { position, description } = req.body;
+        const { position, description, characterId } = req.body;
 
         if (!['min', 'max'].includes(position)) {
             return res.status(400).json({
@@ -847,7 +849,7 @@ router.post('/api/linear_actuator/:id/save-position', express.json(), async (req
             });
         }
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part || part.type !== 'linear_actuator') {
@@ -940,7 +942,8 @@ router.post('/api/linear_actuator/:id/reset', express.json(), async (req, res) =
 router.get('/standard_servo/:id', async (req, res) => {
     try {
         const partId = req.params.id;
-        const parts = await loadParts();
+        const { characterId } = req.query;
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part) {
@@ -993,11 +996,11 @@ router.get('/standard_servo/:id', async (req, res) => {
 router.post('/api/standard_servo/:id/move', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { angle, duration = 1000 } = req.body;
+        const { angle, duration = 1000, characterId } = req.body;
         const angleDeg = parseInt(angle, 10);
         if (isNaN(angleDeg)) return res.status(400).json({ success: false, error: 'Invalid angle' });
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
         if (!part || part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
             if (String(process.env.MB_TEST_MODE || '') === '1') {
@@ -1018,12 +1021,12 @@ router.post('/api/standard_servo/:id/move', async (req, res) => {
 router.post('/api/standard_servo/:id/save-pulse', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { pulseType, pulseUs } = req.body;
+        const { pulseType, pulseUs, characterId } = req.body;
         if (!['min', 'center', 'max'].includes(String(pulseType))) return res.status(400).json({ success: false, error: 'Invalid pulseType' });
         const us = parseInt(pulseUs, 10);
         if (isNaN(us)) return res.status(400).json({ success: false, error: 'Invalid pulseUs' });
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => p.id === partId);
         if (!part || part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
             if (String(process.env.MB_TEST_MODE || '') === '1') {
@@ -1054,10 +1057,10 @@ router.post('/api/standard_servo/:id/save-pulse', async (req, res) => {
 router.post('/api/standard_servo/:id/save-position', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { positionName, description, angle, speed, duration } = req.body;
+        const { positionName, description, angle, speed, duration, characterId } = req.body;
         if (!positionName || !positionName.trim()) return res.status(400).json({ success: false, error: 'Position name required' });
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => p.id === partId);
         if (!part || part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
             if (String(process.env.MB_TEST_MODE || '') === '1') {
@@ -1152,10 +1155,10 @@ router.post('/api/standard_servo/:id/reset', async (req, res) => {
 router.post('/api/standard_servo/:id/copy-from', express.json(), async (req, res) => {
     try {
         const toPartId = req.params.id;
-        const { fromPartId } = req.body || {};
+        const { fromPartId, characterId } = req.body || {};
         if (!fromPartId) return res.status(400).json({ success: false, error: 'fromPartId required' });
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const toPart = parts.find(p => String(p.id) === String(toPartId));
         const fromPart = parts.find(p => String(p.id) === String(fromPartId));
         if (!toPart || toPart.type !== 'servo' || String(toPart.config?.servoType || 'standard').toLowerCase() === 'continuous') {
@@ -1206,7 +1209,8 @@ router.get('/continuous_servo/1', async (req, res) => {
 router.get('/continuous_servo/:id', async (req, res) => {
     try {
         const partId = req.params.id;
-        const parts = await loadParts();
+        const { characterId } = req.query;
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part) {
@@ -1275,7 +1279,7 @@ router.get('/continuous_servo/:id', async (req, res) => {
 router.post('/api/continuous_servo/:id/jog', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { direction, speed = 50, duration = 1000 } = req.body;
+        const { direction, speed = 50, duration = 1000, characterId } = req.body;
 
         const host = (req.headers && req.headers.host) || '';
         const xTest = (req.headers && (req.headers['x-mb-test-mode'] || req.headers['x-mb-test'])) || '';
@@ -1295,7 +1299,7 @@ router.post('/api/continuous_servo/:id/jog', async (req, res) => {
             });
         }
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => String(p.id) === String(partId));
 
         // In test mode or CI unit tests, short-circuit hardware and simulate success
@@ -1350,7 +1354,7 @@ router.post('/api/continuous_servo/:id/jog', async (req, res) => {
 router.post('/api/continuous_servo/:id/save-pulse', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { pulseType, pulseUs } = req.body;
+        const { pulseType, pulseUs, characterId } = req.body;
 
         if (!['stop', 'cw', 'ccw'].includes(pulseType)) {
             return res.status(400).json({
@@ -1368,7 +1372,7 @@ router.post('/api/continuous_servo/:id/save-pulse', async (req, res) => {
             });
         }
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => p.id === partId);
 
         if (!part || part.type !== 'servo' || part.config?.servoType !== 'continuous') {
@@ -1409,7 +1413,7 @@ router.post('/api/continuous_servo/:id/save-pulse', async (req, res) => {
 router.post('/api/continuous_servo/:id/save-position', async (req, res) => {
     try {
         const partId = req.params.id;
-        const { positionName, description, direction, speed, duration } = req.body;
+        const { positionName, description, direction, speed, duration, characterId } = req.body;
 
         if (!positionName || !positionName.trim()) {
             return res.status(400).json({
@@ -1419,7 +1423,7 @@ router.post('/api/continuous_servo/:id/save-position', async (req, res) => {
             });
         }
 
-        const parts = await loadParts();
+        const parts = await loadCharacterParts(characterId);
         const part = parts.find(p => p.id === partId);
 
         if (!part || part.type !== 'servo' || part.config?.servoType !== 'continuous') {
@@ -1519,10 +1523,6 @@ router.post('/api/continuous_servo/:id/positions/:name/update', express.json(), 
         res.json({ success: ok, message: ok ? `Updated position "${name}"` : 'Position not found' });
     } catch (error) {
         console.error('Error updating position:', error);
-        res.status(500).json({ success: false, error: 'Failed to update position', message: error.message });
-    }
-});
-
 // Rename a saved position
 router.post('/api/continuous_servo/:id/positions/:oldName/rename', express.json(), async (req, res) => {
     try {

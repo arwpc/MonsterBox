@@ -72,7 +72,9 @@ async function testPart(part) {
   return res.body;
 }
 
-describe('Parts Test Actions API', () => {
+const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
+
+(isHardwareAvailable ? describe : describe.skip)('Parts Test Actions API', () => {
   it('servo: moveToAngle', async () => {
     const part = await createPart('servo');
     const result = await testPart(part);

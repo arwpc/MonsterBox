@@ -49,7 +49,9 @@ async function testAction(id, action, params) {
   return res.body;
 }
 
-describe('Parts CRUD API', () => {
+const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
+
+(isHardwareAvailable ? describe : describe.skip)('Parts CRUD API', () => {
   it('webcam: full CRUD', async () => {
     const p = await create('webcam');
     const got = await getById(p.id);

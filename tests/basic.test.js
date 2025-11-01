@@ -48,7 +48,7 @@ describe('MonsterBox 4.0 Basic Tests', () => {
     describe('Poses API', () => {
         it('should return poses data', async () => {
             const response = await request(BASE_URL)
-                .get('/poses')
+                .get('/poses/api/poses')
                 .expect(200);
 
             expect(response.body).to.have.property('success', true);

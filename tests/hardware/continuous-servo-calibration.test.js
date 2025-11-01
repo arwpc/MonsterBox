@@ -8,7 +8,9 @@ import request from 'supertest';
 
 const BASE_URL = 'http://127.0.0.1:3100';
 
-describe('Continuous Servo Calibration', function() {
+const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
+
+(isHardwareAvailable ? describe : describe.skip)('Continuous Servo Calibration', function() {
     this.timeout(10000);
 
     let testPartId;

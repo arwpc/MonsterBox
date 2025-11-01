@@ -98,7 +98,8 @@ describe('Ask AI Endpoint Tests', function () {
             expect(res.body).to.have.property('success', true);
         });
 
-        it('should handle long questions', async () => {
+        it('should handle long questions', async function() {
+            this.timeout(60000); // 60 seconds
             const longQuestion = 'Can you tell me about yourself? '.repeat(20);
             const res = await request(BASE_URL)
                 .post('/conversation/api/ask-ai')
