@@ -398,7 +398,7 @@
         // Display online animatronics with full controls
         onlineAnimatronics.forEach(function (anim) {
             // Use hostname for URL if available, fallback to IP
-            var hostname = anim.hostname || anim.name.toLowerCase().replace(/\s+/g, '');
+            var hostname = anim.hostname || anim.name.toLowerCase().replace(/\s+/g, '-');
             var conversationUrl = 'http://' + hostname + ':' + anim.port + '/conversation';
             var adminUrl = 'http://' + hostname + ':' + anim.port;
 

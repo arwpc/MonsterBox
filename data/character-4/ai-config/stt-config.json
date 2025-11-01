@@ -1,22 +1,6 @@
 {
-  "model": "scribe_english_v1",
-  "language": "en",
-  "format": "mp3",
-  "sampleRate": 16000,
-  "channels": 1,
-  "microphonePartId": "14",
-  "microphoneDeviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback",
+  "microphonePartId": "5",
+  "microphoneDeviceId": "default",
   "vadEnabled": true,
-  "vadThreshold": 0.5,
-  "vadSilenceDuration": 500,
-  "audioFilterEnabled": true,
-  "highpassFreq": 200,
-  "lowpassFreq": 3800,
-  "denoiseLevel": -25,
-  "filterSfx": true,
-  "validateEnglish": true,
-  "minLetterRatio": 70,
-  "requireVowels": true,
-  "_preset": "high-accuracy",
-  "_presetName": "High Accuracy"
+  "vadThreshold": 0.05
 }

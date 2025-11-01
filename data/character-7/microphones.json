@@ -1,7 +1,7 @@
 [
   {
     "id": 7,
-    "name": "TestCharWithAgent_1760413645057 Microphone",
+    "name": "TestCharWithAgent_1761971853178 Microphone",
     "deviceId": "default",
     "type": "system",
     "status": "assigned",
@@ -25,7 +25,7 @@
       "realTimeProcessing": true,
       "voiceActivationDetection": true
     },
-    "created": "2025-10-14T03:47:26.130Z",
-    "lastModified": "2025-10-14T03:47:26.130Z"
+    "created": "2025-11-01T04:37:34.456Z",
+    "lastModified": "2025-11-01T04:37:34.456Z"
   }
 ]

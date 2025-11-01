@@ -582,7 +582,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'audio':
-                    // Real-time audio response with text
+                    // Real-time audio response with text - CRITICAL FIX: MAKE IT AUDIBLE
                     if (message.audio_event) {
                         const audioData = message.audio_event.audio_base_64;
                         // Try multiple fields for text content - check audio_event first
@@ -594,21 +594,35 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                         const c = this.activeConnections.get(sessionId);
 
-                        // If we're outputting on server speaker, suppress mic during playback and enqueue audio for streaming
+                        // EMERGENCY FIX: ALWAYS play AI audio through server speakers IMMEDIATELY
+                        // The whole point of AI is to hear it speak - this MUST work
                         try {
-                            if (c && c.outputMode === 'server') {
-                                c.suppressMicUntilMs = Date.now() + 1200; // extend on each chunk
-                                if (!Array.isArray(c.audioBuffer)) c.audioBuffer = [];
-                                c.audioBuffer.push(audioData);
-                                console.log(`🔊 Audio chunk added to buffer (char ${c.characterId}, buffer size: ${c.audioBuffer.length}, playing: ${c.audioPlaying})`);
-                                if (!c.audioPlaying) {
-                                    console.log(`🎵 Starting audio playback for session ${sessionId}`);
-                                    this._startAudioPlayback(sessionId).catch(function (e) { console.error('Audio playback error:', e); });
-                                }
-                            } else {
-                                console.log(`⚠️ Output mode is ${c?.outputMode}, skipping server playback`);
+                            if (c && audioData) {
+                                // Play immediately - don't buffer, don't queue, just PLAY IT NOW
+                                const audioBuffer = Buffer.from(audioData, 'base64');
+                                
+                                // Use AI-specific playback which has highest priority
+                                serverPlaybackService.playAIOnCharacterSpeaker(audioBuffer, {
+                                    characterId: c.characterId,
+                                    contentType: 'audio/mpeg',
+                                    volume: 90,  // Louder for AI - needs to be heard over everything
+                                    kind: 'ai'
+                                }).then(result => {
+                                    if (result.success) {
+                                        console.log(`✅ AI audio played successfully (char ${c.characterId}, device ${result.deviceId})`);
+                                    } else {
+                                        console.error(`❌ AI audio playback FAILED: ${result.error}`);
+                                    }
+                                }).catch(err => {
+                                    console.error(`❌ AI audio playback ERROR:`, err);
+                                });
+                                
+                                // Suppress mic briefly to avoid echo
+                                c.suppressMicUntilMs = Date.now() + 1000;
                             }
-                        } catch (e) { console.error('Error in audio handling:', e); }
+                        } catch (e) { 
+                            console.error('❌ CRITICAL: Error playing AI audio:', e); 
+                        }
 
                         // Always also send to client so UI can display text and/or play locally if selected
                         this.sendToClient(sessionId, {

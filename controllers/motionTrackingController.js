@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
-import { getMarkersForPart } from '../routes/setup/calibration.js';
+import { getCalibrationStore } from '../server/calibration/store.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -487,7 +487,8 @@ async function loadHeadTrackingGuardrails(servoId) {
       return headTrackingGuardrails.get(servoId);
     }
 
-    const markers = await getMarkersForPart(servoId);
+    const calibrationStore = getCalibrationStore();
+    const markers = calibrationStore.getMarkersForPart(servoId);
     const minMarker = markers.find(m => m.name === 'Min');
     const maxMarker = markers.find(m => m.name === 'Max');
 

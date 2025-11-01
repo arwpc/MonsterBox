@@ -1006,5 +1006,49 @@
     "defaults": {},
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1761971263086",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761971283059",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761975001645",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761975019095",
+    "name": "Test LA Model",
+    "description": "linear_actuator defaults for tests",
+    "defaults": {
+      "speedMaxPct": 100,
+      "strokeMs": 2000
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

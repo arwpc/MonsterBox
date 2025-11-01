@@ -117,19 +117,28 @@ export function runPy(args, options = {}) {
  * @returns {Promise<string>} - Command output
  */
 export function runWrapper(wrapperScript, scriptArgs = [], options = {}) {
-    // In CI or UI tests, short-circuit hardware calls to avoid I/O errors
-    // Allow explicit override when running on real hardware by setting MONSTERBOX_HARDWARE_AVAILABLE=1
+    // EMERGENCY FIX: Only simulate in test mode if explicitly running tests AND hardware not available
+    // This was blocking ALL hardware control - critical bug fix for Halloween failure
     const inTestMode = String(process.env.MB_TEST_MODE || '') === '1';
     const hardwareAvailable = String(process.env.MONSTERBOX_HARDWARE_AVAILABLE || '') === '1';
-    if (inTestMode && !hardwareAvailable) {
+    const inCIEnvironment = String(process.env.CI || '') === 'true';
+    
+    // Only skip hardware if:
+    // 1. Explicitly in test mode AND
+    // 2. In CI environment (not local development) AND  
+    // 3. Hardware explicitly marked as unavailable
+    if (inTestMode && inCIEnvironment && !hardwareAvailable) {
         const payload = {
             status: 'success',
             message: `Simulated ${wrapperScript}`,
-            args: scriptArgs
+            args: scriptArgs,
+            simulated: true
         };
         // Mirror runPy() contract by resolving a string output
         return Promise.resolve(JSON.stringify(payload));
     }
+    
+    // ALWAYS attempt real hardware execution unless explicitly in CI
     const wrapperPath = path.resolve(__dirname, '../../python_wrappers', wrapperScript);
     const args = [wrapperPath, ...scriptArgs];
     return runPy(args, options);

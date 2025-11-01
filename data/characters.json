@@ -2,8 +2,7 @@
   {
     "id": 1,
     "name": "PumpkinHead",
-    "elevenLabsAgentId": "agent_0801k3f1dybkecj88sta18gwwrv5",
-    "activeImage": "pumpkinhead.jpg"
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   },
   {
     "id": 2,
@@ -25,8 +24,28 @@
   },
   {
     "id": 5,
+    "name": "PumpkinHead_Updated",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+  },
+  {
+    "id": 6,
+    "name": "PumpkinHead_Updated",
+    "elevenLabsAgentId": "agent_0801k3f1dybkecj88sta18gwwrv5",
+    "activeImage": "pumpkinhead.jpg"
+  },
+  {
+    "id": 7,
     "name": "Groundbreaker",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
     "activeImage": "groundbreaker.jpg"
+  },
+  {
+    "id": 8,
+    "name": "TestChar_1761975536997"
+  },
+  {
+    "id": 9,
+    "name": "TestCharWithAgent_1761975541273",
+    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   }
 ]

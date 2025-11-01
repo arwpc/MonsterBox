@@ -1313,5 +1313,45 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1761971266872",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761971284849",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761975003415",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1761975021222",
+    "name": "Test Motor Model",
+    "description": "motor defaults for tests",
+    "defaults": {
+      "maxDutyPct": 100
+    },
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

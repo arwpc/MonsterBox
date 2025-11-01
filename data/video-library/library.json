@@ -108,8 +108,10 @@
       "bitrate": 0,
       "uploadedAt": "2025-09-29T21:33:24.998Z",
       "favorite": false,
-      "playCount": 0,
-      "thumbnailPath": null
+      "playCount": 1,
+      "thumbnailPath": null,
+      "lastPlayed": "2025-11-01T04:50:45.811Z",
+      "updatedAt": "2025-11-01T04:50:45.825Z"
     }
   ],
   "categories": [
@@ -119,5 +121,5 @@
     "other"
   ],
   "version": "1.0.0",
-  "lastUpdated": "2025-10-18T13:48:58.623Z"
+  "lastUpdated": "2025-11-01T04:50:45.825Z"
 }

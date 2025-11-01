@@ -1,4 +1,28 @@
 {
+  "1": {
+    "partId": 1,
+    "capability": {
+      "kind": "openloop-linear",
+      "invert": false
+    },
+    "bounds": {
+      "minP": 0,
+      "maxP": 1
+    },
+    "presets": [],
+    "motion": {
+      "type": "time-at-speed",
+      "bins": [
+        {
+          "pwmPct": 50,
+          "unitsPerSec": 0.2
+        }
+      ],
+      "settleMs": 120
+    },
+    "version": 1,
+    "lastCalibratedAt": "2025-11-01T04:34:59.912Z"
+  },
   "2": {
     "partId": 2,
     "capability": {

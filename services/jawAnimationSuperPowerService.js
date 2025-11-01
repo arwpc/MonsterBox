@@ -4,10 +4,22 @@ import { fileURLToPath } from 'url';
 import hardwareService from './hardwareService/index.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
-import { getMarkersForPart } from '../routes/setup/calibration.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+async function getMarkersForPart(partId) {
+    try {
+        const { getCalibrationStore } = await import('../server/calibration/store.js');
+        const store = getCalibrationStore();
+        const profile = await store.getProfileForPart(partId);
+        return (profile && profile.markers) ? profile.markers : [];
+    } catch (e) {
+        console.error(`Failed to get markers for part ${partId}:`, e);
+        return [];
+    }
+}
+
 
 /**
  * Jaw Animation Super Power Service

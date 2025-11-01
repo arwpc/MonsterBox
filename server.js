@@ -27,6 +27,7 @@ import calibrationApiRouter from './server/calibration/router.js';
 import firstRunRoutes from './routes/firstRun.js';
 
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
+import audioLoopApiRoutes from './routes/api/audioLoopRoutes.js';
 import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
@@ -294,12 +295,20 @@ app.use('/first-run', firstRunRoutes);
 app.use('/poses', posesRoutes);
 app.use('/ai-settings', aiSettingsRoutes);
 
+// Audio loop API routes
+app.use('/api/audio-loop', audioLoopApiRoutes);
+
 // Direct API endpoint for stopping audio (needed by audio-library page)
 app.post('/api/audio/stop-all', async (req, res) => {
     try {
         const serverPlaybackService = (await import('./services/serverPlaybackService.js')).default;
+        const audioLoopService = (await import('./services/audioLoopService.js')).default;
+        
+        // Stop both regular playback and loops
         await serverPlaybackService.stopAll();
-        res.json({ success: true, message: 'All audio playback stopped' });
+        await audioLoopService.stopAllLoops();
+        
+        res.json({ success: true, message: 'All audio playback and loops stopped' });
     } catch (error) {
         console.error('Error stopping audio:', error);
         res.status(500).json({ success: false, error: 'Failed to stop audio playback' });

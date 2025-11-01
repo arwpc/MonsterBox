@@ -249,10 +249,11 @@ router.delete('/api/audio/:id', async (req, res) => {
 
 /**
  * POST /api/audio/:id/play - Play audio on character speaker
+ * EMERGENCY FIX: Support loop parameter to enable persistent looping
  */
 router.post('/api/audio/:id/play', async (req, res) => {
     try {
-        const { characterId, volume, speakerPartId } = req.body;
+        const { characterId, volume, speakerPartId, loop } = req.body;
         const audio = await audioLibraryService.getAudioById(req.params.id);
 
         if (!audio) {
@@ -265,6 +266,40 @@ router.post('/api/audio/:id/play', async (req, res) => {
         // Get the audio file path
         const audioFilePath = audioLibraryService.getAudioFilePath(audio.filename);
 
+        // If loop is true, use audio loop service for persistent background looping
+        if (loop === true) {
+            const audioLoopService = (await import('../services/audioLoopService.js')).default;
+            
+            const loopSuccess = await audioLoopService.startLoop(
+                characterId,
+                audioFilePath,
+                undefined, // deviceId - let it auto-detect from character config
+                volume || 80
+            );
+
+            if (loopSuccess) {
+                // Record the play event
+                await audioLibraryService.recordPlay(req.params.id);
+
+                return res.json({
+                    success: true,
+                    message: `Looping \"${audio.title}\" on character ${characterId}`,
+                    loop: true,
+                    audio: {
+                        id: audio.id,
+                        title: audio.title,
+                        duration: audio.duration
+                    }
+                });
+            } else {
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to start audio loop'
+                });
+            }
+        }
+
+        // Normal one-time playback (not looped)
         // Read the audio file
         const audioBuffer = await fs.readFile(audioFilePath);
 
@@ -284,6 +319,7 @@ router.post('/api/audio/:id/play', async (req, res) => {
                 success: true,
                 message: `Playing \"${audio.title}\" on ${speakerPartId ? `speaker part ${speakerPartId}` : `character ${characterId} speaker`}`,
                 device: playResult.deviceId,
+                loop: false,
                 audio: {
                     id: audio.id,
                     title: audio.title,
