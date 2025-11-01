@@ -1437,7 +1437,7 @@
           var speed = parseInt(document.getElementById('motSpd').value || '50', 10);
           var duration = parseInt(document.getElementById('motDur').value || '15000', 10);
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'control', params: { direction: dir, speed: speed, duration: duration } })
           }).then(function () { if (st) st.textContent = 'Done'; var d = (window && window.MB_TEST_MODE) ? 2000 : 800; setTimeout(function () { if (st) st.textContent = ''; }, d); })
@@ -1446,7 +1446,7 @@
         el.querySelector('#motStop').addEventListener('click', async function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…';
           try {
-            await fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+            await fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'stop', params: {} })
             });
@@ -1471,7 +1471,7 @@
           var steps = parseInt(document.getElementById('stSteps').value || '200', 10);
           var stepDelayUs = parseInt(document.getElementById('stDelay').value || '800', 10);
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Moving…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } })
           }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
@@ -1480,7 +1480,7 @@
         const stopBtn = el.querySelector('#stStop');
         if (stopBtn) stopBtn.addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Stopping…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'stop' })
           }).then(function () { if (st) st.textContent = 'Stopped'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
@@ -1493,7 +1493,7 @@
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#lightToggle').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle' })
           }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
             .catch(function () { if (st) st.textContent = 'Failed'; });
@@ -1506,7 +1506,7 @@
         el.querySelector('#ledSet').addEventListener('click', function () {
           var bri = parseInt(document.getElementById('ledBri').value || '50', 10);
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Setting…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setBrightness', params: { brightness: bri } })
           }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
             .catch(function () { if (st) st.textContent = 'Failed'; });
@@ -1603,7 +1603,7 @@
         var capBtn = el.querySelector('#camSnap');
         if (capBtn) capBtn.addEventListener('click', function () {
           if (st) st.textContent = 'Capturing…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'capture' })
           }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
             .catch(function () { if (st) st.textContent = 'Failed'; });
@@ -1654,7 +1654,7 @@
           '<pre id="htOut" class="ms-2 small"></pre>' +
           '</div>';
         el.querySelector('#htGet').addEventListener('click', function () {
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPosition' })
           }).then(function (r) { return r.json(); }).then(function (j) {
             var out = document.getElementById('htOut');
@@ -1701,7 +1701,7 @@
           if (st) st.textContent = enabled ? 'Enabling sensor...' : 'Disabling sensor...';
 
           try {
-            const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}`, {
+            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1740,7 +1740,7 @@
 
           if (st) st.textContent = `Reading ${part.name} motion sensor...`;
           try {
-            const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({})
@@ -1796,7 +1796,7 @@
           indicator.style.borderColor = '#0d6efd';
 
           try {
-            const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1867,7 +1867,7 @@
             if (!globalIsLiveTestRunning) return;
 
             try {
-              const response = await fetch(`/setup/parts/api/parts/${encodeURIComponent(part.id)}/test`, {
+              const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
@@ -1937,7 +1937,7 @@
           '</div>';
         el.querySelector('#quickTest').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Testing…';
-          fetch('/setup/parts/api/parts/' + encodeURIComponent(part.id) + '/test', {
+          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
           }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
             .catch(function () { if (st) st.textContent = 'Failed'; });

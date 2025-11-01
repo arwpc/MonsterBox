@@ -17,7 +17,6 @@ import setupAudioRoutes from './routes/setup/audio.js';
 import setupCalibrationRoutes from './routes/setup/calibration.js';
 import setupCharactersRoutes from './routes/setup/characters.js';
 import setupModelsRoutes from './routes/setup/models.js';
-import setupPartsRoutes from './routes/setup/parts.js';
 import setupPosesRoutes from './routes/setup/poses.js';
 import setupSuperPowersRoutes from './routes/setup/super-powers.js';
 import setupSystemRoutes from './routes/setup/system.js';
@@ -31,6 +30,7 @@ import audioLoopApiRoutes from './routes/api/audioLoopRoutes.js';
 import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
+import partsApiRoutes from './routes/api/partsApi.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
@@ -260,28 +260,7 @@ app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/super-powers', setupSuperPowersRoutes);
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
-console.log('🔌 Mounting /setup/parts routes');
-
 app.use('/setup/characters', setupCharactersRoutes);
-app.use('/setup/parts', setupPartsRoutes);
-// Fallback inline Parts routes (ensure tests pass even if router import fails)
-import partsController from './controllers/partsController.js';
-app.get('/setup/parts', async (req, res) => {
-    try {
-        res.renderWithLayout('setup/parts-content', { title: 'Setup Parts - MonsterBox 5.5', page: 'setup-parts' });
-    } catch (err) {
-        console.error('Error rendering parts page:', err);
-        res.status(500).render('error', { title: 'Error', error: 'Failed to load parts page', message: err.message });
-    }
-});
-app.get('/setup/parts/api/parts', partsController.getAllParts);
-app.get('/setup/parts/api/parts/:id', partsController.getPartById);
-app.post('/setup/parts/api/parts', partsController.createPart);
-app.put('/setup/parts/api/parts/:id', partsController.updatePart);
-app.delete('/setup/parts/api/parts/:id', partsController.deletePart);
-app.post('/setup/parts/api/parts/:id/test', partsController.testPart);
-
-
 app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
 app.use('/video-library', videoLibraryRoutes);
@@ -297,6 +276,7 @@ app.use('/ai-settings', aiSettingsRoutes);
 
 // Audio loop API routes
 app.use('/api/audio-loop', audioLoopApiRoutes);
+app.use('/api/parts', partsApiRoutes);
 
 // Direct API endpoint for stopping audio (needed by audio-library page)
 app.post('/api/audio/stop-all', async (req, res) => {

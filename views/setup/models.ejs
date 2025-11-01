@@ -10,7 +10,7 @@
 <div class="container py-4">
       <div class="d-flex align-items-center mb-3">
         <h3 class="me-3 mb-0">Models</h3>
-        <a class="btn btn-outline-secondary btn-sm" href="/setup/parts">Back to Parts</a>
+        <a class="btn btn-outline-secondary btn-sm" href="/setup/calibration">Back to Calibration</a>
       </div>
 
       <div class="row g-3">
@@ -264,7 +264,7 @@
         function loadPartsOfType() {
           var type = typeSelect.value;
           partsSelect.innerHTML = '';
-          fetch('/setup/parts/api/parts')
+          fetch('/api/parts')
             .then(function (r) { return r.json(); })
             .then(function (d) {
               var parts = (d && d.parts) || [];
@@ -314,7 +314,7 @@
           var ok = 0, fail = 0; var status = document.getElementById('applyStatus');
           status.textContent = 'Applying model ' + id + ' to ' + selected.length + ' parts...';
           Promise.all(selected.map(function (pid) {
-            return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid), {
+            return fetch('/api/parts/' + encodeURIComponent(pid), {
               method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: { modelId: id } })
             }).then(function (r) { return r.json(); })
               .then(function (resp) { if (resp && resp.success) ok++; else fail++; })
@@ -341,7 +341,7 @@
               var defaults = md.model.defaults || {};
               return Promise.all(selected.map(function (pid) {
                 // Load the part then merge
-                return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid))
+                return fetch('/api/parts/' + encodeURIComponent(pid))
                   .then(function (r) { return r.json(); })
                   .then(function (pd) {
                     if (!pd || !pd.success || !pd.part) throw new Error('Part ' + pid + ' not found');
@@ -350,7 +350,7 @@
                     var merged = {}; Object.keys(defaults).forEach(function (k) { merged[k] = defaults[k]; });
                     Object.keys(cfg).forEach(function (k) { merged[k] = cfg[k]; });
                     merged.modelId = id;
-                    return fetch('/setup/parts/api/parts/' + encodeURIComponent(pid), {
+                    return fetch('/api/parts/' + encodeURIComponent(pid), {
                       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ config: merged })
                     }).then(function (r) { return r.json(); });
                   });

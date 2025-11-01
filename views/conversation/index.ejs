@@ -63,30 +63,23 @@
 
       <!-- Ask AI a Question Panel -->
       <div class="card mt-3">
-        <div class="card-header">
-          <h5 class="card-title mb-0"><i class="bi bi-question-circle"></i> Ask <span id="charNameAI">Character</span> a
-            Question</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0"><i class="bi bi-robot"></i> AI Chat with <span id="charNameAI">Character</span>
+          </h5>
+          <button id="openChatBtn" class="btn btn-success btn-sm">
+            <i class="bi bi-chat-dots"></i> Open Chat
+          </button>
         </div>
         <div class="card-body">
-          <div class="mb-3">
-            <label for="aiSpeakerSelect" class="form-label small text-muted">Speaker Output</label>
-            <select id="aiSpeakerSelect" class="form-select form-select-sm">
-              <option value="">Loading speakers...</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <input id="askInput" type="text" class="form-control" placeholder="Ask me anything..."
-              onkeypress="if(event.key==='Enter') askAIQuestion()" />
-            <button id="askBtn" class="btn btn-success"><i class="bi bi-send"></i> Ask</button>
-          </div>
-          <div id="askStatus" class="mt-2 small"></div>
-          <div id="aiResponse" class="mt-2 p-2 border rounded"
-            style="display:none; background:#1a1a1a; min-height:60px;">
-            <div class="small text-muted mb-1">AI Response:</div>
-            <div id="aiResponseText" class="small"></div>
+          <div class="text-muted small">
+            <i class="bi bi-info-circle"></i> Click "Open Chat" to start a real-time WebSocket conversation with your character's AI agent.
+            Includes STT, TTS, and character speaker routing.
           </div>
         </div>
       </div>
+
+      <!-- Container for AI Chat Modal -->
+      <div id="ai-chat-container"></div>
 
       <!-- Make Character Say Panel -->
       <div class="card mt-3">
@@ -214,6 +207,8 @@
   </div>
 
   <script src="/js/mic-panel.js"></script>
+  <script src="/js/websocket-chat.js"></script>
+  <script src="/js/components/ai-chat-modal.js"></script>
 
   <script>
     (function () {
@@ -249,6 +244,7 @@
       let selectedAISpeakerPartId = null;
       let listenInAudio = null;
       let aiOnInterval = null;
+      let aiChatModal = null; // AI Chat Modal instance
 
       // Parrot Mode state and function declared early to avoid TDZ issues in event handlers
       var parrotEnabled = false;
@@ -285,13 +281,50 @@
         ui.characterSelect = $('character-select');
         ui.characterSelectStatus = $('character-select-status');
         currentCharacterId = getCurrentCharacterIdFromLabel();
-        // Ask AI panel
-        ui.askInput = $('askInput');
-        ui.askBtn = $('askBtn');
-        ui.askStatus = $('askStatus');
-        ui.aiResponse = $('aiResponse');
-        ui.aiResponseText = $('aiResponseText');
-        ui.aiSpeakerSelect = $('aiSpeakerSelect');
+        
+        // Initialize AI Chat Modal
+        aiChatModal = new AIChatModal('ai-chat-container');
+        
+        // Bind Open Chat button
+        const openChatBtn = $('openChatBtn');
+        if (openChatBtn) {
+          openChatBtn.addEventListener('click', function() {
+            if (!currentCharacterId) {
+              alert('Please select a character first');
+              return;
+            }
+            // Get character's agent ID
+            fetch('/api/elevenlabs/agents')
+              .then(r => r.json())
+              .then(data => {
+                if (data.success && data.agents && data.agents.length > 0) {
+                  // Find agent for current character (by name match or first agent)
+                  const char = characters.find(c => c.id === currentCharacterId);
+                  const charName = char ? char.name : 'Character';
+                  const agent = data.agents.find(a => a.name && a.name.toLowerCase().includes(charName.toLowerCase())) || data.agents[0];
+                  const agentId = agent.id || agent.agent_id || agent.agentId;
+                  
+                  // Render and open modal
+                  aiChatModal.render(currentCharacterId, agentId);
+                  aiChatModal.open(currentCharacterId, agentId);
+                } else {
+                  alert('No AI agents configured. Please create an agent in AI Settings.');
+                }
+              })
+              .catch(err => {
+                console.error('Failed to load agents:', err);
+                alert('Failed to load AI agents');
+              });
+          });
+        }
+        
+        // Ask AI panel - remove old implementation
+        ui.askInput = null;
+        ui.askBtn = null;
+        ui.askStatus = null;
+        ui.aiResponse = null;
+        ui.aiResponseText = null;
+        ui.aiSpeakerSelect = null;
         ui.charNameAI = $('charNameAI');
         setCharName();
         bindEvents();
@@ -537,48 +570,7 @@
         finally { ui.sayBtn.disabled = false; ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak'; }
       }
 
-      // Ask AI a Question - Send question to conversational AI agent
-      async function askAIQuestion() {
-        const question = (ui.askInput.value || '').trim();
-        if (!question) {
-          ui.askStatus.innerHTML = '<span class="text-warning">Enter a question</span>';
-          return;
-        }
-
-        ui.askBtn.disabled = true;
-        ui.askBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Asking...';
-        ui.askStatus.innerHTML = '<span class="text-info">Sending to AI agent...</span>';
-        ui.aiResponse.style.display = 'none';
-
-        try {
-          const r = await fetch('/conversation/api/ask-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              question,
-              speakerPartId: selectedAISpeakerPartId || undefined
-            })
-          });
-          const j = await r.json();
-
-          if (j && j.success) {
-            ui.askStatus.innerHTML = '<span class="text-success">AI responded!</span>';
-            if (j.response) {
-              ui.aiResponseText.textContent = j.response;
-              ui.aiResponse.style.display = 'block';
-            }
-            // Clear input after successful send
-            ui.askInput.value = '';
-          } else {
-            ui.askStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || 'Unknown error') + '</span>';
-          }
-        } catch (e) {
-          ui.askStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
-        } finally {
-          ui.askBtn.disabled = false;
-          ui.askBtn.innerHTML = '<i class="bi bi-send"></i> Ask';
-        }
-      }
+      // OLD Ask AI function removed - replaced by AI Chat Modal
 
       // Listen In - Stream server-side microphone to browser
       function toggleListenIn() {
@@ -710,6 +702,6 @@
 
       document.addEventListener('DOMContentLoaded', init);
       window.__conv = { loadSpeakers, loadWebcam, loadScenes };
-      window.askAIQuestion = askAIQuestion; // Expose for inline event handler
+      // Removed: window.askAIQuestion - replaced by AI Chat Modal
     })();
   </script>
