@@ -5,6 +5,7 @@
  */
 
 import hardwareService from './services/hardwareService/index.js';
+import os from 'os';
 
 async function testCoffinServos() {
     console.log('\n🎃 TESTING COFFIN BREAKER SERVOS...\n');
@@ -85,7 +86,7 @@ async function testOrlokParts() {
 }
 
 async function main() {
-    const hostname = require('os').hostname();
+    const hostname = os.hostname();
     
     console.log(`\n🎃 HALLOWEEN EMERGENCY HARDWARE TEST 🎃`);
     console.log(`Running on: ${hostname}\n`);
