@@ -78,6 +78,7 @@ export async function controlActuator({
         duration: Number(duration)
     };
 
+    console.log(`🔧 Calling MDD10A actuator with config:`, JSON.stringify(config));
     return await runWrapper('linear_actuator_control_v2.py', [JSON.stringify(config)]);
 }
 

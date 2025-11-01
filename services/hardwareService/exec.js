@@ -59,7 +59,9 @@ export function runPy(args, options = {}) {
         childProcess.on('exit', (code) => {
             clearTimeout(timeout);
 
-            console.log(`🔧 Process exited with code ${code} after ${((Date.now() - startTime) / 1000).toFixed(2)}s`);
+            const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+            console.log(`🔧 Process exited with code ${code} after ${elapsedSec}s`);
+            console.log(`🔧 stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
 
             if (code === 0) {
                 // Success - log stdout as success, stderr as info (not error)
