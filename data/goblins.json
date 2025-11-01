@@ -11,7 +11,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-28T01:45:54.624Z",
-    "lastSeen": "2025-10-31T23:50:22.141Z",
+    "lastSeen": "2025-11-01T00:08:53.927Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "",
@@ -35,7 +35,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-28T01:45:55.668Z",
-    "lastSeen": "2025-10-31T23:50:22.134Z",
+    "lastSeen": "2025-11-01T00:08:53.792Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "",
@@ -59,7 +59,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-28T01:51:16.184Z",
-    "lastSeen": "2025-10-31T23:50:22.137Z",
+    "lastSeen": "2025-11-01T00:08:53.817Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "",
@@ -71,4 +71,4 @@
       "autoLock": false
     }
   }
-]]]
+]
