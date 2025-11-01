@@ -86,9 +86,10 @@ class LinearActuatorController:
             dir_pin = self.pins['dir']
             pwm_pin = self.pins['pwm']
 
-            # Stop motor first
+            # Stop motor first - ensure both pins are LOW
             lgpio.gpio_write(self.h, pwm_pin, 0)
-            time.sleep(0.05)
+            lgpio.gpio_write(self.h, dir_pin, 0)
+            time.sleep(0.1)  # Longer initialization delay
 
             # Normalize direction
             if direction in ('extend', 'forward'):
@@ -98,6 +99,7 @@ class LinearActuatorController:
             # Set direction (0=forward, 1=backward)
             dir_value = 0 if dir_norm == 'forward' else 1
             lgpio.gpio_write(self.h, dir_pin, dir_value)
+            time.sleep(0.05)  # Let direction settle before PWM
             log_info(f"Direction set to {dir_norm} (pin {dir_pin} = {dir_value})")
 
             # Calculate duty cycle
@@ -109,9 +111,11 @@ class LinearActuatorController:
             if speed >= 80:
                 log_info(f"Using digital HIGH mode for speed {speed}% (better for MDD10A)")
                 lgpio.gpio_write(self.h, pwm_pin, 1)
+                log_info(f"PWM pin {pwm_pin} set HIGH, running for {duration}ms")
                 time.sleep(duration / 1000.0)
                 lgpio.gpio_write(self.h, pwm_pin, 0)
-                log_info("Motor stopped")
+                lgpio.gpio_write(self.h, dir_pin, 0)  # Also reset direction
+                log_info("Motor stopped, pins reset to LOW")
             else:
                 # Software PWM for lower speeds
                 # Increased minimum frequency for better motor response
