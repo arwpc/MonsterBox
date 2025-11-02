@@ -35,7 +35,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-28T01:45:55.668Z",
-    "lastSeen": "2025-11-01T19:59:22.571Z",
+    "lastSeen": "2025-11-01T21:25:39.298Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "",
@@ -59,7 +59,7 @@
     "version": "1.0.0",
     "status": "online",
     "registeredAt": "2025-10-28T01:51:16.184Z",
-    "lastSeen": "2025-11-01T19:59:22.614Z",
+    "lastSeen": "2025-11-01T21:25:39.300Z",
     "lockedBy": null,
     "lockedAt": null,
     "location": "",
@@ -71,4 +71,4 @@
       "autoLock": false
     }
   }
-]
+]]

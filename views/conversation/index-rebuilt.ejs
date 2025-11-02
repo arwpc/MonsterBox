@@ -26,42 +26,7 @@
     </div>
   </div>
 
-  <!-- TOP ROW - Webcam (large, prominent, left side) -->
-  <div class="row g-3 mb-3">
-    <div class="col-lg-6">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
-          <small class="text-muted" id="webcamHint"></small>
-        </div>
-        <div class="card-body text-center p-2">
-          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" 
-            style="width: 100%; max-height: 450px; object-fit: contain; background: #000;">
-          <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-lg-6">
-      <!-- Scenes -->
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
-          <a href="/scenes" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
-        </div>
-        <div class="card-body" style="max-height: 450px; overflow-y: auto;">
-          <div id="scenesContainer">
-            <div class="text-center text-muted py-3">
-              <div class="spinner-border spinner-border-sm"></div>
-              <p class="mt-2 mb-0 small">Loading scenes...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BOTTOM ROW - Controls in columns -->
+  <!-- Main 2-Column Layout matching conversation-mode.jpg -->
   <div class="row g-3">
     
     <!-- LEFT COLUMN - Main Controls -->
@@ -159,12 +124,7 @@
           </div>
         </div>
       </div>
-      
-    </div>
 
-    <!-- RIGHT COLUMN - Monster Features, etc -->
-    <div class="col-lg-4">
-      
       <!-- Monster Features -->
       <div class="card mb-3">
         <div class="card-header">
@@ -192,6 +152,40 @@
             </div>
             <small class="text-muted">Track visitor movement</small>
           </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- RIGHT COLUMN - Scenes and Webcam -->
+    <div class="col-lg-4">
+      
+      <!-- Scenes -->
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
+          <a href="/scenes" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
+        </div>
+        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+          <div id="scenesContainer">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm"></div>
+              <p class="mt-2 mb-0 small">Loading scenes...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Webcam -->
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
+          <small class="text-muted" id="webcamHint"></small>
+        </div>
+        <div class="card-body text-center">
+          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" 
+            style="max-height: 400px; max-width: 100%; background: #000;">
+          <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
         </div>
       </div>
       
@@ -704,103 +698,42 @@
         <span class="badge bg-secondary" style="font-size: 0.65rem;">${part.type}</span>
       </div>`;
       
-      // Richer, calibration-like controls per type (compact for conversation page)
       if (type === 'servo') {
-        const isCont = String(part.config && part.config.servoType || 'standard') === 'continuous';
+        const isCont = part.config && part.config.servoType === 'continuous';
         if (isCont) {
-          html += `<div class="d-flex gap-1 align-items-center">
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="ccw">CCW</button>
+          html += `<div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-primary" data-part="${part.id}" data-action="ccw">CCW</button>
             <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="cw">CW</button>
-            <input type="number" id="servo-spd-${part.id}" class="form-control form-control-sm" value="35" style="width:70px; margin-left:6px">%
-            <input type="number" id="servo-dur-${part.id}" class="form-control form-control-sm" value="300" style="width:90px">ms
+            <button class="btn btn-sm btn-outline-primary" data-part="${part.id}" data-action="cw">CW</button>
           </div>`;
         } else {
-          html += `<div class="d-flex gap-2 align-items-center">
-            <input type="range" id="servo-${part.id}" class="form-range" min="0" max="180" value="90" style="width:180px">
-            <input type="number" id="servo-num-${part.id}" class="form-control form-control-sm" min="0" max="180" value="90" style="width:80px">
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="move">Move</button>
+          html += `<div class="input-group input-group-sm">
+            <input type="range" class="form-range" min="0" max="180" value="90" id="servo-${part.id}" style="max-width:100px;">
+            <input type="number" class="form-control" min="0" max="180" value="90" id="servo-num-${part.id}" style="max-width:60px;">
+            <button class="btn btn-success" data-part="${part.id}" data-action="move">Move</button>
           </div>`;
         }
       } else if (type === 'linear_actuator') {
-        html += `<div class="d-flex gap-1 align-items-center">
+        html += `<div class="d-flex gap-1">
           <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="extend">Extend</button>
           <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
           <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="retract">Retract</button>
-          <input type="number" id="la-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="la-dur-${part.id}" class="form-control form-control-sm" value="500" style="width:90px">ms
         </div>`;
       } else if (type === 'motor') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select class="form-select form-select-sm" id="motor-dir-${part.id}" style="width:110px;">
+        html += `<div class="d-flex gap-1">
+          <select class="form-select form-select-sm" id="motor-dir-${part.id}" style="max-width:90px;">
             <option value="forward">Forward</option>
             <option value="reverse">Reverse</option>
           </select>
-          <input type="number" id="motor-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="motor-dur-${part.id}" class="form-control form-control-sm" value="15000" style="width:90px">ms
           <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="run">Run</button>
           <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-        </div>`;
-      } else if (type === 'stepper') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select id="st-dir-${part.id}" class="form-select form-select-sm" style="width:90px;"><option value="cw">CW</option><option value="ccw">CCW</option></select>
-          <input id="st-steps-${part.id}" type="number" class="form-control form-control-sm" value="200" style="width:100px">steps
-          <input id="st-delay-${part.id}" type="number" class="form-control form-control-sm" value="800" style="width:110px">us
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="moveSteps">Move</button>
-          <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-        </div>`;
-      } else if (type === 'light') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="toggle">Toggle</button>
-        </div>`;
-      } else if (type === 'led') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <input id="led-bri-${part.id}" type="range" class="form-range" min="0" max="100" value="50" style="width:160px">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="setBrightness">Set</button>
-        </div>`;
-      } else if (type === 'speaker') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="playPreview">Play Preview</button>
-        </div>`;
-      } else if (type === 'microphone') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <div class="progress" style="width:160px;height:12px"><div id="mic-vu-${part.id}" class="progress-bar" style="width:0%"></div></div>
-          <span id="mic-level-${part.id}" class="small ms-2">0</span>
-          <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="pollMic">Poll</button>
-        </div>`;
-      } else if (type === 'webcam') {
-        html += `<div class="d-flex flex-column align-items-stretch gap-2">
-          <a class="btn btn-sm btn-outline-primary" href="/setup/webcam/api/parts/${encodeURIComponent(part.id)}/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>
-          <div class="d-flex gap-2 align-items-center">
-            <label class="form-label small mb-0">Zoom</label>
-            <input id="cam-zoom-${part.id}" type="range" class="form-range" min="100" max="300" value="100" style="width:120px">
-            <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="capture">Capture</button>
-          </div>
-        </div>`;
-      } else if (type === 'head_tracking') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="getPosition">Get Position</button>
-        </div>`;
-      } else if (type === 'motion_sensor') {
-        const enabled = part.config && part.config.enabled ? 'checked' : '';
-        html += `<div class="d-flex flex-column gap-1">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="motion-toggle-${part.id}" ${enabled}>
-            <label class="form-check-label small" for="motion-toggle-${part.id}">Sensor Enabled</label>
-          </div>
-          <div class="d-flex gap-2 align-items-center">
-            <button class="btn btn-sm btn-outline-info" data-part="${part.id}" data-action="readMotion">Read</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="detectMotion">Detect</button>
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="startLiveTest">Start Live</button>
-            <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stopLiveTest" style="display:none;">Stop</button>
-          </div>
         </div>`;
       } else {
         html += `<button class="btn btn-sm btn-secondary w-100" data-part="${part.id}" data-action="test">Test</button>`;
       }
-
+      
       html += `<div class="mt-1 small text-info" id="status-${part.id}"></div>`;
-
+      
       return html;
     }
 
@@ -821,26 +754,6 @@
           numInput.addEventListener('input', () => { range.value = numInput.value; });
         }
       });
-
-      // Motion sensor toggles (enable/disable)
-      ui.hardwareList.querySelectorAll('input[id^="motion-toggle-"]').forEach(cb => {
-        if (cb.dataset._bound) return; cb.dataset._bound = '1';
-        cb.addEventListener('change', async (e) => {
-          const id = (cb.id || '').split('-').pop();
-          const enabled = !!cb.checked;
-          try {
-            await fetch(`/api/parts/${encodeURIComponent(id)}`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ config: Object.assign({}, (currentParts.find(p=>String(p.id)===String(id)) || {}).config, { enabled: enabled }) })
-            });
-            // reflect change in local cache
-            const p = currentParts.find(p=>String(p.id)===String(id)); if (p) p.config = p.config || {}; p.config.enabled = enabled;
-          } catch (err) {
-            console.error('Failed to update motion sensor config', err);
-            cb.checked = !enabled;
-          }
-        });
-      });
     }
 
     async function executeHardwareAction(partId, action) {
@@ -854,7 +767,7 @@
         const type = part.type.toLowerCase();
         let endpoint = `/api/parts/${partId}/test`;
         let body = {};
-        // Map actions for various types; default endpoint is /api/parts/:id/test
+        
         if (type === 'servo') {
           if (action === 'move') {
             const angle = parseInt($(`servo-num-${partId}`).value || '90', 10);
@@ -863,88 +776,25 @@
             body = { p };
           } else if (action === 'cw' || action === 'ccw' || action === 'stop') {
             let delta = action === 'cw' ? 0.1 : action === 'ccw' ? -0.1 : 0;
-            const spd = parseInt($(`servo-spd-${partId}`) ? $(`servo-spd-${partId}`).value : 35, 10) || 35;
-            const dur = parseInt($(`servo-dur-${partId}`) ? $(`servo-dur-${partId}`).value : 300, 10) || 300;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta, speedPct: spd, durationMs: dur };
+            body = { delta, speedPct: 35, durationMs: 300 };
           }
         } else if (type === 'linear_actuator') {
           if (action === 'extend') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: 0.1, speedPct: spd, durationMs: dur };
+            body = { delta: 0.1, speedPct: 50, durationMs: 500 };
           } else if (action === 'retract') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: -0.1, speedPct: spd, durationMs: dur };
+            body = { delta: -0.1, speedPct: 50, durationMs: 500 };
           } else if (action === 'stop') {
             endpoint = `/setup/calibration/api/linear_actuator/${partId}/stop`;
-            body = {};
           }
         } else if (type === 'motor') {
           if (action === 'run') {
-            const dir = $(`motor-dir-${partId}`) ? $(`motor-dir-${partId}`).value : 'forward';
-            const speed = parseInt($(`motor-spd-${partId}`) ? $(`motor-spd-${partId}`).value : 50, 10) || 50;
-            const duration = parseInt($(`motor-dur-${partId}`) ? $(`motor-dur-${partId}`).value : 15000, 10) || 15000;
-            body = { action: 'control', params: { direction: dir, speed: speed, duration: duration } };
+            const dir = $(`motor-dir-${partId}`).value;
+            body = { action: 'control', params: { direction: dir, speed: 50, duration: 15000 } };
           } else if (action === 'stop') {
             body = { action: 'stop', params: {} };
-          }
-        } else if (type === 'stepper') {
-          if (action === 'moveSteps') {
-            const dir = $(`st-dir-${partId}`) ? $(`st-dir-${partId}`).value : 'cw';
-            const steps = parseInt($(`st-steps-${partId}`) ? $(`st-steps-${partId}`).value : 200, 10) || 200;
-            const stepDelayUs = parseInt($(`st-delay-${partId}`) ? $(`st-delay-${partId}`).value : 800, 10) || 800;
-            body = { action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } };
-          } else if (action === 'stop') {
-            body = { action: 'stop' };
-          }
-        } else if (type === 'led') {
-          if (action === 'setBrightness') {
-            const bri = parseInt($(`led-bri-${partId}`) ? $(`led-bri-${partId}`).value : 50, 10) || 50;
-            body = { action: 'setBrightness', params: { brightness: bri } };
-          }
-        } else if (type === 'speaker') {
-          if (action === 'playPreview') {
-            // Mirror calibration behavior: get selected character then request TTS play
-            try {
-              const cur = await fetch('/setup/characters/api/current');
-              const cj = await cur.json();
-              const cid = cj && cj.selectedCharacter;
-              if (!cid) {
-                throw new Error('No character selected');
-              }
-              await fetch('/api/elevenlabs/generate-and-play', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid }) });
-              if (statusEl) statusEl.textContent = 'Done';
-              setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
-              return;
-            } catch (e) {
-              if (statusEl) statusEl.textContent = 'Error: ' + (e && e.message ? e.message : e);
-              return;
-            }
-          }
-        } else if (type === 'microphone') {
-          if (action === 'pollMic') {
-            // Use generic test action - server/test harness can respond
-            body = { action: 'pollMic' };
-          }
-        } else if (type === 'webcam') {
-          if (action === 'capture') {
-            body = { action: 'capture' };
-          }
-        } else if (type === 'head_tracking') {
-          if (action === 'getPosition') {
-            body = { action: 'getPosition' };
-          }
-        } else if (type === 'motion_sensor') {
-          if (action === 'readMotion') {
-            body = { action: 'read' };
-          } else if (action === 'detectMotion') {
-            body = { action: 'detectMotion', params: { duration: 10 } };
-          } else if (action === 'startLiveTest' || action === 'stopLiveTest') {
-            body = { action: action };
           }
         }
         

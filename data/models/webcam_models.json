@@ -103,5 +103,37 @@
     "defaults": {},
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1762034282147",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1762034329783",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1762037762625",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1762038673897",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

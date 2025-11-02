@@ -3,9 +3,27 @@
 </script>
 
 <style>
+  .conv-grid-panel {
+    height: 100%;
+  }
+  .conv-panel-body {
+    max-height: 350px;
+    overflow-y: auto;
+  }
   .conv-hardware-list {
     max-height: 400px;
     overflow-y: auto;
+  }
+  .conv-audio-list {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  .conv-chat-log {
+    height: 250px;
+    overflow-y: auto;
+    background: #111;
+    border-radius: 5px;
+    padding: 10px;
   }
   .conv-part-control {
     border-bottom: 1px solid #333;
@@ -26,46 +44,11 @@
     </div>
   </div>
 
-  <!-- TOP ROW - Webcam (large, prominent, left side) -->
-  <div class="row g-3 mb-3">
-    <div class="col-lg-6">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
-          <small class="text-muted" id="webcamHint"></small>
-        </div>
-        <div class="card-body text-center p-2">
-          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" 
-            style="width: 100%; max-height: 450px; object-fit: contain; background: #000;">
-          <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-lg-6">
-      <!-- Scenes -->
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
-          <a href="/scenes" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
-        </div>
-        <div class="card-body" style="max-height: 450px; overflow-y: auto;">
-          <div id="scenesContainer">
-            <div class="text-center text-muted py-3">
-              <div class="spinner-border spinner-border-sm"></div>
-              <p class="mt-2 mb-0 small">Loading scenes...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BOTTOM ROW - Controls in columns -->
+  <!-- Main Grid Layout: 3 columns on large screens, stacks on mobile -->
   <div class="row g-3">
     
-    <!-- LEFT COLUMN - Main Controls -->
-    <div class="col-lg-8">
+    <!-- Column 1: Character Selection, Live Audio (STT), Make Say -->
+    <div class="col-lg-4">
       
       <!-- Character Selection -->
       <div class="card mb-3" id="character-selection-card">
@@ -76,31 +59,7 @@
           <select id="character-select" class="form-select form-select-sm" data-testid="character-selector">
             <option value="">Loading characters...</option>
           </select>
-          <div id="character-select-status" class="form-text text-muted mt-1 small">Active character</div>
-        </div>
-      </div>
-
-      <!-- AI On (Autonomous) -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-robot"></i> AI On (Autonomous)</h6>
-        </div>
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="aiOnToggle">
-              <label class="form-check-label fw-bold" for="aiOnToggle">AI On</label>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="aiMicToggle" checked>
-              <label class="form-check-label small" for="aiMicToggle">Use Microphone</label>
-            </div>
-          </div>
-          <small class="text-muted d-block mb-2">When ON with mic: responds to speech. Without mic: auto-generates comments.</small>
-          <div id="aiChatLog" class="border rounded p-2 small" style="height: 150px; overflow-y: auto; background: #111;">
-            <div class="text-muted">AI chat log will appear here...</div>
-          </div>
-          <div id="aiOnStatus" class="mt-2 small text-info"></div>
+          <div id="character-select-status" class="form-text text-muted mt-2 small"></div>
         </div>
       </div>
 
@@ -108,21 +67,25 @@
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-mic"></i> Live Audio (STT)</h6>
-          <a href="/ai-settings/stt" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
+          <a href="/ai-settings/stt" class="btn btn-sm btn-outline-secondary" title="STT Configuration">
+            <i class="bi bi-gear"></i>
+          </a>
         </div>
         <div class="card-body">
           <div id="micStatus" class="small text-muted mb-2">Configure VAD and input device</div>
-          <div class="progress mb-2" style="height: 10px;">
+          <div class="progress" style="height: 10px;">
             <div id="audioLevel" class="progress-bar bg-success" style="width: 5%"></div>
           </div>
-          <div class="d-flex gap-2 mb-2">
+          <div class="mt-2 d-flex gap-2 flex-wrap">
             <button id="micStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start</button>
             <button id="micStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
             <button id="listenInBtn" class="btn btn-outline-info btn-sm"><i class="bi bi-headphones"></i> Listen In</button>
           </div>
-          <label class="form-label small text-muted">Transcription</label>
-          <div id="transcript" class="border rounded p-2 small" style="min-height: 60px; max-height: 100px; overflow-y: auto; background: #1a1a1a;">
-            <span class="text-muted">Transcription will appear here...</span>
+          <div class="mt-2">
+            <label class="form-label small text-muted">Transcription</label>
+            <div id="transcript" class="border rounded p-2 small" style="min-height: 60px; max-height: 100px; overflow-y: auto; background: #1a1a1a;">
+              <span class="text-muted">Transcription will appear here...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -147,11 +110,77 @@
         </div>
       </div>
 
+      <!-- Ask AI -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-robot"></i> Ask AI</h6>
+        </div>
+        <div class="card-body">
+          <div class="input-group input-group-sm">
+            <input id="askInput" type="text" class="form-control" placeholder="Ask a question...">
+            <button id="askBtn" class="btn btn-success"><i class="bi bi-chat-dots"></i> Ask</button>
+          </div>
+          <div id="askStatus" class="mt-2 small"></div>
+        </div>
+      </div>
+
+      <!-- Audio Files -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-music-note-list"></i> Audio Files</h6>
+        </div>
+        <div class="card-body">
+          <select id="audioFileSelect" class="form-select form-select-sm mb-2">
+            <option value="">Select audio file...</option>
+          </select>
+          <div class="d-flex gap-2 mb-2">
+            <button id="audioPlayBtn" class="btn btn-success btn-sm flex-fill"><i class="bi bi-play-fill"></i> Play</button>
+            <button id="audioStopBtn" class="btn btn-danger btn-sm flex-fill"><i class="bi bi-stop-fill"></i> Stop</button>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="audioLoopToggle">
+            <label class="form-check-label small" for="audioLoopToggle">Loop continuously</label>
+          </div>
+          <div id="audioStatus" class="mt-2 small"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Column 2: AI On, Hardware Control, Monster Features -->
+    <div class="col-lg-4">
+      
+      <!-- AI On (Autonomous Mode) -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-robot"></i> AI On (Autonomous)</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="aiOnToggle">
+              <label class="form-check-label fw-bold" for="aiOnToggle">AI On</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="aiMicToggle" checked>
+              <label class="form-check-label small" for="aiMicToggle">Use Microphone</label>
+            </div>
+          </div>
+          <small class="text-muted d-block mb-2">When ON with mic: responds to speech via STT. Without mic: generates comments automatically.</small>
+          
+          <div id="aiChatLog" class="conv-chat-log mb-2">
+            <div class="text-muted small">AI chat log will appear here...</div>
+          </div>
+          
+          <div id="aiOnStatus" class="small text-info"></div>
+        </div>
+      </div>
+
       <!-- Hardware Control -->
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-gear"></i> Hardware Control</h6>
-          <span class="badge bg-secondary small" id="hardwareCount">0 parts</span>
+          <span class="badge bg-secondary" id="hardwareCount">0 parts</span>
         </div>
         <div class="card-body p-0">
           <div id="hardwareList" class="conv-hardware-list p-2">
@@ -159,43 +188,94 @@
           </div>
         </div>
       </div>
-      
-    </div>
 
-    <!-- RIGHT COLUMN - Monster Features, etc -->
-    <div class="col-lg-4">
-      
       <!-- Monster Features -->
       <div class="card mb-3">
         <div class="card-header">
           <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
         </div>
         <div class="card-body">
-          <div class="mb-2 pb-2 border-bottom">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="jawToggle">
-              <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
+          <!-- Jaw Animation -->
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <div>
+              <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="jawToggle">
+                <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
+              </div>
+              <small class="text-muted">Sync jaw with speech audio</small>
             </div>
-            <small class="text-muted">Sync jaw with speech audio</small>
+            <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-gear"></i>
+            </a>
           </div>
-          <div class="mb-2 pb-2 border-bottom">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="parrotToggle">
-              <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
+
+          <!-- Parrot Mode -->
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <div>
+              <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="parrotToggle">
+                <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
+              </div>
+              <small class="text-muted">Repeat detected speech</small>
             </div>
-            <small class="text-muted">Repeat detected speech</small>
+            <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-gear"></i>
+            </a>
           </div>
-          <div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="headTrackToggle">
-              <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
+
+          <!-- Head Tracking -->
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" id="headTrackToggle">
+                <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
+              </div>
+              <small class="text-muted">Track visitor movement</small>
             </div>
-            <small class="text-muted">Track visitor movement</small>
+            <a href="/setup/super-powers" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-gear"></i>
+            </a>
           </div>
         </div>
       </div>
-      
+
     </div>
+
+    <!-- Column 3: Scenes, Webcam -->
+    <div class="col-lg-4">
+      
+      <!-- Scenes -->
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
+          <a href="/scenes" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-gear"></i>
+          </a>
+        </div>
+        <div class="card-body conv-panel-body">
+          <div id="scenesContainer">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm"></div>
+              <p class="mt-2 mb-0 small">Loading scenes...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Webcam -->
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
+          <small class="text-muted" id="webcamHint"></small>
+        </div>
+        <div class="card-body text-center">
+          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" style="max-height: 400px; max-width: 100%; background: #000;">
+          <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div>
 
@@ -210,6 +290,9 @@
       sayBtn: null,
       sayInput: null,
       sayStatus: null,
+      askBtn: null,
+      askInput: null,
+      askStatus: null,
       speakerSelect: null,
       jawToggle: null,
       headTrackToggle: null,
@@ -221,6 +304,11 @@
       aiOnStatus: null,
       characterSelect: null,
       characterSelectStatus: null,
+      audioFileSelect: null,
+      audioPlayBtn: null,
+      audioStopBtn: null,
+      audioLoopToggle: null,
+      audioStatus: null,
       hardwareList: null,
       hardwareCount: null,
     };
@@ -231,7 +319,10 @@
     let speakers = [];
     let selectedSpeakerPartId = null;
     let listenInAudio = null;
+    let aiOnInterval = null;
+    let aiWebSocket = null;
     let currentParts = [];
+    let currentAudioFiles = [];
 
     // Parrot Mode
     var parrotEnabled = false;
@@ -263,11 +354,15 @@
     function $(id) { return document.getElementById(id); }
 
     async function init() {
+      // Bind UI elements
       ui.levelBar = $('audioLevel');
       ui.transcript = $('transcript');
       ui.sayBtn = $('sayBtn');
       ui.sayInput = $('sayInput');
       ui.sayStatus = $('sayStatus');
+      ui.askBtn = $('askBtn');
+      ui.askInput = $('askInput');
+      ui.askStatus = $('askStatus');
       ui.speakerSelect = $('convSpeakerSelect');
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
@@ -279,6 +374,11 @@
       ui.aiOnStatus = $('aiOnStatus');
       ui.characterSelect = $('character-select');
       ui.characterSelectStatus = $('character-select-status');
+      ui.audioFileSelect = $('audioFileSelect');
+      ui.audioPlayBtn = $('audioPlayBtn');
+      ui.audioStopBtn = $('audioStopBtn');
+      ui.audioLoopToggle = $('audioLoopToggle');
+      ui.audioStatus = $('audioStatus');
       ui.hardwareList = $('hardwareList');
       ui.hardwareCount = $('hardwareCount');
       
@@ -289,6 +389,7 @@
       await loadCharacters();
       await loadSpeakers();
       
+      // Initialize microphone panel
       try { 
         MicPanel.init({ 
           levelBarId: 'audioLevel', 
@@ -305,6 +406,7 @@
       await loadJawSettings();
       await loadHeadTrackStatus();
       await loadScenes();
+      await loadAudioFiles();
       await loadHardwareParts();
     }
 
@@ -413,12 +515,16 @@
       await loadJawSettings();
       await loadHeadTrackStatus();
       await loadScenes();
+      await loadAudioFiles();
       await loadHardwareParts();
     }
 
     function bindEvents() {
       ui.sayBtn.addEventListener('click', sendSay);
       ui.sayInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendSay(); } });
+      
+      ui.askBtn.addEventListener('click', askAIQuestion);
+      ui.askInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); askAIQuestion(); } });
       
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
@@ -428,6 +534,13 @@
       
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
         parrotEnabled = !!ui.parrotToggle.checked;
+        try { window.__setParrotEnabled = v => { parrotEnabled = !!v; }; } catch (e) { }
+        if (window.MB_TEST_MODE && parrotEnabled) {
+          setTimeout(() => { 
+            try { if (typeof window.__parrotSay === 'function') { window.__parrotSay('test'); } } 
+            catch (e) { } 
+          }, 2500);
+        }
       });
       
       document.addEventListener('micpanel:user_transcript', ev => { 
@@ -436,6 +549,10 @@
           catch (e) { } 
         } 
       });
+      
+      // Audio controls
+      ui.audioPlayBtn && ui.audioPlayBtn.addEventListener('click', playAudioFile);
+      ui.audioStopBtn && ui.audioStopBtn.addEventListener('click', stopAudioFile);
     }
 
     async function loadSpeakers() {
@@ -485,9 +602,13 @@
         const j = await r.json();
         
         if (j && j.success && j.url) { 
+          try { 
+            img.setAttribute('decoding', 'sync'); 
+            img.setAttribute('loading', 'eager'); 
+          } catch (_) { } 
           img.src = j.url + '?_=' + Date.now(); 
           status.textContent = 'Streaming'; 
-          if (hint) hint.textContent = j.url; 
+          hint.textContent = j.url; 
         } else { 
           status.textContent = 'No webcam configured'; 
         }
@@ -567,6 +688,39 @@
       }
     }
 
+    async function askAIQuestion() {
+      const question = (ui.askInput.value || '').trim();
+      if (!question) {
+        ui.askStatus.innerHTML = '<span class="text-warning">Enter a question</span>';
+        return;
+      }
+      
+      ui.askBtn.disabled = true;
+      ui.askBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Asking...';
+      ui.askStatus.innerHTML = '<span class="text-info">Asking AI...</span>';
+      
+      try {
+        const r = await fetch('/api/elevenlabs/generate-and-play', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: question, characterId: currentCharacterId })
+        });
+        const j = await r.json();
+        
+        if (j && j.success) {
+          ui.askStatus.innerHTML = '<span class="text-success">AI responded</span>';
+          ui.askInput.value = '';
+        } else {
+          ui.askStatus.innerHTML = '<span class="text-danger">Failed: ' + (j.error || 'Unknown error') + '</span>';
+        }
+      } catch (e) {
+        ui.askStatus.innerHTML = '<span class="text-danger">Error: ' + e.message + '</span>';
+      } finally {
+        ui.askBtn.disabled = false;
+        ui.askBtn.innerHTML = '<i class="bi bi-chat-dots"></i> Ask';
+      }
+    }
+
     function toggleListenIn() {
       if (listenInAudio) {
         listenInAudio.pause();
@@ -602,8 +756,11 @@
     }
 
     function startAiOn(useMic) {
-      ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - ' + (useMic ? 'Listening' : 'Auto-generating') + '</span>';
+      ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - ' + (useMic ? 'Listening for speech' : 'Auto-generating') + '</span>';
       logAiChat('System', 'AI autonomous mode started (' + (useMic ? 'with microphone' : 'auto-generation') + ')');
+      
+      // TODO: Implement full AI On logic with WebSocket connection
+      // For now, just show status
     }
 
     function stopAiOn() {
@@ -617,7 +774,7 @@
       
       const colorClass = sender === 'System' ? 'text-warning' : sender === 'You' ? 'text-info' : 'text-success';
       const msg = document.createElement('div');
-      msg.className = 'mb-1 ' + colorClass;
+      msg.className = 'mb-2 ' + colorClass + ' small';
       msg.innerHTML = '<strong>' + sender + ':</strong> ' + message;
       log.appendChild(msg);
       log.scrollTop = log.scrollHeight;
@@ -635,7 +792,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
               <div>
                 <strong class="small">${scene.name}</strong>
-                <div class="text-muted" style="font-size: 0.7rem;">${scene.description || 'No description'}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">${scene.description || 'No description'}</div>
               </div>
               <button class="btn btn-sm btn-primary" onclick="playScene(${scene.id})">
                 <i class="bi bi-play"></i>
@@ -643,7 +800,7 @@
             </div>
           `).join('');
         } else {
-          container.innerHTML = '<div class="text-center text-muted py-2 small">No scenes</div>';
+          container.innerHTML = '<div class="text-center text-muted py-2 small"><i class="bi bi-film"></i><p class="mt-2 mb-0">No scenes</p></div>';
         }
       } catch {
         container.innerHTML = '<div class="text-center text-danger py-2 small">Failed to load</div>';
@@ -654,13 +811,109 @@
       try {
         const r = await fetch(`/scenes/api/${sceneId}/play`, { method: 'POST' });
         const j = await r.json();
-        if (!(j && j.success)) {
-          alert('Failed to play scene');
+        if (j && j.success) {
+          console.log('Scene playing:', sceneId);
+        } else {
+          alert('Failed to play scene: ' + (j.error || 'Unknown error'));
         }
       } catch (e) {
         alert('Error playing scene: ' + e.message);
       }
     };
+
+    async function loadAudioFiles() {
+      if (!currentCharacterId) return;
+      
+      try {
+        const r = await fetch(`/audio-library/api/library?characterId=${currentCharacterId}`);
+        const j = await r.json();
+        
+        if (j && j.success && j.files && j.files.length > 0) {
+          currentAudioFiles = j.files;
+          renderAudioFiles();
+        } else {
+          ui.audioFileSelect.innerHTML = '<option value="">No audio files</option>';
+          ui.audioFileSelect.disabled = true;
+        }
+      } catch (e) {
+        console.error('Failed to load audio files:', e);
+        ui.audioFileSelect.innerHTML = '<option value="">Error loading</option>';
+        ui.audioFileSelect.disabled = true;
+      }
+    }
+
+    function renderAudioFiles() {
+      ui.audioFileSelect.innerHTML = '<option value="">Select audio file...</option>';
+      
+      currentAudioFiles.forEach(file => {
+        const opt = new Option(file.title || file.filename, file.id);
+        opt.setAttribute('data-filename', file.filename);
+        ui.audioFileSelect.appendChild(opt);
+      });
+      
+      ui.audioFileSelect.disabled = false;
+    }
+
+    async function playAudioFile() {
+      const audioId = ui.audioFileSelect.value;
+      if (!audioId) {
+        ui.audioStatus.innerHTML = '<span class="text-warning">Select an audio file</span>';
+        return;
+      }
+      
+      const loop = ui.audioLoopToggle.checked;
+      const selectedOption = ui.audioFileSelect.options[ui.audioFileSelect.selectedIndex];
+      const filename = selectedOption.getAttribute('data-filename');
+      const title = selectedOption.text;
+      
+      ui.audioPlayBtn.disabled = true;
+      ui.audioStatus.innerHTML = '<span class="text-info">Playing...</span>';
+      
+      try {
+        const r = await fetch(`/api/orchestration/animatronic/${currentCharacterId}/play-audio`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audioId, loop, filename, audioTitle: title })
+        });
+        const j = await r.json();
+        
+        if (j && j.success) {
+          ui.audioStatus.innerHTML = '<span class="text-success">Playing' + (loop ? ' (loop)' : '') + '</span>';
+        } else {
+          ui.audioStatus.innerHTML = '<span class="text-danger">Failed: ' + (j.error || 'Unknown') + '</span>';
+        }
+      } catch (e) {
+        ui.audioStatus.innerHTML = '<span class="text-danger">Error: ' + e.message + '</span>';
+      } finally {
+        ui.audioPlayBtn.disabled = false;
+      }
+    }
+
+    async function stopAudioFile() {
+      if (!currentCharacterId) return;
+      
+      ui.audioStopBtn.disabled = true;
+      ui.audioStatus.innerHTML = '<span class="text-info">Stopping...</span>';
+      
+      try {
+        const r = await fetch(`/api/orchestration/animatronic/${currentCharacterId}/stop-audio`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const j = await r.json();
+        
+        if (j && j.success) {
+          ui.audioStatus.innerHTML = '<span class="text-success">Stopped</span>';
+          setTimeout(() => { ui.audioStatus.innerHTML = ''; }, 2000);
+        } else {
+          ui.audioStatus.innerHTML = '<span class="text-danger">Failed to stop</span>';
+        }
+      } catch (e) {
+        ui.audioStatus.innerHTML = '<span class="text-danger">Error: ' + e.message + '</span>';
+      } finally {
+        ui.audioStopBtn.disabled = false;
+      }
+    }
 
     async function loadHardwareParts() {
       if (!currentCharacterId) return;
@@ -673,12 +926,12 @@
           currentParts = j.parts;
           renderHardwareParts();
         } else {
-          ui.hardwareList.innerHTML = '<div class="text-muted text-center py-3 small">No hardware parts</div>';
+          ui.hardwareList.innerHTML = '<div class="text-muted text-center py-3 small">No hardware parts configured</div>';
           ui.hardwareCount.textContent = '0 parts';
         }
       } catch (e) {
         console.error('Failed to load hardware parts:', e);
-        ui.hardwareList.innerHTML = '<div class="text-danger text-center py-3 small">Error loading</div>';
+        ui.hardwareList.innerHTML = '<div class="text-danger text-center py-3 small">Error loading parts</div>';
       }
     }
 
@@ -693,118 +946,93 @@
         ui.hardwareList.appendChild(partDiv);
       });
       
+      // Bind control events
       bindHardwareControls();
     }
 
     function renderPartControl(part) {
       const type = part.type.toLowerCase();
       
+      // Common header for all parts
       let html = `<div class="d-flex justify-content-between align-items-center mb-2">
         <strong class="small">${part.name}</strong>
         <span class="badge bg-secondary" style="font-size: 0.65rem;">${part.type}</span>
       </div>`;
       
-      // Richer, calibration-like controls per type (compact for conversation page)
+      // Type-specific controls
       if (type === 'servo') {
-        const isCont = String(part.config && part.config.servoType || 'standard') === 'continuous';
+        const isCont = part.config && part.config.servoType === 'continuous';
         if (isCont) {
-          html += `<div class="d-flex gap-1 align-items-center">
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="ccw">CCW</button>
+          html += `<div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-primary" data-part="${part.id}" data-action="ccw">CCW</button>
             <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="cw">CW</button>
-            <input type="number" id="servo-spd-${part.id}" class="form-control form-control-sm" value="35" style="width:70px; margin-left:6px">%
-            <input type="number" id="servo-dur-${part.id}" class="form-control form-control-sm" value="300" style="width:90px">ms
+            <button class="btn btn-sm btn-outline-primary" data-part="${part.id}" data-action="cw">CW</button>
           </div>`;
         } else {
-          html += `<div class="d-flex gap-2 align-items-center">
-            <input type="range" id="servo-${part.id}" class="form-range" min="0" max="180" value="90" style="width:180px">
-            <input type="number" id="servo-num-${part.id}" class="form-control form-control-sm" min="0" max="180" value="90" style="width:80px">
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="move">Move</button>
+          html += `<div class="input-group input-group-sm">
+            <input type="range" class="form-range" min="0" max="180" value="90" id="servo-${part.id}" style="max-width:100px;">
+            <input type="number" class="form-control" min="0" max="180" value="90" id="servo-num-${part.id}" style="max-width:60px;">
+            <button class="btn btn-success" data-part="${part.id}" data-action="move">Move</button>
           </div>`;
         }
       } else if (type === 'linear_actuator') {
-        html += `<div class="d-flex gap-1 align-items-center">
+        html += `<div class="d-flex gap-1">
           <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="extend">Extend</button>
           <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
           <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="retract">Retract</button>
-          <input type="number" id="la-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="la-dur-${part.id}" class="form-control form-control-sm" value="500" style="width:90px">ms
         </div>`;
       } else if (type === 'motor') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select class="form-select form-select-sm" id="motor-dir-${part.id}" style="width:110px;">
+        html += `<div class="d-flex gap-1">
+          <select class="form-select form-select-sm" id="motor-dir-${part.id}" style="max-width:90px;">
             <option value="forward">Forward</option>
             <option value="reverse">Reverse</option>
           </select>
-          <input type="number" id="motor-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="motor-dur-${part.id}" class="form-control form-control-sm" value="15000" style="width:90px">ms
           <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="run">Run</button>
           <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
         </div>`;
       } else if (type === 'stepper') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select id="st-dir-${part.id}" class="form-select form-select-sm" style="width:90px;"><option value="cw">CW</option><option value="ccw">CCW</option></select>
-          <input id="st-steps-${part.id}" type="number" class="form-control form-control-sm" value="200" style="width:100px">steps
-          <input id="st-delay-${part.id}" type="number" class="form-control form-control-sm" value="800" style="width:110px">us
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="moveSteps">Move</button>
-          <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
+        html += `<div class="input-group input-group-sm">
+          <select class="form-select" id="stepper-dir-${part.id}" style="max-width:70px;">
+            <option value="cw">CW</option>
+            <option value="ccw">CCW</option>
+          </select>
+          <input type="number" class="form-control" value="200" id="stepper-steps-${part.id}" style="max-width:70px;">
+          <button class="btn btn-success" data-part="${part.id}" data-action="move">Move</button>
         </div>`;
       } else if (type === 'light') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="toggle">Toggle</button>
-        </div>`;
+        html += `<button class="btn btn-sm btn-warning w-100" data-part="${part.id}" data-action="toggle">Toggle Light</button>`;
       } else if (type === 'led') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <input id="led-bri-${part.id}" type="range" class="form-range" min="0" max="100" value="50" style="width:160px">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="setBrightness">Set</button>
+        html += `<div class="input-group input-group-sm">
+          <input type="range" class="form-range" min="0" max="100" value="50" id="led-${part.id}">
+          <button class="btn btn-success" data-part="${part.id}" data-action="set">Set</button>
         </div>`;
       } else if (type === 'speaker') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="playPreview">Play Preview</button>
-        </div>`;
+        html += `<button class="btn btn-sm btn-success w-100" data-part="${part.id}" data-action="test">Test Speaker</button>`;
       } else if (type === 'microphone') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <div class="progress" style="width:160px;height:12px"><div id="mic-vu-${part.id}" class="progress-bar" style="width:0%"></div></div>
-          <span id="mic-level-${part.id}" class="small ms-2">0</span>
-          <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="pollMic">Poll</button>
+        html += `<div class="d-flex gap-1">
+          <div class="progress flex-fill" style="height:24px;"><div id="mic-vu-${part.id}" class="progress-bar" style="width:0%"></div></div>
+          <button class="btn btn-sm btn-info" data-part="${part.id}" data-action="poll">Poll</button>
         </div>`;
       } else if (type === 'webcam') {
-        html += `<div class="d-flex flex-column align-items-stretch gap-2">
-          <a class="btn btn-sm btn-outline-primary" href="/setup/webcam/api/parts/${encodeURIComponent(part.id)}/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>
-          <div class="d-flex gap-2 align-items-center">
-            <label class="form-label small mb-0">Zoom</label>
-            <input id="cam-zoom-${part.id}" type="range" class="form-range" min="100" max="300" value="100" style="width:120px">
-            <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="capture">Capture</button>
-          </div>
+        html += `<button class="btn btn-sm btn-info w-100" data-part="${part.id}" data-action="snapshot">Capture Snapshot</button>`;
+      } else if (type === 'motion_sensor') {
+        html += `<div class="d-flex gap-1">
+          <button class="btn btn-sm btn-info flex-fill" data-part="${part.id}" data-action="read">Read</button>
+          <button class="btn btn-sm btn-primary flex-fill" data-part="${part.id}" data-action="detect">Detect</button>
         </div>`;
       } else if (type === 'head_tracking') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="getPosition">Get Position</button>
-        </div>`;
-      } else if (type === 'motion_sensor') {
-        const enabled = part.config && part.config.enabled ? 'checked' : '';
-        html += `<div class="d-flex flex-column gap-1">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="motion-toggle-${part.id}" ${enabled}>
-            <label class="form-check-label small" for="motion-toggle-${part.id}">Sensor Enabled</label>
-          </div>
-          <div class="d-flex gap-2 align-items-center">
-            <button class="btn btn-sm btn-outline-info" data-part="${part.id}" data-action="readMotion">Read</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="detectMotion">Detect</button>
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="startLiveTest">Start Live</button>
-            <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stopLiveTest" style="display:none;">Stop</button>
-          </div>
-        </div>`;
+        html += `<button class="btn btn-sm btn-info w-100" data-part="${part.id}" data-action="position">Get Position</button>`;
       } else {
         html += `<button class="btn btn-sm btn-secondary w-100" data-part="${part.id}" data-action="test">Test</button>`;
       }
-
+      
       html += `<div class="mt-1 small text-info" id="status-${part.id}"></div>`;
-
+      
       return html;
     }
 
     function bindHardwareControls() {
+      // Bind all hardware control buttons
       ui.hardwareList.querySelectorAll('button[data-part]').forEach(btn => {
         btn.addEventListener('click', async () => {
           const partId = btn.getAttribute('data-part');
@@ -813,6 +1041,7 @@
         });
       });
       
+      // Bind servo sliders
       ui.hardwareList.querySelectorAll('input[type="range"][id^="servo-"]').forEach(range => {
         const partId = range.id.split('-')[1];
         const numInput = $(`servo-num-${partId}`);
@@ -820,26 +1049,6 @@
           range.addEventListener('input', () => { numInput.value = range.value; });
           numInput.addEventListener('input', () => { range.value = numInput.value; });
         }
-      });
-
-      // Motion sensor toggles (enable/disable)
-      ui.hardwareList.querySelectorAll('input[id^="motion-toggle-"]').forEach(cb => {
-        if (cb.dataset._bound) return; cb.dataset._bound = '1';
-        cb.addEventListener('change', async (e) => {
-          const id = (cb.id || '').split('-').pop();
-          const enabled = !!cb.checked;
-          try {
-            await fetch(`/api/parts/${encodeURIComponent(id)}`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ config: Object.assign({}, (currentParts.find(p=>String(p.id)===String(id)) || {}).config, { enabled: enabled }) })
-            });
-            // reflect change in local cache
-            const p = currentParts.find(p=>String(p.id)===String(id)); if (p) p.config = p.config || {}; p.config.enabled = enabled;
-          } catch (err) {
-            console.error('Failed to update motion sensor config', err);
-            cb.checked = !enabled;
-          }
-        });
       });
     }
 
@@ -854,7 +1063,8 @@
         const type = part.type.toLowerCase();
         let endpoint = `/api/parts/${partId}/test`;
         let body = {};
-        // Map actions for various types; default endpoint is /api/parts/:id/test
+        
+        // Build request based on type and action
         if (type === 'servo') {
           if (action === 'move') {
             const angle = parseInt($(`servo-num-${partId}`).value || '90', 10);
@@ -863,89 +1073,66 @@
             body = { p };
           } else if (action === 'cw' || action === 'ccw' || action === 'stop') {
             let delta = action === 'cw' ? 0.1 : action === 'ccw' ? -0.1 : 0;
-            const spd = parseInt($(`servo-spd-${partId}`) ? $(`servo-spd-${partId}`).value : 35, 10) || 35;
-            const dur = parseInt($(`servo-dur-${partId}`) ? $(`servo-dur-${partId}`).value : 300, 10) || 300;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta, speedPct: spd, durationMs: dur };
+            body = { delta, speedPct: 35, durationMs: 300 };
           }
         } else if (type === 'linear_actuator') {
           if (action === 'extend') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: 0.1, speedPct: spd, durationMs: dur };
+            body = { delta: 0.1, speedPct: 50, durationMs: 500 };
           } else if (action === 'retract') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
             endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: -0.1, speedPct: spd, durationMs: dur };
+            body = { delta: -0.1, speedPct: 50, durationMs: 500 };
           } else if (action === 'stop') {
             endpoint = `/setup/calibration/api/linear_actuator/${partId}/stop`;
-            body = {};
           }
         } else if (type === 'motor') {
           if (action === 'run') {
-            const dir = $(`motor-dir-${partId}`) ? $(`motor-dir-${partId}`).value : 'forward';
-            const speed = parseInt($(`motor-spd-${partId}`) ? $(`motor-spd-${partId}`).value : 50, 10) || 50;
-            const duration = parseInt($(`motor-dur-${partId}`) ? $(`motor-dur-${partId}`).value : 15000, 10) || 15000;
-            body = { action: 'control', params: { direction: dir, speed: speed, duration: duration } };
+            const dir = $(`motor-dir-${partId}`).value;
+            body = { action: 'control', params: { direction: dir, speed: 50, duration: 15000 } };
           } else if (action === 'stop') {
             body = { action: 'stop', params: {} };
           }
         } else if (type === 'stepper') {
-          if (action === 'moveSteps') {
-            const dir = $(`st-dir-${partId}`) ? $(`st-dir-${partId}`).value : 'cw';
-            const steps = parseInt($(`st-steps-${partId}`) ? $(`st-steps-${partId}`).value : 200, 10) || 200;
-            const stepDelayUs = parseInt($(`st-delay-${partId}`) ? $(`st-delay-${partId}`).value : 800, 10) || 800;
-            body = { action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } };
-          } else if (action === 'stop') {
-            body = { action: 'stop' };
+          if (action === 'move') {
+            const dir = $(`stepper-dir-${partId}`).value;
+            const steps = parseInt($(`stepper-steps-${partId}`).value || '200', 10);
+            body = { action: 'moveSteps', params: { direction: dir, steps, stepDelayUs: 800 } };
           }
+        } else if (type === 'light') {
+          body = { action: 'toggle' };
         } else if (type === 'led') {
-          if (action === 'setBrightness') {
-            const bri = parseInt($(`led-bri-${partId}`) ? $(`led-bri-${partId}`).value : 50, 10) || 50;
-            body = { action: 'setBrightness', params: { brightness: bri } };
-          }
+          const brightness = parseInt($(`led-${partId}`).value || '50', 10);
+          body = { action: 'setBrightness', params: { brightness } };
         } else if (type === 'speaker') {
-          if (action === 'playPreview') {
-            // Mirror calibration behavior: get selected character then request TTS play
-            try {
-              const cur = await fetch('/setup/characters/api/current');
-              const cj = await cur.json();
-              const cid = cj && cj.selectedCharacter;
-              if (!cid) {
-                throw new Error('No character selected');
-              }
-              await fetch('/api/elevenlabs/generate-and-play', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid }) });
-              if (statusEl) statusEl.textContent = 'Done';
-              setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
-              return;
-            } catch (e) {
-              if (statusEl) statusEl.textContent = 'Error: ' + (e && e.message ? e.message : e);
-              return;
-            }
-          }
+          // Test speaker with TTS
+          const r = await fetch('/api/elevenlabs/generate-and-play', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: 'Speaker test', characterId: currentCharacterId })
+          });
+          const j = await r.json();
+          if (statusEl) statusEl.textContent = j.success ? 'Done' : 'Failed';
+          return;
         } else if (type === 'microphone') {
-          if (action === 'pollMic') {
-            // Use generic test action - server/test harness can respond
-            body = { action: 'pollMic' };
-          }
+          const deviceId = (part.config && part.config.deviceId) || 'default';
+          const r = await fetch(`/setup/audio/api/audio-levels?deviceId=${deviceId}&deviceType=input`);
+          const j = await r.json();
+          const level = j.success ? Math.round(j.level * 100) : 0;
+          const vu = $(`mic-vu-${partId}`);
+          if (vu) vu.style.width = level + '%';
+          if (statusEl) statusEl.textContent = `Level: ${level}`;
+          return;
         } else if (type === 'webcam') {
-          if (action === 'capture') {
-            body = { action: 'capture' };
+          body = { action: 'capture' };
+        } else if (type === 'motion_sensor') {
+          if (action === 'detect') {
+            body = { action: 'detectMotion', params: { duration: 10 } };
           }
         } else if (type === 'head_tracking') {
-          if (action === 'getPosition') {
-            body = { action: 'getPosition' };
-          }
-        } else if (type === 'motion_sensor') {
-          if (action === 'readMotion') {
-            body = { action: 'read' };
-          } else if (action === 'detectMotion') {
-            body = { action: 'detectMotion', params: { duration: 10 } };
-          } else if (action === 'startLiveTest' || action === 'stopLiveTest') {
-            body = { action: action };
-          }
+          body = { action: 'getPosition' };
+        } else {
+          body = {};
         }
         
         const r = await fetch(endpoint, {
@@ -965,6 +1152,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', init);
-    window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadHardwareParts };
+    window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadAudioFiles, loadHardwareParts };
   })();
 </script>

@@ -18,7 +18,8 @@ describe('AI Audio System Tests', function() {
         let elevenLabsService;
         
         before(async () => {
-            elevenLabsService = await import('../../services/elevenLabsWebSocketService.js');
+            const serviceModule = await import('../../services/elevenLabsWebSocketService.js');
+            elevenLabsService = serviceModule.default;
         });
 
         it('should load ElevenLabs service', () => {
@@ -28,6 +29,7 @@ describe('AI Audio System Tests', function() {
         it('should have WebSocket connection methods', () => {
             // Check for required methods
             expect(elevenLabsService).to.be.an('object');
+            expect(elevenLabsService.constructor.name).to.equal('ElevenLabsWebSocketService');
         });
 
         it('should validate API key configuration', () => {

@@ -376,29 +376,98 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       } catch (e) {
         // non-fatal in tests
       }
-      return res.json({ success: true, testMode: true, response: 'This is a test AI response.' });
+      return res.json({ success: true, testMode: true, response: 'This is a test AI response to your question.' });
     }
 
-    // Use working agent-speak (TTS with audio playback)
-    const agentSpeakResponse = await fetch(`http://localhost:3000/api/elevenlabs/agent-speak`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: question,
-        characterId: characterId,
-        fallbackToTTS: true
-      })
-    });
+    // Get character's AI agent for conversation
+    const { default: characterService } = await import('../services/characterService.js');
+    const character = await characterService.getCharacterById(characterId);
 
-    const result = await agentSpeakResponse.json();
-
-    if (result.success) {
-      return res.json({
-        success: true,
-        response: result.personalityText || result.originalText || question
+    if (!character || !character.elevenLabsAgentId) {
+      console.log(`⚠️  Character ${characterId} has no AI agent for conversation`);
+      return res.status(400).json({ 
+        success: false, 
+        error: `Character ${characterId} does not have an AI agent assigned for conversation. Please configure an AI agent in character settings.` 
       });
-    } else {
-      return res.status(500).json({ success: false, error: result.error || 'Failed' });
+    }
+
+    // Use ElevenLabs Conversational AI for actual AI conversation
+    // This should generate an AI response to the question, not just repeat the question
+    const { default: elevenLabsWebSocketService } = await import('../services/elevenLabsWebSocketService.js');
+    
+    try {
+      // Generate AI response using ElevenLabs Conversational AI
+      const aiResponse = await elevenLabsWebSocketService.askAgentQuestion(
+        character.elevenLabsAgentId,
+        question,
+        characterId
+      );
+
+      if (aiResponse && aiResponse.success) {
+        // Play the AI's response through TTS
+        const ttsResponse = await fetch(`http://localhost:3000/api/elevenlabs/generate-and-play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: aiResponse.response,
+            characterId: characterId,
+            useCase: 'conversation'
+          })
+        });
+
+        const ttsResult = await ttsResponse.json();
+
+        if (ttsResult.success) {
+          return res.json({
+            success: true,
+            response: aiResponse.response,
+            audioPlayed: true
+          });
+        } else {
+          return res.status(500).json({ 
+            success: false, 
+            error: 'AI responded but TTS failed', 
+            response: aiResponse.response 
+          });
+        }
+      } else {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Failed to get AI response', 
+          details: aiResponse?.error || 'Unknown error' 
+        });
+      }
+    } catch (aiError) {
+      console.error('❌ AI conversation error:', aiError);
+      // Fallback: at least acknowledge the question instead of repeating it
+      const fallbackResponse = `I heard your question about "${question}", but I'm having trouble connecting to my AI service right now. Please try again later.`;
+      
+      try {
+        const ttsResponse = await fetch(`http://localhost:3000/api/elevenlabs/generate-and-play`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: fallbackResponse,
+            characterId: characterId,
+            useCase: 'conversation'
+          })
+        });
+
+        const ttsResult = await ttsResponse.json();
+        
+        return res.json({
+          success: true,
+          response: fallbackResponse,
+          audioPlayed: ttsResult.success,
+          fallback: true
+        });
+      } catch (fallbackError) {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'AI service unavailable and TTS fallback failed',
+          originalError: aiError.message 
+        });
+      }
     }
   } catch (error) {
     console.error('❌ Ask AI error:', error);

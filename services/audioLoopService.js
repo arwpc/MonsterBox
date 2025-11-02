@@ -262,6 +262,26 @@ class AudioLoopService {
     }
 
     /**
+     * Alias for stopAllLoops (for compatibility with tests)
+     * @returns {Promise<void>}
+     */
+    async stopAll() {
+        return this.stopAllLoops();
+    }
+
+    /**
+     * Get status of audio loop service
+     * @returns {Object} - Service status info
+     */
+    getStatus() {
+        return {
+            activeLoops: this._loops.size,
+            monitoringActive: this._monitorInterval !== null,
+            loops: this.getActiveLoops()
+        };
+    }
+
+    /**
      * Get active loops info
      * @returns {Array<Object>} - Array of loop info objects
      */

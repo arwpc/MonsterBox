@@ -184,7 +184,7 @@ export async function executeSceneBulletproof(scene, characterId, options = {}) 
                 const result = await executeStepWithRetries(
                     async () => {
                         // Use original scene executor for actual execution
-                        return await sceneExecutor.executeStep(step, characterId, options);
+                        return await sceneExecutor.executeStep(step, characterId, emit, options);
                     },
                     stepInfo,
                     emit

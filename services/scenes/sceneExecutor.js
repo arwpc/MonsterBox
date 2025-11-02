@@ -459,6 +459,83 @@ async function executeSensorStep(step, characterId, emit) {
   }
 }
 
+async function executeHardwareStep(step, characterId, emit) {
+  const { action, params = {} } = step;
+  if (!action) throw new Error('hardware.step requires action');
+  
+  emit && emit({ type: 'step', status: 'start', stepType: 'hardware', action, params });
+  
+  // Map hardware actions to appropriate handlers
+  switch (action) {
+    case 'move_servo':
+      // Convert hardware step to servo step format
+      let partId = params.partId;
+      if (!partId && (params.channel !== undefined)) {
+        // In test mode, use a well-known servo part ID
+        if (process.env.MB_TEST_MODE === '1') {
+          partId = '63'; // Use existing servo part
+        } else {
+          partId = `servo_${params.channel}`;
+        }
+      }
+      if (!partId) partId = '63'; // Default fallback
+      
+      const servoStep = {
+        type: 'servo',
+        partId: partId,
+        angle: params.position || params.angle,
+        duration: params.duration || 1000
+      };
+      return executeServoStep(servoStep, characterId, emit);
+      
+    case 'move_motor':
+      // Convert hardware step to motor step format
+      const motorStep = {
+        type: 'motor',
+        partId: params.channel || params.partId,
+        speed: params.speed || 50,
+        direction: params.direction || 'cw',
+        duration: params.duration || 1000
+      };
+      return executeMotorStep(motorStep, characterId, emit);
+      
+    case 'move_actuator':
+      // Convert hardware step to linear actuator step format
+      const actuatorStep = {
+        type: 'linear-actuator',
+        partId: params.channel || params.partId,
+        position: params.position || 0.5,
+        speed: params.speed || 50,
+        duration: params.duration || 1000
+      };
+      return executeLinearActuatorStep(actuatorStep, characterId, emit);
+      
+    case 'turn_light':
+    case 'set_light':
+      // Convert hardware step to light step format
+      const lightStep = {
+        type: 'light',
+        partId: params.channel || params.partId,
+        state: params.state || 'on',
+        brightness: params.brightness || 100,
+        duration: params.duration || 0
+      };
+      return executeLightStep(lightStep, characterId, emit);
+      
+    default:
+      // For unrecognized actions, try to use the part control directly
+      const defaultPartId = params.channel || params.partId || params.id;
+      if (defaultPartId) {
+        emit && emit({ type: 'step', status: 'start', stepType: 'hardware', action, partId: defaultPartId });
+        const r = await hardwareService.controlPart(String(defaultPartId), String(action), params);
+        emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'hardware', action, partId: defaultPartId, result: r });
+        if (!r || !r.success) throw new Error((r && r.error) || `Hardware action '${action}' failed`);
+        return r;
+      }
+      throw new Error(`Unknown hardware action: ${action}`);
+  }
+}
+
 export async function executeStep(step, characterId, emit, options) {
   const dryRun = options && options.dryRun;
   const t = (step.type || (step.poseId != null ? 'pose' : null));
@@ -504,6 +581,9 @@ export async function executeStep(step, characterId, emit, options) {
     case 'led':
       // Light/LED step: turn on/off with brightness
       return executeLightStep(step, characterId, emit);
+    case 'hardware':
+      // Generic hardware control step
+      return executeHardwareStep(step, characterId, emit);
     default:
       throw new Error('Unknown step type: ' + t);
   }

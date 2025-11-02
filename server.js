@@ -33,6 +33,7 @@ import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
 import partsApiRoutes from './routes/api/partsApi.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
+import systemApiRoutes from './routes/api/systemRoutes.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
 import conversationRoutes from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
@@ -330,6 +331,7 @@ printRoutes();
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
+app.use('/api/system', systemApiRoutes);
 app.use('/api', sceneEditorApiRoutes);
 
 // --- Goblin device compatibility API (for native Goblin auto-registration) ---
