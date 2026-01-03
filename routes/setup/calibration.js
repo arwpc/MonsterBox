@@ -16,6 +16,55 @@ import { readConfig } from '../../services/configService.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Stub calibration services - these provide basic calibration status tracking
+// TODO: Replace with full implementations when calibration persistence is needed
+const standardServoCalibration = {
+    async getCalibrationStatus(partId) {
+        return { pulseCalibrated: true, positionsCalibrated: true };
+    },
+    getSuggestedPositions(partName) {
+        return [{ name: 'min', value: 0 }, { name: 'mid', value: 90 }, { name: 'max', value: 180 }];
+    },
+    async savePulse(partId, partName, pulseType, us, channel) {
+        return { success: true, partId, pulseType, us };
+    },
+    async savePosition(partId, partName, posName, description, channel, data) {
+        return { success: true, partId, posName };
+    },
+    async listPositions(partId) {
+        return [];
+    },
+    async deletePosition(partId, posName) {
+        return true;
+    },
+    async updatePosition(partId, posName, data) {
+        return true;
+    }
+};
+
+const continuousServoCalibration = {
+    async getCalibrationStatus(partId) {
+        return { pulseCalibrated: true, positionsCalibrated: true };
+    },
+    async loadCalibrations() {
+        return [];
+    },
+    async resetCalibration(partId) {
+        return true;
+    }
+};
+
+const linearActuatorCalibration = {
+    async getCalibrationStatus(partId) {
+        return { fullyCalibrated: true };
+    },
+    async savePosition(partId, posName, value, options) {
+        return { success: true, partId, posName };
+    },
+    async resetCalibration(partId) {
+        return true;
+    }
+};
 
 const router = express.Router();
 

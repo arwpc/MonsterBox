@@ -275,7 +275,6 @@ test.describe('Conversation Control - Audio Files', () => {
     // Test is deprecated - Audio functionality moved to Audio Library page
   });
 });
-});
 
 test.describe('Conversation Control - Hardware Control', () => {
   test.beforeEach(async ({ page }) => {

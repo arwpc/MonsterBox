@@ -135,5 +135,13 @@
     "defaults": {},
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1767400108778",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

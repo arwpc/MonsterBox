@@ -200,5 +200,13 @@
     "defaults": {},
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1767400108734",
+    "name": "Model for servo",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
   }
 ]
