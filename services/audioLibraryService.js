@@ -262,7 +262,9 @@ class AudioLibraryService {
      */
     async getAudioFiles(filters = {}) {
         const library = await this.loadLibrary();
-        let audioFiles = [...library.audio];
+        // Support both 'audio' and 'audioFiles' property names for compatibility
+        const audioArray = library.audio || library.audioFiles || [];
+        let audioFiles = [...audioArray];
 
         // Apply search filter
         if (filters.search) {
