@@ -7,6 +7,30 @@ This directory contains outdated, unused, or backup code that has been removed f
 
 ## Contents
 
+### `/outdated-scripts/` - Archived Shell Scripts (89+ files)
+
+Organized into subdirectories:
+
+| Directory | Count | Description |
+|-----------|-------|-------------|
+| `deploy-variants/` | 6 | Duplicate deploy-all scripts |
+| `goblin-deploy/` | 13 | Duplicate goblin deployment scripts |
+| `fix-scripts/` | 6 | One-time fix scripts |
+| `halloween-2025/` | 16 | Halloween 2025 event-specific scripts |
+| `stt-tuning/` | 8 | Speech-to-text tuning experiments |
+| Root level | 40+ | Various one-time and outdated scripts |
+
+**Key archived scripts:**
+- `update-all-to-5.4.sh` - Replaced by 5.5
+- `deploy-monsterbox-v5.4.sh` - Replaced by 5.5
+- `complete-5.2-deployment.sh` - Obsolete version
+- `force-pull-all-animatronics.sh` - One-time utility
+- All `verify-5x-reboot*.sh` - One-time tests
+
+### `/cleanup-archive/` - Legacy Cleanup Logs
+
+Old test logs and deployment artifacts from previous cleanup operations.
+
 ### `/unused-js/` - Unused JavaScript Files (16 files)
 
 These JavaScript files were found in `public/js/` but are not referenced by any views, routes, or other production code.
