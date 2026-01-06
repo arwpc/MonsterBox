@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Migrate existing calibration data to Unified Positions v1.5
- * MonsterBox 5.3
+ * MonsterBox 5.5
  */
 
 import fs from 'fs/promises';

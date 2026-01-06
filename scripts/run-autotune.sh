@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# MonsterBox 5.1 - Autotune Mic/STT/VAD runner (Orlok)
+# MonsterBox 5.5 - Autotune Mic/STT/VAD runner (Orlok)
 # Usage: ./scripts/run-autotune.sh [BASE_URL]
 # Defaults to http://127.0.0.1:3000. Run on the Orlok Pi for production hardware.
 

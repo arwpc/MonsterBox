@@ -7,7 +7,7 @@ All scripts and documentation have been created for a fresh installation of Mons
 ## 🎯 Current Status
 
 - **GroundBreaker IP**: 192.168.8.200
-- **MonsterBox Status**: Running (version 5.2)
+- **MonsterBox Status**: Running (version 5.5)
 - **Web Interface**: ✅ Accessible at http://192.168.8.200:3000
 - **SSH Access**: ❌ Blocked (SSH keys not authorized, password auth disabled)
 - **Character**: Groundbreaker (ID: 5)

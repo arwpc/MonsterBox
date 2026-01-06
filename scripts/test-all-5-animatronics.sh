@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test All 5 Animatronics - MonsterBox 5.3 Deployment Verification
+# Test All 5 Animatronics - MonsterBox 5.5 Deployment Verification
 # Tests: PumpkinHead, Coffin Breaker, Orlok, Skulltalker, Groundbreaker
 
 set -e
@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo "=========================================="
-echo "MonsterBox 5.3 - All Animatronics Test"
+echo "MonsterBox 5.5 - All Animatronics Test"
 echo "=========================================="
 echo ""
 
@@ -119,7 +119,7 @@ echo ""
 if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}✅ ALL ANIMATRONICS OPERATIONAL!${NC}"
     echo ""
-    echo "MonsterBox 5.3 is successfully deployed to all 5 animatronics:"
+    echo "MonsterBox 5.5 is successfully deployed to all 5 animatronics:"
     echo "  1. PumpkinHead (192.168.8.150)"
     echo "  2. Coffin Breaker (192.168.8.140)"
     echo "  3. Orlok (192.168.8.120)"

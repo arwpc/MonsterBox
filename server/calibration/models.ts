@@ -1,6 +1,6 @@
 /**
  * Unified Positions v1.5 - Calibration Data Models
- * MonsterBox 5.3
+ * MonsterBox 5.5
  */
 
 // Position preset: named position with normalized value [0..1]

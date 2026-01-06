@@ -39,7 +39,7 @@ print_header() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-print_header "MonsterBox 5.3 Clean Startup"
+print_header "MonsterBox 5.5 Clean Startup"
 
 # Step 1: Kill old MonsterBox instances
 print_status "Step 1: Killing old MonsterBox instances..."
@@ -201,7 +201,7 @@ echo "  ✅ Port 3000: Available"
 echo ""
 
 # Step 9: Start MonsterBox
-print_header "Starting MonsterBox 5.3"
+print_header "Starting MonsterBox 5.5"
 
 print_status "Starting server on port 3000..."
 echo ""

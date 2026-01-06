@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MonsterBox 5.2 - Goblin1 5-Video Loop Script
+# MonsterBox 5.5 - Goblin1 5-Video Loop Script
 # Cycles through 5 videos on Goblin1 display with configurable timing
 
 GOBLIN_ENDPOINT="${GOBLIN_ENDPOINT:-http://192.168.8.160:3001}"
@@ -16,7 +16,7 @@ VIDEOS=(
     "3929fd68-49cc-4349-a817-b00bc5e4c3d8.mp4"
 )
 
-echo "🎃 MonsterBox 5.2 - Goblin1 Video Loop"
+echo "🎃 MonsterBox 5.5 - Goblin1 Video Loop"
 echo "======================================"
 echo "Endpoint: $GOBLIN_ENDPOINT"
 echo "Videos: ${#VIDEOS[@]}"
