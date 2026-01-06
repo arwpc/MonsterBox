@@ -2,7 +2,7 @@
 
 ## Quick Summary
 
-GroundBreaker (192.168.8.200) currently has MonsterBox 5.2 running but needs a fresh installation to ensure all components are properly configured. SSH access from other machines is currently blocked (SSH keys not authorized).
+GroundBreaker (192.168.8.200) currently has MonsterBox 5.5 running but needs a fresh installation to ensure all components are properly configured. SSH access from other machines is currently blocked (SSH keys not authorized).
 
 ## Option 1: Physical Console Access (Recommended)
 

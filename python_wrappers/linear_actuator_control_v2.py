@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced Linear Actuator Control Script for MonsterBox 4.0
+Enhanced Linear Actuator Control Script for MonsterBox 5.5
 Supports multiple motor driver boards: MDD10A, Cytron, BTS7960
 """
 

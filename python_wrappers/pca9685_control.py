@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 """
-PCA9685 Control Module for MonsterBox 4.0
-Direct hardware control for MonsterBox 4.0
+PCA9685 Control Module for MonsterBox 5.5
+Direct hardware control for MonsterBox 5.5
 """
 
 import json

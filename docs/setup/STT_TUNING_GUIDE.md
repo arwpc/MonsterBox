@@ -1,6 +1,6 @@
 # Speech-to-Text Tuning Guide
 
-## MonsterBox 5.2 - STT Filter Configuration
+## MonsterBox 5.5 - STT Filter Configuration
 
 This guide will help you optimize speech-to-text recognition for your specific environment and use case.
 

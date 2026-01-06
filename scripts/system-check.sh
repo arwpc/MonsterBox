@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MonsterBox 4.0 System Check Script
+# MonsterBox 5.5 System Check Script
 # Comprehensive verification of all dependencies and functionality
 
 # Color output functions
@@ -29,7 +29,7 @@ check_status() {
 }
 
 echo "========================================"
-echo "    MonsterBox 4.0 System Check"
+echo "    MonsterBox 5.5 System Check"
 echo "========================================"
 echo ""
 
@@ -310,7 +310,7 @@ ISSUES=0
 ! command -v python3 >/dev/null 2>&1 && ISSUES=$((ISSUES+1))
 
 if [ "$ISSUES" -eq 0 ]; then
-    print_success "System appears to be properly configured for MonsterBox 4.0"
+    print_success "System appears to be properly configured for MonsterBox 5.5"
     echo "  Ready to run: npm start"
 elif [ "$ISSUES" -le 2 ]; then
     print_warning "System has minor issues but should work"

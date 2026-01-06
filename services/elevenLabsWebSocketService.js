@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - ElevenLabs WebSocket Conversation Service
+ * MonsterBox 5.5 - ElevenLabs WebSocket Conversation Service
  * Real-time streaming conversation with immediate responses
  */
 

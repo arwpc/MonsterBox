@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - ElevenLabs Agent Service
+ * MonsterBox 5.5 - ElevenLabs Agent Service
  * Handles AI Agent CRUD operations and management
  */
 

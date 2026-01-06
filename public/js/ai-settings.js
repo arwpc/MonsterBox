@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - AI Settings JavaScript
+ * MonsterBox 5.5 - AI Settings JavaScript
  * Rebuilt from scratch using proper Bootstrap patterns
  */
 

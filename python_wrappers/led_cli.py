@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-LED CLI Wrapper for MonsterBox 4.0
+LED CLI Wrapper for MonsterBox 5.5
 Thin wrapper that calls scripts/led_control.py with simple args
 """
 

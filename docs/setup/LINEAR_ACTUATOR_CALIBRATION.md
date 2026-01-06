@@ -2,7 +2,7 @@
 
 ## Overview
 
-I've built a complete calibration system for linear actuators in MonsterBox 4.0. This system allows users to easily define min/max endpoints by moving the actuator into position with simple controls and saving those positions.
+I've built a complete calibration system for linear actuators in MonsterBox 5.5. This system allows users to easily define min/max endpoints by moving the actuator into position with simple controls and saving those positions.
 
 ## Features Implemented
 
@@ -106,7 +106,7 @@ The calibration system integrates seamlessly with your existing MonsterBox infra
 - **Uses existing hardware service**: Leverages `services/hardwareService/actuator.js`
 - **Follows existing patterns**: Similar structure to servo calibrations
 - **Respects part configuration**: Uses existing `directionPin`, `pwmPin`, `maxExtension`, `maxRetraction` settings
-- **Bootstrap UI**: Consistent with existing MonsterBox 4.0 dark theme
+- **Bootstrap UI**: Consistent with existing MonsterBox 5.5 dark theme
 - **Safety first**: Implements proper error handling and user feedback
 
 ## Testing

@@ -1,5 +1,5 @@
 # Goblin Video Integration Architecture
-## MonsterBox 5.3 - Seamless Video Management for Goblin Displays
+## MonsterBox 5.5 - Seamless Video Management for Goblin Displays
 
 ## Overview
 

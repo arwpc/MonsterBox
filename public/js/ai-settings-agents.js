@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - AI Settings Agents JavaScript
+ * MonsterBox 5.5 - AI Settings Agents JavaScript
  * AI Agent management and CRUD operations
  */
 

@@ -1,7 +1,7 @@
 /**
  * Super Powers Configuration JavaScript (ES5)
  * Handles jaw animation configuration UI and real-time monitoring
- * MonsterBox 4.0 - Halloween Edition 🎃
+ * MonsterBox 5.5 - Halloween Edition 🎃
  */
 
 (function() {

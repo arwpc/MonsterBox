@@ -4,7 +4,7 @@
  * Automatically deploys Goblin system to fresh Raspberry Pi devices via SSH
  * Like a facehugger attaching to a host - quick, efficient, and unstoppable!
  * 
- * MonsterBox 5.3 - Halloween 2025
+ * MonsterBox 5.5 - Halloween 2025
  */
 
 import { spawn } from 'child_process';
@@ -202,7 +202,7 @@ class GoblinDeploymentService {
             version: '1.0.0',
             deployment: {
                 timestamp: new Date().toISOString(),
-                deployedBy: 'MonsterBox 5.3 Facehugger 👽',
+                deployedBy: 'MonsterBox 5.5 Facehugger 👽',
                 hostname: goblinId,
                 ip: ipAddress
             },

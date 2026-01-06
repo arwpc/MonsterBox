@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - AI Settings STT JavaScript
+ * MonsterBox 5.5 - AI Settings STT JavaScript
  * Speech-to-Text configuration and testing
  */
 

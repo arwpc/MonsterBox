@@ -1,6 +1,6 @@
 # Noisy Environment Preset Guide
 
-**MonsterBox 5.2 - STT Configuration for Loud Backgrounds**
+**MonsterBox 5.5 - STT Configuration for Loud Backgrounds**
 
 **Created:** 2025-10-10  
 **Tested On:** Orlok (Character 3) with loud background music  

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Motor Control Script for MonsterBox 4.0
+Motor Control Script for MonsterBox 5.5
 Controls DC motors via MDD10A motor controller using lgpio
 Supports Jeep Wagoneer wiper motors and similar DC motors
 """

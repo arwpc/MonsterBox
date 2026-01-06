@@ -33,7 +33,7 @@ const errors = await browser_console_messages({ onlyErrors: true });
 ```bash
 git add -A
 git commit -m "Release v5.4: Goblin standardization + console blanker + video dropdown"
-git tag -a v5.4.0 -m "MonsterBox 5.4 - Goblin System Complete"
+git tag -a v5.4.0 -m "MonsterBox 5.5 - Goblin System Complete"
 git push origin main v5.4.0
 ```
 

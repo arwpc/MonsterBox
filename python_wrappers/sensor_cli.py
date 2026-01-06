@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sensor CLI Wrapper for MonsterBox 4.0
+Sensor CLI Wrapper for MonsterBox 5.5
 - Performs a single digital read using lgpio (preferred) and returns JSON.
 - No simulation fallback: on error, prints JSON error and exits non‑zero.
 

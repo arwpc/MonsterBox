@@ -143,7 +143,7 @@ router.get('/unified', async (req, res) => {
         );
 
         res.renderWithLayout('setup/unified-calibration', {
-            title: 'Unified Calibration - MonsterBox 5.3',
+            title: 'Unified Calibration - MonsterBox 5.5',
             page: 'setup-calibration-unified',
             config: { theme: 'dark' },
             parts: positionableParts,
@@ -165,7 +165,7 @@ router.get('/unified', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/calibration', {
-            title: 'Setup Calibration - MonsterBox 5.3',
+            title: 'Setup Calibration - MonsterBox 5.5',
             page: 'setup-calibration',
             config: { theme: 'dark' },
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
@@ -739,7 +739,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
         const calibrationStatus = await linearActuatorCalibration.getCalibrationStatus(partId);
 
         res.renderWithLayout('setup/calibration-linear-actuator', {
-            title: `Calibrate ${part.name} - MonsterBox 5.3`,
+            title: `Calibrate ${part.name} - MonsterBox 5.5`,
             page: 'setup-calibration-linear-actuator',
             config: { theme: 'dark' },
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
@@ -1019,7 +1019,7 @@ router.get('/standard_servo/:id', async (req, res) => {
             .map(p => ({ id: p.id, name: p.name }));
 
         res.renderWithLayout('setup/calibration-standard-servo', {
-            title: `Calibrate ${part.name} - MonsterBox 5.3`,
+            title: `Calibrate ${part.name} - MonsterBox 5.5`,
             page: 'setup-calibration-standard-servo',
             config: { theme: 'dark' },
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),

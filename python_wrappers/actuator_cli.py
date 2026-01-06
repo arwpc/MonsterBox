@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Linear Actuator CLI Wrapper for MonsterBox 4.0
+Linear Actuator CLI Wrapper for MonsterBox 5.5
 Calls scripts/linear_actuator_control.py with a simple, stable interface.
 No simulation fallback: errors propagate with descriptive JSON.
 

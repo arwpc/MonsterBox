@@ -1,5 +1,5 @@
 /**
- * MonsterBox 4.0 - WebSocket Real-Time Chat Client
+ * MonsterBox 5.5 - WebSocket Real-Time Chat Client
  * Provides instant responses via WebSocket streaming
  */
 

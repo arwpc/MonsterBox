@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Light CLI Wrapper for MonsterBox 4.0
+Light CLI Wrapper for MonsterBox 5.5
 Thin wrapper that calls scripts/light_control.py with simple args
 """
 

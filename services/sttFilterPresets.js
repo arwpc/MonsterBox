@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.2 - STT Filter Presets
+ * MonsterBox 5.5 - STT Filter Presets
  * Predefined filter configurations for different environments
  */
 

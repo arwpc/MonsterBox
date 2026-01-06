@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Motor CLI Wrapper for MonsterBox 4.0
+Motor CLI Wrapper for MonsterBox 5.5
 Thin wrapper that calls scripts/motor_control.py, deriving dir/pwm pins from a base pin
 """
 

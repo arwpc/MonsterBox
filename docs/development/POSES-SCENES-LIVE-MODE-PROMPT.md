@@ -1,11 +1,11 @@
-d# 🎃 MonsterBox 4.0: Complete Poses, Scenes, Steps & Live Mode Implementation
+d# 🎃 MonsterBox 5.5: Complete Poses, Scenes, Steps & Live Mode Implementation
 
 ## 📋 CRITICAL: READ README.md FIRST
-MANDATORY: Before starting any work, thoroughly read the `README.md` file to understand MonsterBox 4.0's architecture, existing capabilities, and testing requirements. This system builds upon a sophisticated foundation that must be preserved and leveraged.
+MANDATORY: Before starting any work, thoroughly read the `README.md` file to understand MonsterBox 5.5's architecture, existing capabilities, and testing requirements. This system builds upon a sophisticated foundation that must be preserved and leveraged.
 
 ## 🎯 Project Overview
 
-Implement a comprehensive interactive animatronic control system for MonsterBox 4.0 that includes:
+Implement a comprehensive interactive animatronic control system for MonsterBox 5.5 that includes:
 
 1. Enhanced Poses System (Static & Moving poses)
 2. Advanced Scenes System (ordered steps with serial/concurrent execution)
@@ -15,8 +15,8 @@ Implement a comprehensive interactive animatronic control system for MonsterBox 
 
 ## 🏗️ Architecture Requirements
 
-### CRITICAL: Leverage MonsterBox 4.0 Capabilities
-- REUSE EXISTING SYSTEMS: MonsterBox 4.0 has extensive infrastructure that MUST be leveraged:
+### CRITICAL: Leverage MonsterBox 5.5 Capabilities
+- REUSE EXISTING SYSTEMS: MonsterBox 5.5 has extensive infrastructure that MUST be leveraged:
   - `services/hardwareService/index.js` - Complete hardware control for all 11 part types
   - `controllers/posesController.js` - Existing pose management and execution
   - `services/poses/poseEngine.js` - Pose execution engine with safety enforcement
@@ -27,8 +27,8 @@ Implement a comprehensive interactive animatronic control system for MonsterBox 
 
 ### Legacy Code Reference
 - Legacy files should be used ONLY for reference and understanding patterns
-- Do NOT copy legacy code - adapt concepts to MonsterBox 4.0 architecture
-- MonsterBox 4.0 is single-node, simplified, and more robust
+- Do NOT copy legacy code - adapt concepts to MonsterBox 5.5 architecture
+- MonsterBox 5.5 is single-node, simplified, and more robust
 
 ### Character Isolation
 - ALL functionality must respect the currently selected character
@@ -300,7 +300,7 @@ UI Components to Create:
 
 ## 🚨 Critical Success Factors
 
-1. Preserve Existing Functionality: All current MonsterBox 4.0 features must continue working
+1. Preserve Existing Functionality: All current MonsterBox 5.5 features must continue working
 2. Character Isolation: Every feature must respect character boundaries
 3. Hardware Safety: All hardware operations must include safety enforcement
 4. Real-time Performance: Live Mode must be responsive and reliable
@@ -321,4 +321,4 @@ UI Components to Create:
 
 ---
 
-Remember: This is a sophisticated system building on extensive existing infrastructure. Study the existing code patterns, leverage the robust services already in place, and maintain the high quality standards established in MonsterBox 4.0.
+Remember: This is a sophisticated system building on extensive existing infrastructure. Study the existing code patterns, leverage the robust services already in place, and maintain the high quality standards established in MonsterBox 5.5.

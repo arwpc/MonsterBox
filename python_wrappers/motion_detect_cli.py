@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Motion Detection CLI Wrapper for MonsterBox 4.0
+Motion Detection CLI Wrapper for MonsterBox 5.5
 Continuously monitors a PIR motion sensor and reports state changes.
 
 Usage:

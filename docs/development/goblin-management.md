@@ -510,5 +510,5 @@ npx playwright test tests/playwright/goblin-management-full.spec.js
 ---
 
 **Last Updated**: 2025-10-21  
-**Version**: MonsterBox 5.3
+**Version**: MonsterBox 5.5
 
