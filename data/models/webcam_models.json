@@ -143,5 +143,29 @@
     "defaults": {},
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "1767567381451",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1767567805589",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
+  },
+  {
+    "id": "1767568583759",
+    "name": "Model for webcam",
+    "description": "",
+    "defaults": {},
+    "controlsSchema": {},
+    "meta": {}
   }
 ]

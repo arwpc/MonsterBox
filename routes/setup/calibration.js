@@ -210,7 +210,7 @@ router.get('/api/parts', async (req, res) => {
             if (p && p.enabled) {
                 if (p.pin != null) out.push(String(p.pin));
                 if (p.directionPin != null) out.push(String(p.directionPin));
-                if (p.pwmPin != null) out.push(String(pwmPin));
+                if (p.pwmPin != null) out.push(String(p.pwmPin));
                 // Include stepper-specific pins for conflict detection
                 if (p.stepPin != null) out.push(String(p.stepPin));
                 if (p.dirPin != null) out.push(String(p.dirPin));

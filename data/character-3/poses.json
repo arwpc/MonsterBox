@@ -18,6 +18,24 @@
       "concurrent": false,
       "notes": "Generated from elbow template",
       "created": "2026-01-03T00:28:26.747Z"
+    },
+    {
+      "id": 2,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2026-01-05T20:35:07.341Z"
     }
   ],
   "templates": {}

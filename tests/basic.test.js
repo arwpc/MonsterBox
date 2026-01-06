@@ -37,11 +37,11 @@ describe('MonsterBox 4.0 Basic Tests', () => {
         });
     });
 
-    it('should serve the setup parts page', async () => {
+    it('should serve the setup calibration page (parts integrated)', async () => {
         const response = await request(BASE_URL)
-            .get('/setup/parts')
+            .get('/setup/calibration')
             .expect(200);
-        expect(response.text).to.include('Setup Parts');
+        expect(response.text).to.include('Calibration');
     });
 
 

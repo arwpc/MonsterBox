@@ -20,15 +20,29 @@ async function waitForServer(timeoutMs = 10000) {
 
 describe('Ask AI Endpoint Tests', function () {
     this.timeout(40000);
+    let serverInTestMode = false;
 
     before(async () => {
         const up = await waitForServer(1000);
-        if (up) return; // already running externally
+        if (up) {
+            // Check if server is in test mode
+            try {
+                const res = await axios.post(`${BASE_URL}/conversation/api/ask-ai`, 
+                    { question: 'ping' }, 
+                    { timeout: 5000 }
+                );
+                serverInTestMode = res.data && res.data.testMode === true;
+            } catch (_) {
+                serverInTestMode = false;
+            }
+            return;
+        }
         // Start server with test mode to avoid external API calls in CI
         const env = { ...process.env, MB_TEST_MODE: '1' };
         child = spawn('node', ['server.js'], { cwd: process.cwd(), stdio: 'inherit', env });
         const ok = await waitForServer(15000);
         if (!ok) throw new Error('Server did not start in time');
+        serverInTestMode = true;
     });
 
     after(async () => {
@@ -61,8 +75,13 @@ describe('Ask AI Endpoint Tests', function () {
             expect(res.body.error).to.include('question');
         });
 
-        it('should return valid response', async () => {
-            this.timeout(35000); // Allow time for real AI if configured
+        it('should return valid response', async function() {
+            // Skip slow AI calls when server is in production mode
+            if (!serverInTestMode) {
+                this.skip();
+                return;
+            }
+            this.timeout(5000);
 
             const res = await request(BASE_URL)
                 .post('/conversation/api/ask-ai')
@@ -73,11 +92,13 @@ describe('Ask AI Endpoint Tests', function () {
             expect(res.body).to.have.property('response');
             expect(res.body.response).to.be.a('string');
             expect(res.body.response.length).to.be.greaterThan(0);
-
-            console.log('  📝 Response:', res.body.response.substring(0, 100) + '...');
         });
 
-        it('should accept optional speakerPartId parameter', async () => {
+        it('should accept optional speakerPartId parameter', async function() {
+            if (!serverInTestMode) {
+                this.skip();
+                return;
+            }
             const res = await request(BASE_URL)
                 .post('/conversation/api/ask-ai')
                 .send({
@@ -89,7 +110,11 @@ describe('Ask AI Endpoint Tests', function () {
             expect(res.body).to.have.property('success', true);
         });
 
-        it('should handle questions with special characters', async () => {
+        it('should handle questions with special characters', async function() {
+            if (!serverInTestMode) {
+                this.skip();
+                return;
+            }
             const res = await request(BASE_URL)
                 .post('/conversation/api/ask-ai')
                 .send({ question: 'What\'s your name? Tell me more!' });
@@ -99,7 +124,11 @@ describe('Ask AI Endpoint Tests', function () {
         });
 
         it('should handle long questions', async function() {
-            this.timeout(60000); // 60 seconds
+            if (!serverInTestMode) {
+                this.skip();
+                return;
+            }
+            this.timeout(5000);
             const longQuestion = 'Can you tell me about yourself? '.repeat(20);
             const res = await request(BASE_URL)
                 .post('/conversation/api/ask-ai')

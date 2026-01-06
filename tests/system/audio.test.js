@@ -52,7 +52,8 @@ describe('Audio Service System Tests', function() {
             await audioLoopService.stopAll();
             
             const status = audioLoopService.getStatus();
-            expect(Object.keys(status)).to.have.lengthOf(0);
+            // Status returns { activeLoops: number, monitoringActive: bool, loops: [] }
+            expect(status.activeLoops).to.equal(0);
         });
     });
 

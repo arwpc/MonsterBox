@@ -1,54 +1,91 @@
-## Copilot Instructions for MonsterBox
+# MonsterBox Copilot Instructions
 
 Mission: make small, reversible, test-backed changes; prioritize hardware safety.
 
-## Hard rules (must follow)
-- Do not add new dependencies without an explicit rationale and a plan to pin/version them.
-- Never change GPIO/I2C/power defaults (or PCA9685/pigpio settings) without: rationale, a simulation path using `MB_TEST_MODE=1`, and tests or manual verification steps.
-- Don’t commit secrets, credentials, or long-lived API keys to the repo.
+## Architecture Overview
 
-## Quick context (what an agent should know immediately)
-- Single-node Express server: entrypoint is `server.js` (routes mounted from `routes/`).
-- Audio, webcam, and hardware control are first-class concerns (see `services/`, `goblin/`, and `scripts/`).
-- Tests: Mocha for unit, Playwright for UI/E2E. Playwright runs Firefox by default in CI.
-- Important env flags:
-	- `MB_TEST_MODE=1` — stub/external-safe mode used in CI and local dev.
-	- `MB_NO_MCP=1` — disable MCP calls during tests.
-	- `MONSTERBOX_HARDWARE_AVAILABLE=1` — enable hardware-only tests.
+MonsterBox is a **distributed animatronic control system** for Halloween props:
+- **Central Hub** (this codebase): Express.js server on RPi 4B managing all animatronics
+- **Animatronics** (5 nodes): RPi units at fixed IPs (192.168.8.x) each controlling servos, motors, actuators, lights via GPIO/I2C
+- **Goblins** (video displays): RPi 3B+/4B units running MPV for video playback (port 3001)
+- **AI Integration**: ElevenLabs for STT/TTS, conversation mode with real-time WebSocket audio
 
-## Common commands (include these in PR testing instructions)
-- Install: `npm ci`
-- Start (dev/test-safe): `MB_TEST_MODE=1 npm start` (server at `:3000`)
-- Unit tests: `npm run test:unit`
-- Fast UI/E2E (CI-friendly): `npm run test:ui:fast`
-- Full verify (unit + e2e): `npm run verify`
+Key data flow: `routes/` -> `services/` -> `python_wrappers/` -> GPIO/PCA9685 hardware
 
-## Architecture & patterns to reference
-- `server.js` — shows global flags, error stats (`app.locals.errorStats`), and `res.renderWithLayout` helper used by EJS templates.
-- `routes/` — modular routers; prefer adding endpoints here and following existing API shapes (tests rely on stable endpoints).
-- `services/` — hardware and audio integrations (PipeWire, jaw animation, audio health monitor). Search for `audioHealthMonitor`, `pipewireService`, and `elevenLabsWebSocketService` when changing audio behavior.
-- `goblin/` and `goblin-management` — Goblin video subsystem patterns (MPV usage, queue APIs) are important for media playback changes.
-- `scripts/` — system-level scripts (e.g., `scripts/setup-webcam.sh`) document assumptions about system packages and udev rules.
+## Critical Conventions
 
-## Testing & E2E notes (do this in PRs)
-- Playwright tests treat console errors and HTTP 5xx as failures. Avoid noisy client-side console logs in UI changes.
-- Use `MB_TEST_MODE=1` in test steps to avoid external API calls. If you need to exercise external integrations, add a clear opt-in and test guard in the test harness.
-- For hardware-related changes, provide an emulation path or mark tests behind `MONSTERBOX_HARDWARE_AVAILABLE=1` and document manual verification steps.
+### Hardware Control
+- **Python wrappers**: All GPIO/PWM commands execute via `python_wrappers/*_cli.py` scripts called from `services/hardwareService/exec.js`
+- **Test mode safety**: Set `MB_TEST_MODE=1` to stub hardware calls in CI; only skips real hardware when also in CI (`process.env.CI=true`)
+- **Part types**: servo, motor, stepper, led, light, linear_actuator, sensor, motion_sensor, microphone, speaker, webcam
+- **Calibration data**: Stored per-character in `data/calibration_profiles.json` and `data/character-{id}/`
 
-## PR checklist (include in PR description)
-1. Summary: 1–2 sentences.
-2. Files changed and the reason.
-3. Commands to reproduce locally (include env flags, e.g., `MB_TEST_MODE=1`).
-4. Tests run and their status (unit/E2E). Include failing output if any.
-5. Risk: hardware, data, or runtime impact and mitigation.
+### Data Model
+- Characters: `data/characters.json` (id, name, elevenLabsAgentId)
+- Parts: `data/parts.json` (type, config, characterId)
+- Scenes/Steps: `data/character-{id}/scenes.json` - steps execute parts in sequence
+- Poses: `data/character-{id}/poses.json` - named servo positions
 
-## When to be conservative
-- Hardware control code touching `pca9685`, `pigpio`, GPIO pins, or I2C buses: assume high risk. Require simulation, an explicit rollback plan, and test steps.
-- Adding native or platform-specific dependencies (e.g., RPi binary bindings): document cross-arch build and runtime requirements.
+### API Pattern
+All routes return `{ success: boolean, ...data }` or `{ success: false, error: string }`:
+```javascript
+// Example from routes/api/sceneEditorApi.js
+res.json({ success: true, parts: parts });
+res.status(500).json({ success: false, error: 'Failed', message: error.message });
+```
 
-## Where to look for more guidance
-- Operational README: `README.md` (top-level) and `docs/deployment/README.md` for systemd and production details.
-- Tests overview: `tests/README.md`.
-- Cursor rules & agent guidance: `.cursor/rules/*.mdc` (dev workflow and self-improve rules).
+## Commands
 
-If anything here is unclear or you'd like this shortened/expanded for a specific task, tell me which area to adjust and I'll iterate.
+```bash
+npm ci                              # Install dependencies
+MB_TEST_MODE=1 npm start            # Dev server at :3000
+npm run test:unit                   # Mocha unit tests
+npm run test:browser                # Playwright browser tests
+npm run verify                      # Full test suite (unit + browser)
+MONSTERBOX_HARDWARE_AVAILABLE=1 npm run test:hardware  # Real hardware tests
+```
+
+## Environment Flags
+
+| Flag | Purpose |
+|------|---------|
+| `MB_TEST_MODE=1` | Stub external APIs/hardware in CI |
+| `MONSTERBOX_HARDWARE_AVAILABLE=1` | Enable hardware tests on real RPi |
+| `MB_NO_MCP=1` | Disable MCP tool calls |
+| `PORT=3123` | Playwright test port (auto-set) |
+
+## Key Service Patterns
+
+- **Orchestration** (`services/orchestrationService.js`): Broadcasts commands to all animatronics via HTTP/SSH
+- **Hardware** (`services/hardwareService/`): `runWrapper()` executes Python CLI scripts; returns JSON output
+- **Audio** (`services/pipewireService.js`, `serverPlaybackService.js`): PipeWire/WirePlumber routing, VU meters
+- **Goblin** (`services/goblinManagerService.js`): Video queue management, playlist deployment to display units
+
+## Testing Notes
+
+- Playwright tests run Chromium, single worker, sequential (`playwright.config.js`)
+- Browser tests validate console errors and HTTP 5xx as failures - avoid noisy logs
+- Create tests in `tests/unit/*.test.js` (Mocha/Chai) or `tests/browser/*.spec.js` (Playwright)
+
+## Hard Rules
+
+1. **No GPIO changes** without simulation path and rollback plan
+2. **No new dependencies** without explicit rationale
+3. **No secrets** in repo (use `.env`, see `.env.example`)
+4. **Character-independent tests**: Use env vars, not hardcoded IDs
+
+## Key Files Reference
+
+| Purpose | Location |
+|---------|----------|
+| Server entry | `server.js` |
+| Route mounting | `routes/`, `routes/api/`, `routes/setup/` |
+| Hardware control | `services/hardwareService/index.js` |
+| Python GPIO scripts | `python_wrappers/*_cli.py` |
+| Test setup | `tests/README.md`, `playwright.config.js` |
+| Deployment docs | `docs/deployment/README.md` |
+
+## See Also
+
+- **[README.md](../README.md)** - Operational quick-start, ports (3000, 8090, 8795, 3001), curl examples, PipeWire/webcam verification
+- **[docs/deployment/README.md](../docs/deployment/README.md)** - Systemd services, production setup, Pi-specific configuration
