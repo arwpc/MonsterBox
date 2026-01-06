@@ -8,14 +8,14 @@
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 4,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 0
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2025-10-30T04:17:48.655Z"
+    "updated": "2026-01-06T15:32:18.521Z"
   },
   {
     "id": "2",
