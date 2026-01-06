@@ -1,38 +1,53 @@
 [Unit]
-Description=MonsterBox Goblin Gold Media Player
+Description=MonsterBox Goblin Media Player
+Documentation=https://github.com/arwpc/MonsterBox
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
 User=remote
-Group=video
-Environment=NODE_ENV=production
-Environment=GOBLIN_PORT=3001
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-# Optimized for 720p30 H.264 videos on Pi3B+
-Environment=GOBLIN_DRM_CONNECTOR=HDMI-A-1
-Environment=GOBLIN_HWDEC=v4l2m2m-copy
-Environment=GOBLIN_VO=drm
-# All videos are standardized to 720p30, no transcoding needed
-# Extra MPV tuning flags (space-separated). Safe defaults for smooth playback
-# GPU DRM context + ES with cheap interpolation, plus caching/buffering
-Environment=GOBLIN_MPV_EXTRA_ARGS=--no-config --no-osc --no-osd-bar --no-sub --sub-auto=never --cache=yes --cache-secs=30 --demuxer-max-bytes=512MiB --demuxer-readahead-secs=30 --cache-on-disk=no --video-sync=display-resample --display-fps=59.94 --video-sync-max-video-change=0.008 --timing-window=0.25 --framedrop=no --vd-lavc-threads=1 --no-audio --scale=bilinear --dscale=bilinear --correct-downscaling=no --blend-subtitles=no
-ExecStartPre=+/usr/local/bin/goblin-setup.sh
-ExecStart=/usr/bin/node /home/remote/goblin/server.js
-ExecStartPost=/usr/local/bin/goblin-autostart.sh
-# Give mpv/node much higher CPU/IO priority and allow RT scheduling
-AmbientCapabilities=CAP_SYS_NICE
-CapabilityBoundingSet=CAP_SYS_NICE
-LimitRTPRIO=95
-CPUSchedulingPolicy=rr
-CPUSchedulingPriority=80
-Nice=-20
-IOSchedulingClass=realtime
-IOSchedulingPriority=0
+WorkingDirectory=/home/remote/goblin
+Environment="GOBLIN_ID=goblin-one"
+Environment="GOBLIN_PORT=3001"
+Environment="NODE_ENV=production"
+Environment="MONSTERBOX_URL=http://192.168.8.140:3000"
+
+# Pre-start cleanup and display claim (ignore failures)
+ExecStartPre=-/usr/bin/pkill -f ffplay
+ExecStartPre=-/usr/bin/pkill -f mpv
+ExecStartPre=-/usr/bin/pkill -f vlc
+ExecStartPre=-/bin/bash -lc 'lsof -t -i :3001 | xargs -r kill -9'
+ExecStartPre=-/usr/bin/test -x /usr/local/bin/claim_display.sh && /usr/local/bin/claim_display.sh
+
+# Start server
+ExecStart=/usr/bin/node /home/remote/goblin/src/server.js
+
+# Restart policy - production hardened
 Restart=always
 RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillMode=mixed
+
+# Resource limits
 LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=append:/home/remote/goblin/logs/goblin.log
+StandardError=append:/home/remote/goblin/logs/goblin-error.log
+SyslogIdentifier=goblin
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Watchdog - restart if service becomes unresponsive
+WatchdogSec=60
 
 [Install]
 WantedBy=multi-user.target
+

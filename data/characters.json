@@ -38,14 +38,5 @@
     "name": "Groundbreaker",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
     "activeImage": "groundbreaker.jpg"
-  },
-  {
-    "id": 8,
-    "name": "TestChar_1761975536997"
-  },
-  {
-    "id": 9,
-    "name": "TestCharWithAgent_1761975541273",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
   }
 ]
