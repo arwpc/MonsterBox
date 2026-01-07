@@ -28,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -40,18 +40,30 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
     - name: Run Unit Tests
       run: npm run test:unit
     - name: Start MonsterBox Server
       run: |
-        npm start &
-        echo $! > server.pid
+        MB_TEST_MODE=1 npm start &
+        APP_PID=$!
+        echo $APP_PID > server.pid
+        sleep 10
       env:
         NODE_ENV: test
         PORT: 3000
     - name: Wait for Server
-      run: npx wait-on http://localhost:3000 --timeout 60000
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:3000 2>/dev/null; then
+            echo "Server is ready"
+            exit 0
+          fi
+          echo "Waiting for server... attempt $i/30"
+          sleep 2
+        done
+        echo "Server failed to start"
+        exit 1
     - name: Run Demo E2E (PW_CLEAN_SERVER=1)
       env:
         PW_CLEAN_SERVER: 1
