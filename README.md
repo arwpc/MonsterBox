@@ -11,8 +11,9 @@ MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B w
 This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
 ## What's New / Version Notes
-- Target version: MonsterBox 5.5 (October 2025)
+- Target version: MonsterBox 5.5 (January 2026)
 - Health endpoint and UI titles now report 5.5
+- GitHub Actions CI workflow validates every commit
 - API stabilization: normalized /audio-library/api/library to return both object and array forms; preserved /api/audio-select array defaults
 - Orchestration hardening: per-anim and global timeouts for say-all; partial success semantics (success=true if any device responds)
 - Auto AI status: in-memory status map exposed via /api/orchestration/auto-ai/status
