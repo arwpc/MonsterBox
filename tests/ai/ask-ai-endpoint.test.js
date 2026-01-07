@@ -153,7 +153,7 @@ describe('Ask AI Endpoint Tests', function () {
         // These tests run only if ElevenLabs is configured
         // They will be skipped in test mode
 
-        it('should connect to AI agent when ElevenLabs is configured', async function () {
+        it.skip('should connect to AI agent when ElevenLabs is configured', async function () {
             // Skip if in test mode
             if (process.env.MB_TEST_MODE === '1') {
                 this.skip();

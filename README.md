@@ -6,6 +6,7 @@ MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B w
 - Real hardware control for servos, motors, linear actuators, lights, sensors, steppers
 - ElevenLabs AI integration for STT, Conversational AI, and TTS
 - Goblin video display subsystem for Pi 3B+/4B signage playback
+- GitHub Actions CI for automated testing on every commit
 
 This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
