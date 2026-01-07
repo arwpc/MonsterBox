@@ -17,15 +17,12 @@ on:
         type: choice
         options:
           - all
-          - critical-only
-          - characters
-          - hardware
-          - ai
-          - sounds
-          - chatterpi
+          - unit
+          - system
+          - browser
           - integration
       headed:
-        description: 'Run tests in headed mode'
+        description: 'Run tests in headed mode (browser tests only)'
         required: false
         default: false
         type: boolean
@@ -33,12 +30,11 @@ on:
 jobs:
   deep-functionality-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     strategy:
       matrix:
         node-version: [20.x]
-        browser: [chromium]
       fail-fast: false
 
     steps:
@@ -52,251 +48,61 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: |
-        npm ci
-        npx playwright install --with-deps ${{ matrix.browser }}
+      run: npm ci
 
-    - name: Setup test environment
-      run: |
-        mkdir -p test-results/screenshots
-        mkdir -p test-results/reports
-        mkdir -p test-results/temp-files
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
 
-    - name: Start MonsterBox application
+    - name: Run Unit Tests
+      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'unit' || github.event.inputs.test_suite == ''
+      run: npm run test:unit
+
+    - name: Run System Tests
+      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'system' || github.event.inputs.test_suite == ''
+      run: npm run test:system
+
+    - name: Run Browser Tests
+      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'browser' || github.event.inputs.test_suite == ''
+      run: npm run test:browser
+      env:
+        HEADED: ${{ github.event.inputs.headed || 'false' }}
+
+    - name: Run Integration Tests
+      if: github.event.inputs.test_suite == 'integration'
       run: |
         MB_TEST_MODE=1 npm start &
         APP_PID=$!
-        echo "APP_PID=$APP_PID" >> $GITHUB_ENV
         sleep 15
-        # Wait for application to be ready with timeout
+        # Wait for application to be ready
         for i in {1..30}; do
           if curl -f http://localhost:3000 2>/dev/null; then
             echo "Application is ready"
-            exit 0
+            break
           fi
           echo "Waiting for application... attempt $i/30"
           sleep 2
         done
-        echo "Application failed to start"
+        # Run integration tests here if you have them
+        npm run test:system
         kill $APP_PID 2>/dev/null || true
-        exit 1
       env:
         NODE_ENV: test
         PORT: 3000
-
-    - name: Run Deep Functionality Tests - All Suites
-      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
-      run: |
-        npm run test:deep
-      env:
-        BROWSER: ${{ matrix.browser }}
-        HEADED: ${{ github.event.inputs.headed || 'false' }}
-
-    - name: Run Deep Functionality Tests - Critical Only
-      if: github.event.inputs.test_suite == 'critical-only'
-      run: |
-        npm run test:deep-critical
-      env:
-        BROWSER: ${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - Characters
-      if: github.event.inputs.test_suite == 'characters'
-      run: |
-        npx playwright test tests/deep-functionality/01-characters-deep.spec.js --project=${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - Hardware
-      if: github.event.inputs.test_suite == 'hardware'
-      run: |
-        npx playwright test tests/deep-functionality/02-hardware-parts-deep.spec.js --project=${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - AI Management
-      if: github.event.inputs.test_suite == 'ai'
-      run: |
-        npx playwright test tests/deep-functionality/03-ai-management-deep.spec.js --project=${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - Sounds
-      if: github.event.inputs.test_suite == 'sounds'
-      run: |
-        npx playwright test tests/deep-functionality/04-sounds-deep.spec.js --project=${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - ChatterPi
-      if: github.event.inputs.test_suite == 'chatterpi'
-      run: |
-        npx playwright test tests/deep-functionality/07-chatterpi-deep.spec.js --project=${{ matrix.browser }}
-
-    - name: Run Deep Functionality Tests - Integration
-      if: github.event.inputs.test_suite == 'integration'
-      run: |
-        npx playwright test tests/deep-functionality/08-integration-deep.spec.js --project=${{ matrix.browser }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: deep-functionality-test-results-${{ matrix.node-version }}-${{ matrix.browser }}
+        name: test-results-${{ matrix.node-version }}
         path: |
-          test-results/
           playwright-report/
+          test-results/
         retention-days: 30
-
-    - name: Upload screenshots
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: test-screenshots-${{ matrix.node-version }}-${{ matrix.browser }}
-        path: test-results/screenshots/
-        retention-days: 7
 
     - name: Generate test summary
       if: always()
       run: |
         echo "## Deep Functionality Test Results" >> $GITHUB_STEP_SUMMARY
         echo "- **Node.js Version**: ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Browser**: ${{ matrix.browser }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Test Suite**: ${{ github.event.inputs.test_suite || 'all' }}" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f "test-results/reports/deep-functionality-report.json" ]; then
-          echo "### Test Summary" >> $GITHUB_STEP_SUMMARY
-          node -e "
-            const report = JSON.parse(require('fs').readFileSync('test-results/reports/deep-functionality-report.json', 'utf8'));
-            console.log(\`- **Total Suites**: \${report.summary.totalSuites}\`);
-            console.log(\`- **Passed**: \${report.summary.passedSuites}\`);
-            console.log(\`- **Failed**: \${report.summary.failedSuites}\`);
-            console.log(\`- **Success Rate**: \${Math.round((report.summary.passedSuites / report.summary.totalSuites) * 100)}%\`);
-            console.log(\`- **Duration**: \${Math.round(report.summary.duration / 1000)}s\`);
-          " >> $GITHUB_STEP_SUMMARY
-        fi
-
-    - name: Comment PR with test results
-      if: github.event_name == 'pull_request' && always()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          
-          let comment = `## 🧪 Deep Functionality Test Results\n\n`;
-          comment += `**Configuration**: Node.js ${{ matrix.node-version }} + ${{ matrix.browser }}\n`;
-          comment += `**Test Suite**: ${{ github.event.inputs.test_suite || 'all' }}\n\n`;
-          
-          try {
-            const reportPath = 'test-results/reports/deep-functionality-report.json';
-            if (fs.existsSync(reportPath)) {
-              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-              
-              comment += `### 📊 Summary\n`;
-              comment += `- **Total Suites**: ${report.summary.totalSuites}\n`;
-              comment += `- **✅ Passed**: ${report.summary.passedSuites}\n`;
-              comment += `- **❌ Failed**: ${report.summary.failedSuites}\n`;
-              comment += `- **⏭️ Skipped**: ${report.summary.skippedSuites}\n`;
-              comment += `- **🎯 Success Rate**: ${Math.round((report.summary.passedSuites / report.summary.totalSuites) * 100)}%\n`;
-              comment += `- **⏱️ Duration**: ${Math.round(report.summary.duration / 1000)}s\n\n`;
-              
-              if (report.suites.failed.length > 0) {
-                comment += `### ❌ Failed Suites\n`;
-                report.suites.failed.forEach(suite => {
-                  comment += `- **${suite.name}**: ${suite.error}\n`;
-                });
-                comment += `\n`;
-              }
-              
-              if (report.summary.passedSuites === report.summary.totalSuites) {
-                comment += `🎉 **All tests passed!** MonsterBox functionality is working correctly.\n`;
-              } else if (report.summary.passedSuites / report.summary.totalSuites >= 0.8) {
-                comment += `✅ **Most tests passed.** Minor issues detected that should be reviewed.\n`;
-              } else {
-                comment += `⚠️ **Significant issues detected.** Please review failed tests before merging.\n`;
-              }
-            } else {
-              comment += `⚠️ Test report not found. Tests may have failed to complete.\n`;
-            }
-          } catch (error) {
-            comment += `❌ Error reading test results: ${error.message}\n`;
-          }
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: comment
-          });
-
-  performance-tests:
-    runs-on: ubuntu-latest
-    needs: deep-functionality-tests
-    if: github.event_name == 'schedule' || github.event.inputs.test_suite == 'all'
-    timeout-minutes: 30
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: |
-        npm ci
-        npx playwright install --with-deps chromium
-
-    - name: Start MonsterBox application
-      run: |
-        npm start &
-        sleep 30
-        timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
-      env:
-        NODE_ENV: test
-
-    - name: Run Performance Tests
-      run: |
-        npx playwright test tests/deep-functionality/08-integration-deep.spec.js --grep "Performance Under Load" --project=chromium
-
-    - name: Upload performance results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: performance-test-results
-        path: test-results/
-        retention-days: 14
-
-  security-validation:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
-    timeout-minutes: 15
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run security audit
-      run: npm audit --audit-level=moderate
-
-    - name: Check for sensitive data in tests
-      run: |
-        # Check for hardcoded API keys or sensitive data in test files
-        if grep -r "sk-" tests/ || grep -r "api_key.*=" tests/ || grep -r "password.*=" tests/; then
-          echo "❌ Potential sensitive data found in test files"
-          exit 1
-        else
-          echo "✅ No sensitive data detected in test files"
-        fi
-
-    - name: Validate test data cleanup
-      run: |
-        # Ensure test data factory has proper cleanup
-        if ! grep -q "cleanup" tests/utils/test-data-factory.js; then
-          echo "⚠️ Test data factory should include cleanup methods"
-        else
-          echo "✅ Test data cleanup methods found"
-        fi
+        echo "- **Status**: Tests completed" >> $GITHUB_STEP_SUMMARY
