@@ -15,5 +15,150 @@
       }
     ],
     "created": "2025-10-31T21:45:00.000Z"
+  },
+  {
+    "id": 101,
+    "name": "Servo & Wait Test",
+    "steps": [
+      {
+        "type": "servo",
+        "partId": "4",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "wait"
+      }
+    ],
+    "created": "2026-01-06T22:38:06.912Z"
+  },
+  {
+    "id": 102,
+    "name": "Linear Actuator Test",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      }
+    ],
+    "created": "2026-01-06T22:38:49.729Z"
+  },
+  {
+    "id": 103,
+    "name": "Audio & Light Test",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "07 - The Coffin.mp3"
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      }
+    ],
+    "created": "2026-01-06T22:39:44.966Z"
+  },
+  {
+    "id": 104,
+    "name": "AI Voice Test - Say This & Ask AI",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "Welcome to Warner Castle, mortal! I am Count Orlok, and tonight your soul belongs to me!"
+      },
+      {
+        "type": "askAI",
+        "question": "What is your favorite way to terrorize visitors on Halloween night?"
+      }
+    ],
+    "created": "2026-01-06T22:42:08.489Z"
+  },
+  {
+    "id": 105,
+    "name": "Sensor Trigger Test",
+    "steps": [
+      {
+        "type": "sensor",
+        "partId": "14"
+      },
+      {
+        "type": "sayThis",
+        "text": "I sense your presence, mortal! You dare approach Castle Orlok?"
+      }
+    ],
+    "created": "2026-01-06T22:43:01.132Z"
+  },
+  {
+    "id": 106,
+    "name": "Full Servo Test - All 4 Servos",
+    "steps": [
+      {
+        "type": "servo",
+        "partId": "10",
+        "angle": 45,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "5",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "4",
+        "angle": 90,
+        "duration": 1000
+      }
+    ],
+    "created": "2026-01-06T22:44:19.602Z"
+  },
+  {
+    "id": 107,
+    "name": "Left Arm & Goblin Video Test",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "2",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-192-168-8-14"
+      }
+    ],
+    "created": "2026-01-06T22:45:29.187Z"
+  },
+  {
+    "id": 108,
+    "name": "Pose Test",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": "1"
+      }
+    ],
+    "created": "2026-01-06T22:46:04.563Z"
   }
 ]
