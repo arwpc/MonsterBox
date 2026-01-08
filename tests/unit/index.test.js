@@ -3,6 +3,9 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
+// Set dummy API key for tests to avoid configuration errors
+process.env.ELEVENLABS_API_KEY = 'test-dummy-key';
+
 // This loader mirrors the previous glob-based Mocha command so we keep full coverage.
 
 const __filename = fileURLToPath(import.meta.url);
