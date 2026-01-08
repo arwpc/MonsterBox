@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      ELEVENLABS_API_KEY: test-dummy-key
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

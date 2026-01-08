@@ -20,6 +20,7 @@ on:
 env:
   NODE_VERSION: '20'
   PYTHON_VERSION: '3.11'
+  ELEVENLABS_API_KEY: test-dummy-key
 
 jobs:
   test:
