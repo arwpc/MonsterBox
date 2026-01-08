@@ -25,7 +25,11 @@ describe('Conversation API (integration-lite)', function () {
     const up = await waitForServer(1000);
     if (up) return; // already running externally
     // Start server with test mode to avoid external TTS calls
-    const env = { ...process.env, MB_TEST_MODE: '1' };
+    const env = { 
+      ...process.env, 
+      MB_TEST_MODE: '1',
+      ELEVENLABS_API_KEY: 'test-dummy-key' 
+    };
     child = spawn('node', ['server.js'], { cwd: process.cwd(), stdio: 'inherit', env });
     const ok = await waitForServer(15000);
     if (!ok) throw new Error('Server did not start in time');
