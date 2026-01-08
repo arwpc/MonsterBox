@@ -13,7 +13,7 @@
     "test": "npm run test:browser && npm run test:system && npm run test:unit",
     "test:quick": "npm run test:system && npm run test:browser:quick",
     "test:syntax": "mocha tests/syntax-validation.test.js --timeout 5000",
-    "test:unit": "mocha --recursive tests/unit --reporter spec --exit",
+    "test:unit": "mocha --require tests/setup.js --recursive tests/unit --reporter spec --exit",
     "test:system": "MB_TEST_MODE=1 mocha --recursive tests/system --reporter spec --exit --timeout 10000",
     "test:browser": "MB_TEST_MODE=1 playwright test tests/browser --reporter=list",
     "test:browser:quick": "MB_TEST_MODE=1 playwright test tests/browser/setup-parts.spec.js tests/browser/audio-library.spec.js --reporter=list",
