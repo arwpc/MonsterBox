@@ -1,6 +1,31 @@
 # MonsterBox Copilot Instructions
 
-Mission: make small, reversible, test-backed changes; prioritize hardware safety.
+## Mission
+You are the coding assistant for **MonsterBox** (Node.js + Python, EJS/Express, RPi GPIO). Optimize for **small, reversible, test-backed changes**. Default to **hardware safety**.
+
+## Hard Rules
+1. **Do NOT** add new dependencies without an open issue and rationale.
+2. **Do NOT** change GPIO/I2C pin maps, PWM, or actuator direction defaults unless:
+   - You explain why.
+   - You add/update tests.
+   - You propose doc updates (setup guides + examples).
+   - You have a rollback plan.
+3. **No secrets** in code or logs. Use `.env`; redact outputs.
+4. **Preserve existing structure**: `controllers/`, `services/`, `routes/`, `python_wrappers/`.
+5. **Character-independent tests**: Use env vars, not hardcoded IDs.
+6. **No GPIO changes** without simulation path and rollback plan.
+
+## Quality Gates & Workflow
+1. **Test First**: Run `npm run test:unit` (Mocha) and `npm run test:browser` (Playwright) before proposing a diff to ensure a clean baseline.
+2. **Verify**: Run `npm run verify` after changes. If any fail: stop, show failing tests, suggest smallest fix first.
+3. **UI Validation**: For UI changes, verify using browser tools or tests.
+
+## Output Format
+When proposing complex changes, use this format:
+- **Proposed Diff**: Unified, minimal.
+- **Why**: 1–3 bullets.
+- **Test Plan**: Exact commands + expected results.
+- **Risk**: Scope, hardware impact, rollback.
 
 ## Architecture Overview
 
@@ -60,19 +85,6 @@ MONSTERBOX_HARDWARE_AVAILABLE=1 npm run test:hardware  # Real hardware tests
 - **Hardware** (`services/hardwareService/`): `runWrapper()` executes Python CLI scripts; returns JSON output
 - **Audio** (`services/pipewireService.js`, `serverPlaybackService.js`): PipeWire/WirePlumber routing, VU meters
 - **Goblin** (`services/goblinManagerService.js`): Video queue management, playlist deployment to display units
-
-## Testing Notes
-
-- Playwright tests run Chromium, single worker, sequential (`playwright.config.js`)
-- Browser tests validate console errors and HTTP 5xx as failures - avoid noisy logs
-- Create tests in `tests/unit/*.test.js` (Mocha/Chai) or `tests/browser/*.spec.js` (Playwright)
-
-## Hard Rules
-
-1. **No GPIO changes** without simulation path and rollback plan
-2. **No new dependencies** without explicit rationale
-3. **No secrets** in repo (use `.env`, see `.env.example`)
-4. **Character-independent tests**: Use env vars, not hardcoded IDs
 
 ## Key Files Reference
 

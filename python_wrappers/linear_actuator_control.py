@@ -122,30 +122,28 @@ def control_actuator(direction, speed, duration, dir_pin, pwm_pin, max_extension
         lgpio.gpio_write(h, dir_pin, dir_value)
         log_info(f"Set direction pin ({dir_pin}) to {'LOW' if dir_value == 0 else 'HIGH'} ({direction})")
         
-        # Convert speed from percentage (0-100) to a duty cycle value (0-255)
-        duty_cycle = int((speed_float / 100.0) * 255)
-        log_info(f"Set duty cycle to {duty_cycle}/255 ({speed_float}%)")
+        # Use hardware-timed PWM via lgpio
+        # frequency=1000Hz (smoother than 100Hz), duty_cycle=speed_float (0-100)
+        pwm_freq = 1000
+        log_info(f"Starting PWM: pin={pwm_pin}, freq={pwm_freq}Hz, duty={speed_float}%")
         
-        # Simple software PWM implementation that works on all pins
-        # Implement PWM manually with cycle timing
-        cycle_time = 0.01  # 10ms cycle time (100Hz)
-        start_time = time.time()
-        end_time = start_time + (actual_duration / 1000.0)
-        
-        while time.time() < end_time:
-            if duty_cycle > 0:
-                # Calculate on and off times
-                on_time = cycle_time * (duty_cycle / 255.0)
-                off_time = cycle_time - on_time
-                
-                # PWM cycle
-                lgpio.gpio_write(h, pwm_pin, 1)  # HIGH
-                time.sleep(on_time)
-                lgpio.gpio_write(h, pwm_pin, 0)  # LOW
-                time.sleep(off_time)
-            else:
-                # 0% duty cycle means just stay off
-                time.sleep(cycle_time)
+        if speed_float > 0:
+            try:
+                lgpio.tx_pwm(h, pwm_pin, pwm_freq, speed_float)
+            except AttributeError:
+                # Fallback for older lgpio versions or mock environments
+                log_warning("lgpio.tx_pwm not found, using basic digital write fallback")
+                duty_threshold = 50.0
+                lgpio.gpio_write(h, pwm_pin, 1 if speed_float > duty_threshold else 0)
+            
+            time.sleep(actual_duration / 1000.0)
+            
+            try:
+                lgpio.tx_pwm(h, pwm_pin, pwm_freq, 0)
+            except:
+                pass
+        else:
+            time.sleep(actual_duration / 1000.0)
         
         # Stop motor - set PWM pin to LOW
         lgpio.gpio_write(h, pwm_pin, 0)  # Digital LOW

@@ -1244,4 +1244,17 @@ router.get('/api/calibration/profiles', async (req, res) => {
     }
 });
 
+// System Power Toggle
+router.post('/api/system/power', async (req, res) => {
+    try {
+        const { state } = req.body;
+        console.log(`🔌 Toggling System Power: ${state}`);
+        const result = await hardwareService.setPower(state === true || state === 'true' || state === 'on');
+        res.json(result);
+    } catch (error) {
+         console.error('Error in power toggle:', error);
+         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;

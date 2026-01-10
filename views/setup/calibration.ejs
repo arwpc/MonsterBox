@@ -1237,14 +1237,14 @@
             '<button class="btn btn-primary btn-lg" data-dir="ccw"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
             '<button class="btn btn-danger btn-lg" data-dir="stop"><i class="bi bi-stop-circle"></i> Stop</button>' +
             '<button class="btn btn-primary btn-lg" data-dir="cw">CW <i class="bi bi-arrow-clockwise"></i></button>' +
-            '<input type="number" id="spd" class="form-control form-control-lg" value="35" style="width:110px">% ' +
-            '<input type="number" id="dur" class="form-control form-control-lg" value="300" style="width:140px"> ms' +
+            '<input type="number" id="spd" class="form-control form-control-lg" value="90" style="width:110px">% ' +
+            '<input type="number" id="dur" class="form-control form-control-lg" value="1500" style="width:140px"> ms' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           el.querySelectorAll('button[data-dir]').forEach(b => b.addEventListener('click', async () => {
             const dir = b.getAttribute('data-dir');
-            const speed = parseInt(document.getElementById('spd').value || '35', 10);
-            const duration = parseInt(document.getElementById('dur').value || '300', 10);
+            const speed = parseInt(document.getElementById('spd').value || '90', 10);
+            const duration = parseInt(document.getElementById('dur').value || '1500', 10);
             const st = document.getElementById('ctrlStatus');
             if (st) st.textContent = `${part.name} (ID: ${part.id}) ${dir} at ${speed}%…`;
             console.log(`Continuous servo: ${part.name} (ID: ${part.id}) direction: ${dir}, speed: ${speed}%, duration: ${duration}ms`);
@@ -1337,12 +1337,12 @@
           '<button class="btn btn-primary btn-lg" id="extendBtn"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
           '<button class="btn btn-danger btn-lg" id="stopBtn"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '<button class="btn btn-primary btn-lg" id="retractBtn"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
-          '<input type="number" id="laSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
-          '<input type="number" id="laDur" class="form-control form-control-lg" value="500" style="width:140px"> ms' +
+          '<input type="number" id="laSpd" class="form-control form-control-lg" value="90" style="width:110px">%' +
+          '<input type="number" id="laDur" class="form-control form-control-lg" value="1500" style="width:140px"> ms' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
-        const spd = () => parseInt(document.getElementById('laSpd').value || '50', 10);
-        const dur = () => parseInt(document.getElementById('laDur').value || '500', 10);
+        const spd = () => parseInt(document.getElementById('laSpd').value || '90', 10);
+        const dur = () => parseInt(document.getElementById('laDur').value || '1500', 10);
         el.querySelector('#extendBtn').addEventListener('click', async () => {
           const st = document.getElementById('ctrlStatus');
           try {
@@ -1427,14 +1427,14 @@
       } else if (part.type === 'motor') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
           '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
-          '<input type="number" id="motSpd" class="form-control form-control-lg" value="50" style="width:110px">%' +
+          '<input type="number" id="motSpd" class="form-control form-control-lg" value="90" style="width:110px">%' +
           '<input type="number" id="motDur" class="form-control form-control-lg" value="15000" style="width:140px"> ms' +
           '<button id="motRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Run</button>' +
           '<button id="motStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#motRun').addEventListener('click', function () {
           var dir = document.getElementById('motDir').value;
-          var speed = parseInt(document.getElementById('motSpd').value || '50', 10);
+          var speed = parseInt(document.getElementById('motSpd').value || '90', 10);
           var duration = parseInt(document.getElementById('motDur').value || '15000', 10);
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
@@ -3273,6 +3273,23 @@
     // Initialize modal when page loads
     document.addEventListener('DOMContentLoaded', function () {
       initAddPartModal();
+
+      // Power Enable Handler
+      const pwr = document.getElementById('powerEnable');
+      if (pwr) {
+        pwr.addEventListener('change', async (e) => {
+             try {
+               const s = e.target.checked; 
+               const r = await fetch('/setup/calibration/api/system/power', {
+                  method:'POST',
+                  headers:{'Content-Type':'application/json'},
+                  body:JSON.stringify({state:s})
+               });
+               const res = await r.json();
+               if(window.showToast) window.showToast(s?'Power Enabled':'Power Disabled', s?'success':'warning');
+             } catch(e) { console.error(e); }
+        });
+      }
 
       // Add tab change event listener to re-render edit config when Edit tab is activated
       const editTabButton = document.querySelector('button[data-bs-target="#tabEdit"]');

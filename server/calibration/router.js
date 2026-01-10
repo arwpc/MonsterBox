@@ -72,7 +72,13 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
       console.error(`Invalid nudge request for part ${partId} - missing parameters:`, req.body);
       return res.status(400).json({ success: false, error: 'Must provide either (dir, scale) or (delta)' });
     }
-  } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to nudge', message: String(err) }); }
+  } catch (err) {
+    if (String(err).includes('Unsupported capability')) {
+      return res.status(400).json({ success: false, error: String(err) });
+    }
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Failed to nudge', message: String(err) });
+  }
 });
 
 router.post('/:partId/stop', async (req, res) => {
@@ -101,7 +107,13 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
     await adapter.gotoNormalized(clampedP, { speedPct });
     positionState.set(partId, { currentP: clampedP, lastUpdated: new Date().toISOString() });
     res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });
-  } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to move', message: String(err) }); }
+  } catch (err) {
+    if (String(err).includes('Unsupported capability')) {
+      return res.status(400).json({ success: false, error: String(err) });
+    }
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Failed to move', message: String(err) });
+  }
 });
 
 router.post('/:partId/set-min', express.json(), async (req, res) => {

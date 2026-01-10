@@ -1,0 +1,5 @@
+{
+  "relayPin": 17,
+  "description": "Main Power Relay GPIO Pin (17 was 'LED' in docs, often used for power)",
+  "activeLow": false
+}

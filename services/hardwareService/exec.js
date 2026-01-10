@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_CONFIG = {
     timeoutMs: 30000,  // 30 seconds to allow long-duration hardware movements
     pythonPath: '/usr/bin/python3',
-    scriptsPath: path.resolve(__dirname, '../../../../scripts/hardware'),
+    scriptsPath: path.resolve(__dirname, '../../python_wrappers'),
     enableLogging: true
 };
 

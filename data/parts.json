@@ -51,6 +51,251 @@
     "description": "Webcam microphone for audio input",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true
+  },
+  {
+    "id": "5",
+    "name": "Right Arm of Orlok",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "Test updated via comprehensive tests",
+    "config": {
+      "controlBoard": "MDD10A",
+      "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse",
+      "testFlag": true,
+      "minPulse": 600
+    },
+    "created": "2025-10-05T18:10:45.178Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 23,
+    "pwmPin": 12,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010196402",
+    "updated": "2025-10-27T23:22:01.502Z",
+    "characterId": 3
+  },
+  {
+    "id": "6",
+    "name": "Left Arm of Manipulation",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "MDD10A Control Board - Left arm linear actuator (GPIO 18=DIR, 13=PWM)",
+    "config": {
+      "maxExtension": 15000,
+      "maxRetraction": 15000,
+      "controlBoard": "MDD10A",
+      "modelId": "1759010196402"
+    },
+    "created": "2025-10-05T18:11:05.207Z",
+    "enabled": true,
+    "controlBoard": "MDD10A",
+    "directionPin": 18,
+    "pwmPin": 13,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010196402",
+    "updated": "2025-10-28T20:35:58.221Z",
+    "characterId": 3
+  },
+  {
+    "id": "7",
+    "name": "Bow At The Waist",
+    "type": "linear_actuator",
+    "pin": null,
+    "description": "BTS7960 Control Board - Loom over/bow movement (GPIO 21=RPWM, 19=LPWM, 5=REN, 22=LEN) - CORRECTED WIRING",
+    "config": {
+      "maxExtension": 15000,
+      "maxRetraction": 15000,
+      "controlBoard": "BTS7960"
+    },
+    "created": "2025-10-05T18:11:24.393Z",
+    "enabled": true,
+    "controlBoard": "BTS7960",
+    "rpwmPin": 19,
+    "lpwmPin": 21,
+    "renPin": 5,
+    "lenPin": 22,
+    "maxExtension": 15000,
+    "maxRetraction": 15000,
+    "modelId": "1759010196402",
+    "updated": "2025-10-06T00:24:32.586Z",
+    "characterId": 3
+  },
+  {
+    "id": "8",
+    "name": "Elbow",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 4
+    },
+    "created": "2025-10-05T18:12:14.762Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2025-10-09T21:00:59.115Z",
+    "characterId": 3
+  },
+  {
+    "id": "9",
+    "name": "Forearm Rotation",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 5
+    },
+    "created": "2025-10-05T18:12:32.839Z",
+    "enabled": true,
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2025-10-09T21:00:45.054Z",
+    "characterId": 3
+  },
+  {
+    "id": "10",
+    "name": "Speaker Orlok",
+    "type": "speaker",
+    "pin": null,
+    "description": "audio output devices",
+    "config": {
+      "audioDeviceId": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+      "volume": 100
+    },
+    "created": "2025-10-05T18:13:31.695Z",
+    "enabled": true,
+    "modelId": "default_speaker",
+    "characterId": 3,
+    "updated": "2025-10-11T02:22:02.627Z"
+  },
+  {
+    "id": "11",
+    "name": "Microphone Orlok",
+    "type": "microphone",
+    "pin": null,
+    "description": "audio input devices",
+    "config": {
+      "deviceId": "default"
+    },
+    "created": "2025-10-05T18:13:53.101Z",
+    "enabled": true,
+    "modelId": "mic_generic_usb",
+    "updated": "2025-10-06T02:11:40.479Z",
+    "characterId": 3
+  },
+  {
+    "id": "12",
+    "name": "Hand of Azura",
+    "type": "light",
+    "pin": 26,
+    "description": "basic on/off lighting",
+    "config": {
+      "brightness": 100
+    },
+    "created": "2025-10-05T22:59:52.554Z",
+    "enabled": true,
+    "modelId": "light_generic_12v",
+    "updated": "2025-10-28T20:36:52.505Z",
+    "characterId": 3
+  },
+  {
+    "id": "13",
+    "name": "Eye of Orlok",
+    "type": "webcam",
+    "pin": null,
+    "description": "video capture devices",
+    "config": {
+      "devicePath": "/dev/video1",
+      "deviceId": "video1",
+      "modelId": "default-uvc-1"
+    },
+    "created": "2025-10-06T02:14:37.260Z",
+    "enabled": true,
+    "updated": "2025-10-28T20:38:03.267Z",
+    "modelId": "default-uvc-1",
+    "characterId": 3
+  },
+  {
+    "id": "14",
+    "name": "Jaw of Orlok",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "modelId": "servo_miuzei_25kg",
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "channel": 8,
+      "address": 64,
+      "pca9685Frequency": 50
+    },
+    "created": "2025-10-06T02:21:04.041Z",
+    "enabled": true,
+    "markers": [
+      {
+        "name": "Mid",
+        "kind": "absolute",
+        "locked": false,
+        "value": 83,
+        "unit": "deg"
+      },
+      {
+        "name": "Max",
+        "kind": "absolute",
+        "locked": false,
+        "value": 93,
+        "unit": "deg"
+      },
+      {
+        "name": "Min",
+        "kind": "absolute",
+        "locked": false,
+        "value": 70,
+        "unit": "deg"
+      }
+    ],
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2025-10-06T02:23:46.073Z",
+    "characterId": 3
+  },
+  {
+    "id": "15",
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "pin": null,
+    "description": "precise angle control: standard, continuous, feedback",
+    "config": {
+      "servoType": "continuous",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 0
+    },
+    "created": "2025-10-06T02:24:37.393Z",
+    "enabled": true,
+    "updated": "2025-10-28T20:36:32.329Z",
+    "modelId": "servo_gobilda_stingray2",
+    "characterId": 3
+  },
+  {
+    "id": "16",
+    "name": "Sensor for Orlok",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion detection",
+    "config": {},
+    "created": "2025-10-07T00:53:34.885Z",
+    "enabled": true,
+    "modelId": "pir_generic",
+    "updated": "2025-10-28T20:38:11.352Z",
+    "characterId": 3
   }
 ]
-

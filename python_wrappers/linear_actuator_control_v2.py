@@ -165,17 +165,24 @@ class LinearActuatorController:
             lgpio.gpio_write(self.h, inactive_pin, 0)
             time.sleep(0.02)
 
-            # Simple digital control: Set active pin HIGH for duration
-            # This works reliably for wiper motors and similar DC motors
-            # Speed control can be added later with hardware PWM if needed
+            # Enhanced control: Use lgpio tx_pwm for speed control
             if speed > 0:
-                lgpio.gpio_write(self.h, active_pin, 1)
-                log_info(f"Motor running {dir_norm} (pin {active_pin} HIGH)")
+                try:
+                    lgpio.tx_pwm(self.h, active_pin, pwm_hz or 2000, speed)
+                    log_info(f"Motor running {dir_norm} (pin {active_pin} at {speed}% duty, {pwm_hz}Hz)")
+                except AttributeError:
+                     # Fallback
+                    lgpio.gpio_write(self.h, active_pin, 1)
+                    log_info(f"Motor running {dir_norm} (pin {active_pin} HIGH - Digital Fallback)")
 
                 # Run for specified duration
                 time.sleep(duration / 1000.0)
 
                 # Stop motor
+                try:
+                    lgpio.tx_pwm(self.h, active_pin, pwm_hz or 2000, 0)
+                except:
+                    pass
                 lgpio.gpio_write(self.h, active_pin, 0)
                 log_info("Motor stopped")
             else:

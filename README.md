@@ -233,3 +233,6 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 
 - MonsterBox 5.5 - https://orlok
 
+
+## Historical Hardware Reference
+For debugging connection issues or restoring older hardware configurations, see: [docs/hardware/legacy_hardware_config_reference.md](docs/hardware/legacy_hardware_config_reference.md).

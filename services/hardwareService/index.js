@@ -1532,8 +1532,24 @@ export function getSupportedPartTypes() {
 // Initialize PipeWire stream routing service
 streamRoutingService.startPeriodicCleanup(30000); // Clean up dead streams every 30 seconds
 
+/**
+ * Global Power Control
+ * @param {boolean} state - True for ON, False for OFF
+ */
+export async function setPower(state) {
+    try {
+        const scriptPath = path.resolve(__dirname, '../../scripts/set_power.py');
+        await runWrapper('python3', [scriptPath, state ? 'on' : 'off']);
+        return { success: true, state };
+    } catch(err) {
+        console.error("Set Power Error", err);
+        return { success: false, error: err.message };
+    }
+}
+
 export default {
     controlPart,
+    setPower,
     getAvailableActions,
     getSupportedPartTypes,
     HARDWARE_CONTROLLERS,
