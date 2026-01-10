@@ -1,6 +1,7 @@
 import express from 'express';
 import AbsoluteServoAdapter from './adapters/AbsoluteServoAdapter.js';
 import OpenLoopLinearAdapter from './adapters/OpenLoopLinearAdapter.js';
+import ContinuousServoAdapter from './adapters/ContinuousServoAdapter.js';
 import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
 import { getCalibrationStore } from './store.js';
 
@@ -182,9 +183,18 @@ function getOrCreateAdapter(partId, profile) {
   if (adapterCache.has(partId)) return adapterCache.get(partId);
   const cap = profile.capability || { kind: 'absolute-servo' };
   let adapter;
-  if (cap.kind === 'absolute-servo') adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false);
-  else if (cap.kind === 'openloop-linear' && profile.motion && profile.motion.type === 'time-at-speed') adapter = new OpenLoopLinearAdapter(partId, profile.motion, cap.invert || false);
-  else throw new Error(`Unsupported capability: ${cap.kind}`);
+  if (cap.kind === 'absolute-servo') {
+    adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false);
+  } else if (cap.kind === 'openloop-linear' && profile.motion && profile.motion.type === 'time-at-speed') {
+    adapter = new OpenLoopLinearAdapter(partId, profile.motion, cap.invert || false);
+  } else if (cap.kind === 'continuous-servo') {
+    // Continuous servo adapter - needs channel/address from part config
+    const channel = profile.channel || cap.channel || 0;
+    const address = profile.address || cap.address || 64;
+    adapter = new ContinuousServoAdapter(partId, profile.motion, cap.invert || false, channel, address);
+  } else {
+    throw new Error(`Unsupported capability: ${cap.kind}`);
+  }
   adapterCache.set(partId, adapter);
   return adapter;
 }
