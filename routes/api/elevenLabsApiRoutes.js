@@ -869,7 +869,7 @@ async function generateAndPlaySimpleTTS(text, characterId, res) {
 router.get('/stt/realtime/status', async (req, res) => {
     try {
         const { default: realtimeSTTService } = await import('../../services/elevenLabsRealtimeSTTService.js');
-        const sessions = realtimeSTTService.getAllSessions();
+        const sessions = realtimeSTTService.sessions;
         const sessionList = [];
         for (const [id, session] of sessions) {
             sessionList.push({
