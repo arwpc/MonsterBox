@@ -444,5 +444,5 @@ For additional help:
 ---
 
 **Last Updated**: 2025-10-17
-**MonsterBox Version**: 5.0 (Gold Release)
+**MonsterBox Version**: 5.5 (Gold Release)
 

@@ -93,7 +93,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Basic health check endpoint for readiness tests
 app.get('/health', (req, res) => {
     try {
-        res.status(200).json({ status: 'OK', version: '5.5', time: new Date().toISOString() });
+        res.status(200).json({ status: 'OK', version: '5.5.1', time: new Date().toISOString() });
     } catch (e) {
         res.status(200).json({ status: 'OK' });
     }

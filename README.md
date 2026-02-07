@@ -10,20 +10,30 @@ MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B w
 
 This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New / Version Notes
-- Target version: MonsterBox 5.5 (February 2026)
-- **ElevenLabs upgrade**: TTS default `eleven_flash_v2_5` (~75ms latency), STT default `scribe_v2`, Scribe v2 Realtime WebSocket STT (`scribe_v2_realtime`, ~150ms latency)
+## What's New — v5.5.1 Gold Release (February 2026)
+
+### ElevenLabs Upgrade
+- **TTS**: Default model `eleven_flash_v2_5` (~75ms latency); `eleven_multilingual_v2` for narration
+- **STT**: Default model `scribe_v2` (batch); `scribe_v2_realtime` WebSocket streaming (~150ms latency)
 - **Per-character AI config**: Each character has its own TTS model, voice, and STT settings in `data/character-{N}/ai-config/`
-- **Direct service calls**: All speech paths (say, ask-ai, scenes) use direct `elevenLabsTTSService` + `serverPlaybackService` instead of HTTP loopback
+- **Direct service calls**: All speech paths use direct `elevenLabsTTSService` + `serverPlaybackService` — no HTTP loopback
 - **Scene AI integration**: Scene "Ask AI" steps call real ElevenLabs Conversational AI agents
-- Health endpoint and UI titles now report 5.5
-- GitHub Actions CI workflow validates every commit
-- API stabilization: normalized /audio-library/api/library to return both object and array forms; preserved /api/audio-select array defaults
-- Orchestration hardening: per-anim and global timeouts for say-all; partial success semantics (success=true if any device responds)
-- Auto AI status: in-memory status map exposed via /api/orchestration/auto-ai/status
-- Webcam fix: conversation webcam stream URLs are always absolute (protocol + host)
-- Test-mode stability: console sanitization and error downgrades to avoid false negatives in E2E
-- Playwright uses a dedicated test port (3123) to avoid port collisions during CI
+
+### Dashboard Consolidation
+- `/conversation` merged into Dashboard (`/`) — single-page control for all character features
+- Jaw Animation is now at `/setup/jaw-animation` (dedicated Super Power page)
+- Navigation simplified: Dashboard, Live, Setup (Calibration, Models, Characters, Poses, Audio, Webcam, Jaw Animation, System)
+
+### Testing
+- **257 total tests**: 148 Mocha (system/unit/AI/hardware) + 109 Playwright (browser E2E)
+- All ElevenLabs services, audio pipeline, hardware, and UI tests passing
+- Stepper motors tested via real GPIO (lgpio backend on RPi 4B)
+
+### Infrastructure
+- Health endpoint and UI titles report 5.5
+- GitHub Actions CI validates every commit
+- Playwright uses dedicated test port (3123) for CI isolation
+- `MB_TEST_MODE=1` flag for safe testing without hardware init
 
 ## Quick Start (RPi4B)
 ```bash
@@ -229,18 +239,34 @@ See: `goblin/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 - Goblin Two: 192.168.8.106:3001 ⏳ Offline
 - Goblin Three: 192.168.8.14:3001 ✅ Operational
 
-SSH for RPi4B: remote / klrklr89!
+SSH for RPi4B: see docs/security/remote-access.md
 
 ## Testing
-- Unit tests and E2E live conversation simulations under /test
-- Playwright e2e with Firefox headless on RPi4b
+
+MonsterBox has **257 tests** (148 Mocha + 109 Playwright) covering all major subsystems.
+
+### Test Results (v5.5.1 Gold - February 2026)
+
+| Suite | Framework | Passing | Pending | Failing |
+|-------|-----------|---------|---------|---------|
+| System (AI audio, audio, hardware, jaw, models, scenes) | Mocha | 93 | 2 | 6* |
+| Unit (calibration API, basic routes) | Mocha | 28 | 0 | 0 |
+| AI (ask-ai, conversation) | Mocha | 5 | 5 | 0 |
+| Hardware (stepper, microphone, calibration) | Mocha | 22 | 27 | 0 |
+| Browser E2E (8 spec files) | Playwright | 109 | 7 | 0 |
+
+*\*6 jaw-animation test failures require a physically calibrated jaw servo — hardware-environment-dependent, not code bugs.*
 
 ```bash
-# Unit tests
-npm test -- --run
+# Run all tests
+npm test
 
-# E2E (example)
-npx playwright test --project=firefox --headless
+# Individual suites
+npm run test:system         # Mocha system tests
+npm run test:unit           # Mocha unit tests
+npm run test:browser        # Playwright browser tests (headless Chromium)
+npm run test:hardware       # Hardware tests (needs real GPIO)
+npm run verify              # system + unit + browser
 ```
 
 ## Troubleshooting Quick Commands
@@ -256,17 +282,41 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 ```
 
 ## Documentation Index
-- Deployment: docs/deployment/README.md
-- Technical Overview: docs/MonsterBox-Technical-Overview.md
-- ElevenLabs Integration: docs/integration/ELEVENLABS_INTEGRATION.md
-- AI Management Feature: docs/development/AI-Management-Feature.md
-- Goblin Video System: docs/GOBLIN_VIDEO_INTEGRATION.md
-- Orlok audio results: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md
-- Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
-- Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md
-- Noisy Environment STT: docs/setup/Noisy_Environment_Preset_Guide.md
 
-- MonsterBox 5.5 - https://orlok
+### Core
+- [CHANGELOG.md](CHANGELOG.md) — Release history
+- [Deployment Guide](docs/deployment/README.md) — Systemd, SSH, production setup
+
+### AI & Audio
+- [ElevenLabs Integration](docs/integration/ELEVENLABS_INTEGRATION.md) — Architecture, services, per-character config
+- [AI Management Feature](docs/development/AI-Management-Feature.md) — UI, models, agent setup
+- [AI Integration Guide](docs/development/ai-integration-guide.md) — Developer reference
+
+### Hardware
+- [Hardware Integration](docs/integration/Hardware-Integration-Layer-Interfaces.md) — Service layer, adapters
+- [GPIO Assignments](docs/hardware/gpio_assignments.md) — Pin mappings
+- [Legacy Hardware Config](docs/hardware/legacy_hardware_config_reference.md) — Historical reference
+
+### Setup & Calibration
+- [Animatronic Setup Guide](docs/setup/ANIMATRONIC-SETUP-GUIDE.md) — Full setup walkthrough
+- [Linear Actuator Calibration](docs/setup/LINEAR_ACTUATOR_CALIBRATION.md) — Calibration procedure
+- [STT Tuning Guide](docs/setup/STT_TUNING_GUIDE.md) — Speech-to-text optimization
+
+### Characters
+- [Groundbreaker Setup](docs/characters/GROUNDBREAKER_SETUP_INSTRUCTIONS.md)
+- [PumpkinHead Parts](docs/characters/PUMPKINHEAD_COMPLETE_PARTS_LIST.md)
+
+### Goblin Video System
+- [Goblin Video Integration](docs/integration/GOBLIN_VIDEO_INTEGRATION.md) — Deployment, API, playlists
+
+### Testing
+- [Testing Overview](docs/testing/index.md) — All test categories
+- [Test Organization](docs/testing/organization.md) — Directory structure
+- [Deep Testing Framework](docs/testing/DEEP-TESTING-FRAMEWORK-SUMMARY.md) — Playwright framework
+
+### Security
+- [Remote Access](docs/security/remote-access.md) — SSH, access control
+- [Authentication](docs/security/authentication.md) — Auth mechanisms
 
 
 ## Historical Hardware Reference

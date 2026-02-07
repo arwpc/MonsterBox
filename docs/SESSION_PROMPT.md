@@ -6,14 +6,14 @@
 
 ## System Context
 
-You are working on **MonsterBox 5.5.0** — a Node.js/Express animatronic control system for Halloween props. The codebase lives at `/home/remote/MonsterBox` on an **RPi 4B (aarch64)** named **orlok** (192.168.8.120). You're connected via SSH.
+You are working on **MonsterBox 5.5.1 Gold** — a Node.js/Express animatronic control system for Halloween props. The codebase lives at `/home/remote/MonsterBox` on an **RPi 4B (aarch64)** named **orlok** (192.168.8.120). You're connected via SSH.
 
 The app runs as a systemd service (`monsterbox`) on port 3000. Use `sudo systemctl restart monsterbox` to restart it. The service runs `node server.js`.
 
 ## Architecture
 
 - **Runtime**: Node.js + Express + EJS views + Bootstrap 5
-- **Server**: `server.js` (794 lines) — main Express app
+- **Server**: `server.js` (~730 lines) — main Express app
 - **Config**: `config/animatronics.json`, `config/app-config.json`
 - **Data**: JSON flat files in `data/` (characters.json, parts.json, models/*.json, etc.)
 - **No database** — everything is file-based JSON
@@ -34,31 +34,43 @@ services/              # Business logic (35+ service files)
 views/                 # EJS templates
   setup/               # Setup pages (calibration, models, characters, poses, etc.)
   orchestration/       # Orchestration UI
-  conversation/        # AI conversation UI
+  conversation/        # Dashboard / AI conversation UI (rendered at /)
   live/                # Live camera view
 public/                # Static assets (CSS, JS, images)
 data/                  # All persistent data (JSON files)
   models/              # Model definitions per part type (*_models.json)
-  character-{id}/      # Per-character config (jaw_settings, ai_agent_state, etc.)
+  character-{id}/      # Per-character config (jaw_settings, ai_agent_state, ai-config/, etc.)
   audio-library/       # Audio files per character
 tests/                 # Test suites
   system/              # Mocha API tests (run: npm run test:system)
   unit/                # Mocha unit tests (run: npm run test:unit)
+  ai/                  # AI endpoint tests
+  hardware/            # Hardware tests (stepper, microphone, calibration)
   browser/             # Playwright browser tests (run: npm run test:browser)
 ```
+
+### Dashboard Consolidation
+- `/` renders the Dashboard (using `views/conversation/index.ejs`)
+- `/conversation` redirects to `/` — conversation IS the dashboard
+- Jaw Animation has its own page at `/setup/jaw-animation`
+- Nav: Dashboard, Live, Setup (Calibration, Models, Characters, Poses, Audio, Webcam, Jaw Animation, System)
 
 ### Hardware Abstraction
 
 Parts are controlled through a hardware service layer:
 - **PCA9685** servo controller over I2C (address 64)
 - **BTS7960** / **MDD10A** H-bridge motor drivers via GPIO
+- **Stepper motors** via `python_wrappers/stepper_cli.py` (lgpio backend)
 - **PipeWire** for audio (speaker + microphone)
 - **USB webcam** via v4l2
 - **PIR motion sensor** via GPIO
 
-### AI Integration
-- **ElevenLabs** for TTS/STT/Conversational AI
-- AI conversation mode with jaw animation synced to speech
+### AI Integration (ElevenLabs — single provider)
+- **TTS**: `eleven_flash_v2_5` (default, ~75ms) and `eleven_multilingual_v2` (narration)
+- **STT**: `scribe_v2` (batch) and `scribe_v2_realtime` (WebSocket streaming, ~150ms)
+- **Conversational AI**: ElevenLabs agents via WebSocket on port 8795
+- **Per-character config**: `data/character-{N}/ai-config/tts-config.json` and `stt-config.json`
+- **Speech pipeline**: `elevenLabsTTSService.generateSpeech()` → `serverPlaybackService.playAIOnCharacterSpeaker()`
 - Agent state stored per character in `data/character-{id}/ai_agent_state.json`
 
 ## Characters (Animatronics)
@@ -69,7 +81,7 @@ Parts are controlled through a hardware service layer:
 | 2 | Coffin Breaker | — | |
 | 3 | **Orlok** | 192.168.8.120 | **Current host** — primary dev target |
 | 4 | Skulltalker | 192.168.8.130 | |
-| 5 | Groundbreaker | 192.168.8.200 | Also PumpkinHead_Updated (IDs 5,6) |
+| 5 | Groundbreaker | 192.168.8.200 | |
 | 7 | Groundbreaker | — | |
 
 ### Orlok's Parts (Character ID 3) — 12 parts
@@ -101,6 +113,8 @@ The Models page (`/setup/models`) uses structured form fields per type (no raw J
 
 ## Test Infrastructure
 
+**257 total tests** — 148 Mocha + 109 Playwright
+
 ```bash
 npm test                    # All tests (browser + system + unit)
 npm run test:system         # Mocha system tests (MB_TEST_MODE=1)
@@ -111,37 +125,41 @@ npm run verify              # system + unit + browser
 ```
 
 ### Test Files
-**System (Mocha)**: ai-audio, audio, hardware, models, scenes
-**Browser (Playwright)**: audio-library, conversation (x2), models, orchestration, scenes, setup-parts + legacy test-* files
-**Unit (Mocha)**: calibration-unified-api, index
+**System (Mocha)**: ai-audio, audio, hardware, jaw-animation, models, scenes
+**Unit (Mocha)**: calibration-unified-api, index (basic routes)
+**AI (Mocha)**: ask-ai-endpoint, conversation-route, conversation-service
+**Hardware (Mocha)**: stepper, microphone, continuous-servo-calibration, linear-actuator-calibration
+**Browser (Playwright)**: audio-library, conversation, conversation-refactor, jaw-animation, models, orchestration, scenes, setup-parts
 
-Playwright config: `playwright.config.js` (headless Chromium, `playwright.live.config.ts` for headed)
+Playwright config: `playwright.config.js` (headless Chromium on port 3123)
 
 ## Recent Git History
 
 ```
+ce30c302 fix: update tests for dashboard consolidation and hardware import
+f0800eb5 Update docs, install.sh, and remove legacy ElevenLabs compatibility
+f095b7c1 Fix ElevenLabs integration: per-character TTS, direct service calls, correct STT model
+563285a1 Fix realtime STT status endpoint
+0776353d Upgrade ElevenLabs to Scribe v2 Realtime STT + Flash v2.5 TTS
+949d2594 Consolidate navigation: Dashboard=Conversation, Super Powers→Jaw Animation
 334b5b01 Add Models page Mocha and Playwright test coverage
 3d691cae Redesign Models UI and Calibration Model/Overrides tab
-2749872d Updates to fix hardware - all but head swivel - la servos work
-c52e7141 Add ContinuousServoAdapter for Head on Swivel servo
-26496663 Fix hardware calibration: linear actuators, BTS7960 motor, power toggle
-99a5a6bb Major testing fixes
-abd28f34 MonsterBox 5.5.1 GOLD
 ```
 
-Branch: **main** (active). Stale branches exist but aren't relevant.
+Branch: **main** (active). Latest tag: `v5.5.1` (Gold Release, February 2026).
 
 ## Key URLs (when app is running)
 
-- Home: http://localhost:3000
+- Dashboard: http://localhost:3000
 - Calibration: http://localhost:3000/setup/calibration
 - Models: http://localhost:3000/setup/models
 - Characters: http://localhost:3000/setup/characters
 - Poses: http://localhost:3000/setup/poses
 - Scenes: http://localhost:3000/scenes
 - Orchestration: http://localhost:3000/orchestration
-- Conversation: http://localhost:3000/conversation
+- Jaw Animation: http://localhost:3000/setup/jaw-animation
 - System: http://localhost:3000/setup/system
+- Live: http://localhost:3000/live
 
 ## Development Conventions
 
@@ -156,6 +174,5 @@ Branch: **main** (active). Stale branches exist but aren't relevant.
 ## Known Issues / Tech Debt
 
 - Head on Swivel (part 15) uses ContinuousServoAdapter — different behavior from standard servos
-- Characters 5 and 6 are duplicates ("PumpkinHead_Updated")
-- Some legacy test files in tests/browser/ (test-*.js) aren't in the Playwright spec pattern
+- 6 jaw-animation Mocha tests fail without a physically calibrated jaw servo (hardware-env dependent)
 - ARCHIVE/ directory contains old/deprecated code kept for reference

@@ -131,11 +131,11 @@ ensure_monsterbox_app() {
     
     wait_for_http "http://localhost:3000/health" "MonsterBox"
     
-    # Additional verification - check that conversation page loads
-    if curl -sf "http://localhost:3000/conversation" >/dev/null 2>&1; then
-        log "✓ MonsterBox conversation page is accessible"
+    # Additional verification - check that dashboard page loads
+    if curl -sf "http://localhost:3000/" >/dev/null 2>&1; then
+        log "✓ MonsterBox dashboard is accessible"
     else
-        error "MonsterBox conversation page not accessible"
+        error "MonsterBox dashboard not accessible"
         return 1
     fi
 }

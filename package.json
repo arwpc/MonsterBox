@@ -1,7 +1,7 @@
 {
   "name": "monsterbox",
-  "version": "5.5.0",
-  "description": "MonsterBox 5.5 - Animatronic Control System with Conversation Mode, Poses, Random Poses on Boot, and Hardened Orchestration",
+  "version": "5.5.1",
+  "description": "MonsterBox 5.5 - Animatronic Control System with ElevenLabs AI, Per-Character Voice Config, and Hardened Orchestration",
   "main": "server.js",
   "type": "module",
   "scripts": {

@@ -349,6 +349,6 @@ The **Noisy Environment** preset provides optimal STT performance for loud backg
 ---
 
 **Last Updated:** 2025-10-10  
-**MonsterBox Version:** 5.2  
+**MonsterBox Version:** 5.5  
 **Preset Version:** 1.0
 
