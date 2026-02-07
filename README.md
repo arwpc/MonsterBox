@@ -11,7 +11,11 @@ MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B w
 This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
 ## What's New / Version Notes
-- Target version: MonsterBox 5.5 (January 2026)
+- Target version: MonsterBox 5.5 (February 2026)
+- **ElevenLabs upgrade**: TTS default `eleven_flash_v2_5` (~75ms latency), STT default `scribe_v2`, Scribe v2 Realtime WebSocket STT (`scribe_v2_realtime`, ~150ms latency)
+- **Per-character AI config**: Each character has its own TTS model, voice, and STT settings in `data/character-{N}/ai-config/`
+- **Direct service calls**: All speech paths (say, ask-ai, scenes) use direct `elevenLabsTTSService` + `serverPlaybackService` instead of HTTP loopback
+- **Scene AI integration**: Scene "Ask AI" steps call real ElevenLabs Conversational AI agents
 - Health endpoint and UI titles now report 5.5
 - GitHub Actions CI workflow validates every commit
 - API stabilization: normalized /audio-library/api/library to return both object and array forms; preserved /api/audio-select array defaults
@@ -90,11 +94,39 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 Open: http://localhost:3000/setup/calibration
 
 ## AI Management (ElevenLabs)
-- Three sections: STT, AI Agent, TTS
-- Full CRUD and per-Character assignment; microphone tests use the server mic (PipeWire), not getUserMedia
-- Best practices: 16 kHz mono PCM, 20-40 ms frames, immediate playback, barge-in support
 
-Docs: docs/AI-Management-Feature.md, docs/development/ai-integration-guide.md
+All AI voice services run through **ElevenLabs** (single provider, single API key).
+
+### Models
+| Service | Model | Use Case |
+|---------|-------|----------|
+| TTS | `eleven_flash_v2_5` | Character voice (default, ~75ms latency) |
+| TTS | `eleven_multilingual_v2` | Narration / high-quality |
+| STT | `scribe_v2` | File-based transcription |
+| STT | `scribe_v2_realtime` | Real-time streaming via WebSocket |
+
+### Architecture
+- **Per-character config**: `data/character-{N}/ai-config/tts-config.json` and `stt-config.json`
+- **Three sections**: STT settings, AI Agent (Conversational AI), TTS voice config
+- **Microphone**: Server-side via PipeWire (not `getUserMedia`)
+- **Audio format**: 16 kHz mono PCM, 20-40 ms frames
+- **Conversation**: Real-time WebSocket on port 8795 with barge-in support
+
+### API Quick Test
+```bash
+# Generate speech with character's configured voice
+curl -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello from MonsterBox","characterId":3}'
+
+# Check STT capabilities
+curl http://localhost:3000/api/elevenlabs/stt/capabilities
+
+# Realtime STT status
+curl http://localhost:3000/api/elevenlabs/stt/realtime/status
+```
+
+Docs: docs/development/AI-Management-Feature.md, docs/integration/ELEVENLABS_INTEGRATION.md
 
 ## Goblin - Video Display System
 
@@ -226,10 +258,13 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 ## Documentation Index
 - Deployment: docs/deployment/README.md
 - Technical Overview: docs/MonsterBox-Technical-Overview.md
-- Goblin: goblin/README.md (to be created)
+- ElevenLabs Integration: docs/integration/ELEVENLABS_INTEGRATION.md
+- AI Management Feature: docs/development/AI-Management-Feature.md
+- Goblin Video System: docs/GOBLIN_VIDEO_INTEGRATION.md
 - Orlok audio results: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md
 - Groundbreaker install: docs/characters/GROUNDBREAKER_INSTALLATION_COMPLETE.md
 - Hardware independence prompt: docs/MonsterBox-Hardware-Independence-Prompt.md
+- Noisy Environment STT: docs/setup/Noisy_Environment_Preset_Guide.md
 
 - MonsterBox 5.5 - https://orlok
 

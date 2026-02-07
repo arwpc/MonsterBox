@@ -12,9 +12,9 @@ Integration testing ensures that different components of MonsterBox work togethe
 - **Multi-Character Coordination**: Test simultaneous operation of multiple animatronics
 
 ### 2. AI Service Integration
-- **Voice Synthesis**: TopMediai API integration testing
-- **Character AI**: AI character response and conversation testing
-- **ChatterPi Integration**: Jaw animation synchronized with AI responses
+- **Voice Synthesis**: ElevenLabs TTS integration testing (`eleven_flash_v2_5`)
+- **Character AI**: ElevenLabs Conversational AI agent response testing
+- **Conversation Integration**: Jaw animation synchronized with TTS output
 
 ### 3. Web Interface Integration
 - **Real-time Updates**: WebSocket communication testing

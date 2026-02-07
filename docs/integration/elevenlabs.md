@@ -1,106 +1,74 @@
 ## ElevenLabs Integration
 
-MonsterBox integrates ElevenLabs Text-to-Speech (TTS) to generate high-quality voice lines for animatronic characters. This integration allows users to select from a variety of voices, preview generated speech, and assign voices to characters or scenes.
+MonsterBox uses ElevenLabs as its sole AI voice provider for Text-to-Speech (TTS), Speech-to-Text (STT), and Conversational AI.
 
-### How ElevenLabs is Integrated
-- ElevenLabs TTS is accessed via the MonsterBox web interface ("Configure Voice" button, scene editor, and sound management).
-- The backend uses a Node.js API wrapper that communicates with the ElevenLabs API using a secret API key stored in environment variables.
-- Voices are fetched via `/api/voice/available`, filtered for TTS capabilities, and displayed in the UI for selection.
-- Voice generation (TTS) is triggered via `/api/voice/generate` and `/api/voice/generate-for-scene` endpoints.
+### Current Models
+
+| Service | Model | Description |
+|---------|-------|-------------|
+| TTS | `eleven_flash_v2_5` | Default — fastest (~75ms latency) |
+| TTS | `eleven_multilingual_v2` | High-quality narration |
+| STT | `scribe_v2` | Batch file transcription, 90+ languages |
+| STT | `scribe_v2_realtime` | WebSocket streaming, ~150ms latency |
 
 ### API Key Configuration
-To use ElevenLabs, you must provide a valid API key. Set this in your `.env` file at the project root:
 
-```env
-ELEVENLABS_API_KEY=your_actual_api_key_here
+Set `ELEVENLABS_API_KEY` in your environment or store it at `/etc/monsterbox/elevenlabs.key`:
+
+```bash
+# Environment variable
+export ELEVENLABS_API_KEY=xi_your_api_key_here
+
+# Or file-based (created by install.sh)
+sudo mkdir -p /etc/monsterbox
+echo -n 'xi_your_key' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null
+sudo chmod 600 /etc/monsterbox/elevenlabs.key
 ```
 
-Restart the application after changing the key.
+### Per-Character Voice Configuration
 
-### Listing and Using Voices
-MonsterBox fetches the list of available voices and displays them in the "Configure Voice" interface. Users can filter by gender, style, accent, and age, and preview each voice with different styles (e.g., neutral, happy, sad).
+Each character can have its own voice settings stored in `data/character-{N}/ai-config/tts-config.json`:
 
-#### Sample Code: Fetching Voices (Frontend)
-```js
-// scripts/voiceSelector.js (excerpt)
-async loadVoices() {
-    try {
-        this.showLoading('Loading voices...');
-        const response = await fetch('/api/voice/available');
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to load voices');
-        }
-        const voices = await response.json();
-        this.voices = voices;
-        this.populateVoiceTable();
-        await this.loadRecentlyUsed();
-    } catch (error) {
-        console.error('Error loading voices:', error);
-        this.showError('Failed to load voices: ' + error.message);
-    } finally {
-        this.hideLoading();
-    }
+```json
+{
+  "model": "eleven_flash_v2_5",
+  "voice_id": "21m00Tcm4TlvDq8ikWAM",
+  "stability": 0.5,
+  "similarity_boost": 0.75,
+  "style": 0,
+  "output_format": "mp3_44100_128"
 }
 ```
 
-#### Filtering for TTS Capabilities
-```js
-// scripts/voiceSelector.js (excerpt)
-getVoiceStyles(voice) {
-    const baseStyles = ['neutral'];
-    if (voice.capabilities && voice.capabilities['tts.vox_2_0']) {
-        baseStyles.push('happy', 'sad', 'angry', 'fearful');
-    }
-    return baseStyles;
-}
+The system loads per-character config via `aiConfigStore.getTTSConfigForCharacter(characterId)`, falling back to the global config at `data/ai-config/tts-config.json`.
+
+### Voice Catalog
+
+Browse available voices at `/ai-management/tts`. The UI fetches voices from ElevenLabs and displays them with filters for gender, language, and accent. Each voice can be previewed before assignment to a character.
+
+### TTS Quick Test
+
+```bash
+curl -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello from MonsterBox","characterId":3}'
 ```
 
-#### Generating Speech (Preview)
-```js
-// scripts/voiceSelector.js (excerpt)
-async generatePreview(style = 'neutral') {
-    try {
-        this.showLoading('Generating preview...');
-        const previewText = document.querySelector('#previewText').value;
-        const speakerId = this.currentPreviewVoice.speaker_id;
-        if (!speakerId) throw new Error('No valid speaker ID found for this voice');
-        const response = await fetch('/api/voice/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                speaker_id: speakerId,
-                text: previewText,
-                style,
-                characterId: this.characterId,
-                options: {
-                    speed: parseFloat(document.querySelector('#speed').value),
-                    pitch: parseInt(document.querySelector('#pitch').value),
-                    volume: parseInt(document.querySelector('#volume').value)
-                }
-            })
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to generate preview');
-        }
-        const data = await response.json();
-        this.lastGeneratedAudio = data;
-        // Play the audio preview...
-    } catch (error) {
-        // Handle errors
-    } finally {
-        this.hideLoading();
-    }
-}
-```
+### STT Quick Test
 
-### Typical Workflow
-1. Go to "Configure Voice" in the MonsterBox web UI.
-2. Browse and filter available voices (fetched from ElevenLabs).
-3. Preview voices with different styles and settings.
-4. Assign a selected voice to a character or scene.
-5. When a scene is played, MonsterBox generates and plays the TTS audio using the selected voice.
+```bash
+# Check STT capabilities
+curl http://localhost:3000/api/elevenlabs/stt/capabilities
+
+# Transcribe a file
+curl -X POST http://localhost:3000/api/elevenlabs/stt/transcribe \
+  -F "file=@audio.wav"
+```
 
 ### Security Note
-Never share your ElevenLabs API key publicly. The example above is for documentation only. Always use your own key and keep it secret.
+
+Never share your ElevenLabs API key publicly. Store it securely and restrict file permissions.
+
+### More Information
+
+See [ELEVENLABS_INTEGRATION.md](ELEVENLABS_INTEGRATION.md) for full architecture details.

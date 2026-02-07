@@ -1,269 +1,146 @@
-# ElevenLabs Conversational AI Integration
+# ElevenLabs Integration
 
 ## Overview
 
-This document outlines the complete integration of ElevenLabs Conversational AI into MonsterBox, replacing the legacy three-API system (OpenAI Whisper STT + ChatGPT + TopMediai TTS) with a unified ElevenLabs solution.
+MonsterBox uses **ElevenLabs** as its sole AI voice provider, replacing the legacy three-API system (OpenAI Whisper STT + ChatGPT + TopMediai TTS) with a unified ElevenLabs solution.
 
-## Architecture Changes
+## Architecture
 
-### Before (Legacy System)
-```
-User Input → OpenAI Whisper STT → ChatGPT AI → TopMediai TTS → Audio Output
-```
-
-### After (ElevenLabs Integration)
 ```
 User Input → ElevenLabs Conversational AI → Audio Output
            ↓
-    Real-time WebSocket Connection
+    Real-time WebSocket Connection (port 8795)
            ↓
-    Integrated STT + AI + TTS
+    Integrated STT + AI Agent + TTS
 ```
 
-## Updated Components
+### Services
+| Service | File | Purpose |
+|---------|------|---------|
+| TTS | `services/elevenLabsTTSService.js` | Voice synthesis via REST API |
+| STT (batch) | `services/elevenLabsSTTService.js` | File-based transcription |
+| STT (realtime) | `services/elevenLabsRealtimeSTTService.js` | WebSocket streaming STT |
+| WebSocket | `services/elevenLabsWebSocketService.js` | Conversation bridge (port 8795) |
+| Config | `services/aiConfigStore.js` | Per-character AI config management |
+| Playback | `services/serverPlaybackService.js` | Audio playback on character speakers |
+| Server Mic | `services/serverSTTListener.js` | PipeWire microphone input for STT |
 
-### 1. AI Management Dashboard (`/ai-management`)
-- **Title**: ElevenLabs Conversational AI Dashboard
-- **Status Monitoring**: ElevenLabs service status instead of separate STT/AI/TTS
-- **Navigation**: Updated links to ElevenLabs-specific pages
-- **Test Functions**: Unified ElevenLabs testing instead of separate API tests
+## Models
 
-### 2. Voice Activity Detection (`/ai-management/stt`)
-- **Renamed From**: Speech-to-Text Configuration
-- **Purpose**: Configure ElevenLabs voice activity detection
-- **Settings**:
-  - VAD Type (server_vad/client_vad)
-  - VAD Threshold (0.1-1.0)
-  - Prefix Padding (0-1000ms)
-  - Silence Duration (100-2000ms)
+| Service | Model ID | Description |
+|---------|----------|-------------|
+| TTS | `eleven_flash_v2_5` | Default — lowest latency (~75ms) |
+| TTS | `eleven_multilingual_v2` | High-quality, narration use cases |
+| STT | `scribe_v2` | Batch transcription, 90+ languages, keyterm prompting |
+| STT | `scribe_v2_realtime` | WebSocket streaming, ~150ms latency, VAD |
 
-### 3. ElevenLabs Agents (`/ai-management/agents`)
-- **Renamed From**: OpenAI Assistants Management
-- **Purpose**: Manage ElevenLabs conversational agents
-- **Features**:
-  - Agent creation and configuration
-  - Voice selection from ElevenLabs catalog
-  - Conversation starters preservation
-  - Character-specific agent assignments
+## Per-Character Configuration
 
-### 4. Voice Configuration (`/ai-management/voices`)
-- **Renamed From**: Text-to-Speech Configuration
-- **Purpose**: Configure ElevenLabs voice synthesis
-- **Settings**:
-  - Stability (0.0-1.0)
-  - Similarity (0.0-1.0)
-  - Style (0.0-1.0)
-  - Output Format (MP3/PCM variants)
-  - Model Selection (Multilingual v1/v2)
+Each character can have its own TTS and STT settings:
 
-### 5. Enhanced Test Chat (`/test-chat`)
-- **Integration**: ElevenLabs WebSocket connections
-- **Metrics**: Voice Input, Agent, Voice Output timing
-- **Features**: Real-time conversational AI testing
-
-### 6. Conversational AI Interface (`/conversational-ai`)
-- **Renamed From**: ChatterPi
-- **Purpose**: Main voice chat interface
-- **Features**: Character selection, voice controls, conversation starters
-
-## API Changes
-
-### New Endpoints
-
-#### ElevenLabs Status
 ```
-GET /ai-management/api/status
-Response: { success: true, status: { elevenlabs: {...} } }
+data/character-{N}/ai-config/
+├── tts-config.json    # voice_id, model, stability, similarity
+└── stt-config.json    # model, language, sample rate, VAD
 ```
 
-#### ElevenLabs Testing
-```
-POST /ai-management/api/test/elevenlabs
-POST /ai-management/api/test/voices  
-POST /ai-management/api/test/conversation
-```
+Loaded via `aiConfigStore.getTTSConfigForCharacter(characterId)` with fallback to global `data/ai-config/tts-config.json`.
 
-#### Voice Management
-```
-GET /ai-management/api/elevenlabs/voices
-POST /ai-management/api/elevenlabs/global
-POST /ai-management/api/vad/config
-```
+## UI Components
 
-### Removed Endpoints
-- `/ai-management/api/stt/*` (OpenAI Whisper)
-- `/ai-management/api/tts/*` (TopMediai)
-- Separate AI personality endpoints
+| Route | Purpose |
+|-------|---------|
+| `/ai-management` | Main dashboard with ElevenLabs status |
+| `/ai-management/stt` | STT configuration (model, language, VAD, audio filters) |
+| `/ai-management/agents` | ElevenLabs Agent management and character assignment |
+| `/ai-management/tts` | TTS voice configuration (model, voice, stability, similarity) |
+| `/conversation` | Real-time voice chat interface |
 
-## Configuration Changes
+## API Endpoints
 
-### Environment Variables
+### TTS
 ```bash
-# Required
+# Generate speech and play on character speaker
+curl -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello","characterId":3}'
+
+# List voices
+curl http://localhost:3000/api/elevenlabs/voices
+```
+
+### STT
+```bash
+# Capabilities
+curl http://localhost:3000/api/elevenlabs/stt/capabilities
+
+# Transcribe audio file
+curl -X POST http://localhost:3000/api/elevenlabs/stt/transcribe \
+  -F "file=@audio.wav"
+
+# Realtime STT status
+curl http://localhost:3000/api/elevenlabs/stt/realtime/status
+```
+
+### Service Status
+```bash
+curl http://localhost:3000/ai-management/api/status
+```
+
+## Environment Variables
+
+```bash
+# Required — ElevenLabs API key
 ELEVENLABS_API_KEY=xi_your_api_key_here
-
-# Optional (legacy keys no longer needed)
-# OPENAI_API_KEY=sk_...
-# TOPMEDIAI_API_KEY=...
 ```
 
-### Configuration Files
-- `data/ai-config/vad-config.json` - Voice Activity Detection settings
-- `data/ai-config/elevenlabs-config.json` - Global ElevenLabs settings
-- Character configurations updated with ElevenLabs agent IDs
+The key can also be stored at `/etc/monsterbox/elevenlabs.key` (created by `install.sh`).
 
-## Terminology Changes
+## Speech Pipeline
 
-### UI Labels
-| Old Term | New Term |
-|----------|----------|
-| ChatterPi | Conversational AI / Voice Chat |
-| Speech-to-Text | Voice Activity Detection |
-| AI Personalities | ElevenLabs Agents |
-| Text-to-Speech | Voice Configuration |
-| STT/AI/TTS Pipeline | ElevenLabs Conversational AI |
+All speech paths use direct service calls:
 
-### Route Changes
-| Old Route | New Route |
-|-----------|-----------|
-| `/chatterpi` | `/conversational-ai` |
-| `/ai-management/stt` | `/ai-management/stt` (updated content) |
-| `/ai-management/assistants` | `/ai-management/agents` |
-| `/ai-management/tts` | `/ai-management/voices` |
+```javascript
+// Generate TTS audio buffer
+const { buffer } = await elevenLabsTTSService.generateSpeech(text, ttsConfig);
 
-### File Renames
-| Old File | New File |
-|----------|----------|
-| `routes/chatterPiRoutes.js` | `routes/conversationalAIRoutes.js` |
-| `views/chatterpi.ejs` | `views/conversational-ai.ejs` |
-| `public/js/chatterpi.js` | `public/js/conversational-ai.js` |
+// Play on character's assigned speaker
+await serverPlaybackService.playAIOnCharacterSpeaker(buffer, characterId);
 
-## Testing
-
-### Comprehensive Test Suite
-Run the complete ElevenLabs integration tests:
-```bash
-./scripts/test-elevenlabs-integration.sh
+// Drive jaw animation (parallel)
+jawAnimationService.driveFromBuffer(buffer, characterId);
 ```
 
-### Test Coverage
-- ✅ AI Management Dashboard functionality
-- ✅ Voice Activity Detection configuration
-- ✅ ElevenLabs Agents management
-- ✅ Voice Configuration settings
-- ✅ Enhanced Test Chat interface
-- ✅ Conversational AI route integration
-- ✅ API endpoint functionality
-- ✅ Backward compatibility
+This applies to:
+- `/api/say` (make character speak)
+- `/api/ask-ai` (AI conversation → TTS response)
+- Scene `sayThis` steps
+- Scene `askAI` steps (via `elevenLabsWebSocketService.askAgentQuestion()`)
 
-### Manual Testing Checklist
-1. **Dashboard Access**: Navigate to `/ai-management`
-2. **Service Status**: Verify ElevenLabs connection status
-3. **Agent Creation**: Create new ElevenLabs agent
-4. **Voice Selection**: Choose voice from ElevenLabs catalog
-5. **Conversation Test**: Test real-time conversation
-6. **Character Switching**: Verify character-specific agents
-7. **Settings Persistence**: Confirm configuration saves
+## Conversation Flow
 
-## Migration Guide
+### WebSocket Conversation (port 8795)
+1. Browser connects to `ws://host:8795`
+2. Server streams microphone audio via PipeWire
+3. Audio sent to Scribe v2 Realtime for streaming STT
+4. Transcribed text sent to ElevenLabs Agent
+5. Agent response streamed back as TTS audio
+6. Audio played on character speaker with jaw animation
 
-### For Existing Installations
-
-1. **Update Environment Variables**:
-   ```bash
-   # Add to .env
-   ELEVENLABS_API_KEY=xi_your_api_key_here
-   ```
-
-2. **Update Navigation Links**:
-   - Update any bookmarks from `/chatterpi` to `/conversational-ai`
-   - AI management links automatically redirect
-
-3. **Character Configuration**:
-   - Existing characters preserved
-   - AI personalities migrated to ElevenLabs agents
-   - Voice assignments updated to ElevenLabs voices
-
-4. **Test Integration**:
-   ```bash
-   # Run integration tests
-   ./scripts/test-elevenlabs-integration.sh
-   ```
-
-### Breaking Changes
-- OpenAI Whisper STT configuration no longer used
-- TopMediai TTS settings replaced with ElevenLabs voice settings
-- ChatterPi terminology replaced throughout UI
-- WebSocket connections now use ElevenLabs service
-
-### Backward Compatibility
-- Existing character data preserved
-- Conversation starters maintained
-- Character switching functionality retained
-- Jaw animation integration continues to work
+### Fallback (batch STT)
+If Realtime STT is unavailable, falls back to batch Scribe v2 polling.
 
 ## Troubleshooting
 
 ### Common Issues
-
-1. **ElevenLabs API Key Not Working**
-   - Verify key format: `xi_...`
-   - Check API key permissions
-   - Confirm account has sufficient credits
-
-2. **Voice Loading Issues**
-   - Check internet connection
-   - Verify ElevenLabs service status
-   - Review browser console for errors
-
-3. **WebSocket Connection Failed**
-   - Confirm ElevenLabs service is running
-   - Check firewall settings
-   - Verify port 8771 is available
-
-4. **Character Switching Not Working**
-   - Verify character has assigned ElevenLabs agent
-   - Check agent configuration
-   - Review character service logs
+1. **API Key Not Working** — Verify format `xi_...`, check account credits
+2. **Voice Not Playing** — Check PipeWire routing: `wpctl status`, `pactl list short sinks`
+3. **STT Silent** — Verify microphone: `pactl list short sources`, check character mic assignment
+4. **WebSocket Connection Failed** — Check port 8795 availability, check logs
 
 ### Debug Commands
 ```bash
-# Check service status
+journalctl -u monsterbox -f
 curl http://localhost:3000/ai-management/api/status
-
-# Test ElevenLabs connection
-curl -X POST http://localhost:3000/ai-management/api/test/elevenlabs
-
-# View application logs
-tail -f logs/app.log
+curl http://localhost:3000/api/elevenlabs/stt/capabilities
 ```
-
-## Future Enhancements
-
-### Planned Features
-- [ ] Multi-language conversation support
-- [ ] Voice cloning integration
-- [ ] Advanced emotion detection
-- [ ] Custom voice training
-- [ ] Conversation analytics
-- [ ] Real-time voice modulation
-
-### Integration Opportunities
-- [ ] Character-specific voice profiles
-- [ ] Emotion-based animation triggers
-- [ ] Advanced conversation flows
-- [ ] Multi-character conversations
-- [ ] Voice-driven scene changes
-
-## Support
-
-For issues related to ElevenLabs integration:
-1. Check the test suite results
-2. Review the troubleshooting section
-3. Examine application logs
-4. Verify ElevenLabs service status
-5. Test with minimal configuration
-
-## Conclusion
-
-The ElevenLabs Conversational AI integration provides a unified, streamlined approach to voice-based character interaction in MonsterBox. By replacing the complex three-API system with a single, powerful service, we've improved reliability, reduced latency, and enhanced the overall user experience while maintaining full backward compatibility with existing character configurations.

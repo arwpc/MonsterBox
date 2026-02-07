@@ -279,8 +279,8 @@ else
     print_warning "scripts/tune-mjpg.sh not found; skipping mjpg-streamer tuning"
 fi
 
-# 16. Configure ElevenLabs API Key (optional via env)
-print_status "Configuring ElevenLabs API key (if provided)..."
+# 16. Configure ElevenLabs AI (required for STT, TTS, Conversational AI)
+print_status "Configuring ElevenLabs AI..."
 
 # Accept either ELEVENLABS_API_KEY or XI_API_KEY from the environment
 ELEVEN_KEY="${ELEVENLABS_API_KEY:-$XI_API_KEY}"
@@ -294,6 +294,40 @@ if [ -n "$ELEVEN_KEY" ]; then
 else
     print_warning "No ELEVENLABS_API_KEY (or XI_API_KEY) found in environment. You can set it later with:"
     echo "    sudo mkdir -p /etc/monsterbox && echo -n 'sk_...' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key"
+fi
+
+# Provision default AI config (TTS: eleven_flash_v2_5, STT: scribe_v2)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AI_CONFIG_DIR="$REPO_DIR/data/ai-config"
+mkdir -p "$AI_CONFIG_DIR"
+
+if [ ! -f "$AI_CONFIG_DIR/tts-config.json" ]; then
+    cat > "$AI_CONFIG_DIR/tts-config.json" << 'TTSCFG'
+{
+  "model": "eleven_flash_v2_5",
+  "voice_id": "",
+  "stability": 0.5,
+  "similarity_boost": 0.75,
+  "style": 0,
+  "output_format": "mp3_44100_128"
+}
+TTSCFG
+    print_success "Created default TTS config (eleven_flash_v2_5)"
+fi
+
+if [ ! -f "$AI_CONFIG_DIR/stt-config.json" ]; then
+    cat > "$AI_CONFIG_DIR/stt-config.json" << 'STTCFG'
+{
+  "model": "scribe_v2",
+  "language": "en",
+  "sampleRate": 16000,
+  "audioFilterEnabled": true,
+  "vadEnabled": true,
+  "vadThreshold": 0.3,
+  "vadSilenceDuration": 500
+}
+STTCFG
+    print_success "Created default STT config (scribe_v2)"
 fi
 
 

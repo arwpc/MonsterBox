@@ -403,17 +403,7 @@ STTManager.prototype.bindEvents = function () {
     if (modelSelect) {
         modelSelect.addEventListener('change', function () {
             var m = modelSelect.value;
-            if (m === 'scribe_v2') {
-                // Scribe v2 supports all languages; keep current language selection
-                self.savePartialConfig({ model: m });
-            } else if (m === 'scribe_english_v1') {
-                // Legacy: force English
-                var langSelect2 = document.getElementById('sttLanguage');
-                if (langSelect2) { langSelect2.value = 'en'; }
-                self.savePartialConfig({ model: m, language: 'en' });
-            } else {
-                self.savePartialConfig({ model: m });
-            }
+            self.savePartialConfig({ model: m });
         });
     }
     var langSelect = document.getElementById('sttLanguage');

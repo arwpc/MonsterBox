@@ -32,12 +32,6 @@ class ElevenLabsSTTService {
                         name: 'Scribe v2 Realtime',
                         description: 'Real-time streaming STT with ~150ms latency, VAD, and word-level timestamps. 90+ languages.',
                         languages: ['auto', 'en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh', 'ja', 'hu', 'ko']
-                    },
-                    {
-                        id: 'scribe_v1',
-                        name: 'Scribe v1 (Legacy)',
-                        description: 'First-generation STT model. Superseded by Scribe v2.',
-                        languages: ['auto', 'en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh', 'ja', 'hu', 'ko']
                     }
                 ],
                 supportedFormats: ['wav', 'mp3', 'm4a', 'flac', 'ogg', 'webm'],
@@ -76,17 +70,9 @@ class ElevenLabsSTTService {
                 contentType: mimeType
             });
 
-            // Map English-only alias to actual model and enforce language
+            // Use scribe_v2 as default
             var modelToSend = options.model || 'scribe_v2';
             var langToSend = options.language;
-            // Map legacy model aliases
-            if (modelToSend === 'scribe_english_v1') {
-                modelToSend = 'scribe_v2';
-                if (!langToSend || langToSend === 'auto') langToSend = 'en';
-            } else if (modelToSend === 'scribe_v1') {
-                // Upgrade legacy scribe_v1 to scribe_v2
-                modelToSend = 'scribe_v2';
-            }
 
             // ALWAYS log what we're sending to ElevenLabs
             console.log(`🎙️ STT Request: model_id="${modelToSend}", language_code="${langToSend || 'NOT SET'}", bytes=${audioBuffer.length}, mimeType="${mimeType}", filename="${filename}"`);

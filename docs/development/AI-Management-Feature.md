@@ -2,46 +2,48 @@
 
 ## Overview
 
-The AI Management Feature provides a comprehensive, centralized interface for configuring and managing all AI systems within MonsterBox. This feature integrates core AI components to enable complete character interactions:
+The AI Management Feature provides a centralized interface for configuring and managing all AI systems within MonsterBox. All AI voice services run through **ElevenLabs** as the sole provider:
 
-1. **Speech-to-Text (STT)** - ElevenLabs Speech-to-Text API
-2. **AI Personalities** - ElevenLabs Conversational AI with character-specific configurations
-3. **Text-to-Speech (TTS)** - ElevenLabs voice synthesis with full voice catalog
+1. **Speech-to-Text (STT)** — ElevenLabs Scribe v2 (batch) and Scribe v2 Realtime (WebSocket streaming)
+2. **Conversational AI** — ElevenLabs Agents with per-character personalities
+3. **Text-to-Speech (TTS)** — ElevenLabs voice synthesis with per-character voice and model config
+
+## Current Models
+
+| Service | Model ID | Use Case |
+|---------|----------|----------|
+| TTS | `eleven_flash_v2_5` | Default — fastest (~75ms latency) |
+| TTS | `eleven_multilingual_v2` | High-quality narration |
+| STT | `scribe_v2` | File-based/batch transcription |
+| STT | `scribe_v2_realtime` | Real-time streaming via WebSocket (~150ms latency) |
 
 ## Features
 
 ### 🎤 Speech-to-Text Configuration
-- **OpenAI Whisper Integration**: Configure API keys, model selection, and language preferences
-- **Audio Quality Settings**: Adjust confidence thresholds, chunk duration, and timeout configurations
+- **ElevenLabs Scribe v2**: Configure model, language, and audio quality settings
+- **Realtime STT**: WebSocket-based streaming with VAD (Voice Activity Detection)
+- **Audio Filters**: Highpass/lowpass filters, denoise, and VAD tuning for noisy environments
 - **Live Testing**: Real-time audio recording and transcription testing with confidence metrics
-- **Fallback Support**: System STT fallback when OpenAI services are unavailable
+- **Server-side Microphone**: Uses PipeWire audio input, not browser `getUserMedia`
 
-### 🧠 AI Personality Management
-- **Multi-Provider Support**: OpenAI, Anthropic, and Google AI integration
-- **Per-Character Configuration**: Individual AI settings for each character including:
-  - Model selection (GPT-4, GPT-3.5, Claude 3, Gemini Pro)
-  - Temperature and creativity controls
-  - Maximum token limits
-  - Custom system prompts and personality definitions
-  - Conversation context length
-- **Global Defaults**: Set system-wide AI configuration defaults
-- **Real-time Testing**: Test AI responses with different characters and prompts
+### 🧠 Conversational AI Agents
+- **ElevenLabs Agents**: Per-character conversational AI with custom personalities
+- **Agent Management**: Create, configure, and assign agents to characters
+- **Voice Selection**: Choose from ElevenLabs voice catalog per agent
+- **Conversation Starters**: Configure per-character conversation prompts
+- **Real-time Chat**: WebSocket conversation on port 8795 with barge-in support
 
 ### 🔊 Text-to-Speech Configuration
-- **TopMediaAI Integration**: Full access to 100+ voice catalog
-- **Voice Assignment**: Character-specific voice selection with preview functionality
-- **Advanced Voice Settings**: Speed, pitch, volume, emotion, and audio format controls
-- **Voice Catalog Browser**: Searchable and filterable voice selection with:
-  - Gender, language, and accent filters
-  - VIP, free, new, and trending voice categories
-  - Real-time voice preview with custom text
-- **Audio Testing**: Generate and test speech with immediate playback
+- **Per-Character Voice**: Each character has its own TTS model, voice, stability, and similarity settings
+- **Voice Catalog**: Browse and preview ElevenLabs voices with filtering
+- **Model Selection**: `eleven_flash_v2_5` (fast) or `eleven_multilingual_v2` (quality)
+- **Advanced Settings**: Stability, similarity boost, style, output format
+- **Audio Testing**: Generate and test speech with immediate playback on character's speaker
 
-### 🔄 Unified Pipeline Management
-- **Complete Workflow Testing**: End-to-end STT → AI → TTS pipeline testing
-- **System Status Monitoring**: Real-time status of all AI components
-- **Performance Metrics**: Response times, success rates, and error tracking
-- **Configuration Management**: Import/export AI settings for backup and sharing
+### 🔄 Per-Character Configuration
+- **Config Storage**: `data/character-{N}/ai-config/tts-config.json` and `stt-config.json`
+- **Global Fallback**: `data/ai-config/tts-config.json` used when no per-character config exists
+- **Service**: `aiConfigStore.getTTSConfigForCharacter(characterId)` loads per-character or global config
 
 ## Navigation
 
@@ -49,125 +51,112 @@ Access the AI Management Feature through:
 - **Main Menu**: "🤖 AI Management" button on the home page
 - **Character Pages**: "Configure Voice" button opens TTS configuration for that character
 - **Direct URLs**:
-  - `/ai-management` - Main dashboard
-  - `/ai-management/stt` - Speech-to-Text configuration
-  - `/ai-management/personalities` - AI Personality management
-  - `/ai-management/tts` - Text-to-Speech configuration
+  - `/ai-management` — Main dashboard
+  - `/ai-management/stt` — STT configuration
+  - `/ai-management/agents` — ElevenLabs Agent management
+  - `/ai-management/tts` — TTS voice configuration
 
-## Integration with Existing Systems
+## Integration with Animatronic Systems
 
-### ChatterPi Compatibility
-- Maintains backward compatibility with existing ChatterPi AI configurations
-- Existing character voice assignments are preserved and enhanced
-- ChatterPi chat interface continues to work with new AI configurations
+### Speech Pipeline
+All speech paths use direct service calls (no HTTP loopback):
+```
+Text → elevenLabsTTSService.generateSpeech() → serverPlaybackService.playAIOnCharacterSpeaker()
+                                              → jawAnimationService.driveFromBuffer() (parallel)
+```
 
-### Character Management Integration
-- Character-specific AI and voice settings are stored with character data
-- "Configure Voice" buttons throughout the interface link to the new TTS configuration
-- AI instance assignments work seamlessly with the new personality management
+### Scene Execution
+- **Say This** steps: Use `getTTSConfigForCharacter(characterId)` for per-character voice
+- **Ask AI** steps: Call `elevenLabsWebSocketService.askAgentQuestion()` for real conversational AI responses, then TTS the reply
+- **Jaw Animation**: Driven from audio buffer in parallel with playback
 
-### Hardware Integration
-- Voice configurations integrate with existing servo animation systems
-- Audio output works with existing speaker and hardware configurations
-- Real-time jaw animation continues to work with TTS output
+### Conversation Route (`/api/ask-ai`)
+- Direct `elevenLabsTTSService.generateSpeech()` + `serverPlaybackService.playAIOnCharacterSpeaker()`
+- No HTTP loopback — uses imported service modules directly
+- Per-character TTS config for voice selection
 
 ## Configuration Files
 
-AI configurations are stored in `/data/ai-config/`:
-- `stt-config.json` - Speech-to-Text settings
-- `personalities-config.json` - AI personality global settings
-- `tts-config.json` - Text-to-Speech global settings
-
-Character-specific AI configurations are stored within character data files.
+AI configurations are stored in:
+- `data/ai-config/stt-config.json` — Global STT settings
+- `data/ai-config/tts-config.json` — Global TTS settings
+- `data/ai-config/elevenlabs-config.json` — Global ElevenLabs settings
+- `data/ai-config/vad-config.json` — Voice Activity Detection settings
+- `data/character-{N}/ai-config/tts-config.json` — Per-character TTS settings
+- `data/character-{N}/ai-config/stt-config.json` — Per-character STT settings
 
 ## API Endpoints
 
 ### STT API
-- `GET /ai-management/api/stt/status` - Check STT system status
-- `POST /ai-management/api/stt/config` - Save STT configuration
-- `POST /ai-management/api/stt/test` - Test STT connection
-- `POST /ai-management/api/stt/transcribe` - Transcribe audio file
-
-### AI Personalities API
-- `POST /ai-management/api/personalities/global` - Save global AI settings
-- `GET /ai-management/api/personalities/character/:id` - Get character AI config
-- `POST /ai-management/api/personalities/character/:id` - Save character AI config
-- `POST /ai-management/api/personalities/test` - Test AI response
+- `GET /api/elevenlabs/stt/capabilities` — List STT models and capabilities
+- `POST /api/elevenlabs/stt/transcribe` — Transcribe audio file
+- `GET /api/elevenlabs/stt/realtime/status` — Realtime STT session status
+- `GET /api/elevenlabs/stt/realtime/capabilities` — Realtime STT capabilities
 
 ### TTS API
-- `POST /ai-management/api/tts/global` - Save global TTS settings
-- `POST /ai-management/api/tts/save-all` - Save all voice assignments
+- `POST /api/elevenlabs/generate-and-play` — Generate speech and play on character speaker
+- `GET /api/elevenlabs/voices` — List available voices
+- `POST /ai-management/api/tts/global` — Save global TTS settings
 
-### Testing API
-- `POST /ai-management/api/test/stt` - Test STT system
-- `POST /ai-management/api/test/ai` - Test AI system
-- `POST /ai-management/api/test/tts` - Test TTS system
-- `POST /ai-management/api/test/pipeline` - Test complete pipeline
+### Agent API
+- `GET /ai-management/api/agents` — List configured agents
+- `POST /ai-management/api/agents` — Create/update agent
+- `POST /ai-management/api/test/conversation` — Test conversation with agent
 
-### Configuration Management
-- `GET /ai-management/api/export` - Export all AI configurations
-- `POST /ai-management/api/import` - Import AI configurations from file
+### Status API
+- `GET /ai-management/api/status` — ElevenLabs service status
+- `POST /ai-management/api/test/elevenlabs` — Test ElevenLabs connection
 
 ## Environment Variables
 
-Required environment variables:
 ```bash
-OPENAI_API_KEY=sk-your-openai-api-key-here
-TOPMEDIAI_API_KEY=your-topmediai-api-key-here
-```
+# Required
+ELEVENLABS_API_KEY=xi_your_api_key_here
 
-Optional environment variables:
-```bash
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
-GOOGLE_API_KEY=your-google-ai-api-key-here
+# Optional (for text AI fallback providers)
+ANTHROPIC_API_KEY=your-anthropic-key
+GOOGLE_API_KEY=your-google-key
 ```
 
 ## Usage Examples
 
 ### Setting Up a New Character
 1. Create character in Characters section
-2. Navigate to AI Management → AI Personalities
-3. Configure character's AI personality and behavior
+2. Navigate to AI Management → Agents
+3. Create or assign an ElevenLabs conversational agent
 4. Navigate to AI Management → TTS
-5. Assign voice from TopMediaAI catalog
-6. Test complete pipeline with AI Management → Dashboard
+5. Select voice from ElevenLabs catalog and configure model (`eleven_flash_v2_5`)
+6. Test with conversation interface
 
 ### Testing Voice Configuration
 1. Go to AI Management → TTS
 2. Select character and click "Configure"
-3. Browse voice catalog and select voice
-4. Adjust speed, pitch, volume settings
+3. Browse ElevenLabs voice catalog
+4. Adjust stability, similarity, style settings
 5. Preview voice with custom text
 6. Assign voice to character
-
-### Exporting Configuration
-1. Go to AI Management → Dashboard
-2. Click "Export Configuration"
-3. Download JSON file with all AI settings
-4. Use for backup or sharing between systems
 
 ## Troubleshooting
 
 ### Common Issues
-- **No API Key**: Ensure environment variables are set correctly
-- **Voice Not Playing**: Check browser audio permissions and speaker configuration
-- **STT Not Working**: Verify microphone permissions and OpenAI API key
-- **AI Responses Failing**: Check API key validity and network connectivity
+- **No API Key**: Set `ELEVENLABS_API_KEY` in environment or `/etc/monsterbox/elevenlabs.key`
+- **Voice Not Playing**: Check PipeWire audio routing and character speaker assignment
+- **STT Not Working**: Verify microphone is assigned to character, check PipeWire source
+- **AI Responses Failing**: Verify ElevenLabs agent is configured and assigned to character
 
-### Error Messages
-- "No API key configured": Set required environment variables
-- "Voice catalog failed to load": Check TopMediaAI API key and network
-- "Character not found": Ensure character exists in Characters section
-- "Configuration save failed": Check file permissions in data directory
+### Debug Commands
+```bash
+# Check ElevenLabs status
+curl http://localhost:3000/ai-management/api/status
 
-## Future Enhancements
+# Test TTS
+curl -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Test","characterId":3}'
 
-Planned improvements:
-- Real-time voice cloning integration
-- Advanced emotion and style controls
-- Multi-language conversation support
-- Voice training and customization
-- Advanced AI model fine-tuning
-- Integration with additional TTS providers
-- Voice morphing and effects
-- Conversation memory and context persistence
+# Check STT capabilities
+curl http://localhost:3000/api/elevenlabs/stt/capabilities
+
+# App logs
+journalctl -u monsterbox -f
+```

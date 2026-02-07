@@ -12,8 +12,8 @@ Conversation testing ensures AI character interactions are natural, contextually
 - **Conversation Flow**: Smooth dialogue progression
 
 ### 2. Voice Synthesis Testing
-- **TopMediai Integration**: Voice generation quality and reliability
-- **Character Voice Matching**: Appropriate voice selection for each character
+- **ElevenLabs TTS**: Voice generation quality and reliability (`eleven_flash_v2_5`)
+- **Character Voice Matching**: Per-character voice selection via `getTTSConfigForCharacter()`
 - **Audio Quality**: Clear and natural-sounding speech
 
 ### 3. Jaw Animation Synchronization
@@ -147,7 +147,7 @@ python3 scripts/character_ai_system.py
    - Character personality inconsistencies
 
 2. **Voice Synthesis Issues**
-   - TopMediai API problems
+   - ElevenLabs API key or credits
    - Voice selection errors
    - Audio quality problems
 

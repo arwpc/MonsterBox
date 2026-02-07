@@ -41,9 +41,9 @@ We have successfully created the most comprehensive test automation framework th
 - ✅ **Lights**: Pin setup, brightness controls, on/off operations, dimming
 
 #### AI Management Deep Testing (`03-ai-management-deep.spec.js`)
-- ✅ OpenAI configuration and API testing
-- ✅ Anthropic Claude configuration
-- ✅ TopMediai TTS configuration and voice testing (2000+ voices)
+- ✅ ElevenLabs TTS configuration and voice testing
+- ✅ ElevenLabs STT configuration (Scribe v2)
+- ✅ ElevenLabs Agent management and assignment
 - ✅ AI instance management (CRUD operations)
 - ✅ Character-AI assignment workflows
 - ✅ AI chat interface and message handling
@@ -54,7 +54,7 @@ We have successfully created the most comprehensive test automation framework th
 - ✅ Audio file upload (MP3/WAV validation, file size limits)
 - ✅ Playback controls (Play/pause/stop, volume controls)
 - ✅ Sound library organization and management
-- ✅ TopMediai TTS integration and WAV format support
+- ✅ ElevenLabs TTS integration and audio format support
 - ✅ Sound assignment to characters and scenes
 - ✅ Audio quality and format validation
 - ✅ Real-time audio processing and streaming
@@ -64,7 +64,7 @@ We have successfully created the most comprehensive test automation framework th
 - ✅ Jaw animation system with servo control (GPIO 18, closed=50°, open=30°)
 - ✅ WebSocket communication (ports 8765, 8767)
 - ✅ Audio processing and voice integration
-- ✅ AI integration with OpenAI and character responses
+- ✅ AI integration with ElevenLabs agents and character responses
 - ✅ TTS integration and voice synthesis
 - ✅ Advanced audio settings and configuration
 - ✅ Error handling and recovery
