@@ -1,5 +1,5 @@
 {
-  "model": "scribe_english_v1",
+  "model": "scribe_v2",
   "language": "en",
   "format": "wav",
   "sampleRate": 16000,

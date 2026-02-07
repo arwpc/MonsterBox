@@ -246,7 +246,7 @@ TTSManager.prototype.saveConfiguration = function () {
     config.style = parseFloat(config.style || '0');
     config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
     config.voice_id = config.defaultVoice || '';
-    config.model = config.ttsModel || config.model || 'eleven_monolingual_v1';
+    config.model = config.ttsModel || config.model || 'eleven_flash_v2_5';
 
     fetch('/api/elevenlabs/tts/config', {
         method: 'POST',
@@ -450,7 +450,7 @@ TTSManager.prototype.previewVoice = function (voiceId) {
     var requestData = {
         text: previewText,
         voice_id: voiceId,
-        model: document.getElementById('ttsModel').value || 'eleven_monolingual_v1',
+        model: document.getElementById('ttsModel').value || 'eleven_flash_v2_5',
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.5,

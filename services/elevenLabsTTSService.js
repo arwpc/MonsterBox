@@ -100,7 +100,7 @@ class ElevenLabsTTSService {
 
             const requestData = {
                 text: text,
-                model_id: options.model || 'eleven_monolingual_v1',
+                model_id: options.model || 'eleven_flash_v2_5',
                 voice_settings: {
                     stability: (options.stability !== undefined ? options.stability : 0.5),
                     similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
@@ -147,7 +147,7 @@ class ElevenLabsTTSService {
         try {
             const requestData = {
                 text: text,
-                model_id: options.model || 'eleven_monolingual_v1',
+                model_id: options.model || 'eleven_flash_v2_5',
                 voice_settings: {
                     stability: (options.stability !== undefined ? options.stability : 0.5),
                     similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
@@ -287,7 +287,7 @@ class ElevenLabsTTSService {
     getTTSConfig(useCase = 'conversation') {
         const configs = {
             conversation: {
-                model: 'eleven_monolingual_v1',
+                model: 'eleven_flash_v2_5',
                 stability: 0.5,
                 similarity_boost: 0.5,
                 style: 0.0,
@@ -301,7 +301,7 @@ class ElevenLabsTTSService {
                 use_speaker_boost: false
             },
             character: {
-                model: 'eleven_monolingual_v1',
+                model: 'eleven_flash_v2_5',
                 stability: 0.3,
                 similarity_boost: 0.7,
                 style: 0.5,

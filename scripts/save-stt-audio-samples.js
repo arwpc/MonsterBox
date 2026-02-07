@@ -173,7 +173,7 @@ async function listSamples() {
         console.log(`\nTo test a sample with ElevenLabs API:`);
         console.log(`  curl -X POST "https://api.elevenlabs.io/v1/speech-to-text" \\`);
         console.log(`    -H "xi-api-key: $(cat /etc/monsterbox/elevenlabs.key)" \\`);
-        console.log(`    -F "model_id=scribe_v1" \\`);
+        console.log(`    -F "model_id=scribe_v2" \\`);
         console.log(`    -F "language_code=en" \\`);
         console.log(`    -F "file=@${SAMPLE_DIR}/FILENAME.wav"`);
         

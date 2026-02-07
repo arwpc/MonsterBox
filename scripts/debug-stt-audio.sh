@@ -144,7 +144,7 @@ if [ -f /etc/monsterbox/elevenlabs.key ]; then
         echo "Sending test audio to ElevenLabs API..."
         RESPONSE=$(curl -s -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
             -H "xi-api-key: $API_KEY" \
-            -F "model_id=scribe_v1" \
+            -F "model_id=scribe_v2" \
             -F "language_code=en" \
             -F "file=@$TEST_FILE")
         

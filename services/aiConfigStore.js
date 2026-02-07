@@ -40,7 +40,7 @@ async function writeJson(file, data) {
 export async function getSTTConfig() {
   const raw = (await readJson('stt-config.json')) || {};
   return {
-    model: raw.model ?? 'scribe_v1',
+    model: raw.model ?? 'scribe_v2',
     language: raw.language ?? 'auto',
     format: raw.format ?? 'wav',
     sampleRate: typeof raw.sampleRate === 'number' ? raw.sampleRate : 16000,
@@ -72,7 +72,7 @@ export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
   const base = {
     voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
-    model: 'eleven_monolingual_v1',
+    model: 'eleven_flash_v2_5',
     stability: 0.5,
     similarity_boost: 0.5,
     style: 0.0,
@@ -120,7 +120,7 @@ export async function getTTSConfigForCharacter(characterId) {
       // include agent_id if specified for this character
       agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
       voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : 'Tj9l48J9AJbry5yCP5eW',
-      model: parsed.model || 'eleven_monolingual_v1',
+      model: parsed.model || 'eleven_flash_v2_5',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
       similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,
       style: typeof parsed.style === 'number' ? parsed.style : 0.0,

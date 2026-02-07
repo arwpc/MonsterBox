@@ -150,7 +150,7 @@ router.post('/stt/listen/start', requireElevenLabsConfig, async (req, res) => {
         const saved = await getSTTConfig();
         const body = req.body || {};
         const deviceId = body.deviceId || 'default';
-        const model = body.model || saved.model || 'scribe_v1';
+        const model = body.model || saved.model || 'scribe_v2';
         const language = body.language || saved.language || 'auto';
         const result = serverSTTListener.startSession({ deviceId, model, language });
         res.json(result);
@@ -208,7 +208,7 @@ router.post('/stt/testSample', requireElevenLabsConfig, async (req, res) => {
         // Use saved STT configuration for model/language
         const { getSTTConfig } = await import('../../services/aiConfigStore.js');
         const saved = await getSTTConfig();
-        const model = saved.model || 'scribe_v1';
+        const model = saved.model || 'scribe_v2';
         const language = saved.language || undefined;
         const result = await elevenLabsSTTService.transcribeAudio(wav, { mimeType: 'audio/wav', model, language });
         if (result && result.success) {
@@ -863,6 +863,54 @@ async function generateAndPlaySimpleTTS(text, characterId, res) {
         });
     }
 }
+
+// ===== Realtime STT (Scribe v2 Realtime) =====
+
+router.get('/stt/realtime/status', async (req, res) => {
+    try {
+        const { default: realtimeSTTService } = await import('../../services/elevenLabsRealtimeSTTService.js');
+        const sessions = realtimeSTTService.getAllSessions();
+        const sessionList = [];
+        for (const [id, session] of sessions) {
+            sessionList.push({
+                sessionId: id,
+                connected: session.connected,
+                model: session.options?.model_id || 'scribe_v2_realtime',
+                language: session.options?.language_code || 'en',
+                commitStrategy: session.options?.commit_strategy || 'auto_vad'
+            });
+        }
+        res.json({
+            success: true,
+            activeSessions: sessionList.length,
+            sessions: sessionList
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.get('/stt/realtime/capabilities', async (req, res) => {
+    res.json({
+        success: true,
+        capabilities: {
+            model: 'scribe_v2_realtime',
+            endpoint: 'wss://api.elevenlabs.io/v1/speech-to-text/realtime',
+            audioFormat: 'pcm_16000',
+            sampleRate: 16000,
+            channels: 1,
+            encoding: 'pcm_s16le',
+            commitStrategies: ['auto_vad', 'manual'],
+            vadDefaults: {
+                silence_threshold_ms: 1500,
+                threshold: 0.4,
+                min_speech_duration_ms: 100,
+                min_silence_duration_ms: 100
+            },
+            features: ['partial_transcripts', 'committed_transcripts', 'timestamps', 'auto_reconnect']
+        }
+    });
+});
 
 
 export default router;

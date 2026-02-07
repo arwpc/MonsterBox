@@ -1,6 +1,8 @@
 /**
  * MonsterBox 5.5 - ElevenLabs WebSocket Conversation Service
  * Real-time streaming conversation with immediate responses
+ * 
+ * Upgraded: Uses Scribe v2 Realtime for live STT instead of batch transcription
  */
 
 import { EventEmitter } from 'events';
@@ -13,6 +15,7 @@ import { getSTTConfig } from './aiConfigStore.js';
 import { readConfig } from './configService.js';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
 import elevenLabsSTTService from './elevenLabsSTTService.js';
+import realtimeSTTService from './elevenLabsRealtimeSTTService.js';
 import randomPoseService from './randomPoseService.js';
 import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
@@ -273,6 +276,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
             suppressMicUntilMs: 0,   // suppress server mic during server playback
             audioBuffer: [],         // base64 MP3 frames from ElevenLabs
             audioPlaying: false,     // audio playback loop active flag
+            // Scribe v2 Realtime STT session (replaces batch STT polling)
+            realtimeSTTSession: null,
+            useRealtimeSTT: true,    // prefer Scribe v2 Realtime over batch STT
             // Hardening: Error tracking
             consecutiveErrors: 0,
             maxConsecutiveErrors: 10,
@@ -320,6 +326,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
             switch (message.type) {
                 case 'start_conversation':
                     await this.startConversation(sessionId, message.agentId);
+                    // Start Scribe v2 Realtime STT for live transcription
+                    if (connection.useRealtimeSTT) {
+                        this._startRealtimeSTTSession(sessionId).catch(e => console.error('RT-STT start error:', e.message));
+                    }
                     // If server mic is selected, begin streaming immediately
                     if (connection.micSource === 'server') {
                         this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
@@ -331,6 +341,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     console.log(`🎤 Starting transcription-only mode for session ${sessionId}`);
                     connection.isActive = true;
                     connection.transcriptionOnly = true;
+                    // Start Scribe v2 Realtime STT for live transcription
+                    if (connection.useRealtimeSTT) {
+                        this._startRealtimeSTTSession(sessionId).catch(e => console.error('RT-STT start error:', e.message));
+                    }
                     this.sendToClient(sessionId, {
                         type: 'transcription_started',
                         message: 'Transcription-only mode active - speak into the microphone'
@@ -346,6 +360,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     console.log(`🛑 Stopping transcription for session ${sessionId}`);
                     connection.isActive = false;
                     connection.transcriptionOnly = false;
+                    this._stopRealtimeSTTSession(sessionId);
                     this._stopServerMicLoop(sessionId, false);
                     this.sendToClient(sessionId, {
                         type: 'transcription_stopped',
@@ -402,6 +417,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 case 'end_conversation':
                     await this.endConversation(sessionId);
+                    this._stopRealtimeSTTSession(sessionId);
                     this._stopServerMicLoop(sessionId, true);
                     break;
 
@@ -762,6 +778,148 @@ class ElevenLabsWebSocketService extends EventEmitter {
             message: 'Real-time conversation ended'
         });
     }
+
+    /**
+     * Start a Scribe v2 Realtime STT session for a connection.
+     * Streams partial/committed transcripts to the browser client.
+     */
+    async _startRealtimeSTTSession(sessionId) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection) return;
+
+        // Destroy any existing session
+        if (connection.realtimeSTTSession) {
+            try { connection.realtimeSTTSession.disconnect('restart'); } catch (_) { /* noop */ }
+            connection.realtimeSTTSession = null;
+        }
+
+        try {
+            const sttCfg = await getSTTConfig();
+            const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto')
+                ? connection.sttLanguage
+                : (sttCfg.language && sttCfg.language !== 'auto' ? sttCfg.language : null);
+
+            const session = await realtimeSTTService.createSession({
+                sessionId: `rt_${sessionId}`,
+                languageCode: lang || undefined,
+                commitStrategy: 'vad',
+                vadSilenceThresholdSecs: 1.5,
+                vadThreshold: 0.4,
+                includeTimestamps: true,
+                includeLanguageDetection: true,
+                previousText: null
+            });
+
+            connection.realtimeSTTSession = session;
+
+            // Wire Scribe events → client WebSocket
+            session.on('partial_transcript', (data) => {
+                if (!data.text) return;
+                this.sendToClient(sessionId, {
+                    type: 'stt_partial',
+                    text: data.text,
+                    timestamp: data.timestamp,
+                    source: 'scribe_v2_realtime'
+                });
+            });
+
+            session.on('committed_transcript', (data) => {
+                if (!data.text) return;
+                // Apply the same English/SFX filtering as before
+                let allow = true;
+                try {
+                    const filterSfx = (sttCfg.filterSfx !== false);
+                    const validateEnglish = (sttCfg.validateEnglish !== false);
+                    const effectiveLang = (lang || 'en').slice(0, 2);
+
+                    if (effectiveLang === 'en') {
+                        if (filterSfx && _isBracketedSfx(data.text)) {
+                            allow = false;
+                            console.log(`❌ [RT-STT] Filtered (SFX): "${data.text}"`);
+                        } else if (validateEnglish && !_isLikelyEnglish(data.text, sttCfg)) {
+                            allow = false;
+                            console.log(`❌ [RT-STT] Filtered (non-English): "${data.text}"`);
+                        }
+                    }
+                } catch (_) { /* noop */ }
+
+                if (allow) {
+                    console.log(`✅ [RT-STT] Accepted: "${data.text}"`);
+                    // Primary transcript event for UI
+                    this.sendToClient(sessionId, {
+                        type: 'stt_committed',
+                        text: data.text,
+                        timestamp: data.timestamp,
+                        source: 'scribe_v2_realtime'
+                    });
+                    // Also send as stt_partial for backward compatibility with existing UI
+                    this.sendToClient(sessionId, {
+                        type: 'stt_partial',
+                        text: data.text,
+                        timestamp: data.timestamp,
+                        final: true,
+                        source: 'scribe_v2_realtime'
+                    });
+                }
+            });
+
+            session.on('committed_transcript_with_timestamps', (data) => {
+                if (!data.text) return;
+                // Send word-level timestamps (useful for jaw animation sync on input)
+                this.sendToClient(sessionId, {
+                    type: 'stt_timestamps',
+                    text: data.text,
+                    words: data.words,
+                    languageCode: data.languageCode,
+                    timestamp: data.timestamp,
+                    source: 'scribe_v2_realtime'
+                });
+            });
+
+            session.on('scribe_error', (data) => {
+                console.error(`❌ [RT-STT] Scribe error for ${sessionId}:`, data.type, data.message);
+                this.sendToClient(sessionId, {
+                    type: 'stt_error',
+                    message: `Scribe: ${data.type} - ${data.message}`,
+                    source: 'scribe_v2_realtime'
+                });
+            });
+
+            session.on('disconnected', () => {
+                console.log(`🔌 [RT-STT] Session disconnected for ${sessionId}`);
+                connection.realtimeSTTSession = null;
+            });
+
+            console.log(`✅ [RT-STT] Scribe v2 Realtime session started for ${sessionId}`);
+            this.sendToClient(sessionId, {
+                type: 'debug',
+                originalType: 'realtime_stt_started',
+                data: { model: 'scribe_v2_realtime', language: lang || 'auto', strategy: 'vad' }
+            });
+
+        } catch (error) {
+            console.error(`❌ [RT-STT] Failed to start for ${sessionId}:`, error.message);
+            connection.useRealtimeSTT = false; // Fall back to batch STT
+            this.sendToClient(sessionId, {
+                type: 'debug',
+                originalType: 'realtime_stt_fallback',
+                data: { error: error.message, fallback: 'batch_stt' }
+            });
+        }
+    }
+
+    /**
+     * Stop a Scribe v2 Realtime STT session for a connection
+     */
+    _stopRealtimeSTTSession(sessionId) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection) return;
+        if (connection.realtimeSTTSession) {
+            try { connection.realtimeSTTSession.disconnect('session_stop'); } catch (_) { /* noop */ }
+            connection.realtimeSTTSession = null;
+        }
+    }
+
     /**
      * Server microphone capture loop -> send user_audio_chunk to ElevenLabs
      */
@@ -836,6 +994,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
             if (!connection.serverMicActive) return;
             // If real-time agent socket isn't ready, continue with local STT only (skip agent streaming)
             const agentReady = !!(connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN);
+            // Check if Scribe v2 Realtime session is connected
+            const realtimeReady = !!(connection.realtimeSTTSession && connection.realtimeSTTSession.isConnected);
             try {
                 let deviceId = 'default';
                 if (connection.characterId != null) {
@@ -849,113 +1009,64 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 if (wav && wav.length > 44) {
                     const raw = wav.subarray(44); // strip 44-byte WAV header -> raw PCM16LE
 
-                    // Accumulate raw PCM into rolling buffer for partial STT (keep ~6s max to capture full sentences)
-                    try {
-                        if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
-                        connection.sttPcm = Buffer.concat([connection.sttPcm, raw]);
-                        const maxBytes = 16000 * 2 * 6; // 6 seconds @16kHz mono 16-bit (increased for longer phrases)
-                        if (connection.sttPcm.length > maxBytes) {
-                            connection.sttPcm = connection.sttPcm.slice(connection.sttPcm.length - maxBytes);
-                        }
-                    } catch (_) { /* noop */ }
-
                     // Current time and suppression check (avoid echo during server playback)
                     const now = Date.now();
                     const suppressed = connection.suppressMicUntilMs && (now < connection.suppressMicUntilMs);
 
-                    // 1) Stream to ElevenLabs real-time agent (unless suppressed)
+                    // 1) Stream to ElevenLabs ConvAI real-time agent (unless suppressed)
                     if (!suppressed && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                         const b64 = raw.toString('base64');
                         connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
                     }
 
-                    // 2) Throttled STT transcription for on-screen "You (STT)" lines (unless suppressed)
-                    // Increased throttle to 2.5s and minimum buffer to 2.5s to capture full sentences
-                    if (!suppressed && (!connection.sttLastAt || (now - connection.sttLastAt) >= 2500)) {
+                    // 2) Stream to Scribe v2 Realtime for live STT (unless suppressed)
+                    if (!suppressed && realtimeReady) {
+                        // Send raw PCM directly to Scribe v2 Realtime — no batch polling needed!
+                        connection.realtimeSTTSession.sendPCMBuffer(raw);
+                    }
+                    // 2b) Fallback: Batch STT if Scribe v2 Realtime is not available
+                    else if (!suppressed && !realtimeReady && (!connection.sttLastAt || (now - connection.sttLastAt) >= 2500)) {
+                        // Accumulate PCM for batch STT fallback
+                        try {
+                            if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
+                            connection.sttPcm = Buffer.concat([connection.sttPcm, raw]);
+                            const maxBytes = 16000 * 2 * 6; // 6 seconds
+                            if (connection.sttPcm.length > maxBytes) {
+                                connection.sttPcm = connection.sttPcm.slice(connection.sttPcm.length - maxBytes);
+                            }
+                        } catch (_) { /* noop */ }
+
                         connection.sttLastAt = now;
                         try {
                             const sttCfg = await getSTTConfig();
-                            // Require at least 2.5 seconds of audio (80000 bytes = 2.5s @ 16kHz mono 16-bit)
                             const pcmForStt = (connection.sttPcm && connection.sttPcm.length >= 80000)
                                 ? connection.sttPcm.slice(-Math.min(connection.sttPcm.length, 16000 * 2 * 6))
                                 : null;
                             if (pcmForStt) {
                                 let sttWav = encodeWavPCM16LE(pcmForStt, 16000, 1);
                                 const lang = (connection.sttLanguage && connection.sttLanguage !== 'auto') ? connection.sttLanguage : (sttCfg.language || 'auto');
-
-                                // Debug: Log STT configuration
-                                console.log(`🎤 STT Config: model=${sttCfg.model}, lang=${lang}, connLang=${connection.sttLanguage}, cfgLang=${sttCfg.language}`);
-
-                                // Apply audio filtering if enabled
-                                const audioFilterEnabled = (sttCfg.audioFilterEnabled !== false); // default true
-                                const debugAudio = process.env.MB_DEBUG_AUDIO === '1';
+                                const audioFilterEnabled = (sttCfg.audioFilterEnabled !== false);
                                 try {
                                     if (process.env.MB_STT_FILTER === '1' || (audioFilterEnabled && lang && lang.slice(0, 2) === 'en')) {
-                                        const beforeSize = sttWav.length;
-                                        const startTime = Date.now();
                                         sttWav = await this._filterWavForSTT(sttWav, sttCfg);
-                                        const afterSize = sttWav.length;
-                                        const duration = Date.now() - startTime;
-                                        if (debugAudio) {
-                                            console.log('[STT Filter] Applied audio filters in ' + duration + 'ms (before: ' + beforeSize + ' bytes, after: ' + afterSize + ' bytes)');
-                                        }
                                     }
-                                } catch (err) {
-                                    if (debugAudio) {
-                                        console.error('[STT Filter] Audio filtering failed:', err.message || err);
-                                    }
-                                    /* keep original on failure */
-                                }
+                                } catch (_) { /* keep original on failure */ }
 
                                 const result = await elevenLabsSTTService.transcribeAudio(sttWav, { mimeType: 'audio/wav', model: sttCfg.model, language: lang });
                                 const text = (result && result.success && (result.transcript || result.text)) ? String(result.transcript || result.text).trim() : '';
 
                                 if (text) {
-                                    console.log(`📝 STT received: "${text}" (lang=${lang}, detected=${result.language || 'unknown'})`);
-                                }
-
-                                if (text) {
                                     let allow = true;
-                                    let filterReason = null;
-
-                                    // Text filtering based on configuration
-                                    const allowSfxForAutotune = process.env.MB_AUTOTUNE_ALLOW_SFX === '1';
-                                    const filterSfx = (sttCfg.filterSfx !== false); // default true
-                                    const validateEnglish = (sttCfg.validateEnglish !== false); // default true
-
-                                    console.log(`🔍 Filter check: lang="${lang}", validateEnglish=${validateEnglish}, filterSfx=${filterSfx}`);
-
-                                    if ((lang || '').slice(0, 2) === 'en' && !allowSfxForAutotune) {
-                                        // Check for bracketed sound effects
-                                        if (filterSfx && _isBracketedSfx(text)) {
-                                            allow = false;
-                                            filterReason = 'bracketed_sfx';
-                                            console.log(`❌ Filtered (SFX): "${text}"`);
-                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_sfx', data: { text } }); } catch (_) { }
-                                        }
-                                        // Validate English text
-                                        else if (validateEnglish && !_isLikelyEnglish(text, sttCfg)) {
-                                            allow = false;
-                                            filterReason = 'non_english';
-                                            console.log(`❌ Filtered (non-English): "${text}"`);
-                                            try { this.sendToClient(sessionId, { type: 'debug', originalType: 'stt_filtered_english', data: { text } }); } catch (_) { }
-                                        }
-                                    } else {
-                                        console.log(`⚠️ Skipping English filter: lang="${lang}" (not 'en')`);
+                                    const filterSfx = (sttCfg.filterSfx !== false);
+                                    const validateEnglish = (sttCfg.validateEnglish !== false);
+                                    if ((lang || '').slice(0, 2) === 'en' && process.env.MB_AUTOTUNE_ALLOW_SFX !== '1') {
+                                        if (filterSfx && _isBracketedSfx(text)) allow = false;
+                                        else if (validateEnglish && !_isLikelyEnglish(text, sttCfg)) allow = false;
                                     }
-
-                                    if (!allow) {
-                                        console.log(`❌ Rejected: "${text}" (reason: ${filterReason})`);
-                                    }
-
                                     if (allow) {
-                                        console.log(`✅ Accepted: "${text}"`);
-                                        this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now });
-                                        // reset buffer after a successful partial to avoid repeats
+                                        this.sendToClient(sessionId, { type: 'stt_partial', text: text, timestamp: now, source: 'batch_scribe_v2' });
                                         connection.sttPcm = Buffer.alloc(0);
                                     }
-                                } else if (debugAudio && result && !result.success) {
-                                    console.log('[STT] Transcription failed:', result.error || 'Unknown error');
                                 }
                             }
                         } catch (e) {
@@ -964,11 +1075,22 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 this.sendToClient(sessionId, { type: 'stt_error', message: String(msg).slice(0, 200) });
                             } catch (_) { /* noop */ }
                         }
+                    } else if (!suppressed && !realtimeReady) {
+                        // Still accumulate PCM for batch fallback between throttle windows
+                        try {
+                            if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
+                            connection.sttPcm = Buffer.concat([connection.sttPcm, raw]);
+                            const maxBytes = 16000 * 2 * 6;
+                            if (connection.sttPcm.length > maxBytes) {
+                                connection.sttPcm = connection.sttPcm.slice(connection.sttPcm.length - maxBytes);
+                            }
+                        } catch (_) { /* noop */ }
                     }
+
                     // 3) Periodic client breadcrumb with device and bytes captured (once per second)
                     if (!connection._dbgLastTs || (now - connection._dbgLastTs) >= 1000) {
                         connection._dbgLastTs = now;
-                        try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_tick', data: { deviceId, bytes: raw.length, suppressed: !!suppressed } }); } catch (_) { }
+                        try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_tick', data: { deviceId, bytes: raw.length, suppressed: !!suppressed, realtimeSTT: realtimeReady } }); } catch (_) { }
                     }
                 }
             } catch (_) { /* ignore per-frame errors */ }
@@ -1008,6 +1130,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
         // Stop any server mic loop and send EOS
         try { this._stopServerMicLoop(sessionId, true); } catch (_) { /* noop */ }
+        // Stop Scribe v2 Realtime STT session
+        try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
 
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
