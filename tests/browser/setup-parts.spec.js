@@ -30,8 +30,13 @@ test.describe('Setup Calibration Page (Parts)', () => {
     test('should display parts list or selector', async () => {
         tracker.clear();
         
-        // Wait for parts table/list or part selector to load
-        await page.waitForSelector('select, table, .parts-list, [data-parts], #partSelector', { timeout: 5000 });
+        // Calibration page has select elements (model select, type select) and/or parts list
+        // These may not be visible until a character is selected, but should be attached to DOM
+        const selectCount = await page.locator('select').count();
+        const tableCount = await page.locator('table').count();
+        const partsCount = await page.locator('.parts-list, [data-parts], #partSelector').count();
+        
+        expect(selectCount + tableCount + partsCount).toBeGreaterThan(0);
         
         await tracker.logErrors();
     });

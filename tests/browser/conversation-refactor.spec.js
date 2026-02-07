@@ -1,6 +1,7 @@
 /**
- * Comprehensive tests for refactored Conversation Control page
+ * Comprehensive tests for refactored Conversation Control page (now the Dashboard)
  * Tests all grid panels and features inline (no modals)
+ * Note: /conversation redirects to / — conversation IS the dashboard
  */
 
 import { test, expect } from '@playwright/test';
@@ -10,13 +11,13 @@ const TEST_TIMEOUT = 60000;
 
 test.describe('Conversation Control - Grid Layout', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
+    await page.goto(`${BASE_URL}/`);
     await page.waitForLoadState('networkidle');
   });
 
   test('should render page with grid layout', async ({ page }) => {
-    // Check page title
-    await expect(page.locator('h1')).toContainText('Conversation Control');
+    // Check page title — dashboard renders Conversation Control view
+    await expect(page.locator('h1')).toContainText('Dashboard');
     
     // Verify grid structure exists (Bootstrap columns with different sizes)
     const lgColumns = page.locator('[class*="col-lg-"]');

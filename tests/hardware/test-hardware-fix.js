@@ -4,7 +4,7 @@
  * Tests servos and actuators to ensure they're working
  */
 
-import hardwareService from './services/hardwareService/index.js';
+import hardwareService from '../../services/hardwareService/index.js';
 import os from 'os';
 
 async function testCoffinServos() {

@@ -1,6 +1,7 @@
 /**
  * AI Conversation Tests
- * Validates all functionality on /conversation page
+ * Validates conversation functionality on the Dashboard (/ route)
+ * Note: /conversation now redirects to / — conversation IS the dashboard
  */
 
 import { test, expect } from '@playwright/test';
@@ -14,7 +15,7 @@ test.describe('AI Conversation Page', () => {
 
     test.beforeEach(async ({ browser }) => {
         page = await browser.newPage();
-        tracker = await testNavigation(page, `${BASE_URL}/conversation`, 'Conversation');
+        tracker = await testNavigation(page, `${BASE_URL}/`, 'Dashboard');
     });
 
     test.afterEach(async () => {
@@ -22,7 +23,7 @@ test.describe('AI Conversation Page', () => {
     });
 
     test('should load conversation page without errors', async () => {
-        expect(await page.title()).toContain('Conversation');
+        expect(await page.title()).toContain('Dashboard');
     });
 
     test('should display character selection', async () => {
