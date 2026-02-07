@@ -4405,6 +4405,20 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "1770486669299qthsvredo",
+      "sceneId": 104,
+      "characterId": 3,
+      "timestamp": "2026-02-07T17:51:09.299Z",
+      "startTime": "2026-02-07T17:50:47.122Z",
+      "endTime": "2026-02-07T17:51:09.287Z",
+      "duration": 22165,
+      "stepsExecuted": 2,
+      "totalSteps": 2,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4621,6 +4635,14 @@
       "characterId": 2,
       "executionCount": 1,
       "lastExecuted": "2026-01-06T15:33:12.149Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_104": {
+      "sceneId": 104,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2026-02-07T17:51:09.311Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

@@ -170,17 +170,7 @@
     </button>
   </div>
 
-  <!-- Quick Model assignment (always visible) -->
-  <div class="mb-3">
-    <label class="form-label">Model</label>
-    <div class="input-group">
-      <select id="modelSelect" class="form-select">
-        <option value="">Select model</option>
-      </select>
-      <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
-    </div>
-    <div class="form-text">Models are shared across all characters. Overrides remain part-specific.</div>
-  </div>
+
 
   <div class="row g-3">
     <!-- Left Sidebar: Devices -->
@@ -389,30 +379,64 @@
             <!-- Model/Overrides -->
             <div class="tab-pane fade" id="tabModel">
               <div class="row g-3">
+                <!-- Model Selection -->
                 <div class="col-12">
-                  <div class="alert alert-secondary py-2">Use the Model selector above to assign or change the
-                    model. Defaults can be overridden below.</div>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Overrides (JSON)</label>
-                  <textarea id="overridesEditor" class="form-control" rows="6"
-                    placeholder="{\n  &quot;minPulse&quot;: 500,\n  &quot;maxPulse&quot;: 2500\n}"></textarea>
-                  <div class="d-flex justify-content-end mt-2 gap-2">
-                    <button id="saveOverridesBtn" class="btn btn-success btn-sm"><i class="bi bi-save"></i> Save
-                      Overrides</button>
-                    <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm"><i
-                        class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
+                  <div class="card border-secondary">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-cpu"></i> Model Assignment</span>
+                      <a href="/setup/models" class="btn btn-outline-secondary btn-sm" target="_blank">
+                        <i class="bi bi-gear"></i> Manage Models
+                      </a>
+                    </div>
+                    <div class="card-body">
+                      <div class="input-group">
+                        <select id="modelSelect" class="form-select">
+                          <option value="">Select model...</option>
+                        </select>
+                        <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
+                      </div>
+                      <div class="form-text">Models are shared across all characters. Select a model to see its defaults below.</div>
+                    </div>
                   </div>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Model Defaults</label>
-                  <pre id="modelDefaultsJson" class="bg-dark text-light p-2 small" style="min-height:120px">{}</pre>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Effective</label>
-                  <pre id="effectiveJson" class="bg-dark text-light p-2 small" style="min-height:120px">{}</pre>
+
+                <!-- Part-Specific Overrides -->
+                <div class="col-12">
+                  <div class="card border-info">
+                    <div class="card-header"><i class="bi bi-sliders"></i> Part-Specific Overrides</div>
+                    <div class="card-body">
+                      <div class="form-text mb-2">These overrides are saved to <strong>this part only</strong> and take priority over model defaults.</div>
+                      <div id="overrideFieldsArea" class="row g-2 mb-3">
+                        <div class="text-muted small">Select a device and model to see override fields.</div>
+                      </div>
+                      <div class="mb-2">
+                        <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawOverridesCollapse" role="button">
+                          <i class="bi bi-code-slash"></i> Raw JSON
+                        </a>
+                        <div class="collapse" id="rawOverridesCollapse">
+                          <textarea id="overridesEditor" class="form-control mt-1 font-monospace" rows="5"
+                            placeholder='{}'></textarea>
+                        </div>
+                      </div>
+                      <div class="d-flex justify-content-end gap-2">
+                        <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm"><i
+                            class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
+                        <button id="saveOverridesBtn" class="btn btn-success btn-sm"><i class="bi bi-save"></i> Save
+                          Overrides</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
+                <!-- Effective Config -->
+                <div class="col-md-6">
+                  <label class="form-label">Model Defaults</label>
+                  <pre id="modelDefaultsJson" class="bg-dark text-light p-2 small rounded" style="min-height:100px">{}</pre>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Effective (merged)</label>
+                  <pre id="effectiveJson" class="bg-dark text-light p-2 small rounded" style="min-height:100px">{}</pre>
+                </div>
               </div>
             </div>
             <!-- Safety -->
@@ -1122,6 +1146,115 @@
       modelSelect.innerHTML = '<option value="">Select model…</option>' + list.map(m => `<option value="${m.id}" ${String(current || '') === String(m.id) ? 'selected' : ''}>${m.name}</option>`).join('');
     }
 
+    // ─── Override Fields Schema per type ──────────────────────────────────
+    const OVERRIDE_SCHEMAS = {
+      servo: [
+        { key: 'minPulse', label: 'Min Pulse (µs)', type: 'number' },
+        { key: 'maxPulse', label: 'Max Pulse (µs)', type: 'number' },
+        { key: 'neutralPulse', label: 'Neutral Pulse (µs)', type: 'number' },
+        { key: 'rotationRangeDeg', label: 'Rotation Range (°)', type: 'number' },
+        { key: 'servoType', label: 'Servo Type', type: 'select', options: ['standard', 'continuous', 'feedback'] },
+        { key: 'controllerType', label: 'Controller', type: 'select', options: ['pca9685', 'gpio'] },
+        { key: 'channel', label: 'PCA9685 Channel', type: 'number' },
+        { key: 'address', label: 'I2C Address', type: 'number' },
+        { key: 'pca9685Frequency', label: 'PWM Frequency (Hz)', type: 'number' },
+      ],
+      linear_actuator: [
+        { key: 'speedMaxPct', label: 'Max Speed (%)', type: 'number' },
+        { key: 'strokeMs', label: 'Stroke Time (ms)', type: 'number' },
+        { key: 'maxExtension', label: 'Max Extension (ms)', type: 'number' },
+        { key: 'maxRetraction', label: 'Max Retraction (ms)', type: 'number' },
+        { key: 'controlBoard', label: 'Control Board', type: 'select', options: ['MDD10A', 'BTS7960', 'L298N'] },
+      ],
+      motor: [
+        { key: 'motorType', label: 'Motor Type', type: 'select', options: ['dc', 'stepper'] },
+        { key: 'voltage', label: 'Voltage (V)', type: 'number' },
+        { key: 'maxDutyPct', label: 'Max Duty (%)', type: 'number' },
+        { key: 'stepsPerRevolution', label: 'Steps/Rev', type: 'number' },
+        { key: 'stepAngleDeg', label: 'Step Angle (°)', type: 'number' },
+      ],
+      stepper: [
+        { key: 'motorType', label: 'Motor Type', type: 'select', options: ['stepper'] },
+        { key: 'stepsPerRevolution', label: 'Steps/Rev', type: 'number' },
+        { key: 'stepAngleDeg', label: 'Step Angle (°)', type: 'number' },
+        { key: 'ratedCurrentA', label: 'Rated Current (A)', type: 'number' },
+        { key: 'holdingTorqueNcm', label: 'Holding Torque (Ncm)', type: 'number' },
+      ],
+      light: [
+        { key: 'brightness', label: 'Brightness (%)', type: 'number' },
+      ],
+      led: [
+        { key: 'brightness', label: 'Brightness (%)', type: 'number' },
+        { key: 'pwmFrequency', label: 'PWM Frequency (Hz)', type: 'number' },
+        { key: 'maxCurrentMa', label: 'Max Current (mA)', type: 'number' },
+        { key: 'forwardVoltageV', label: 'Forward Voltage (V)', type: 'number' },
+      ],
+      speaker: [
+        { key: 'outputDevice', label: 'Output Device', type: 'text' },
+        { key: 'volume', label: 'Volume (%)', type: 'number' },
+        { key: 'format', label: 'Format', type: 'select', options: ['mp3', 'wav', 'ogg'] },
+      ],
+      microphone: [
+        { key: 'sampleRate', label: 'Sample Rate (Hz)', type: 'number' },
+        { key: 'channels', label: 'Channels', type: 'number' },
+        { key: 'format', label: 'Format', type: 'text' },
+      ],
+      webcam: [
+        { key: 'resolution', label: 'Resolution', type: 'select', options: ['320x240', '640x480', '1280x720', '1920x1080'] },
+        { key: 'fps', label: 'FPS', type: 'number' },
+        { key: 'quality', label: 'Quality (%)', type: 'number' },
+        { key: 'devicePath', label: 'Device Path', type: 'text' },
+      ],
+      motion_sensor: [
+        { key: 'sensitivity', label: 'Sensitivity (%)', type: 'number' },
+        { key: 'retriggerMs', label: 'Retrigger Delay (ms)', type: 'number' },
+      ],
+      head_tracking: [
+        { key: 'trackingMode', label: 'Tracking Mode', type: 'select', options: ['face', 'motion', 'color'] },
+        { key: 'smoothing', label: 'Smoothing (0-1)', type: 'number', step: 0.1 },
+      ],
+    };
+
+    function renderOverrideFields(type, partConfig, modelDefaults) {
+      const area = document.getElementById('overrideFieldsArea');
+      const schema = OVERRIDE_SCHEMAS[type] || [];
+      if (!schema.length) {
+        area.innerHTML = '<div class="text-muted small">No configurable fields for this part type.</div>';
+        return;
+      }
+      const cfg = partConfig || {};
+      const defs = modelDefaults || {};
+      let html = '';
+      schema.forEach(f => {
+        const val = cfg[f.key] !== undefined ? cfg[f.key] : '';
+        const placeholder = defs[f.key] !== undefined ? String(defs[f.key]) : '';
+        const isOverridden = cfg[f.key] !== undefined && cfg[f.key] !== '';
+        const cls = isOverridden ? 'border-info' : '';
+        if (f.type === 'select') {
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><select class="form-select form-select-sm override-field ${cls}" data-key="${f.key}"><option value="">${placeholder ? '(model: ' + placeholder + ')' : '— default —'}</option>`;
+          (f.options || []).forEach(o => { html += `<option value="${o}" ${String(val) === o ? 'selected' : ''}>${o}</option>`; });
+          html += `</select></div>`;
+        } else if (f.type === 'number') {
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="number" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" value="${val}" placeholder="${placeholder}" ${f.step ? 'step="' + f.step + '"' : ''}></div>`;
+        } else {
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="text" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" value="${val}" placeholder="${placeholder}"></div>`;
+        }
+      });
+      area.innerHTML = html;
+    }
+
+    function collectOverrideFields() {
+      const obj = {};
+      document.querySelectorAll('.override-field').forEach(el => {
+        const key = el.dataset.key;
+        let val = el.value;
+        if (val === '' || val === undefined) return; // skip empty = use model default
+        if (el.type === 'number' && val !== '') val = parseFloat(val);
+        obj[key] = val;
+      });
+      return obj;
+    }
+
     async function refreshEffective(partId) {
       try {
         const r = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(partId)}/effective`);
@@ -1135,6 +1268,10 @@
         if (selected && String(selected.id) === String(partId)) {
           selected.modelId = d.part.modelId || selected.modelId;
           selected.config = d.overrides || selected.config;
+          // Render structured override fields
+          renderOverrideFields(selected.type, selected.config, d.modelDefaults || {});
+          // Sync raw JSON editor
+          overridesEditor.value = JSON.stringify(selected.config || {}, null, 2);
         }
       } catch (e) { /* ignore */ }
     }
@@ -1150,18 +1287,31 @@
       if (j.success) {
         selected.modelId = val;
         modelBadge.textContent = 'Model: ' + val;
-        // reflect badge in list
         loadParts();
-        var ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
-        if (ctrlTabBtn) ctrlTabBtn.click();
+        // Stay on Model/Overrides tab to show the new model's defaults
+        refreshEffective(selected.id);
       } else alert(j.error || 'Failed to assign model');
     });
 
     document.getElementById('saveOverridesBtn').addEventListener('click', async () => {
       if (!selected) return;
-      let obj;
-      try { obj = JSON.parse(overridesEditor.value || '{}'); }
-      catch (e) { alert('Invalid JSON'); return; }
+      // Collect from structured fields first, then merge with raw JSON if it's open
+      let obj = collectOverrideFields();
+      const rawCollapse = document.getElementById('rawOverridesCollapse');
+      if (rawCollapse && rawCollapse.classList.contains('show')) {
+        try {
+          const rawObj = JSON.parse(overridesEditor.value || '{}');
+          obj = Object.assign({}, obj, rawObj);
+        } catch (e) { alert('Invalid JSON in raw editor'); return; }
+      }
+      // Preserve keys from config that aren't in the override schema (e.g., modelId, audioDeviceId)
+      if (selected.config) {
+        const schema = OVERRIDE_SCHEMAS[selected.type] || [];
+        const schemaKeys = new Set(schema.map(f => f.key));
+        Object.keys(selected.config).forEach(k => {
+          if (!schemaKeys.has(k) && obj[k] === undefined) obj[k] = selected.config[k];
+        });
+      }
       const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: obj })
       });
