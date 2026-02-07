@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getTTSConfig } from '../aiConfigStore.js';
+import { getTTSConfig, getTTSConfigForCharacter } from '../aiConfigStore.js';
 import { readConfig } from '../configService.js';
 import elevenLabsTTSService from '../elevenLabsTTSService.js';
 import goblinManagerService from '../goblinManagerService.js';
@@ -187,7 +187,7 @@ async function executeSayThisStep(step, characterId, emit) {
   if (!text) throw new Error('sayThis.step requires text');
   emit && emit({ type: 'step', status: 'start', stepType: 'sayThis', text });
 
-  const ttsCfg = await getTTSConfig();
+  const ttsCfg = await getTTSConfigForCharacter(characterId);
   const voiceId = step.voiceId || ttsCfg.voice_id;
   const gen = await elevenLabsTTSService.generateSpeech(text, voiceId, ttsCfg);
   if (!gen.success) {
@@ -206,11 +206,32 @@ async function executeAskAIStep(step, characterId, emit) {
   if (!question) throw new Error('askAI.step requires question');
   emit && emit({ type: 'step', status: 'start', stepType: 'askAI', question });
 
-  const ttsCfg = await getTTSConfig();
+  const ttsCfg = await getTTSConfigForCharacter(characterId);
 
-  // For now, use a simulated response until full conversational AI integration
-  // TODO: Integrate with elevenLabsWebSocketService for real conversational AI
-  const responseText = `I heard your question: "${question}". This is a placeholder response until full conversational AI integration is complete.`;
+  // Try real AI conversation via ElevenLabs WebSocket agent
+  let responseText;
+  try {
+    const { default: characterService } = await import('../characterService.js');
+    const character = await characterService.getCharacterById(characterId);
+    if (character && character.elevenLabsAgentId) {
+      const { default: elevenLabsWebSocketService } = await import('../elevenLabsWebSocketService.js');
+      const aiResponse = await elevenLabsWebSocketService.askAgentQuestion(
+        character.elevenLabsAgentId,
+        question,
+        characterId
+      );
+      if (aiResponse && aiResponse.success && aiResponse.response) {
+        responseText = aiResponse.response;
+      }
+    }
+  } catch (aiErr) {
+    console.warn(`⚠️ Scene askAI: AI agent unavailable for character ${characterId}:`, aiErr.message);
+  }
+
+  // Fallback if AI agent is not configured or failed
+  if (!responseText) {
+    responseText = `I heard your question: "${question}". I'm not able to answer right now, but I'm always listening.`;
+  }
 
   const voiceId = step.voiceId || ttsCfg.voice_id;
   const gen = await elevenLabsTTSService.generateSpeech(responseText, voiceId, ttsCfg);

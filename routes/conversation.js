@@ -10,7 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as motionTrackingController from '../controllers/motionTrackingController.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
-import { getTTSConfig } from '../services/aiConfigStore.js';
+import { getTTSConfig, getTTSConfigForCharacter } from '../services/aiConfigStore.js';
 import audioLibraryService from '../services/audioLibraryService.js';
 import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
@@ -184,7 +184,7 @@ router.post('/api/say', express.json(), async (req, res) => {
       return res.json({ success: true, testMode: true });
     }
 
-    const ttsCfg = await getTTSConfig();
+    const ttsCfg = await getTTSConfigForCharacter(characterId);
     const gen = await elevenLabsTTSService.generateSpeech(text, ttsCfg.voice_id, ttsCfg);
     if (!gen.success) return res.status(500).json({ success: false, error: gen.error || 'TTS generation failed' });
 
@@ -389,24 +389,25 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       );
 
       if (aiResponse && aiResponse.success) {
-        // Play the AI's response through TTS
-        const ttsResponse = await fetch(`http://localhost:3000/api/elevenlabs/generate-and-play`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: aiResponse.response,
-            characterId: characterId,
-            useCase: 'conversation'
-          })
-        });
+        // Play the AI's response through TTS using direct service calls (no HTTP loopback)
+        const ttsCfg = await getTTSConfigForCharacter(characterId);
+        const gen = await elevenLabsTTSService.generateSpeech(aiResponse.response, ttsCfg.voice_id, ttsCfg);
 
-        const ttsResult = await ttsResponse.json();
+        if (gen.success) {
+          const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
+            characterId,
+            contentType: gen.contentType || 'audio/wav',
+            volume: 85,
+            kind: 'ai'
+          });
 
-        if (ttsResult.success) {
+          // Fire-and-forget jaw animation
+          try { jawAnimationService.driveFromText({ characterId, text: aiResponse.response }).catch(() => {}); } catch (_) {}
+
           return res.json({
             success: true,
             response: aiResponse.response,
-            audioPlayed: true
+            audioPlayed: playResult.success
           });
         } else {
           return res.status(500).json({ 
@@ -428,22 +429,24 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       const fallbackResponse = `I heard your question about "${question}", but I'm having trouble connecting to my AI service right now. Please try again later.`;
       
       try {
-        const ttsResponse = await fetch(`http://localhost:3000/api/elevenlabs/generate-and-play`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: fallbackResponse,
-            characterId: characterId,
-            useCase: 'conversation'
-          })
-        });
-
-        const ttsResult = await ttsResponse.json();
+        // Direct TTS fallback (no HTTP loopback)
+        const ttsCfg = await getTTSConfigForCharacter(characterId);
+        const gen = await elevenLabsTTSService.generateSpeech(fallbackResponse, ttsCfg.voice_id, ttsCfg);
+        let audioPlayed = false;
+        if (gen.success) {
+          const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
+            characterId,
+            contentType: gen.contentType || 'audio/wav',
+            volume: 85,
+            kind: 'ai'
+          });
+          audioPlayed = playResult.success;
+        }
         
         return res.json({
           success: true,
           response: fallbackResponse,
-          audioPlayed: ttsResult.success,
+          audioPlayed,
           fallback: true
         });
       } catch (fallbackError) {

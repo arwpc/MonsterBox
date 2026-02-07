@@ -139,7 +139,7 @@ Edit `data/character-3/ai-config/stt-config.json`:
 
 ```json
 {
-  "model": "scribe_english_v1",
+  "model": "scribe_v2",
   "language": "en",
   "sampleRate": "16000",
   "vadEnabled": "on",

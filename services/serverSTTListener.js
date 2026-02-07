@@ -61,7 +61,7 @@ class ServerSTTListener {
   }
 
 
-  startSession({ deviceId = 'default', model = 'eleven_multilingual_v2', language = 'auto' }) {
+  startSession({ deviceId = 'default', model = 'scribe_v2', language = 'auto' }) {
     // Stop any existing sessions for this device to prevent conflicts
     for (const [sid, s] of this.sessions.entries()) {
       if (s.deviceId === deviceId && s.running) {

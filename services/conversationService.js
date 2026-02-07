@@ -2,7 +2,7 @@ import elevenLabsSTTService from './elevenLabsSTTService.js';
 import elevenLabsTTSService from './elevenLabsTTSService.js';
 import elevenLabsAgentService from './elevenLabsAgentService.js';
 import { getCharacterById } from './characterService.js';
-import { getTTSConfig } from './aiConfigStore.js';
+import { getTTSConfig, getTTSConfigForCharacter } from './aiConfigStore.js';
 
 class ConversationService {
   async converse({ characterId, agentId, audioBuffer, text }) {
@@ -31,7 +31,7 @@ class ConversationService {
     if (!resolvedAgentId) {
       // Graceful fallback – echo-style friendly reply
       const fallback = `Spooky echo: ${userText}`;
-      const ttsCfg = await getTTSConfig();
+      const ttsCfg = await getTTSConfigForCharacter(characterId);
       const voiceId = ttsCfg.voice_id || 'Tj9l48J9AJbry5yCP5eW'; // default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
       const tts = await elevenLabsTTSService.generateSpeech(fallback, voiceId, ttsCfg);
       if (!tts.success) return { success: false, stage: 'tts', error: tts.error };
@@ -52,7 +52,7 @@ class ConversationService {
     }
 
     // 4) TTS the reply (always try to return audio)
-    const ttsCfg = await getTTSConfig();
+    const ttsCfg = await getTTSConfigForCharacter(characterId);
     const voiceId = ttsCfg.voice_id || 'Tj9l48J9AJbry5yCP5eW';
     const tts = await elevenLabsTTSService.generateSpeech(replyText, voiceId, ttsCfg);
     if (!tts.success) return { success: false, stage: 'tts', error: tts.error };
