@@ -18,7 +18,7 @@ import setupCalibrationRoutes from './routes/setup/calibration.js';
 import setupCharactersRoutes from './routes/setup/characters.js';
 import setupModelsRoutes from './routes/setup/models.js';
 import setupPosesRoutes from './routes/setup/poses.js';
-import setupSuperPowersRoutes from './routes/setup/super-powers.js';
+import setupJawAnimationRoutes from './routes/setup/jaw-animation.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import setupWebcamRoutes from './routes/setup/webcam.js';
 import calibrationApiRouter from './server/calibration/router.js';
@@ -258,7 +258,8 @@ app.use('/setup/calibration', setupCalibrationRoutes);
 app.use('/setup/audio', setupAudioRoutes);
 app.use('/setup/webcam', setupWebcamRoutes);
 app.use('/setup/models', setupModelsRoutes);
-app.use('/setup/super-powers', setupSuperPowersRoutes);
+app.use('/setup/jaw-animation', setupJawAnimationRoutes);
+app.use('/setup/super-powers', (req, res) => res.redirect(301, req.originalUrl.replace('/setup/super-powers', '/setup/jaw-animation')));
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
 app.use('/setup/characters', setupCharactersRoutes);
@@ -390,7 +391,7 @@ app.post('/api/audio/reset', (req, res) => {
     res.json({ success: true, message: 'Restart attempts reset' });
 });
 
-// Main dashboard route
+// Main dashboard route — renders Conversation Control as the dashboard
 app.get('/', (req, res) => {
     // If in test mode and no character selected, default to character 1 to avoid redirect churn
     const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
@@ -406,73 +407,9 @@ app.get('/', (req, res) => {
         return res.redirect('/first-run');
     }
 
-    res.renderWithLayout('index', {
+    res.renderWithLayout('conversation/index', {
         title: 'MonsterBox 5.5 Dashboard',
-        page: 'dashboard',
-        testMode: (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true'),
-        bodyExtras: `
-            <script>
-                // Load poses count and quick poses
-                document.addEventListener('DOMContentLoaded', function () {
-                    loadPosesData();
-                });
-
-                async function loadPosesData() {
-                    try {
-                        // Request JSON explicitly to avoid HTML parse errors in tests
-                        const response = await fetch('/poses?format=json');
-                        const data = await response.json();
-
-                        if (data.success) {
-                            // Update poses count
-                            document.getElementById('poses-count').textContent = data.poses.length;
-
-                            // Show quick poses (first 5)
-                            const quickPosesContainer = document.getElementById('quick-poses');
-                            if (data.poses.length > 0) {
-                                const quickPoses = data.poses.slice(0, 5);
-                                quickPosesContainer.innerHTML = quickPoses.map(pose =>
-                                    \`<div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span>\${pose.name}</span>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="executePose(\${pose.id})">
-                                        <i class="bi bi-play"></i>
-                                    </button>
-                                </div>\`
-                                ).join('');
-                            } else {
-                                quickPosesContainer.innerHTML =
-                                    \`<div class="text-center text-muted">
-                                    <i class="bi bi-plus-circle fs-1"></i>
-                                    <p>No poses created yet</p>
-                                    <a href="/setup/poses" class="btn btn-sm btn-primary">Create First Pose</a>
-                                </div>\`;
-                            }
-                        }
-                    } catch (error) {
-                        // Avoid console errors during tests; log informationally instead
-                        console.log('Issue loading poses:', (error && error.message) || error);
-                        document.getElementById('poses-count').textContent = 'Error';
-                    }
-                }
-
-                async function executePose(poseId) {
-                    try {
-                        const response = await fetch(\`/poses/\${poseId}/execute\`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            console.log('Pose executed successfully:', result.message);
-                        } else {
-                            console.log('Pose execution failed:', result.error);
-                        }
-                    } catch (error) {
-                        console.log('Failed to execute pose:', (error && error.message) || error);
-                    }
-                }
-            </script>
-        `
+        page: 'dashboard'
     });
 });
 

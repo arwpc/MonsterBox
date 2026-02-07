@@ -3,8 +3,12 @@
     "id": "light_generic_12v",
     "name": "Generic 12V Light",
     "description": "On/Off or PWM dimming",
-    "defaults": { "brightness": 100 },
+    "defaults": {
+      "brightness": 100
+    },
     "controlsSchema": {},
-    "meta": { "manufacturer": "Generic" }
+    "meta": {
+      "manufacturer": "Generic"
+    }
   }
 ]

@@ -195,9 +195,9 @@ describe('MonsterBox 5.5 Basic Tests', () => {
             expect(res.text).to.include('Setup Webcam');
         });
 
-        it('should serve the super powers setup page', async () => {
-            const res = await request(BASE_URL).get('/setup/super-powers').expect(200);
-            expect(res.text).to.include('Setup Super Powers');
+        it('should serve the jaw animation setup page', async () => {
+            const res = await request(BASE_URL).get('/setup/jaw-animation').expect(200);
+            expect(res.text).to.include('Setup Jaw Animation');
         });
 
         it('should serve the calibration setup page', async () => {

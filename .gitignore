@@ -47,6 +47,8 @@ data/port-registry.json
 # Playwright/UI test artifacts (large files) - ignore
 playwright-report/
 test-results/
+tests/playwright-report/
+tests/test-results/
 .playwright/
 
 # App-scoped Playwright artifacts

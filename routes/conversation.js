@@ -15,7 +15,7 @@ import audioLibraryService from '../services/audioLibraryService.js';
 import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
-import jawAnimationService from '../services/jawAnimationService.js';
+import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,22 +39,9 @@ async function loadParts() {
   try { return await loadPartsFromController(); } catch (_) { return []; }
 }
 
-async function readJawSettings() {
-  try { const p = await getDataDir(); const f = path.resolve(p, 'jaw_settings.json'); const txt = await fs.readFile(f, 'utf8'); return JSON.parse(txt) || {}; } catch (_) { return {}; }
-}
-async function writeJawSettings(obj) {
-  const p = await getDataDir();
-  const f = path.resolve(p, 'jaw_settings.json');
-  await fs.mkdir(path.dirname(f), { recursive: true });
-  await fs.writeFile(f, JSON.stringify(obj, null, 2), 'utf8');
-}
-
-// GET /conversation (page)
-router.get('/', async (req, res) => {
-  res.renderWithLayout('conversation/index', {
-    title: 'Conversation Mode - MonsterBox 5.5',
-    page: 'conversation'
-  });
+// GET /conversation (redirect to dashboard — conversation is now the dashboard)
+router.get('/', (req, res) => {
+  res.redirect('/');
 });
 
 // GET /conversation/api/webcam-stream-url - returns webcam stream URL for current character
@@ -100,9 +87,9 @@ router.get('/api/speakers', async (req, res) => {
 router.get('/api/jaw-settings', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
-    const settings = await readJawSettings();
-    const enabled = characterId ? !!settings[String(characterId)]?.enabled : false;
-    res.json({ success: true, enabled });
+    if (!characterId) return res.json({ success: true, enabled: false });
+    const config = await jawAnimationService.readJawConfig(characterId);
+    res.json({ success: true, enabled: !!config.enabled });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -123,12 +110,10 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
-    const settings = await readJawSettings();
-    const cur = settings[String(characterId)] || {};
-    cur.enabled = !!req.body.enabled;
-    settings[String(characterId)] = cur;
-    await writeJawSettings(settings);
-    res.json({ success: true, enabled: cur.enabled });
+    const config = await jawAnimationService.readJawConfig(characterId);
+    config.enabled = !!req.body.enabled;
+    await jawAnimationService.writeJawConfig(characterId, config);
+    res.json({ success: true, enabled: config.enabled });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -481,7 +466,7 @@ router.post('/api/jaw-drive', express.json(), async (req, res) => {
     const characterId = getCurrentCharacterId(req);
     const amp = Number(req.body && req.body.amplitude);
     if (!Number.isFinite(amp)) return res.status(400).json({ success: false, error: 'amplitude required (0..1)' });
-    try { await jawAnimationService.driveFromAmplitude({ characterId, amplitude: Math.max(0, Math.min(1, amp)) }); } catch (_) { }
+    try { await jawAnimationService.driveJawFromAmplitude(characterId, Math.max(0, Math.min(1, amp))); } catch (_) { }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

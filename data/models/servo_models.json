@@ -15,7 +15,7 @@
       "controlType": [
         "PWM"
       ],
-      "torque": "40kg\u00b7cm (7.4V)",
+      "torque": "40kg·cm (7.4V)",
       "voltage": "4.8-7.4V",
       "speed": "~0.15s/60deg"
     }
@@ -36,7 +36,7 @@
       "controlType": [
         "PWM"
       ],
-      "torque": "~2.0-2.2kg\u00b7cm",
+      "torque": "~2.0-2.2kg·cm",
       "voltage": "4.8-6.0V",
       "speed": "~0.10s/60deg"
     }
@@ -72,11 +72,11 @@
       "servoType": "standard"
     },
     "meta": {
-      "notes": "Waterproof 25kg\u00b7cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
+      "notes": "Waterproof 25kg·cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
       "controlType": [
         "PWM"
       ],
-      "torque": "25kg\u00b7cm",
+      "torque": "25kg·cm",
       "voltage": "4.8-7.4V"
     }
   },
@@ -84,7 +84,7 @@
     "id": "servo_gobilda_stingray2",
     "name": "goBILDA Stingray-2 Servo Gearbox",
     "manufacturer": "goBILDA",
-    "description": "goBILDA Stingray-2 with 5-Turn Torque Servo, 900\u00b0 rotation, 700 oz-in torque",
+    "description": "goBILDA Stingray-2 with 5-Turn Torque Servo, 900° rotation, 700 oz-in torque",
     "defaults": {
       "minPulse": 500,
       "maxPulse": 2500,
@@ -93,14 +93,14 @@
       "servoType": "multi-turn"
     },
     "meta": {
-      "notes": "goBILDA Stingray-2 Servo Gearbox with 2:1 gear ratio. 900\u00b0 rotation (2.5 turns). Used for 'Head on a Swivel' and similar applications.",
+      "notes": "goBILDA Stingray-2 Servo Gearbox with 2:1 gear ratio. 900° rotation (2.5 turns). Used for 'Head on a Swivel' and similar applications.",
       "controlType": [
         "PWM"
       ],
-      "torque": "700 oz-in (49 kg\u00b7cm)",
-      "speed": "0.33s/60\u00b0 @ 6V (30 RPM)",
+      "torque": "700 oz-in (49 kg·cm)",
+      "speed": "0.33s/60° @ 6V (30 RPM)",
       "voltage": "4.8-6V",
-      "rotation": "900\u00b0",
+      "rotation": "900°",
       "gearRatio": "2:1"
     }
   }

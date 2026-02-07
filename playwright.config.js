@@ -12,8 +12,9 @@ export default defineConfig({
   workers: 1, // Single worker to prevent server conflicts
   reporter: [
     ['list'],
-    ['html', { outputFolder: 'playwright-report', open: 'never' }]
+    ['html', { outputFolder: 'tests/playwright-report', open: 'never' }]
   ],
+  outputDir: 'tests/test-results',
   
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',

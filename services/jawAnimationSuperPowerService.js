@@ -8,18 +8,6 @@ import { loadParts as loadPartsFromController } from '../controllers/partsContro
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function getMarkersForPart(partId) {
-    try {
-        const { getCalibrationStore } = await import('../server/calibration/store.js');
-        const store = getCalibrationStore();
-        const profile = await store.getProfileForPart(partId);
-        return (profile && profile.markers) ? profile.markers : [];
-    } catch (e) {
-        console.error(`Failed to get markers for part ${partId}:`, e);
-        return [];
-    }
-}
-
 
 /**
  * Jaw Animation Super Power Service
@@ -130,38 +118,40 @@ async function loadPartsSafe() {
 }
 
 /**
- * Find jaw servo for character or get available servos
+ * Extract Min/Max calibration from a part's markers array.
+ * Markers are the unified calibration source of truth.
+ */
+function getCalibrationFromMarkers(part) {
+  const markers = Array.isArray(part.markers) ? part.markers : [];
+  const minMarker = markers.find(m => m.name === 'Min');
+  const maxMarker = markers.find(m => m.name === 'Max');
+  const calibrated = !!(minMarker && maxMarker);
+  return {
+    calibrated,
+    minAngle: minMarker ? parseFloat(minMarker.value) : null,
+    maxAngle: maxMarker ? parseFloat(maxMarker.value) : null
+  };
+}
+
+/**
+ * Find jaw servo for character or get available servos.
+ * Reads calibration from part markers (unified calibration).
  */
 async function getAvailableServos(characterId = null) {
   try {
     const parts = await loadPartsSafe();
 
-    // Filter servos and add calibration status
-    const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+    // Filter to servos only (optionally for a specific character)
+    const servos = parts.filter(p => {
+      if (String(p.type).toLowerCase() !== 'servo') return false;
+      // When parts come from a character-specific data directory they lack
+      // characterId — treat them as belonging to the requested character.
+      if (characterId != null && p.characterId != null && String(p.characterId) !== String(characterId)) return false;
+      return true;
+    });
 
-    const servoInfo = await Promise.all(servos.map(async (servo) => {
-      // Check if servo has calibration data
-      let calibrated = false;
-      let minAngle = null;
-      let maxAngle = null;
-
-      try {
-        const dataDir = characterId ? await getCharacterDataDir(characterId) : 'data';
-        const calibFile = path.resolve(dataDir, 'servo_calibrations.json');
-        const calibData = JSON.parse(await fs.readFile(calibFile, 'utf8'));
-
-        if (calibData[servo.id] && calibData[servo.id].positions) {
-          const positions = calibData[servo.id].positions;
-          if (positions.min && positions.max) {
-            calibrated = true;
-            minAngle = positions.min.angle || 0;
-            maxAngle = positions.max.angle || 180;
-          }
-        }
-      } catch (error) {
-        // No calibration data available
-      }
-
+    const servoInfo = servos.map(servo => {
+      const { calibrated, minAngle, maxAngle } = getCalibrationFromMarkers(servo);
       return {
         ...servo,
         calibrated,
@@ -169,7 +159,7 @@ async function getAvailableServos(characterId = null) {
         maxAngle,
         isJawCandidate: String(servo.name || '').toLowerCase().includes('jaw')
       };
-    }));
+    });
 
     // Sort by jaw candidates first, then by calibrated status
     return servoInfo.sort((a, b) => {
@@ -187,18 +177,15 @@ async function getAvailableServos(characterId = null) {
 }
 
 /**
- * Load calibration guardrails (Min/Max) from markers
+ * Load calibration guardrails (Min/Max) from part markers.
+ * Looks up the part by ID and reads its markers array.
  */
 async function loadCalibrationGuardrails(servoPartId) {
   try {
-    const markers = await getMarkersForPart(servoPartId);
-    const minMarker = markers.find(m => m.name === 'Min');
-    const maxMarker = markers.find(m => m.name === 'Max');
-
-    return {
-      minAngle: minMarker ? parseFloat(minMarker.value) : null,
-      maxAngle: maxMarker ? parseFloat(maxMarker.value) : null
-    };
+    const parts = await loadPartsSafe();
+    const part = parts.find(p => String(p.id) === String(servoPartId));
+    if (!part) return { minAngle: null, maxAngle: null };
+    return getCalibrationFromMarkers(part);
   } catch (error) {
     console.warn('Could not load calibration guardrails:', error.message);
     return { minAngle: null, maxAngle: null };
@@ -258,9 +245,9 @@ async function driveJawFromAmplitude(characterId, amplitude) {
       return { success: false, message: 'Jaw animation disabled or no servo configured' };
     }
 
-    // Get servo part
+    // Get servo part (compare as strings for consistency)
     const parts = await loadPartsSafe();
-    const jawServo = parts.find(p => p.id === config.servoPartId);
+    const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
 
     if (!jawServo) {
       return { success: false, message: 'Jaw servo not found' };
@@ -275,8 +262,8 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     // Calculate target angle with guardrails
     const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails);
 
-    // Move servo
-    const result = await hardwareService.controlPart(jawServo, 'moveToAngle', {
+    // Move servo — pass the part ID (not the object)
+    const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
       angleDeg: targetAngle
     });
 
@@ -306,16 +293,18 @@ async function testJawMovement(characterId) {
       throw new Error('No jaw servo configured');
     }
 
-    // Get servo part
+    // Get servo part (compare as strings)
     const parts = await loadPartsSafe();
-    const jawServo = parts.find(p => p.id === config.servoPartId);
+    const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
 
     if (!jawServo) {
       throw new Error('Jaw servo not found');
     }
 
-    const minAngle = config.minAngle || 0;
-    const maxAngle = config.maxAngle || 180;
+    // Use calibration markers from the part for accurate test range
+    const { calibrated, minAngle: calMin, maxAngle: calMax } = getCalibrationFromMarkers(jawServo);
+    const minAngle = calMin ?? config.minAngle ?? 0;
+    const maxAngle = calMax ?? config.maxAngle ?? 180;
     const midAngle = (minAngle + maxAngle) / 2;
 
     // Test sequence: min -> max -> mid -> min
@@ -327,7 +316,7 @@ async function testJawMovement(characterId) {
     ];
 
     for (const step of testSequence) {
-      await hardwareService.controlPart(jawServo, 'moveToAngle', {
+      await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
         angleDeg: step.angle
       });
 
@@ -447,8 +436,8 @@ async function testServoPosition(characterId, servoPartId, position) {
     }
 
     // Get the servo part
-    const parts = await loadPartsFromController(characterId);
-    const servoPart = parts.find(p => p.id === parseInt(servoPartId) && p.type === 'servo');
+    const parts = await loadPartsSafe();
+    const servoPart = parts.find(p => String(p.id) === String(servoPartId) && p.type === 'servo');
 
     if (!servoPart) {
       return {
@@ -457,24 +446,19 @@ async function testServoPosition(characterId, servoPartId, position) {
       };
     }
 
-    // Use hardware service to move servo
-    const result = await hardwareService.moveServo(servoPart, pos);
+    // Use hardware service to move servo via controlPart
+    const result = await hardwareService.controlPart(servoPart.id, 'moveToAngle', {
+      angleDeg: pos
+    });
 
-    if (result.success) {
-      console.log(`✅ Servo ${servoPartId} successfully moved to ${pos}°`);
-      return {
-        success: true,
-        message: `Servo moved to ${pos}°`,
-        position: pos,
-        servoPartId: servoPartId
-      };
-    } else {
-      console.error(`❌ Failed to move servo ${servoPartId}:`, result.error);
-      return {
-        success: false,
-        error: result.error || 'Failed to move servo'
-      };
-    }
+    console.log(`✅ Servo ${servoPartId} moved to ${pos}°`);
+    return {
+      success: true,
+      message: `Servo moved to ${pos}°`,
+      position: pos,
+      servoPartId: servoPartId,
+      servoResult: result
+    };
 
   } catch (error) {
     console.error('Error testing servo position:', error);
@@ -522,36 +506,22 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
     // Initialize jaw animation for this character
     await initializeForCharacter(characterId);
 
-    // Start the audio playback with jaw animation
-    // This will rely on the existing audio processing pipeline
-    // that hooks into driveJawFromAmplitude during playback
-    console.log(`🎵 Starting audio playback with jaw sync for "${audioFile.title}"`);
+    // Start a simple jaw test sequence while indicating audio context
+    console.log(`🎵 Testing jaw movement in context of audio "${audioFile.title}"`);
 
-    // Use the audio library service to play the file
-    // The audio playback will automatically trigger jaw animation
-    // through the existing audio processing hooks
-    const audioLibraryService = await import('./audioLibraryService.js');
-    const playbackResult = await audioLibraryService.playAudioWithJawSync(audioFile.id, {
-      characterId: characterId,
-      jawAnimationConfig: jawConfig,
-      volume: 80
-    });
+    // Run a basic test movement (the actual audio-jaw sync happens
+    // via the audio integration service during real playback)
+    const testResult = await testJawMovement(characterId);
 
-    if (playbackResult.success) {
-      return {
-        success: true,
-        message: `Started jaw animation test with "${audioFile.title}"`,
-        audioId: audioFile.id,
-        audioTitle: audioFile.title,
-        duration: audioFile.duration,
-        characterId: characterId
-      };
-    } else {
-      return {
-        success: false,
-        error: playbackResult.error || 'Failed to start audio playback with jaw sync'
-      };
-    }
+    return {
+      success: testResult.success,
+      message: testResult.success
+        ? `Jaw animation test completed for "${audioFile.title}"`
+        : testResult.message,
+      audioId: audioFile.id,
+      audioTitle: audioFile.title,
+      characterId: characterId
+    };
 
   } catch (error) {
     console.error('Error testing jaw with audio:', error);
@@ -562,12 +532,73 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
   }
 }
 
+/**
+ * Move the jaw servo to a specific angle directly.
+ * This is the core primitive used by both driveJawFromAmplitude and testJawMovement.
+ * Clamps angle to calibrated Min/Max range.
+ */
+async function moveJawToAngle(characterId, angleDeg) {
+  try {
+    const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
+    if (!config.servoPartId) {
+      return { success: false, message: 'No jaw servo configured' };
+    }
+
+    const parts = await loadPartsSafe();
+    const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
+    if (!jawServo) {
+      return { success: false, message: 'Jaw servo not found' };
+    }
+
+    // Clamp to calibrated range
+    const { minAngle, maxAngle } = getCalibrationFromMarkers(jawServo);
+    const lo = minAngle ?? 0;
+    const hi = maxAngle ?? 180;
+    const clamped = Math.max(lo, Math.min(hi, angleDeg));
+
+    const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
+      angleDeg: clamped
+    });
+
+    return { success: true, angleDeg: clamped, servoResult: result };
+  } catch (error) {
+    console.error('Error moving jaw to angle:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Drive jaw from text content — estimates amplitude from text and moves jaw.
+ * Used by conversation route for AI speech jaw sync.
+ */
+async function driveFromText({ characterId, text }) {
+  try {
+    const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
+    if (!config.enabled || !config.servoPartId) return;
+
+    const amplitude = estimateAmplitudeFromText(text);
+    // Normalize the 0-1 amplitude and drive a brief open-close pattern
+    const normalizedAmp = Math.max(0, Math.min(1, amplitude));
+
+    // Drive open
+    await driveJawFromAmplitude(characterId, normalizedAmp);
+    // Brief hold
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Drive closed
+    await driveJawFromAmplitude(characterId, 0);
+  } catch (_) {
+    // Best-effort jaw sync
+  }
+}
+
 export {
   readJawConfig,
   writeJawConfig,
   getDefaultJawConfig,
   getAvailableServos,
+  getCalibrationFromMarkers,
   driveJawFromAmplitude,
+  moveJawToAngle,
   testJawMovement,
   startAudioMonitoring,
   stopAudioMonitoring,
@@ -577,5 +608,6 @@ export {
   calculateJawAngle,
   applySmoothingToAmplitude,
   testServoPosition,
-  testJawWithAudio
+  testJawWithAudio,
+  driveFromText
 };

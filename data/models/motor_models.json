@@ -68,7 +68,7 @@
     "id": "motor_stepperonline_nema17_59ncm",
     "name": "STEPPERONLINE Nema 17 Stepper (59Ncm, 2A, 48mm, 4-lead)",
     "manufacturer": "STEPPERONLINE",
-    "description": "NEMA 17 stepper motor, 59Ncm (84 oz-in) holding torque, 1.8\u00b0 step, 2A/phase, 4-lead",
+    "description": "NEMA 17 stepper motor, 59Ncm (84 oz-in) holding torque, 1.8° step, 2A/phase, 4-lead",
     "defaults": {
       "motorType": "stepper",
       "stepsPerRevolution": 200,
