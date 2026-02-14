@@ -20,7 +20,7 @@ describe('Jaw Animation Super Power API', () => {
       expect(res.text).to.include('sensitivityRange');
       expect(res.text).to.include('smoothingRange');
       expect(res.text).to.include('testJawBtn');
-      expect(res.text).to.include('startMonitoringBtn');
+      expect(res.text).to.include('playTtsBtn');
       expect(res.text).to.include('emergencyStopBtn');
     });
 
@@ -31,7 +31,7 @@ describe('Jaw Animation Super Power API', () => {
 
     it('should serve the jaw-animation.js static file', async () => {
       const res = await request(BASE_URL).get('/js/jaw-animation.js').expect(200);
-      expect(res.text).to.include('initJawAnimation');
+      expect(res.text).to.include('pollAudioLevels');
     });
   });
 

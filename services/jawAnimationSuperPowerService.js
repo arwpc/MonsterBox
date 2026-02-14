@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 import hardwareService from './hardwareService/index.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
@@ -17,6 +18,8 @@ const __dirname = path.dirname(__filename);
 
 let audioMonitoringState = new Map(); // characterId -> { isMonitoring, lastAmplitude, smoothedAmplitude }
 let characterConfigs = new Map(); // characterId -> jaw animation config
+let activeJawDrives = new Map(); // characterId -> { cancelled, timer, amplitude, angle }
+let envelopeState = new Map(); // characterId -> { lastAngle, lastTime }
 
 /**
  * Get the data directory for the current character
@@ -193,25 +196,49 @@ async function loadCalibrationGuardrails(servoPartId) {
 }
 
 /**
- * Calculate jaw angle based on audio amplitude with calibration guardrails
+ * Calculate jaw angle based on audio amplitude with calibration guardrails.
+ * Applies attack/release envelope when attackTime or releaseTime are configured.
  */
-function calculateJawAngle(amplitude, config, guardrails = {}) {
-  // Apply volume threshold
-  if (amplitude < config.volumeThreshold) {
-    return guardrails.minAngle || config.minAngle || 0;
-  }
-
-  // Apply sensitivity
-  const sensitiveAmplitude = Math.min(1.0, amplitude * config.sensitivity);
-
-  // Use calibration guardrails if available, otherwise fall back to config
+function calculateJawAngle(amplitude, config, guardrails = {}, characterId) {
   const minAngle = guardrails.minAngle ?? config.minAngle ?? 0;
   const maxAngle = guardrails.maxAngle ?? config.maxAngle ?? 180;
-  const angleRange = maxAngle - minAngle;
 
-  // Calculate target angle and clamp to guardrails
-  const targetAngle = minAngle + (sensitiveAmplitude * angleRange);
-  return Math.max(minAngle, Math.min(maxAngle, targetAngle));
+  // Apply volume threshold
+  if (amplitude < config.volumeThreshold) {
+    var rawTarget = minAngle;
+  } else {
+    // Apply sensitivity
+    const sensitiveAmplitude = Math.min(1.0, amplitude * config.sensitivity);
+    const angleRange = maxAngle - minAngle;
+    rawTarget = minAngle + (sensitiveAmplitude * angleRange);
+    rawTarget = Math.max(minAngle, Math.min(maxAngle, rawTarget));
+  }
+
+  // Apply attack/release envelope if characterId is provided
+  if (characterId) {
+    const now = Date.now();
+    const env = envelopeState.get(String(characterId)) || { lastAngle: minAngle, lastTime: now };
+    const dt = Math.max(1, now - env.lastTime); // ms since last update
+
+    if (rawTarget > env.lastAngle) {
+      // Opening — apply attack ramp
+      const attackTime = config.attackTime || 50;
+      const maxDelta = ((maxAngle - minAngle) * dt) / Math.max(1, attackTime);
+      rawTarget = Math.min(rawTarget, env.lastAngle + maxDelta);
+    } else if (rawTarget < env.lastAngle) {
+      // Closing — apply release ramp
+      const releaseTime = config.releaseTime || 150;
+      const maxDelta = ((maxAngle - minAngle) * dt) / Math.max(1, releaseTime);
+      rawTarget = Math.max(rawTarget, env.lastAngle - maxDelta);
+    }
+
+    rawTarget = Math.max(minAngle, Math.min(maxAngle, rawTarget));
+    env.lastAngle = rawTarget;
+    env.lastTime = now;
+    envelopeState.set(String(characterId), env);
+  }
+
+  return rawTarget;
 }
 
 /**
@@ -259,8 +286,8 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     // Apply smoothing
     const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
 
-    // Calculate target angle with guardrails
-    const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails);
+    // Calculate target angle with guardrails and attack/release envelope
+    const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
 
     // Move servo — pass the part ID (not the object)
     const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
@@ -591,6 +618,273 @@ async function driveFromText({ characterId, text }) {
   }
 }
 
+/**
+ * Drive jaw servo from an audio buffer (MP3/WAV).
+ * Decodes to raw PCM via ffmpeg, computes RMS per 50ms frame,
+ * and drives the jaw synchronously each frame (ChatterPi-style).
+ *
+ * Key design: all angle computation happens synchronously in the
+ * frame loop — config, parts and guardrails are preloaded once.
+ * The servo command is fired async but we don't wait for it.
+ * This eliminates the race condition where driveState.angle was
+ * only set inside an async .then() callback.
+ *
+ * Returns a Promise that resolves when playback is complete.
+ */
+async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
+  // Cancel any existing drive for this character
+  cancelJawDrive(characterId);
+
+  const cid = String(characterId);
+  const driveState = { cancelled: false, timer: null, amplitude: 0, angle: 0 };
+  activeJawDrives.set(cid, driveState);
+
+  // Update monitoring state to indicate active playback
+  const monState = audioMonitoringState.get(cid) || { isMonitoring: false, lastAmplitude: 0, smoothedAmplitude: 0 };
+  monState.isMonitoring = true;
+  audioMonitoringState.set(cid, monState);
+
+  // --- Preload all async dependencies ONCE before the frame loop ---
+  // This is inspired by ChatterPi's approach: everything the audio
+  // callback needs is resolved up-front so the per-frame work is
+  // purely synchronous (compute angle, set state, fire servo).
+  const config = characterConfigs.get(cid) || await readJawConfig(characterId);
+  if (!config.enabled || !config.servoPartId) {
+    activeJawDrives.delete(cid);
+    return { success: false, message: 'Jaw animation disabled or no servo configured' };
+  }
+
+  const parts = await loadPartsSafe();
+  const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
+  if (!jawServo) {
+    activeJawDrives.delete(cid);
+    return { success: false, message: 'Jaw servo not found' };
+  }
+
+  const guardrails = await loadCalibrationGuardrails(config.servoPartId);
+  const closedAngle = guardrails.minAngle ?? config.minAngle ?? 0;
+
+  return new Promise((resolve, reject) => {
+    // Decode audio to raw PCM: signed 16-bit little-endian, 16kHz, mono
+    const ffmpeg = spawn('ffmpeg', [
+      '-i', 'pipe:0',
+      '-f', 's16le',
+      '-ar', '16000',
+      '-ac', '1',
+      'pipe:1'
+    ], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+    const pcmChunks = [];
+
+    ffmpeg.stdout.on('data', (chunk) => {
+      pcmChunks.push(chunk);
+    });
+
+    ffmpeg.stderr.on('data', () => {
+      // Suppress ffmpeg stderr noise
+    });
+
+    ffmpeg.on('error', (err) => {
+      console.error('ffmpeg spawn error:', err.message);
+      driveState.cancelled = true;
+      activeJawDrives.delete(cid);
+      resolve({ success: false, error: err.message });
+    });
+
+    ffmpeg.on('close', (code) => {
+      if (driveState.cancelled) {
+        resolve({ success: false, error: 'Cancelled' });
+        return;
+      }
+
+      const pcmBuffer = Buffer.concat(pcmChunks);
+      if (pcmBuffer.length === 0) {
+        activeJawDrives.delete(cid);
+        resolve({ success: false, error: 'No PCM data decoded' });
+        return;
+      }
+
+      // Split into 50ms frames: 16000 Hz * 0.05s * 2 bytes = 1600 bytes per frame
+      const FRAME_SIZE = 1600;
+      const FRAME_DURATION_MS = 50;
+      const frames = [];
+
+      for (let offset = 0; offset < pcmBuffer.length; offset += FRAME_SIZE) {
+        const end = Math.min(offset + FRAME_SIZE, pcmBuffer.length);
+        const frameData = pcmBuffer.subarray(offset, end);
+
+        // Compute RMS amplitude
+        let sum = 0;
+        const sampleCount = Math.floor(frameData.length / 2);
+        for (let i = 0; i < sampleCount; i++) {
+          const sample = frameData.readInt16LE(i * 2);
+          sum += sample * sample;
+        }
+        const rms = sampleCount > 0 ? Math.sqrt(sum / sampleCount) / 32768 : 0;
+        frames.push(rms);
+      }
+
+      const totalDuration = frames.length * FRAME_DURATION_MS;
+      let frameIndex = 0;
+
+      function nextFrame() {
+        if (driveState.cancelled || frameIndex >= frames.length) {
+          // Done — close jaw (fire-and-forget servo command)
+          hardwareService.controlPart(jawServo.id, 'moveToAngle', { angleDeg: closedAngle }).catch(() => {});
+          driveState.amplitude = 0;
+          driveState.angle = closedAngle;
+          const ms = audioMonitoringState.get(cid);
+          if (ms) {
+            ms.isMonitoring = false;
+            ms.lastAmplitude = 0;
+            ms.smoothedAmplitude = 0;
+          }
+          activeJawDrives.delete(cid);
+          resolve({ success: true, duration: totalDuration, frameCount: frames.length });
+          return;
+        }
+
+        const amplitude = frames[frameIndex];
+
+        // --- Synchronous angle computation (ChatterPi-style) ---
+        // Apply smoothing, threshold, sensitivity, and envelope —
+        // all pure math, no async calls needed.
+        const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
+        const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
+
+        // Set state IMMEDIATELY so the polling endpoint always
+        // sees the current amplitude and angle — no async gap.
+        driveState.amplitude = amplitude;
+        driveState.angle = targetAngle;
+
+        // Update monitoring state synchronously
+        const ms = audioMonitoringState.get(cid);
+        if (ms) {
+          ms.lastAmplitude = amplitude;
+          ms.smoothedAmplitude = smoothedAmplitude;
+        }
+
+        // Fire servo command async (don't wait — like ChatterPi
+        // which sets servo.angle and lets hardware handle PWM).
+        hardwareService.controlPart(jawServo.id, 'moveToAngle', {
+          angleDeg: targetAngle
+        }).catch(() => {});
+
+        frameIndex++;
+        driveState.timer = setTimeout(nextFrame, FRAME_DURATION_MS);
+      }
+
+      // Begin the frame loop
+      nextFrame();
+    });
+
+    // Write audio buffer to ffmpeg stdin
+    ffmpeg.stdin.write(audioBuffer);
+    ffmpeg.stdin.end();
+  });
+}
+
+/**
+ * Cancel an active jaw drive for a character.
+ * Stops the frame loop and returns jaw to closed position.
+ */
+function cancelJawDrive(characterId) {
+  const cid = String(characterId);
+  const state = activeJawDrives.get(cid);
+  if (state) {
+    state.cancelled = true;
+    if (state.timer) {
+      clearTimeout(state.timer);
+      state.timer = null;
+    }
+    activeJawDrives.delete(cid);
+  }
+  // Reset monitoring state
+  const ms = audioMonitoringState.get(cid);
+  if (ms) {
+    ms.isMonitoring = false;
+    ms.lastAmplitude = 0;
+    ms.smoothedAmplitude = 0;
+  }
+}
+
+/**
+ * Get the current jaw drive state for a character (used by the polling endpoint).
+ */
+function getJawDriveState(characterId) {
+  const cid = String(characterId);
+  const state = activeJawDrives.get(cid);
+  if (state && !state.cancelled) {
+    return { active: true, amplitude: state.amplitude, angle: state.angle };
+  }
+  return { active: false, amplitude: 0, angle: 0 };
+}
+
+/**
+ * Simulate jaw drive for test/demo mode (no real audio or hardware).
+ * Generates synthetic amplitude frames that look like natural speech
+ * and updates the same state maps so the polling endpoint returns
+ * animated data.
+ */
+function simulateJawDrive(characterId, durationMs) {
+  cancelJawDrive(characterId);
+
+  const cid = String(characterId);
+  const FRAME_MS = 50;
+  const totalFrames = Math.ceil((durationMs || 2000) / FRAME_MS);
+  const driveState = { cancelled: false, timer: null, amplitude: 0, angle: 0 };
+  activeJawDrives.set(cid, driveState);
+
+  const monState = audioMonitoringState.get(cid) || { isMonitoring: false, lastAmplitude: 0, smoothedAmplitude: 0 };
+  monState.isMonitoring = true;
+  audioMonitoringState.set(cid, monState);
+
+  // Pre-generate synthetic speech-like amplitude frames
+  const frames = [];
+  for (let i = 0; i < totalFrames; i++) {
+    const t = i / totalFrames;
+    // Envelope: fade in 10%, sustain, fade out last 15%
+    let env = 1;
+    if (t < 0.10) env = t / 0.10;
+    else if (t > 0.85) env = (1 - t) / 0.15;
+    // Simulate speech with mixed sine waves + randomness
+    const speech = 0.3 + 0.25 * Math.sin(i * 0.7) + 0.15 * Math.sin(i * 1.3) + 0.1 * Math.sin(i * 2.9);
+    // Add brief pauses (simulates word boundaries)
+    const wordPause = (Math.sin(i * 0.15) > 0.85) ? 0.05 : 1;
+    frames.push(Math.max(0, Math.min(1, speech * env * wordPause + Math.random() * 0.05)));
+  }
+
+  let frameIndex = 0;
+
+  function nextFrame() {
+    if (driveState.cancelled || frameIndex >= frames.length) {
+      driveState.amplitude = 0;
+      driveState.angle = 0;
+      const ms = audioMonitoringState.get(cid);
+      if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
+      activeJawDrives.delete(cid);
+      return;
+    }
+
+    const amp = frames[frameIndex];
+    driveState.amplitude = amp;
+    // Map amplitude to angle range (use config min/max or defaults)
+    const minA = 70, maxA = 93; // typical Orlok jaw range
+    driveState.angle = minA + amp * (maxA - minA);
+
+    const ms = audioMonitoringState.get(cid);
+    if (ms) {
+      ms.lastAmplitude = amp;
+      ms.smoothedAmplitude = amp * 0.7 + (ms.smoothedAmplitude || 0) * 0.3;
+    }
+
+    frameIndex++;
+    driveState.timer = setTimeout(nextFrame, FRAME_MS);
+  }
+
+  nextFrame();
+}
+
 export {
   readJawConfig,
   writeJawConfig,
@@ -609,5 +903,9 @@ export {
   applySmoothingToAmplitude,
   testServoPosition,
   testJawWithAudio,
-  driveFromText
+  driveFromText,
+  driveJawFromAudioBuffer,
+  cancelJawDrive,
+  getJawDriveState,
+  simulateJawDrive
 };

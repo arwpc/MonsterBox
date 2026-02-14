@@ -2,6 +2,10 @@ import express from 'express';
 import { loadCharacters } from '../../services/characterService.js';
 import * as configService from '../../services/configService.js';
 import * as jawAnimationService from '../../services/jawAnimationSuperPowerService.js';
+import { getTTSConfigForCharacter } from '../../services/aiConfigStore.js';
+import elevenLabsTTSService from '../../services/elevenLabsTTSService.js';
+import serverPlaybackService from '../../services/serverPlaybackService.js';
+import { loadParts as loadPartsFromController, saveParts } from '../../controllers/partsController.js';
 
 const router = express.Router();
 
@@ -186,22 +190,21 @@ router.post('/api/jaw-animation/:characterId/test', async (req, res) => {
   }
 });
 
-// Get real-time audio levels (simulated for now)
+// Get real-time audio levels and jaw state
 router.get('/api/jaw-animation/:characterId/audio-levels', async (req, res) => {
   try {
     const { characterId } = req.params;
     const monitoringState = jawAnimationService.getAudioMonitoringState(characterId);
-
-    // Add some simulated audio level for demonstration
-    const simulatedLevel = Math.random() * 0.3; // Low level simulation
+    const driveState = jawAnimationService.getJawDriveState(characterId);
 
     res.json({
       success: true,
       characterId: characterId,
-      isMonitoring: monitoringState.isMonitoring,
-      currentAmplitude: monitoringState.lastAmplitude,
+      isMonitoring: monitoringState.isMonitoring || driveState.active,
+      currentAmplitude: driveState.active ? driveState.amplitude : monitoringState.lastAmplitude,
       smoothedAmplitude: monitoringState.smoothedAmplitude,
-      simulatedLevel: simulatedLevel,
+      jawAngle: driveState.angle,
+      playing: driveState.active,
       timestamp: Date.now()
     });
   } catch (error) {
@@ -267,6 +270,150 @@ router.get('/api/jaw-animation/:characterId/servos', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting available servos:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Test TTS with jaw animation — generates speech, plays through speaker, drives jaw from audio
+router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const { text } = req.body || {};
+
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({ success: false, error: 'text is required' });
+    }
+
+    // In test mode, bypass real TTS but still simulate jaw animation
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      const simDuration = 2000;
+      jawAnimationService.simulateJawDrive(characterId, simDuration);
+      return res.json({ success: true, duration: simDuration, testMode: true });
+    }
+
+    // Get TTS config for the character's voice
+    const ttsCfg = await getTTSConfigForCharacter(characterId);
+    const gen = await elevenLabsTTSService.generateSpeech(String(text).trim(), ttsCfg.voice_id, ttsCfg);
+
+    if (!gen.success) {
+      return res.status(500).json({ success: false, error: gen.error || 'TTS generation failed' });
+    }
+
+    // Play audio on character's speaker (fire-and-forget — don't block the response)
+    serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
+      contentType: gen.contentType,
+      characterId: characterId
+    }).catch((err) => {
+      console.error('TTS playback error:', err.message);
+    });
+
+    // Drive jaw from audio buffer simultaneously (fire-and-forget)
+    jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType)
+      .catch((err) => {
+        console.error('Jaw drive error:', err.message);
+      });
+
+    // Estimate duration from buffer size (rough: MP3 at ~128kbps or WAV)
+    const contentType = gen.contentType || 'audio/mpeg';
+    let estimatedDuration = 3000;
+    if (contentType.includes('mpeg') || contentType.includes('mp3')) {
+      estimatedDuration = Math.round((gen.audioBuffer.length * 8) / 128000 * 1000);
+    } else {
+      // Assume WAV 16kHz 16bit mono
+      estimatedDuration = Math.round((gen.audioBuffer.length / (16000 * 2)) * 1000);
+    }
+
+    res.json({ success: true, duration: estimatedDuration });
+  } catch (error) {
+    console.error('Error in test-tts:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Adjust calibration for a servo part's Min or Max marker
+router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const { servoPartId, marker, delta } = req.body || {};
+
+    if (!servoPartId || !marker || delta === undefined) {
+      return res.status(400).json({ success: false, error: 'servoPartId, marker, and delta are required' });
+    }
+
+    if (marker !== 'Min' && marker !== 'Max') {
+      return res.status(400).json({ success: false, error: 'marker must be "Min" or "Max"' });
+    }
+
+    const parts = await loadPartsFromController();
+    const partIndex = parts.findIndex(p => String(p.id) === String(servoPartId));
+
+    if (partIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Servo part not found' });
+    }
+
+    const part = parts[partIndex];
+    if (!Array.isArray(part.markers)) {
+      return res.status(400).json({ success: false, error: 'Part has no calibration markers' });
+    }
+
+    const markerObj = part.markers.find(m => m.name === marker);
+    if (!markerObj) {
+      return res.status(400).json({ success: false, error: `Marker "${marker}" not found on part` });
+    }
+
+    // Apply delta
+    markerObj.value = parseFloat(markerObj.value) + parseFloat(delta);
+
+    // Clamp to 0-180
+    markerObj.value = Math.max(0, Math.min(180, markerObj.value));
+
+    // Save parts
+    await saveParts(parts);
+
+    // Read updated calibration
+    const { calibrated, minAngle, maxAngle } = jawAnimationService.getCalibrationFromMarkers(part);
+
+    // Also update jaw config to reflect new calibration
+    const jawConfig = await jawAnimationService.readJawConfig(characterId);
+    if (jawConfig.servoPartId === String(servoPartId)) {
+      jawConfig.minAngle = minAngle;
+      jawConfig.maxAngle = maxAngle;
+      await jawAnimationService.writeJawConfig(characterId, jawConfig);
+    }
+
+    res.json({
+      success: true,
+      newValue: markerObj.value,
+      minAngle: minAngle,
+      maxAngle: maxAngle
+    });
+  } catch (error) {
+    console.error('Error adjusting calibration:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Stop playback and jaw drive
+router.post('/api/jaw-animation/:characterId/stop', async (req, res) => {
+  try {
+    const { characterId } = req.params;
+
+    // Cancel jaw drive loop
+    jawAnimationService.cancelJawDrive(characterId);
+
+    // Drive jaw to closed position
+    await jawAnimationService.moveJawToAngle(characterId, 0).catch(() => {});
+
+    // Stop any active audio playback for the character
+    try {
+      await serverPlaybackService.stopForCharacter(characterId);
+    } catch (e) {
+      // Non-fatal — playback may not be active
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error stopping playback:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -103,6 +103,55 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 
 Open: http://localhost:3000/setup/calibration
 
+## Jaw Animation (Super Power)
+
+Jaw Animation drives a servo to match speech amplitude in real-time, producing lifelike mouth movement during TTS playback. Inspired by [ChatterPi](https://github.com/ViennaMike/ChatterPi), amplitude-to-angle mapping runs **synchronously** in each audio frame — no async gaps between amplitude measurement and servo command.
+
+**How It Works:**
+1. ElevenLabs TTS generates an audio buffer
+2. ffmpeg decodes to 16 kHz 16-bit mono PCM
+3. 50 ms RMS frames are processed in a tight loop:
+   - Amplitude computed → sensitivity scaling → smoothing (EMA) → attack/release envelope → angle mapping
+   - `driveState.angle` set **immediately** (synchronous)
+   - Servo command fired as fire-and-forget (async, non-blocking)
+
+**Configuration** (`data/character-{N}/super-powers.json`):
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `enabled` | `true` | Enable jaw animation |
+| `servoPartId` | — | Part ID of the jaw servo (from `parts.json`) |
+| `sensitivity` | `4` | Amplitude multiplier (higher = more responsive) |
+| `smoothing` | `0.2` | EMA smoothing factor (0=max smooth, 1=raw) |
+| `volumeThreshold` | `0.02` | Minimum amplitude to register (noise gate) |
+| `attackTime` | `30` | Max degrees/frame when opening (ramp limiter) |
+| `releaseTime` | `80` | Max degrees/frame when closing (ramp limiter) |
+| `minAngle` | `70` | Servo closed position (degrees) |
+| `maxAngle` | `93` | Servo open position (degrees) |
+
+**Setup Page:** `http://localhost:3000/setup/jaw-animation`
+
+**API:**
+```bash
+# Save jaw config for character 3
+curl -X POST http://localhost:3000/api/jaw-animation/3 \
+  -H "Content-Type: application/json" \
+  -d '{"enabled":true,"servoPartId":"10","sensitivity":4,"smoothing":0.2,"volumeThreshold":0.02,"attackTime":30,"releaseTime":80,"minAngle":70,"maxAngle":93}'
+
+# Drive jaw to specific amplitude (0.0-1.0)
+curl -X POST http://localhost:3000/api/jaw-animation/3/drive \
+  -H "Content-Type: application/json" -d '{"amplitude":0.5}'
+
+# Poll real-time audio levels during playback
+curl http://localhost:3000/api/jaw-animation/3/audio-levels
+
+# Test TTS with jaw drive
+curl -X POST http://localhost:3000/api/jaw-animation/3/test-tts \
+  -H "Content-Type: application/json" -d '{"text":"Hello from Orlok"}'
+```
+
+See: `services/jawAnimationSuperPowerService.js`, `routes/setup/jaw-animation.js`
+
 ## AI Management (ElevenLabs)
 
 All AI voice services run through **ElevenLabs** (single provider, single API key).

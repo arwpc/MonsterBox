@@ -193,8 +193,8 @@ router.post('/api/say', express.json(), async (req, res) => {
     });
     if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
 
-    // Fire-and-forget rudimentary jaw animation driven by text amplitude heuristic
-    try { jawAnimationService.driveFromText({ characterId, text }).catch(() => { }); } catch (_) { }
+    // Fire-and-forget jaw animation driven by real audio amplitude
+    try { jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType).catch(() => { }); } catch (_) { }
 
     res.json({ success: true, device: play.deviceId });
   } catch (e) {
@@ -401,8 +401,8 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
             kind: 'ai'
           });
 
-          // Fire-and-forget jaw animation
-          try { jawAnimationService.driveFromText({ characterId, text: aiResponse.response }).catch(() => {}); } catch (_) {}
+          // Fire-and-forget jaw animation driven by real audio amplitude
+          try { jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType || 'audio/wav').catch(() => {}); } catch (_) {}
 
           return res.json({
             success: true,

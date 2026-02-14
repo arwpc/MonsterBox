@@ -2,6 +2,23 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [5.5.2] - 2026-02-12 — Jaw Animation Sync Fix
+
+### Jaw Animation
+- **ChatterPi-inspired sync fix**: Restructured `driveJawFromAudioBuffer()` to compute angle synchronously in each audio frame — eliminates async gap that caused polling to read stale/zero angles
+- Preload config, parts, and guardrails once before frame loop (no per-frame async lookups)
+- Fire-and-forget servo commands (non-blocking, like ChatterPi's `self.jaw.angle = jawTarget`)
+- Attack/release envelope ramp limiting in `calculateJawAngle()` for natural jaw motion
+- Tuned default parameters: sensitivity=4, smoothing=0.2, attackTime=30, releaseTime=80
+- Fixed double-nested `super-powers.json` bug (`jawAnimation.jawAnimation.{...}` → `jawAnimation.{...}`)
+- Added `simulateJawDrive()` for test mode operation without hardware
+- Improved audio level meter scaling (audio: ×400, jaw: sqrt curve)
+- Added cache-busting to client JS (`?v=<%= Date.now() %>`)
+
+### Documentation
+- Added Jaw Animation section to README with algorithm description, config table, and API examples
+- Updated CHANGELOG with v5.5.2 release notes
+
 ## [5.5.1] - 2026-02-07 — Gold Release
 
 ### ElevenLabs AI Overhaul
