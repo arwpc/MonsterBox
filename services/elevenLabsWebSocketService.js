@@ -392,6 +392,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
                     break;
 
+                case 'set_audio_playback':
+                    // Toggle whether AI audio is played through character speaker
+                    connection.audioPlaybackEnabled = !!(message && message.enabled);
+                    this.sendToClient(sessionId, { type: 'debug', originalType: 'set_audio_playback', data: { enabled: connection.audioPlaybackEnabled } });
+                    break;
+
                 case 'set_stt_language':
                     try {
                         const lang = (message && message.language) ? String(message.language).toLowerCase() : '';
@@ -498,11 +504,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 elevenLabsWs.send(JSON.stringify({
                     type: 'conversation_initiation_client_data',
                     conversation_config_override: {
+                        agent: {
+                            prompt: {
+                                prompt: 'IMPORTANT INSTRUCTION: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs], etc. in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.'
+                            }
+                        },
                         turn_detection: {
                             type: 'server_vad',
                             threshold: 0.5,
-                            prefix_padding_ms: 100, // Reduced for faster response
-                            silence_duration_ms: 500 // Reduced for faster response
+                            prefix_padding_ms: 100,
+                            silence_duration_ms: 500
                         }
                     }
                 }));
@@ -598,56 +609,50 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'audio':
-                    // Real-time audio response with text - CRITICAL FIX: MAKE IT AUDIBLE
+                    // Real-time audio chunk from ElevenLabs agent
                     if (message.audio_event) {
                         const audioData = message.audio_event.audio_base_64;
-                        // Try multiple fields for text content - check audio_event first
+                        // Extract text only if actually present in this chunk
                         const responseText = message.audio_event?.agent_response ||
                             message.audio_event?.text ||
-                            message.agent_response ||
-                            message.text ||
                             null;
 
                         const c = this.activeConnections.get(sessionId);
 
-                        // EMERGENCY FIX: ALWAYS play AI audio through server speakers IMMEDIATELY
-                        // The whole point of AI is to hear it speak - this MUST work
+                        // Play AI audio through server speakers if enabled
                         try {
-                            if (c && audioData) {
-                                // Play immediately - don't buffer, don't queue, just PLAY IT NOW
+                            if (c && audioData && c.audioPlaybackEnabled !== false) {
                                 const audioBuffer = Buffer.from(audioData, 'base64');
                                 
-                                // Use AI-specific playback which has highest priority
                                 serverPlaybackService.playAIOnCharacterSpeaker(audioBuffer, {
                                     characterId: c.characterId,
                                     contentType: 'audio/mpeg',
-                                    volume: 90,  // Louder for AI - needs to be heard over everything
+                                    volume: 90,
                                     kind: 'ai'
-                                }).then(result => {
-                                    if (result.success) {
-                                        console.log(`✅ AI audio played successfully (char ${c.characterId}, device ${result.deviceId})`);
-                                    } else {
-                                        console.error(`❌ AI audio playback FAILED: ${result.error}`);
-                                    }
                                 }).catch(err => {
                                     console.error(`❌ AI audio playback ERROR:`, err);
                                 });
                                 
-                                // Suppress mic briefly to avoid echo
-                                c.suppressMicUntilMs = Date.now() + 1000;
+                                // Suppress mic to avoid echo (3 seconds)
+                                c.suppressMicUntilMs = Date.now() + 3000;
                             }
                         } catch (e) { 
                             console.error('❌ CRITICAL: Error playing AI audio:', e); 
                         }
 
-                        // Always also send to client so UI can display text and/or play locally if selected
-                        this.sendToClient(sessionId, {
-                            type: 'agent_response',
-                            text: responseText || 'Audio response',
+                        // Send audio chunk to client (type 'audio_chunk' — NOT agent_response)
+                        // Only include text if this chunk actually contains a response
+                        const chunkMsg = {
+                            type: 'audio_chunk',
                             audio: audioData,
                             timestamp: Date.now(),
                             realTime: true
-                        });
+                        };
+                        if (responseText) {
+                            chunkMsg.text = responseText;
+                        }
+                        this.sendToClient(sessionId, chunkMsg);
+
                         // Trigger a safe random pose during speech if enabled
                         try {
                             if (c && c.characterId != null) {
@@ -668,17 +673,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             connection.consecutiveErrors = 0; // Reset error counter on success
                             console.log(`✅ Session ${sessionId}: Transcribed "${userText}" (count=${connection.transcriptCount})`);
 
-                            // Primary event used by mic-panel
+                            // Send user transcript event to client (single event, no duplicates)
                             this.sendToClient(sessionId, {
                                 type: 'user_transcript',
                                 user_transcription_event: message.user_transcription_event || { user_transcript: userText },
-                                timestamp: Date.now()
-                            });
-                            // Also send generic transcript event for broader UI compatibility
-                            this.sendToClient(sessionId, {
-                                type: 'transcript',
-                                role: 'user',
-                                text: userText,
                                 timestamp: Date.now()
                             });
                         }
@@ -699,12 +697,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
 
 
-                    this.sendToClient(sessionId, {
-                        type: 'agent_response',
-                        text: responseText || 'Text response',
-                        timestamp: Date.now(),
-                        realTime: true
-                    });
+                    if (responseText) {
+                        this.sendToClient(sessionId, {
+                            type: 'agent_response',
+                            text: responseText,
+                            timestamp: Date.now(),
+                            realTime: true
+                        });
+                    }
                     break;
 
                 case 'ping':
@@ -1087,7 +1087,27 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         } catch (_) { /* noop */ }
                     }
 
-                    // 3) Periodic client breadcrumb with device and bytes captured (once per second)
+                    // 3) Compute RMS audio level from PCM16LE and send to client
+                    //    PCM16LE = signed 16-bit little-endian samples
+                    var rmsLevel = 0;
+                    try {
+                        var sumSq = 0;
+                        var sampleCount = Math.floor(raw.length / 2);
+                        for (var si = 0; si < sampleCount; si++) {
+                            var sample = raw.readInt16LE(si * 2);
+                            sumSq += sample * sample;
+                        }
+                        rmsLevel = Math.sqrt(sumSq / (sampleCount || 1)) / 32768;
+                        rmsLevel = Math.min(1, rmsLevel);
+                    } catch (_) { rmsLevel = 0; }
+
+                    // Send audio level to browser every ~500ms (every other tick at 250ms)
+                    if (!connection._vuLastTs || (now - connection._vuLastTs) >= 500) {
+                        connection._vuLastTs = now;
+                        try { this.sendToClient(sessionId, { type: 'audio_level', level: Math.round(rmsLevel * 100) }); } catch (_) { }
+                    }
+
+                    // 4) Periodic client breadcrumb with device and bytes captured (once per second)
                     if (!connection._dbgLastTs || (now - connection._dbgLastTs) >= 1000) {
                         connection._dbgLastTs = now;
                         try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_tick', data: { deviceId, bytes: raw.length, suppressed: !!suppressed, realtimeSTT: realtimeReady } }); } catch (_) { }

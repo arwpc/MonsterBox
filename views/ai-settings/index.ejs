@@ -51,7 +51,7 @@
 
     <!-- AI Settings Dashboard -->
     <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="card h-100">
                 <div class="card-body text-center">
                     <i class="bi bi-mic display-4 text-primary mb-3"></i>
@@ -64,20 +64,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-robot display-4 text-success mb-3"></i>
-                    <h5 class="card-title">AI Agents</h5>
-                    <p class="card-text">Create and manage conversational AI agents for characters.</p>
-                    <a href="/ai-settings/agents" class="btn btn-success">
-                        <i class="bi bi-arrow-right"></i> Manage Agents
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
             <div class="card h-100">
                 <div class="card-body text-center">
                     <i class="bi bi-volume-up display-4 text-warning mb-3"></i>
@@ -90,13 +77,69 @@
             </div>
         </div>
 
-
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-chat-dots display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Chat</h5>
+                    <p class="card-text">Talk to your character's AI agent in real time.</p>
+                    <span class="badge bg-success" id="chatActiveIndicator">Ready</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Quick Stats -->
+    <!-- Chat Panel + Stats -->
     <div class="row g-4 mt-4">
         <div class="col-lg-8">
-            <div class="card">
+            <!-- Inline Chat Panel -->
+            <div class="card border-success">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-dots"></i> Chat —
+                        <span id="chatCharacterName">Loading...</span>
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="aiAutonomousToggle">
+                            <label class="form-check-label text-white small" for="aiAutonomousToggle">AI On</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Chat Log -->
+                    <div id="chatLog" class="bg-dark text-light p-3 font-monospace"
+                        style="height: 300px; overflow-y: auto; font-size: 0.9rem;">
+                        <div class="text-muted text-center">Chat will appear here...</div>
+                    </div>
+                    <!-- VU Meter -->
+                    <div class="px-3 py-2 bg-dark border-top border-secondary">
+                        <div class="d-flex align-items-center">
+                            <small class="text-muted me-2"><i class="bi bi-activity"></i> Mic:</small>
+                            <div class="progress flex-grow-1" style="height: 12px;">
+                                <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span id="chatVULabel" class="ms-2 badge bg-secondary" style="font-size: 0.7rem;">0%</span>
+                        </div>
+                    </div>
+                    <!-- Chat Input -->
+                    <div class="p-3 border-top">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="chatInput" placeholder="Type a message..."
+                                autocomplete="off">
+                            <button class="btn btn-success" type="button" id="chatSendBtn">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Stats -->
+            <div class="card mb-3">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-graph-up"></i> AI Integration Status
@@ -104,25 +147,27 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-6">
                             <div class="text-center">
-                                <div class="display-6 text-primary" id="agentCount">-</div>
-                                <small class="text-muted">AI Agents</small>
+                                <div class="display-6 text-success" id="chatActiveStatus">
+                                    <i class="bi bi-circle"></i>
+                                </div>
+                                <small class="text-muted">Chat Active</small>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6">
                             <div class="text-center">
                                 <div class="display-6 text-success" id="voiceCount">-</div>
                                 <small class="text-muted">Available Voices</small>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 mt-3">
                             <div class="text-center">
                                 <div class="display-6 text-warning" id="characterCount">-</div>
                                 <small class="text-muted">Characters</small>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-6 mt-3">
                             <div class="text-center">
                                 <div class="display-6 text-info" id="assignmentCount">-</div>
                                 <small class="text-muted">Assignments</small>
@@ -131,9 +176,8 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4">
+            <!-- Quick Actions -->
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
@@ -142,9 +186,6 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" id="createAgent">
-                            <i class="bi bi-plus-circle"></i> Create New Agent
-                        </button>
                         <button class="btn btn-outline-success" id="testConversation">
                             <i class="bi bi-chat-dots"></i> Test Conversation
                         </button>

@@ -12,6 +12,21 @@
         </div>
     </div>
 
+    <!-- Character Banner -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center mb-0" id="sttCharacterBanner">
+                <i class="bi bi-person-badge me-2"></i>
+                <strong>Currently tuning: </strong>
+                <span id="sttCharacterName" class="ms-1">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: STT Configuration -->
+        <div class="col-lg-8">
+
     <!-- Real-time Transcription - THE MOST IMPORTANT FEATURE -->
     <div class="row g-4 mb-4">
         <div class="col-12">
@@ -39,24 +54,6 @@
                                 <i class="bi bi-mic-fill"></i> 2s Test
                             </button>
                         </div>
-                    </div>
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-bold mb-0">Live Transcription</label>
-                            <div class="d-flex align-items-center">
-                                <small class="text-muted me-2"
-                                    title="Amplified 10x for visibility. Speak to see levels spike.">
-                                    <i class="bi bi-activity"></i> Audio Input:
-                                </small>
-                                <div class="progress" style="width: 200px; height: 20px;">
-                                    <div id="micVUMeter" class="progress-bar bg-success" role="progressbar"
-                                        style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <span id="micVULabel" class="ms-2 badge bg-secondary">0%</span>
-                            </div>
-                        </div>
-                        <div id="liveTranscript" class="form-control bg-dark text-light font-monospace"
-                            style="height: 250px; overflow-y: auto; font-size: 1.1rem;"></div>
                     </div>
                 </div>
             </div>
@@ -400,6 +397,38 @@
             </div>
         </div>
     </div>
+
+        </div><!-- end col-lg-8 -->
+
+        <!-- Right Column: Sticky Transcript + VU Meter -->
+        <div class="col-lg-4">
+            <div style="position: sticky; top: 70px;">
+                <div class="card border-primary mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-activity"></i> Live Transcript
+                        </h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <small class="text-muted me-2"
+                                title="Amplified 10x for visibility. Speak to see levels spike.">
+                                <i class="bi bi-activity"></i> Audio Input:
+                            </small>
+                            <div class="progress flex-grow-1" style="height: 20px;">
+                                <div id="micVUMeter" class="progress-bar bg-success" role="progressbar"
+                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span id="micVULabel" class="ms-2 badge bg-secondary">0%</span>
+                        </div>
+                        <div id="liveTranscript" class="form-control bg-dark text-light font-monospace"
+                            style="height: 150px; overflow-y: auto; font-size: 0.9rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- end col-lg-4 -->
+
+    </div><!-- end row -->
 </div>
 
 <!-- STT page logic -->

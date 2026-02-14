@@ -17,8 +17,105 @@ TTSManager.prototype.init = function () {
     this.loadSpeakerParts();
     this.bindEvents();
     this.updateRangeDisplays();
+    this.loadCharacterBanner();
+    this.loadCharacterVoiceConfig();
 
     console.log('TTS Manager initialized');
+};
+
+TTSManager.prototype.loadCharacterBanner = function () {
+    var label = document.getElementById('charLabel');
+    var bannerName = document.getElementById('ttsCharacterName');
+    if (!bannerName) return;
+
+    // Try navbar first
+    if (label && label.textContent.trim() && label.textContent.trim() !== 'No Character') {
+        bannerName.textContent = label.textContent.trim();
+        return;
+    }
+
+    // Fallback to REST
+    fetch('/setup/characters/api/current')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.characterName) {
+                bannerName.textContent = j.characterName;
+            } else if (j && j.selectedCharacter) {
+                bannerName.textContent = 'Character ' + j.selectedCharacter;
+            } else {
+                bannerName.textContent = 'No character selected';
+            }
+        })
+        .catch(function () {
+            bannerName.textContent = 'Unknown';
+        });
+};
+
+TTSManager.prototype.loadCharacterVoiceConfig = function () {
+    var self = this;
+
+    fetch('/api/elevenlabs/tts/config')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.success && data.config) {
+                var cfg = data.config;
+                // Pre-select voice
+                if (cfg.voice_id) {
+                    var voiceSelect = document.getElementById('defaultVoice');
+                    if (voiceSelect) {
+                        // Wait for voices to load then select
+                        self._pendingVoiceId = cfg.voice_id;
+                        voiceSelect.value = cfg.voice_id;
+                    }
+                }
+                // Pre-select model
+                if (cfg.model) {
+                    var modelSelect = document.getElementById('ttsModel');
+                    if (modelSelect) modelSelect.value = cfg.model;
+                }
+                // Sliders
+                if (typeof cfg.stability !== 'undefined') {
+                    var s = document.getElementById('stability');
+                    if (s) s.value = cfg.stability;
+                }
+                if (typeof cfg.similarity_boost !== 'undefined') {
+                    var sb = document.getElementById('similarityBoost');
+                    if (sb) sb.value = cfg.similarity_boost;
+                }
+                if (typeof cfg.style !== 'undefined') {
+                    var st = document.getElementById('style');
+                    if (st) st.value = cfg.style;
+                }
+                if (typeof cfg.use_speaker_boost !== 'undefined') {
+                    var spk = document.getElementById('speakerBoost');
+                    if (spk) spk.checked = !!cfg.use_speaker_boost;
+                }
+
+                self.updateRangeDisplays();
+                self.updateCurrentVoiceDisplay(cfg.voice_id);
+            }
+        })
+        .catch(function (e) {
+            console.error('Failed to load character voice config:', e);
+        });
+};
+
+TTSManager.prototype.updateCurrentVoiceDisplay = function (voiceId) {
+    var el = document.getElementById('ttsCurrentVoiceName');
+    if (!el) return;
+    if (!voiceId) {
+        el.textContent = 'Not assigned';
+        return;
+    }
+    // Find voice name from loaded voices
+    var voice = this.voices.find(function (v) { return v.voice_id === voiceId; });
+    if (voice) {
+        el.textContent = voice.name;
+    } else {
+        el.textContent = voiceId;
+        // Retry once voices finish loading
+        this._pendingVoiceId = voiceId;
+    }
 };
 
 TTSManager.prototype.loadVoices = function () {
@@ -83,7 +180,7 @@ TTSManager.prototype.populateVoiceSelects = function () {
         var select = document.getElementById(selectId);
         if (select) {
             var currentValue = select.value;
-            select.innerHTML = selectId === 'testVoice' ? '<option value="">Use default voice</option>' : '<option value="">Select voice...</option>';
+            select.innerHTML = selectId === 'testVoice' ? '<option value="">Use character voice</option>' : '<option value="">Select voice...</option>';
 
             self.voices.forEach(function (voice) {
                 var option = document.createElement('option');
@@ -97,6 +194,16 @@ TTSManager.prototype.populateVoiceSelects = function () {
             }
         }
     });
+
+    // Apply pending voice selection from character config
+    if (self._pendingVoiceId) {
+        var voiceSelect = document.getElementById('defaultVoice');
+        if (voiceSelect) {
+            voiceSelect.value = self._pendingVoiceId;
+        }
+        self.updateCurrentVoiceDisplay(self._pendingVoiceId);
+        self._pendingVoiceId = null;
+    }
 };
 
 TTSManager.prototype.showVoicesError = function () {

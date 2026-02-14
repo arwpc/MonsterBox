@@ -38,8 +38,37 @@ STTManager.prototype.init = function () {
     this.loadFilterPresets();
     this.loadSavedConfig();
     this.bindEvents();
+    this.loadCharacterBanner();
 
     console.log('STT Manager initialized');
+};
+
+STTManager.prototype.loadCharacterBanner = function () {
+    var label = document.getElementById('charLabel');
+    var bannerName = document.getElementById('sttCharacterName');
+    if (!bannerName) return;
+
+    // Try navbar first
+    if (label && label.textContent.trim() && label.textContent.trim() !== 'No Character') {
+        bannerName.textContent = label.textContent.trim();
+        return;
+    }
+
+    // Fallback to REST
+    fetch('/setup/characters/api/current')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.characterName) {
+                bannerName.textContent = j.characterName;
+            } else if (j && j.selectedCharacter) {
+                bannerName.textContent = 'Character ' + j.selectedCharacter;
+            } else {
+                bannerName.textContent = 'No character selected';
+            }
+        })
+        .catch(function () {
+            bannerName.textContent = 'Unknown';
+        });
 };
 
 STTManager.prototype.loadFilterPresets = function () {

@@ -27,17 +27,38 @@ async function readJsonIfExists(filePath) {
 
 const router = express.Router();
 
+// Helper to get current character info
+async function getCurrentCharacterInfo() {
+    try {
+        const config = await readConfig();
+        const characterId = parseInt(config.selectedCharacter, 10) || 1;
+        const charactersPath = path.resolve(__dirname, '..', 'data', 'characters.json');
+        const chars = await readJsonIfExists(charactersPath);
+        let characterName = 'Character ' + characterId;
+        if (Array.isArray(chars)) {
+            const found = chars.find(c => c.id === characterId);
+            if (found) characterName = found.name || characterName;
+        }
+        return { characterId, characterName };
+    } catch {
+        return { characterId: 1, characterName: 'Unknown' };
+    }
+}
+
 // AI Settings main page
 router.get('/', async (req, res) => {
     try {
         const isConfigured = elevenLabsConfigService.isElevenLabsConfigured();
         const maskedApiKey = elevenLabsConfigService.getMaskedApiKey();
+        const { characterId, characterName } = await getCurrentCharacterInfo();
 
         res.renderWithLayout('ai-settings/index', {
             title: 'AI Settings - ElevenLabs Integration',
             page: 'ai-settings',
             isConfigured,
             maskedApiKey,
+            characterId,
+            characterName,
             activeTab: req.query.tab || 'overview',
             scripts: ['/js/ai-settings.js']
         });
@@ -55,11 +76,13 @@ router.get('/', async (req, res) => {
 // STT (Speech-to-Text) Settings
 router.get('/stt', async (req, res) => {
     try {
-        // TODO: Fetch STT models and settings from ElevenLabs API
+        const { characterId, characterName } = await getCurrentCharacterInfo();
         res.renderWithLayout('ai-settings/stt', {
             title: 'Speech-to-Text Settings',
             page: 'ai-settings-stt',
             activeTab: 'stt',
+            characterId,
+            characterName,
             scripts: ['/js/ai-settings-stt.js']
         });
     } catch (error) {
@@ -68,30 +91,21 @@ router.get('/stt', async (req, res) => {
     }
 });
 
-// AI Agent Management
-router.get('/agents', async (req, res) => {
-    try {
-        // TODO: Fetch agents from ElevenLabs API
-        res.renderWithLayout('ai-settings/agents', {
-            title: 'AI Agent Management',
-            page: 'ai-settings-agents',
-            activeTab: 'agents',
-            scripts: ['/js/websocket-chat.js', '/js/ai-settings-agents.js']
-        });
-    } catch (error) {
-        console.error('Error loading agents:', error);
-        res.status(500).json({ error: 'Failed to load agents' });
-    }
+// AI Agent Management - redirect to overview (agents UI removed, API routes kept)
+router.get('/agents', (req, res) => {
+    res.redirect('/ai-settings');
 });
 
 // TTS (Text-to-Speech) Settings
 router.get('/tts', async (req, res) => {
     try {
-        // TODO: Fetch voices and TTS settings from ElevenLabs API
+        const { characterId, characterName } = await getCurrentCharacterInfo();
         res.renderWithLayout('ai-settings/tts', {
-            title: 'Text-to-Speech Settings',
+            title: 'Text-to-Speech Settings - Voice Assignment',
             page: 'ai-settings-tts',
             activeTab: 'tts',
+            characterId,
+            characterName,
             scripts: ['/js/ai-settings-tts.js']
         });
     } catch (error) {
