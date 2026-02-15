@@ -118,5 +118,71 @@
     "/^\\s*tune2fs\\b/i": false,
     "/^\\s*fsck\\b/i": false
   },
-  "chat.agent.maxRequests": 100
+  "chat.agent.maxRequests": 100,
+
+  // --- Claude Code Integration ---
+  "claude.autoReadClaudeMd": true,
+  "claude.enableInlineEdit": true,
+  "claude.confirmBeforeExecutingCommands": false,
+  "claude.maxContextTokens": 200000,
+  "claude.preferredModel": "claude-sonnet-4-5",
+  "claude.showDiffView": true,
+  "claude.enableAutoMemory": true,
+  "claude.memoryPath": "${workspaceFolder}/.claude/memory",
+
+  // --- Performance optimization for RPI4B ---
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.vscode-server/**": true,
+    "**/.claude/**": true,
+    "**/data/audio-library/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/data/audio-library/**": true
+  },
+  "git.autofetch": false,
+  "git.autorefresh": false,
+  "git.detectSubmodules": false,
+
+  // --- Editor optimizations ---
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "selection",
+  "editor.formatOnSave": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+
+  // --- Python settings for hardware wrappers ---
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+
+  // --- Node.js settings ---
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "javascript.suggest.autoImports": true,
+  "eslint.enable": true,
+
+  // --- Terminal settings ---
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.scrollback": 10000,
+
+  // --- Workspace state restoration ---
+  "workbench.startupEditor": "none",
+  "window.restoreWindows": "all",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // --- Auto-launch configurations ---
+  "task.autoDetect": "on",
+  "npm.autoDetect": "on"
 }

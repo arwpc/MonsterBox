@@ -1,6 +1,5 @@
 repopack-output.txt
 node_modules/
-.vscode/
 .idea/
 # Ignore all log files, including those in the /log directory
 *.log
@@ -20,7 +19,6 @@ dev-debug.log
 # Environment variables
 # Editor directories and files
 .idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
@@ -34,8 +32,8 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-# Task files
-tasks.json
+# Task files (but not .vscode/tasks.json)
+/tasks.json
 tasks/
 # MkDocs generated site
 site/data/last-used-character.json
@@ -66,3 +64,7 @@ apps/monsterbox4/tests/ui/traces/
 *.zip
 .augment/
 .cursor/
+
+# Claude Code session data and cache
+.claude/
+!.claude/memory/

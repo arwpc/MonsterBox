@@ -1,0 +1,64 @@
+{
+    "folders": [
+        {
+            "path": ".",
+            "name": "MonsterBox"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "**/.git": false,
+            "**/node_modules": true,
+            "**/.claude": true
+        },
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/dist": true,
+            "**/build": true,
+            "**/data/audio-library/**": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "github.copilot",
+            "github.copilot-chat",
+            "ms-playwright.playwright",
+            "dbaeumer.vscode-eslint",
+            "ms-python.python",
+            "anthropic.claude-code"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "node",
+                "request": "launch",
+                "name": "MonsterBox Server (Dev)",
+                "skipFiles": ["<node_internals>/**"],
+                "program": "${workspaceFolder}/server.js",
+                "env": {
+                    "NODE_ENV": "development"
+                },
+                "console": "integratedTerminal"
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Auto-Start MonsterBox Service Check",
+                "type": "shell",
+                "command": "sudo systemctl is-active monsterbox.service || echo 'Service not running - use Restart MonsterBox Service task'",
+                "presentation": {
+                    "reveal": "silent",
+                    "panel": "shared"
+                },
+                "runOptions": {
+                    "runOn": "folderOpen"
+                }
+            }
+        ]
+    }
+}

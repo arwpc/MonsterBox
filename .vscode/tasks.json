@@ -1,0 +1,129 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Unit Tests (Mocha)",
+            "type": "shell",
+            "command": "npm run test:unit",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "System Tests (Mocha)",
+            "type": "shell",
+            "command": "npm run test:system",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "E2E Tests (Playwright)",
+            "type": "shell",
+            "command": "npm run test:e2e",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Verify (Full Test Suite)",
+            "type": "shell",
+            "command": "npm run verify",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Quick Tests",
+            "type": "shell",
+            "command": "npm run test:quick",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Restart MonsterBox Service",
+            "type": "shell",
+            "command": "sudo systemctl restart monsterbox.service",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "View Service Logs",
+            "type": "shell",
+            "command": "sudo journalctl -u monsterbox.service -f",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "Check Service Status",
+            "type": "shell",
+            "command": "sudo systemctl status monsterbox.service",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Start Dev Server",
+            "type": "shell",
+            "command": "npm run dev",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "isBackground": true
+        },
+        {
+            "label": "Test Jaw Animation (Direct)",
+            "type": "shell",
+            "command": "node scripts/test-jaw-direct.mjs",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Test Jaw Animation (HTTP)",
+            "type": "shell",
+            "command": "node scripts/test-jaw-sync.mjs",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Full Restart + Test Cycle",
+            "dependsOn": [
+                "Restart MonsterBox Service",
+                "Verify (Full Test Suite)"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}
