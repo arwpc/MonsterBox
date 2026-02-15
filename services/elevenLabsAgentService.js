@@ -196,26 +196,14 @@ class ElevenLabsAgentService {
      * Create agent template for MonsterBox characters
      */
     createAgentTemplate(characterName, voiceId) {
-        const templates = {
-            'Orlok': {
-                name: `${characterName} - Vampire Agent`,
-                prompt: `You are Orlok, an ancient and mysterious vampire. You speak in an old-fashioned, slightly menacing way, but you're actually quite charming to trick-or-treaters. You enjoy Halloween and appreciate children's costumes. Keep responses brief and atmospheric. Always stay in character as a vampire who has lived for centuries. IMPORTANT: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs] in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.`,
-                first_message: "Ah, what have we here? A brave little mortal approaches my domain on this most hallowed of nights...",
-                language: "en",
-                max_duration: 300,
-                voice_id: voiceId
-            },
-            'default': {
-                name: `${characterName} - AI Agent`,
-                prompt: `You are ${characterName}, a friendly Halloween character. You love interacting with trick-or-treaters and enjoy the spooky atmosphere of Halloween. Keep your responses brief, engaging, and appropriate for children. Stay in character and make the experience magical for visitors. IMPORTANT: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs] in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.`,
-                first_message: `Hello there! I'm ${characterName}. Happy Halloween! What brings you to my spooky domain tonight?`,
-                language: "en",
-                max_duration: 300,
-                voice_id: voiceId
-            }
+        return {
+            name: `${characterName} - AI Agent`,
+            prompt: `You are ${characterName}, a friendly Halloween character. You love interacting with trick-or-treaters and enjoy the spooky atmosphere of Halloween. Keep your responses brief, engaging, and appropriate for children. Stay in character and make the experience magical for visitors. IMPORTANT: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs] in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.`,
+            first_message: `Hello there! I'm ${characterName}. Happy Halloween! What brings you to my spooky domain tonight?`,
+            language: "en",
+            max_duration: 300,
+            voice_id: voiceId
         };
-
-        return templates[characterName] || templates['default'];
     }
 
     /**
@@ -353,7 +341,7 @@ class ElevenLabsAgentService {
 
         // Agent-specific quick responses
         const responses = {
-            'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n': { // Orlok
+            'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n': {
                 greetings: [
                     "Ah, another mortal seeks my attention...",
                     "You dare disturb my eternal rest?",
@@ -370,7 +358,7 @@ class ElevenLabsAgentService {
                     "Your mortal concerns amuse me."
                 ]
             },
-            'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Skulltalker
+            'agent_7901k3f1dza1ee68w1257zh3s9x6': {
                 greetings: [
                     "The bones... they speak...",
                     "Death calls... do you hear it?",
@@ -387,7 +375,7 @@ class ElevenLabsAgentService {
                     "Whispers from... the void..."
                 ]
             },
-            'agent_0801k3f1dybkecj88sta18gwwrv5': { // PumpkinHead
+            'agent_0801k3f1dybkecj88sta18gwwrv5': {
                 greetings: [
                     "Well, well... what have we here?",
                     "Another visitor to my patch!",
@@ -404,7 +392,7 @@ class ElevenLabsAgentService {
                     "Trick or treat... choose wisely."
                 ]
             },
-            'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Coffin Breaker
+            'agent_8401k3f1dx98e05t94yp6kz4vf8n': {
                 greetings: [
                     "Who disturbs my eternal rest?",
                     "The coffin creaks... I stir...",
