@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - AI Settings Routes
+ * MonsterBox - AI Settings Routes
  * Comprehensive ElevenLabs STT/Agent/TTS management interface
  */
 

@@ -7,7 +7,7 @@ const router = express.Router();
  */
 router.get('/', function (req, res) {
     res.renderWithLayout('orchestration/index', {
-        title: 'Orchestration Control - MonsterBox 5.5',
+        title: 'Orchestration Control - MonsterBox',
         page: 'orchestration'
     });
 });

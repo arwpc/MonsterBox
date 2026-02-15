@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - ElevenLabs Scribe v2 Realtime Speech-to-Text Service
+ * MonsterBox - ElevenLabs Scribe v2 Realtime Speech-to-Text Service
  * 
  * WebSocket-based real-time STT using the Scribe v2 Realtime model.
  * Streams PCM audio chunks and receives partial/committed transcripts

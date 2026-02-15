@@ -10,7 +10,7 @@ const router = express.Router();
 // Page
 router.get('/', (req, res) => {
     res.renderWithLayout('setup/models', {
-        title: 'Setup Models - MonsterBox 5.5',
+        title: 'Setup Models - MonsterBox',
         page: 'setup-models'
     });
 });

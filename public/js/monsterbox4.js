@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 Core JavaScript
+ * MonsterBox Core JavaScript
  * Common functionality and utilities
  */
 

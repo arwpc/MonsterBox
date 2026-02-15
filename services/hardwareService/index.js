@@ -1,5 +1,5 @@
 /**
- * Hardware Service Index for MonsterBox 5.5
+ * Hardware Service Index for MonsterBox
  * Unified interface for all 11 Part types with PipeWire integration
  */
 

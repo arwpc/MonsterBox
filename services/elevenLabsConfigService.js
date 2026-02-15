@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - ElevenLabs Configuration Service
+ * MonsterBox - ElevenLabs Configuration Service
  * Secure API key management and ElevenLabs-specific configuration
  */
 

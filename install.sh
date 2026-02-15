@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MonsterBox 5.5 Complete Installation Script
+# MonsterBox Complete Installation Script
 # For fresh Raspberry Pi 4B installations
 # Run with: sudo bash install.sh
 
@@ -33,7 +33,7 @@ fi
 ACTUAL_USER=${SUDO_USER:-$(logname 2>/dev/null || echo "pi")}
 ACTUAL_HOME=$(eval echo ~$ACTUAL_USER)
 
-print_status "Installing MonsterBox 5.5 for user: $ACTUAL_USER"
+print_status "Installing MonsterBox for user: $ACTUAL_USER"
 print_status "User home directory: $ACTUAL_HOME"
 
 # 1. System Update and Upgrade
@@ -374,7 +374,7 @@ fi
 
 
 
-print_success "MonsterBox 5.5 system installation complete!"
+print_success "MonsterBox system installation complete!"
 print_warning "Please reboot your Raspberry Pi to ensure all changes take effect"
 print_status "After reboot, navigate to your MonsterBox directory and run: npm ci"
 print_status "Then start MonsterBox with: npm start"

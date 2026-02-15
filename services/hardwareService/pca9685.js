@@ -1,5 +1,5 @@
 /**
- * PCA9685 PWM Driver Service for MonsterBox 5.5
+ * PCA9685 PWM Driver Service for MonsterBox
  * Direct local function calls for PCA9685 servo control
  */
 

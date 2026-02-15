@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - AI Settings TTS JavaScript
+ * MonsterBox - AI Settings TTS JavaScript
  * Text-to-Speech configuration and testing
  */
 

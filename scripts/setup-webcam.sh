@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MonsterBox 5.5 Webcam Setup Script
+# MonsterBox Webcam Setup Script
 # Ensures camera functionality works properly on fresh RPi4B installations
 
 set -e
@@ -22,7 +22,7 @@ print_warning() {
     echo -e "\e[1;33m>>> Warning: $1\e[0m"
 }
 
-print_status "Setting up webcam and camera functionality for MonsterBox 5.5"
+print_status "Setting up webcam and camera functionality for MonsterBox"
 
 # 1. Check if running as root for system changes
 if [ "$EUID" -eq 0 ]; then

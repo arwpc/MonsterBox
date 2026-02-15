@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async function (req, res) {
   try {
     res.renderWithLayout('setup/characters', {
-      title: 'Setup Characters - MonsterBox 5.5',
+      title: 'Setup Characters - MonsterBox',
       page: 'setup-characters',
       config: { theme: 'dark' }
     });
@@ -43,7 +43,7 @@ router.post('/api/character-assignments', charactersController.updateAssignment)
 router.get('/images', async function (req, res) {
   try {
     res.renderWithLayout('setup/character-images', {
-      title: 'Character Images - MonsterBox 5.5',
+      title: 'Character Images - MonsterBox',
       page: 'setup-characters',
       config: { theme: 'dark' },
       includeMainWrapper: false

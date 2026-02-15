@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MonsterBox 5.5 - Animatronic Control System
+ * MonsterBox - Animatronic Control System
  * Single Node Express Server with Conversation Mode, Poses, and AI Integration
  * Unified navigation with consolidated features
  */
@@ -11,6 +11,10 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 
 // Route imports
 import setupAudioRoutes from './routes/setup/audio.js';
@@ -93,7 +97,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Basic health check endpoint for readiness tests
 app.get('/health', (req, res) => {
     try {
-        res.status(200).json({ status: 'OK', version: '5.5.1', time: new Date().toISOString() });
+        res.status(200).json({ status: 'OK', version: pkg.version, time: new Date().toISOString() });
     } catch (e) {
         res.status(200).json({ status: 'OK' });
     }
@@ -103,7 +107,7 @@ app.get('/health', (req, res) => {
 app.use((req, res, next) => {
     res.renderWithLayout = function (contentTemplate, options = {}) {
         const layoutOptions = {
-            title: options.title || 'MonsterBox 5.5',
+            title: options.title || 'MonsterBox',
             page: options.page || 'dashboard',
             config: req.app.locals.config,
             currentCharacter: res.locals.currentCharacter,
@@ -166,6 +170,7 @@ app.use(async (req, res, next) => {
         req.app.locals.config = merged;
         res.locals.config = merged;
         res.locals.currentCharacter = merged.selectedCharacter || null;
+        res.locals.appVersion = pkg.version;
 
         // Load character name and data for navigation
         if (merged.selectedCharacter) {
@@ -408,7 +413,7 @@ app.get('/', (req, res) => {
     }
 
     res.renderWithLayout('conversation/index', {
-        title: 'MonsterBox 5.5 Dashboard',
+        title: 'MonsterBox Dashboard',
         page: 'dashboard'
     });
 });
@@ -416,7 +421,7 @@ app.get('/', (req, res) => {
 // Live Mode page (lightweight dashboard for poses/actions during shows)
 app.get('/live', (req, res) => {
     res.renderWithLayout('live/index', {
-        title: 'Live Dashboard - MonsterBox 5.5',
+        title: 'Live Dashboard - MonsterBox',
         page: 'live',
         includeNavigation: true
     });
@@ -425,7 +430,7 @@ app.get('/live', (req, res) => {
 // Setup routes
 app.get('/setup', (req, res) => {
     res.renderWithLayout('setup/index', {
-        title: 'Setup - MonsterBox 5.5',
+        title: 'Setup - MonsterBox',
         page: 'setup',
         config: { theme: 'dark' },
         currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
@@ -582,7 +587,7 @@ function getLanAddresses() {
 
 // Start server on primary port
 const server = app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🎭 MonsterBox 5.5 server running on port ${PORT}`);
+    console.log(`🎭 MonsterBox ${pkg.version} server running on port ${PORT}`);
     console.log(`📱 Dashboard: http://localhost:${PORT}`);
     console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
     console.log(`🎬 Live Mode: http://localhost:${PORT}/live`);

@@ -1,8 +1,8 @@
 #!/bin/bash
-# MonsterBox 5.5 - All Animatronics Status Check
+# MonsterBox - All Animatronics Status Check
 
 echo "============================================"
-echo "  MonsterBox 5.5 - Animatronic Status"
+echo "  MonsterBox - Animatronic Status"
 echo "============================================"
 echo ""
 

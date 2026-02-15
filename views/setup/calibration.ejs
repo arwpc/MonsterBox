@@ -62,7 +62,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Calibration - MonsterBox 5.5</title>
+  <title>Setup Calibration - MonsterBox <%= typeof appVersion !== 'undefined' ? appVersion : '' %></title>
   <script>
     try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
     // Add a CSS hook early for test-only adjustments

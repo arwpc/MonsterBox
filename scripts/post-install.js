@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MonsterBox 5.5 Post-Install Script
+ * MonsterBox Post-Install Script
  * Runs automatically after npm install to set up Python dependencies
  * and verify system configuration
  */
@@ -186,7 +186,7 @@ async function createEnvironmentFile() {
     
     printStatus('Creating default environment file...');
     
-    const envContent = `# MonsterBox 5.5 Environment Configuration
+    const envContent = `# MonsterBox Environment Configuration
 NODE_ENV=production
 PORT=3000
 
@@ -228,7 +228,7 @@ LOG_LEVEL=info
  */
 function displayNextSteps() {
     console.log('');
-    printStatus('MonsterBox 5.5 Post-Install Complete!');
+    printStatus('MonsterBox Post-Install Complete!');
     console.log('');
     console.log('Next Steps:');
     console.log('  1. For fresh Raspberry Pi setup: sudo bash install.sh');
@@ -241,7 +241,7 @@ function displayNextSteps() {
     console.log('  npm run install:python - Install Python dependencies');
     console.log('  npm run check - Run system diagnostics');
     console.log('');
-    printSuccess('Ready to use MonsterBox 5.5!');
+    printSuccess('Ready to use MonsterBox!');
 }
 
 /**
@@ -249,7 +249,7 @@ function displayNextSteps() {
  */
 async function main() {
     console.log('');
-    printStatus('MonsterBox 5.5 Post-Install Setup');
+    printStatus('MonsterBox Post-Install Setup');
     console.log('');
     
     try {

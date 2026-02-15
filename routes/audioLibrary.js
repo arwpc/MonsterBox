@@ -37,7 +37,7 @@ const upload = multer({
 // Main audio library page
 router.get('/', (req, res) => {
     res.renderWithLayout('audio-library/index', {
-        title: 'Audio Library - MonsterBox 5.5',
+        title: 'Audio Library - MonsterBox',
         page: 'audio-library',
         pageTitle: 'Audio Library'
     });

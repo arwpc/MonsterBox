@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
     }
     try {
         res.renderWithLayout('poses/index', {
-            title: 'Poses - MonsterBox 5.5',
+            title: 'Poses - MonsterBox',
             page: 'poses',
             pageHeading: 'Poses'
         });

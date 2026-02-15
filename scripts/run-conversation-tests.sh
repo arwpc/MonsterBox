@@ -20,7 +20,7 @@ FAILED_TESTS=0
 SKIPPED_TESTS=0
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  MonsterBox 5.5 - Conversation Mode Test Suite            ║${NC}"
+echo -e "${BLUE}║  MonsterBox - Conversation Mode Test Suite            ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 

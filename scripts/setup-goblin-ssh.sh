@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# MonsterBox 5.5 - Setup SSH Access for Goblins
+# MonsterBox - Setup SSH Access for Goblins
 # Deploys SSH keys and enables passwordless SSH access
 
 set -e
@@ -154,7 +154,7 @@ enable_ssh_on_goblin() {
 
 # Main process
 main() {
-    print_header "MonsterBox 5.5 - Goblin SSH Setup"
+    print_header "MonsterBox - Goblin SSH Setup"
     
     echo ""
     print_info "This script will:"

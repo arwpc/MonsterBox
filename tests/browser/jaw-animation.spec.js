@@ -1,5 +1,5 @@
 /**
- * Jaw Animation (v5.5) Browser Tests
+ * Jaw Animation Browser Tests
  * Validates /setup/jaw-animation page UI layout and controls
  */
 
@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-test.describe('Jaw Animation — v5.5 single-viewport layout', () => {
+test.describe('Jaw Animation — single-viewport layout', () => {
     let page;
 
     test.beforeEach(async ({ browser }) => {

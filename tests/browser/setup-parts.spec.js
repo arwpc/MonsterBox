@@ -1,7 +1,7 @@
 /**
  * Setup Calibration Tests (Parts integrated into Calibration)
  * Validates functionality on /setup/calibration page
- * Note: /setup/parts was consolidated into /setup/calibration in MonsterBox 5.5
+ * Note: /setup/parts was consolidated into /setup/calibration
  */
 
 import { test, expect } from '@playwright/test';

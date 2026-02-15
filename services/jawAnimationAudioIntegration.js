@@ -1,7 +1,7 @@
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 
 /**
- * Jaw Animation Audio Integration (v5.5)
+ * Jaw Animation Audio Integration
  *
  * The PipeWire / global-interval approach has been replaced by
  * driveJawFromAudioBuffer() in jawAnimationSuperPowerService.js,
@@ -17,7 +17,7 @@ import * as jawAnimationService from './jawAnimationSuperPowerService.js';
  * No-op — retained for server.js startup compatibility.
  */
 async function initialize() {
-  console.log('🦷 Jaw animation audio integration initialized (v5.5 – audio-buffer driven)');
+  console.log('🦷 Jaw animation audio integration initialized (audio-buffer driven)');
 }
 
 /**

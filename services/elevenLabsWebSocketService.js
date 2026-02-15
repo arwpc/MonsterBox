@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - ElevenLabs WebSocket Conversation Service
+ * MonsterBox - ElevenLabs WebSocket Conversation Service
  * Real-time streaming conversation with immediate responses
  * 
  * Upgraded: Uses Scribe v2 Realtime for live STT instead of batch transcription

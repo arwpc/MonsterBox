@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/poses', {
-            title: 'Setup Poses - MonsterBox 5.5',
+            title: 'Setup Poses - MonsterBox',
             page: 'setup-poses',
             config: { theme: 'dark' },
             scripts: ['/js/monsterbox4.js', '/js/poses-setup.js']

@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/webcam', {
-            title: 'Setup Webcam - MonsterBox 5.5',
+            title: 'Setup Webcam - MonsterBox',
             page: 'setup-webcam'
         });
     } catch (error) {

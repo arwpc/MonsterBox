@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - AI Settings JavaScript
+ * MonsterBox - AI Settings JavaScript
  * Rebuilt from scratch using proper Bootstrap patterns
  * Includes inline chat panel
  */

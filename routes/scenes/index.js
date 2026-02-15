@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('scenes/scenes', {
-            title: 'Scenes - MonsterBox 5.5',
+            title: 'Scenes - MonsterBox',
             page: 'scenes'
         });
     } catch (error) {
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
 router.get('/edit/new', async (req, res) => {
     try {
         res.renderWithLayout('scenes/scene-editor', {
-            title: 'Create New Scene - MonsterBox 5.5',
+            title: 'Create New Scene - MonsterBox',
             page: 'scenes'
         });
     } catch (error) {
@@ -49,7 +49,7 @@ router.get('/edit/new', async (req, res) => {
 router.get('/edit/:id', async (req, res) => {
     try {
         res.renderWithLayout('scenes/scene-editor', {
-            title: 'Edit Scene - MonsterBox 5.5',
+            title: 'Edit Scene - MonsterBox',
             page: 'scenes'
         });
     } catch (error) {

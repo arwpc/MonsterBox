@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - ElevenLabs Text-to-Speech Service
+ * MonsterBox - ElevenLabs Text-to-Speech Service
  * Handles TTS configuration, voice management, and audio generation
  */
 

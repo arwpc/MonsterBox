@@ -1,6 +1,6 @@
 /**
  * Jaw Animation Configuration JavaScript (ES5)
- * MonsterBox 5.5 — Single-viewport jaw tuning page
+ * MonsterBox — Single-viewport jaw tuning page
  * Handles TTS test playback, calibration quick-adjust, and real-time monitoring.
  */
 

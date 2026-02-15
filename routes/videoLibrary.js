@@ -32,7 +32,7 @@ const upload = multer({
 // Main video library page
 router.get('/', (req, res) => {
     res.renderWithLayout('video-library/index', {
-        title: 'Video Library - MonsterBox 5.5',
+        title: 'Video Library - MonsterBox',
         page: 'video-library',
         pageTitle: 'Video Library'
     });

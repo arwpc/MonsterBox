@@ -1,6 +1,6 @@
-# MonsterBox 5.5 Testing Framework
+# MonsterBox Testing Framework
 
-This document outlines the testing architecture for MonsterBox 5.5, designed to be modular, character-independent, and comprehensive.
+This document outlines the testing architecture for MonsterBox, designed to be modular, character-independent, and comprehensive.
 
 ## Guiding Principles
 

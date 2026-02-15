@@ -1,5 +1,5 @@
 /**
- * MonsterBox 5.5 - ElevenLabs Speech-to-Text Service
+ * MonsterBox - ElevenLabs Speech-to-Text Service
  * Handles STT configuration and processing
  */
 
