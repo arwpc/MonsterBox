@@ -129,6 +129,8 @@
   "claude.showDiffView": true,
   "claude.enableAutoMemory": true,
   "claude.memoryPath": "${workspaceFolder}/.claude/memory",
+  "claude-code-usage.showInActivityBar": true,
+  "claude-code-usage.enabled": true,
 
   // --- Performance optimization for RPI4B ---
   "files.watcherExclude": {
