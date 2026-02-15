@@ -302,7 +302,7 @@ class ServerSTTListener {
       console.log(`   Sample rate: ${sr}Hz, Channels: ${ch}`);
     }
 
-    // 1) First try Python/PyAudio route which is verified working on Orlok
+    // 1) First try Python/PyAudio route (preferred capture method)
     const pyBuf = await this._captureWithPython(sourceArg, durationSec);
     if (pyBuf && pyBuf.length > 44) { // WAV header is 44 bytes
       this._lastCapturePath = 'python';

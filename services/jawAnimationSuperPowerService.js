@@ -879,7 +879,7 @@ function simulateJawDrive(characterId, durationMs) {
     const amp = frames[frameIndex];
     driveState.amplitude = amp;
     // Map amplitude to angle range (use config min/max or defaults)
-    const minA = 70, maxA = 93; // typical Orlok jaw range
+    const minA = 70, maxA = 93; // default simulated jaw range
     driveState.angle = minA + amp * (maxA - minA);
 
     const ms = audioMonitoringState.get(cid);

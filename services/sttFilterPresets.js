@@ -30,7 +30,7 @@ export const STT_FILTER_PRESETS = {
 
     'noisy-environment': {
         name: 'Noisy Environment (Music/Crowds)',
-        description: 'Optimized for loud background music, crowds, or ambient noise - tuned on Orlok',
+        description: 'Optimized for loud background music, crowds, or ambient noise',
         icon: 'volume-up',
         config: {
             // Audio Filtering - Aggressive music/noise rejection
