@@ -45,7 +45,7 @@ export async function loadCharacters() {
     const data = await fs.readFile(file, 'utf8');
     let characters = JSON.parse(data);
     if (!Array.isArray(characters)) characters = getDefaultCharacters();
-    // In test mode, normalize to canonical ids/names expected by E2E
+    // Test fixture: normalize to canonical ids/names expected by E2E test suite
     if (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true') {
       const canonical = [
         { id: 1, name: 'PumpkinHead' },
