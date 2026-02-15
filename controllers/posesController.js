@@ -352,10 +352,12 @@ function createPoseFromTemplate(templateName, option, partId, customName) {
  * @returns {number} - Character ID
  */
 function getCurrentCharacterId(req) {
-    // Try to get from query params, then from app config
-    return parseInt(req.query.characterId) || 
-           parseInt(req.app.locals?.config?.selectedCharacter) || 
-           4; // Default to character 4 (Skulltalker)
+    const characterId = parseInt(req.query.characterId) ||
+           parseInt(req.app.locals?.config?.selectedCharacter);
+    if (!characterId) {
+        throw new Error('Character ID required — no character selected');
+    }
+    return characterId;
 }
 
 export default {

@@ -577,7 +577,10 @@ async function getPartMetadata(partId) {
         const config = await partsService.readConfig();
 
         // Load parts from character-specific directory
-        const characterId = config.selectedCharacter || 3;
+        const characterId = config.selectedCharacter;
+        if (!characterId) {
+            throw new Error('No character selected — set selectedCharacter in app-config.json');
+        }
         const partsPath = path.resolve(__dirname, `../../data/character-${characterId}/parts.json`);
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);

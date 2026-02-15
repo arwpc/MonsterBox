@@ -423,7 +423,15 @@ class ElevenLabsAgentService {
             }
         };
 
-        const agentResponses = responses[agentId] || responses['agent_0801k3f1dw7xe2g8r4jkbxk0gt2n'];
+        const agentResponses = responses[agentId];
+        if (!agentResponses) {
+            // No quick responses configured for this agent — return generic fallback
+            return [
+                "Greetings, mortal...",
+                "The shadows stir...",
+                "Welcome to my domain..."
+            ];
+        }
 
         // Choose response type based on user input
         if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('greet')) {

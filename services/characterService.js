@@ -34,13 +34,9 @@ async function resolveCharactersPath() {
 }
 
 function getDefaultCharacters() {
-  // Canonical defaults expected by E2E tests
-  return [
-    { id: 1, name: 'PumpkinHead' },
-    { id: 2, name: 'Coffin Breaker' },
-    { id: 3, name: 'Orlok' },
-    { id: 4, name: 'Skulltalker' }
-  ];
+  // Return empty array — callers must handle missing characters gracefully
+  console.error('❌ characters.json is missing or invalid — returning empty character list');
+  return [];
 }
 
 export async function loadCharacters() {
