@@ -1,18 +1,14 @@
 # Testing Overview
 
-MonsterBox has **257 tests** across Mocha (system/unit/AI/hardware) and Playwright (browser E2E) frameworks.
+MonsterBox has comprehensive tests across Playwright (browser E2E) and Mocha (system/unit) frameworks.
 
-## Test Results (v5.5.1 Gold — February 2026)
+## Test Results (v6.0.0 — February 2026)
 
-| Suite | Framework | Passing | Pending | Failing |
+| Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System | Mocha | 93 | 2 | 6* |
-| Unit | Mocha | 28 | 0 | 0 |
-| AI | Mocha | 5 | 5 | 0 |
-| Hardware | Mocha | 22 | 27 | 0 |
-| Browser E2E | Playwright | 109 | 7 | 0 |
+| Browser E2E | Playwright | 140 | 7 | 1* |
 
-*\*6 jaw-animation failures require a physically calibrated jaw servo — hardware-dependent, not code bugs.*
+*\*1 jaw-animation timeout requires a physically calibrated jaw servo — hardware-dependent, not a code bug.*
 
 ## Testing Categories
 

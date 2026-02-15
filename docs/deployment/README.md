@@ -1,6 +1,6 @@
 # Deployment Documentation
 
-This directory contains deployment guides, status reports, and procedures for MonsterBox 5.5 deployments.
+This directory contains deployment guides, status reports, and procedures for MonsterBox deployments.
 
 ## Quick Links
 
@@ -19,7 +19,7 @@ This directory contains deployment guides, status reports, and procedures for Mo
 
 ## Deployment Overview
 
-MonsterBox 5.5 supports deployment to multiple animatronic characters across a network.
+MonsterBox supports deployment to multiple animatronic characters across a network.
 
 ### Supported Characters
 1. **PumpkinHead** (Character 1) - 192.168.8.150 ✅
@@ -169,7 +169,7 @@ arecord -D hw:3,0 -f S16_LE -r 16000 -c 1 -d 3 /tmp/test.wav
   - Goblin video display integration
   - Complete audio pipeline
 
-### MonsterBox 5.5 Release
+### MonsterBox 5.5 Release (Historical)
 - **Date:** October 2025
 - **Status:** ✅ Production Ready
 - **Current Commit:** f2f11caf
@@ -183,6 +183,6 @@ arecord -D hw:3,0 -f S16_LE -r 16000 -c 1 -d 3 /tmp/test.wav
 
 ---
 
-**Last Updated:** October 30, 2025  
-**Current Version:** MonsterBox 5.5
+**Last Updated:** February 2026
+**Current Version:** MonsterBox 6.0.0
 

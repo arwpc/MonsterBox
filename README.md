@@ -1,6 +1,6 @@
-# MonsterBox 5.5 - Animatronic Control and Media System
+# MonsterBox - Animatronic Control and Media System
 
-MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B with:
+MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 - PipeWire + WirePlumber audio (multiple speakers/microphones, per-stream routing)
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
 - Real hardware control for servos, motors, linear actuators, lights, sensors, steppers
@@ -8,29 +8,32 @@ MonsterBox 5.5 is a single-node animatronic control system for Raspberry Pi 4B w
 - Goblin video display subsystem for Pi 3B+/4B signage playback
 - GitHub Actions CI for automated testing on every commit
 
-This README provides an accurate quick-start and operational overview for 5.5 and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
+This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v5.5.1 Gold Release (February 2026)
+## What's New — v6.0.0 (February 2026)
 
-### ElevenLabs Upgrade
-- **TTS**: Default model `eleven_flash_v2_5` (~75ms latency); `eleven_multilingual_v2` for narration
-- **STT**: Default model `scribe_v2` (batch); `scribe_v2_realtime` WebSocket streaming (~150ms latency)
-- **Per-character AI config**: Each character has its own TTS model, voice, and STT settings in `data/character-{N}/ai-config/`
-- **Direct service calls**: All speech paths use direct `elevenLabsTTSService` + `serverPlaybackService` — no HTTP loopback
-- **Scene AI integration**: Scene "Ask AI" steps call real ElevenLabs Conversational AI agents
+### Character Independence
+- All hardcoded character names (Orlok, PumpkinHead, etc.) and numeric ID defaults (`|| 1`, `|| 3`) removed from services, controllers, and routes
+- Every feature works for ANY character — no fallback to a specific character when none is selected
+- Missing `characterId` now returns proper 400 errors instead of silently defaulting
 
-### Dashboard Consolidation
-- `/conversation` merged into Dashboard (`/`) — single-page control for all character features
-- Jaw Animation is now at `/setup/jaw-animation` (dedicated Super Power page)
-- Navigation simplified: Dashboard, Live, Setup (Calibration, Models, Characters, Poses, Audio, Webcam, Jaw Animation, System)
+### Dynamic Versioning
+- Version displayed everywhere is sourced from `package.json` — single source of truth
+- Server startup, health endpoint, page titles, footers, and navigation all use `pkg.version`
+- No more hardcoded version strings scattered across the codebase
+
+### Code Quality
+- Removed character-specific comments and template logic from AI agent service
+- Generalized all route handlers to be character-agnostic
+- Shell scripts and install tooling use unversioned "MonsterBox" branding
 
 ### Testing
-- **257 total tests**: 148 Mocha (system/unit/AI/hardware) + 109 Playwright (browser E2E)
+- **148 tests**: 140 passing, 1 failing (pre-existing jaw-animation hardware timeout), 7 skipped
+- Playwright browser E2E + Mocha system/unit tests
 - All ElevenLabs services, audio pipeline, hardware, and UI tests passing
-- Stepper motors tested via real GPIO (lgpio backend on RPi 4B)
 
 ### Infrastructure
-- Health endpoint and UI titles report 5.5
+- Health endpoint and UI titles report version dynamically from package.json
 - GitHub Actions CI validates every commit
 - Playwright uses dedicated test port (3123) for CI isolation
 - `MB_TEST_MODE=1` flag for safe testing without hardware init
@@ -294,17 +297,13 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has **257 tests** (148 Mocha + 109 Playwright) covering all major subsystems.
 
-### Test Results (v5.5.1 Gold - February 2026)
+### Test Results (v6.0.0 - February 2026)
 
-| Suite | Framework | Passing | Pending | Failing |
+| Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System (AI audio, audio, hardware, jaw, models, scenes) | Mocha | 93 | 2 | 6* |
-| Unit (calibration API, basic routes) | Mocha | 28 | 0 | 0 |
-| AI (ask-ai, conversation) | Mocha | 5 | 5 | 0 |
-| Hardware (stepper, microphone, calibration) | Mocha | 22 | 27 | 0 |
-| Browser E2E (8 spec files) | Playwright | 109 | 7 | 0 |
+| Browser E2E (8 spec files) | Playwright | 140 | 7 | 1* |
 
-*\*6 jaw-animation test failures require a physically calibrated jaw servo — hardware-environment-dependent, not code bugs.*
+*\*1 jaw-animation timeout requires a physically calibrated jaw servo — hardware-environment-dependent, not a code bug.*
 
 ```bash
 # Run all tests

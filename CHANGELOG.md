@@ -2,6 +2,36 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.0.0] - 2026-02-14 — Character Independence & Dynamic Versioning
+
+### Character Independence
+- Removed all hardcoded character names (Orlok, PumpkinHead, Skulltalker, Coffin Breaker) from services, controllers, routes
+- Removed all numeric ID defaults (`|| 1`, `|| 3`, `|| 4`) — missing characterId now returns 400 errors
+- Generalized ElevenLabs agent template (removed Orlok-specific template)
+- Removed character-name comments from quick response agent ID keys
+- Cleaned up character-specific comments in STT, jaw animation, and filter presets
+
+### Dynamic Versioning
+- All version displays now sourced from `package.json` (single source of truth)
+- Server health endpoint uses `pkg.version` instead of hardcoded string
+- EJS templates use `res.locals.appVersion` middleware for dynamic version in titles, footers, and navigation
+- Server startup log includes dynamic version
+- Removed hardcoded "5.5" from all JS services, routes, public scripts, shell scripts, and install tooling
+
+### AI Service Audit
+- Audited TTS, STT, and AI implementations for duplication
+- Confirmed single canonical TTS service (`elevenLabsTTSService.js`)
+- Confirmed three distinct STT approaches (batch, polling, WebSocket) — no consolidation needed
+- No duplicate AI service code found
+
+### Documentation
+- Updated README.md with v6.0.0 release notes
+- Updated CHANGELOG.md with v6.0.0 entry
+- Created `docs/v6-phase1-checklist.md`, `docs/v6-phase2-ai-audit.md`, `docs/v6-deferred.md`
+
+### Test Results
+- 140 passing, 1 failing (pre-existing jaw-animation hardware timeout), 7 skipped
+
 ## [5.5.2] - 2026-02-12 — Jaw Animation Sync Fix
 
 ### Jaw Animation
