@@ -235,7 +235,7 @@ class VideoLibraryService {
             return {
                 duration: parseFloat(data.format.duration) || 0,
                 resolution: `${videoStream.width}x${videoStream.height}`,
-                fps: eval(videoStream.r_frame_rate) || 0,
+                fps: (function(r) { var parts = String(r || '0').split('/'); return parts.length === 2 ? (parseFloat(parts[0]) / parseFloat(parts[1])) || 0 : parseFloat(r) || 0; })(videoStream.r_frame_rate),
                 bitrate: parseInt(data.format.bit_rate) || 0
             };
         } catch (error) {

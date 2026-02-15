@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import hardwareService from '../../services/hardwareService/index.js';
@@ -18,9 +18,9 @@ const PARTS_FILE = path.join(__dirname, '../../data/parts.json');
 /**
  * Get all parts
  */
-router.get('/parts', (req, res) => {
+router.get('/parts', async (req, res) => {
     try {
-        const parts = JSON.parse(fs.readFileSync(PARTS_FILE, 'utf8'));
+        const parts = JSON.parse(await fs.readFile(PARTS_FILE, 'utf8'));
         res.json(parts);
     } catch (error) {
         console.error('Error reading parts:', error);
@@ -31,15 +31,15 @@ router.get('/parts', (req, res) => {
 /**
  * Get single part by ID
  */
-router.get('/parts/:id', (req, res) => {
+router.get('/parts/:id', async (req, res) => {
     try {
-        const parts = JSON.parse(fs.readFileSync(PARTS_FILE, 'utf8'));
+        const parts = JSON.parse(await fs.readFile(PARTS_FILE, 'utf8'));
         const part = parts.find(p => p.id === req.params.id);
-        
+
         if (!part) {
             return res.status(404).json({ error: 'Part not found' });
         }
-        
+
         res.json(part);
     } catch (error) {
         console.error('Error reading part:', error);
@@ -52,9 +52,9 @@ router.get('/parts/:id', (req, res) => {
  */
 router.post('/parts/:id/test', async (req, res) => {
     try {
-        const parts = JSON.parse(fs.readFileSync(PARTS_FILE, 'utf8'));
+        const parts = JSON.parse(await fs.readFile(PARTS_FILE, 'utf8'));
         const part = parts.find(p => p.id === req.params.id);
-        
+
         if (!part) {
             return res.status(404).json({ error: 'Part not found' });
         }
@@ -70,8 +70,8 @@ router.post('/parts/:id/test', async (req, res) => {
             duration: parseInt(duration)
         });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: `Part ${part.name} tested at position ${position}`,
             part: part
         });
@@ -84,20 +84,20 @@ router.post('/parts/:id/test', async (req, res) => {
 /**
  * Update part configuration
  */
-router.put('/parts/:id', (req, res) => {
+router.put('/parts/:id', async (req, res) => {
     try {
-        const parts = JSON.parse(fs.readFileSync(PARTS_FILE, 'utf8'));
+        const parts = JSON.parse(await fs.readFile(PARTS_FILE, 'utf8'));
         const index = parts.findIndex(p => p.id === req.params.id);
-        
+
         if (index === -1) {
             return res.status(404).json({ error: 'Part not found' });
         }
 
         // Update part with new data
         parts[index] = { ...parts[index], ...req.body, id: req.params.id };
-        
-        fs.writeFileSync(PARTS_FILE, JSON.stringify(parts, null, 2));
-        
+
+        await fs.writeFile(PARTS_FILE, JSON.stringify(parts, null, 2));
+
         res.json({ success: true, part: parts[index] });
     } catch (error) {
         console.error('Error updating part:', error);

@@ -341,17 +341,19 @@ class PipeWireService {
      */
     async moveSinkInput(streamId, sinkId) {
         try {
+            const sid = String(streamId || '').replace(/[^a-zA-Z0-9_.@:-]/g, '');
+            const snk = String(sinkId || '').replace(/[^a-zA-Z0-9_.@:-]/g, '');
             // Try wpctl first
             try {
-                await pexec(`wpctl move ${streamId} ${sinkId}`);
-                return { success: true, method: 'wpctl', streamId, sinkId };
+                await pexec(`wpctl move ${sid} ${snk}`);
+                return { success: true, method: 'wpctl', streamId: sid, sinkId: snk };
             } catch (wpErr) {
                 console.log('wpctl move failed, trying pactl');
             }
 
             // Fallback to pactl
-            await pexec(`pactl move-sink-input ${streamId} ${sinkId}`);
-            return { success: true, method: 'pactl', streamId, sinkId };
+            await pexec(`pactl move-sink-input ${sid} ${snk}`);
+            return { success: true, method: 'pactl', streamId: sid, sinkId: snk };
         } catch (error) {
             console.error('Failed to move sink input:', error.message);
             return { success: false, error: error.message };
@@ -391,7 +393,7 @@ class PipeWireService {
      */
     async setDefaultSink(sinkId) {
         try {
-            const id = String(sinkId || '').trim();
+            const id = String(sinkId || '').trim().replace(/[^a-zA-Z0-9_.@:-]/g, '');
             const isNumeric = /^\d+$/.test(id);
             if (isNumeric) {
                 // Prefer wpctl for numeric PipeWire IDs
@@ -413,7 +415,7 @@ class PipeWireService {
      */
     async setDefaultSource(sourceId) {
         try {
-            const id = String(sourceId || '').trim();
+            const id = String(sourceId || '').trim().replace(/[^a-zA-Z0-9_.@:-]/g, '');
             const isNumeric = /^\d+$/.test(id);
             if (isNumeric) {
                 // Prefer wpctl for numeric PipeWire IDs
@@ -464,7 +466,7 @@ class PipeWireService {
     async setSourceVolume(sourceId, volume) {
         try {
             const v = Math.max(0, Math.min(2, Number(volume) || 0));
-            const id = String(sourceId || '').trim();
+            const id = String(sourceId || '').trim().replace(/[^a-zA-Z0-9_.@:-]/g, '');
             // Map ALSA/default-like ids to default PipeWire/Pulse targets
             const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
             const wpTarget = isAlias ? '@DEFAULT_AUDIO_SOURCE@' : id;
