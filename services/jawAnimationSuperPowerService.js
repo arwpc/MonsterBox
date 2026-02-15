@@ -108,10 +108,20 @@ function getDefaultJawConfig() {
 }
 
 /**
- * Load parts safely with error handling
+ * Load parts safely with error handling.
+ * When characterId is provided, loads from the character-specific data
+ * directory (data/character-{characterId}/parts.json) instead of relying
+ * on the global dataPath in app-config.json.  This ensures that API
+ * requests for a specific character always resolve the correct parts file.
  */
-async function loadPartsSafe() {
+async function loadPartsSafe(characterId) {
   try {
+    if (characterId != null) {
+      const partsFile = path.resolve(`data/character-${characterId}`, 'parts.json');
+      const data = await fs.readFile(partsFile, 'utf8');
+      const parts = JSON.parse(data);
+      return Array.isArray(parts) ? parts : [];
+    }
     const parts = await loadPartsFromController();
     return Array.isArray(parts) ? parts : [];
   } catch (error) {
@@ -142,7 +152,7 @@ function getCalibrationFromMarkers(part) {
  */
 async function getAvailableServos(characterId = null) {
   try {
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
 
     // Filter to servos only (optionally for a specific character)
     const servos = parts.filter(p => {
@@ -183,9 +193,9 @@ async function getAvailableServos(characterId = null) {
  * Load calibration guardrails (Min/Max) from part markers.
  * Looks up the part by ID and reads its markers array.
  */
-async function loadCalibrationGuardrails(servoPartId) {
+async function loadCalibrationGuardrails(servoPartId, characterId) {
   try {
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
     const part = parts.find(p => String(p.id) === String(servoPartId));
     if (!part) return { minAngle: null, maxAngle: null };
     return getCalibrationFromMarkers(part);
@@ -273,7 +283,7 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     }
 
     // Get servo part (compare as strings for consistency)
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
     const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
 
     if (!jawServo) {
@@ -281,7 +291,7 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     }
 
     // Load calibration guardrails (Min/Max markers)
-    const guardrails = await loadCalibrationGuardrails(config.servoPartId);
+    const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
 
     // Apply smoothing
     const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
@@ -321,7 +331,7 @@ async function testJawMovement(characterId) {
     }
 
     // Get servo part (compare as strings)
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
     const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
 
     if (!jawServo) {
@@ -463,7 +473,7 @@ async function testServoPosition(characterId, servoPartId, position) {
     }
 
     // Get the servo part
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
     const servoPart = parts.find(p => String(p.id) === String(servoPartId) && p.type === 'servo');
 
     if (!servoPart) {
@@ -571,7 +581,7 @@ async function moveJawToAngle(characterId, angleDeg) {
       return { success: false, message: 'No jaw servo configured' };
     }
 
-    const parts = await loadPartsSafe();
+    const parts = await loadPartsSafe(characterId);
     const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
     if (!jawServo) {
       return { success: false, message: 'Jaw servo not found' };
@@ -654,14 +664,14 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
     return { success: false, message: 'Jaw animation disabled or no servo configured' };
   }
 
-  const parts = await loadPartsSafe();
+  const parts = await loadPartsSafe(characterId);
   const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
   if (!jawServo) {
     activeJawDrives.delete(cid);
     return { success: false, message: 'Jaw servo not found' };
   }
 
-  const guardrails = await loadCalibrationGuardrails(config.servoPartId);
+  const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
   const closedAngle = guardrails.minAngle ?? config.minAngle ?? 0;
 
   return new Promise((resolve, reject) => {
