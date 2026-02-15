@@ -73,7 +73,10 @@ router.post('/enable', express.json(), async (req, res) => {
     try {
         const { characterId, cooldownMs, minAmplitude, maxAmplitude } = req.body || {};
 
-        const resolvedCharacterId = characterId || req.app?.locals?.config?.selectedCharacter || 1;
+        const resolvedCharacterId = characterId || req.app?.locals?.config?.selectedCharacter;
+        if (!resolvedCharacterId) {
+            return res.status(400).json({ success: false, error: 'characterId is required' });
+        }
 
         const result = await randomPoseService.enable(resolvedCharacterId, {
             cooldownMs,

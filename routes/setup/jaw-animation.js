@@ -17,7 +17,7 @@ const router = express.Router();
 router.get('/api/list', async (req, res) => {
   try {
     const config = await configService.readConfig();
-    const characterId = parseInt(config.selectedCharacter, 10) || 1;
+    const characterId = parseInt(config.selectedCharacter, 10) || null;
 
     const [jawConfig, availableServos, monitoringState] = await Promise.all([
       jawAnimationService.readJawConfig(characterId),

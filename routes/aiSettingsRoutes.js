@@ -31,17 +31,17 @@ const router = express.Router();
 async function getCurrentCharacterInfo() {
     try {
         const config = await readConfig();
-        const characterId = parseInt(config.selectedCharacter, 10) || 1;
+        const characterId = parseInt(config.selectedCharacter, 10) || null;
         const charactersPath = path.resolve(__dirname, '..', 'data', 'characters.json');
         const chars = await readJsonIfExists(charactersPath);
-        let characterName = 'Character ' + characterId;
-        if (Array.isArray(chars)) {
+        let characterName = characterId ? 'Character ' + characterId : 'No Character';
+        if (characterId && Array.isArray(chars)) {
             const found = chars.find(c => c.id === characterId);
             if (found) characterName = found.name || characterName;
         }
         return { characterId, characterName };
     } catch {
-        return { characterId: 1, characterName: 'Unknown' };
+        return { characterId: null, characterName: 'Unknown' };
     }
 }
 
@@ -122,7 +122,7 @@ router.get('/api/settings', async (req, res) => {
     try {
         const appRoot = path.resolve(__dirname, '..');
         const appConfig = await readConfig();
-        const characterId = parseInt(appConfig.selectedCharacter, 10) || 1;
+        const characterId = parseInt(appConfig.selectedCharacter, 10) || null;
         const dataPath = appConfig.dataPath
             ? path.resolve(appRoot, appConfig.dataPath)
             : path.resolve(appRoot, 'data', `character-${characterId}`);

@@ -12,7 +12,7 @@ import goblinManagerService from '../../services/goblinManagerService.js';
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
-  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || 1;
+  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
 }
 
 /**

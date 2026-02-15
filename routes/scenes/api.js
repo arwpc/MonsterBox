@@ -13,8 +13,7 @@ import armedModeRoutes from './armed-mode.js';
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
-  // Default to character 1 (PumpkinHead) when unset to keep tests and demos stable
-  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || 1;
+  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
 }
 
 async function respondWithScenes(req, res) {

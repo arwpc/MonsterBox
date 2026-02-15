@@ -274,7 +274,7 @@ router.post('/api/play-audio', express.json(), async (req, res) => {
       return res.status(404).json({ success: false, error: 'Audio file not found' });
     }
 
-    const characterId = body.characterId || getCurrentCharacterId(req) || 1;
+    const characterId = body.characterId || getCurrentCharacterId(req);
     const responseAudio = {
       id: audioEntry.id || fallbackEntry?.id || null,
       title: audioEntry.title || fallbackEntry?.title || null,
