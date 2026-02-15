@@ -7,28 +7,48 @@
 import axios from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 
 class OrchestrationService {
     constructor() {
-        // Animatronic network map with characterId and agentId for AI features
-        this.animatronics = [
-            { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 8, agentId: 'agent_0801k3f1dybkecj88sta18gwwrv5' },
-            { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n' },
-            { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 3, agentId: 'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n' },
-            { id: 4, name: 'Skulltalker', hostname: 'skulltalker', ip: '192.168.8.130', port: 3000, characterId: 4, agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6' },
-            { id: 5, name: 'Groundbreaker', hostname: 'groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 9, agentId: 'agent_4201k6s9y384f9v9hqmg67ygc645' }
-        ];
-
-        // Goblin network map
-        this.goblins = [
-            { id: 'chestwound', name: 'Chestwound Goblin', ip: '192.168.8.160', port: 3001 },
-            { id: 'goblin2', name: 'Goblin2', ip: '192.168.8.161', port: 3001 }
-        ];
+        const config = this.loadAnimatronicsConfig();
+        this.animatronics = config.animatronics;
+        this.goblins = config.goblins;
 
         this.sshUser = 'remote';
         this.sshPassword = 'klrklr89!'; // For reference, but using SSH keys
+    }
+
+    /**
+     * Load animatronic and goblin topology from config/animatronics.json
+     * Uses synchronous read since this runs once at startup in the constructor
+     */
+    loadAnimatronicsConfig() {
+        const configPath = path.resolve(__dirname, '..', 'config', 'animatronics.json');
+        try {
+            const raw = readFileSync(configPath, 'utf8');
+            const config = JSON.parse(raw);
+
+            const animatronics = Array.isArray(config.animatronics) ? config.animatronics : [];
+            const goblins = Array.isArray(config.goblins) ? config.goblins : [];
+
+            if (animatronics.length === 0) {
+                console.warn('⚠️ config/animatronics.json contains no animatronics entries');
+            }
+
+            console.log(`📡 Loaded ${animatronics.length} animatronics and ${goblins.length} goblins from config`);
+            return { animatronics, goblins };
+        } catch (error) {
+            console.error(`❌ Failed to load config/animatronics.json: ${error.message}`);
+            console.error('   Orchestration will have no animatronics configured.');
+            return { animatronics: [], goblins: [] };
+        }
     }
 
     /**
@@ -367,27 +387,20 @@ class OrchestrationService {
 
     /**
      * Start all queue loops on all animatronics
+     * Uses defaultSceneId from each animatronic's config entry
      */
     async startAllQueueLoops() {
         console.log('🎬 Starting all queue loops...');
 
-        const sceneMap = {
-            'Skulltalker': 9,
-            'Groundbreaker': 1,
-            'Orlok': 100,
-            'PumpkinHead': 100,
-            'Coffin Breaker': 1
-        };
-
         const results = await Promise.allSettled(
             this.animatronics.map(async (animatronic) => {
                 try {
-                    const sceneId = sceneMap[animatronic.name];
+                    const sceneId = animatronic.defaultSceneId;
                     if (!sceneId) {
                         return {
                             name: animatronic.name,
                             success: false,
-                            error: 'No scene configured'
+                            error: 'No defaultSceneId configured'
                         };
                     }
 
@@ -481,4 +494,3 @@ class OrchestrationService {
 // Export singleton instance
 const orchestrationService = new OrchestrationService();
 export default orchestrationService;
-

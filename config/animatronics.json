@@ -1,9 +1,13 @@
 {
-  "orlok": { "characterId": 3, "host": "orlok.lan", "ip": "192.168.8.120" },
-  "pumpkinhead": { "characterId": 1, "host": "pumpkinhead.lan", "ip": "192.168.8.150" },
-  "coffin": { "characterId": 2, "host": "coffin.lan", "ip": "192.168.8.140" },
-  "skulltalker": { "characterId": 4, "host": "skulltalker.lan", "ip": "192.168.8.130" },
-  "groundbreaker": { "characterId": 5, "host": "groundbreaker.lan", "ip": "192.168.8.200" },
-  "goblin": { "role": "display", "host": "goblin.lan", "ip": "192.168.8.160" }
+  "animatronics": [
+    { "id": 1, "name": "PumpkinHead", "hostname": "pumpkinhead", "ip": "192.168.8.150", "port": 3000, "characterId": 1, "agentId": "agent_0801k3f1dybkecj88sta18gwwrv5", "defaultSceneId": 100 },
+    { "id": 2, "name": "Coffin Breaker", "hostname": "coffinbreaker", "ip": "192.168.8.140", "port": 3000, "characterId": 2, "agentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n", "defaultSceneId": 1 },
+    { "id": 3, "name": "Orlok", "hostname": "orlok", "ip": "192.168.8.120", "port": 3000, "characterId": 3, "agentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n", "defaultSceneId": 100 },
+    { "id": 4, "name": "Skulltalker", "hostname": "skulltalker", "ip": "192.168.8.130", "port": 3000, "characterId": 4, "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6", "defaultSceneId": 9 },
+    { "id": 5, "name": "Groundbreaker", "hostname": "groundbreaker", "ip": "192.168.8.200", "port": 3000, "characterId": 7, "agentId": "agent_4201k6s9y384f9v9hqmg67ygc645", "defaultSceneId": 1 }
+  ],
+  "goblins": [
+    { "id": "chestwound", "name": "Chestwound Goblin", "ip": "192.168.8.160", "port": 3001 },
+    { "id": "goblin2", "name": "Goblin2", "ip": "192.168.8.161", "port": 3001 }
+  ]
 }
-
