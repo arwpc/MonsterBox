@@ -534,6 +534,9 @@
                         </button>
                       </div>
                     </div>
+                    <button id="calSaveAdvancedBtn" class="btn btn-success w-100 mb-2">
+                      <i class="bi bi-save"></i> Save Tracking Settings
+                    </button>
                     <button id="calEmergencyStopBtn" class="btn btn-danger w-100">
                       <i class="bi bi-stop-circle-fill"></i> EMERGENCY STOP ALL SERVOS
                     </button>
@@ -1581,6 +1584,87 @@
           calEmergencyStopAllServos();
         });
       }
+
+      // Save settings button
+      var saveBtn = document.getElementById('calSaveAdvancedBtn');
+      if (saveBtn) {
+        var newSave = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSave, saveBtn);
+        newSave.addEventListener('click', function () {
+          saveAdvancedTrackingSettings();
+        });
+      }
+
+      // Load previously saved values from part config
+      loadSavedTrackingSettings(part);
+    }
+
+    // Save/load tracking settings to part config
+    function saveAdvancedTrackingSettings() {
+      if (!selected || selected.type !== 'webcam') {
+        showToast('No webcam part selected', 'warning');
+        return;
+      }
+
+      var trackingConfig = {
+        motionTracking: {
+          motionThreshold: parseInt(document.getElementById('calMotionThreshold').value),
+          minContourArea: parseInt(document.getElementById('calMinContourArea').value),
+          trackingSmoothing: parseFloat(document.getElementById('calTrackingSmoothing').value),
+          trackingDeadzone: parseInt(document.getElementById('calTrackingDeadzone').value)
+        },
+        headTracking: {
+          panServoId: document.getElementById('calPanServoSelect').value || '',
+          rangeDeg: parseInt(document.getElementById('calHeadTrackingRange').value),
+          smoothing: parseFloat(document.getElementById('calHeadTrackingSmoothing').value)
+        }
+      };
+
+      // Merge into part config and save via PUT
+      var existingConfig = selected.config || {};
+      var mergedConfig = Object.assign({}, existingConfig, trackingConfig);
+
+      fetch('/setup/calibration/api/parts/' + encodeURIComponent(selected.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: mergedConfig })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.success) {
+            selected.config = mergedConfig;
+            showToast('Tracking settings saved', 'success');
+          } else {
+            showToast('Failed to save: ' + (data.error || 'Unknown'), 'error');
+          }
+        })
+        .catch(function (err) {
+          showToast('Save error: ' + err.message, 'error');
+        });
+    }
+
+    function loadSavedTrackingSettings(part) {
+      var cfg = (part && part.config) || {};
+      var mt = cfg.motionTracking || {};
+      var ht = cfg.headTracking || {};
+
+      // Motion tracking params
+      var thresh = document.getElementById('calMotionThreshold');
+      var contour = document.getElementById('calMinContourArea');
+      var smooth = document.getElementById('calTrackingSmoothing');
+      var dead = document.getElementById('calTrackingDeadzone');
+      if (thresh && mt.motionThreshold != null) { thresh.value = mt.motionThreshold; var d = document.getElementById('calMotionThresholdValue'); if (d) d.textContent = mt.motionThreshold; }
+      if (contour && mt.minContourArea != null) { contour.value = mt.minContourArea; var d = document.getElementById('calMinContourAreaValue'); if (d) d.textContent = mt.minContourArea; }
+      if (smooth && mt.trackingSmoothing != null) { smooth.value = mt.trackingSmoothing; var d = document.getElementById('calTrackingSmoothingValue'); if (d) d.textContent = mt.trackingSmoothing; }
+      if (dead && mt.trackingDeadzone != null) { dead.value = mt.trackingDeadzone; var d = document.getElementById('calTrackingDeadzoneValue'); if (d) d.textContent = mt.trackingDeadzone; }
+
+      // Head tracking params
+      var panSelect = document.getElementById('calPanServoSelect');
+      var range = document.getElementById('calHeadTrackingRange');
+      var htSmooth = document.getElementById('calHeadTrackingSmoothing');
+      if (panSelect && ht.panServoId) { panSelect.value = ht.panServoId; var btn = document.getElementById('calEnableHeadTracking'); if (btn) btn.disabled = !panSelect.value; }
+      if (range && ht.rangeDeg != null) { range.value = ht.rangeDeg; var d = document.getElementById('calHeadTrackingRangeValue'); if (d) d.textContent = ht.rangeDeg; }
+      if (htSmooth && ht.smoothing != null) { htSmooth.value = ht.smoothing; var d = document.getElementById('calHeadTrackingSmoothingValue'); if (d) d.textContent = ht.smoothing; }
     }
 
     // Advanced-tab stream + overlay helpers
