@@ -75,23 +75,24 @@
         </div>
       </div>
 
-      <!-- Theme Card -->
-      <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5></div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label for="themeSelect" class="form-label">Bootstrap Theme</label>
-              <select class="form-select" id="themeSelect">
-                <option value="dark" <%=(typeof config !== 'undefined' && config && config.theme==='dark' || (typeof config === 'undefined' || !config || !config.theme)) ? 'selected' : '' %>>Dark Theme</option>
-                <option value="light" <%=(typeof config !== 'undefined' && config && config.theme==='light') ? 'selected' : '' %>>Light Theme</option>
-              </select>
-              <div class="form-text">Select the Bootstrap color scheme for the entire application</div>
+      <!-- Theme Gallery -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
+            <div>
+              <span class="badge bg-secondary me-2" id="themePreviewLabel">Previewing: --</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme">
+                <i class="bi bi-check-circle"></i> Apply Theme
+              </button>
             </div>
-            <button type="button" class="btn btn-primary" id="saveThemeBtn">
-              <i class="bi bi-check-circle"></i> Save Theme
-            </button>
-            <div id="themeMessage" class="mt-2"></div>
+          </div>
+          <div class="card-body">
+            <div id="themeMessage" class="mb-3"></div>
+            <div class="row g-3" id="themeGallery"></div>
           </div>
         </div>
       </div>
@@ -889,19 +890,146 @@
   $('#btnSaveTemplate').addEventListener('click', saveTemplate);
   $('#btnSaveTemplateForm').addEventListener('click', saveTemplate);
 
-  /* ─── Theme ────────────────────────────────────────────────────────────────── */
-  $('#saveThemeBtn').addEventListener('click', function () {
-    var theme = $('#themeSelect').value;
-    apiPost('/api/config/theme', { theme: theme }, function (err, data) {
-      if (err || !data || !data.success) {
-        showAlert('themeMessage', 'danger', '<i class="bi bi-exclamation-triangle"></i> Failed: ' + ((data && data.error) || 'Unknown error'));
-      } else {
-        showAlert('themeMessage', 'success', '<i class="bi bi-check-circle"></i> Theme saved! Reloading...');
-        document.documentElement.setAttribute('data-bs-theme', theme);
-        setTimeout(function () { window.location.reload(); }, 1000);
+  /* ─── Theme Gallery ─────────────────────────────────────────────────────── */
+  var THEMES = [
+    { name: 'default-dark',  label: 'Default Dark',  dark: true,  colors: ['#0d1117','#6f42c1','#0dcaf0'] },
+    { name: 'default-light', label: 'Default Light', dark: false, colors: ['#f8f9fa','#0d6efd','#6c757d'] },
+    { name: 'cerulean',  label: 'Cerulean',  dark: false, colors: ['#ffffff','#2fa4e7','#033c73'] },
+    { name: 'cosmo',     label: 'Cosmo',     dark: false, colors: ['#ffffff','#2780e3','#373a3c'] },
+    { name: 'flatly',    label: 'Flatly',    dark: false, colors: ['#ffffff','#2c3e50','#18bc9c'] },
+    { name: 'journal',   label: 'Journal',   dark: false, colors: ['#ffffff','#eb6864','#333333'] },
+    { name: 'litera',    label: 'Litera',    dark: false, colors: ['#ffffff','#4582ec','#333333'] },
+    { name: 'lux',       label: 'Lux',       dark: false, colors: ['#ffffff','#1a1a2e','#c0a46b'] },
+    { name: 'minty',     label: 'Minty',     dark: false, colors: ['#ffffff','#78c2ad','#f3969a'] },
+    { name: 'sandstone', label: 'Sandstone', dark: false, colors: ['#ffffff','#325d88','#8e8c84'] },
+    { name: 'united',    label: 'United',    dark: false, colors: ['#ffffff','#e95420','#772953'] },
+    { name: 'yeti',      label: 'Yeti',      dark: false, colors: ['#ffffff','#008cba','#333333'] },
+    { name: 'cyborg',    label: 'Cyborg',    dark: true,  colors: ['#060606','#2a9fd6','#555555'] },
+    { name: 'darkly',    label: 'Darkly',    dark: true,  colors: ['#222222','#375a7f','#00bc8c'] },
+    { name: 'quartz',    label: 'Quartz',    dark: true,  colors: ['#1a1a2e','#e16e8a','#8661c1'] },
+    { name: 'slate',     label: 'Slate',     dark: true,  colors: ['#272b30','#3a3f44','#7a8288'] },
+    { name: 'solar',     label: 'Solar',     dark: true,  colors: ['#002b36','#b58900','#2aa198'] },
+    { name: 'superhero', label: 'Superhero', dark: true,  colors: ['#2b3e50','#df691a','#4e5d6c'] },
+    { name: 'vapor',     label: 'Vapor',     dark: true,  colors: ['#1a1a2e','#ea39b8','#6f42c1'] }
+  ];
+
+  var __rawCurrent = '<%= (typeof config !== "undefined" && config && config.theme) ? config.theme : "darkly" %>';
+  var __legacyMap = { 'dark': 'default-dark', 'light': 'default-light' };
+  var currentTheme = __legacyMap[__rawCurrent] || __rawCurrent;
+  var previewTheme = currentTheme;
+
+  function buildThemeGallery() {
+    var gallery = document.getElementById('themeGallery');
+    if (!gallery) return;
+    var html = '';
+    for (var i = 0; i < THEMES.length; i++) {
+      var t = THEMES[i];
+      var isActive = (t.name === currentTheme);
+      var borderClass = isActive ? 'border-primary border-2' : '';
+      html += '<div class="col-6 col-md-4 col-lg-3">' +
+        '<div class="card theme-card ' + borderClass + '" data-theme="' + t.name + '" ' +
+        'style="cursor:pointer;position:relative;" role="button">' +
+        '<div class="card-body p-2 text-center">' +
+        '<div class="d-flex justify-content-center mb-2">';
+      for (var c = 0; c < t.colors.length; c++) {
+        html += '<div style="width:28px;height:28px;border-radius:50%;background:' + t.colors[c] +
+          ';border:2px solid rgba(128,128,128,0.3);' + (c > 0 ? 'margin-left:-6px;' : '') + '"></div>';
       }
+      html += '</div>' +
+        '<strong class="d-block small">' + t.label + '</strong>' +
+        '<span class="badge ' + (t.dark ? 'bg-dark' : 'bg-light text-dark') + ' mt-1" style="font-size:0.65rem;">' +
+        (t.dark ? 'Dark' : 'Light') + '</span>';
+      if (isActive) {
+        html += '<span class="position-absolute top-0 end-0 m-1 badge bg-primary"><i class="bi bi-check-lg"></i></span>';
+      }
+      html += '</div></div></div>';
+    }
+    gallery.innerHTML = html;
+
+    // Bind click handlers
+    var cards = gallery.querySelectorAll('.theme-card');
+    for (var j = 0; j < cards.length; j++) {
+      cards[j].addEventListener('click', function () {
+        var name = this.getAttribute('data-theme');
+        doPreviewTheme(name);
+      });
+    }
+  }
+
+  function doPreviewTheme(name) {
+    previewTheme = name;
+    var t = null;
+    for (var i = 0; i < THEMES.length; i++) {
+      if (THEMES[i].name === name) { t = THEMES[i]; break; }
+    }
+    if (!t) return;
+
+    // Swap CSS link
+    var bsLink = document.querySelector('link[href*="/vendor/bootswatch/"], link[href*="/vendor/bootstrap/bootstrap"]');
+    if (bsLink) {
+      var isBootswatch = ['cerulean','cosmo','cyborg','darkly','flatly','journal','litera','lux','minty','sandstone','united','yeti','quartz','slate','solar','superhero','vapor'].indexOf(name) !== -1;
+      if (isBootswatch) {
+        bsLink.href = '/vendor/bootswatch/' + name + '/bootstrap.min.css';
+      } else {
+        bsLink.href = '/vendor/bootstrap/bootstrap.min.css';
+      }
+    }
+
+    // Set data attributes
+    document.documentElement.setAttribute('data-bs-theme', t.dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-mb-theme', name);
+
+    // Update preview label
+    var label = document.getElementById('themePreviewLabel');
+    if (label) label.textContent = 'Previewing: ' + t.label;
+
+    // Update card borders
+    var cards = document.querySelectorAll('.theme-card');
+    for (var j = 0; j < cards.length; j++) {
+      var cardName = cards[j].getAttribute('data-theme');
+      cards[j].classList.remove('border-primary', 'border-2', 'border-success');
+      if (cardName === name) {
+        cards[j].classList.add('border-primary', 'border-2');
+      }
+      // Re-add checkmark for saved theme
+      var badge = cards[j].querySelector('.badge.bg-primary');
+      if (badge && cardName !== currentTheme) badge.remove();
+    }
+  }
+
+  // Reset preview to currently saved theme
+  var btnResetPreview = document.getElementById('btnResetPreview');
+  if (btnResetPreview) {
+    btnResetPreview.addEventListener('click', function () {
+      doPreviewTheme(currentTheme);
     });
-  });
+  }
+
+  // Apply theme (save to server)
+  var btnApplyTheme = document.getElementById('btnApplyTheme');
+  if (btnApplyTheme) {
+    btnApplyTheme.addEventListener('click', function () {
+      apiPost('/api/config/theme', { theme: previewTheme }, function (err, data) {
+        if (err || !data || !data.success) {
+          showAlert('themeMessage', 'danger', '<i class="bi bi-exclamation-triangle"></i> Failed: ' + ((data && data.error) || 'Unknown error'));
+        } else {
+          showAlert('themeMessage', 'success', '<i class="bi bi-check-circle"></i> Theme saved! Reloading...');
+          setTimeout(function () { window.location.reload(); }, 1000);
+        }
+      });
+    });
+  }
+
+  buildThemeGallery();
+  var initLabel = document.getElementById('themePreviewLabel');
+  if (initLabel) {
+    for (var ti = 0; ti < THEMES.length; ti++) {
+      if (THEMES[ti].name === currentTheme) {
+        initLabel.textContent = 'Current: ' + THEMES[ti].label;
+        break;
+      }
+    }
+  }
 
   /* ─── Reboot / Shutdown ────────────────────────────────────────────────────── */
   $('#btnReboot').addEventListener('click', function () {

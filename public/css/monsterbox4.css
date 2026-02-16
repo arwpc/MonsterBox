@@ -14,8 +14,8 @@
     --mb-light: #f8f9fa;
 }
 
-/* Dark theme enhancements */
-[data-bs-theme="dark"] {
+/* Dark theme enhancements (only for default-dark, not Bootswatch dark themes) */
+html[data-mb-theme="default-dark"] {
     --bs-body-bg: #0d1117;
     --bs-body-color: #e6edf3;
     --bs-card-bg: #161b22;

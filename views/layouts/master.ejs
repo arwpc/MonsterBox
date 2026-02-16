@@ -1,5 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="<%= config?.theme || 'dark' %>">
+<%
+var __rawTheme = (config && config.theme) || 'darkly';
+var __legacyMap = { 'dark': 'default-dark', 'light': 'default-light' };
+var __themeVal = __legacyMap[__rawTheme] || __rawTheme;
+var __darkThemes = ['darkly','cyborg','slate','solar','superhero','vapor','quartz','default-dark'];
+var __bootswatchThemes = ['cerulean','cosmo','cyborg','darkly','flatly','journal','litera','lux','minty','sandstone','united','yeti','quartz','slate','solar','superhero','vapor'];
+var __isDarkTheme = __darkThemes.indexOf(__themeVal) !== -1;
+var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
+%>
+<html lang="en" data-bs-theme="<%= __isDarkTheme ? 'dark' : 'light' %>"
+      data-mb-theme="<%= __themeVal %>">
 
 <head>
     <meta charset="UTF-8">
@@ -8,8 +18,12 @@
         <%= title %>
     </title>
 
-    <!-- Bootstrap 5 CSS - Local with CDN fallback -->
+    <!-- Bootstrap 5 CSS - Bootswatch theme or default -->
+    <% if (__isBootswatch) { %>
+    <link href="/vendor/bootswatch/<%= __themeVal %>/bootstrap.min.css" rel="stylesheet">
+    <% } else { %>
     <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <% } %>
     <link href="/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
     <!-- Custom CSS -->
