@@ -1,7 +1,7 @@
 /* MonsterBox Custom Theme Enhancements */
 
 /* Theme-specific overrides and enhancements */
-[data-theme="monsterbox"] {
+[data-bs-theme="monsterbox"] {
   /* Enhanced terminal styling */
   --terminal-glow: 0 0 10px #00ff00;
   --terminal-text-shadow: 0 0 5px #00ff00;
@@ -10,28 +10,28 @@
   scrollbar-color: #00ff00 #000000;
 }
 
-[data-theme="monsterbox"] *::-webkit-scrollbar {
+[data-bs-theme="monsterbox"] *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-[data-theme="monsterbox"] *::-webkit-scrollbar-track {
+[data-bs-theme="monsterbox"] *::-webkit-scrollbar-track {
   background: #000000;
   border-radius: 4px;
 }
 
-[data-theme="monsterbox"] *::-webkit-scrollbar-thumb {
+[data-bs-theme="monsterbox"] *::-webkit-scrollbar-thumb {
   background: #00ff00;
   border-radius: 4px;
   box-shadow: 0 0 5px #00ff00;
 }
 
-[data-theme="monsterbox"] *::-webkit-scrollbar-thumb:hover {
+[data-bs-theme="monsterbox"] *::-webkit-scrollbar-thumb:hover {
   background: #00cc00;
   box-shadow: 0 0 8px #00ff00;
 }
 
-[data-theme="monsterbox-halloween"] {
+[data-bs-theme="monsterbox-halloween"] {
   /* Halloween theme enhancements */
   --halloween-glow: 0 0 10px #ff8000;
   --halloween-text-shadow: 0 0 5px #ff8000;
@@ -39,17 +39,17 @@
   scrollbar-color: #ff8000 #0f0f0f;
 }
 
-[data-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb {
+[data-bs-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb {
   background: #ff8000;
   box-shadow: 0 0 5px #ff8000;
 }
 
-[data-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb:hover {
+[data-bs-theme="monsterbox-halloween"] *::-webkit-scrollbar-thumb:hover {
   background: #cc6600;
   box-shadow: 0 0 8px #ff8000;
 }
 
-[data-theme="monsterbox-retro"] {
+[data-bs-theme="monsterbox-retro"] {
   /* Retro theme enhancements */
   --retro-glow: 0 0 10px #00ff00;
   --retro-text-shadow: 0 0 5px #00ff00;
@@ -57,7 +57,7 @@
   scrollbar-color: #00ff00 #001100;
 }
 
-[data-theme="monsterbox-retro"] *::-webkit-scrollbar-thumb {
+[data-bs-theme="monsterbox-retro"] *::-webkit-scrollbar-thumb {
   background: #00ff00;
   box-shadow: 0 0 5px #00ff00;
 }

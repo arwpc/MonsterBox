@@ -12,8 +12,7 @@ router.get('/', async function (req, res) {
   try {
     res.renderWithLayout('setup/characters', {
       title: 'Setup Characters - MonsterBox',
-      page: 'setup-characters',
-      config: { theme: 'dark' }
+      page: 'setup-characters'
     });
   } catch (err) {
     console.error('Error rendering characters page:', err);
@@ -45,7 +44,6 @@ router.get('/images', async function (req, res) {
     res.renderWithLayout('setup/character-images', {
       title: 'Character Images - MonsterBox',
       page: 'setup-characters',
-      config: { theme: 'dark' },
       includeMainWrapper: false
     });
   } catch (err) {

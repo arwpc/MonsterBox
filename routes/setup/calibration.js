@@ -148,16 +148,15 @@ router.get('/unified', async (req, res) => {
         res.renderWithLayout('setup/unified-calibration', {
             title: 'Unified Calibration - MonsterBox',
             page: 'setup-calibration-unified',
-            config: { theme: 'dark' },
+
             parts: positionableParts,
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
         });
     } catch (error) {
         console.error('Error rendering unified calibration page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            config: { theme: 'dark' },
             error: 'Failed to load unified calibration page',
             message: error.message
         });
@@ -170,15 +169,14 @@ router.get('/', async (req, res) => {
         res.renderWithLayout('setup/calibration', {
             title: 'Setup Calibration - MonsterBox',
             page: 'setup-calibration',
-            config: { theme: 'dark' },
+
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
         });
     } catch (error) {
         console.error('Error rendering calibration setup page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            config: { theme: 'dark' },
             error: 'Failed to load calibration setup page',
             message: error.message
         });
@@ -719,10 +717,9 @@ router.get('/linear_actuator/:id', async (req, res) => {
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part) {
-            return res.status(404).render('error', {
+            return res.status(404).renderWithLayout('error', {
                 title: 'Part Not Found',
                 page: 'error',
-                config: { theme: 'dark' },
                 error: 'Linear actuator not found',
                 message: `No linear actuator found with ID: ${partId}`
             });
@@ -732,7 +729,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
             return res.status(400).renderWithLayout('error', {
                 title: 'Invalid Part Type',
                 page: 'error',
-                config: { theme: 'dark' },
+    
                 testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
                 error: 'Invalid part type',
                 message: `Part ${partId} is not a linear actuator`
@@ -744,7 +741,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
         res.renderWithLayout('setup/calibration-linear-actuator', {
             title: `Calibrate ${part.name} - MonsterBox`,
             page: 'setup-calibration-linear-actuator',
-            config: { theme: 'dark' },
+
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
             part: part,
             calibrationStatus: calibrationStatus
@@ -754,7 +751,7 @@ router.get('/linear_actuator/:id', async (req, res) => {
         res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            config: { theme: 'dark' },
+
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
             error: 'Failed to load calibration page',
             message: error.message
@@ -999,16 +996,16 @@ router.get('/standard_servo/:id', async (req, res) => {
         const part = parts.find(p => String(p.id) === String(partId));
 
         if (!part) {
-            return res.status(404).render('error', {
-                title: 'Part Not Found', page: 'error', config: { theme: 'dark' },
+            return res.status(404).renderWithLayout('error', {
+                title: 'Part Not Found', page: 'error',
                 error: 'Part not found', message: `No part found with ID: ${partId}`
             });
         }
 
         // Verify this is a standard positional servo (not continuous)
         if (part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
-            return res.status(400).render('error', {
-                title: 'Invalid Part Type', page: 'error', config: { theme: 'dark' },
+            return res.status(400).renderWithLayout('error', {
+                title: 'Invalid Part Type', page: 'error',
                 error: 'Invalid part type', message: 'This calibration page is only for standard positional servos'
             });
         }
@@ -1024,7 +1021,7 @@ router.get('/standard_servo/:id', async (req, res) => {
         res.renderWithLayout('setup/calibration-standard-servo', {
             title: `Calibrate ${part.name} - MonsterBox`,
             page: 'setup-calibration-standard-servo',
-            config: { theme: 'dark' },
+
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
             part,
             calibrationStatus,
@@ -1036,7 +1033,7 @@ router.get('/standard_servo/:id', async (req, res) => {
         res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            config: { theme: 'dark' },
+
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
             error: 'Failed to render page',
             message: error.message

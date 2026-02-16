@@ -45,6 +45,7 @@ import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
 import scenesRoutes from './routes/scenes/index.js';
 import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
+import configApiRoutes from './routes/api/configRoutes.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
@@ -52,6 +53,7 @@ import goblinManagerService from './services/goblinManagerService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import pipewireService from './services/pipewireService.js';
 import serverPlaybackService from './services/serverPlaybackService.js';
+import systemService from './services/systemService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -336,6 +338,7 @@ app.use('/api/elevenlabs', elevenLabsApiRoutes);
 app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
 app.use('/api/system', systemApiRoutes);
+app.use('/api/config', configApiRoutes);
 app.use('/api', sceneEditorApiRoutes);
 
 // --- Goblin device compatibility API (for native Goblin auto-registration) ---
@@ -430,7 +433,6 @@ app.get('/setup', (req, res) => {
     res.renderWithLayout('setup/index', {
         title: 'Setup - MonsterBox',
         page: 'setup',
-        config: { theme: 'dark' },
         currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
     });
 });
@@ -640,6 +642,13 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
     }
 
+    // Start system performance collector (records snapshots every 5 minutes)
+    try {
+        systemService.startPerformanceCollector(300000);
+    } catch (error) {
+        console.error(`❌ Failed to start performance collector:`, error.message);
+    }
+
     // Console performance monitor (CPU, Memory, Audio streams, WS clients, Webcam)
     try {
         let lastVideoOk = mjpgHealthy;
@@ -707,6 +716,13 @@ async function gracefulShutdown(signal) {
         await motionTrackingCleanup();
     } catch (error) {
         console.warn('Motion tracking cleanup error:', (error && error.message) || error);
+    }
+
+    try {
+        // Stop performance collector
+        systemService.stopPerformanceCollector();
+    } catch (error) {
+        console.warn('Performance collector cleanup error:', (error && error.message) || error);
     }
 
     try {

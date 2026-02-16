@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
       scripts: ['/js/first-run.js']
     });
   } catch (err) {
-    res.status(500).render('error', { title: 'Error', error: 'Failed to load first-run', message: err.message });
+    res.status(500).renderWithLayout('error', { title: 'Error', page: 'error', error: 'Failed to load first-run', message: err.message });
   }
 });
 

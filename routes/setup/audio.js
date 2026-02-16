@@ -15,15 +15,13 @@ router.get('/', async (req, res) => {
         res.renderWithLayout('setup/audio', {
             title: 'Setup Audio - MonsterBox',
             page: 'setup-audio',
-            config: { theme: 'dark' },
             scripts: ['/js/setup-audio.js']
         });
     } catch (error) {
         console.error('Error rendering audio setup page:', error);
-        res.status(500).render('error', {
+        res.status(500).renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            config: { theme: 'dark' },
             error: 'Failed to load audio setup page',
             message: error.message
         });

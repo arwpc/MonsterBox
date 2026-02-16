@@ -1,150 +1,939 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1><i class="bi bi-pc-display"></i> Setup System</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1><i class="bi bi-pc-display"></i> System</h1>
+  <div>
+    <button class="btn btn-outline-danger btn-sm me-2" id="btnReboot" title="Reboot System">
+      <i class="bi bi-arrow-clockwise"></i> Reboot
+    </button>
+    <button class="btn btn-outline-danger btn-sm" id="btnShutdown" title="Shutdown System">
+      <i class="bi bi-power"></i> Shutdown
+    </button>
+  </div>
 </div>
 
-<div class="row g-4">
-  <!-- Theme Settings Card -->
-  <div class="col-lg-6">
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-3" id="systemTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+      <i class="bi bi-speedometer2"></i> Overview
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">
+      <i class="bi bi-graph-up"></i> Performance
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
+      <i class="bi bi-journal-text"></i> Logs
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+      <i class="bi bi-gear"></i> Settings
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="ssh-tab" data-bs-toggle="tab" data-bs-target="#ssh" type="button" role="tab">
+      <i class="bi bi-key"></i> SSH Keys
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab">
+      <i class="bi bi-clipboard-data"></i> Templates
+    </button>
+  </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="systemTabContent">
+
+  <!-- ══════════════════ Tab 1: Overview ══════════════════ -->
+  <div class="tab-pane fade show active" id="overview" role="tabpanel">
+    <div class="row g-3">
+      <!-- System Info Card -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-info-circle"></i> System Information</h5></div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5">MonsterBox Version</dt>
+              <dd class="col-sm-7"><span class="badge bg-primary" id="infoVersion"><%= typeof appVersion !== 'undefined' ? appVersion : 'loading...' %></span></dd>
+              <dt class="col-sm-5">Hostname</dt>
+              <dd class="col-sm-7" id="infoHostname">Loading...</dd>
+              <dt class="col-sm-5">Node.js</dt>
+              <dd class="col-sm-7" id="infoNode">Loading...</dd>
+              <dt class="col-sm-5">Platform</dt>
+              <dd class="col-sm-7" id="infoPlatform">Loading...</dd>
+              <dt class="col-sm-5">System Uptime</dt>
+              <dd class="col-sm-7" id="infoUptime">Loading...</dd>
+              <dt class="col-sm-5">CPU Model</dt>
+              <dd class="col-sm-7" id="infoCpuModel">Loading...</dd>
+              <dt class="col-sm-5">CPU Cores</dt>
+              <dd class="col-sm-7" id="infoCpuCount">Loading...</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Card -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5></div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="themeSelect" class="form-label">Bootstrap Theme</label>
+              <select class="form-select" id="themeSelect">
+                <option value="dark" <%=(typeof config !== 'undefined' && config && config.theme==='dark' || (typeof config === 'undefined' || !config || !config.theme)) ? 'selected' : '' %>>Dark Theme</option>
+                <option value="light" <%=(typeof config !== 'undefined' && config && config.theme==='light') ? 'selected' : '' %>>Light Theme</option>
+              </select>
+              <div class="form-text">Select the Bootstrap color scheme for the entire application</div>
+            </div>
+            <button type="button" class="btn btn-primary" id="saveThemeBtn">
+              <i class="bi bi-check-circle"></i> Save Theme
+            </button>
+            <div id="themeMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Gauges -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-speedometer"></i> Live Performance</h5>
+            <small class="text-muted" id="gaugeTimestamp">--</small>
+          </div>
+          <div class="card-body">
+            <div class="row text-center g-3">
+              <div class="col-6 col-md-3">
+                <h6>CPU</h6>
+                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                  <canvas id="gaugeCpu" width="100" height="100"></canvas>
+                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeCpuText">--%</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <h6>Memory</h6>
+                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                  <canvas id="gaugeMem" width="100" height="100"></canvas>
+                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeMemText">--%</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <h6>Temperature</h6>
+                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                  <canvas id="gaugeTemp" width="100" height="100"></canvas>
+                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeTempText">--&deg;C</span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <h6>Disk</h6>
+                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                  <canvas id="gaugeDisk" width="100" height="100"></canvas>
+                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeDiskText">--%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Tab 2: Performance ══════════════════ -->
+  <div class="tab-pane fade" id="performance" role="tabpanel">
     <div class="card">
-      <div class="card-header">
-        <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="bi bi-graph-up"></i> Performance History</h5>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary active" data-period="24h">24 Hours</button>
+          <button class="btn btn-outline-secondary" data-period="1w">1 Week</button>
+          <button class="btn btn-outline-secondary" data-period="1m">1 Month</button>
+        </div>
       </div>
       <div class="card-body">
         <div class="mb-3">
-          <label for="themeSelect" class="form-label">Bootstrap Theme</label>
-          <select class="form-select" id="themeSelect">
-            <option value="dark" <%=(config?.theme==='dark' || !config?.theme) ? 'selected' : '' %>>Dark Theme</option>
-            <option value="light" <%=(config?.theme==='light' ) ? 'selected' : '' %>>Light Theme</option>
-          </select>
-          <div class="form-text">Select the Bootstrap color scheme for the entire application</div>
+          <canvas id="perfChart" height="280" style="width:100%;"></canvas>
         </div>
-        <button type="button" class="btn btn-primary" id="saveThemeBtn">
-          <i class="bi bi-check-circle"></i> Save Theme
-        </button>
-        <div id="themeMessage" class="mt-3"></div>
+        <div class="row text-center" id="perfSummary">
+          <div class="col-4"><strong>Avg CPU:</strong> <span id="perfAvgCpu">--</span>%</div>
+          <div class="col-4"><strong>Avg Memory:</strong> <span id="perfAvgMem">--</span>%</div>
+          <div class="col-4"><strong>Avg Temp:</strong> <span id="perfAvgTemp">--</span>&deg;C</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- System Information Card -->
-  <div class="col-lg-6">
+  <!-- ══════════════════ Tab 3: Logs ══════════════════ -->
+  <div class="tab-pane fade" id="logs" role="tabpanel">
     <div class="card">
       <div class="card-header">
-        <h5 class="card-title mb-0"><i class="bi bi-info-circle"></i> System Information</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row mb-0">
-          <dt class="col-sm-4">MonsterBox Version</dt>
-          <dd class="col-sm-8">5.3</dd>
-
-          <dt class="col-sm-4">Node.js Version</dt>
-          <dd class="col-sm-8" id="nodeVersion">Loading...</dd>
-
-          <dt class="col-sm-4">Platform</dt>
-          <dd class="col-sm-8" id="platform">Loading...</dd>
-        </dl>
-      </div>
-    </div>
-  </div>
-
-  <!-- System Control Card -->
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="card-title mb-0"><i class="bi bi-power"></i> System Control</h5>
-      </div>
-      <div class="card-body">
-        <div class="alert alert-warning" role="alert">
-          <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Rebooting will temporarily interrupt all
-          animatronic operations.
+        <div class="row align-items-center g-2">
+          <div class="col-auto">
+            <select class="form-select form-select-sm" id="logService">
+              <option value="monsterbox">monsterbox</option>
+              <option value="mjpg-streamer">mjpg-streamer</option>
+              <option value="pigpiod">pigpiod</option>
+              <option value="pipewire">pipewire</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <select class="form-select form-select-sm" id="logLines">
+              <option value="50">50 lines</option>
+              <option value="100" selected>100 lines</option>
+              <option value="200">200 lines</option>
+              <option value="500">500 lines</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-sm btn-primary" id="btnRefreshLogs"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+          <div class="col-auto">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="logAutoRefresh">
+              <label class="form-check-label" for="logAutoRefresh">Auto-refresh</label>
+            </div>
+          </div>
         </div>
-        <button type="button" class="btn btn-danger" id="rebootBtn">
-          <i class="bi bi-arrow-clockwise"></i> Reboot Animatronic
-        </button>
-        <div id="rebootMessage" class="mt-3"></div>
+      </div>
+      <div class="card-body p-0">
+        <pre id="logOutput" class="mb-0 p-3" style="max-height:500px;overflow-y:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;">Loading logs...</pre>
       </div>
     </div>
   </div>
+
+  <!-- ══════════════════ Tab 4: Settings ══════════════════ -->
+  <div class="tab-pane fade" id="settings" role="tabpanel">
+    <div class="accordion" id="settingsAccordion">
+      <!-- CPU Settings -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#cpuSettings">CPU Settings</button></h2>
+        <div id="cpuSettings" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body">
+            <div class="row align-items-end g-3">
+              <div class="col-md-6">
+                <label class="form-label">CPU Governor</label>
+                <select class="form-select" id="cpuGovernor"><option>Loading...</option></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Current</label>
+                <input type="text" class="form-control" id="cpuGovernorCurrent" readonly>
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-primary w-100" id="btnSaveCpuGovernor"><i class="bi bi-check-circle"></i> Apply</button>
+              </div>
+            </div>
+            <div id="cpuMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPU Settings -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#gpuSettings">GPU Settings</button></h2>
+        <div id="gpuSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-4">GPU Memory</dt>
+              <dd class="col-sm-8" id="gpuMemory">Loading...</dd>
+            </dl>
+            <small class="text-muted">GPU memory allocation is set in /boot/config.txt and requires a reboot to change.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Memory Settings -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#memSettings">Memory &amp; Swap</button></h2>
+        <div id="memSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Swap Total</dt>
+              <dd class="col-sm-8" id="swapTotal">Loading...</dd>
+              <dt class="col-sm-4">Swap Used</dt>
+              <dd class="col-sm-8" id="swapUsed">Loading...</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Startup Tasks -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#startupSettings">Startup Tasks</button></h2>
+        <div id="startupSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body" id="startupTasksList">
+            <p class="text-muted">Loading startup tasks...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Tab 5: SSH Keys ══════════════════ -->
+  <div class="tab-pane fade" id="ssh" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-key"></i> SSH Keys</h5></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm" id="sshKeysTable">
+                <thead><tr><th>Name</th><th>Fingerprint</th><th>Created</th><th>Actions</th></tr></thead>
+                <tbody id="sshKeysBody"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card mb-3">
+          <div class="card-header"><h6 class="card-title mb-0">Generate New Key</h6></div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label">Key Type</label>
+              <select class="form-select form-select-sm" id="sshKeyType">
+                <option value="ed25519" selected>Ed25519 (Recommended)</option>
+                <option value="rsa">RSA 4096</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Comment</label>
+              <input type="text" class="form-control form-control-sm" id="sshKeyComment" placeholder="MonsterBox key">
+            </div>
+            <button class="btn btn-sm btn-primary w-100" id="btnGenerateKey"><i class="bi bi-plus-circle"></i> Generate</button>
+            <div id="sshGenMessage" class="mt-2"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h6 class="card-title mb-0">Deploy to Host</h6></div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label">Key</label>
+              <select class="form-select form-select-sm" id="deployKeySelect"><option>-- select key --</option></select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Host</label>
+              <input type="text" class="form-control form-control-sm" id="deployHost" placeholder="user@host">
+            </div>
+            <button class="btn btn-sm btn-success w-100" id="btnDeployKey"><i class="bi bi-send"></i> Deploy</button>
+            <div id="sshDeployMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Tab 6: Templates ══════════════════ -->
+  <div class="tab-pane fade" id="templates" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-clipboard-data"></i> Saved Templates</h5>
+            <button class="btn btn-sm btn-primary" id="btnSaveTemplate"><i class="bi bi-plus-circle"></i> Save Current Config</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead><tr><th>Name</th><th>Description</th><th>Created</th><th>Actions</th></tr></thead>
+                <tbody id="templatesBody"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><h6 class="card-title mb-0">Save New Template</h6></div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-control form-control-sm" id="tplName" placeholder="My Config">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Description</label>
+              <textarea class="form-control form-control-sm" id="tplDesc" rows="2" placeholder="Description..."></textarea>
+            </div>
+            <button class="btn btn-sm btn-primary w-100" id="btnSaveTemplateForm"><i class="bi bi-save"></i> Save</button>
+            <div id="tplMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
+<div id="systemAlerts" class="mt-3"></div>
+
 <script>
-  // Theme management
-  document.getElementById('saveThemeBtn').addEventListener('click', async function () {
-    const theme = document.getElementById('themeSelect').value;
-    const messageEl = document.getElementById('themeMessage');
+(function () {
+  'use strict';
+  /* ─── Helpers ──────────────────────────────────────────────────────────────── */
+  var $ = function (sel) { return document.querySelector(sel); };
+  var $$ = function (sel) { return document.querySelectorAll(sel); };
 
-    try {
-      const response = await fetch('/api/config/theme', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme })
-      });
+  function showAlert(containerId, type, msg) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' + msg +
+      '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+  }
 
-      const data = await response.json();
+  function formatUptime(seconds) {
+    var d = Math.floor(seconds / 86400);
+    var h = Math.floor((seconds % 86400) / 3600);
+    var m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+    if (h > 0) return h + 'h ' + m + 'm';
+    return m + 'm';
+  }
 
-      if (data.success) {
-        messageEl.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Theme saved! Reloading page...</div>';
+  function apiGet(url, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onload = function () {
+      try { cb(null, JSON.parse(xhr.responseText)); } catch (e) { cb(e); }
+    };
+    xhr.onerror = function () { cb(new Error('Network error')); };
+    xhr.send();
+  }
 
-        // Apply theme immediately
-        document.documentElement.setAttribute('data-bs-theme', theme);
+  function apiPost(url, body, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onload = function () {
+      try { cb(null, JSON.parse(xhr.responseText)); } catch (e) { cb(e); }
+    };
+    xhr.onerror = function () { cb(new Error('Network error')); };
+    xhr.send(JSON.stringify(body || {}));
+  }
 
-        // Reload page after short delay to apply theme across all components
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Failed to save theme: ' + (data.error || 'Unknown error') + '</div>';
-      }
-    } catch (error) {
-      messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error: ' + error.message + '</div>';
-    }
-  });
+  function apiPut(url, body, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onload = function () {
+      try { cb(null, JSON.parse(xhr.responseText)); } catch (e) { cb(e); }
+    };
+    xhr.onerror = function () { cb(new Error('Network error')); };
+    xhr.send(JSON.stringify(body || {}));
+  }
 
-  // Reboot system
-  document.getElementById('rebootBtn').addEventListener('click', async function () {
-    const messageEl = document.getElementById('rebootMessage');
+  function apiDelete(url, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('DELETE', url);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onload = function () {
+      try { cb(null, JSON.parse(xhr.responseText)); } catch (e) { cb(e); }
+    };
+    xhr.onerror = function () { cb(new Error('Network error')); };
+    xhr.send();
+  }
 
-    if (!confirm('Are you sure you want to reboot this animatronic? This will interrupt all operations.')) {
-      return;
-    }
+  /* ─── Gauge Drawing ────────────────────────────────────────────────────────── */
+  function drawGauge(canvasId, percent, color) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    var cx = w / 2, cy = h / 2, r = (Math.min(w, h) / 2) - 8;
+    var startAngle = 0.75 * Math.PI;
+    var endAngle = 2.25 * Math.PI;
+    var pct = Math.max(0, Math.min(100, percent || 0));
+    var sweepAngle = startAngle + (pct / 100) * (endAngle - startAngle);
 
-    try {
-      messageEl.innerHTML = '<div class="alert alert-info"><i class="bi bi-arrow-clockwise"></i> Rebooting system... Please wait 30-60 seconds.</div>';
-      this.disabled = true;
+    ctx.clearRect(0, 0, w, h);
 
-      const response = await fetch('/api/system/reboot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.stroke();
 
-      const data = await response.json();
-
-      if (data.success) {
-        messageEl.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Reboot initiated. The system will be unavailable for about a minute.</div>';
-      } else {
-        messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Failed to reboot: ' + (data.error || 'Unknown error') + '</div>';
-        this.disabled = false;
-      }
-    } catch (error) {
-      messageEl.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error: ' + error.message + '</div>';
-      this.disabled = false;
-    }
-  });
-
-  // Load system information
-  async function loadSystemInfo() {
-    try {
-      const response = await fetch('/api/system/info');
-      const data = await response.json();
-
-      if (data.success) {
-        document.getElementById('nodeVersion').textContent = data.nodeVersion || 'Unknown';
-        document.getElementById('platform').textContent = data.platform || 'Unknown';
-      }
-    } catch (error) {
-      console.error('Failed to load system info:', error);
+    // Value arc
+    if (pct > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, sweepAngle);
+      ctx.strokeStyle = color || '#0d6efd';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.stroke();
     }
   }
 
+  function gaugeColor(pct) {
+    if (pct >= 90) return '#dc3545';
+    if (pct >= 70) return '#ffc107';
+    return '#198754';
+  }
+
+  function tempColor(temp) {
+    var t = parseFloat(temp);
+    if (t >= 80) return '#dc3545';
+    if (t >= 65) return '#ffc107';
+    return '#198754';
+  }
+
+  /* ─── Tab 1: Overview ──────────────────────────────────────────────────────── */
+  function loadSystemInfo() {
+    apiGet('/api/system/info', function (err, data) {
+      if (err || !data || !data.success) return;
+      if (data.version) $('#infoVersion').textContent = 'v' + data.version;
+      $('#infoHostname').textContent = data.hostname || 'Unknown';
+      $('#infoNode').textContent = data.nodeVersion || 'Unknown';
+      $('#infoPlatform').textContent = data.platform || 'Unknown';
+      $('#infoUptime').textContent = data.systemUptime ? formatUptime(data.systemUptime) : 'Unknown';
+      $('#infoCpuModel').textContent = data.cpuModel || 'Unknown';
+      $('#infoCpuCount').textContent = data.cpuCount || 'Unknown';
+    });
+  }
+
+  function refreshGauges() {
+    apiGet('/api/system/performance', function (err, data) {
+      if (err || !data || !data.success) return;
+      var p = data.performance;
+
+      drawGauge('gaugeCpu', p.cpu, gaugeColor(p.cpu));
+      $('#gaugeCpuText').textContent = p.cpu + '%';
+
+      drawGauge('gaugeMem', p.memory, gaugeColor(p.memory));
+      $('#gaugeMemText').textContent = p.memory + '%';
+
+      var temp = p.temperature ? parseFloat(p.temperature) : 0;
+      var tempPct = Math.min(100, (temp / 85) * 100);
+      drawGauge('gaugeTemp', tempPct, tempColor(temp));
+      $('#gaugeTempText').innerHTML = (p.temperature || '--') + '&deg;C';
+
+      var disk = p.disk || 0;
+      drawGauge('gaugeDisk', disk, gaugeColor(disk));
+      $('#gaugeDiskText').textContent = disk + '%';
+
+      var now = new Date();
+      $('#gaugeTimestamp').textContent = 'Updated: ' + now.toLocaleTimeString();
+    });
+  }
+
+  var gaugeInterval = null;
+  function startGaugeRefresh() {
+    refreshGauges();
+    gaugeInterval = setInterval(refreshGauges, 5000);
+  }
+  function stopGaugeRefresh() {
+    if (gaugeInterval) { clearInterval(gaugeInterval); gaugeInterval = null; }
+  }
+
+  /* ─── Tab 2: Performance History ───────────────────────────────────────────── */
+  var currentPeriod = '24h';
+
+  function drawPerfChart(data) {
+    var canvas = document.getElementById('perfChart');
+    if (!canvas || !data || data.length === 0) {
+      if (canvas) {
+        var ctx2 = canvas.getContext('2d');
+        ctx2.clearRect(0, 0, canvas.width, canvas.height);
+        ctx2.fillStyle = '#666';
+        ctx2.font = '14px sans-serif';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('No performance data available for this period.', canvas.width / 2, canvas.height / 2);
+      }
+      return;
+    }
+
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width = canvas.offsetWidth;
+    var H = canvas.height = 280;
+    var pad = { top: 20, right: 20, bottom: 30, left: 40 };
+    var chartW = W - pad.left - pad.right;
+    var chartH = H - pad.top - pad.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 0.5;
+    for (var g = 0; g <= 4; g++) {
+      var gy = pad.top + (chartH / 4) * g;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, gy);
+      ctx.lineTo(W - pad.right, gy);
+      ctx.stroke();
+      ctx.fillStyle = '#999';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((100 - g * 25) + '%', pad.left - 5, gy + 4);
+    }
+
+    function drawLine(arr, color) {
+      if (!arr || arr.length < 2) return;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      for (var i = 0; i < arr.length; i++) {
+        var x = pad.left + (i / (arr.length - 1)) * chartW;
+        var y = pad.top + (1 - arr[i] / 100) * chartH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    var cpuArr = [], memArr = [], tempArr = [];
+    for (var j = 0; j < data.length; j++) {
+      cpuArr.push(data[j].cpu || 0);
+      memArr.push(data[j].memory || 0);
+      var t = data[j].temperature ? (parseFloat(data[j].temperature) / 85) * 100 : 0;
+      tempArr.push(Math.min(100, t));
+    }
+
+    drawLine(cpuArr, '#0d6efd');
+    drawLine(memArr, '#198754');
+    drawLine(tempArr, '#dc3545');
+
+    // Legend
+    var legendItems = [
+      { color: '#0d6efd', label: 'CPU' },
+      { color: '#198754', label: 'Memory' },
+      { color: '#dc3545', label: 'Temperature' }
+    ];
+    var lx = pad.left + 10;
+    for (var li = 0; li < legendItems.length; li++) {
+      ctx.fillStyle = legendItems[li].color;
+      ctx.fillRect(lx, pad.top + 5, 12, 3);
+      ctx.fillStyle = '#ccc';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(legendItems[li].label, lx + 16, pad.top + 10);
+      lx += 80;
+    }
+
+    // Summary
+    var sumCpu = 0, sumMem = 0, sumTemp = 0, tempCount = 0;
+    for (var s = 0; s < data.length; s++) {
+      sumCpu += data[s].cpu || 0;
+      sumMem += data[s].memory || 0;
+      if (data[s].temperature) { sumTemp += parseFloat(data[s].temperature); tempCount++; }
+    }
+    $('#perfAvgCpu').textContent = data.length ? (sumCpu / data.length).toFixed(1) : '--';
+    $('#perfAvgMem').textContent = data.length ? (sumMem / data.length).toFixed(1) : '--';
+    $('#perfAvgTemp').textContent = tempCount ? (sumTemp / tempCount).toFixed(1) : '--';
+  }
+
+  function loadPerfHistory(period) {
+    currentPeriod = period || currentPeriod;
+    apiGet('/api/system/performance/history?period=' + currentPeriod, function (err, data) {
+      if (err || !data || !data.success) { drawPerfChart([]); return; }
+      drawPerfChart(data.data || []);
+    });
+  }
+
+  // Period buttons
+  var periodBtns = $$('#performance .btn-group .btn');
+  for (var pi = 0; pi < periodBtns.length; pi++) {
+    periodBtns[pi].addEventListener('click', function () {
+      for (var b = 0; b < periodBtns.length; b++) periodBtns[b].classList.remove('active');
+      this.classList.add('active');
+      loadPerfHistory(this.getAttribute('data-period'));
+    });
+  }
+
+  /* ─── Tab 3: Logs ──────────────────────────────────────────────────────────── */
+  var logAutoTimer = null;
+
+  function loadLogs() {
+    var service = $('#logService').value;
+    var lines = $('#logLines').value;
+    apiGet('/api/system/logs?service=' + encodeURIComponent(service) + '&lines=' + lines, function (err, data) {
+      if (err || !data) { $('#logOutput').textContent = 'Error loading logs'; return; }
+      $('#logOutput').textContent = data.logs || 'No logs available';
+      var el = $('#logOutput');
+      el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  $('#btnRefreshLogs').addEventListener('click', loadLogs);
+  $('#logService').addEventListener('change', loadLogs);
+  $('#logLines').addEventListener('change', loadLogs);
+  $('#logAutoRefresh').addEventListener('change', function () {
+    if (this.checked) {
+      loadLogs();
+      logAutoTimer = setInterval(loadLogs, 5000);
+    } else {
+      if (logAutoTimer) { clearInterval(logAutoTimer); logAutoTimer = null; }
+    }
+  });
+
+  /* ─── Tab 4: Settings ──────────────────────────────────────────────────────── */
+  function loadSettings() {
+    apiGet('/api/system/settings', function (err, data) {
+      if (err || !data || !data.success) return;
+      var s = data.settings;
+
+      // CPU Governor
+      var govSelect = $('#cpuGovernor');
+      govSelect.innerHTML = '';
+      var avail = (s.cpu && s.cpu.availableGovernors) || [];
+      for (var i = 0; i < avail.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = avail[i];
+        opt.textContent = avail[i];
+        if (s.cpu && avail[i] === s.cpu.governor) opt.selected = true;
+        govSelect.appendChild(opt);
+      }
+      if (avail.length === 0) {
+        govSelect.innerHTML = '<option>N/A</option>';
+      }
+      $('#cpuGovernorCurrent').value = (s.cpu && s.cpu.governor) || 'unknown';
+
+      // GPU
+      $('#gpuMemory').textContent = (s.gpu && s.gpu.memory) || 'N/A';
+
+      // Swap
+      $('#swapTotal').textContent = (s.memory && s.memory.swapTotalMB) ? s.memory.swapTotalMB + ' MB' : 'N/A';
+      $('#swapUsed').textContent = (s.memory && s.memory.swapUsedMB != null) ? s.memory.swapUsedMB + ' MB' : 'N/A';
+    });
+
+    // Startup tasks
+    apiGet('/api/system/settings/startup', function (err, data) {
+      if (err || !data || !data.success) return;
+      var tasks = data.tasks || [];
+      var html = '';
+      for (var i = 0; i < tasks.length; i++) {
+        html += '<div class="form-check form-switch mb-2">' +
+          '<input class="form-check-input startup-toggle" type="checkbox" data-service="' + tasks[i].service + '"' +
+          (tasks[i].enabled ? ' checked' : '') + '>' +
+          '<label class="form-check-label">' + tasks[i].service + '</label></div>';
+      }
+      $('#startupTasksList').innerHTML = html || '<p class="text-muted">No startup tasks found</p>';
+
+      // Bind toggle handlers
+      var toggles = $$('.startup-toggle');
+      for (var t = 0; t < toggles.length; t++) {
+        toggles[t].addEventListener('change', function () {
+          var svc = this.getAttribute('data-service');
+          var en = this.checked;
+          apiPut('/api/system/settings/startup', { service: svc, enabled: en }, function (err2, res) {
+            if (err2 || !res || !res.success) {
+              showAlert('systemAlerts', 'danger', 'Failed to update startup task');
+            }
+          });
+        });
+      }
+    });
+  }
+
+  $('#btnSaveCpuGovernor').addEventListener('click', function () {
+    var gov = $('#cpuGovernor').value;
+    apiPut('/api/system/settings', { category: 'cpu', key: 'governor', value: gov }, function (err, data) {
+      if (err || !data || !data.success) {
+        showAlert('cpuMessage', 'danger', 'Failed: ' + ((data && data.error) || 'Unknown error'));
+      } else {
+        showAlert('cpuMessage', 'success', 'CPU governor set to ' + gov);
+        $('#cpuGovernorCurrent').value = gov;
+      }
+    });
+  });
+
+  /* ─── Tab 5: SSH Keys ──────────────────────────────────────────────────────── */
+  function loadSSHKeys() {
+    apiGet('/api/system/ssh/keys', function (err, data) {
+      if (err || !data || !data.success) return;
+      var keys = data.keys || [];
+      var tbody = $('#sshKeysBody');
+      var deploySelect = $('#deployKeySelect');
+
+      if (keys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No SSH keys found</td></tr>';
+        deploySelect.innerHTML = '<option>-- no keys --</option>';
+        return;
+      }
+
+      var html = '';
+      var dhtml = '<option value="">-- select key --</option>';
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var created = k.created ? new Date(k.created).toLocaleDateString() : '--';
+        html += '<tr><td>' + k.name + '</td><td><code class="small">' +
+          (k.fingerprint || '--').substring(0, 47) + '</code></td><td>' + created + '</td>' +
+          '<td><button class="btn btn-sm btn-outline-danger ssh-delete-btn" data-name="' + k.name + '"><i class="bi bi-trash"></i></button></td></tr>';
+        dhtml += '<option value="' + k.name + '">' + k.name + '</option>';
+      }
+      tbody.innerHTML = html;
+      deploySelect.innerHTML = dhtml;
+
+      // Bind delete buttons
+      var delBtns = $$('.ssh-delete-btn');
+      for (var d = 0; d < delBtns.length; d++) {
+        delBtns[d].addEventListener('click', function () {
+          var name = this.getAttribute('data-name');
+          if (!confirm('Delete SSH key "' + name + '"?')) return;
+          apiDelete('/api/system/ssh/keys/' + encodeURIComponent(name), function (err2, res) {
+            if (err2 || !res || !res.success) {
+              showAlert('systemAlerts', 'danger', 'Failed to delete key');
+            } else {
+              loadSSHKeys();
+            }
+          });
+        });
+      }
+    });
+  }
+
+  $('#btnGenerateKey').addEventListener('click', function () {
+    var type = $('#sshKeyType').value;
+    var comment = $('#sshKeyComment').value;
+    apiPost('/api/system/ssh/keys/generate', { type: type, comment: comment }, function (err, data) {
+      if (err || !data || !data.success) {
+        showAlert('sshGenMessage', 'danger', 'Failed: ' + ((data && data.error) || 'Unknown error'));
+      } else {
+        showAlert('sshGenMessage', 'success', 'Key generated: ' + data.name);
+        loadSSHKeys();
+      }
+    });
+  });
+
+  $('#btnDeployKey').addEventListener('click', function () {
+    var keyName = $('#deployKeySelect').value;
+    var host = $('#deployHost').value;
+    if (!keyName || !host) {
+      showAlert('sshDeployMessage', 'warning', 'Select a key and enter a host');
+      return;
+    }
+    apiPost('/api/system/ssh/keys/deploy', { keyName: keyName, host: host }, function (err, data) {
+      if (err || !data || !data.success) {
+        showAlert('sshDeployMessage', 'danger', 'Failed: ' + ((data && data.error) || 'Unknown error'));
+      } else {
+        showAlert('sshDeployMessage', 'success', 'Key deployed to ' + host);
+      }
+    });
+  });
+
+  /* ─── Tab 6: Templates ─────────────────────────────────────────────────────── */
+  function loadTemplates() {
+    apiGet('/api/system/templates', function (err, data) {
+      if (err || !data || !data.success) return;
+      var tpls = data.templates || [];
+      var tbody = $('#templatesBody');
+
+      if (tpls.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No templates saved</td></tr>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < tpls.length; i++) {
+        var t = tpls[i];
+        var created = t.created ? new Date(t.created).toLocaleDateString() : '--';
+        html += '<tr><td>' + (t.name || 'Untitled') + '</td><td>' + (t.description || '--') + '</td><td>' + created + '</td>' +
+          '<td>' +
+          '<button class="btn btn-sm btn-outline-primary tpl-apply-btn me-1" data-id="' + t.id + '" title="Apply"><i class="bi bi-play-circle"></i></button>' +
+          '<button class="btn btn-sm btn-outline-danger tpl-delete-btn" data-id="' + t.id + '" title="Delete"><i class="bi bi-trash"></i></button>' +
+          '</td></tr>';
+      }
+      tbody.innerHTML = html;
+
+      // Bind
+      var applyBtns = $$('.tpl-apply-btn');
+      for (var a = 0; a < applyBtns.length; a++) {
+        applyBtns[a].addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          apiPost('/api/system/templates/' + id + '/apply', {}, function (err2, res) {
+            if (err2 || !res || !res.success) {
+              showAlert('systemAlerts', 'danger', 'Failed to apply template');
+            } else {
+              showAlert('systemAlerts', 'success', 'Template applied');
+              loadSettings();
+            }
+          });
+        });
+      }
+
+      var delBtns = $$('.tpl-delete-btn');
+      for (var dd = 0; dd < delBtns.length; dd++) {
+        delBtns[dd].addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          if (!confirm('Delete this template?')) return;
+          apiDelete('/api/system/templates/' + id, function (err2, res) {
+            if (err2 || !res || !res.success) {
+              showAlert('systemAlerts', 'danger', 'Failed to delete template');
+            } else {
+              loadTemplates();
+            }
+          });
+        });
+      }
+    });
+  }
+
+  function saveTemplate() {
+    var name = $('#tplName').value;
+    var desc = ($('#tplDesc') && $('#tplDesc').value) || '';
+    if (!name) { showAlert('tplMessage', 'warning', 'Name required'); return; }
+    apiPost('/api/system/templates', { name: name, description: desc }, function (err, data) {
+      if (err || !data || !data.success) {
+        showAlert('tplMessage', 'danger', 'Failed: ' + ((data && data.error) || 'Unknown error'));
+      } else {
+        showAlert('tplMessage', 'success', 'Template saved');
+        $('#tplName').value = '';
+        $('#tplDesc').value = '';
+        loadTemplates();
+      }
+    });
+  }
+
+  $('#btnSaveTemplate').addEventListener('click', saveTemplate);
+  $('#btnSaveTemplateForm').addEventListener('click', saveTemplate);
+
+  /* ─── Theme ────────────────────────────────────────────────────────────────── */
+  $('#saveThemeBtn').addEventListener('click', function () {
+    var theme = $('#themeSelect').value;
+    apiPost('/api/config/theme', { theme: theme }, function (err, data) {
+      if (err || !data || !data.success) {
+        showAlert('themeMessage', 'danger', '<i class="bi bi-exclamation-triangle"></i> Failed: ' + ((data && data.error) || 'Unknown error'));
+      } else {
+        showAlert('themeMessage', 'success', '<i class="bi bi-check-circle"></i> Theme saved! Reloading...');
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        setTimeout(function () { window.location.reload(); }, 1000);
+      }
+    });
+  });
+
+  /* ─── Reboot / Shutdown ────────────────────────────────────────────────────── */
+  $('#btnReboot').addEventListener('click', function () {
+    if (!confirm('Are you sure you want to reboot? All operations will be interrupted.')) return;
+    showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-clockwise"></i> Rebooting... please wait 30-60 seconds.');
+    apiPost('/api/system/reboot', {}, function () {});
+  });
+
+  $('#btnShutdown').addEventListener('click', function () {
+    if (!confirm('Are you sure you want to SHUT DOWN? The system will power off.')) return;
+    showAlert('systemAlerts', 'warning', '<i class="bi bi-power"></i> Shutting down...');
+    apiPost('/api/system/shutdown', {}, function () {});
+  });
+
+  /* ─── Tab change handler ───────────────────────────────────────────────────── */
+  var tabEl = document.getElementById('systemTabs');
+  if (tabEl) {
+    tabEl.addEventListener('shown.bs.tab', function (ev) {
+      var target = ev.target.getAttribute('data-bs-target');
+      if (target === '#overview') { startGaugeRefresh(); }
+      else { stopGaugeRefresh(); }
+      if (target === '#performance') { loadPerfHistory(currentPeriod); }
+      if (target === '#logs') { loadLogs(); }
+      if (target === '#settings') { loadSettings(); }
+      if (target === '#ssh') { loadSSHKeys(); }
+      if (target === '#templates') { loadTemplates(); }
+    });
+  }
+
+  /* ─── Init ─────────────────────────────────────────────────────────────────── */
   loadSystemInfo();
+  startGaugeRefresh();
+
+})();
 </script>
