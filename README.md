@@ -10,32 +10,29 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.0.0 (February 2026)
+## What's New — v6.1.0 (February 2026)
 
-### Character Independence
-- All hardcoded character names (Orlok, PumpkinHead, etc.) and numeric ID defaults (`|| 1`, `|| 3`) removed from services, controllers, and routes
-- Every feature works for ANY character — no fallback to a specific character when none is selected
-- Missing `characterId` now returns proper 400 errors instead of silently defaulting
+### Animation Studio
+- **Unified three-panel interface** at `/scenes` replaces separate Scenes, Scene Editor, and Poses pages
+- Left: Scene Library (search/filter), Pose Library (by category), Queue (play/loop/pause/skip)
+- Center: Timeline editor with color-coded step blocks, inline editing, SortableJS drag-reorder
+- Right: Webcam live preview, Part Palette (grouped by type), quick-add Action palette
+- Toolbar with Jaw Animation and Head Tracking toggles, Emergency Stop, Ctrl+S save
+- 14 scene step types including new **jaw-animation** and **head-tracking** steps
+- Drag-and-drop from palette to timeline, scenes to queue, poses to timeline
 
-### Dynamic Versioning
-- Version displayed everywhere is sourced from `package.json` — single source of truth
-- Server startup, health endpoint, page titles, footers, and navigation all use `pkg.version`
-- No more hardcoded version strings scattered across the codebase
-
-### Code Quality
-- Removed character-specific comments and template logic from AI agent service
-- Generalized all route handlers to be character-agnostic
-- Shell scripts and install tooling use unversioned "MonsterBox" branding
+### Route Consolidation
+- `/setup/poses` and `/poses` now redirect to Animation Studio; JSON APIs preserved
+- Navigation shows single "Animation Studio" link under Activities
 
 ### Testing
-- **148 tests**: 140 passing, 1 failing (pre-existing jaw-animation hardware timeout), 7 skipped
-- Playwright browser E2E + Mocha system/unit tests
-- All ElevenLabs services, audio pipeline, hardware, and UI tests passing
+- **174 passing** (browser + system + unit), 7 skipped, 2 pre-existing failures
+- 10 new system tests for jaw-animation/head-tracking step types
+- 18 updated browser tests for Animation Studio UI
 
-### Infrastructure
-- Health endpoint and UI titles report version dynamically from package.json
-- GitHub Actions CI validates every commit
-- Playwright uses dedicated test port (3123) for CI isolation
+### Previous: v6.0.0 — Character Independence & Dynamic Versioning
+- All hardcoded character names and ID defaults removed
+- Version sourced from `package.json` everywhere
 - `MB_TEST_MODE=1` flag for safe testing without hardware init
 
 ## Quick Start (RPi4B)
@@ -295,15 +292,16 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 ## Testing
 
-MonsterBox has **257 tests** (148 Mocha + 109 Playwright) covering all major subsystems.
+MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v6.0.0 - February 2026)
+### Test Results (v6.1.0 - February 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| Browser E2E (8 spec files) | Playwright | 140 | 7 | 1* |
+| System + Unit | Mocha | 160+ | 2 | 0 |
+| Browser E2E (9 spec files) | Playwright | 174 | 7 | 2* |
 
-*\*1 jaw-animation timeout requires a physically calibrated jaw servo — hardware-environment-dependent, not a code bug.*
+*\*2 pre-existing: AI Settings VU meter (hardware-dependent), Jaw Animation save config (disabled option). Not code bugs.*
 
 ```bash
 # Run all tests

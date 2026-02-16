@@ -2,7 +2,7 @@
 
 ## Project Identity
 - **Application:** MonsterBox — RPi4b-based animatronic character control system
-- **Version Target:** 6.0.0 (active migration from previous version)
+- **Version:** 6.1.0
 - **Owner:** Aaron Warner, Coralville, Iowa
 - **Stack:** Node.js, Express, EJS templates, Python hardware scripts, Raspberry Pi 4B
 - **Repository:** Local git, commit frequently with descriptive messages
@@ -23,6 +23,7 @@
 - **Known Issue:** Much code was originally built for Orlok (char_id=3). Hardcoded references to "Orlok", "orlok", char_id=3, or character_id=3 are bugs unless they are default/fallback values clearly marked as such
 - **AI Services:** TTS (text-to-speech) and STT (speech-to-text) — must have ONE canonical implementation each, used everywhere
 - **Hardware Layer:** Python scripts control servos, LEDs, audio on RPi GPIO pins via Node child_process calls
+- **Animation Studio:** Unified scene/pose editor at `/scenes` — three-panel layout with timeline editor, drag-and-drop, and live preview. Replaces the separate Scenes and Poses pages (legacy routes redirect to `/scenes`)
 
 ## Common Commands
 - `npm start` — Start the application server
@@ -52,9 +53,9 @@
 
 ## Git Workflow
 - Commit after each logical unit of work (not at end of session)
-- Commit message format: `v6.0.0: [phase] brief description`
-- Example: `v6.0.0: [char-independence] remove hardcoded Orlok references from TTS controller`
-- Tag final version: `git tag -a v6.0.0 -m "MonsterBox 6.0.0 release"`
+- Commit message format: `v6.1.0: [phase] brief description`
+- Example: `v6.1.0: [animation-studio] add jaw-animation step type to executor`
+- Tag final version: `git tag -a v6.1.0 -m "MonsterBox 6.1.0 release"`
 
 ## Session Startup Checklist
 1. Read `README.md` completely

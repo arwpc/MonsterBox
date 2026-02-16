@@ -2,6 +2,36 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.1.0] - 2026-02-16 — Animation Studio
+
+### Animation Studio
+- **Unified three-panel interface** at `/scenes` replaces separate Scenes list, Scene Editor, and Poses pages
+- Left panel: Scene Library (searchable), Pose Library (grouped by category), Queue (full playback controls)
+- Center panel: Timeline editor with color-coded step blocks, inline edit forms, SortableJS drag-reorder
+- Right panel: Webcam live preview, Part Palette (grouped by type), Action palette for quick step adds
+- Toolbar: New Scene, New Pose, Save (Ctrl+S), Play, Stop, Jaw Animation toggle, Head Tracking toggle, Emergency Stop
+- Drag-and-drop: palette to timeline, scenes to queue, poses to timeline as steps
+- Queue controls: Play, Loop, Pause, Resume, Skip, Clear, Save as Story
+- 14 step types with type-specific inline edit forms and color-coded blocks
+
+### New Scene Step Types
+- **jaw-animation**: Enable/disable jaw animation sync during scene playback (non-fatal if unconfigured)
+- **head-tracking**: Start/stop webcam-based head tracking during scenes (non-fatal if hardware unavailable)
+- Both integrated into `sceneExecutor.js` with graceful degradation
+
+### Route Consolidation
+- `/scenes` now renders Animation Studio (`views/scenes/studio.ejs`) with full-width layout
+- `/setup/poses` redirects to `/scenes` (API endpoints preserved)
+- `/poses` HTML requests redirect to `/scenes` (JSON API preserved)
+- `/scenes/edit/:id` redirects to `/scenes?edit=id`
+- Navigation updated: single "Animation Studio" entry under Activities (replaces Poses + Scenes)
+
+### Testing
+- Added 10 new system tests for jaw-animation and head-tracking step types
+- Updated 18 browser tests for Animation Studio UI (three-panel layout, toolbar, toggles, redirects, APIs)
+- Updated basic test for poses redirect (302 instead of 200)
+- **174 passing** (browser + system + unit), 7 skipped, 2 pre-existing failures
+
 ## [6.0.0] - 2026-02-14 — Character Independence & Dynamic Versioning
 
 ### Character Independence
