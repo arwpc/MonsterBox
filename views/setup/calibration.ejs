@@ -457,80 +457,86 @@
               <div id="advancedDefault" class="alert alert-secondary mb-0">Advanced settings per device will appear here.</div>
               <!-- Motion Tracking (shown for webcam parts) -->
               <div id="advancedMotionTracking" style="display:none;">
-                <div class="card mb-3">
-                  <div class="card-header"><i class="bi bi-eye"></i> Motion Tracking</div>
-                  <div class="card-body">
-                    <div class="mb-3">
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="calEnableMotionTracking">
-                        <label class="form-check-label" for="calEnableMotionTracking">
-                          <strong>Enable Motion Tracking</strong>
-                        </label>
-                      </div>
-                      <small class="text-muted">Track the largest moving object in the field of view</small>
-                    </div>
-                    <div id="calMotionTrackingParams" style="display:none;">
-                      <div class="mb-2">
-                        <label class="form-label">Motion Threshold</label>
-                        <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25">
-                        <small class="text-muted">Sensitivity: <span id="calMotionThresholdValue">25</span></small>
-                      </div>
-                      <div class="mb-2">
-                        <label class="form-label">Min Object Size</label>
-                        <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100">
-                        <small class="text-muted">Pixels: <span id="calMinContourAreaValue">500</span></small>
-                      </div>
-                      <div class="mb-2">
-                        <label class="form-label">Tracking Smoothing</label>
-                        <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1">
-                        <small class="text-muted">Factor: <span id="calTrackingSmoothingValue">0.3</span></small>
-                      </div>
-                      <div class="mb-2">
-                        <label class="form-label">Deadzone</label>
-                        <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5">
-                        <small class="text-muted">Percent: <span id="calTrackingDeadzoneValue">5</span>%</small>
-                      </div>
-                    </div>
-                    <div id="calMotionTrackingStatus" class="mt-3" style="display:none;">
-                      <div class="alert alert-info mb-0">
-                        <small>
-                          <strong>Status:</strong> <span id="calTrackingStatusText">Initializing...</span><br>
-                          <strong>Target:</strong> <span id="calTargetPosition">None detected</span>
-                        </small>
+                <div class="row g-3">
+                  <!-- Left: Live stream with motion overlay -->
+                  <div class="col-md-6">
+                    <div class="card h-100">
+                      <div class="card-header py-1"><i class="bi bi-broadcast"></i> Live Stream</div>
+                      <div class="card-body p-1">
+                        <div id="advStreamContainer" style="position:relative;background:#000;width:100%;min-height:200px;overflow:hidden;">
+                          <img id="advStreamImg" alt="Stream" style="width:100%;display:none;">
+                          <canvas id="motionOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;"></canvas>
+                          <div id="advNoStream" class="text-secondary text-center py-4">Enable motion tracking to start stream</div>
+                        </div>
+                        <div id="calMotionTrackingStatus" class="mt-2" style="display:none;">
+                          <div class="alert alert-info mb-0 py-1 px-2">
+                            <small>
+                              <strong>Status:</strong> <span id="calTrackingStatusText">Initializing...</span><br>
+                              <strong>Target:</strong> <span id="calTargetPosition">None detected</span>
+                            </small>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <!-- Head Tracking -->
-                <div class="card mb-3">
-                  <div class="card-header"><i class="bi bi-magic"></i> Head Tracking</div>
-                  <div class="card-body">
-                    <div class="mb-2">
-                      <label class="form-label">Pan Servo (Head Movement)</label>
-                      <select id="calPanServoSelect" class="form-select form-select-sm">
-                        <option value="">Select servo for head tracking...</option>
-                      </select>
-                    </div>
-                    <div class="row mb-2">
-                      <div class="col-6">
-                        <label class="form-label">Range (degrees)</label>
-                        <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60">
-                        <small class="text-muted">+/-<span id="calHeadTrackingRangeValue">60</span> deg</small>
+                  <!-- Right: Motion + Head Tracking controls -->
+                  <div class="col-md-6">
+                    <div class="card mb-2">
+                      <div class="card-header py-1"><i class="bi bi-eye"></i> Motion Tracking</div>
+                      <div class="card-body py-2">
+                        <div class="form-check mb-2">
+                          <input class="form-check-input" type="checkbox" id="calEnableMotionTracking">
+                          <label class="form-check-label" for="calEnableMotionTracking">
+                            <strong>Enable Motion Tracking</strong>
+                          </label>
+                        </div>
+                        <div id="calMotionTrackingParams" style="display:none;">
+                          <div class="mb-1">
+                            <label class="form-label small mb-0">Threshold <span class="text-muted" id="calMotionThresholdValue">25</span></label>
+                            <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25">
+                          </div>
+                          <div class="mb-1">
+                            <label class="form-label small mb-0">Min Object <span class="text-muted" id="calMinContourAreaValue">500</span>px</label>
+                            <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100">
+                          </div>
+                          <div class="mb-1">
+                            <label class="form-label small mb-0">Smoothing <span class="text-muted" id="calTrackingSmoothingValue">0.3</span></label>
+                            <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1">
+                          </div>
+                          <div class="mb-1">
+                            <label class="form-label small mb-0">Deadzone <span class="text-muted" id="calTrackingDeadzoneValue">5</span>%</label>
+                            <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5">
+                          </div>
+                        </div>
                       </div>
-                      <div class="col-6">
-                        <label class="form-label">Smoothing</label>
-                        <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05">
-                        <small class="text-muted"><span id="calHeadTrackingSmoothingValue">0.35</span></small>
+                    </div>
+                    <div class="card mb-2">
+                      <div class="card-header py-1"><i class="bi bi-magic"></i> Head Tracking</div>
+                      <div class="card-body py-2">
+                        <div class="mb-2">
+                          <label class="form-label small mb-0">Pan Servo</label>
+                          <select id="calPanServoSelect" class="form-select form-select-sm">
+                            <option value="">Select servo...</option>
+                          </select>
+                        </div>
+                        <div class="row mb-2 gx-2">
+                          <div class="col-6">
+                            <label class="form-label small mb-0">Range +/-<span id="calHeadTrackingRangeValue">60</span>&deg;</label>
+                            <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60">
+                          </div>
+                          <div class="col-6">
+                            <label class="form-label small mb-0">Smooth <span id="calHeadTrackingSmoothingValue">0.35</span></label>
+                            <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05">
+                          </div>
+                        </div>
+                        <button id="calEnableHeadTracking" class="btn btn-outline-warning btn-sm w-100" disabled>
+                          <i class="bi bi-magic"></i> Enable Head Tracking
+                        </button>
                       </div>
                     </div>
-                    <button id="calEnableHeadTracking" class="btn btn-outline-warning w-100" disabled>
-                      <i class="bi bi-magic"></i> Enable Head Tracking
-                    </button>
-                    <small class="text-muted d-block mt-1">Select a servo above to enable head tracking</small>
-                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100 mt-2">
+                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100">
                       <i class="bi bi-stop-circle-fill"></i> EMERGENCY STOP ALL SERVOS
                     </button>
-                    <small class="text-muted d-block mt-1">Immediately stops all servo movement</small>
                   </div>
                 </div>
               </div>
@@ -1507,11 +1513,13 @@
           if (this.checked) {
             if (paramsDiv) paramsDiv.style.display = 'block';
             if (statusDiv) statusDiv.style.display = 'block';
+            startAdvStream();
             startCalMotionTracking();
           } else {
             if (paramsDiv) paramsDiv.style.display = 'none';
             if (statusDiv) statusDiv.style.display = 'none';
             stopCalMotionTracking();
+            stopAdvStream();
             calSetHeadTrackingUI(false);
           }
         });
@@ -1573,6 +1581,80 @@
           calEmergencyStopAllServos();
         });
       }
+    }
+
+    // Advanced-tab stream + overlay helpers
+    function startAdvStream() {
+      if (!selected || selected.type !== 'webcam') return;
+      var img = document.getElementById('advStreamImg');
+      var noStream = document.getElementById('advNoStream');
+      if (!img) return;
+      var qs = '?auto=1&_ts=' + Date.now();
+      img.src = '/setup/calibration/api/webcam/parts/' + encodeURIComponent(selected.id) + '/stream' + qs;
+      img.style.display = 'block';
+      if (noStream) noStream.style.display = 'none';
+      setupAdvMotionOverlay();
+    }
+
+    function stopAdvStream() {
+      var img = document.getElementById('advStreamImg');
+      var noStream = document.getElementById('advNoStream');
+      var canvas = document.getElementById('motionOverlay');
+      if (img) { img.src = ''; img.style.display = 'none'; }
+      if (noStream) noStream.style.display = 'block';
+      if (canvas) { canvas.style.display = 'none'; }
+    }
+
+    function setupAdvMotionOverlay() {
+      var img = document.getElementById('advStreamImg');
+      var canvas = document.getElementById('motionOverlay');
+      if (!img || !canvas) return;
+
+      function updateCanvasSize() {
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          var rect = img.getBoundingClientRect();
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          canvas.style.width = rect.width + 'px';
+          canvas.style.height = rect.height + 'px';
+          var containerRect = img.parentElement.getBoundingClientRect();
+          canvas.style.left = (rect.left - containerRect.left) + 'px';
+          canvas.style.top = (rect.top - containerRect.top) + 'px';
+        }
+      }
+      img.addEventListener('load', updateCanvasSize);
+      window.addEventListener('resize', updateCanvasSize);
+      setTimeout(updateCanvasSize, 200);
+    }
+
+    function drawMotionOverlay(bbox) {
+      var canvas = document.getElementById('motionOverlay');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      if (!canvas.width || !canvas.height) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      var x = (bbox.x / 100) * canvas.width;
+      var y = (bbox.y / 100) * canvas.height;
+      var w = (bbox.w / 100) * canvas.width;
+      var h = (bbox.h / 100) * canvas.height;
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+      var cx = x + w / 2;
+      var cy = y + h / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+      ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
+      ctx.stroke();
+      canvas.style.display = 'block';
+    }
+
+    function clearMotionOverlay() {
+      var canvas = document.getElementById('motionOverlay');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.display = 'none';
     }
 
     function getCalMotionTrackingParams() {
@@ -1654,13 +1736,17 @@
               var tp = document.getElementById('calTargetPosition');
               if (st.target_detected && st.target_position) {
                 if (tp) tp.textContent = 'X: ' + st.target_position[0].toFixed(1) + '%, Y: ' + st.target_position[1].toFixed(1) + '%';
+                if (st.bbox) {
+                  drawMotionOverlay(st.bbox);
+                }
               } else {
                 if (tp) tp.textContent = 'None detected';
+                clearMotionOverlay();
               }
             }
           })
           .catch(function () { });
-      }, 200);
+      }, 50);
     }
 
     function calSetHeadTrackingUI(enabled) {
