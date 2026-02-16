@@ -255,7 +255,7 @@
     </div>
 
     <!-- Center Panel: Device Card -->
-    <div class="col-12 col-xl-6">
+    <div class="col-12 col-xl-6" id="centerPanelCol">
       <div class="card h-100" id="deviceCard" data-empty="1">
         <div class="card-header d-flex justify-content-between align-items-center">
           <div>
@@ -335,8 +335,8 @@
                   </div>
                 </div>
 
-                <!-- Simple Calibration (Unified) -->
-                <div class="col-12">
+                <!-- Simple Calibration (Unified) — only shown for movement parts -->
+                <div class="col-12" id="simpleCalCard">
                   <div class="card">
                     <div class="card-header"><i class="bi bi-bullseye"></i> Simple Calibration</div>
                     <div class="card-body">
@@ -558,8 +558,8 @@
       </div>
     </div>
 
-    <!-- Right Panel: Unified Calibration (Positions v1.5) -->
-    <div class="col-12 col-xl-3">
+    <!-- Right Panel: Unified Calibration (Positions v1.5) — only shown for movement parts -->
+    <div class="col-12 col-xl-3" id="rightPanelCol">
       <div class="card h-100" id="unifiedCalPanel">
         <div class="card-header">
           <i class="bi bi-bullseye"></i> Calibration (Positions v1.5)
@@ -764,8 +764,26 @@
       const removeBtn = document.getElementById('btnRemove');
       if (removeBtn) removeBtn.disabled = false;
 
-      // Load unified calibration for this part
-      await loadUnifiedCalibration(selected.id, selected);
+      // Show/hide calibration panels based on whether the part type has physical movement
+      var CALIBRATABLE_TYPES = ['servo', 'linear_actuator', 'motor', 'stepper'];
+      var isCalPart = CALIBRATABLE_TYPES.indexOf(selected.type) !== -1;
+      var rightCol = document.getElementById('rightPanelCol');
+      var centerCol = document.getElementById('centerPanelCol');
+      var simpleCalCard = document.getElementById('simpleCalCard');
+      if (rightCol) rightCol.style.display = isCalPart ? '' : 'none';
+      if (simpleCalCard) simpleCalCard.style.display = isCalPart ? '' : 'none';
+      var sweepBtn = document.getElementById('btnTestSweep');
+      if (sweepBtn) sweepBtn.style.display = isCalPart ? '' : 'none';
+      // Expand center panel when calibration panel is hidden
+      if (centerCol) {
+        centerCol.classList.toggle('col-xl-6', isCalPart);
+        centerCol.classList.toggle('col-xl-9', !isCalPart);
+      }
+
+      // Load unified calibration for this part (only for calibratable types)
+      if (isCalPart) {
+        await loadUnifiedCalibration(selected.id, selected);
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
