@@ -1,67 +1,40 @@
 /**
  * Scenes Routes
- * Routes for scene management interface
+ * Routes for scene management interface — Animation Studio
  */
 
 import express from 'express';
 
 const router = express.Router();
 
-// Scenes page
+// Animation Studio — unified scenes, poses, timeline editor
 router.get('/', async (req, res) => {
     try {
-        res.renderWithLayout('scenes/scenes', {
-            title: 'Scenes - MonsterBox',
-            page: 'scenes'
+        res.renderWithLayout('scenes/studio', {
+            title: 'Animation Studio - MonsterBox',
+            page: 'scenes',
+            includeMainWrapper: false
         });
     } catch (error) {
-        console.error('Error rendering scenes page:', error);
+        console.error('Error rendering Animation Studio:', error);
         res.status(500);
         res.renderWithLayout('error', {
             title: 'Error',
             page: 'error',
-            error: 'Failed to load scenes page',
+            error: 'Failed to load Animation Studio',
             message: error.message
         });
     }
 });
 
-// Scene editor page - new scene
-router.get('/edit/new', async (req, res) => {
-    try {
-        res.renderWithLayout('scenes/scene-editor', {
-            title: 'Create New Scene - MonsterBox',
-            page: 'scenes'
-        });
-    } catch (error) {
-        console.error('Error rendering scene editor:', error);
-        res.status(500);
-        res.renderWithLayout('error', {
-            title: 'Error',
-            page: 'error',
-            error: 'Failed to load scene editor',
-            message: error.message
-        });
-    }
-});
-
-// Scene editor page - edit existing scene
+// Scene editor page - edit existing scene (redirect to studio with ?edit=id)
 router.get('/edit/:id', async (req, res) => {
-    try {
-        res.renderWithLayout('scenes/scene-editor', {
-            title: 'Edit Scene - MonsterBox',
-            page: 'scenes'
-        });
-    } catch (error) {
-        console.error('Error rendering scene editor:', error);
-        res.status(500);
-        res.renderWithLayout('error', {
-            title: 'Error',
-            page: 'error',
-            error: 'Failed to load scene editor',
-            message: error.message
-        });
-    }
+    res.redirect('/scenes?edit=' + encodeURIComponent(req.params.id));
+});
+
+// Scene editor page - new scene (redirect to studio)
+router.get('/edit/new', async (req, res) => {
+    res.redirect('/scenes');
 });
 
 export default router;

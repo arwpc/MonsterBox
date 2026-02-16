@@ -16,20 +16,13 @@ function wantsJson(req) {
     return accept.includes('application/json');
 }
 
-// Get all poses / poses dashboard
+// Get all poses / redirect to Animation Studio
 router.get('/', async (req, res, next) => {
     if (wantsJson(req)) {
         return posesController.getAllPoses(req, res);
     }
-    try {
-        res.renderWithLayout('poses/index', {
-            title: 'Poses - MonsterBox',
-            page: 'poses',
-            pageHeading: 'Poses'
-        });
-    } catch (error) {
-        next(error);
-    }
+    // Redirect HTML requests to Animation Studio
+    res.redirect('/scenes');
 });
 
 router.get('/api/poses', posesController.getAllPoses);

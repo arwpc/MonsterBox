@@ -20,12 +20,12 @@ describe('MonsterBox Basic Tests', () => {
             expect(response.text).to.include('MonsterBox');
         });
 
-        it('should serve the setup poses page', async () => {
+        it('should redirect setup poses to Animation Studio', async () => {
             const response = await request(BASE_URL)
                 .get('/setup/poses')
-                .expect(200);
+                .expect(302);
 
-            expect(response.text).to.include('Setup Poses');
+            expect(response.headers.location).to.equal('/scenes');
         });
 
         it('should serve the live dashboard', async () => {

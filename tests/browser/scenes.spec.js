@@ -1,181 +1,248 @@
 /**
- * Scene Editor Tests
- * Validates all functionality on /scenes page
+ * Animation Studio Tests
+ * Validates all functionality on /scenes (Animation Studio) page
  */
 
 import { test, expect } from '@playwright/test';
-import { testNavigation, testButtonClick, ErrorTracker, getAllInteractiveElements } from './framework.js';
+import { testNavigation, ErrorTracker, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-test.describe('Scene Editor Page', () => {
+test.describe('Animation Studio Page', () => {
     let page;
     let tracker;
 
     test.beforeEach(async ({ browser }) => {
         page = await browser.newPage();
-        tracker = await testNavigation(page, `${BASE_URL}/scenes`, 'Scene');
+        tracker = await testNavigation(page, `${BASE_URL}/scenes`, 'Animation Studio');
     });
 
     test.afterEach(async () => {
         await page.close();
     });
 
-    test('should load scenes page without errors', async () => {
-        expect(await page.title()).toContain('Scene');
+    test('should load Animation Studio without errors', async () => {
+        expect(await page.title()).toContain('Animation Studio');
     });
 
-    test('should display scene list', async () => {
+    test('should display three-panel layout', async () => {
         tracker.clear();
-        
-        // Wait for scenes list to load (use actual ID from page)
-        await page.waitForSelector('#scenesList, .scene-list, [data-scenes]', { timeout: 5000 });
-        
+
+        // Left panel - scene/pose library
+        const leftPanel = page.locator('#leftPanel, .studio-left');
+        if (await leftPanel.count() > 0) {
+            await expect(leftPanel.first()).toBeVisible();
+        }
+
+        // Center panel - timeline editor
+        const centerPanel = page.locator('#centerPanel, .studio-center');
+        if (await centerPanel.count() > 0) {
+            await expect(centerPanel.first()).toBeVisible();
+        }
+
+        // Right panel - preview/palette
+        const rightPanel = page.locator('#rightPanel, .studio-right');
+        if (await rightPanel.count() > 0) {
+            await expect(rightPanel.first()).toBeVisible();
+        }
+
         await tracker.logErrors();
     });
 
-    test('should execute a scene', async () => {
+    test('should display toolbar with action buttons', async () => {
         tracker.clear();
-        
-        // Find execute/play button
-        const executeButton = page.locator('button:has-text("Execute"), button:has-text("Play"), .execute-btn').first();
-        
-        if (await executeButton.count() > 0) {
-            await executeButton.click();
-            
-            // Wait for scene execution (scenes can take time)
-            await page.waitForTimeout(3000);
-            
-            // Check for success message or completion indicator
-            const statusIndicator = page.locator('.scene-status, [data-status], .status-message');
-            if (await statusIndicator.count() > 0) {
-                console.log('Scene status:', await statusIndicator.first().textContent());
+
+        // Check for toolbar buttons
+        const toolbar = page.locator('.studio-toolbar, #studioToolbar');
+        if (await toolbar.count() > 0) {
+            await expect(toolbar.first()).toBeVisible();
+        }
+
+        // New Scene button
+        const newSceneBtn = page.locator('button:has-text("New Scene"), #btnNewScene');
+        if (await newSceneBtn.count() > 0) {
+            await expect(newSceneBtn.first()).toBeVisible();
+        }
+
+        // Save button
+        const saveBtn = page.locator('button:has-text("Save"), #btnSave');
+        if (await saveBtn.count() > 0) {
+            await expect(saveBtn.first()).toBeVisible();
+        }
+
+        await tracker.assertNoErrors();
+    });
+
+    test('should display scene library', async () => {
+        tracker.clear();
+
+        // Wait for scene list section to be present
+        await page.waitForSelector('#scenesSection', { timeout: 5000 });
+
+        await tracker.logErrors();
+    });
+
+    test('should display pose library', async () => {
+        tracker.clear();
+
+        // Pose library section
+        const poseLib = page.locator('#poseLibrary, .pose-library, [data-poses]');
+        if (await poseLib.count() > 0) {
+            await expect(poseLib.first()).toBeVisible();
+        }
+
+        await tracker.logErrors();
+    });
+
+    test('should have emergency stop button', async () => {
+        tracker.clear();
+
+        const estopBtn = page.locator('#btnEstop, button:has-text("E-STOP"), .e-stop-btn');
+        if (await estopBtn.count() > 0) {
+            await expect(estopBtn.first()).toBeVisible();
+        }
+
+        await tracker.assertNoErrors();
+    });
+
+    test('should load scene into editor on click', async () => {
+        tracker.clear();
+
+        // Click first scene in list
+        const sceneItem = page.locator('.scene-item, [data-scene-id]').first();
+        if (await sceneItem.count() > 0) {
+            await sceneItem.click();
+            await page.waitForTimeout(1000);
+
+            // Timeline should populate
+            const timeline = page.locator('#timeline, .timeline-container');
+            if (await timeline.count() > 0) {
+                await expect(timeline.first()).toBeVisible();
             }
         }
-        
-        await tracker.assertNoErrors();
+
+        await tracker.logErrors();
     });
 
-    test('should stop scene execution', async () => {
+    test('should open add step modal', async () => {
         tracker.clear();
-        
-        // Start a scene first
-        const executeButton = page.locator('button:has-text("Execute")').first();
-        if (await executeButton.count() > 0) {
-            await executeButton.click();
-            await page.waitForTimeout(1000);
-        }
-        
-        // Stop the scene
-        const stopButton = page.locator('button:has-text("Stop"), .stop-btn').first();
-        if (await stopButton.count() > 0) {
-            await stopButton.click();
-            await page.waitForTimeout(1000);
-        }
-        
-        await tracker.assertNoErrors();
-    });
 
-    test('should create new scene', async () => {
-        tracker.clear();
-        
-        // Find create/new button
-        const createButton = page.locator('button:has-text("New"), button:has-text("Create"), .new-scene-btn').first();
-        
-        if (await createButton.count() > 0) {
-            await createButton.click();
-            await page.waitForTimeout(1000);
-            
-            // Should show scene editor or form
-            const editor = page.locator('.scene-editor, form[name="scene"], #sceneEditor');
-            if (await editor.count() > 0) {
-                await expect(editor.first()).toBeVisible();
+        const addStepBtn = page.locator('button:has-text("Add Step"), #btnAddStep, .add-step-btn').first();
+        if (await addStepBtn.count() > 0) {
+            await addStepBtn.click();
+            await page.waitForTimeout(500);
+
+            // Modal should appear
+            const modal = page.locator('#addStepModal, .modal.show');
+            if (await modal.count() > 0) {
+                await expect(modal.first()).toBeVisible();
             }
         }
-        
+
         await tracker.assertNoErrors();
     });
 
-    test('should save scene', async () => {
+    test('should have play and stop buttons', async () => {
         tracker.clear();
-        
-        // Find save button
-        const saveButton = page.locator('button:has-text("Save"), .save-btn').first();
-        
-        if (await saveButton.count() > 0) {
-            await saveButton.click();
-            await page.waitForTimeout(2000);
-            
-            // Check for success message
-            const successMessage = page.locator('.alert-success, .success');
-            if (await successMessage.count() > 0) {
-                console.log('Save message:', await successMessage.first().textContent());
-            }
-        }
-        
+
+        // Play button exists but starts disabled (no scene loaded)
+        const playButton = page.locator('#btnPlay');
+        await expect(playButton).toBeVisible();
+        // Should be disabled when no scene is loaded
+        await expect(playButton).toBeDisabled();
+
+        const stopButton = page.locator('#btnStop');
+        await expect(stopButton).toBeVisible();
+
         await tracker.assertNoErrors();
     });
 
-    test('should delete scene', async () => {
+    test('should enable play after loading a scene', async () => {
         tracker.clear();
-        
-        // Find delete button
-        const deleteButton = page.locator('button:has-text("Delete"), .delete-btn').first();
-        
-        if (await deleteButton.count() > 0) {
-            // Handle confirmation dialog
-            page.once('dialog', dialog => {
-                console.log(`Delete confirmation: ${dialog.message()}`);
-                dialog.dismiss(); // Don't actually delete in tests
-            });
-            
-            await deleteButton.click();
-            await page.waitForTimeout(1000);
+
+        // Click first scene to load it
+        const sceneItem = page.locator('.scene-item, [data-scene-id]').first();
+        if (await sceneItem.count() > 0) {
+            await sceneItem.click();
+            await page.waitForTimeout(1500);
+
+            // Play button should now be enabled
+            const playButton = page.locator('#btnPlay');
+            await expect(playButton).toBeEnabled({ timeout: 3000 });
         }
-        
+
         await tracker.assertNoErrors();
     });
 
-    test('should add step to scene', async () => {
+    test('should redirect /setup/poses to Animation Studio', async () => {
         tracker.clear();
-        
-        // Find add step button
-        const addStepButton = page.locator('button:has-text("Add Step"), .add-step-btn').first();
-        
-        if (await addStepButton.count() > 0) {
-            await addStepButton.click();
-            await page.waitForTimeout(1000);
-        }
-        
+
+        const response = await page.goto(`${BASE_URL}/setup/poses`);
+        // Should redirect to /scenes
+        expect(page.url()).toContain('/scenes');
+
+        await tracker.logErrors();
+    });
+
+    test('should redirect /scenes/edit/:id to Animation Studio', async () => {
+        tracker.clear();
+
+        await page.goto(`${BASE_URL}/scenes/edit/test-scene`);
+        // Should redirect to /scenes?edit=test-scene
+        expect(page.url()).toContain('/scenes');
+
+        await tracker.logErrors();
+    });
+
+    test('should have jaw animation toggle in toolbar', async () => {
+        tracker.clear();
+
+        const jawToggle = page.locator('#jawToggle');
+        await expect(jawToggle).toBeVisible();
+
         await tracker.assertNoErrors();
     });
 
-    test('should handle scene execution errors gracefully', async () => {
+    test('should have head tracking toggle in toolbar', async () => {
         tracker.clear();
-        
-        // Execute a scene
-        const executeButton = page.locator('button:has-text("Execute")').first();
-        if (await executeButton.count() > 0) {
-            await executeButton.click();
-            await page.waitForTimeout(5000);
-            
-            // Even if scene fails, page shouldn't have JS errors
-            // Network errors (500) during execution are tracked by bulletproofExecutor
-        }
-        
-        // Allow network errors from scene execution (they're handled)
-        // Only check for console JS errors
-        const errors = tracker.getErrors();
-        expect(errors.console.length, 'Console errors found').toBe(0);
+
+        const headTrackToggle = page.locator('#headTrackToggle');
+        await expect(headTrackToggle).toBeVisible();
+
+        await tracker.assertNoErrors();
     });
 
     test('should validate all interactive elements', async () => {
         tracker.clear();
-        
+
         const elements = await getAllInteractiveElements(page);
-        console.log(`Found ${elements.length} interactive elements`);
-        
+        console.log('Found ' + elements.length + ' interactive elements');
+
         expect(elements.length).toBeGreaterThan(0);
         await tracker.assertNoErrors();
+    });
+
+    test('should display navigation with Animation Studio link', async () => {
+        tracker.clear();
+
+        // Check navigation has Animation Studio instead of separate Poses/Scenes
+        const studioLink = page.locator('a:has-text("Animation Studio")');
+        expect(await studioLink.count()).toBeGreaterThan(0);
+
+        await tracker.assertNoErrors();
+    });
+
+    test('should serve poses API as JSON', async () => {
+        const response = await page.request.get(`${BASE_URL}/poses/api/poses`);
+        expect(response.status()).toBe(200);
+        const json = await response.json();
+        expect(json).toBeDefined();
+    });
+
+    test('should serve scenes API as JSON', async () => {
+        const response = await page.request.get(`${BASE_URL}/scenes/api`);
+        expect(response.status()).toBe(200);
+        const json = await response.json();
+        expect(json).toBeDefined();
     });
 });

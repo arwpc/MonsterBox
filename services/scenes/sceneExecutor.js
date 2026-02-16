@@ -557,6 +557,80 @@ async function executeHardwareStep(step, characterId, emit) {
   }
 }
 
+async function executeJawAnimationStep(step, characterId, emit) {
+  const action = step.action || 'enable';
+  emit && emit({ type: 'step', status: 'start', stepType: 'jaw-animation', action });
+
+  try {
+    const { default: jawService } = await import('../jawAnimationSuperPowerService.js');
+    if (action === 'enable') {
+      // Read jaw config to verify it's configured
+      const config = await jawService.readJawConfig(characterId);
+      if (!config || !config.enabled) {
+        emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action, warning: 'Jaw animation not configured for this character' });
+        return { success: true, action, warning: 'Jaw not configured' };
+      }
+      emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action });
+      return { success: true, action: 'enable' };
+    } else {
+      // Disable - just signal it
+      emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action });
+      return { success: true, action: 'disable' };
+    }
+  } catch (err) {
+    // Non-fatal: jaw animation is optional
+    emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action, warning: err.message });
+    return { success: true, action, warning: err.message };
+  }
+}
+
+async function executeHeadTrackingStep(step, characterId, emit) {
+  const action = step.action || 'start';
+  emit && emit({ type: 'step', status: 'start', stepType: 'head-tracking', action });
+
+  try {
+    const { startMotionTracking, stopMotionTracking } = await import('../../controllers/motionTrackingController.js');
+    if (action === 'start') {
+      // Create a mock req/res to call the controller
+      const mockReq = {
+        body: { webcamId: step.webcamId || 'webcam-auto', params: step.params || {} }
+      };
+      let result = { success: true, action: 'start' };
+      const mockRes = {
+        status: function() { return mockRes; },
+        json: function(data) { result = data; }
+      };
+      await startMotionTracking(mockReq, mockRes);
+      // Controller may return success:false if webcam not found — non-fatal
+      if (!result.success) {
+        emit && emit({ type: 'step', status: 'complete', stepType: 'head-tracking', action, warning: result.error || 'Head tracking unavailable' });
+        return { success: true, action, warning: result.error || 'Head tracking unavailable' };
+      }
+      emit && emit({ type: 'step', status: 'complete', stepType: 'head-tracking', action, result });
+      return result;
+    } else {
+      // Stop
+      const mockReq = { body: { webcamId: step.webcamId || 'webcam-auto' } };
+      let result = { success: true, action: 'stop' };
+      const mockRes = {
+        status: function() { return mockRes; },
+        json: function(data) { result = data; }
+      };
+      await stopMotionTracking(mockReq, mockRes);
+      if (!result.success) {
+        emit && emit({ type: 'step', status: 'complete', stepType: 'head-tracking', action, warning: result.error || 'Stop failed' });
+        return { success: true, action, warning: result.error || 'Stop failed' };
+      }
+      emit && emit({ type: 'step', status: 'complete', stepType: 'head-tracking', action, result });
+      return result;
+    }
+  } catch (err) {
+    // Non-fatal: head tracking is optional
+    emit && emit({ type: 'step', status: 'complete', stepType: 'head-tracking', action, warning: err.message });
+    return { success: true, action, warning: err.message };
+  }
+}
+
 export async function executeStep(step, characterId, emit, options) {
   const dryRun = options && options.dryRun;
   const t = (step.type || (step.poseId != null ? 'pose' : null));
@@ -605,6 +679,10 @@ export async function executeStep(step, characterId, emit, options) {
     case 'hardware':
       // Generic hardware control step
       return executeHardwareStep(step, characterId, emit);
+    case 'jaw-animation':
+      return executeJawAnimationStep(step, characterId, emit);
+    case 'head-tracking':
+      return executeHeadTrackingStep(step, characterId, emit);
     default:
       throw new Error('Unknown step type: ' + t);
   }

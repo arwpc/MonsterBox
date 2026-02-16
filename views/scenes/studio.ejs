@@ -1,0 +1,1796 @@
+<!-- Animation Studio - Unified Scenes, Poses & Timeline Editor -->
+<!-- Cache buster: v1.0 - 2026-02-16 - Animation Studio Launch -->
+
+<style>
+  .studio-toolbar {
+    background: var(--bs-dark);
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .studio-panels {
+    height: calc(100vh - 140px);
+    overflow: hidden;
+  }
+  .studio-panel {
+    height: 100%;
+    overflow-y: auto;
+    border-right: 1px solid var(--bs-border-color);
+  }
+  .studio-panel:last-child {
+    border-right: none;
+  }
+  .panel-section {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 0.75rem;
+  }
+  .panel-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.4rem 0;
+    user-select: none;
+  }
+  .panel-section-header h6 {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .panel-section-body {
+    padding-top: 0.5rem;
+  }
+  .panel-section-body.collapsed {
+    display: none;
+  }
+
+  /* Scene/Pose library items */
+  .lib-item {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+  }
+  .lib-item:hover {
+    background: rgba(255,255,255,0.08);
+  }
+  .lib-item.active {
+    background: rgba(13,110,253,0.2);
+    border-left: 3px solid var(--bs-primary);
+    padding-left: calc(0.5rem - 3px);
+  }
+  .lib-item .lib-actions {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .lib-item:hover .lib-actions {
+    opacity: 1;
+  }
+  .lib-item .badge {
+    font-size: 0.7rem;
+    margin-left: 0.3rem;
+  }
+
+  /* Timeline steps */
+  .step-block {
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: move;
+    border-left: 4px solid;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+  }
+  .step-block:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .step-block.dragging {
+    opacity: 0.4;
+  }
+  .step-block.expanded .step-edit-form {
+    display: block;
+  }
+  .step-edit-form {
+    display: none;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--bs-border-color);
+  }
+  .step-block-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .step-type-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .step-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+  .step-actions {
+    display: flex;
+    gap: 2px;
+  }
+  .step-actions .btn {
+    padding: 0.15rem 0.35rem;
+    font-size: 0.75rem;
+  }
+
+  /* Step type colors */
+  .step-color-servo { border-left-color: #0d6efd; }
+  .step-color-servo .step-type-icon { background: rgba(13,110,253,0.2); color: #0d6efd; }
+  .step-color-audio { border-left-color: #198754; }
+  .step-color-audio .step-type-icon { background: rgba(25,135,84,0.2); color: #198754; }
+  .step-color-sayThis { border-left-color: #6f42c1; }
+  .step-color-sayThis .step-type-icon { background: rgba(111,66,193,0.2); color: #6f42c1; }
+  .step-color-askAI { border-left-color: #3d0f7a; }
+  .step-color-askAI .step-type-icon { background: rgba(61,15,122,0.2); color: #6f42c1; }
+  .step-color-wait { border-left-color: #6c757d; }
+  .step-color-wait .step-type-icon { background: rgba(108,117,125,0.2); color: #6c757d; }
+  .step-color-pose { border-left-color: #fd7e14; }
+  .step-color-pose .step-type-icon { background: rgba(253,126,20,0.2); color: #fd7e14; }
+  .step-color-light { border-left-color: #ffc107; }
+  .step-color-light .step-type-icon { background: rgba(255,193,7,0.2); color: #ffc107; }
+  .step-color-motor { border-left-color: #dc3545; }
+  .step-color-motor .step-type-icon { background: rgba(220,53,69,0.2); color: #dc3545; }
+  .step-color-linear-actuator { border-left-color: #e83e8c; }
+  .step-color-linear-actuator .step-type-icon { background: rgba(232,62,140,0.2); color: #e83e8c; }
+  .step-color-sensor { border-left-color: #0dcaf0; }
+  .step-color-sensor .step-type-icon { background: rgba(13,202,240,0.2); color: #0dcaf0; }
+  .step-color-goblin-video { border-left-color: #d63384; }
+  .step-color-goblin-video .step-type-icon { background: rgba(214,51,132,0.2); color: #d63384; }
+  .step-color-jaw-animation { border-left-color: #20c997; }
+  .step-color-jaw-animation .step-type-icon { background: rgba(32,201,151,0.2); color: #20c997; }
+  .step-color-head-tracking { border-left-color: #0d6efd; }
+  .step-color-head-tracking .step-type-icon { background: rgba(13,110,253,0.2); color: #0d6efd; }
+
+  /* Concurrent indicator */
+  .concurrent-link {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: var(--bs-warning);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    z-index: 5;
+  }
+
+  /* Add step zone */
+  .add-step-zone {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--bs-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .add-step-zone:hover, .add-step-zone.drag-over {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+    background: rgba(13,110,253,0.05);
+  }
+
+  /* Part palette */
+  .palette-part {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: grab;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+  }
+  .palette-part:hover {
+    background: rgba(255,255,255,0.08);
+  }
+  .palette-part.disabled-part {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .palette-part .part-icon {
+    width: 24px;
+    text-align: center;
+    margin-right: 0.4rem;
+    flex-shrink: 0;
+  }
+  .palette-action {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: grab;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+  }
+  .palette-action:hover {
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* Queue items */
+  .queue-item {
+    cursor: move;
+    font-size: 0.85rem;
+  }
+  .queue-item:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  /* Webcam preview */
+  .webcam-preview {
+    background: #000;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    position: relative;
+    min-height: 120px;
+  }
+  .webcam-preview img {
+    width: 100%;
+    display: block;
+  }
+  .webcam-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--bs-secondary);
+    font-size: 0.8rem;
+  }
+
+  /* Mode toggles */
+  .mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+  }
+  .mode-toggle .form-check-input {
+    margin-top: 0;
+  }
+  .tracking-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #198754;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Search input */
+  .search-input {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Scrollbar styling */
+  .studio-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+  .studio-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .studio-panel::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+  }
+</style>
+
+<!-- Toolbar -->
+<div class="studio-toolbar">
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <strong class="me-2"><i class="bi bi-palette"></i> Animation Studio</strong>
+
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-success" id="btnNewScene" title="New Scene"><i class="bi bi-plus-circle"></i> Scene</button>
+      <button class="btn btn-outline-info" id="btnNewPose" title="New Pose"><i class="bi bi-plus-circle"></i> Pose</button>
+    </div>
+
+    <button class="btn btn-sm btn-primary" id="btnSave" disabled title="Save current scene"><i class="bi bi-save"></i> Save</button>
+
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-outline-success" id="btnPlay" disabled title="Play scene"><i class="bi bi-play-fill"></i></button>
+      <button class="btn btn-outline-danger" id="btnStop" disabled title="Stop"><i class="bi bi-stop-fill"></i></button>
+    </div>
+
+    <div class="vr mx-1"></div>
+
+    <div class="mode-toggle">
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="jawToggle">
+        <label class="form-check-label" for="jawToggle">Jaw</label>
+      </div>
+    </div>
+    <div class="mode-toggle">
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="headTrackToggle">
+        <label class="form-check-label" for="headTrackToggle">Head Track</label>
+      </div>
+      <span id="headTrackIndicator" style="display:none;"><span class="tracking-pulse"></span></span>
+    </div>
+
+    <div class="vr mx-1"></div>
+
+    <button class="btn btn-sm btn-outline-warning" id="btnEmergencyStop" title="Emergency Stop All"><i class="bi bi-exclamation-triangle"></i> E-STOP</button>
+
+    <span class="ms-auto text-muted" style="font-size:0.75rem;" id="studioStatus"></span>
+  </div>
+</div>
+
+<!-- Three-Panel Layout -->
+<div class="row g-0 studio-panels">
+  <!-- LEFT PANEL: Library & Queue -->
+  <div class="col-xl-3 col-lg-3 studio-panel" id="leftPanel">
+
+    <!-- Scene Library -->
+    <div class="panel-section">
+      <div class="panel-section-header" data-toggle-section="scenesSection">
+        <h6><i class="bi bi-film"></i> Scenes</h6>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="panel-section-body" id="scenesSection">
+        <input type="text" class="form-control form-control-sm search-input mb-2" id="sceneSearch" placeholder="Search scenes...">
+        <div id="sceneLibrary"></div>
+      </div>
+    </div>
+
+    <!-- Pose Library -->
+    <div class="panel-section">
+      <div class="panel-section-header" data-toggle-section="posesSection">
+        <h6><i class="bi bi-person-arms-up"></i> Poses</h6>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="panel-section-body" id="posesSection">
+        <div id="poseLibrary"></div>
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="panel-section">
+      <div class="panel-section-header" data-toggle-section="queueSection">
+        <h6><i class="bi bi-collection-play"></i> Queue</h6>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="panel-section-body" id="queueSection">
+        <div class="btn-group btn-group-sm w-100 mb-2">
+          <button class="btn btn-success" id="btnQueuePlay"><i class="bi bi-play-fill"></i> Play</button>
+          <button class="btn btn-info" id="btnQueueLoop"><i class="bi bi-repeat"></i> Loop</button>
+          <button class="btn btn-warning" id="btnQueueStop"><i class="bi bi-stop-fill"></i> Stop</button>
+          <button class="btn btn-outline-danger" id="btnQueueClear"><i class="bi bi-trash"></i></button>
+        </div>
+        <div class="btn-group btn-group-sm w-100 mb-2">
+          <button class="btn btn-outline-secondary" id="btnQueuePause"><i class="bi bi-pause-fill"></i> Pause</button>
+          <button class="btn btn-outline-secondary" id="btnQueueResume"><i class="bi bi-skip-forward-fill"></i> Resume</button>
+          <button class="btn btn-outline-secondary" id="btnQueueSkip"><i class="bi bi-skip-end-fill"></i> Skip</button>
+        </div>
+        <div id="queueStatus" class="mb-1" style="font-size:0.8rem;"></div>
+        <div id="queueList" class="list-group list-group-flush" style="min-height:60px;"></div>
+        <div id="emptyQueue" class="text-muted text-center py-2" style="font-size:0.8rem; display:none;">
+          <i class="bi bi-inbox"></i> Drag scenes here
+        </div>
+        <div class="input-group input-group-sm mt-2">
+          <input type="text" class="form-control" id="storyNameInput" placeholder="Story name...">
+          <button class="btn btn-outline-secondary" id="btnSaveStory"><i class="bi bi-save"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL: Timeline/Editor -->
+  <div class="col-xl-6 col-lg-6 studio-panel" id="centerPanel">
+    <div class="p-3">
+      <div id="noSceneSelected" class="text-center text-muted py-5">
+        <i class="bi bi-film" style="font-size:3rem;"></i>
+        <p class="mt-2">Select a scene from the library or create a new one</p>
+        <button class="btn btn-success" id="btnNewSceneCenter"><i class="bi bi-plus-circle"></i> Create New Scene</button>
+      </div>
+
+      <div id="timelineEditor" style="display:none;">
+        <div class="d-flex align-items-center mb-3">
+          <input type="text" class="form-control form-control-sm me-2" id="sceneNameInput" placeholder="Scene name..." style="max-width:300px;">
+          <span class="badge bg-secondary me-2" id="stepCountBadge">0 steps</span>
+          <button class="btn btn-sm btn-outline-primary" id="btnDuplicateScene" title="Duplicate Scene"><i class="bi bi-files"></i></button>
+          <button class="btn btn-sm btn-outline-danger ms-1" id="btnDeleteCurrentScene" title="Delete Scene"><i class="bi bi-trash"></i></button>
+        </div>
+
+        <div id="stepsList"></div>
+
+        <div class="add-step-zone mt-2" id="addStepZone">
+          <i class="bi bi-plus-circle" style="font-size:1.5rem;"></i>
+          <div>Drag a part here or click to add a step</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Preview & Palette -->
+  <div class="col-xl-3 col-lg-3 studio-panel" id="rightPanel">
+
+    <!-- Live Preview -->
+    <div class="panel-section">
+      <div class="panel-section-header" data-toggle-section="previewSection">
+        <h6><i class="bi bi-camera-video"></i> Live Preview</h6>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="panel-section-body" id="previewSection">
+        <div class="webcam-preview" id="webcamContainer">
+          <div class="webcam-placeholder" id="webcamPlaceholder">
+            <span><i class="bi bi-camera-video-off"></i> No webcam</span>
+          </div>
+        </div>
+        <div class="mt-1 d-flex align-items-center gap-1">
+          <select class="form-select form-select-sm" id="webcamPartSelect" style="font-size:0.75rem;">
+            <option value="">Select webcam...</option>
+          </select>
+          <button class="btn btn-sm btn-outline-primary" id="btnStartStream" title="Start Stream"><i class="bi bi-play"></i></button>
+          <button class="btn btn-sm btn-outline-danger" id="btnStopStream" title="Stop Stream" style="display:none;"><i class="bi bi-stop"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part Palette -->
+    <div class="panel-section">
+      <div class="panel-section-header" data-toggle-section="paletteSection">
+        <h6><i class="bi bi-tools"></i> Part Palette</h6>
+        <i class="bi bi-chevron-down"></i>
+      </div>
+      <div class="panel-section-body" id="paletteSection">
+        <div id="partPalette"></div>
+
+        <hr class="my-2">
+        <div class="text-muted mb-1" style="font-size:0.75rem; font-weight:600;">ACTIONS</div>
+        <div id="actionPalette">
+          <div class="palette-action" draggable="true" data-step-type="audio">
+            <span class="part-icon"><i class="bi bi-music-note-beamed text-success"></i></span> Audio
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="sayThis">
+            <span class="part-icon"><i class="bi bi-chat-quote" style="color:#6f42c1;"></i></span> Say This (TTS)
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="askAI">
+            <span class="part-icon"><i class="bi bi-robot" style="color:#6f42c1;"></i></span> Ask AI
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="wait">
+            <span class="part-icon"><i class="bi bi-hourglass-split text-secondary"></i></span> Wait/Pause
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="pose">
+            <span class="part-icon"><i class="bi bi-person-arms-up" style="color:#fd7e14;"></i></span> Pose
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="goblin-video">
+            <span class="part-icon"><i class="bi bi-display" style="color:#d63384;"></i></span> Goblin Video
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="jaw-animation">
+            <span class="part-icon"><i class="bi bi-lightning" style="color:#20c997;"></i></span> Jaw Animation
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="head-tracking">
+            <span class="part-icon"><i class="bi bi-bullseye" style="color:#0d6efd;"></i></span> Head Tracking
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Step Modal -->
+<div class="modal fade" id="addStepModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Step</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <h6 class="text-muted mb-2">Actions</h6>
+        <div class="row g-2 mb-3" id="modalActions"></div>
+        <h6 class="text-muted mb-2">Character Parts</h6>
+        <div class="row g-2" id="modalParts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Pose Modal -->
+<div class="modal fade" id="newPoseModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-arms-up"></i> New Pose</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Pose Name</label>
+          <input type="text" class="form-control" id="newPoseName" placeholder="Enter pose name...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <input type="text" class="form-control" id="newPoseCategory" placeholder="e.g., greeting, idle, scare">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Template</label>
+          <select class="form-select" id="newPoseTemplate">
+            <option value="">Custom (no template)</option>
+          </select>
+        </div>
+        <div id="newPoseTemplateOptions" style="display:none;"></div>
+        <div id="newPosePartsConfig"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnCreatePose">Create Pose</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stories Modal -->
+<div class="modal fade" id="storiesModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-collection"></i> Stories</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="storiesList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ============ STATE ============
+  var allScenes = [];
+  var allPoses = [];
+  var allParts = [];
+  var calibrationProfiles = {};
+  var sounds = [];
+  var goblins = [];
+  var poseTemplates = {};
+
+  var currentSceneId = null;
+  var currentSteps = [];
+  var expandedStepIndex = -1;
+  var jawEnabled = false;
+  var headTrackEnabled = false;
+  var webcamStreaming = false;
+
+  // ============ HELPERS ============
+  function $(id) { return document.getElementById(id); }
+  function setHtml(id, html) { var el = $(id); if (el) el.innerHTML = html; }
+  function show(id) { var el = $(id); if (el) el.style.display = ''; }
+  function hide(id) { var el = $(id); if (el) el.style.display = 'none'; }
+  function alertBox(type, text) { return '<div class="alert alert-' + type + ' py-1 px-2 mb-1" style="font-size:0.8rem;">' + text + '</div>'; }
+  function escHtml(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s || '')); return d.innerHTML; }
+
+  function setStatus(msg) {
+    var el = $('studioStatus');
+    if (el) el.textContent = msg;
+    if (msg) setTimeout(function() { if (el && el.textContent === msg) el.textContent = ''; }, 5000);
+  }
+
+  // ============ API CALLS ============
+  function apiGet(url) {
+    return fetch(url).then(function(r) { return r.json(); });
+  }
+
+  function apiPost(url, data) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function apiPut(url, data) {
+    return fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function apiDelete(url) {
+    return fetch(url, { method: 'DELETE' }).then(function(r) { return r.json(); });
+  }
+
+  // ============ DATA LOADING ============
+  function loadAllData() {
+    Promise.all([
+      apiGet('/scenes/api').then(function(j) { allScenes = (j.success && j.scenes) ? j.scenes : []; }),
+      apiGet('/setup/poses/api/poses').then(function(j) { allPoses = (j.success && j.poses) ? j.poses : []; }),
+      apiGet('/api/parts').then(function(j) { allParts = (j.success && j.parts) ? j.parts : []; }),
+      apiGet('/api/calibration/profiles').then(function(j) { calibrationProfiles = j || {}; }).catch(function() { calibrationProfiles = {}; }),
+      apiGet('/api/sounds').then(function(j) { sounds = (j.success && j.sounds) ? j.sounds : []; }).catch(function() { sounds = []; }),
+      apiGet('/api/goblins').then(function(j) { goblins = (j.success && j.goblins) ? j.goblins : []; }).catch(function() { goblins = []; }),
+      apiGet('/setup/poses/api/templates').then(function(j) { poseTemplates = (j.success && j.templates) ? j.templates : {}; }).catch(function() { poseTemplates = {}; })
+    ]).then(function() {
+      renderSceneLibrary();
+      renderPoseLibrary();
+      renderPartPalette();
+      renderAddStepModal();
+      populateWebcamSelect();
+      loadQueue();
+
+      // Check URL for edit parameter
+      var params = new URLSearchParams(window.location.search);
+      var editId = params.get('edit');
+      if (editId) loadSceneIntoEditor(parseInt(editId, 10));
+    }).catch(function(err) {
+      console.error('Failed to load data:', err);
+      setStatus('Error loading data');
+    });
+  }
+
+  // ============ SCENE LIBRARY ============
+  function renderSceneLibrary() {
+    var filter = ($('sceneSearch') || {}).value || '';
+    filter = filter.toLowerCase();
+    var filtered = allScenes.filter(function(s) {
+      return !filter || (s.name || '').toLowerCase().indexOf(filter) !== -1;
+    });
+    var html = '';
+    if (filtered.length === 0) {
+      html = '<div class="text-muted text-center py-2" style="font-size:0.8rem;">No scenes</div>';
+    }
+    filtered.forEach(function(s) {
+      var stepCount = (s.steps && s.steps.length) || 0;
+      var isActive = currentSceneId === s.id;
+      html += '<div class="lib-item' + (isActive ? ' active' : '') + '" data-scene-id="' + s.id + '" draggable="true">';
+      html += '<i class="bi bi-film me-1"></i> ';
+      html += '<span class="text-truncate">' + escHtml(s.name || 'Scene ' + s.id) + '</span>';
+      html += '<span class="badge bg-secondary">' + stepCount + '</span>';
+      html += '<span class="lib-actions">';
+      html += '<button class="btn btn-sm btn-outline-success p-0 px-1 scene-play-btn" data-id="' + s.id + '" title="Play"><i class="bi bi-play-fill"></i></button> ';
+      html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 scene-delete-btn" data-id="' + s.id + '" title="Delete"><i class="bi bi-trash"></i></button>';
+      html += '</span>';
+      html += '</div>';
+    });
+    setHtml('sceneLibrary', html);
+
+    // Attach event listeners
+    document.querySelectorAll('#sceneLibrary .lib-item').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        if (e.target.closest('.scene-play-btn') || e.target.closest('.scene-delete-btn')) return;
+        var id = parseInt(el.getAttribute('data-scene-id'), 10);
+        loadSceneIntoEditor(id);
+      });
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', 'scene:' + el.getAttribute('data-scene-id'));
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+    });
+    document.querySelectorAll('.scene-play-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = parseInt(btn.getAttribute('data-id'), 10);
+        playScene(id);
+      });
+    });
+    document.querySelectorAll('.scene-delete-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = parseInt(btn.getAttribute('data-id'), 10);
+        deleteScene(id);
+      });
+    });
+  }
+
+  function loadSceneIntoEditor(id) {
+    var scene = allScenes.find(function(s) { return s.id === id; });
+    if (!scene) return;
+    currentSceneId = id;
+    currentSteps = JSON.parse(JSON.stringify(scene.steps || []));
+    expandedStepIndex = -1;
+    $('sceneNameInput').value = scene.name || '';
+    hide('noSceneSelected');
+    show('timelineEditor');
+    $('btnSave').disabled = false;
+    $('btnPlay').disabled = false;
+    $('btnStop').disabled = false;
+    renderTimeline();
+    renderSceneLibrary();
+    setStatus('Editing: ' + (scene.name || 'Scene ' + id));
+  }
+
+  function createNewScene() {
+    var name = prompt('Scene name:');
+    if (!name) return;
+    apiPost('/scenes/api', { name: name, steps: [] }).then(function(j) {
+      if (j.success && j.scene) {
+        allScenes.push(j.scene);
+        renderSceneLibrary();
+        loadSceneIntoEditor(j.scene.id);
+        setStatus('Created: ' + name);
+      }
+    });
+  }
+
+  function deleteScene(id) {
+    if (!confirm('Delete this scene?')) return;
+    apiDelete('/scenes/api/' + id).then(function(j) {
+      if (j.success) {
+        allScenes = allScenes.filter(function(s) { return s.id !== id; });
+        if (currentSceneId === id) {
+          currentSceneId = null;
+          currentSteps = [];
+          hide('timelineEditor');
+          show('noSceneSelected');
+          $('btnSave').disabled = true;
+          $('btnPlay').disabled = true;
+        }
+        renderSceneLibrary();
+        setStatus('Scene deleted');
+      }
+    });
+  }
+
+  function playScene(id) {
+    setStatus('Playing scene...');
+    apiPost('/scenes/api/' + id + '/play', {}).then(function(j) {
+      if (j.success) setStatus('Scene played (' + (j.steps || 0) + ' steps)');
+      else setStatus('Play failed: ' + (j.error || 'Unknown'));
+    }).catch(function(e) { setStatus('Error: ' + e.message); });
+  }
+
+  function saveCurrentScene() {
+    if (!currentSceneId) return;
+    var name = ($('sceneNameInput') || {}).value || '';
+    if (!name) { setStatus('Enter a scene name'); return; }
+    // Collect step data from forms before saving
+    collectStepData();
+    apiPut('/scenes/api/' + currentSceneId, { name: name, steps: currentSteps }).then(function(j) {
+      if (j.success) {
+        // Update local data
+        var idx = allScenes.findIndex(function(s) { return s.id === currentSceneId; });
+        if (idx >= 0) { allScenes[idx].name = name; allScenes[idx].steps = currentSteps; }
+        renderSceneLibrary();
+        setStatus('Saved!');
+      } else {
+        setStatus('Save failed: ' + (j.error || 'Unknown'));
+      }
+    }).catch(function(e) { setStatus('Error: ' + e.message); });
+  }
+
+  // ============ POSE LIBRARY ============
+  function renderPoseLibrary() {
+    // Group by category
+    var groups = {};
+    allPoses.forEach(function(p) {
+      var cat = p.category || 'uncategorized';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+
+    var html = '';
+    if (allPoses.length === 0) {
+      html = '<div class="text-muted text-center py-2" style="font-size:0.8rem;">No poses</div>';
+    }
+    Object.keys(groups).forEach(function(cat) {
+      html += '<div class="text-muted mb-1" style="font-size:0.7rem; font-weight:600; text-transform:uppercase;">' + escHtml(cat) + '</div>';
+      groups[cat].forEach(function(p) {
+        html += '<div class="lib-item" draggable="true" data-pose-id="' + p.id + '">';
+        html += '<i class="bi bi-person-arms-up me-1" style="color:#fd7e14;"></i> ';
+        html += '<span class="text-truncate">' + escHtml(p.name) + '</span>';
+        html += '<span class="badge bg-secondary">' + ((p.parts && p.parts.length) || 0) + '</span>';
+        html += '<span class="lib-actions">';
+        html += '<button class="btn btn-sm btn-outline-success p-0 px-1 pose-test-btn" data-id="' + p.id + '" title="Test"><i class="bi bi-play-fill"></i></button> ';
+        html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-delete-btn" data-id="' + p.id + '" title="Delete"><i class="bi bi-trash"></i></button>';
+        html += '</span>';
+        html += '</div>';
+      });
+    });
+    setHtml('poseLibrary', html);
+
+    // Drag handlers for poses
+    document.querySelectorAll('#poseLibrary .lib-item').forEach(function(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', 'pose:' + el.getAttribute('data-pose-id'));
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+    });
+    document.querySelectorAll('.pose-test-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = parseInt(btn.getAttribute('data-id'), 10);
+        apiPost('/setup/poses/api/poses/' + id + '/test', {}).then(function(j) {
+          setStatus(j.success ? 'Pose tested' : ('Pose failed: ' + (j.error || j.message || '')));
+        });
+      });
+    });
+    document.querySelectorAll('.pose-delete-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!confirm('Delete this pose?')) return;
+        var id = parseInt(btn.getAttribute('data-id'), 10);
+        apiDelete('/setup/poses/api/poses/' + id).then(function(j) {
+          if (j.success) {
+            allPoses = allPoses.filter(function(p) { return p.id !== id; });
+            renderPoseLibrary();
+            setStatus('Pose deleted');
+          }
+        });
+      });
+    });
+  }
+
+  // ============ PART PALETTE ============
+  function renderPartPalette() {
+    var typeGroups = {
+      'servo': { icon: 'bi-gear', label: 'Servos', color: '#0d6efd', items: [] },
+      'linear_actuator': { icon: 'bi-arrows-expand', label: 'Actuators', color: '#e83e8c', items: [] },
+      'motor': { icon: 'bi-fan', label: 'Motors', color: '#dc3545', items: [] },
+      'light': { icon: 'bi-lightbulb', label: 'Lights', color: '#ffc107', items: [] },
+      'led': { icon: 'bi-lightbulb', label: 'LEDs', color: '#ffc107', items: [] },
+      'motion_sensor': { icon: 'bi-radar', label: 'Sensors', color: '#0dcaf0', items: [] },
+      'sensor': { icon: 'bi-radar', label: 'Sensors', color: '#0dcaf0', items: [] }
+    };
+
+    allParts.forEach(function(p) {
+      var t = p.type || '';
+      if (typeGroups[t]) typeGroups[t].items.push(p);
+    });
+
+    // Merge led into light, sensor into motion_sensor
+    if (typeGroups.led.items.length > 0) {
+      typeGroups.light.items = typeGroups.light.items.concat(typeGroups.led.items);
+    }
+    if (typeGroups.sensor.items.length > 0) {
+      typeGroups.motion_sensor.items = typeGroups.motion_sensor.items.concat(typeGroups.sensor.items);
+    }
+
+    var html = '';
+    ['servo', 'linear_actuator', 'motor', 'light', 'motion_sensor'].forEach(function(t) {
+      var g = typeGroups[t];
+      if (g.items.length === 0) return;
+      html += '<div class="text-muted mb-1" style="font-size:0.75rem; font-weight:600;"><i class="bi ' + g.icon + '"></i> ' + g.label + '</div>';
+      g.items.forEach(function(p) {
+        var stepType = t;
+        if (t === 'linear_actuator') stepType = 'linear-actuator';
+        if (t === 'motion_sensor' || t === 'sensor') stepType = 'sensor';
+        if (t === 'led') stepType = 'light';
+        var cls = p.enabled ? '' : ' disabled-part';
+        html += '<div class="palette-part' + cls + '" draggable="' + (p.enabled ? 'true' : 'false') + '" data-step-type="' + stepType + '" data-part-id="' + p.id + '">';
+        html += '<span class="part-icon"><i class="bi ' + g.icon + '" style="color:' + g.color + ';"></i></span>';
+        html += '<span class="text-truncate">' + escHtml(p.name) + '</span>';
+        if (!p.enabled) html += ' <span class="badge bg-dark" style="font-size:0.6rem;">off</span>';
+        html += '</div>';
+      });
+    });
+    setHtml('partPalette', html);
+
+    // Drag handlers
+    document.querySelectorAll('.palette-part[draggable=true], .palette-action[draggable=true]').forEach(function(el) {
+      el.addEventListener('dragstart', function(e) {
+        var data = 'step:' + el.getAttribute('data-step-type');
+        var partId = el.getAttribute('data-part-id');
+        if (partId) data += ':' + partId;
+        e.dataTransfer.setData('text/plain', data);
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+    });
+  }
+
+  // ============ WEBCAM PREVIEW ============
+  function populateWebcamSelect() {
+    var sel = $('webcamPartSelect');
+    if (!sel) return;
+    var html = '<option value="">Select webcam...</option>';
+    allParts.forEach(function(p) {
+      if ((p.type || '').toLowerCase() === 'webcam' && p.enabled) {
+        html += '<option value="' + p.id + '">' + escHtml(p.name) + '</option>';
+      }
+    });
+    sel.innerHTML = html;
+  }
+
+  function startWebcamStream() {
+    var partId = ($('webcamPartSelect') || {}).value;
+    if (!partId) { setStatus('Select a webcam first'); return; }
+    var container = $('webcamContainer');
+    var placeholder = $('webcamPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
+    var img = document.createElement('img');
+    img.id = 'webcamStream';
+    img.src = '/setup/calibration/api/webcam/parts/' + partId + '/stream';
+    img.alt = 'Live webcam';
+    img.onerror = function() { setStatus('Webcam stream failed'); stopWebcamStream(); };
+    container.appendChild(img);
+    webcamStreaming = true;
+    hide('btnStartStream');
+    show('btnStopStream');
+  }
+
+  function stopWebcamStream() {
+    var img = $('webcamStream');
+    if (img) { img.src = ''; img.remove(); }
+    var placeholder = $('webcamPlaceholder');
+    if (placeholder) placeholder.style.display = '';
+    webcamStreaming = false;
+    show('btnStartStream');
+    hide('btnStopStream');
+  }
+
+  // ============ TIMELINE RENDERING ============
+  var STEP_META = {
+    'servo':            { icon: 'bi-gear',              label: 'Servo' },
+    'motor':            { icon: 'bi-fan',               label: 'Motor' },
+    'linear-actuator':  { icon: 'bi-arrows-expand',     label: 'Actuator' },
+    'light':            { icon: 'bi-lightbulb',         label: 'Light' },
+    'led':              { icon: 'bi-lightbulb',         label: 'LED' },
+    'audio':            { icon: 'bi-music-note-beamed', label: 'Audio' },
+    'sayThis':          { icon: 'bi-chat-quote',        label: 'Say This' },
+    'askAI':            { icon: 'bi-robot',             label: 'Ask AI' },
+    'wait':             { icon: 'bi-hourglass-split',   label: 'Wait' },
+    'pose':             { icon: 'bi-person-arms-up',    label: 'Pose' },
+    'sensor':           { icon: 'bi-radar',             label: 'Sensor' },
+    'goblin-video':     { icon: 'bi-display',           label: 'Goblin Video' },
+    'jaw-animation':    { icon: 'bi-lightning',         label: 'Jaw Animation' },
+    'head-tracking':    { icon: 'bi-bullseye',          label: 'Head Tracking' },
+    'part':             { icon: 'bi-wrench',            label: 'Part (Legacy)' },
+    'hardware':         { icon: 'bi-cpu',               label: 'Hardware' }
+  };
+
+  function getStepSummary(step) {
+    var t = step.type || '';
+    switch (t) {
+      case 'servo':
+        var pName = getPartName(step.partId);
+        if (step.usePreset) return pName + ' -> Preset: ' + (step.presetName || '?');
+        return pName + ' -> ' + (step.angle != null ? step.angle + '\u00B0' : '?');
+      case 'motor':
+        return getPartName(step.partId) + ' ' + (step.direction || 'fwd') + ' ' + (step.speed || 50) + '%';
+      case 'linear-actuator':
+        return getPartName(step.partId) + ' ' + (step.direction || 'extend');
+      case 'light': case 'led':
+        return getPartName(step.partId) + ' ' + (step.state || 'on');
+      case 'audio':
+        var snd = sounds.find(function(s) { return s.filename === step.audioId || s.id === step.audioId; });
+        return snd ? snd.name : (step.audioId || 'No audio');
+      case 'sayThis':
+        return (step.text || '').substring(0, 40) || 'No text';
+      case 'askAI':
+        return (step.question || step.text || '').substring(0, 40) || 'No question';
+      case 'wait':
+        var ms = parseInt(step.duration, 10) || 0;
+        return (ms / 1000).toFixed(1) + 's';
+      case 'pose':
+        var pose = allPoses.find(function(p) { return p.id == step.poseId; });
+        return pose ? pose.name : ('Pose #' + (step.poseId || '?'));
+      case 'sensor':
+        return getPartName(step.partId) + ' (wait for motion)';
+      case 'goblin-video':
+        return (step.goblinId || '?') + ': ' + (step.videoId || '?');
+      case 'jaw-animation':
+        return (step.action || 'enable');
+      case 'head-tracking':
+        return (step.action || 'start');
+      default:
+        return t;
+    }
+  }
+
+  function getPartName(partId) {
+    if (!partId) return '?';
+    var p = allParts.find(function(pp) { return String(pp.id) === String(partId); });
+    return p ? p.name : ('Part #' + partId);
+  }
+
+  function renderTimeline() {
+    var container = $('stepsList');
+    if (!container) return;
+    $('stepCountBadge').textContent = currentSteps.length + ' step' + (currentSteps.length !== 1 ? 's' : '');
+
+    if (currentSteps.length === 0) {
+      container.innerHTML = '<div class="text-muted text-center py-3" style="font-size:0.85rem;">No steps. Add from the palette or click below.</div>';
+      return;
+    }
+
+    var html = '';
+    currentSteps.forEach(function(step, idx) {
+      var t = step.type || 'unknown';
+      var meta = STEP_META[t] || { icon: 'bi-question-circle', label: t };
+      var colorClass = 'step-color-' + t;
+      var isExpanded = expandedStepIndex === idx;
+      var jawBadge = '';
+      if (jawEnabled && (t === 'sayThis' || t === 'askAI')) {
+        jawBadge = ' <span class="badge bg-success" style="font-size:0.6rem;">JAW</span>';
+      }
+
+      html += '<div class="step-block ' + colorClass + (isExpanded ? ' expanded' : '') + '" data-step-index="' + idx + '">';
+
+      // Concurrent link
+      if (step.concurrent && idx < currentSteps.length - 1) {
+        html += '<div class="concurrent-link" title="Runs with next step"><i class="bi bi-link-45deg"></i></div>';
+      }
+
+      // Header
+      html += '<div class="step-block-header">';
+      html += '<div class="step-type-icon"><i class="bi ' + meta.icon + '"></i></div>';
+      html += '<div class="step-info"><strong>' + meta.label + '</strong> ' + escHtml(getStepSummary(step)) + jawBadge + '</div>';
+      html += '<div class="step-actions">';
+      html += '<button class="btn btn-outline-success step-play-btn" data-idx="' + idx + '" title="Test"><i class="bi bi-play-fill"></i></button>';
+      html += '<button class="btn btn-outline-secondary step-dup-btn" data-idx="' + idx + '" title="Duplicate"><i class="bi bi-files"></i></button>';
+      html += '<button class="btn btn-outline-danger step-del-btn" data-idx="' + idx + '" title="Remove"><i class="bi bi-trash"></i></button>';
+      html += '</div>';
+      html += '</div>';
+
+      // Edit form (shown when expanded)
+      html += '<div class="step-edit-form">';
+      html += renderStepForm(step, idx);
+      html += '</div>';
+
+      html += '</div>';
+    });
+    container.innerHTML = html;
+
+    // Init SortableJS
+    if (window.Sortable) {
+      new Sortable(container, {
+        animation: 150,
+        handle: '.step-block',
+        ghostClass: 'dragging',
+        onEnd: function(evt) {
+          var item = currentSteps.splice(evt.oldIndex, 1)[0];
+          currentSteps.splice(evt.newIndex, 0, item);
+          if (expandedStepIndex === evt.oldIndex) expandedStepIndex = evt.newIndex;
+          else if (expandedStepIndex > evt.oldIndex && expandedStepIndex <= evt.newIndex) expandedStepIndex--;
+          else if (expandedStepIndex < evt.oldIndex && expandedStepIndex >= evt.newIndex) expandedStepIndex++;
+          renderTimeline();
+        }
+      });
+    }
+
+    // Event listeners
+    container.querySelectorAll('.step-block').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        if (e.target.closest('.step-actions') || e.target.closest('.step-edit-form')) return;
+        var idx = parseInt(el.getAttribute('data-step-index'), 10);
+        expandedStepIndex = (expandedStepIndex === idx) ? -1 : idx;
+        renderTimeline();
+      });
+    });
+    container.querySelectorAll('.step-play-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        testStep(idx);
+      });
+    });
+    container.querySelectorAll('.step-dup-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        currentSteps.splice(idx + 1, 0, JSON.parse(JSON.stringify(currentSteps[idx])));
+        renderTimeline();
+      });
+    });
+    container.querySelectorAll('.step-del-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        currentSteps.splice(idx, 1);
+        if (expandedStepIndex === idx) expandedStepIndex = -1;
+        else if (expandedStepIndex > idx) expandedStepIndex--;
+        renderTimeline();
+      });
+    });
+
+    // Step form input change handlers
+    attachStepFormHandlers();
+  }
+
+  function testStep(idx) {
+    var step = currentSteps[idx];
+    if (!step) return;
+    collectStepData();
+    step = currentSteps[idx];
+    setStatus('Testing step...');
+    apiPost('/scenes/api/test-step', step).then(function(j) {
+      setStatus(j.success ? 'Step OK' : ('Step failed: ' + (j.error || '')));
+    }).catch(function(e) { setStatus('Error: ' + e.message); });
+  }
+
+  // ============ STEP FORMS ============
+  function renderStepForm(step, idx) {
+    var t = step.type || '';
+    var html = '';
+
+    switch (t) {
+      case 'servo': html = renderServoForm(step, idx); break;
+      case 'motor': html = renderMotorForm(step, idx); break;
+      case 'linear-actuator': html = renderActuatorForm(step, idx); break;
+      case 'light': case 'led': html = renderLightForm(step, idx); break;
+      case 'audio': html = renderAudioForm(step, idx); break;
+      case 'sayThis': html = renderSayThisForm(step, idx); break;
+      case 'askAI': html = renderAskAIForm(step, idx); break;
+      case 'wait': html = renderWaitForm(step, idx); break;
+      case 'pose': html = renderPoseForm(step, idx); break;
+      case 'sensor': html = renderSensorForm(step, idx); break;
+      case 'goblin-video': html = renderGoblinForm(step, idx); break;
+      case 'jaw-animation': html = renderJawAnimForm(step, idx); break;
+      case 'head-tracking': html = renderHeadTrackForm(step, idx); break;
+      default: html = '<div class="text-muted">Unknown step type: ' + escHtml(t) + '</div>'; break;
+    }
+
+    // Concurrent toggle (for all types)
+    html += '<div class="form-check mt-2">';
+    html += '<input class="form-check-input sf-input" type="checkbox" data-idx="' + idx + '" data-field="concurrent" id="conc' + idx + '"' + (step.concurrent ? ' checked' : '') + '>';
+    html += '<label class="form-check-label" for="conc' + idx + '" style="font-size:0.8rem;">Run with next step</label>';
+    html += '</div>';
+
+    return html;
+  }
+
+  function renderServoForm(step, idx) {
+    var servos = allParts.filter(function(p) { return p.type === 'servo' && p.enabled; });
+    var html = '<div class="row g-2">';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Servo</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId">';
+    html += '<option value="">Select...</option>';
+    servos.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Mode</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="usePreset">';
+    html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual</option>';
+    html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Preset</option>';
+    html += '</select></div>';
+    if (!step.usePreset) {
+      html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Angle</label>';
+      html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="angle" value="' + (step.angle != null ? step.angle : 90) + '" min="0" max="180"></div>';
+      html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Duration (ms)</label>';
+      html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
+    } else {
+      html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Preset</label>';
+      html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="presetName">';
+      html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min</option>';
+      html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max</option>';
+      if (step.partId && calibrationProfiles[step.partId] && calibrationProfiles[step.partId].presets) {
+        calibrationProfiles[step.partId].presets.forEach(function(pr) {
+          html += '<option value="' + escHtml(pr.name) + '"' + (step.presetName === pr.name ? ' selected' : '') + '>' + escHtml(pr.name) + '</option>';
+        });
+      }
+      html += '</select></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderMotorForm(step, idx) {
+    var motors = allParts.filter(function(p) { return p.type === 'motor' && p.enabled; });
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Motor</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    motors.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Direction</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
+    html += '<option value="forward"' + (step.direction === 'forward' ? ' selected' : '') + '>Forward</option>';
+    html += '<option value="backward"' + (step.direction === 'backward' ? ' selected' : '') + '>Backward</option>';
+    html += '</select></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Speed %</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 50) + '" min="0" max="100"></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Duration</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderActuatorForm(step, idx) {
+    var acts = allParts.filter(function(p) { return p.type === 'linear_actuator' && p.enabled; });
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Actuator</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    acts.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Direction</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
+    html += '<option value="extend"' + (step.direction === 'extend' ? ' selected' : '') + '>Extend</option>';
+    html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
+    html += '</select></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Speed %</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 75) + '" min="0" max="100"></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Duration</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 3000) + '" min="0"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderLightForm(step, idx) {
+    var lights = allParts.filter(function(p) { return (p.type === 'light' || p.type === 'led') && p.enabled; });
+    var html = '<div class="row g-2">';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Light</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    lights.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-3"><label class="form-label" style="font-size:0.75rem;">State</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="state">';
+    html += '<option value="on"' + (step.state === 'on' ? ' selected' : '') + '>On</option>';
+    html += '<option value="off"' + (step.state === 'off' ? ' selected' : '') + '>Off</option>';
+    html += '</select></div>';
+    html += '<div class="col-3"><label class="form-label" style="font-size:0.75rem;">Bright %</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="brightness" value="' + (step.brightness || 100) + '" min="0" max="100"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAudioForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-8"><label class="form-label" style="font-size:0.75rem;">Audio File</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="audioId"><option value="">Select...</option>';
+    sounds.forEach(function(s) {
+      var sel = (step.audioId === s.filename || step.audioId === s.id) ? ' selected' : '';
+      html += '<option value="' + escHtml(s.filename || s.id) + '"' + sel + '>' + escHtml(s.name || s.filename) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Volume %</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderSayThisForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Text</label>';
+    html += '<textarea class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="text" rows="2" placeholder="Text to speak...">' + escHtml(step.text || '') + '</textarea></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAskAIForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Question</label>';
+    html += '<textarea class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="question" rows="2" placeholder="Ask AI a question...">' + escHtml(step.question || step.text || '') + '</textarea></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderWaitForm(step, idx) {
+    var ms = parseInt(step.duration, 10) || 1000;
+    var html = '<div class="row g-2">';
+    html += '<div class="col-8"><label class="form-label" style="font-size:0.75rem;">Duration (ms)</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="duration" value="' + ms + '" min="0" step="100"></div>';
+    html += '<div class="col-4 d-flex align-items-end"><span class="text-muted" style="font-size:0.8rem;">' + (ms / 1000).toFixed(1) + 's</span></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderPoseForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Pose</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="poseId"><option value="">Select pose...</option>';
+    allPoses.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (step.poseId == p.id ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderSensorForm(step, idx) {
+    var sensors = allParts.filter(function(p) { return (p.type === 'motion_sensor' || p.type === 'sensor') && p.enabled; });
+    var html = '<div class="row g-2">';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Sensor</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    sensors.forEach(function(p) {
+      html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Timeout (ms)</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="timeout" value="' + (step.timeout || 5000) + '" min="0"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderGoblinForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Goblin</label>';
+    html += '<select class="form-select form-select-sm sf-input goblin-sel" data-idx="' + idx + '" data-field="goblinId"><option value="">Select...</option>';
+    goblins.forEach(function(g) {
+      html += '<option value="' + g.id + '"' + (step.goblinId == g.id ? ' selected' : '') + '>' + escHtml(g.name || g.id) + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Video</label>';
+    html += '<select class="form-select form-select-sm sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select goblin first</option></select></div>';
+    html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Volume %</label>';
+    html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
+    html += '<div class="col-6"><div class="form-check mt-4"><input type="checkbox" class="form-check-input sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
+    html += '<label class="form-check-label" for="gloop' + idx + '" style="font-size:0.8rem;">Loop</label></div></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderJawAnimForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Action</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
+    html += '<option value="enable"' + (step.action === 'enable' || !step.action ? ' selected' : '') + '>Enable Jaw Animation</option>';
+    html += '<option value="disable"' + (step.action === 'disable' ? ' selected' : '') + '>Disable Jaw Animation</option>';
+    html += '</select></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderHeadTrackForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Action</label>';
+    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
+    html += '<option value="start"' + (step.action === 'start' || !step.action ? ' selected' : '') + '>Start Head Tracking</option>';
+    html += '<option value="stop"' + (step.action === 'stop' ? ' selected' : '') + '>Stop Head Tracking</option>';
+    html += '</select></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function attachStepFormHandlers() {
+    document.querySelectorAll('.sf-input').forEach(function(input) {
+      input.addEventListener('change', function() {
+        var idx = parseInt(this.getAttribute('data-idx'), 10);
+        var field = this.getAttribute('data-field');
+        var val = this.value;
+        if (this.type === 'checkbox') val = this.checked;
+        else if (this.type === 'number') val = parseFloat(val);
+        else if (field === 'usePreset') val = (val === 'true');
+        if (currentSteps[idx]) {
+          currentSteps[idx][field] = val;
+          // Re-render if mode changed
+          if (field === 'usePreset' || field === 'partId') renderTimeline();
+        }
+      });
+    });
+  }
+
+  function collectStepData() {
+    document.querySelectorAll('.sf-input').forEach(function(input) {
+      var idx = parseInt(input.getAttribute('data-idx'), 10);
+      var field = input.getAttribute('data-field');
+      if (isNaN(idx) || !field || !currentSteps[idx]) return;
+      var val = input.value;
+      if (input.type === 'checkbox') val = input.checked;
+      else if (input.type === 'number') val = parseFloat(val);
+      else if (field === 'usePreset') val = (val === 'true');
+      currentSteps[idx][field] = val;
+    });
+  }
+
+  // ============ ADD STEP ============
+  function addStep(type, partId) {
+    var step = { type: type };
+    if (partId) step.partId = String(partId);
+
+    // Defaults
+    switch (type) {
+      case 'servo': step.angle = 90; step.duration = 1000; break;
+      case 'motor': step.direction = 'forward'; step.speed = 50; step.duration = 1000; break;
+      case 'linear-actuator': step.direction = 'extend'; step.speed = 75; step.duration = 3000; break;
+      case 'light': step.state = 'on'; step.brightness = 100; break;
+      case 'wait': step.duration = 1000; break;
+      case 'sensor': step.timeout = 5000; step.waitForMotion = true; break;
+      case 'audio': step.volume = 80; break;
+      case 'sayThis': step.text = ''; break;
+      case 'askAI': step.question = ''; break;
+      case 'goblin-video': step.volume = 80; break;
+      case 'jaw-animation': step.action = 'enable'; break;
+      case 'head-tracking': step.action = 'start'; break;
+    }
+
+    collectStepData();
+    currentSteps.push(step);
+    expandedStepIndex = currentSteps.length - 1;
+    renderTimeline();
+  }
+
+  function renderAddStepModal() {
+    // Actions
+    var actions = [
+      { type: 'pose', icon: 'bi-person-arms-up', label: 'Pose' },
+      { type: 'audio', icon: 'bi-music-note-beamed', label: 'Audio' },
+      { type: 'sayThis', icon: 'bi-chat-quote', label: 'Say This' },
+      { type: 'askAI', icon: 'bi-robot', label: 'Ask AI' },
+      { type: 'goblin-video', icon: 'bi-display', label: 'Goblin Video' },
+      { type: 'wait', icon: 'bi-hourglass-split', label: 'Wait' },
+      { type: 'sensor', icon: 'bi-radar', label: 'Sensor' },
+      { type: 'jaw-animation', icon: 'bi-lightning', label: 'Jaw Animation' },
+      { type: 'head-tracking', icon: 'bi-bullseye', label: 'Head Tracking' }
+    ];
+    var aHtml = '';
+    actions.forEach(function(a) {
+      aHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-primary w-100 modal-step-btn" data-type="' + a.type + '"><i class="bi ' + a.icon + '"></i><br><small>' + a.label + '</small></button></div>';
+    });
+    setHtml('modalActions', aHtml);
+
+    // Parts
+    var pHtml = '';
+    allParts.filter(function(p) { return p.enabled && ['servo', 'motor', 'linear_actuator', 'light', 'led', 'motion_sensor'].indexOf(p.type) >= 0; }).forEach(function(p) {
+      var stepType = p.type === 'linear_actuator' ? 'linear-actuator' : (p.type === 'motion_sensor' ? 'sensor' : (p.type === 'led' ? 'light' : p.type));
+      pHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-success w-100 modal-step-btn" data-type="' + stepType + '" data-part="' + p.id + '"><i class="bi bi-gear"></i><br><small>' + escHtml(p.name) + '</small></button></div>';
+    });
+    if (!pHtml) pHtml = '<div class="col-12 text-muted text-center">No parts configured</div>';
+    setHtml('modalParts', pHtml);
+
+    // Event listeners
+    document.querySelectorAll('.modal-step-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var type = btn.getAttribute('data-type');
+        var partId = btn.getAttribute('data-part');
+        addStep(type, partId);
+        var modal = bootstrap.Modal.getInstance($('addStepModal'));
+        if (modal) modal.hide();
+      });
+    });
+  }
+
+  // ============ QUEUE ============
+  function loadQueue() {
+    apiGet('/scenes/api/queue').then(function(j) {
+      if (!j.success) return;
+      var status = j.status || {};
+      var items = status.items || [];
+
+      // Status
+      if (status.running) {
+        var msg = '<span class="badge bg-success">Running</span>';
+        if (status.nowPlaying) msg += ' ' + escHtml(status.nowPlaying.name);
+        setHtml('queueStatus', msg);
+      } else {
+        setHtml('queueStatus', '');
+      }
+
+      // Items
+      if (items.length === 0) {
+        hide('queueList');
+        show('emptyQueue');
+        return;
+      }
+      show('queueList');
+      hide('emptyQueue');
+
+      var html = '';
+      items.forEach(function(it, i) {
+        html += '<div class="list-group-item list-group-item-action queue-item py-1 px-2" draggable="true" data-queue-idx="' + i + '">';
+        html += '<div class="d-flex justify-content-between align-items-center">';
+        html += '<span style="font-size:0.8rem;"><i class="bi bi-grip-vertical"></i> ' + escHtml(it.name) + '</span>';
+        html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 queue-remove-btn" data-idx="' + i + '" style="font-size:0.7rem;"><i class="bi bi-x"></i></button>';
+        html += '</div></div>';
+      });
+      setHtml('queueList', html);
+
+      // Remove buttons
+      document.querySelectorAll('.queue-remove-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          removeFromQueue(parseInt(btn.getAttribute('data-idx'), 10));
+        });
+      });
+
+      // Sortable for queue
+      if (window.Sortable) {
+        new Sortable($('queueList'), {
+          animation: 150,
+          onEnd: function(evt) {
+            apiPost('/scenes/api/queue/reorder', { fromIndex: evt.oldIndex, toIndex: evt.newIndex }).then(function() { loadQueue(); });
+          }
+        });
+      }
+    });
+  }
+
+  function addToQueue(sceneId) {
+    apiPost('/scenes/api/queue/enqueue', { sceneId: parseInt(sceneId, 10) }).then(function(j) {
+      if (j.success) { loadQueue(); setStatus('Added to queue'); }
+    });
+  }
+
+  function removeFromQueue(idx) {
+    apiGet('/scenes/api/queue').then(function(j) {
+      if (!j.success) return;
+      var items = j.status.items || [];
+      return apiPost('/scenes/api/queue/clear', {}).then(function() {
+        var promises = [];
+        items.forEach(function(it, i) {
+          if (i !== idx) promises.push(apiPost('/scenes/api/queue/enqueue', { sceneId: it.id }));
+        });
+        return Promise.all(promises);
+      }).then(function() { loadQueue(); });
+    });
+  }
+
+  // ============ MODE TOGGLES ============
+  function toggleJawAnimation(enabled) {
+    jawEnabled = enabled;
+    renderTimeline();
+    if (enabled) {
+      setStatus('Jaw animation enabled');
+    } else {
+      setStatus('Jaw animation disabled');
+    }
+  }
+
+  function toggleHeadTracking(enabled) {
+    headTrackEnabled = enabled;
+    if (enabled) {
+      show('headTrackIndicator');
+      setStatus('Head tracking enabled');
+    } else {
+      hide('headTrackIndicator');
+      setStatus('Head tracking disabled');
+    }
+  }
+
+  // ============ DRAG & DROP ============
+  function setupDragDrop() {
+    var zone = $('addStepZone');
+    if (!zone) return;
+
+    zone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', function() {
+      zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      var data = e.dataTransfer.getData('text/plain') || '';
+      handleDrop(data);
+    });
+
+    // Queue drop zone
+    var queueList = $('queueList');
+    var emptyQueue = $('emptyQueue');
+    [queueList, emptyQueue].forEach(function(el) {
+      if (!el) return;
+      el.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      });
+      el.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var data = e.dataTransfer.getData('text/plain') || '';
+        if (data.indexOf('scene:') === 0) {
+          var sceneId = data.split(':')[1];
+          addToQueue(sceneId);
+        }
+      });
+    });
+  }
+
+  function handleDrop(data) {
+    if (!currentSceneId) {
+      setStatus('Select or create a scene first');
+      return;
+    }
+    if (data.indexOf('step:') === 0) {
+      var parts = data.split(':');
+      var type = parts[1];
+      var partId = parts[2] || null;
+      addStep(type, partId);
+    } else if (data.indexOf('pose:') === 0) {
+      var poseId = data.split(':')[1];
+      addStep('pose', null);
+      currentSteps[currentSteps.length - 1].poseId = parseInt(poseId, 10);
+      renderTimeline();
+    }
+  }
+
+  // ============ PANEL SECTION TOGGLES ============
+  function setupSectionToggles() {
+    document.querySelectorAll('.panel-section-header').forEach(function(header) {
+      header.addEventListener('click', function() {
+        var sectionId = header.getAttribute('data-toggle-section');
+        if (!sectionId) return;
+        var body = $(sectionId);
+        if (body) body.classList.toggle('collapsed');
+        var chevron = header.querySelector('.bi-chevron-down, .bi-chevron-right');
+        if (chevron) {
+          chevron.classList.toggle('bi-chevron-down');
+          chevron.classList.toggle('bi-chevron-right');
+        }
+      });
+    });
+  }
+
+  // ============ EVENT BINDINGS ============
+  function bindEvents() {
+    // Toolbar buttons
+    $('btnNewScene').addEventListener('click', createNewScene);
+    $('btnNewSceneCenter').addEventListener('click', createNewScene);
+    $('btnSave').addEventListener('click', saveCurrentScene);
+    $('btnPlay').addEventListener('click', function() {
+      if (currentSceneId) playScene(currentSceneId);
+    });
+    $('btnStop').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/stop', {}).then(function() { setStatus('Stopped'); });
+    });
+    $('btnEmergencyStop').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/emergency-stop', {}).then(function() { setStatus('EMERGENCY STOP'); loadQueue(); });
+    });
+
+    // New Pose
+    $('btnNewPose').addEventListener('click', function() {
+      var modal = new bootstrap.Modal($('newPoseModal'));
+      modal.show();
+    });
+    $('btnCreatePose').addEventListener('click', function() {
+      var name = ($('newPoseName') || {}).value;
+      if (!name) { alert('Enter a name'); return; }
+      var poseData = {
+        name: name,
+        category: ($('newPoseCategory') || {}).value || 'custom',
+        parts: [],
+        concurrent: false
+      };
+      apiPost('/setup/poses/api/poses', poseData).then(function(j) {
+        if (j.success && j.pose) {
+          allPoses.push(j.pose);
+          renderPoseLibrary();
+          var modal = bootstrap.Modal.getInstance($('newPoseModal'));
+          if (modal) modal.hide();
+          setStatus('Pose created: ' + name);
+        } else {
+          alert('Failed: ' + (j.error || j.message || 'Unknown'));
+        }
+      });
+    });
+
+    // Scene search
+    $('sceneSearch').addEventListener('input', renderSceneLibrary);
+
+    // Add step zone click
+    $('addStepZone').addEventListener('click', function() {
+      if (!currentSceneId) { setStatus('Create a scene first'); return; }
+      var modal = new bootstrap.Modal($('addStepModal'));
+      modal.show();
+    });
+
+    // Duplicate scene
+    $('btnDuplicateScene').addEventListener('click', function() {
+      if (!currentSceneId) return;
+      apiPost('/scenes/api/' + currentSceneId + '/duplicate', {}).then(function(j) {
+        if (j.success && j.scene) {
+          allScenes.push(j.scene);
+          renderSceneLibrary();
+          loadSceneIntoEditor(j.scene.id);
+          setStatus('Scene duplicated');
+        }
+      });
+    });
+    $('btnDeleteCurrentScene').addEventListener('click', function() {
+      if (currentSceneId) deleteScene(currentSceneId);
+    });
+
+    // Queue buttons
+    $('btnQueuePlay').addEventListener('click', function() { playQueue(false); });
+    $('btnQueueLoop').addEventListener('click', function() { playQueue(true); });
+    $('btnQueueStop').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/stop', {}).then(function() { loadQueue(); setStatus('Queue stopped'); });
+    });
+    $('btnQueueClear').addEventListener('click', function() {
+      if (!confirm('Clear queue?')) return;
+      apiPost('/scenes/api/queue/clear', {}).then(function() { loadQueue(); });
+    });
+    $('btnQueuePause').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/pause', {}).then(function() { loadQueue(); setStatus('Queue paused'); });
+    });
+    $('btnQueueResume').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/resume', {}).then(function() { loadQueue(); setStatus('Queue resumed'); });
+    });
+    $('btnQueueSkip').addEventListener('click', function() {
+      apiPost('/scenes/api/queue/skip', {}).then(function() { loadQueue(); setStatus('Skipped'); });
+    });
+    $('btnSaveStory').addEventListener('click', function() {
+      var name = ($('storyNameInput') || {}).value;
+      if (!name) { setStatus('Enter story name'); return; }
+      apiGet('/scenes/api/queue').then(function(j) {
+        if (!j.success) return;
+        var items = j.status.items || [];
+        if (items.length === 0) { setStatus('Queue is empty'); return; }
+        return apiPost('/scenes/api/queue/library', {
+          name: name,
+          mode: 'sequential',
+          scenes: items.map(function(it) { return { scene_id: it.id }; })
+        });
+      }).then(function(j) {
+        if (j && j.success) { setStatus('Story saved'); $('storyNameInput').value = ''; }
+      });
+    });
+
+    // Webcam
+    $('btnStartStream').addEventListener('click', startWebcamStream);
+    $('btnStopStream').addEventListener('click', stopWebcamStream);
+
+    // Mode toggles
+    $('jawToggle').addEventListener('change', function() { toggleJawAnimation(this.checked); });
+    $('headTrackToggle').addEventListener('change', function() { toggleHeadTracking(this.checked); });
+
+    // Keyboard shortcut: Ctrl+S to save
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (currentSceneId) saveCurrentScene();
+      }
+    });
+  }
+
+  function playQueue(loop) {
+    apiGet('/scenes/api/queue').then(function(j) {
+      if (!j.success) return;
+      var items = j.status.items || [];
+      if (items.length === 0) { setStatus('Queue is empty'); return; }
+      return apiPost('/scenes/api/queue/start-config', {
+        mode: loop ? 'loop_queue' : 'sequential',
+        scenes: items.map(function(it) { return { scene_id: it.id }; })
+      });
+    }).then(function(j) {
+      if (j && j.success) {
+        setStatus(loop ? 'Queue looping' : 'Queue playing');
+        loadQueue();
+      }
+    });
+  }
+
+  // ============ INITIALIZATION ============
+  function init() {
+    bindEvents();
+    setupSectionToggles();
+    setupDragDrop();
+    loadAllData();
+
+    // Refresh queue every 2 seconds
+    setInterval(loadQueue, 2000);
+  }
+
+  // Start when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
