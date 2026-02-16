@@ -190,9 +190,9 @@ describe('MonsterBox Basic Tests', () => {
             expect(res.text).to.include('Setup Audio');
         });
 
-        it('should serve the webcam setup page', async () => {
-            const res = await request(BASE_URL).get('/setup/webcam').expect(200);
-            expect(res.text).to.include('Setup Webcam');
+        it('should return 404 for removed webcam page', async () => {
+            const res = await request(BASE_URL).get('/setup/webcam');
+            expect(res.status).to.equal(404);
         });
 
         it('should serve the jaw animation setup page', async () => {

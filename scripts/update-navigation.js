@@ -22,7 +22,6 @@ const filesToUpdate = [
     
     // Setup pages
     { file: 'views/setup/calibration.ejs', page: 'setup-calibration' },
-    { file: 'views/setup/webcam.ejs', page: 'setup-webcam' },
     { file: 'views/setup/poses.ejs', page: 'setup-poses' },
     { file: 'views/setup/super-powers.ejs', page: 'setup-super-powers' },
     { file: 'views/setup/system.ejs', page: 'setup-system' },

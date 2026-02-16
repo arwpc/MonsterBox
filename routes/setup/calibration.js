@@ -12,6 +12,9 @@ import hardwareService from '../../services/hardwareService/index.js';
 
 import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
+import webcamController from '../../controllers/webcamController.js';
+import webcamModelsController from '../../controllers/webcamModelsController.js';
+import * as motionTrackingController from '../../controllers/motionTrackingController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1256,5 +1259,42 @@ router.post('/api/system/power', async (req, res) => {
          res.status(500).json({ success: false, error: error.message });
     }
 });
+
+// ===== WEBCAM API ROUTES (migrated from routes/setup/webcam.js) =====
+router.get('/api/webcam/health', webcamController.getHealthStatus);
+
+// Webcam device controls (per webcam part)
+router.get('/api/webcam/parts/:id/controls/list', webcamController.listControls);
+router.put('/api/webcam/parts/:id/controls/set', express.json(), webcamController.setControls);
+
+// Device discovery
+router.get('/api/webcam/devices', webcamController.listDevices);
+router.get('/api/webcam/devices/probe', webcamController.probeDevices);
+router.get('/api/webcam/devices/inuse', webcamController.devicesInUse);
+
+// Apply selected webcam device to mjpg-streamer service
+router.post('/api/webcam/parts/:id/apply-device', express.json(), webcamController.applyDeviceToService);
+
+// Live MJPEG stream
+router.get('/api/webcam/parts/:id/stream', webcamController.streamMJPEG);
+
+// Webcam Models CRUD
+router.get('/api/webcam/models', webcamModelsController.getAllModels);
+router.get('/api/webcam/models/:id', webcamModelsController.getModelById);
+router.post('/api/webcam/models', express.json(), webcamModelsController.createModel);
+router.put('/api/webcam/models/:id', express.json(), webcamModelsController.updateModel);
+router.delete('/api/webcam/models/:id', webcamModelsController.deleteModel);
+
+// Motion Tracking API
+router.post('/api/webcam/motion-tracking/start', express.json(), motionTrackingController.startMotionTracking);
+router.post('/api/webcam/motion-tracking/stop', express.json(), motionTrackingController.stopMotionTracking);
+router.post('/api/webcam/motion-tracking/params', express.json(), motionTrackingController.updateMotionTrackingParams);
+router.get('/api/webcam/motion-tracking/status', motionTrackingController.getMotionTrackingStatus);
+router.get('/api/webcam/motion-tracking/head-tracking-requirements', motionTrackingController.checkHeadTrackingRequirements);
+
+// Head Tracking API
+router.post('/api/webcam/motion-tracking/head-tracking/enable', express.json(), motionTrackingController.enableHeadTracking);
+router.post('/api/webcam/motion-tracking/head-tracking/disable', express.json(), motionTrackingController.disableHeadTracking);
+router.get('/api/webcam/motion-tracking/head-tracking/status', motionTrackingController.getHeadTrackingStatus);
 
 export default router;

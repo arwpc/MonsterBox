@@ -9,7 +9,6 @@ import path from 'path';
 
 const filesToFix = [
     { file: 'views/setup/calibration.ejs', page: 'setup-calibration' },
-    { file: 'views/setup/webcam.ejs', page: 'setup-webcam' },
     { file: 'views/setup/poses.ejs', page: 'setup-poses' },
     { file: 'views/setup/audio.ejs', page: 'setup-audio' },
     { file: 'views/setup/characters.ejs', page: 'setup-characters' },

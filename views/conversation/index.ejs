@@ -232,6 +232,8 @@
     let selectedSpeakerPartId = null;
     let listenInAudio = null;
     let currentParts = [];
+    var aiChatClient = null;
+    var aiOnActive = false;
 
     // Parrot Mode
     var parrotEnabled = false;
@@ -601,14 +603,153 @@
       }
     }
 
-    function startAiOn(useMic) {
-      ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - ' + (useMic ? 'Listening' : 'Auto-generating') + '</span>';
-      logAiChat('System', 'AI autonomous mode started (' + (useMic ? 'with microphone' : 'auto-generation') + ')');
+    async function getCharacterAgentId() {
+      if (!currentCharacterId) return null;
+      try {
+        var r = await fetch('/setup/characters/api/characters/' + currentCharacterId);
+        var j = await r.json();
+        return (j && j.character && (j.character.elevenLabsAgentId || j.character.agentId)) || null;
+      } catch (_) { return null; }
+    }
+
+    async function startAiOn(useMic) {
+      ui.aiOnStatus.innerHTML = '<span class="text-info">Connecting...</span>';
+      logAiChat('System', 'Starting AI autonomous mode...');
+
+      // Check if ElevenLabs is configured
+      try {
+        var statusResp = await fetch('/conversation/api/agent-status');
+        var statusJson = await statusResp.json();
+        if (!statusJson.configured) {
+          ui.aiOnStatus.innerHTML = '<span class="text-danger">ElevenLabs not configured</span>';
+          logAiChat('System', 'Error: ElevenLabs API key not configured. Go to AI Settings.');
+          ui.aiOnToggle.checked = false;
+          return;
+        }
+      } catch (_) {}
+
+      // Get character's agent ID
+      var agentId = await getCharacterAgentId();
+      if (!agentId) {
+        ui.aiOnStatus.innerHTML = '<span class="text-danger">No AI agent assigned</span>';
+        logAiChat('System', 'Error: No AI agent assigned to this character. Configure in character settings.');
+        ui.aiOnToggle.checked = false;
+        return;
+      }
+
+      // Create WebSocket chat client
+      aiChatClient = new WebSocketChatClient();
+
+      aiChatClient.onConnectionStatusChange = function(connected) {
+        if (connected) {
+          ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - Connected</span>';
+        } else if (aiOnActive) {
+          ui.aiOnStatus.innerHTML = '<span class="text-warning">AI On - Reconnecting...</span>';
+        }
+      };
+
+      aiChatClient.onConversationStarted = function(msg) {
+        ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - ' + (useMic ? 'Listening' : 'Active') + '</span>';
+        logAiChat('System', 'Conversation started with AI agent');
+      };
+
+      aiChatClient.onAgentResponse = function(msg) {
+        var text = msg.text || (msg.agent_response_event && msg.agent_response_event.agent_response) || '';
+        if (text) {
+          logAiChat('AI', text);
+        }
+      };
+
+      aiChatClient.onConversationEnded = function(msg) {
+        logAiChat('System', 'Conversation ended');
+        if (aiOnActive) {
+          ui.aiOnStatus.innerHTML = '<span class="text-warning">Conversation ended</span>';
+        }
+      };
+
+      aiChatClient.onError = function(msg) {
+        logAiChat('System', 'Error: ' + (msg.message || 'Unknown error'));
+        ui.aiOnStatus.innerHTML = '<span class="text-danger">Error: ' + (msg.message || '') + '</span>';
+      };
+
+      // Override handleServerMessage to catch user transcripts and other messages
+      var origHandler = aiChatClient.handleServerMessage.bind(aiChatClient);
+      aiChatClient.handleServerMessage = function(message) {
+        if (message.type === 'user_transcript' && message.user_transcription_event) {
+          var transcript = message.user_transcription_event.user_transcript;
+          if (transcript) {
+            logAiChat('You', transcript);
+            if (ui.transcript) {
+              ui.transcript.innerHTML = '<span class="text-info">You: ' + transcript.replace(/</g, '&lt;') + '</span>';
+            }
+          }
+        }
+        if (message.type === 'stt_partial' && message.text) {
+          if (ui.transcript) {
+            ui.transcript.innerHTML = '<span class="text-muted">Hearing: ' + message.text.replace(/</g, '&lt;') + '</span>';
+          }
+        }
+        if (message.type === 'audio_level' && typeof message.level !== 'undefined') {
+          if (ui.levelBar) {
+            ui.levelBar.style.width = Math.round(message.level * 100) + '%';
+          }
+        }
+        origHandler(message);
+      };
+
+      aiOnActive = true;
+      aiChatClient.connect();
+
+      // Wait for connection, then start conversation
+      var connectAttempts = 0;
+      var waitForConnect = setInterval(function() {
+        connectAttempts++;
+        if (aiChatClient && aiChatClient.isConnected) {
+          clearInterval(waitForConnect);
+          aiChatClient.sendMessage({ type: 'set_character', characterId: currentCharacterId });
+          if (useMic) {
+            aiChatClient.sendMessage({ type: 'set_mic_source', source: 'server' });
+          }
+          aiChatClient.startConversation(agentId);
+          logAiChat('System', 'AI autonomous mode active' + (useMic ? ' with microphone' : ''));
+        }
+        if (connectAttempts > 50) { // 10 second timeout
+          clearInterval(waitForConnect);
+          if (aiChatClient && !aiChatClient.isConnected && aiOnActive) {
+            ui.aiOnStatus.innerHTML = '<span class="text-danger">Connection timeout</span>';
+            logAiChat('System', 'Failed to connect to AI service. Check that WebSocket server is running.');
+            stopAiOn();
+            ui.aiOnToggle.checked = false;
+          }
+        }
+      }, 200);
+
+      // Save state to server
+      fetch('/conversation/api/ai-on', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: true, characterId: currentCharacterId })
+      }).catch(function() {});
     }
 
     function stopAiOn() {
+      aiOnActive = false;
+      if (aiChatClient) {
+        try { aiChatClient.endConversation(); } catch (_) {}
+        setTimeout(function() {
+          try { aiChatClient.disconnect(); } catch (_) {}
+          aiChatClient = null;
+        }, 500);
+      }
       ui.aiOnStatus.innerHTML = '';
       logAiChat('System', 'AI autonomous mode stopped');
+
+      // Save state to server
+      fetch('/conversation/api/ai-on', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: false })
+      }).catch(function() {});
     }
 
     function logAiChat(sender, message) {
@@ -770,7 +911,7 @@
         </div>`;
       } else if (type === 'webcam') {
         html += `<div class="d-flex flex-column align-items-stretch gap-2">
-          <a class="btn btn-sm btn-outline-primary" href="/setup/webcam/api/parts/${encodeURIComponent(part.id)}/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>
+          <a class="btn btn-sm btn-outline-primary" href="/setup/calibration/api/webcam/parts/${encodeURIComponent(part.id)}/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>
           <div class="d-flex gap-2 align-items-center">
             <label class="form-label small mb-0">Zoom</label>
             <input id="cam-zoom-${part.id}" type="range" class="form-range" min="100" max="300" value="100" style="width:120px">

@@ -454,7 +454,86 @@
             </div>
             <!-- Advanced -->
             <div class="tab-pane fade" id="tabAdvanced">
-              <div class="alert alert-secondary mb-0">Advanced settings per device will appear here.</div>
+              <div id="advancedDefault" class="alert alert-secondary mb-0">Advanced settings per device will appear here.</div>
+              <!-- Motion Tracking (shown for webcam parts) -->
+              <div id="advancedMotionTracking" style="display:none;">
+                <div class="card mb-3">
+                  <div class="card-header"><i class="bi bi-eye"></i> Motion Tracking</div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="calEnableMotionTracking">
+                        <label class="form-check-label" for="calEnableMotionTracking">
+                          <strong>Enable Motion Tracking</strong>
+                        </label>
+                      </div>
+                      <small class="text-muted">Track the largest moving object in the field of view</small>
+                    </div>
+                    <div id="calMotionTrackingParams" style="display:none;">
+                      <div class="mb-2">
+                        <label class="form-label">Motion Threshold</label>
+                        <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25">
+                        <small class="text-muted">Sensitivity: <span id="calMotionThresholdValue">25</span></small>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Min Object Size</label>
+                        <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100">
+                        <small class="text-muted">Pixels: <span id="calMinContourAreaValue">500</span></small>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Tracking Smoothing</label>
+                        <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1">
+                        <small class="text-muted">Factor: <span id="calTrackingSmoothingValue">0.3</span></small>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label">Deadzone</label>
+                        <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5">
+                        <small class="text-muted">Percent: <span id="calTrackingDeadzoneValue">5</span>%</small>
+                      </div>
+                    </div>
+                    <div id="calMotionTrackingStatus" class="mt-3" style="display:none;">
+                      <div class="alert alert-info mb-0">
+                        <small>
+                          <strong>Status:</strong> <span id="calTrackingStatusText">Initializing...</span><br>
+                          <strong>Target:</strong> <span id="calTargetPosition">None detected</span>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Head Tracking -->
+                <div class="card mb-3">
+                  <div class="card-header"><i class="bi bi-magic"></i> Head Tracking</div>
+                  <div class="card-body">
+                    <div class="mb-2">
+                      <label class="form-label">Pan Servo (Head Movement)</label>
+                      <select id="calPanServoSelect" class="form-select form-select-sm">
+                        <option value="">Select servo for head tracking...</option>
+                      </select>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col-6">
+                        <label class="form-label">Range (degrees)</label>
+                        <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60">
+                        <small class="text-muted">+/-<span id="calHeadTrackingRangeValue">60</span> deg</small>
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label">Smoothing</label>
+                        <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05">
+                        <small class="text-muted"><span id="calHeadTrackingSmoothingValue">0.35</span></small>
+                      </div>
+                    </div>
+                    <button id="calEnableHeadTracking" class="btn btn-outline-warning w-100" disabled>
+                      <i class="bi bi-magic"></i> Enable Head Tracking
+                    </button>
+                    <small class="text-muted d-block mt-1">Select a servo above to enable head tracking</small>
+                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100 mt-2">
+                      <i class="bi bi-stop-circle-fill"></i> EMERGENCY STOP ALL SERVOS
+                    </button>
+                    <small class="text-muted d-block mt-1">Immediately stops all servo movement</small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -670,6 +749,7 @@
       renderControls(selected);
       renderEdit(selected);
       refreshEffective(selected.id);
+      renderAdvancedTab(selected);
 
       // Enable Remove button when a part is selected
       const removeBtn = document.getElementById('btnRemove');
@@ -1361,6 +1441,306 @@
     let globalLiveTestInterval = null;
     let globalIsLiveTestRunning = false;
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ADVANCED TAB: Motion Tracking & Head Tracking (for webcam parts)
+    // ─────────────────────────────────────────────────────────────────────────
+    var calMotionTrackingActive = false;
+    var calHeadTrackingEnabled = false;
+    var calTrackingPollInterval = null;
+
+    function renderAdvancedTab(part) {
+      var advDefault = document.getElementById('advancedDefault');
+      var advMotion = document.getElementById('advancedMotionTracking');
+      if (!advDefault || !advMotion) return;
+
+      if (part && part.type === 'webcam') {
+        advDefault.style.display = 'none';
+        advMotion.style.display = 'block';
+        initCalMotionTracking(part);
+        loadServoPartsForCalHeadTracking();
+      } else {
+        advDefault.style.display = 'block';
+        advMotion.style.display = 'none';
+        stopCalMotionTracking();
+      }
+    }
+
+    function loadServoPartsForCalHeadTracking() {
+      var servoSelect = document.getElementById('calPanServoSelect');
+      if (!servoSelect) return;
+      servoSelect.innerHTML = '<option value="">Select servo for head tracking...</option>';
+      var servoParts = (parts || []).filter(function (p) { return p.type === 'servo'; });
+      servoParts.forEach(function (servo) {
+        var opt = document.createElement('option');
+        opt.value = servo.id;
+        opt.textContent = servo.name || ('Servo #' + servo.id);
+        servoSelect.appendChild(opt);
+      });
+    }
+
+    function initCalMotionTracking(part) {
+      var enableCb = document.getElementById('calEnableMotionTracking');
+      var paramsDiv = document.getElementById('calMotionTrackingParams');
+      var statusDiv = document.getElementById('calMotionTrackingStatus');
+      var headBtn = document.getElementById('calEnableHeadTracking');
+      var servoSelect = document.getElementById('calPanServoSelect');
+      var eStopBtn = document.getElementById('calEmergencyStopBtn');
+
+      // Reset state
+      if (enableCb) enableCb.checked = false;
+      if (paramsDiv) paramsDiv.style.display = 'none';
+      if (statusDiv) statusDiv.style.display = 'none';
+      calMotionTrackingActive = false;
+      calHeadTrackingEnabled = false;
+      if (headBtn) {
+        headBtn.classList.remove('btn-success', 'btn-danger');
+        headBtn.classList.add('btn-outline-warning');
+        headBtn.textContent = 'Enable Head Tracking';
+        headBtn.disabled = true;
+      }
+
+      // Remove old listeners by cloning
+      if (enableCb) {
+        var newCb = enableCb.cloneNode(true);
+        enableCb.parentNode.replaceChild(newCb, enableCb);
+        newCb.addEventListener('change', function () {
+          if (this.checked) {
+            if (paramsDiv) paramsDiv.style.display = 'block';
+            if (statusDiv) statusDiv.style.display = 'block';
+            startCalMotionTracking();
+          } else {
+            if (paramsDiv) paramsDiv.style.display = 'none';
+            if (statusDiv) statusDiv.style.display = 'none';
+            stopCalMotionTracking();
+            calSetHeadTrackingUI(false);
+          }
+        });
+      }
+
+      // Parameter sliders
+      var paramIds = ['calMotionThreshold', 'calMinContourArea', 'calTrackingSmoothing', 'calTrackingDeadzone'];
+      paramIds.forEach(function (pid) {
+        var slider = document.getElementById(pid);
+        var display = document.getElementById(pid + 'Value');
+        if (slider && display) {
+          var newSlider = slider.cloneNode(true);
+          slider.parentNode.replaceChild(newSlider, slider);
+          newSlider.addEventListener('input', function () {
+            display.textContent = this.value;
+            updateCalMotionTrackingParams();
+          });
+        }
+      });
+
+      // Head tracking param displays
+      var headParamIds = ['calHeadTrackingRange', 'calHeadTrackingSmoothing'];
+      headParamIds.forEach(function (pid) {
+        var slider = document.getElementById(pid);
+        var display = document.getElementById(pid + 'Value');
+        if (slider && display) {
+          var newSlider = slider.cloneNode(true);
+          slider.parentNode.replaceChild(newSlider, slider);
+          newSlider.addEventListener('input', function () {
+            display.textContent = this.value;
+          });
+        }
+      });
+
+      // Servo select enables head tracking button
+      if (servoSelect) {
+        var newSelect = servoSelect.cloneNode(true);
+        servoSelect.parentNode.replaceChild(newSelect, servoSelect);
+        newSelect.addEventListener('change', function () {
+          var btn = document.getElementById('calEnableHeadTracking');
+          if (btn) btn.disabled = !this.value;
+        });
+      }
+
+      // Head tracking button
+      if (headBtn) {
+        var newHBtn = headBtn.cloneNode(true);
+        headBtn.parentNode.replaceChild(newHBtn, headBtn);
+        newHBtn.addEventListener('click', function () {
+          calToggleHeadTracking();
+        });
+      }
+
+      // Emergency stop
+      if (eStopBtn) {
+        var newEBtn = eStopBtn.cloneNode(true);
+        eStopBtn.parentNode.replaceChild(newEBtn, eStopBtn);
+        newEBtn.addEventListener('click', function () {
+          calEmergencyStopAllServos();
+        });
+      }
+    }
+
+    function getCalMotionTrackingParams() {
+      return {
+        motionThreshold: parseInt(document.getElementById('calMotionThreshold').value),
+        minContourArea: parseInt(document.getElementById('calMinContourArea').value),
+        trackingSmoothing: parseFloat(document.getElementById('calTrackingSmoothing').value),
+        trackingDeadzone: parseFloat(document.getElementById('calTrackingDeadzone').value)
+      };
+    }
+
+    function startCalMotionTracking() {
+      if (!selected || selected.type !== 'webcam') return;
+      var statusText = document.getElementById('calTrackingStatusText');
+      if (statusText) statusText.textContent = 'Starting motion tracking...';
+      calMotionTrackingActive = true;
+
+      fetch('/setup/calibration/api/webcam/motion-tracking/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webcamId: selected.id, params: getCalMotionTrackingParams() })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (result.success) {
+            if (statusText) statusText.textContent = 'Motion tracking active';
+            startCalTrackingStatusPolling();
+          } else {
+            if (statusText) statusText.textContent = 'Failed: ' + (result.error || 'Unknown');
+          }
+        })
+        .catch(function (err) {
+          if (statusText) statusText.textContent = 'Error: ' + err.message;
+        });
+    }
+
+    function stopCalMotionTracking() {
+      calMotionTrackingActive = false;
+      if (calTrackingPollInterval) {
+        clearInterval(calTrackingPollInterval);
+        calTrackingPollInterval = null;
+      }
+      if (!selected || selected.type !== 'webcam') return;
+      var statusText = document.getElementById('calTrackingStatusText');
+      if (statusText) statusText.textContent = 'Stopping...';
+
+      fetch('/setup/calibration/api/webcam/motion-tracking/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webcamId: selected.id })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+          if (statusText) statusText.textContent = 'Stopped';
+          var tp = document.getElementById('calTargetPosition');
+          if (tp) tp.textContent = 'None detected';
+        })
+        .catch(function () { });
+    }
+
+    function updateCalMotionTrackingParams() {
+      if (!selected || !calMotionTrackingActive) return;
+      fetch('/setup/calibration/api/webcam/motion-tracking/params', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webcamId: selected.id, params: getCalMotionTrackingParams() })
+      }).catch(function () { });
+    }
+
+    function startCalTrackingStatusPolling() {
+      if (calTrackingPollInterval) clearInterval(calTrackingPollInterval);
+      calTrackingPollInterval = setInterval(function () {
+        if (!calMotionTrackingActive || !selected) return;
+        fetch('/setup/calibration/api/webcam/motion-tracking/status?webcamId=' + encodeURIComponent(selected.id))
+          .then(function (r) { return r.json(); })
+          .then(function (result) {
+            if (result.success && result.status) {
+              var st = result.status;
+              var tp = document.getElementById('calTargetPosition');
+              if (st.target_detected && st.target_position) {
+                if (tp) tp.textContent = 'X: ' + st.target_position[0].toFixed(1) + '%, Y: ' + st.target_position[1].toFixed(1) + '%';
+              } else {
+                if (tp) tp.textContent = 'None detected';
+              }
+            }
+          })
+          .catch(function () { });
+      }, 200);
+    }
+
+    function calSetHeadTrackingUI(enabled) {
+      calHeadTrackingEnabled = !!enabled;
+      var btn = document.getElementById('calEnableHeadTracking');
+      if (!btn) return;
+      btn.classList.remove('btn-outline-warning', 'btn-success', 'btn-danger');
+      if (calHeadTrackingEnabled) {
+        btn.classList.add('btn-danger');
+        btn.textContent = 'Disable Head Tracking';
+      } else {
+        btn.classList.add('btn-outline-warning');
+        btn.textContent = 'Enable Head Tracking';
+      }
+      btn.disabled = false;
+    }
+
+    function calToggleHeadTracking() {
+      if (!selected || selected.type !== 'webcam') return;
+
+      if (!calHeadTrackingEnabled) {
+        var panId = document.getElementById('calPanServoSelect').value;
+        if (!panId) { alert('Please select a servo for head tracking'); return; }
+        var rangeDeg = parseInt(document.getElementById('calHeadTrackingRange').value);
+        var smoothing = parseFloat(document.getElementById('calHeadTrackingSmoothing').value);
+
+        fetch('/setup/calibration/api/webcam/motion-tracking/head-tracking/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            webcamId: selected.id,
+            panServoId: panId,
+            params: { rangeDeg: rangeDeg, centerDeg: 0, smoothing: smoothing, deadzone: 6 }
+          })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data && data.success) {
+              calSetHeadTrackingUI(true);
+            } else {
+              alert('Failed: ' + (data.error || 'Unknown'));
+            }
+          })
+          .catch(function (err) { alert('Error: ' + err.message); });
+      } else {
+        fetch('/setup/calibration/api/webcam/motion-tracking/head-tracking/disable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webcamId: selected.id })
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data && data.success) calSetHeadTrackingUI(false);
+          })
+          .catch(function () { });
+      }
+    }
+
+    function calEmergencyStopAllServos() {
+      fetch('/setup/calibration/api/parts')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var allParts = (data.parts || []);
+          var stops = [];
+          allParts.filter(function (p) { return p.type === 'servo' && String((p.config && p.config.servoType) || 'standard') === 'continuous'; })
+            .forEach(function (servo) {
+              stops.push(fetch('/setup/calibration/api/continuous_servo/' + encodeURIComponent(servo.id) + '/jog', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ direction: 'stop', speed: 0, duration: 0 })
+              }));
+            });
+          allParts.filter(function (p) { return p.type === 'linear_actuator'; })
+            .forEach(function (act) {
+              stops.push(fetch('/setup/calibration/api/linear_actuator/' + encodeURIComponent(act.id) + '/stop', { method: 'POST' }));
+            });
+          return Promise.all(stops);
+        })
+        .then(function () { alert('Emergency stop executed.'); })
+        .catch(function (e) { alert('Emergency stop failed: ' + e.message); });
+    }
+
     function renderControls(part) {
       const el = document.getElementById('controlsArea');
 
@@ -1704,14 +2084,14 @@
           '<div class="row g-3 align-items-start">' +
           '<div class="col-md-6">' +
           '<div class="border bg-black d-flex justify-content-center align-items-center" style="width:100%;max-width:420px;height:320px;overflow:hidden">' +
-          '<img id="camPreview" src="/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/stream" style="max-width:none;transform-origin:center center;transform:scale(1)">' +
+          '<img id="camPreview" src="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" style="max-width:none;transform-origin:center center;transform:scale(1)">' +
           '</div>' +
           '<div class="mt-2">' +
           '<label class="form-label small">Digital zoom: <span id="zoomVal">100%</span></label>' +
           '<input type="range" class="form-range" id="camZoom" min="100" max="300" step="5" value="100">' +
           '</div>' +
           '<div class="mt-2 d-flex flex-wrap gap-2">' +
-          '<a class="btn btn-outline-primary" href="/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+          '<a class="btn btn-outline-primary" href="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
           '<button id="camSnap" class="btn btn-outline-secondary"><i class="bi bi-camera"></i> Capture</button>' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
@@ -1772,7 +2152,7 @@
         var loadBtn = el.querySelector('#loadCamCtrls');
         if (loadBtn) loadBtn.addEventListener('click', function () {
           if (st) st.textContent = 'Loading controls…';
-          fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/list')
+          fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/list')
             .then(function (r) { return r.json(); })
             .then(function (j) {
               if (!j || j.success === false) { if (st) st.textContent = 'Failed to load controls'; return; }
@@ -1790,7 +2170,7 @@
         if (applyBtn) applyBtn.addEventListener('click', function () {
           if (st) st.textContent = 'Applying…';
           var controls = readControlsFromUI();
-          fetch('/setup/webcam/api/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+          fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
           }).then(function (r) { return r.json(); }).then(function (j) {
             if (j && j.success) { if (st) st.textContent = 'Applied'; }
@@ -2964,7 +3344,7 @@
       const select = document.getElementById('addWebcamDevice');
       if (!select) return;
 
-      fetch('/setup/webcam/api/devices/probe')
+      fetch('/setup/calibration/api/webcam/devices/probe')
         .then(r => r.json())
         .then(data => {
           select.innerHTML = '<option value="">Select a detected webcam...</option>';
@@ -3277,7 +3657,7 @@
       const select = document.getElementById('editWebcamDevice');
       if (!select) return;
 
-      fetch('/setup/webcam/api/devices/probe')
+      fetch('/setup/calibration/api/webcam/devices/probe')
         .then(r => r.json())
         .then(data => {
           const currentValue = select.value;
@@ -3399,7 +3779,7 @@
         return;
       }
 
-      fetch(`/setup/webcam/api/parts/${encodeURIComponent(selected.id)}/apply-device`, {
+      fetch(`/setup/calibration/api/webcam/parts/${encodeURIComponent(selected.id)}/apply-device`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})

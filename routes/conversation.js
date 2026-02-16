@@ -58,12 +58,12 @@ router.get('/api/webcam-stream-url', async (req, res) => {
 
     if (!cam) {
       // Always return a full absolute URL so tests can assert it contains http
-      const url = `${baseUrl}/setup/webcam/api/parts/auto/stream`;
+      const url = `${baseUrl}/setup/calibration/api/webcam/parts/auto/stream`;
       return res.json({ success: true, url });
     }
 
     // Always absolute
-    const url = `${baseUrl}/setup/webcam/api/parts/${cam.id}/stream`;
+    const url = `${baseUrl}/setup/calibration/api/webcam/parts/${cam.id}/stream`;
     res.json({ success: true, url });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -95,11 +95,22 @@ router.get('/api/jaw-settings', async (req, res) => {
   }
 });
 
-// GET /conversation/api/agent-status - whether ElevenLabs is configured
+// GET /conversation/api/agent-status - whether ElevenLabs is configured + character agent info
 router.get('/api/agent-status', async (req, res) => {
   try {
     const configured = !!elevenLabsConfigService.isElevenLabsConfigured();
-    res.json({ success: true, configured });
+    const characterId = getCurrentCharacterId(req);
+    let agentId = null;
+
+    if (characterId) {
+      try {
+        const { default: characterService } = await import('../services/characterService.js');
+        const character = await characterService.getCharacterById(characterId);
+        agentId = character && character.elevenLabsAgentId ? character.elevenLabsAgentId : null;
+      } catch (_) {}
+    }
+
+    res.json({ success: true, configured, agentId, characterId });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -389,33 +400,13 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       );
 
       if (aiResponse && aiResponse.success) {
-        // Play the AI's response through TTS using direct service calls (no HTTP loopback)
-        const ttsCfg = await getTTSConfigForCharacter(characterId);
-        const gen = await elevenLabsTTSService.generateSpeech(aiResponse.response, ttsCfg.voice_id, ttsCfg);
-
-        if (gen.success) {
-          const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
-            characterId,
-            contentType: gen.contentType || 'audio/wav',
-            volume: 85,
-            kind: 'ai'
-          });
-
-          // Fire-and-forget jaw animation driven by real audio amplitude
-          try { jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType || 'audio/wav').catch(() => {}); } catch (_) {}
-
-          return res.json({
-            success: true,
-            response: aiResponse.response,
-            audioPlayed: playResult.success
-          });
-        } else {
-          return res.status(500).json({ 
-            success: false, 
-            error: 'AI responded but TTS failed', 
-            response: aiResponse.response 
-          });
-        }
+        // The agent already streamed its audio response through the speaker
+        // via askAgentQuestion -> _startAudioPlayback. No need for separate TTS.
+        return res.json({
+          success: true,
+          response: aiResponse.response,
+          audioPlayed: true
+        });
       } else {
         return res.status(500).json({ 
           success: false, 
@@ -528,7 +519,7 @@ router.post('/api/ai-on', express.json(), async (req, res) => {
 });
 
 // GET /conversation/api/ai-status
-// Get current AI agent status and latency
+// Get current AI agent status
 router.get('/api/ai-status', async (req, res) => {
   try {
     const dataDir = await getDataDir();
@@ -542,15 +533,11 @@ router.get('/api/ai-status', async (req, res) => {
       // File doesn't exist or is invalid, return default state
     }
 
-    // TODO: Get actual latency from ElevenLabs WebSocket service
-    // For now, return a simulated latency
-    const latency = state.enabled ? Math.floor(Math.random() * 200 + 100) : null;
-
     res.json({
       success: true,
       enabled: !!state.enabled,
-      latency: latency,
-      characterId: state.characterId || null
+      characterId: state.characterId || null,
+      timestamp: state.timestamp || null
     });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
