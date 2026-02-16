@@ -2,6 +2,37 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.1.1] - 2026-02-16 — Bootswatch Themes, PIR Sensor Fix, Calibration Refactor
+
+### Bootswatch Theme Gallery
+- Added 17 Bootswatch theme CSS files (Bootstrap 5.3.2 replacements) to `public/vendor/bootswatch/`
+- Light themes: cerulean, cosmo, flatly, journal, litera, lux, minty, sandstone, united, yeti
+- Dark themes: cyborg, darkly, quartz, slate, solar, superhero, vapor
+- Visual theme gallery on System page with color swatches, dark/light badges, live preview
+- Conditional CSS loading in `master.ejs` — Bootswatch themes replace default Bootstrap CSS
+- Theme API (`POST /api/config/theme`) expanded to validate all 19 themes (2 default + 17 Bootswatch)
+- Legacy `dark`/`light` values mapped to `default-dark`/`default-light` in both API and templates
+- Custom `monsterbox4.css` dark overrides scoped to `html[data-mb-theme="default-dark"]` only
+
+### PIR Motion Sensor Fix
+- Fixed `/api/parts/:id/test` route path — was double-nested causing 404 errors
+- Parts test endpoint now dispatches by part type using hardware service controllers
+- `motion_sensor` parts call `HARDWARE_CONTROLLERS.motion_sensor.read()` and `.detectMotion()`
+- Returns `testResult` object matching calibration UI expectations (`motionDetected`, `detections`)
+- Parts API made character-aware (reads from `data/character-{id}/parts.json`)
+- Servo, light, and linear actuator test dispatchers also added
+
+### Calibration Panel Refactor
+- Calibration UI (right panel, simple calibration card, sweep test button) hidden for non-movement parts
+- Only shown for `servo`, `linear_actuator`, `motor`, `stepper`
+- Center panel expands from `col-xl-6` to `col-xl-9` when calibration is hidden
+- Non-movement parts (webcam, microphone, speaker, light, LED, motion_sensor, head_tracking) show controls only
+
+### Testing
+- Added system tests for parts API type-aware dispatch (motion sensor read/detect, theme validation)
+- Added browser tests for calibration panel visibility based on part type
+- **386+ passing** (160 system + 226 unit), 174 browser, 2 pre-existing failures
+
 ## [6.1.0] - 2026-02-16 — Animation Studio
 
 ### Animation Studio

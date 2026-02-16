@@ -10,9 +10,29 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.1.0 (February 2026)
+## What's New — v6.1.1 (February 2026)
 
-### Animation Studio
+### Bootswatch Theme Gallery
+- **17 Bootswatch themes** (10 light + 7 dark) available as complete Bootstrap CSS replacements
+- Visual theme gallery on System page (`/setup/system`) with color swatches and light/dark badges
+- **Live preview** — click any theme card to instantly swap CSS without page reload
+- "Apply Theme" saves to config; theme persists across all pages
+- Legacy `dark`/`light` values automatically mapped to `default-dark`/`default-light`
+- Custom CSS overrides scoped to `default-dark` only (Bootswatch themes use their own colors)
+
+### PIR Motion Sensor Fix
+- Fixed `/api/parts/:id/test` route — was double-nested (`/api/parts/parts/:id/test`) causing 404s
+- Parts test endpoint now dispatches by part type: `motion_sensor`, `servo`, `light`, `linear_actuator`
+- PIR sensor "Read" and "Detect Motion" buttons on calibration page now work correctly
+- Parts API is now character-aware (reads from `data/character-{id}/parts.json`)
+
+### Calibration Panel Refactor
+- Calibration UI (right panel, simple calibration card, sweep test button) now **hidden** for non-movement parts
+- Only shown for `servo`, `linear_actuator`, `motor`, `stepper` — parts with physical movement
+- Center panel expands to fill the space when calibration is hidden
+- Non-movement parts (webcam, microphone, speaker, light, LED, motion sensor) show only their type-specific controls
+
+### Previous: v6.1.0 — Animation Studio
 - **Unified three-panel interface** at `/scenes` replaces separate Scenes, Scene Editor, and Poses pages
 - Left: Scene Library (search/filter), Pose Library (by category), Queue (play/loop/pause/skip)
 - Center: Timeline editor with color-coded step blocks, inline editing, SortableJS drag-reorder
@@ -25,7 +45,7 @@ This README provides an accurate quick-start and operational overview and links 
 - `/setup/poses` and `/poses` now redirect to Animation Studio; JSON APIs preserved
 - Navigation shows single "Animation Studio" link under Activities
 
-### Testing
+### Testing (v6.1.0)
 - **174 passing** (browser + system + unit), 7 skipped, 2 pre-existing failures
 - 10 new system tests for jaw-animation/head-tracking step types
 - 18 updated browser tests for Animation Studio UI
@@ -94,9 +114,9 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 ```
 
 ## Calibration and Controls
-- Simple Calibration panels for servos, motors, linear actuators, steppers
+- Calibration panels shown only for **movement parts**: servos, motors, linear actuators, steppers
+- Non-movement parts (webcam, microphone, speaker, light, sensor) show type-specific controls only — no calibration UI
 - Guardrails: Jaw Animation and Head Tracking respect Min/Max
-- Modal guidelines: use data-bs-toggle/data-bs-target; populate via JS only
 - **Clear Calibration**: Remove calibration data for individual parts or all parts of current character
   - Individual Clear: Click "Clear" button in calibration panel (removes min/max/presets for selected part)
   - Clear All: Click "Clear All Calibrations" button next to mode toggle (clears all parts of current character)
@@ -294,11 +314,12 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v6.1.0 - February 2026)
+### Test Results (v6.1.1 - February 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System + Unit | Mocha | 160+ | 2 | 0 |
+| System | Mocha | 160 | 2 | 0 |
+| Unit | Mocha | 226 | 32 | 0 |
 | Browser E2E (9 spec files) | Playwright | 174 | 7 | 2* |
 
 *\*2 pre-existing: AI Settings VU meter (hardware-dependent), Jaw Animation save config (disabled option). Not code bugs.*
