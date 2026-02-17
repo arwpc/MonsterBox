@@ -115,6 +115,8 @@ class ServerPlaybackService {
   constructor() {
     // Streaming players keyed by characterId
     this._streams = new Map();
+    // Persistent PCM (raw audio) streams for real-time ConvAI playback
+    this._pcmStreams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
     this._lastAIPlay = null; // dedicated telemetry for AI playback
     this._mpg123Available = this._detectMpg123();
@@ -133,15 +135,13 @@ class ServerPlaybackService {
 
   _detectCmd(cmd) {
     try {
-      const r = spawnSync(cmd, ['-version'], { encoding: 'utf8' });
-      return r && r.status === 0;
+      const r = spawnSync(cmd, ['--version'], { encoding: 'utf8' });
+      if (r && r.status === 0) return true;
+      // Some tools use -version instead of --version
+      const r2 = spawnSync(cmd, ['-version'], { encoding: 'utf8' });
+      return r2 && r2.status === 0;
     } catch (_) {
-      try {
-        const r2 = spawnSync(cmd, ['--version'], { encoding: 'utf8' });
-        return r2 && r2.status === 0;
-      } catch {
-        return false;
-      }
+      return false;
     }
   }
 
@@ -241,6 +241,104 @@ class ServerPlaybackService {
       if (ok) return done();
       rec.proc.stdin.once('drain', done);
     });
+  }
+
+  /**
+   * Ensure a persistent pw-play process for raw PCM16LE streaming (e.g. ElevenLabs ConvAI).
+   * Uses pw-play --format s16 --rate <sampleRate> --channels 1 --target <device> -
+   */
+  async _ensurePcmStream(opts = {}) {
+    if (!this._pwplayAvailable) {
+      throw new Error('pw-play_not_available');
+    }
+    const deviceId = await this._resolveDeviceId(opts);
+    const key = 'pcm_' + String(opts.characterId || 'default') + '_' + deviceId;
+    let rec = this._pcmStreams.get(key);
+    if (rec && rec.proc && !rec.proc.killed) {
+      return rec;
+    }
+    const sampleRate = opts.sampleRate || 16000;
+    const volume = typeof opts.volume === 'number' ? opts.volume : 90;
+
+    const { spawn } = await import('child_process');
+
+    const pwArgs = ['--format', 's16', '--rate', String(sampleRate), '--channels', '1',
+                    '--volume', String(Math.max(0, Math.min(1, volume / 100)).toFixed(3))];
+    if (deviceId && deviceId !== 'default') pwArgs.push('--target', deviceId);
+    pwArgs.push('-'); // read from stdin
+
+    console.log(`🔊 Starting pw-play PCM stream for ${key}: device=${deviceId}, rate=${sampleRate}, volume=${volume}`);
+
+    const pw = spawn('pw-play', pwArgs);
+
+    pw.stdin.on('error', (err) => {
+      console.error(`pw-play(pcm) stdin error for ${key}:`, err.message);
+      this._pcmStreams.delete(key);
+    });
+
+    pw.stderr.on('data', (data) => {
+      const msg = data.toString().trim();
+      if (msg) console.error(`pw-play(pcm) stderr for ${key}:`, msg);
+    });
+
+    pw.on('exit', (code, signal) => {
+      console.log(`pw-play(pcm) exited for ${key} with code ${code}, signal ${signal}`);
+      const cur = this._pcmStreams.get(key);
+      if (cur && cur.proc === pw) this._pcmStreams.delete(key);
+    });
+
+    rec = { proc: pw, deviceId, sampleRate, contentType: 'audio/pcm' };
+    this._pcmStreams.set(key, rec);
+    return rec;
+  }
+
+  /**
+   * Write raw PCM16LE audio to a persistent pw-play stream.
+   * Used for real-time ConvAI audio where chunks arrive continuously.
+   */
+  async writePcmStream(buffer, opts = {}) {
+    if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    if (!this._pwplayAvailable) {
+      return { success: false, error: 'pw-play_not_available' };
+    }
+    const rec = await this._ensurePcmStream(opts);
+    return new Promise((resolve) => {
+      const ok = rec.proc.stdin.write(buffer);
+      const done = () => {
+        this._lastPlay = {
+          ts: Date.now(),
+          characterId: opts.characterId || null,
+          deviceId: rec.deviceId,
+          player: 'pw-play(pcm)',
+          contentType: 'audio/pcm',
+          streamed: buffer.length,
+          volume: typeof opts.volume === 'number' ? opts.volume : 90,
+          simulated: false,
+          kind: opts.kind || 'ai'
+        };
+        if ((opts.kind || '').toLowerCase() === 'ai') {
+          this._lastAIPlay = { ...this._lastPlay };
+        }
+        resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
+      };
+      if (ok) return done();
+      rec.proc.stdin.once('drain', done);
+    });
+  }
+
+  /**
+   * Stop all persistent PCM streams for a character (any device).
+   */
+  async stopPcmStream(opts = {}) {
+    const prefix = 'pcm_' + String(opts.characterId || 'default') + '_';
+    for (const [key, rec] of this._pcmStreams) {
+      if (key.startsWith(prefix)) {
+        try { rec.proc.stdin.end(); } catch (_) { }
+        try { rec.proc.kill('SIGTERM'); } catch (_) { }
+        this._pcmStreams.delete(key);
+      }
+    }
+    return { success: true };
   }
 
   /**
@@ -465,14 +563,17 @@ class ServerPlaybackService {
   async stopStream(opts = {}) {
     const key = String(opts.characterId || 'default');
     const rec = this._streams.get(key);
-    if (!rec) return { success: true };
-    try { rec.proc.stdin.end(); } catch (_) { }
-    try { rec.proc.kill('SIGTERM'); } catch (_) { }
-    if (rec.paplay) {
-      try { rec.paplay.stdin.end(); } catch (_) { }
-      try { rec.paplay.kill('SIGTERM'); } catch (_) { }
+    if (rec) {
+      try { rec.proc.stdin.end(); } catch (_) { }
+      try { rec.proc.kill('SIGTERM'); } catch (_) { }
+      if (rec.paplay) {
+        try { rec.paplay.stdin.end(); } catch (_) { }
+        try { rec.paplay.kill('SIGTERM'); } catch (_) { }
+      }
+      this._streams.delete(key);
     }
-    this._streams.delete(key);
+    // Also stop any PCM stream for this character
+    try { await this.stopPcmStream(opts); } catch (_) { }
     return { success: true };
   }
 
@@ -570,7 +671,7 @@ class ServerPlaybackService {
 
   async stopAll() {
     try {
-      // Stop all managed streams
+      // Stop all managed MP3 streams
       for (const [key, rec] of this._streams) {
         try { rec.proc.stdin.end(); } catch (_) { }
         try { rec.proc.kill('SIGTERM'); } catch (_) { }
@@ -580,6 +681,12 @@ class ServerPlaybackService {
         }
       }
       this._streams.clear();
+      // Stop all managed PCM streams
+      for (const [key, rec] of this._pcmStreams) {
+        try { rec.proc.stdin.end(); } catch (_) { }
+        try { rec.proc.kill('SIGTERM'); } catch (_) { }
+      }
+      this._pcmStreams.clear();
       try {
         await runWrapper('speaker_cli.py', ['stop'], { enableLogging: false, timeoutMs: 5000 });
       } catch (_) { /* best-effort */ }

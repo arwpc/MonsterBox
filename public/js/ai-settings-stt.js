@@ -340,7 +340,45 @@ STTManager.prototype.applySavedConfigIfReady = function () {
     var vadThresholdValue = document.getElementById('vadThresholdValue');
     if (vadThresholdEl && typeof cfg.vadThreshold !== 'undefined') {
         vadThresholdEl.value = cfg.vadThreshold;
-        if (vadThresholdValue) vadThresholdValue.textContent = cfg.vadThreshold.toFixed(2);
+        if (vadThresholdValue) vadThresholdValue.textContent = Number(cfg.vadThreshold).toFixed(2);
+    }
+
+    // Audio filter settings
+    var audioFilterEnabled = document.getElementById('audioFilterEnabled');
+    if (audioFilterEnabled && typeof cfg.audioFilterEnabled !== 'undefined') {
+        audioFilterEnabled.checked = !!cfg.audioFilterEnabled;
+    }
+    var filterSfx = document.getElementById('filterSfx');
+    if (filterSfx && typeof cfg.filterSfx !== 'undefined') {
+        filterSfx.checked = !!cfg.filterSfx;
+    }
+    var validateEnglish = document.getElementById('validateEnglish');
+    if (validateEnglish && typeof cfg.validateEnglish !== 'undefined') {
+        validateEnglish.checked = !!cfg.validateEnglish;
+    }
+    var requireVowels = document.getElementById('requireVowels');
+    if (requireVowels && typeof cfg.requireVowels !== 'undefined') {
+        requireVowels.checked = !!cfg.requireVowels;
+    }
+
+    // Filter sliders
+    var highpassFreqEl = document.getElementById('highpassFreq');
+    var highpassFreqValue = document.getElementById('highpassFreqValue');
+    if (highpassFreqEl && typeof cfg.highpassFreq !== 'undefined') {
+        highpassFreqEl.value = cfg.highpassFreq;
+        if (highpassFreqValue) highpassFreqValue.textContent = cfg.highpassFreq;
+    }
+    var lowpassFreqEl = document.getElementById('lowpassFreq');
+    var lowpassFreqValue = document.getElementById('lowpassFreqValue');
+    if (lowpassFreqEl && typeof cfg.lowpassFreq !== 'undefined') {
+        lowpassFreqEl.value = cfg.lowpassFreq;
+        if (lowpassFreqValue) lowpassFreqValue.textContent = cfg.lowpassFreq;
+    }
+    var denoiseLevelEl = document.getElementById('denoiseLevel');
+    var denoiseLevelValue = document.getElementById('denoiseLevelValue');
+    if (denoiseLevelEl && typeof cfg.denoiseLevel !== 'undefined') {
+        denoiseLevelEl.value = cfg.denoiseLevel;
+        if (denoiseLevelValue) denoiseLevelValue.textContent = cfg.denoiseLevel;
     }
 };
 
@@ -653,26 +691,7 @@ STTManager.prototype.bindEvents = function () {
             self.savePartialConfig({ vadEnabled: !!el.checked });
         });
     });
-    // Threshold sliders (two variants exist: 0.05..0.95 and 1..30)
-    var vadSliders = document.querySelectorAll('#vadThreshold');
-    vadSliders.forEach(function (sl) {
-        sl.addEventListener('input', function () {
-            var min = parseFloat(sl.min || '0');
-            var max = parseFloat(sl.max || '0');
-            var pct;
-            if (max <= 1.0) {
-                // Decimal slider (0.05..0.95)
-                var f = parseFloat(sl.value || '0.03') || 0.03;
-                pct = Math.max(1, Math.min(30, Math.round(f * 100)));
-            } else {
-                // Percent slider (1..30)
-                pct = Math.max(1, Math.min(30, parseInt(sl.value, 10) || 3));
-            }
-            if (vadLbl) vadLbl.textContent = pct + '%';
-            var thr = Math.max(0.01, Math.min(0.3, pct / 100));
-            self.savePartialConfig({ vadThreshold: thr });
-        });
-    });
+    // Note: VAD threshold input handler is bound above (line ~505) with full slider range
 
     if (stopRecordingBtn) {
         stopRecordingBtn.addEventListener('click', function () { self.stopRecording(); });
@@ -689,18 +708,34 @@ STTManager.prototype.bindEvents = function () {
 
 STTManager.prototype.saveConfiguration = function () {
     var self = this;
-    var formData = new FormData(document.getElementById('sttConfigForm'));
+    var form = document.getElementById('sttConfigForm');
     var config = {};
 
-    for (var pair of formData.entries()) {
-        config[pair[0]] = pair[1];
+    // Collect form values with proper types (ES5-safe iteration)
+    if (form) {
+        var formData = new FormData(form);
+        var entries = formData.entries();
+        var entry = entries.next();
+        while (!entry.done) {
+            var key = entry.value[0];
+            var val = entry.value[1];
+            // Convert numeric strings to numbers
+            var num = Number(val);
+            config[key] = (val !== '' && !isNaN(num) && typeof val === 'string' && val.trim() !== '') ? num : val;
+            entry = entries.next();
+        }
+        // Explicitly handle checkboxes (unchecked = missing from FormData)
+        var checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            var cb = checkboxes[i];
+            if (cb.name) config[cb.name] = cb.checked;
+        }
     }
 
     // Include microphone selection and defaults
     var micSelect = document.getElementById('microphonePart');
     config.microphonePartId = micSelect && micSelect.value ? micSelect.value : null;
     config.microphoneDeviceId = self.getSelectedMicDeviceId() || null;
-    config.format = 'mp3';
 
     // Persist to global STT config
     fetch('/api/elevenlabs/stt/config', {
@@ -1044,8 +1079,8 @@ STTManager.prototype.appendTranscript = function (text) {
     area.scrollTop = area.scrollHeight;
 };
 
-// Get current character ID from page
-STTManager.prototype.getCurrentCharacterId = function () {
+// Get current character ID from page (synchronous, from DOM)
+STTManager.prototype.getCurrentCharacterIdSync = function () {
     var label = document.getElementById('charLabel');
     var cid = label && label.getAttribute('data-char-id');
     var n = parseInt(cid, 10);
@@ -1100,7 +1135,7 @@ STTManager.prototype.connectWebSocket = function () {
             self.wsConnected = true;
 
             // Set character ID
-            self.currentCharacterId = self.getCurrentCharacterId();
+            self.currentCharacterId = self.getCurrentCharacterIdSync();
             if (self.currentCharacterId) {
                 console.log('📤 Setting character ID:', self.currentCharacterId);
                 self.ws.send(JSON.stringify({ type: 'set_character', characterId: self.currentCharacterId }));

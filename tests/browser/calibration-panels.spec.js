@@ -119,10 +119,16 @@ test.describe('Calibration Panel Visibility', () => {
         await webcamPart.click();
         await page.waitForTimeout(500);
 
+        // Sweep button lives inside the right calibration panel, which is hidden for non-movement parts
         const sweepBtn = page.locator('#btnTestSweep');
         if (await sweepBtn.count() > 0) {
-            const isHidden = await sweepBtn.evaluate(el => el.style.display === 'none');
-            expect(isHidden).toBe(true);
+            const isNotVisible = await sweepBtn.evaluate(el => {
+                if (el.style.display === 'none') return true;
+                // Check if parent panel is hidden
+                var parent = el.closest('#rightPanelCol');
+                return parent && parent.style.display === 'none';
+            });
+            expect(isNotVisible).toBe(true);
         }
     });
 

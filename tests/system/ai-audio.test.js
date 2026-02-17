@@ -118,8 +118,8 @@ describe('AI Audio System Tests', function() {
                 'utf8'
             );
             
-            // Should contain immediate playback call
-            expect(serviceCode).to.include('playAIOnCharacterSpeaker');
+            // Should contain persistent streaming playback call (PCM or MP3)
+            expect(serviceCode).to.include('writePcmStream');
         });
     });
 

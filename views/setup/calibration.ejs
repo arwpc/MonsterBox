@@ -549,8 +549,6 @@
         <div class="card-footer d-flex justify-content-between">
           <div class="text-muted small" id="devNotes">Notes: —</div>
           <div class="d-flex gap-2">
-            <button class="btn btn-outline-info btn-sm" id="btnTestSweep"><i class="bi bi-arrows"></i> Sweep
-              Test</button>
             <button class="btn btn-outline-danger btn-sm" id="btnRemove" disabled><i class="bi bi-trash"></i>
               Remove</button>
           </div>
@@ -593,6 +591,9 @@
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearCalibration()">
               <i class="bi bi-eraser"></i> Clear
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()">
+              <i class="bi bi-arrows"></i> Sweep Test
             </button>
           </div>
 
@@ -772,8 +773,6 @@
       var simpleCalCard = document.getElementById('simpleCalCard');
       if (rightCol) rightCol.style.display = isCalPart ? '' : 'none';
       if (simpleCalCard) simpleCalCard.style.display = isCalPart ? '' : 'none';
-      var sweepBtn = document.getElementById('btnTestSweep');
-      if (sweepBtn) sweepBtn.style.display = isCalPart ? '' : 'none';
       // Expand center panel when calibration panel is hidden
       if (centerCol) {
         centerCol.classList.toggle('col-xl-6', isCalPart);
@@ -963,6 +962,84 @@
     }
 
     window.setCalibrationBound = setCalibrationBound;
+
+    // Sweep test: move from min to max 3 times at 100% speed
+    async function runSweepTest() {
+      var partId = window.selectedPartId;
+      if (!partId) { alert('No part selected'); return; }
+      if (!currentCalProfile || !currentCalProfile.bounds) {
+        alert('Set Min and Max bounds first before running sweep test.');
+        return;
+      }
+      var bounds = currentCalProfile.bounds;
+      var minP = bounds.minP;
+      var maxP = bounds.maxP;
+      if (minP == null || maxP == null) {
+        alert('Both Min and Max bounds must be set for sweep test.');
+        return;
+      }
+      if (minP >= maxP) {
+        alert('Min must be less than Max to sweep.');
+        return;
+      }
+
+      var btn = document.getElementById('btnTestSweep');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweeping...';
+      }
+
+      var SWEEPS = 3;
+      var SPEED = 100;
+
+      try {
+        for (var i = 0; i < SWEEPS; i++) {
+          // Go to min
+          var res1 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p: minP, speedPct: SPEED })
+          });
+          var d1 = await res1.json();
+          if (d1.targetP != null) updateCurrentPositionDisplay(d1.targetP);
+
+          // Pause to let the servo/actuator reach position
+          var range = maxP - minP;
+          var travelMs = Math.max(300, Math.round(range * 1500));
+          await new Promise(function (r) { setTimeout(r, travelMs); });
+
+          // Go to max
+          var res2 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p: maxP, speedPct: SPEED })
+          });
+          var d2 = await res2.json();
+          if (d2.targetP != null) updateCurrentPositionDisplay(d2.targetP);
+
+          await new Promise(function (r) { setTimeout(r, travelMs); });
+        }
+
+        // Return to midpoint after sweep
+        var mid = (minP + maxP) / 2;
+        var res3 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p: mid, speedPct: SPEED })
+        });
+        var d3 = await res3.json();
+        if (d3.targetP != null) updateCurrentPositionDisplay(d3.targetP);
+      } catch (err) {
+        console.error('Sweep test error:', err);
+        alert('Sweep test failed: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-arrows"></i> Sweep Test';
+        }
+      }
+    }
+    window.runSweepTest = runSweepTest;
 
     // Preset management
     function renderPresetsUI(presets) {
@@ -1997,29 +2074,26 @@
           }));
         } else {
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<input id="ang" type="range" min="0" max="180" value="90" class="form-range" style="width:320px">' +
-            '<input id="angNum" type="number" class="form-control form-control-lg" value="90" style="width:110px">° ' +
+            '<input id="ang" type="range" min="0" max="1000" value="500" class="form-range" style="width:320px">' +
+            '<input id="angNum" type="number" class="form-control form-control-lg" value="0.500" step="0.001" min="0" max="1" style="width:130px">' +
             '<button id="goAng" class="btn btn-success btn-lg"><i class="bi bi-cursor"></i> Move</button>' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           const s = el.querySelector('#ang');
           const n = el.querySelector('#angNum');
-          s.addEventListener('input', () => n.value = s.value);
-          n.addEventListener('input', () => s.value = n.value);
+          s.addEventListener('input', () => { n.value = (parseInt(s.value, 10) / 1000).toFixed(3); });
+          n.addEventListener('input', () => { s.value = Math.round(parseFloat(n.value || '0.5') * 1000); });
           el.querySelector('#goAng').addEventListener('click', async () => {
-            const angle = parseInt(n.value || '90', 10);
+            const p = parseFloat(n.value || '0.5');
+            if (isNaN(p) || p < 0 || p > 1) { alert('Position must be between 0.000 and 1.000'); return; }
             const st = document.getElementById('ctrlStatus');
-            if (st) st.textContent = `Moving ${part.name} (ID: ${part.id}) to ${angle}°…`;
-            console.log(`Moving servo: ${part.name} (ID: ${part.id}) to angle: ${angle}°`);
+            if (st) st.textContent = `Moving ${part.name} to ${p.toFixed(3)}…`;
+            console.log(`Moving servo: ${part.name} (ID: ${part.id}) to position: ${p.toFixed(3)}`);
             try {
-              // Convert angle (0-180°) to normalized position (0-1)
-              const p = angle / 180.0;
-
               // Deterministic status in test mode
               if (window && window.MB_TEST_MODE) {
                 if (st) st.textContent = 'Done';
                 setTimeout(() => { if (st) st.textContent = ''; }, 2000);
-                // Fire-and-forget the request in test mode
                 fetch(`/api/calibration/${encodeURIComponent(part.id)}/goto`, {
                   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p })
                 }).catch(() => { });
@@ -2032,11 +2106,13 @@
               });
               const data = await response.json();
               if (response.ok && data.success) {
-                if (st) st.textContent = `${part.name} moved to ${angle}°`;
-                console.log(`Successfully moved servo ${part.name} to ${angle}°`);
-                // Update position display with actual position
+                if (st) st.textContent = `${part.name} moved to ${(data.targetP != null ? data.targetP : p).toFixed(3)}`;
+                console.log(`Successfully moved servo ${part.name} to ${p.toFixed(3)}`);
                 if (data.targetP != null) {
                   updateCurrentPositionDisplay(data.targetP);
+                  // Sync controls to actual clamped position
+                  n.value = data.targetP.toFixed(3);
+                  s.value = Math.round(data.targetP * 1000);
                 }
               } else {
                 if (st) st.textContent = 'Move failed: ' + (data.error || 'unknown');
@@ -3005,8 +3081,8 @@
       function sc_currentValue() {
         var part = window.selectedPart || {}; var t = String(part.type || '');
         if (t === 'servo') {
-          var n = document.getElementById('angNum'); if (n) { var v = parseInt(n.value || '0', 10); if (!isNaN(v)) return v; }
-          var v2 = prompt('Enter angle (0-180)'); var pv = parseInt(v2, 10); return isNaN(pv) ? 90 : pv;
+          var n = document.getElementById('angNum'); if (n) { var v = parseFloat(n.value || '0.5'); if (!isNaN(v)) return v; }
+          var v2 = prompt('Enter position (0.000-1.000)'); var pv = parseFloat(v2); return isNaN(pv) ? 0.5 : pv;
         } else if (t === 'motor') {
           var d = document.getElementById('motDur'); if (d) { var v3 = parseInt(d.value || '500', 10); if (!isNaN(v3)) return v3; }
           var v4 = prompt('Enter duration (ms)'); var pv2 = parseInt(v4, 10); return isNaN(pv2) ? 500 : pv2;

@@ -222,7 +222,7 @@ TTSManager.prototype.loadSpeakerParts = function () {
             return response.json();
         })
         .then(function (data) {
-            self.speakerParts = (data.success && data.parts) ? data.parts.filter(part => part.type === 'speaker') : [];
+            self.speakerParts = (data.success && data.parts) ? data.parts.filter(function (part) { return part.type === 'speaker'; }) : [];
             self.populateSpeakerSelect();
         })
         .catch(function (error) {
@@ -340,11 +340,25 @@ TTSManager.prototype.updateRangeDisplay = function (rangeId) {
 
 TTSManager.prototype.saveConfiguration = function () {
     var self = this;
-    var formData = new FormData(document.getElementById('ttsConfigForm'));
+    var form = document.getElementById('ttsConfigForm');
     var config = {};
 
-    for (var pair of formData.entries()) {
-        config[pair[0]] = pair[1];
+    // ES5-safe FormData iteration
+    if (form) {
+        var formData = new FormData(form);
+        var entries = formData.entries();
+        var entry = entries.next();
+        while (!entry.done) {
+            var key = entry.value[0];
+            var val = entry.value[1];
+            config[key] = val;
+            entry = entries.next();
+        }
+        // Explicitly handle checkboxes (unchecked = missing from FormData)
+        var checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].name) config[checkboxes[i].name] = checkboxes[i].checked;
+        }
     }
 
     // Normalize types
@@ -352,8 +366,8 @@ TTSManager.prototype.saveConfiguration = function () {
     config.similarity_boost = parseFloat(config.similarity_boost || '0.5');
     config.style = parseFloat(config.style || '0');
     config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
-    config.voice_id = config.defaultVoice || '';
-    config.model = config.ttsModel || config.model || 'eleven_flash_v2_5';
+    // voice_id comes from the form's name="voice_id" select — do NOT overwrite
+    config.model = config.model || 'eleven_flash_v2_5';
 
     fetch('/api/elevenlabs/tts/config', {
         method: 'POST',
@@ -373,10 +387,50 @@ TTSManager.prototype.saveConfiguration = function () {
 
 TTSManager.prototype.testTTSConfiguration = function () {
     var self = this;
+    var voiceId = document.getElementById('defaultVoice').value;
+    if (!voiceId) {
+        self.showAlert('Please select a voice first', 'warning');
+        return;
+    }
 
-    // TODO: Test TTS configuration
-    console.log('Testing TTS configuration...');
-    this.showAlert('TTS configuration test completed!', 'info');
+    var testBtn = document.getElementById('testTTS');
+    if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing...';
+    }
+
+    fetch('/api/elevenlabs/tts/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: 'TTS test successful.',
+            voice_id: voiceId,
+            model: document.getElementById('ttsModel').value || 'eleven_flash_v2_5',
+            voice_settings: {
+                stability: parseFloat(document.getElementById('stability').value),
+                similarity_boost: parseFloat(document.getElementById('similarityBoost').value),
+                style: parseFloat(document.getElementById('style').value),
+                use_speaker_boost: document.getElementById('speakerBoost').checked
+            }
+        })
+    })
+    .then(function (r) {
+        if (r.ok) {
+            self.showAlert('TTS configuration test passed! Voice and API are working.', 'success');
+        } else {
+            throw new Error('TTS generation failed (HTTP ' + r.status + ')');
+        }
+    })
+    .catch(function (e) {
+        console.error('TTS test error:', e);
+        self.showAlert('TTS test failed: ' + e.message, 'danger');
+    })
+    .finally(function () {
+        if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Test TTS';
+        }
+    });
 };
 
 TTSManager.prototype.generateSpeech = function () {
@@ -600,9 +654,42 @@ TTSManager.prototype.testSpeakerIntegration = function () {
         return;
     }
 
-    // TODO: Test speaker integration
-    console.log('Testing speaker integration with part:', speakerSelect.value);
-    this.showAlert('Speaker integration test completed!', 'success');
+    var testBtn = document.getElementById('testSpeakerIntegration');
+    if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing...';
+    }
+
+    // Generate TTS and play through the character's speaker
+    fetch('/setup/characters/api/current')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            var charId = j && j.selectedCharacter;
+            if (!charId) throw new Error('No character selected');
+            return fetch('/api/elevenlabs/generate-and-play', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: 'Speaker integration test. Can you hear me?', characterId: charId })
+            });
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+            if (j && j.success) {
+                self.showAlert('Speaker test passed! Audio played on ' + (j.device || 'speaker'), 'success');
+            } else {
+                self.showAlert('Speaker test failed: ' + ((j && j.error) || 'Unknown'), 'danger');
+            }
+        })
+        .catch(function (e) {
+            console.error('Speaker integration test error:', e);
+            self.showAlert('Speaker test failed: ' + e.message, 'danger');
+        })
+        .finally(function () {
+            if (testBtn) {
+                testBtn.disabled = false;
+                testBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Test TTS &rarr; Speaker';
+            }
+        });
 };
 
 TTSManager.prototype.cloneVoice = function () {

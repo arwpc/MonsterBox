@@ -24,6 +24,8 @@ function AISettingsManager() {
     this._lastAgentText = '';
     this._pendingChatMessage = null;
     this._audioPlaybackEnabled = true;
+    this.chatSpeakerPartId = null;
+    this._lastPartialEl = null; // for in-place STT partial update
 }
 
 AISettingsManager.prototype.init = function () {
@@ -239,16 +241,10 @@ AISettingsManager.prototype.bindEvents = function () {
             if (chatInput) {
                 chatInput.scrollIntoView({ behavior: 'smooth' });
             }
-            // Auto-send a greeting message after a short delay for WS to connect
-            setTimeout(function () {
-                var greeting = 'Hello! Who are you?';
-                self.appendChatMessage('You', greeting);
-                if (self.chatWs && self.chatConnected) {
-                    self.chatWs.send(JSON.stringify({ type: 'send_message', text: greeting }));
-                } else {
-                    self._pendingChatMessage = greeting;
-                }
-            }, 1500);
+            // Queue the greeting — it will be sent when conversation_started is received
+            var greeting = 'Hello! Who are you?';
+            self._pendingChatMessage = greeting;
+            self.appendChatMessage('You', greeting);
             self.showAlert('AI conversation started — sending greeting...', 'success');
         });
     }
@@ -325,6 +321,18 @@ AISettingsManager.prototype.initChat = function () {
         });
     }
 
+    // Load available speaker parts for audio output dropdown
+    self.loadSpeakerParts();
+    var speakerSelect = document.getElementById('chatSpeakerSelect');
+    if (speakerSelect) {
+        speakerSelect.addEventListener('change', function () {
+            self.chatSpeakerPartId = speakerSelect.value || null;
+            if (self.chatWs && self.chatConnected) {
+                self.chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: self.chatSpeakerPartId }));
+            }
+        });
+    }
+
     // Poll for character changes every 10 seconds — reconnect WS if character changed
     self._charPollTimer = setInterval(function () {
         fetch('/setup/characters/api/current')
@@ -373,9 +381,34 @@ AISettingsManager.prototype.getAgentIdForCharacter = function (charId, callback)
         .catch(function () { callback(null); });
 };
 
+AISettingsManager.prototype.loadSpeakerParts = function () {
+    var select = document.getElementById('chatSpeakerSelect');
+    if (!select) return;
+    fetch('/conversation/api/speakers')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data || !data.speakers) return;
+            var speakers = data.speakers;
+            // Keep existing "Auto" option, add speaker parts
+            for (var i = 0; i < speakers.length; i++) {
+                var s = speakers[i];
+                var opt = document.createElement('option');
+                opt.value = String(s.id);
+                var label = s.name || s.label || ('Speaker #' + s.id);
+                if (s.characterId) label += ' (char ' + s.characterId + ')';
+                opt.textContent = label;
+                select.appendChild(opt);
+            }
+        })
+        .catch(function () { /* ignore */ });
+};
+
 AISettingsManager.prototype.connectChatWebSocket = function () {
     var self = this;
     if (self.chatWs && self.chatConnected) return;
+
+    // Track whether conversation is fully ready (after conversation_started from server)
+    self._conversationReady = false;
 
     var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
     var wsUrl = protocol + '//' + window.location.hostname + ':8795';
@@ -393,16 +426,16 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
             self.chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
             // Tell server whether to play audio through character speaker
             self.chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: self._audioPlaybackEnabled }));
+            // Send speaker part selection if user picked one
+            if (self.chatSpeakerPartId) {
+                self.chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: self.chatSpeakerPartId }));
+            }
 
             if (self.chatAgentId) {
                 self.chatWs.send(JSON.stringify({ type: 'start_conversation', agentId: self.chatAgentId }));
             }
 
-            // If there was a pending message from before connection, send it now
-            if (self._pendingChatMessage) {
-                self.chatWs.send(JSON.stringify({ type: 'send_message', text: self._pendingChatMessage }));
-                self._pendingChatMessage = null;
-            }
+            // NOTE: Do NOT send pending messages here — wait for conversation_started
         };
 
         self.chatWs.onmessage = function (ev) {
@@ -416,6 +449,36 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
                 // VU meter — update from server mic audio level
                 if (msg.type === 'audio_level') {
                     self.updateVUMeter(msg.level || 0);
+                    return;
+                }
+
+                // Conversation is ready — flush any pending messages
+                if (msg.type === 'conversation_started') {
+                    self._conversationReady = true;
+                    console.log('Chat conversation started with agent:', msg.agentId);
+                    if (self._pendingChatMessage) {
+                        var pending = self._pendingChatMessage;
+                        self._pendingChatMessage = null;
+                        self.chatWs.send(JSON.stringify({ type: 'send_message', text: pending }));
+                    }
+                    return;
+                }
+
+                if (msg.type === 'conversation_ended') {
+                    self._conversationReady = false;
+                    return;
+                }
+
+                if (msg.type === 'error') {
+                    // Display server-sent errors in the chat log
+                    var errText = msg.message || msg.error || 'Unknown error';
+                    self.appendChatMessage('System', 'Error: ' + errText);
+                    return;
+                }
+
+                if (msg.type === 'interruption') {
+                    // Barge-in: agent was interrupted by user speaking
+                    self._lastPartialEl = null;
                     return;
                 }
 
@@ -436,10 +499,25 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
                 }
                 else if (msg.type === 'user_transcript' && msg.user_transcription_event) {
                     var userText = msg.user_transcription_event.user_transcript;
-                    if (userText) self.appendChatMessage('You (mic)', userText);
+                    if (userText) {
+                        // Final user transcript — clear any partial and show committed text
+                        self._lastPartialEl = null;
+                        self.appendChatMessage('You (mic)', userText);
+                    }
                 }
-                // Ignore generic 'transcript' events — user_transcript already handles user side
-                // and agent_response handles AI side
+                else if (msg.type === 'stt_committed' && msg.text) {
+                    // Committed transcript from Scribe v2 Realtime — replace partial
+                    self._lastPartialEl = null;
+                    self.appendChatMessage('You (mic)', msg.text);
+                }
+                else if (msg.type === 'stt_partial' && msg.text) {
+                    // Partial transcript — update in-place to avoid flooding
+                    if (msg.final) {
+                        // Final stt_partial acts like committed — skip if stt_committed already handled
+                        return;
+                    }
+                    self.updatePartialTranscript(msg.text);
+                }
             } catch (e) {
                 console.error('Chat WS parse error:', e);
             }
@@ -447,12 +525,14 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
 
         self.chatWs.onclose = function () {
             self.chatConnected = false;
+            self._conversationReady = false;
             self.chatWs = null;
             self.updateChatStatus(false);
         };
 
         self.chatWs.onerror = function () {
             self.chatConnected = false;
+            self._conversationReady = false;
         };
     } catch (e) {
         console.error('Chat WS connect error:', e);
@@ -469,11 +549,17 @@ AISettingsManager.prototype.sendChatMessage = function () {
     self.appendChatMessage('You', text);
     input.value = '';
 
-    if (self.chatWs && self.chatConnected) {
+    if (self.chatWs && self.chatConnected && self._conversationReady) {
+        // Conversation is fully ready — send immediately
+        self.chatWs.send(JSON.stringify({ type: 'send_message', text: text }));
+    } else if (self.chatWs && self.chatConnected && !self._conversationReady) {
+        // WS connected but conversation not yet initialized — queue for server-side handling
         self.chatWs.send(JSON.stringify({ type: 'send_message', text: text }));
     } else {
-        // Queue message and connect — it will be sent on WS open
+        // Not connected at all — queue message and connect
         self._pendingChatMessage = text;
+        // Auto-enable audio playback when user initiates chat
+        self._audioPlaybackEnabled = true;
         self.connectChatWebSocket();
     }
 };
@@ -486,6 +572,12 @@ AISettingsManager.prototype.appendChatMessage = function (sender, text) {
     if (sender === 'AI') {
         text = text.replace(/\[.*?\]/g, '').replace(/\s{2,}/g, ' ').trim();
         if (!text) return; // Nothing left after stripping
+    }
+
+    // Remove any in-flight partial transcript element when committing mic text
+    if ((sender === 'You (mic)') && this._lastPartialEl && this._lastPartialEl.parentNode) {
+        this._lastPartialEl.parentNode.removeChild(this._lastPartialEl);
+        this._lastPartialEl = null;
     }
 
     // Clear placeholder
@@ -504,6 +596,35 @@ AISettingsManager.prototype.appendChatMessage = function (sender, text) {
         '<span>' + this.escapeHtml(text) + '</span>';
 
     chatLog.appendChild(msgDiv);
+    chatLog.scrollTop = chatLog.scrollHeight;
+};
+
+AISettingsManager.prototype.updatePartialTranscript = function (text) {
+    var chatLog = document.getElementById('chatLog');
+    if (!chatLog) return;
+
+    if (this._lastPartialEl && this._lastPartialEl.parentNode === chatLog) {
+        // Update existing partial element in-place
+        var span = this._lastPartialEl.querySelector('.partial-text');
+        if (span) {
+            span.textContent = text;
+        }
+    } else {
+        // Create new partial element
+        var placeholder = chatLog.querySelector('.text-muted.text-center');
+        if (placeholder) placeholder.remove();
+
+        var time = new Date().toLocaleTimeString();
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'mb-1';
+        msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
+            '<strong class="text-info">You (mic):</strong> ' +
+            '<span class="partial-text" style="opacity:0.7"></span>';
+        var span = msgDiv.querySelector('.partial-text');
+        if (span) span.textContent = text;
+        chatLog.appendChild(msgDiv);
+        this._lastPartialEl = msgDiv;
+    }
     chatLog.scrollTop = chatLog.scrollHeight;
 };
 

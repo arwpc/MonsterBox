@@ -100,7 +100,10 @@
                         <span id="chatCharacterName">Loading...</span>
                     </h5>
                     <div class="d-flex align-items-center gap-2">
-                        <div class="form-check form-switch mb-0">
+                        <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;">
+                            <option value="">Audio: Auto</option>
+                        </select>
+                        <div class="form-check form-switch mb-0" title="Connect to the ElevenLabs conversational AI agent for real-time voice chat. When on, the character listens via microphone and speaks responses through the selected speaker.">
                             <input class="form-check-input" type="checkbox" id="aiAutonomousToggle">
                             <label class="form-check-label text-white small" for="aiAutonomousToggle">AI On</label>
                         </div>

@@ -325,14 +325,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
             switch (message.type) {
                 case 'start_conversation':
+                    // Initialize pending message queue
+                    connection.pendingMessages = [];
+                    connection.conversationReady = false;
                     await this.startConversation(sessionId, message.agentId);
                     // Start Scribe v2 Realtime STT for live transcription
+                    // (mic loop is deferred until conversation_initiation_metadata is received)
                     if (connection.useRealtimeSTT) {
                         this._startRealtimeSTTSession(sessionId).catch(e => console.error('RT-STT start error:', e.message));
-                    }
-                    // If server mic is selected, begin streaming immediately
-                    if (connection.micSource === 'server') {
-                        this._startServerMicLoop(sessionId).catch(function () { /* noop */ });
                     }
                     break;
 
@@ -396,6 +396,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // Toggle whether AI audio is played through character speaker
                     connection.audioPlaybackEnabled = !!(message && message.enabled);
                     this.sendToClient(sessionId, { type: 'debug', originalType: 'set_audio_playback', data: { enabled: connection.audioPlaybackEnabled } });
+                    break;
+
+                case 'set_speaker_part':
+                    // Override which speaker part to route audio through
+                    connection.speakerPartId = message.speakerPartId || null;
+                    console.log(`🔊 Speaker part set to ${connection.speakerPartId} for session ${sessionId}`);
+                    // Stop existing stream so next chunk creates one with the new device
+                    if (connection.characterId != null) {
+                        try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { }
+                    }
                     break;
 
                 case 'set_stt_language':
@@ -492,47 +502,31 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 console.log(`⚡ Connected to ElevenLabs real-time agent: ${agentId}`);
                 connection.elevenLabsWs = elevenLabsWs;
                 connection.agentId = agentId;
+                // Mark as active but NOT ready for messages until conversation_initiation_metadata received
                 connection.isActive = true;
+                connection.conversationReady = false;
+                connection.pendingMessages = connection.pendingMessages || [];
 
-
-                // Ensure server mic loop is running once active
-                if (connection.micSource === 'server') {
-                    try { this._startServerMicLoop(sessionId); } catch (_) { }
-                }
-
-                // Send conversation initiation with optimized config for speed
+                // Send minimal conversation initiation — let the agent's own config handle everything
                 elevenLabsWs.send(JSON.stringify({
                     type: 'conversation_initiation_client_data',
-                    conversation_config_override: {
-                        agent: {
-                            prompt: {
-                                prompt: 'IMPORTANT INSTRUCTION: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs], etc. in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.'
-                            }
-                        },
-                        turn_detection: {
-                            type: 'server_vad',
-                            threshold: 0.5,
-                            prefix_padding_ms: 100,
-                            silence_duration_ms: 500
-                        }
-                    }
+                    conversation_config_override: {}
                 }));
-
-                this.sendToClient(sessionId, {
-                    type: 'conversation_started',
-                    agentId: agentId,
-                    message: 'Connected to real-time agent - ready for instant chat!'
-                });
             });
 
             elevenLabsWs.on('message', (data) => {
                 this.handleElevenLabsMessage(sessionId, data);
             });
 
-            elevenLabsWs.on('close', () => {
-                console.log(`🔌 ElevenLabs real-time connection closed for ${sessionId}`);
+            elevenLabsWs.on('close', (code, reason) => {
+                console.log(`🔌 ElevenLabs real-time connection closed for ${sessionId} (code=${code}, reason=${reason || 'none'})`);
                 connection.elevenLabsWs = null;
                 connection.isActive = false;
+                connection.conversationReady = false;
+                // Stop persistent audio stream so mpg123 flushes remaining data and exits cleanly
+                if (connection.characterId != null) {
+                    try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                }
                 this.sendToClient(sessionId, {
                     type: 'conversation_ended',
                     message: 'Real-time conversation ended'
@@ -561,7 +555,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
      */
     async sendMessageToAgent(sessionId, text) {
         const connection = this.activeConnections.get(sessionId);
-        if (!connection || !connection.elevenLabsWs || !connection.isActive) {
+        if (!connection) {
+            this.sendToClient(sessionId, {
+                type: 'error',
+                message: 'No active session'
+            });
+            return;
+        }
+
+        // If conversation is being established but not yet ready, queue the message
+        if (connection.isActive && !connection.conversationReady) {
+            console.log(`⏳ Queuing message (conversation starting): "${text}"`);
+            if (!connection.pendingMessages) connection.pendingMessages = [];
+            connection.pendingMessages.push(text);
+            return;
+        }
+
+        if (!connection.elevenLabsWs || !connection.isActive || !connection.conversationReady) {
             this.sendToClient(sessionId, {
                 type: 'error',
                 message: 'No active real-time conversation'
@@ -573,7 +583,6 @@ class ElevenLabsWebSocketService extends EventEmitter {
             console.log(`📤 Sending text to real-time agent: "${text}"`);
 
             // Send text message to ElevenLabs real-time WebSocket
-            // Use proper text message format for conversational AI
             const message = {
                 type: 'user_message',
                 text: text
@@ -606,6 +615,39 @@ class ElevenLabsWebSocketService extends EventEmitter {
             switch (message.type) {
                 case 'conversation_initiation_metadata':
                     console.log(`🎯 Conversation initiated for ${sessionId}`);
+                    connection.conversationReady = true;
+                    // Detect output audio format from agent config (default: pcm_16000)
+                    try {
+                        const meta = message.conversation_initiation_metadata_event || {};
+                        const fmt = meta.agent_output_audio_format || '';
+                        connection.audioOutputFormat = fmt || 'pcm_16000';
+                        console.log(`🔊 Agent output audio format: "${fmt}" (using: "${connection.audioOutputFormat}")`);
+                        // Log the full metadata keys for debugging
+                        console.log(`🔊 ConvAI metadata keys:`, JSON.stringify(Object.keys(meta)));
+                    } catch (_) {
+                        connection.audioOutputFormat = 'pcm_16000';
+                    }
+
+                    // NOW notify the client that conversation is ready
+                    this.sendToClient(sessionId, {
+                        type: 'conversation_started',
+                        agentId: connection.agentId,
+                        message: 'Connected to real-time agent - ready for instant chat!'
+                    });
+
+                    // Start server mic loop only after conversation is fully initialized
+                    if (connection.micSource === 'server') {
+                        try { this._startServerMicLoop(sessionId); } catch (_) { }
+                    }
+
+                    // Flush any pending text messages that arrived before conversation was ready
+                    if (connection.pendingMessages && connection.pendingMessages.length > 0) {
+                        const pending = connection.pendingMessages.splice(0);
+                        for (const pendingText of pending) {
+                            console.log(`📤 Flushing pending message: "${pendingText}"`);
+                            this.sendMessageToAgent(sessionId, pendingText);
+                        }
+                    }
                     break;
 
                 case 'audio':
@@ -623,16 +665,43 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         try {
                             if (c && audioData && c.audioPlaybackEnabled !== false) {
                                 const audioBuffer = Buffer.from(audioData, 'base64');
-                                
-                                serverPlaybackService.playAIOnCharacterSpeaker(audioBuffer, {
-                                    characterId: c.characterId,
-                                    contentType: 'audio/mpeg',
-                                    volume: 90,
-                                    kind: 'ai'
-                                }).catch(err => {
-                                    console.error(`❌ AI audio playback ERROR:`, err);
-                                });
-                                
+                                const fmt = c.audioOutputFormat || 'pcm_16000';
+                                // Log first chunk for format debugging
+                                if (!c._audioChunkCount) {
+                                    c._audioChunkCount = 0;
+                                    console.log(`🔊 First audio chunk: ${audioBuffer.length} bytes, format="${fmt}", charId=${c.characterId}, playbackEnabled=${c.audioPlaybackEnabled}`);
+                                    // Check MP3 magic bytes (0xFF 0xFB/0xF3/0xF2 or ID3)
+                                    const hdr = audioBuffer.slice(0, 4);
+                                    const isMP3 = (hdr[0] === 0xFF && (hdr[1] & 0xE0) === 0xE0) || (hdr[0] === 0x49 && hdr[1] === 0x44 && hdr[2] === 0x33);
+                                    console.log(`🔊 Audio header bytes: [${hdr[0]?.toString(16)}, ${hdr[1]?.toString(16)}, ${hdr[2]?.toString(16)}, ${hdr[3]?.toString(16)}] isMP3=${isMP3}`);
+                                }
+                                c._audioChunkCount++;
+
+                                // Use persistent streaming for continuous real-time playback.
+                                // ElevenLabs ConvAI defaults to PCM16LE; use writePcmStream
+                                // for raw PCM or writeMp3Stream if agent outputs MP3.
+                                if (fmt.startsWith('pcm_')) {
+                                    const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
+                                    serverPlaybackService.writePcmStream(audioBuffer, {
+                                        characterId: c.characterId,
+                                        speakerPartId: c.speakerPartId,
+                                        volume: 90,
+                                        sampleRate,
+                                        kind: 'ai'
+                                    }).catch(err => {
+                                        console.error(`❌ AI audio playback ERROR:`, err);
+                                    });
+                                } else {
+                                    serverPlaybackService.writeMp3Stream(audioBuffer, {
+                                        characterId: c.characterId,
+                                        speakerPartId: c.speakerPartId,
+                                        volume: 90,
+                                        kind: 'ai'
+                                    }).catch(err => {
+                                        console.error(`❌ AI audio playback ERROR:`, err);
+                                    });
+                                }
+
                                 // Suppress mic to avoid echo (3 seconds)
                                 c.suppressMicUntilMs = Date.now() + 3000;
                             }
@@ -758,6 +827,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
     async endConversation(sessionId) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
+
+        // Stop persistent audio stream for this character
+        if (connection.characterId != null) {
+            try { await serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* best-effort */ }
+        }
 
         // Close ElevenLabs WebSocket if active
         if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
@@ -1155,6 +1229,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
+            // Stop persistent audio stream for this character
+            if (connection.characterId != null) {
+                try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+            }
             // Close ElevenLabs WebSocket if active
             if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                 try {
@@ -1231,15 +1309,28 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 }
                 if (chunksToPlay.length === 0) continue;
 
-                // Combine chunks into single buffer and stream
-                const combinedBase64 = chunksToPlay.join('');
-                const audioBuffer = Buffer.from(combinedBase64, 'base64');
+                // Decode each base64 chunk separately then concatenate raw buffers.
+                // Joining base64 strings corrupts data (padding '=' in the middle).
+                const audioBuffer = Buffer.concat(chunksToPlay.map(chunk => Buffer.from(chunk, 'base64')));
 
-                const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-                    characterId: c.characterId,
-                    contentType: 'audio/mpeg', // ElevenLabs ConvAI default stream is MP3 frames
-                    volume: 80
-                });
+                // Use PCM stream for raw audio (ConvAI default), MP3 stream otherwise
+                const fmt = c.audioOutputFormat || 'pcm_16000';
+                let result;
+                if (fmt.startsWith('pcm_')) {
+                    const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
+                    result = await serverPlaybackService.writePcmStream(audioBuffer, {
+                        characterId: c.characterId,
+                        volume: 80,
+                        sampleRate,
+                        kind: 'ai'
+                    });
+                } else {
+                    result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+                        characterId: c.characterId,
+                        contentType: 'audio/mpeg',
+                        volume: 80
+                    });
+                }
                 if (!result.success) {
                     console.error(`❌ Audio playback failed: ${result.error}`);
                 }
@@ -1256,14 +1347,28 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     async stopWebSocketServer() {
+        // Clear session cleanup timer to prevent leaks
+        if (this._cleanupTimer) {
+            clearInterval(this._cleanupTimer);
+            this._cleanupTimer = null;
+        }
+
         if (this.wsServer) {
             // Close all active connections
             for (const [sessionId, connection] of this.activeConnections) {
+                // Stop server mic loops
+                try { this._stopServerMicLoop(sessionId, false); } catch (_) { /* noop */ }
+                // Stop realtime STT sessions
+                try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
+                // Stop audio streams
+                if (connection.characterId != null) {
+                    try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                }
                 if (connection.elevenLabsWs) {
-                    connection.elevenLabsWs.close();
+                    try { connection.elevenLabsWs.close(); } catch (_) { /* noop */ }
                 }
                 if (connection.clientWs) {
-                    connection.clientWs.close();
+                    try { connection.clientWs.close(); } catch (_) { /* noop */ }
                 }
             }
 
@@ -1300,6 +1405,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     elevenLabsWs: null,
                     agentId,
                     isActive: true,
+                    startTime: new Date(),
                     characterId,
                     outputMode: 'server',
                     micSource: 'server',
