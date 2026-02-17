@@ -246,82 +246,86 @@ class AudioLibrary {
     }
 
     createAudioCard(audio) {
-        const tags = audio.tags.map(tag =>
-            `<span class="badge bg-secondary tag-badge">${tag}</span>`
-        ).join('');
+        var tags = Array.isArray(audio.tags) ? audio.tags : [];
+        var tagsHTML = tags.map(function(tag) {
+            return '<span class="badge bg-secondary tag-badge">' + tag + '</span>';
+        }).join('');
+        var format = audio.format || 'audio';
+        var fileSize = audio.fileSize || 0;
+        var uploadedAt = audio.uploadedAt || audio.addedAt || '';
 
-        const bulkCheckbox = this.bulkSelectMode ? `
-            <div class="position-absolute top-0 start-0 p-2">
-                <input type="checkbox" class="form-check-input bulk-checkbox"
-                       data-audio-id="${audio.id}"
-                       ${this.selectedAudioIds.has(audio.id) ? 'checked' : ''}>
-            </div>
-        ` : '';
+        var bulkCheckbox = this.bulkSelectMode ? '\
+            <div class="position-absolute top-0 start-0 p-2">\
+                <input type="checkbox" class="form-check-input bulk-checkbox"\
+                       data-audio-id="' + audio.id + '"\
+                       ' + (this.selectedAudioIds.has(audio.id) ? 'checked' : '') + '>\
+            </div>\
+        ' : '';
 
-        return `
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card audio-card h-100" id="audio-${audio.id}">
-                    <div class="position-relative">
-                        ${bulkCheckbox}
-                        <div class="waveform-container">
-                            <div class="waveform-placeholder">
-                                <i class="bi bi-soundwave"></i>
-                                <span class="ms-2">${this.formatDuration(audio.duration)}</span>
-                            </div>
-                            <div class="audio-controls">
-                                <button class="btn btn-primary btn-sm me-1 play-btn" data-audio-id="${audio.id}">
-                                    <i class="bi bi-play-fill"></i>
-                                </button>
-                                <button class="btn btn-info btn-sm edit-btn" data-audio-id="${audio.id}">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <button class="favorite-btn ${audio.favorite ? 'active' : ''}" data-audio-id="${audio.id}">
-                            <i class="bi bi-heart${audio.favorite ? '-fill' : ''}"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title mb-2">${audio.title}</h6>
-                        <p class="card-text small text-muted mb-2">${audio.description || 'No description'}</p>
-                        <div class="mb-2">${tags}</div>
-                        <div class="d-flex justify-content-between align-items-center small text-muted">
-                            <span>
-                                <i class="bi bi-file-earmark"></i>
-                                ${audio.format.toUpperCase()}
-                            </span>
-                            <span>
-                                <i class="bi bi-hdd"></i>
-                                ${this.formatFileSize(audio.fileSize)}
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
-                            <span>
-                                <i class="bi bi-play"></i>
-                                ${audio.playCount || 0} plays
-                            </span>
-                            <span>
-                                <i class="bi bi-calendar"></i>
-                                ${this.formatDate(audio.uploadedAt)}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="btn-group w-100" role="group">
-                            <button class="btn btn-outline-primary btn-sm play-character-btn" data-audio-id="${audio.id}">
-                                <i class="bi bi-speaker"></i> Play on Character
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="window.open('/audio-library/api/audio/${audio.id}/download')">
-                                <i class="bi bi-download"></i>
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm delete-btn" data-audio-id="${audio.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        return '\
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">\
+                <div class="card audio-card h-100" id="audio-' + audio.id + '">\
+                    <div class="position-relative">\
+                        ' + bulkCheckbox + '\
+                        <div class="waveform-container">\
+                            <div class="waveform-placeholder">\
+                                <i class="bi bi-soundwave"></i>\
+                                <span class="ms-2">' + this.formatDuration(audio.duration) + '</span>\
+                            </div>\
+                            <div class="audio-controls">\
+                                <button class="btn btn-primary btn-sm me-1 play-btn" data-audio-id="' + audio.id + '">\
+                                    <i class="bi bi-play-fill"></i>\
+                                </button>\
+                                <button class="btn btn-info btn-sm edit-btn" data-audio-id="' + audio.id + '">\
+                                    <i class="bi bi-pencil"></i>\
+                                </button>\
+                            </div>\
+                        </div>\
+                        <button class="favorite-btn ' + (audio.favorite ? 'active' : '') + '" data-audio-id="' + audio.id + '">\
+                            <i class="bi bi-heart' + (audio.favorite ? '-fill' : '') + '"></i>\
+                        </button>\
+                    </div>\
+                    <div class="card-body">\
+                        <h6 class="card-title mb-2">' + (audio.title || 'Untitled') + '</h6>\
+                        <p class="card-text small text-muted mb-2">' + (audio.description || 'No description') + '</p>\
+                        <div class="mb-2">' + tagsHTML + '</div>\
+                        <div class="d-flex justify-content-between align-items-center small text-muted">\
+                            <span>\
+                                <i class="bi bi-file-earmark"></i>\
+                                ' + format.toUpperCase() + '\
+                            </span>\
+                            <span>\
+                                <i class="bi bi-hdd"></i>\
+                                ' + this.formatFileSize(fileSize) + '\
+                            </span>\
+                        </div>\
+                        <div class="d-flex justify-content-between align-items-center small text-muted mt-1">\
+                            <span>\
+                                <i class="bi bi-play"></i>\
+                                ' + (audio.playCount || 0) + ' plays\
+                            </span>\
+                            <span>\
+                                <i class="bi bi-calendar"></i>\
+                                ' + this.formatDate(uploadedAt) + '\
+                            </span>\
+                        </div>\
+                    </div>\
+                    <div class="card-footer">\
+                        <div class="btn-group w-100" role="group">\
+                            <button class="btn btn-outline-primary btn-sm play-character-btn" data-audio-id="' + audio.id + '">\
+                                <i class="bi bi-speaker"></i> Play on Character\
+                            </button>\
+                            <button class="btn btn-outline-secondary btn-sm" onclick="window.open(\'/audio-library/api/audio/' + audio.id + '/download\')">\
+                                <i class="bi bi-download"></i>\
+                            </button>\
+                            <button class="btn btn-outline-danger btn-sm delete-btn" data-audio-id="' + audio.id + '">\
+                                <i class="bi bi-trash"></i>\
+                            </button>\
+                        </div>\
+                    </div>\
+                </div>\
+            </div>\
+        ';
     }
 
     setupAudioCardEvents(card, audio) {
@@ -635,11 +639,11 @@ class AudioLibrary {
         }
 
         // Populate form with current audio data
-        document.getElementById('editTitle').value = audio.title;
+        document.getElementById('editTitle').value = audio.title || '';
         document.getElementById('editDescription').value = audio.description || '';
-        document.getElementById('editCategory').value = audio.category;
-        document.getElementById('editTags').value = audio.tags.join(', ');
-        document.getElementById('editFavorite').checked = audio.favorite;
+        document.getElementById('editCategory').value = audio.category || 'other';
+        document.getElementById('editTags').value = Array.isArray(audio.tags) ? audio.tags.join(', ') : '';
+        document.getElementById('editFavorite').checked = audio.favorite || false;
 
         // Store current audio ID
         document.getElementById('editAudioModal').dataset.audioId = audio.id;
@@ -778,7 +782,10 @@ class AudioLibrary {
     }
 
     formatDate(dateString) {
-        return new Date(dateString).toLocaleDateString();
+        if (!dateString) return 'Unknown';
+        var d = new Date(dateString);
+        if (isNaN(d.getTime())) return 'Unknown';
+        return d.toLocaleDateString();
     }
 
     capitalizeFirst(str) {

@@ -74,7 +74,7 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
 
 </head>
 
-<body>
+<body data-ws-port="8795">
     <!-- Navigation - Automatically included on ALL pages (can be disabled with includeNavigation=false) -->
     <% if (typeof includeNavigation==='undefined' || includeNavigation !==false) { %>
         <%- include('../components/unified-navigation', { page: page || 'dashboard' , currentCharacter:

@@ -411,7 +411,8 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
     self._conversationReady = false;
 
     var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-    var wsUrl = protocol + '//' + window.location.hostname + ':8795';
+    var wsPort = document.body.getAttribute('data-ws-port') || '8795';
+    var wsUrl = protocol + '//' + window.location.hostname + ':' + wsPort;
 
     try {
         self.chatWs = new WebSocket(wsUrl);

@@ -180,8 +180,8 @@ class VideoLibrary {
                     ` : ''}
                     
                     <div class="position-relative">
-                        ${video.thumbnail ? `
-                            <img src="/video-library/api/thumbnail/${video.id}" class="video-thumbnail" alt="${video.title}">
+                        ${video.thumbnailPath ? `
+                            <img src="/video-library/api/video/${video.id}/thumbnail" class="video-thumbnail" alt="${video.title}">
                         ` : `
                             <div class="video-thumbnail d-flex align-items-center justify-content-center">
                                 <i class="bi bi-camera-video fs-1 text-white"></i>
@@ -246,7 +246,7 @@ class VideoLibrary {
 
             playerContainer.innerHTML = `
                 <video class="video-preview-player" controls autoplay>
-                    <source src="/video-library/api/stream/${videoId}" type="${video.mimeType || 'video/mp4'}">
+                    <source src="/video-library/api/video/${videoId}/stream" type="${video.mimeType || 'video/mp4'}">
                     Your browser does not support the video tag.
                 </video>
             `;
@@ -410,9 +410,9 @@ class VideoLibrary {
 
         const formData = new FormData();
         
-        // Add files
+        // Add files (field name must match multer config: 'videoFiles')
         this.selectedFiles.forEach(file => {
-            formData.append('videos', file);
+            formData.append('videoFiles', file);
         });
 
         // Add form data

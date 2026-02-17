@@ -386,10 +386,11 @@ router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
             res.status(400).json(result);
         }
     } catch (error) {
-        console.error('TTS generation error:', error);
+        console.error('TTS generation error:', error.message);
         res.status(500).json({
             success: false,
-            error: 'TTS generation failed'
+            error: 'TTS generation failed',
+            details: error.message
         });
     }
 });
@@ -556,7 +557,7 @@ router.post('/play-audio', async (req, res) => {
         const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
             characterId: characterId,
             contentType: `audio/${format}`,
-            volume: 80
+            volume: 85
         });
 
         // Clean up temp file
@@ -834,7 +835,7 @@ async function generateAndPlaySimpleTTS(text, characterId, res) {
         const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 80
+            volume: 85
         });
 
         if (playResult.success) {

@@ -1374,7 +1374,7 @@
         { key: 'forwardVoltageV', label: 'Forward Voltage (V)', type: 'number' },
       ],
       speaker: [
-        { key: 'outputDevice', label: 'Output Device', type: 'text' },
+        { key: 'audioDeviceId', label: 'Audio Device ID', type: 'text' },
         { key: 'volume', label: 'Volume (%)', type: 'number' },
         { key: 'format', label: 'Format', type: 'select', options: ['mp3', 'wav', 'ogg'] },
       ],
@@ -4379,7 +4379,7 @@
         const micDevice = document.getElementById('editMicDevice')?.value;
         const sampleRate = document.getElementById('editSampleRate')?.value;
         const gain = document.getElementById('editGain')?.value;
-        if (micDevice) config.device = micDevice;
+        if (micDevice) config.deviceId = micDevice;
         if (sampleRate) config.sampleRate = parseInt(sampleRate);
         if (gain) config.gain = parseInt(gain);
         break;
@@ -4389,7 +4389,7 @@
         const volume = document.getElementById('editVolume')?.value;
         const bass = document.getElementById('editBass')?.value;
         const treble = document.getElementById('editTreble')?.value;
-        if (speakerDevice) config.device = speakerDevice;
+        if (speakerDevice) config.audioDeviceId = speakerDevice;
         if (volume) config.volume = parseInt(volume);
         if (bass) config.bass = parseInt(bass);
         if (treble) config.treble = parseInt(treble);

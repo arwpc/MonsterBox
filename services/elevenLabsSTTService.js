@@ -206,7 +206,7 @@ class ElevenLabsSTTService {
                 model: 'scribe_v2',
                 language: 'auto',
                 format: 'wav',
-                sampleRate: 44100,
+                sampleRate: 16000,
                 channels: 1
             }
         };

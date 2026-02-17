@@ -50,6 +50,159 @@ class AudioLibraryService {
         this.filesDir = path.join(__dirname, '..', 'data', 'audio-library', 'files');
         this.waveformsDir = path.join(__dirname, '..', 'data', 'audio-library', 'waveforms');
         this.supportedFormats = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+        this._initialized = false;
+        this._initPromise = this._initialize();
+    }
+
+    /**
+     * One-time initialization: ensure files dir exists and rescan if needed
+     */
+    async _initialize() {
+        try {
+            await fs.mkdir(this.filesDir, { recursive: true });
+            await fs.mkdir(this.waveformsDir, { recursive: true });
+            await this.rescanLibrary();
+            this._initialized = true;
+            console.log('Audio Library Service initialized');
+        } catch (error) {
+            console.error('Audio Library Service initialization error:', error);
+        }
+    }
+
+    /**
+     * Rescan the files directory and rebuild/repair library.json entries.
+     * Preserves existing metadata for entries that already have it.
+     * Adds new entries for files on disk not yet in the library.
+     * Normalizes the 'audioFiles' key to 'audio'.
+     */
+    async rescanLibrary() {
+        await acquireLock();
+        try {
+            const library = await this._loadLibraryRaw();
+
+            // Normalize: support both 'audio' and 'audioFiles' keys
+            let existingEntries = library.audio || library.audioFiles || [];
+            // Build a map of filename -> entry for quick lookup
+            const entryByFilename = {};
+            for (const entry of existingEntries) {
+                if (entry.filename) {
+                    entryByFilename[entry.filename] = entry;
+                }
+            }
+
+            // Scan the files directory for actual audio files
+            let filesOnDisk = [];
+            try {
+                filesOnDisk = await fs.readdir(this.filesDir);
+            } catch (err) {
+                if (err.code !== 'ENOENT') throw err;
+            }
+
+            const audioFiles = filesOnDisk.filter(f => {
+                const ext = path.extname(f).toLowerCase();
+                return this.supportedFormats.includes(ext);
+            });
+
+            let changed = false;
+            const repairedEntries = [];
+
+            for (const filename of audioFiles) {
+                const existing = entryByFilename[filename];
+                const needsRepair = !existing || !existing.format || !existing.fileSize || existing.tags === undefined;
+
+                if (needsRepair) {
+                    changed = true;
+                    const filePath = path.join(this.filesDir, filename);
+                    const ext = path.extname(filename);
+                    const baseName = path.basename(filename, ext);
+
+                    // Extract metadata from the actual file
+                    let extractedMeta = {};
+                    try {
+                        extractedMeta = await this.extractMetadata(filePath);
+                    } catch (e) {
+                        // Fallback: at least get file size
+                        try {
+                            const stats = await fs.stat(filePath);
+                            extractedMeta = { fileSize: stats.size, format: ext.substring(1) };
+                        } catch (_) {
+                            extractedMeta = { fileSize: 0, format: ext.substring(1) };
+                        }
+                    }
+
+                    // Build a clean title from filename
+                    let title = (existing && existing.title) || baseName;
+                    // Clean up UUID-style titles to show descriptive names
+                    if (/^[0-9a-f]{8}[-\s][0-9a-f]{4}/.test(title)) {
+                        // It's a UUID-based name; use extracted metadata title or keep as-is
+                        title = extractedMeta.title || title;
+                    }
+                    // Replace underscores and clean up
+                    title = title.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+
+                    // Determine category from existing or auto-detect
+                    let category = (existing && existing.category) || 'other';
+                    if (category === 'other' && extractedMeta.genre) {
+                        const genre = extractedMeta.genre.toLowerCase();
+                        if (genre.includes('horror') || genre.includes('scary')) category = 'scary';
+                        else if (genre.includes('ambient')) category = 'ambient';
+                        else if (genre.includes('halloween')) category = 'halloween';
+                        else if (genre.includes('music')) category = 'music';
+                    }
+
+                    repairedEntries.push({
+                        id: (existing && existing.id) || baseName,
+                        title: title,
+                        description: (existing && existing.description) || (extractedMeta.artist ? 'By ' + extractedMeta.artist : ''),
+                        filename: filename,
+                        originalFilename: (existing && existing.originalFilename) || filename,
+                        format: extractedMeta.format || ext.substring(1),
+                        duration: (existing && existing.duration) || extractedMeta.duration || null,
+                        fileSize: extractedMeta.fileSize || 0,
+                        sampleRate: (existing && existing.sampleRate) || extractedMeta.sampleRate || null,
+                        channels: (existing && existing.channels) || extractedMeta.channels || null,
+                        bitrate: (existing && existing.bitrate) || extractedMeta.bitrate || null,
+                        tags: (existing && existing.tags) || [],
+                        category: category,
+                        artist: (existing && existing.artist) || extractedMeta.artist || null,
+                        album: (existing && existing.album) || extractedMeta.album || null,
+                        genre: (existing && existing.genre) || extractedMeta.genre || null,
+                        year: (existing && existing.year) || extractedMeta.year || null,
+                        uploadedAt: (existing && (existing.uploadedAt || existing.addedAt)) || new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        waveformGenerated: (existing && existing.waveformGenerated) || false,
+                        favorite: (existing && existing.favorite) || false,
+                        playCount: (existing && existing.playCount) || 0,
+                        lastPlayed: (existing && existing.lastPlayed) || null
+                    });
+                } else {
+                    // Entry is complete, keep it
+                    repairedEntries.push(existing);
+                }
+            }
+
+            // Check if key name changed from audioFiles to audio
+            if (library.audioFiles && !library.audio) {
+                changed = true;
+            }
+
+            if (changed) {
+                const repairedLibrary = {
+                    version: library.version || '1.0.0',
+                    created: library.created || library.createdAt || new Date().toISOString(),
+                    lastModified: new Date().toISOString(),
+                    totalFiles: repairedEntries.length,
+                    totalSize: repairedEntries.reduce((sum, a) => sum + (a.fileSize || 0), 0),
+                    categories: library.categories || this.createDefaultLibrary().categories,
+                    tags: library.tags || [],
+                    audio: repairedEntries
+                };
+                await this.saveLibrary(repairedLibrary);
+                console.log(`Audio library rescanned: ${repairedEntries.length} files, ${changed ? 'updated' : 'no changes'}`);
+            }
+        } finally {
+            await releaseLock();
+        }
     }
 
     /**
@@ -71,24 +224,46 @@ class AudioLibraryService {
     }
 
     /**
-     * Load the audio library database
+     * Raw load without normalization (used by rescan)
+     */
+    async _loadLibraryRaw() {
+        try {
+            const data = await fs.readFile(this.libraryPath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                return this.createDefaultLibrary();
+            }
+            console.error('Error loading audio library:', error);
+            return this.createDefaultLibrary();
+        }
+    }
+
+    /**
+     * Load the audio library database (normalizes audioFiles -> audio)
      */
     async loadLibrary() {
         try {
             const data = await fs.readFile(this.libraryPath, 'utf8');
             try {
-                return JSON.parse(data);
+                const library = JSON.parse(data);
+                // Normalize: ensure 'audio' key exists
+                if (!library.audio && library.audioFiles) {
+                    library.audio = library.audioFiles;
+                    delete library.audioFiles;
+                }
+                if (!library.audio) {
+                    library.audio = [];
+                }
+                return library;
             } catch (parseError) {
                 console.error(`Error parsing audio library JSON at ${this.libraryPath}:`, parseError);
-                // Return a default structure to prevent crash
                 return this.createDefaultLibrary();
             }
         } catch (error) {
             if (error.code === 'ENOENT') {
-                // Create default library if it doesn't exist
-                const defaultLibrary = this.createDefaultLibrary();
-                await this.saveLibrary(defaultLibrary);
-                return defaultLibrary;
+                // Return default; rescan will create the file on init
+                return this.createDefaultLibrary();
             }
             throw error;
         }

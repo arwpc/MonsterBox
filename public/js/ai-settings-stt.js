@@ -993,68 +993,16 @@ STTManager.prototype.onMicSelectionChange = function () {
 STTManager.prototype.startVUMeter = function () {
     var self = this;
     self.stopVUMeter();
-    if (!self.currentMicDeviceId) {
-        console.warn('Cannot start VU meter: no microphone device ID');
-        return;
-    }
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
     if (!meterEl || !labelEl) {
-        console.warn('Cannot start VU meter: elements not found', { meterEl: !!meterEl, labelEl: !!labelEl });
+        console.warn('Cannot start VU meter: elements not found');
         return;
     }
-    console.log('Starting VU meter for device:', self.currentMicDeviceId);
-
-    // Optimized VU meter with request deduplication
-    var lastLoggedPct = -1;
-    function updateVU() {
-        // Skip if previous request still pending
-        if (self.vuPending) return;
-
-        self.vuPending = true;
-        var url = '/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(self.currentMicDeviceId) + '&deviceType=input';
-        fetch(url)
-            .then(function (r) { return r.json(); })
-            .then(function (j) {
-                self.vuPending = false;
-                if (!j || !j.success) {
-                    console.warn('VU meter: API returned failure', j);
-                    return;
-                }
-                var level = +j.level || 0;
-                // Amplify display for better visibility: multiply by 10 for display only
-                // This makes quiet sounds visible (0.001 becomes 1%)
-                var displayLevel = level * 10;
-                var pct = Math.max(0, Math.min(100, Math.round(displayLevel * 100)));
-
-                // Color code: green for low, yellow for medium, red for clipping
-                if (pct < 30) {
-                    meterEl.className = 'progress-bar bg-success';
-                } else if (pct < 70) {
-                    meterEl.className = 'progress-bar bg-warning';
-                } else {
-                    meterEl.className = 'progress-bar bg-danger';
-                }
-
-                // Only log when level changes significantly (reduces console spam)
-                if (Math.abs(pct - lastLoggedPct) >= 5 || pct > 10) {
-                    console.log('🎤 Audio level:', level.toFixed(6), '→', pct + '% (amplified 10x)');
-                    lastLoggedPct = pct;
-                }
-
-                meterEl.style.width = pct + '%';
-                meterEl.setAttribute('aria-valuenow', String(pct));
-                labelEl.textContent = pct + '%';
-            })
-            .catch(function (err) {
-                self.vuPending = false;
-                console.error('VU meter fetch error:', err);
-            });
-    }
-
-    // Reduced polling frequency: 500ms instead of 300ms for better performance
-    updateVU(); // Initial update
-    self.vuTimer = setInterval(updateVU, 500);
+    // VU meter is now driven by WebSocket audio_level messages from the server mic loop.
+    // No HTTP polling needed — the server pushes levels every ~500ms during active sessions.
+    self._vuActive = true;
+    console.log('VU meter active (WebSocket-driven)');
 };
 
 STTManager.prototype.stopVUMeter = function () {
@@ -1062,10 +1010,10 @@ STTManager.prototype.stopVUMeter = function () {
         clearInterval(this.vuTimer);
         this.vuTimer = null;
     }
-    this.vuPending = false; // Reset pending flag
+    this._vuActive = false;
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
-    if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); }
+    if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'progress-bar bg-success'; }
     if (labelEl) { labelEl.textContent = '0%'; }
 };
 
@@ -1113,7 +1061,7 @@ STTManager.prototype.getAgentIdForCharacter = function (charId, callback) {
         .catch(function () { callback(null); });
 };
 
-// Connect to WebSocket server (port 8795)
+// Connect to WebSocket server
 STTManager.prototype.connectWebSocket = function () {
     var self = this;
 
@@ -1122,10 +1070,11 @@ STTManager.prototype.connectWebSocket = function () {
         return;
     }
 
-    console.log('🔌 Connecting to WebSocket on port 8795...');
+    var wsPort = document.body.getAttribute('data-ws-port') || '8795';
+    console.log('🔌 Connecting to WebSocket on port ' + wsPort + '...');
 
     var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-    var wsUrl = protocol + '//' + window.location.hostname + ':8795';
+    var wsUrl = protocol + '//' + window.location.hostname + ':' + wsPort;
 
     try {
         self.ws = new WebSocket(wsUrl);
@@ -1159,6 +1108,28 @@ STTManager.prototype.connectWebSocket = function () {
             try {
                 var msg = JSON.parse(ev.data);
                 if (!msg) return;
+
+                // VU meter update from server mic loop (real-time, no HTTP polling)
+                if (msg.type === 'audio_level' && self._vuActive) {
+                    var pct = Math.max(0, Math.min(100, msg.level || 0));
+                    var meterEl = document.getElementById('micVUMeter');
+                    var labelEl = document.getElementById('micVULabel');
+                    if (meterEl) {
+                        meterEl.style.width = pct + '%';
+                        meterEl.setAttribute('aria-valuenow', String(pct));
+                        if (pct > 70) { meterEl.className = 'progress-bar bg-danger'; }
+                        else if (pct > 40) { meterEl.className = 'progress-bar bg-warning'; }
+                        else { meterEl.className = 'progress-bar bg-success'; }
+                    }
+                    if (labelEl) { labelEl.textContent = pct + '%'; }
+                    // Auto-decay after 800ms of silence
+                    if (self._vuDecayTimer) clearTimeout(self._vuDecayTimer);
+                    self._vuDecayTimer = setTimeout(function () {
+                        if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'progress-bar bg-success'; }
+                        if (labelEl) { labelEl.textContent = '0%'; }
+                    }, 800);
+                    return;
+                }
 
                 // Handle user transcript (final)
                 if (msg.type === 'user_transcript' && msg.user_transcription_event && msg.user_transcription_event.user_transcript) {

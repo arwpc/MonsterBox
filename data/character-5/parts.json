@@ -41,9 +41,11 @@
     "characterId": 5,
     "name": "Groundbreaker Speaker",
     "type": "speaker",
-    "deviceName": "default",
-    "volume": 80,
     "description": "Audio output speaker",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 85
+    },
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true
   },

@@ -822,7 +822,8 @@
             return aiWebSockets[animId];
         }
 
-        var wsUrl = 'ws://' + ip + ':8795';
+        var wsPort = document.body.getAttribute('data-ws-port') || '8795';
+        var wsUrl = 'ws://' + ip + ':' + wsPort;
         console.log('🔌 Connecting to AI WebSocket for ' + name + ':', wsUrl);
 
         var ws = new WebSocket(wsUrl);

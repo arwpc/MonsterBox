@@ -1,7 +1,7 @@
 {
   "model": "scribe_v2",
   "language": "en",
-  "format": "mp3",
+  "format": "wav",
   "sampleRate": 16000,
   "channels": 1,
   "microphonePartId": "7",

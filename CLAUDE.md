@@ -2,7 +2,7 @@
 
 ## Project Identity
 - **Application:** MonsterBox — RPi4b-based animatronic character control system
-- **Version:** 6.1.0
+- **Version:** 6.1.2
 - **Owner:** Aaron Warner, Coralville, Iowa
 - **Stack:** Node.js, Express, EJS templates, Python hardware scripts, Raspberry Pi 4B
 - **Repository:** Local git, commit frequently with descriptive messages
@@ -53,9 +53,9 @@
 
 ## Git Workflow
 - Commit after each logical unit of work (not at end of session)
-- Commit message format: `v6.1.0: [phase] brief description`
-- Example: `v6.1.0: [animation-studio] add jaw-animation step type to executor`
-- Tag final version: `git tag -a v6.1.0 -m "MonsterBox 6.1.0 release"`
+- Commit message format: `v6.1.2: [phase] brief description`
+- Example: `v6.1.2: [animation-studio] add jaw-animation step type to executor`
+- Tag final version: `git tag -a v6.1.2 -m "MonsterBox 6.1.2 release"`
 
 ## Session Startup Checklist
 1. Read `README.md` completely

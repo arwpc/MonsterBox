@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream } from 'fs';
 import multer from 'multer';
 import path from 'path';
 import goblinManagerService from '../services/goblinManagerService.js';
@@ -277,7 +277,7 @@ router.get('/api/video/:id/stream', async (req, res) => {
                 'Content-Disposition': `inline; filename="${video.originalName}"`
             });
 
-            const stream = require('fs').createReadStream(filePath, { start, end });
+            const stream = createReadStream(filePath, { start, end });
             stream.pipe(res);
         } else {
             res.writeHead(200, {
@@ -286,7 +286,7 @@ router.get('/api/video/:id/stream', async (req, res) => {
                 'Content-Disposition': `inline; filename="${video.originalName}"`
             });
 
-            const stream = require('fs').createReadStream(filePath);
+            const stream = createReadStream(filePath);
             stream.pipe(res);
         }
     } catch (error) {
@@ -311,7 +311,7 @@ router.get('/api/video/:id/download', async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="${video.originalName}"`);
         res.setHeader('Content-Type', `video/${video.format}`);
 
-        const stream = require('fs').createReadStream(filePath);
+        const stream = createReadStream(filePath);
         stream.pipe(res);
     } catch (error) {
         console.error('Error downloading video:', error);
@@ -333,7 +333,7 @@ router.get('/api/video/:id/thumbnail', async (req, res) => {
         res.setHeader('Content-Type', 'image/jpeg');
         res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
 
-        const stream = require('fs').createReadStream(result.thumbnailPath);
+        const stream = createReadStream(result.thumbnailPath);
         stream.pipe(res);
     } catch (error) {
         console.error('Error getting thumbnail:', error);

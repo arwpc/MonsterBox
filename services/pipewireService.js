@@ -117,99 +117,105 @@ class PipeWireService {
     }
 
     /**
-     * Parse wpctl status output for sinks
+     * Parse a specific section from wpctl status output.
+     * Handles tree-drawing characters (│├└─) and the * default marker.
+     * @param {string} output - full wpctl status stdout
+     * @param {string} topSection - top-level section name (e.g. "Audio")
+     * @param {string} subSection - sub-section header (e.g. "Sinks:")
      */
-    parseWpctlSinks(output) {
-        const sinks = [];
+    _parseWpctlSection(output, topSection, subSection) {
+        const items = [];
         const lines = output.split('\n');
-        let inSinksSection = false;
+        let inTopSection = false;
+        let inSubSection = false;
 
         for (const line of lines) {
-            if (line.includes('Audio') && line.includes('Sinks:')) {
-                inSinksSection = true;
+            // Top-level sections ("Audio", "Video", "Settings") start at column 0 with no tree chars
+            const trimmed = line.trimEnd();
+            if (/^[A-Z][a-z]+$/.test(trimmed)) {
+                if (trimmed === topSection) {
+                    inTopSection = true;
+                    inSubSection = false;
+                } else {
+                    inTopSection = false;
+                    inSubSection = false;
+                }
                 continue;
             }
-            if (inSinksSection && line.trim() === '') {
-                inSinksSection = false;
+
+            if (!inTopSection) continue;
+
+            // Detect sub-section header (e.g. " ├─ Sinks:")
+            if (line.includes(subSection)) {
+                inSubSection = true;
                 continue;
             }
-            if (inSinksSection) {
-                const match = line.match(/\s*(\d+)\.\s*(.+?)\s*\[(.+?)\]/);
-                if (match) {
-                    const [, id, name, state] = match;
-                    const isDefault = line.includes('*') || state.includes('default');
-                    sinks.push({
-                        id: id,
-                        name: name.trim(),
-                        description: isDefault ? `${name.trim()} [Default]` : name.trim(),
+            // Next sub-section header ends current sub-section
+            if (inSubSection && /[├└]/.test(line) && line.includes(':')) {
+                inSubSection = false;
+                continue;
+            }
+            // Strip tree drawing chars for emptiness check
+            const cleaned = line.replace(/[│├└─\s*]/g, '');
+            // Empty tree line (just │ and whitespace) ends the sub-section
+            if (inSubSection && cleaned === '') {
+                inSubSection = false;
+                continue;
+            }
+
+            if (!inSubSection) continue;
+
+            // Parse item lines like: " │  *   88. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.90]"
+            const isDefault = line.includes('*');
+            const match = line.match(/(\d+)\.\s+(.+?)\s+\[(.+?)\]/);
+            if (!match) {
+                // Some items may lack a bracketed state (e.g. video sources)
+                const noState = line.match(/(\d+)\.\s+(.+)/);
+                if (noState) {
+                    items.push({
+                        id: noState[1],
+                        name: noState[2].trim(),
+                        description: isDefault ? `${noState[2].trim()} [Default]` : noState[2].trim(),
                         isDefault,
-                        state: state.trim()
+                        state: 'RUNNING'
                     });
                 }
+                continue;
             }
+            const [, id, name, state] = match;
+            items.push({
+                id,
+                name: name.trim(),
+                description: isDefault ? `${name.trim()} [Default]` : name.trim(),
+                isDefault,
+                state: state.trim()
+            });
         }
 
         // Ensure default appears first
-        sinks.sort((a, b) => {
+        items.sort((a, b) => {
             if (a.isDefault && !b.isDefault) return -1;
             if (!a.isDefault && b.isDefault) return 1;
             return a.name.localeCompare(b.name);
         });
 
-        // Add generic defaults if no devices found
-        if (sinks.length === 0) {
-            return this.getDefaultSinks();
-        }
+        return items;
+    }
 
-        return sinks;
+    /**
+     * Parse wpctl status output for sinks
+     */
+    parseWpctlSinks(output) {
+        const sinks = this._parseWpctlSection(output, 'Audio', 'Sinks:');
+        return sinks.length > 0 ? sinks : this.getDefaultSinks();
     }
 
     /**
      * Parse wpctl status output for sources
      */
     parseWpctlSources(output) {
-        const sources = [];
-        const lines = output.split('\n');
-        let inSourcesSection = false;
-
-        for (const line of lines) {
-            if (line.includes('Audio') && line.includes('Sources:')) {
-                inSourcesSection = true;
-                continue;
-            }
-            if (inSourcesSection && line.trim() === '') {
-                inSourcesSection = false;
-                continue;
-            }
-            if (inSourcesSection) {
-                const match = line.match(/\s*(\d+)\.\s*(.+?)\s*\[(.+?)\]/);
-                if (match) {
-                    const [, id, name, state] = match;
-                    const isDefault = line.includes('*') || state.includes('default');
-                    sources.push({
-                        id: id,
-                        name: name.trim(),
-                        description: isDefault ? `${name.trim()} [Default]` : name.trim(),
-                        isDefault,
-                        state: state.trim()
-                    });
-                }
-            }
-        }
-
-        // Ensure default appears first
-        sources.sort((a, b) => {
-            if (a.isDefault && !b.isDefault) return -1;
-            if (!a.isDefault && b.isDefault) return 1;
-            return a.name.localeCompare(b.name);
-        });
-
-        // Add generic defaults if no devices found
-        if (sources.length === 0) {
-            return this.getDefaultSources();
-        }
-
-        return sources;
+        const sources = this._parseWpctlSection(output, 'Audio', 'Sources:');
+        return sources.length > 0 ? sources : this.getDefaultSources();
     }
 
     /**
@@ -688,24 +694,6 @@ class PipeWireService {
         return tools;
     }
 
-    /**
-     * Move sink input to different sink
-     */
-    async moveSinkInput(sinkInputId, sinkId) {
-        try {
-            await pexec(`wpctl set-default ${sinkInputId} ${sinkId}`);
-            return { success: true, sinkInputId, sinkId };
-        } catch (wpError) {
-            try {
-                // Fallback to pactl
-                await pexec(`pactl move-sink-input ${sinkInputId} ${sinkId}`);
-                return { success: true, sinkInputId, sinkId };
-            } catch (paError) {
-                console.error('Failed to move sink input:', paError.message);
-                return { success: false, error: paError.message };
-            }
-        }
-    }
 }
 
 // Export singleton instance

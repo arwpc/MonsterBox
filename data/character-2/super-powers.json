@@ -1,13 +1,13 @@
 {
   "jawAnimation": {
-    "enabled": true,
-    "servoPartId": null,
+    "enabled": false,
+    "servoPartId": "10",
     "sensitivity": 1,
     "smoothing": 0.6,
     "volumeThreshold": 0.02,
     "attackTime": 50,
     "releaseTime": 150,
-    "minAngle": null,
-    "maxAngle": null
+    "minAngle": 70,
+    "maxAngle": 93
   }
 }

@@ -2,6 +2,39 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.1.2] - 2026-02-16 — Audio Stack Overhaul
+
+### Critical Bug Fixes
+- **Fixed `require()` crash in ES module** — `elevenLabsWebSocketService.js` used CommonJS `require('child_process')` inside an ES module, causing runtime crash when `_filterWavForSTT()` was called. Replaced with proper ES `import { spawn }` at top of file.
+- **Fixed duplicate `moveSinkInput`** — `pipewireService.js` had a second definition (using `wpctl set-default` which sets the global default) shadowing the correct first definition (using `wpctl move`). Removed the incorrect duplicate.
+- **Fixed PipeWire sink/source listing** — `parseWpctlSinks()` checked `line.includes('Audio') && line.includes('Sinks:')` but wpctl status puts these on separate lines, so the parser never found any sinks and always fell back to placeholder "Default Output"/"PulseAudio Output". Rewrote parser to correctly handle wpctl's tree-drawing format with `│├└─` characters and `*` default markers.
+
+### Audio Configuration Standardization
+- **Sample rate**: Standardized to 16000 Hz across `elevenLabsConfigService`, `elevenLabsSTTService` transcription preset, and `microphoneService` format default
+- **VAD threshold**: Unified to 0.40 across `characterAudioConfigService`, `serverSTTListener` (was 0.03/0.5 in various places)
+- **Microphone format**: Fixed default from `float32` to `pcm_s16le` in `microphoneService` to match actual capture pipeline
+- **Playback volume**: Added `DEFAULT_VOLUME = 85` constant in `serverPlaybackService`, replaced all scattered 80/85/90 defaults
+- **Speaker device field**: Canonicalized to `config.audioDeviceId` across all data files and services (was `device`, `deviceName`, `outputDevice` in various places)
+- **STT format**: Fixed character-3 STT config from `mp3` to `wav`
+
+### VU Meter Unification
+- Replaced HTTP polling VU meter on STT page (`fetch('/setup/audio/api/audio-levels')` at 500ms interval spawning Python each time) with WebSocket-driven push (receives `audio_level` messages from existing WS connection)
+- Auto-decay timer (800ms) matches Chat page behavior
+- Color-coded bars: green (<40%), warning (40-70%), danger (>70%)
+
+### Error Handling Improvements
+- **TTS error extraction**: Fixed arraybuffer response parsing — ElevenLabs error details (e.g., "quota_exceeded: You have 1 credits remaining") were lost because `error.response.data.detail` returns undefined on a Buffer. Added `_extractError()` helper to decode Buffer error bodies.
+- **Security fix**: Stopped dumping full axios error objects (which include API key in request headers) to console.error. Now only logs the extracted error message.
+- **UI error surfacing**: TTS page now shows actual error messages ("quota_exceeded: ...") instead of generic "TTS generation failed (HTTP 401)"
+
+### WebSocket Port Centralization
+- Added `data-ws-port="8795"` attribute on `<body>` in `master.ejs`
+- Updated 5 client files (`ai-settings.js`, `ai-settings-stt.js`, `websocket-chat.js`, `mic-panel.js`, `orchestration/index.ejs`) to read port from DOM attribute instead of hardcoding
+
+### Data File Updates
+- Normalized speaker `config.audioDeviceId` in `data/parts.json` and all `data/character-*/parts.json` files
+- Updated `calibration.ejs` edit form to write canonical field names for speakers and microphones
+
 ## [6.1.1] - 2026-02-16 — Bootswatch Themes, PIR Sensor Fix, Calibration Refactor
 
 ### Bootswatch Theme Gallery

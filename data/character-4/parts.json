@@ -84,8 +84,8 @@
     "pin": null,
     "description": "Main speaker",
     "config": {
-      "device": "default",
-      "volume": 80
+      "audioDeviceId": "default",
+      "volume": 85
     },
     "created": "2025-10-12T06:00:05.000Z",
     "enabled": true,

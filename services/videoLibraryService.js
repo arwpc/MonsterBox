@@ -45,11 +45,11 @@ async function releaseLock() {
 
 class VideoLibraryService {
     constructor() {
-        this.videoDir = path.resolve('./data/video-library');
+        this.videoDir = path.join(__dirname, '..', 'data', 'video-library');
         this.filesDir = path.join(this.videoDir, 'files');
         this.libraryFile = path.join(this.videoDir, 'library.json');
         this.thumbnailsDir = path.join(this.videoDir, 'thumbnails');
-        
+
         // Supported video formats
         this.supportedFormats = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v'];
         this.supportedMimes = [
@@ -57,7 +57,7 @@ class VideoLibraryService {
             'video/webm', 'video/x-flv', 'video/x-ms-wmv'
         ];
 
-        this.init();
+        this._initPromise = this.init();
     }
 
     async init() {
@@ -80,10 +80,81 @@ class VideoLibraryService {
                 });
             }
 
-            console.log('✅ Video Library Service initialized');
+            console.log('Video Library Service initialized');
         } catch (error) {
-            console.error('❌ Failed to initialize Video Library Service:', error);
-            throw error;
+            console.error('Failed to initialize Video Library Service:', error);
+        } finally {
+            await releaseLock();
+        }
+
+        // Rescan to pick up any files on disk not in library.json
+        await this.rescanLibrary();
+    }
+
+    /**
+     * Rescan the files directory and add any video files not yet in the library.
+     */
+    async rescanLibrary() {
+        await acquireLock();
+        try {
+            const libraryData = await this.loadLibraryData();
+            const existingFileNames = new Set((libraryData.videos || []).map(v => v.fileName));
+
+            let filesOnDisk = [];
+            try {
+                filesOnDisk = await fs.readdir(this.filesDir);
+            } catch (err) {
+                if (err.code !== 'ENOENT') throw err;
+            }
+
+            const videoFiles = filesOnDisk.filter(f => {
+                const ext = path.extname(f).toLowerCase();
+                return this.supportedFormats.includes(ext);
+            });
+
+            let added = 0;
+            for (const fileName of videoFiles) {
+                if (!existingFileNames.has(fileName)) {
+                    const ext = path.extname(fileName);
+                    const baseName = path.basename(fileName, ext);
+                    const filePath = path.join(this.filesDir, fileName);
+
+                    let fileSize = 0;
+                    try {
+                        const stats = await fs.stat(filePath);
+                        fileSize = stats.size;
+                    } catch (_) { /* ignore */ }
+
+                    const videoInfo = await this.extractVideoMetadata(filePath);
+
+                    libraryData.videos.push({
+                        id: baseName,
+                        title: baseName,
+                        description: '',
+                        category: 'other',
+                        tags: [],
+                        originalName: fileName,
+                        fileName: fileName,
+                        format: ext.substring(1).toLowerCase(),
+                        fileSize: fileSize,
+                        duration: videoInfo.duration || 0,
+                        resolution: videoInfo.resolution || 'unknown',
+                        fps: videoInfo.fps || 0,
+                        bitrate: videoInfo.bitrate || 0,
+                        uploadedAt: new Date().toISOString(),
+                        favorite: false,
+                        playCount: 0,
+                        thumbnailPath: null
+                    });
+                    added++;
+                }
+            }
+
+            if (added > 0) {
+                libraryData.lastUpdated = new Date().toISOString();
+                await this.saveLibraryData(libraryData);
+                console.log('Video library rescanned: ' + added + ' new files added');
+            }
         } finally {
             await releaseLock();
         }

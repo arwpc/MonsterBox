@@ -38,8 +38,8 @@
     "pin": null,
     "description": "Left speaker",
     "config": {
-      "device": "default",
-      "volume": 80
+      "audioDeviceId": "default",
+      "volume": 85
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
@@ -60,8 +60,8 @@
     "pin": null,
     "description": "Right speaker",
     "config": {
-      "device": "default",
-      "volume": 80
+      "audioDeviceId": "default",
+      "volume": 85
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
@@ -106,12 +106,23 @@
     "description": "Main webcam for vision",
     "config": {
       "devicePath": "/dev/video0",
-      "deviceId": "video0"
+      "deviceId": "video0",
+      "motionTracking": {
+        "motionThreshold": 42,
+        "minContourArea": 500,
+        "trackingSmoothing": 0.3,
+        "trackingDeadzone": 8
+      },
+      "headTracking": {
+        "panServoId": "",
+        "rangeDeg": 90,
+        "smoothing": 0.35
+      }
     },
     "created": "2025-10-14T02:20:17.009Z",
     "enabled": true,
     "modelId": "default-uvc-1",
-    "updated": "2025-10-27T07:19:48.892Z"
+    "updated": "2026-02-16T18:50:55.862Z"
   },
   {
     "id": "7",
@@ -137,8 +148,8 @@
     "pin": null,
     "description": "USB audio dongle speaker",
     "config": {
-      "device": "default",
-      "volume": 80
+      "audioDeviceId": "default",
+      "volume": 85
     },
     "created": "2025-10-14T02:20:17.065Z",
     "enabled": true,

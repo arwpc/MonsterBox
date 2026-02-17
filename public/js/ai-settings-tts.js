@@ -417,9 +417,12 @@ TTSManager.prototype.testTTSConfiguration = function () {
     .then(function (r) {
         if (r.ok) {
             self.showAlert('TTS configuration test passed! Voice and API are working.', 'success');
-        } else {
-            throw new Error('TTS generation failed (HTTP ' + r.status + ')');
+            return;
         }
+        return r.json().catch(function () { return {}; }).then(function (j) {
+            var detail = (j && (j.details || j.error)) || ('HTTP ' + r.status);
+            throw new Error(detail);
+        });
     })
     .catch(function (e) {
         console.error('TTS test error:', e);
@@ -471,9 +474,11 @@ TTSManager.prototype.generateSpeech = function () {
         .then(function (response) {
             if (response.ok) {
                 return response.blob();
-            } else {
-                throw new Error('Failed to generate speech');
             }
+            return response.json().catch(function () { return {}; }).then(function (j) {
+                var detail = (j && (j.details || j.error)) || ('HTTP ' + response.status);
+                throw new Error(detail);
+            });
         })
         .then(function (audioBlob) {
             self.playGeneratedAudio(audioBlob);
@@ -481,7 +486,7 @@ TTSManager.prototype.generateSpeech = function () {
         })
         .catch(function (error) {
             console.error('Speech generation error:', error);
-            self.showAlert('Failed to generate speech', 'danger');
+            self.showAlert('Speech generation failed: ' + error.message, 'danger');
         })
         .finally(function () {
             generateBtn.innerHTML = originalText;
@@ -630,9 +635,11 @@ TTSManager.prototype.previewVoice = function (voiceId) {
         .then(function (response) {
             if (response.ok) {
                 return response.blob();
-            } else {
-                throw new Error('Failed to generate voice preview');
             }
+            return response.json().catch(function () { return {}; }).then(function (j) {
+                var detail = (j && (j.details || j.error)) || ('HTTP ' + response.status);
+                throw new Error(detail);
+            });
         })
         .then(function (audioBlob) {
             // Play preview through the same system as main TTS
@@ -641,7 +648,7 @@ TTSManager.prototype.previewVoice = function (voiceId) {
         })
         .catch(function (error) {
             console.error('Voice preview error:', error);
-            self.showAlert('Failed to generate voice preview', 'danger');
+            self.showAlert('Voice preview failed: ' + error.message, 'danger');
         });
 };
 

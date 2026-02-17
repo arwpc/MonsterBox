@@ -1,6 +1,6 @@
 {
   "port": 3000,
-  "theme": "dark",
-  "selectedCharacter": 2,
-  "dataPath": "data/character-2"
+  "theme": "darkly",
+  "selectedCharacter": 1,
+  "dataPath": "data/character-1"
 }

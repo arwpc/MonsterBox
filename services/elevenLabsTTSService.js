@@ -15,6 +15,26 @@ class ElevenLabsTTSService {
         this._preferMp3 = this._detectMpg123Availability();
     }
 
+    /**
+     * Extract a human-readable error from an axios error (handles arraybuffer/stream responses)
+     */
+    _extractError(error) {
+        try {
+            if (error.response?.data) {
+                const d = error.response.data;
+                const raw = Buffer.isBuffer(d) ? d.toString('utf8')
+                    : (typeof d === 'string' ? d : null);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    const detail = parsed?.detail;
+                    if (typeof detail === 'string') return detail;
+                    if (detail?.message) return `${detail.status || 'error'}: ${detail.message}`;
+                }
+            }
+        } catch (_) { /* fall through */ }
+        return error.message;
+    }
+
     _detectMpg123Availability() {
         try {
             // Allow explicit override via env
@@ -47,12 +67,9 @@ class ElevenLabsTTSService {
                 voices: response.data.voices || []
             };
         } catch (error) {
-            console.error('Error fetching voices:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message,
-                voices: []
-            };
+            const msg = this._extractError(error);
+            console.error('Error fetching voices:', msg);
+            return { success: false, error: msg, voices: [] };
         }
     }
 
@@ -76,11 +93,9 @@ class ElevenLabsTTSService {
                 voice: response.data
             };
         } catch (error) {
-            console.error('Error fetching voice:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            const msg = this._extractError(error);
+            console.error('Error fetching voice:', msg);
+            return { success: false, error: msg };
         }
     }
 
@@ -132,11 +147,9 @@ class ElevenLabsTTSService {
                 contentType: response.headers['content-type'] || (this._preferMp3 ? 'audio/mpeg' : 'audio/wav')
             };
         } catch (error) {
-            console.error('TTS generation error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            const msg = this._extractError(error);
+            console.error('TTS generation error:', msg);
+            return { success: false, error: msg };
         }
     }
 
@@ -177,11 +190,9 @@ class ElevenLabsTTSService {
                 contentType: response.headers['content-type'] || (this._preferMp3 ? 'audio/mpeg' : 'audio/wav')
             };
         } catch (error) {
-            console.error('TTS streaming error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            const msg = this._extractError(error);
+            console.error('TTS streaming error:', msg);
+            return { success: false, error: msg };
         }
     }
 
@@ -205,12 +216,9 @@ class ElevenLabsTTSService {
                 models: response.data || []
             };
         } catch (error) {
-            console.error('Error fetching TTS models:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message,
-                models: []
-            };
+            const msg = this._extractError(error);
+            console.error('Error fetching TTS models:', msg);
+            return { success: false, error: msg, models: [] };
         }
     }
 
@@ -245,11 +253,9 @@ class ElevenLabsTTSService {
                 voice: response.data
             };
         } catch (error) {
-            console.error('Voice cloning error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            const msg = this._extractError(error);
+            console.error('Voice cloning error:', msg);
+            return { success: false, error: msg };
         }
     }
 
@@ -273,11 +279,9 @@ class ElevenLabsTTSService {
                 message: 'Voice deleted successfully'
             };
         } catch (error) {
-            console.error('Error deleting voice:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
+            const msg = this._extractError(error);
+            console.error('Error deleting voice:', msg);
+            return { success: false, error: msg };
         }
     }
 

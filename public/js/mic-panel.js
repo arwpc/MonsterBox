@@ -59,7 +59,8 @@
       if (!cfg.enableStt) return;
       try {
         var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-        var wsUrl = protocol + '//' + window.location.hostname + ':8795';
+        var wsPort = document.body.getAttribute('data-ws-port') || '8795';
+        var wsUrl = protocol + '//' + window.location.hostname + ':' + wsPort;
         ws = new WebSocket(wsUrl);
         ws.onopen = async function () {
           wsConnected = true; setStatus((statusEl?.textContent || '') + ' • WS connected');

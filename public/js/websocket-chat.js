@@ -26,7 +26,7 @@ WebSocketChatClient.prototype.connect = function () {
         // When on HTTPS, connect via reverse-proxied path so no port is needed
         var wsUrl = isSecure
             ? (wsProto + '://' + window.location.host + '/ai-chat')
-            : (wsProto + '://' + window.location.hostname + ':8795');
+            : (wsProto + '://' + window.location.hostname + ':' + (document.body.getAttribute('data-ws-port') || '8795'));
         console.log('🔌 Connecting to WebSocket:', wsUrl);
 
         this.ws = new WebSocket(wsUrl);

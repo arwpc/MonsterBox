@@ -74,7 +74,7 @@ class ServerSTTListener {
     const state = {
       deviceId, model, language, running: true, transcript: '', lastError: null, timer: null,
       chunksCaptured: 0, chunksWithAudio: 0, chunksTranscribed: 0, lastChunkBytes: 0, startedAt: Date.now(), lastActivityAt: null,
-      vadEnabled: false, vadThreshold: 0.03, consecutiveErrors: 0, maxConsecutiveErrors: 10
+      vadEnabled: false, vadThreshold: 0.40, consecutiveErrors: 0, maxConsecutiveErrors: 10
     };
 
     console.log(`🎤 Starting STT session ${sessionId} for device: ${deviceId}, model: ${model}, language: ${language}`);
@@ -85,7 +85,7 @@ class ServerSTTListener {
         if (!cfg) return;
         state.vadEnabled = !!cfg.vadEnabled;
         if (typeof cfg.vadThreshold === 'number') {
-          var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.03; state.vadThreshold = t;
+          var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.40; state.vadThreshold = t;
         }
         console.log(`🎤 Session ${sessionId} VAD settings: enabled=${state.vadEnabled}, threshold=${state.vadThreshold}`);
       }).catch(() => { /* ignore */ });
@@ -108,7 +108,7 @@ class ServerSTTListener {
           try {
             if (state.vadEnabled) {
               rms = this._computeWavRms(buffer);
-              var thr = state.vadThreshold || 0.03;
+              var thr = state.vadThreshold || 0.40;
               if (!(rms >= thr)) {
                 shouldTranscribe = false;
                 if (state.chunksCaptured % 20 === 0) {

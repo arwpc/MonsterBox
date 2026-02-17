@@ -86,8 +86,8 @@
     "pin": null,
     "description": "Main speaker",
     "config": {
-      "device": "default",
-      "volume": 80
+      "audioDeviceId": "default",
+      "volume": 85
     },
     "created": "2025-10-12T06:00:05.000Z",
     "enabled": true,
@@ -101,11 +101,23 @@
     "description": "Main webcam",
     "config": {
       "devicePath": "/dev/video0",
-      "deviceId": "video0"
+      "deviceId": "video0",
+      "motionTracking": {
+        "motionThreshold": 42,
+        "minContourArea": 500,
+        "trackingSmoothing": 0.3,
+        "trackingDeadzone": 8
+      },
+      "headTracking": {
+        "panServoId": "",
+        "rangeDeg": 90,
+        "smoothing": 0.35
+      }
     },
     "created": "2025-10-12T06:00:06.000Z",
     "enabled": true,
-    "modelId": "default-uvc-1"
+    "modelId": "default-uvc-1",
+    "updated": "2026-02-17T02:51:25.627Z"
   },
   {
     "id": "8",

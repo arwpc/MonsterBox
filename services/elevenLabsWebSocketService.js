@@ -5,6 +5,7 @@
  * Upgraded: Uses Scribe v2 Realtime for live STT instead of batch transcription
  */
 
+import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
@@ -1008,7 +1009,6 @@ class ElevenLabsWebSocketService extends EventEmitter {
             const lowpass = (filterConfig && filterConfig.lowpassFreq) || 4200;
             const denoise = (filterConfig && filterConfig.denoiseLevel) || -22;
 
-            const { spawn } = require('child_process');
             return await new Promise(function (resolve) {
                 try {
                     // Build optimized filter chain

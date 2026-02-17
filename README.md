@@ -10,27 +10,18 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.1.1 (February 2026)
+## What's New — v6.1.2 (February 2026)
 
-### Bootswatch Theme Gallery
-- **17 Bootswatch themes** (10 light + 7 dark) available as complete Bootstrap CSS replacements
-- Visual theme gallery on System page (`/setup/system`) with color swatches and light/dark badges
-- **Live preview** — click any theme card to instantly swap CSS without page reload
-- "Apply Theme" saves to config; theme persists across all pages
-- Legacy `dark`/`light` values automatically mapped to `default-dark`/`default-light`
-- Custom CSS overrides scoped to `default-dark` only (Bootswatch themes use their own colors)
+### Audio Stack Overhaul
+- **Fixed 3 critical bugs**: `require()` crash in ES module, duplicate `moveSinkInput` shadowing, broken wpctl sink/source parser that always returned placeholder devices
+- **Standardized audio defaults**: 16kHz sample rate, 0.40 VAD threshold, `pcm_s16le` format, `DEFAULT_VOLUME = 85` — consistent across all 8+ services
+- **Canonical speaker field**: `config.audioDeviceId` everywhere (was `device`, `deviceName`, `outputDevice` in various files)
+- **Real PipeWire devices**: Audio Configuration page now shows actual hardware (Unitek Y-247A, Built-in Audio) instead of generic "Default Output"
+- **VU meter upgrade**: STT page uses WebSocket push instead of HTTP polling (no more Python spawns per poll)
+- **Better error messages**: TTS quota/API errors now surfaced to UI with actual details instead of generic "500"
+- **WebSocket port centralized**: All 5 client JS files read from `data-ws-port` DOM attribute instead of hardcoding 8795
 
-### PIR Motion Sensor Fix
-- Fixed `/api/parts/:id/test` route — was double-nested (`/api/parts/parts/:id/test`) causing 404s
-- Parts test endpoint now dispatches by part type: `motion_sensor`, `servo`, `light`, `linear_actuator`
-- PIR sensor "Read" and "Detect Motion" buttons on calibration page now work correctly
-- Parts API is now character-aware (reads from `data/character-{id}/parts.json`)
-
-### Calibration Panel Refactor
-- Calibration UI (right panel, simple calibration card, sweep test button) now **hidden** for non-movement parts
-- Only shown for `servo`, `linear_actuator`, `motor`, `stepper` — parts with physical movement
-- Center panel expands to fill the space when calibration is hidden
-- Non-movement parts (webcam, microphone, speaker, light, LED, motion sensor) show only their type-specific controls
+### Previous: v6.1.1 — Bootswatch Themes, PIR Sensor Fix, Calibration Refactor
 
 ### Previous: v6.1.0 — Animation Studio
 - **Unified three-panel interface** at `/scenes` replaces separate Scenes, Scene Editor, and Poses pages
@@ -314,12 +305,12 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v6.1.1 - February 2026)
+### Test Results (v6.1.2 - February 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System | Mocha | 160 | 2 | 0 |
-| Unit | Mocha | 226 | 32 | 0 |
+| System | Mocha | 174 | 2 | 0 |
+| Unit | Mocha | 240 | 32 | 0 |
 | Browser E2E (9 spec files) | Playwright | 174 | 7 | 2* |
 
 *\*2 pre-existing: AI Settings VU meter (hardware-dependent), Jaw Animation save config (disabled option). Not code bugs.*

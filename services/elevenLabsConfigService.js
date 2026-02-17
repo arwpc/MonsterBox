@@ -104,7 +104,7 @@ class ElevenLabsConfigService {
      */
     getAudioConfig() {
         return {
-            sampleRate: parseInt(this.config.AUDIO_SAMPLE_RATE) || 44100,
+            sampleRate: parseInt(this.config.AUDIO_SAMPLE_RATE) || 16000,
             channels: parseInt(this.config.AUDIO_CHANNELS) || 1,
             format: this.config.AUDIO_FORMAT || 'wav'
         };

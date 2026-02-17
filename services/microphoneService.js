@@ -23,7 +23,7 @@ class MicrophoneService {
             voiceActivation: false,
             voiceActivationThreshold: 0.1,
             bufferSize: 1024,
-            format: 'float32'
+            format: 'pcm_s16le'
         };
     }
 

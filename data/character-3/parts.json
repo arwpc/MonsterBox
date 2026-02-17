@@ -155,11 +155,22 @@
     "config": {
       "devicePath": "/dev/video1",
       "deviceId": "video1",
-      "modelId": "default-uvc-1"
+      "modelId": "default-uvc-1",
+      "motionTracking": {
+        "motionThreshold": 42,
+        "minContourArea": 500,
+        "trackingSmoothing": 0.3,
+        "trackingDeadzone": 8
+      },
+      "headTracking": {
+        "panServoId": "",
+        "rangeDeg": 90,
+        "smoothing": 0.35
+      }
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2025-10-28T20:38:03.267Z",
+    "updated": "2026-02-16T03:42:46.743Z",
     "modelId": "default-uvc-1"
   },
   {
@@ -202,7 +213,7 @@
       }
     ],
     "modelId": "servo_miuzei_25kg",
-    "updated": "2025-10-06T02:23:46.073Z"
+    "updated": "2026-02-17T01:07:25.592Z"
   },
   {
     "id": "11",

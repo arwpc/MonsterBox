@@ -23,6 +23,18 @@ async function resolvePartsPath() {
   }
 }
 
+// Resolve PipeWire sink ID from a speaker part object.
+// Canonical field: config.audioDeviceId — legacy fallbacks kept for backward compat.
+function _resolveSpeakerDevice(speaker) {
+  if (!speaker) return 'default';
+  const cfg = speaker.config || {};
+  // Canonical field first, then legacy variants
+  return cfg.audioDeviceId || cfg.outputDevice || cfg.device || cfg.deviceName ||
+         cfg.pulseSink || cfg.sink || cfg.outputSink ||
+         speaker.audioDeviceId || speaker.outputDevice || speaker.deviceName ||
+         speaker.pulseSink || speaker.sink || 'default';
+}
+
 async function getSpeakerDeviceForCharacter(characterId) {
   try {
     const partsFile = await resolvePartsPath();
@@ -30,28 +42,7 @@ async function getSpeakerDeviceForCharacter(characterId) {
     const parts = JSON.parse(content);
     if (Array.isArray(parts)) {
       const speaker = parts.find(p => String(p.type).toLowerCase() === 'speaker' && Number(p.characterId) === Number(characterId));
-      if (speaker) {
-        // Try various common fields
-        const cfg = speaker.config || {};
-        // Support several historical/variant fields used in parts definitions
-        const candidates = [
-          cfg.outputDevice,
-          cfg.audioDeviceId,
-          cfg.deviceName,
-          cfg.pulseSink,
-          cfg.sink,
-          cfg.outputSink,
-          speaker.outputDevice,
-          speaker.deviceName,
-          speaker.pulseSink,
-          speaker.sink,
-          speaker.outputSink
-        ];
-        for (const c of candidates) {
-          if (c && String(c).trim()) return String(c).trim();
-        }
-        return 'default';
-      }
+      return _resolveSpeakerDevice(speaker);
     }
   } catch (e) {
     console.warn('⚠️ Could not resolve speaker for character:', e.message);
@@ -66,26 +57,7 @@ async function getSpeakerDeviceForPartId(speakerPartId) {
     const parts = JSON.parse(content);
     if (Array.isArray(parts)) {
       const speaker = parts.find(p => String(p.id) === String(speakerPartId) && String(p.type).toLowerCase() === 'speaker');
-      if (speaker) {
-        const cfg = speaker.config || {};
-        const candidates = [
-          cfg.outputDevice,
-          cfg.audioDeviceId,
-          cfg.deviceName,
-          cfg.pulseSink,
-          cfg.sink,
-          cfg.outputSink,
-          speaker.outputDevice,
-          speaker.deviceName,
-          speaker.pulseSink,
-          speaker.sink,
-          speaker.outputSink
-        ];
-        for (const c of candidates) {
-          if (c && String(c).trim()) return String(c).trim();
-        }
-        return 'default';
-      }
+      return _resolveSpeakerDevice(speaker);
     }
   } catch (e) {
     console.warn('⚠️ Could not resolve speaker for partId:', e.message);
@@ -110,6 +82,9 @@ async function writeTempAudio(buffer, contentType) {
   await fs.writeFile(filePath, buffer);
   return filePath;
 }
+
+// Canonical default volume for all playback paths (0-100)
+const DEFAULT_VOLUME = 85;
 
 class ServerPlaybackService {
   constructor() {
@@ -154,7 +129,7 @@ class ServerPlaybackService {
   }
 
   _calcMpg123Scale(volume) {
-    const vol = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : 80;
+    const vol = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : DEFAULT_VOLUME;
     return Math.max(0, Math.min(32768, Math.round(32768 * (vol / 100))));
   }
 
@@ -169,7 +144,7 @@ class ServerPlaybackService {
     }
 
     const deviceId = await this._resolveDeviceId(opts);
-    const volume = typeof opts.volume === 'number' ? opts.volume : 80;
+    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
 
     const env = { ...process.env };
     if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
@@ -228,7 +203,7 @@ class ServerPlaybackService {
           player: 'mpg123',
           contentType: 'audio/mpeg',
           streamed: buffer.length,
-          volume: typeof opts.volume === 'number' ? opts.volume : 80,
+          volume: typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME,
           simulated: false,
           kind: opts.kind || 'general'
         };
@@ -258,7 +233,7 @@ class ServerPlaybackService {
       return rec;
     }
     const sampleRate = opts.sampleRate || 16000;
-    const volume = typeof opts.volume === 'number' ? opts.volume : 90;
+    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
 
     const { spawn } = await import('child_process');
 
@@ -312,7 +287,7 @@ class ServerPlaybackService {
           player: 'pw-play(pcm)',
           contentType: 'audio/pcm',
           streamed: buffer.length,
-          volume: typeof opts.volume === 'number' ? opts.volume : 90,
+          volume: typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME,
           simulated: false,
           kind: opts.kind || 'ai'
         };
@@ -350,7 +325,7 @@ class ServerPlaybackService {
       if (!buffer || !buffer.length) return { success: false, error: 'No audio buffer provided' };
       const characterId = opts.characterId || null;
       const contentType = (opts.contentType || 'audio/mpeg').toLowerCase();
-      const volume = typeof opts.volume === 'number' ? opts.volume : 85;
+      const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
       const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
       // Stop any managed stream for this character so AI gets exclusive path
@@ -584,7 +559,7 @@ class ServerPlaybackService {
       }
       const characterId = opts.characterId || null;
       const contentType = opts.contentType || 'audio/mpeg';
-      const volume = typeof opts.volume === 'number' ? opts.volume : 80;
+      const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
 
       // In automated test mode, avoid invoking system audio; just record telemetry
       if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {

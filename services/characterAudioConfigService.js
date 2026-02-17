@@ -28,7 +28,7 @@ class CharacterAudioConfigService {
                 confidenceThreshold: 0.7,
                 realTimeProcessing: true,
                 provider: 'elevenlabs',
-                vadThreshold: 0.5,
+                vadThreshold: 0.40,
                 silenceDuration: 200,
                 prefixPadding: 300
             },
@@ -59,8 +59,8 @@ class CharacterAudioConfigService {
             },
             speaker: {
                 defaultSpeakerId: null,
-                outputDevice: 'default',
-                volume: 80,
+                audioDeviceId: 'default',
+                volume: 85,
                 enabled: true
             }
         };
