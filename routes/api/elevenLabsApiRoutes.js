@@ -500,7 +500,7 @@ router.post('/voices/clone', requireElevenLabsConfig, upload.array('files', 5), 
 // All conversation functionality now handled by WebSocket service on port 8795
 // Visit /ai-settings/agents and use Chat buttons for real-time conversation
 
-router.post('/conversation/test', requireElevenLabsConfig, async (req, res) => {
+router.post('/conversation/test', async (req, res) => {
     res.status(410).json({
         success: false,
         error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',
@@ -509,7 +509,7 @@ router.post('/conversation/test', requireElevenLabsConfig, async (req, res) => {
     });
 });
 
-router.post('/conversation', requireElevenLabsConfig, upload.single('audio'), async (req, res) => {
+router.post('/conversation', async (req, res) => {
     res.status(410).json({
         success: false,
         error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',
@@ -518,7 +518,7 @@ router.post('/conversation', requireElevenLabsConfig, upload.single('audio'), as
     });
 });
 
-router.post('/conversation/play', requireElevenLabsConfig, async (req, res) => {
+router.post('/conversation/play', async (req, res) => {
     res.status(410).json({
         success: false,
         error: 'HTTP conversation endpoints disabled. Use real-time WebSocket on port 8795.',

@@ -1,6 +1,6 @@
 site_name: MonsterBox Documentation
 docs_dir: .
-site_dir: site
+site_dir: ../mkdocs-site
 theme:
   name: material
   palette:
