@@ -16,6 +16,11 @@ class AudioLibrary {
         this.speakers = [];
         this.selectedSpeakerPartId = null;
 
+        // View toggle state
+        this.currentView = 'grid';
+        this.listSortColumn = null;
+        this.listSortDirection = 'asc';
+
         this.init();
     }
 
@@ -27,6 +32,7 @@ class AudioLibrary {
         this.renderSpeakerSelector();
         await this.loadAudioLibrary();
         this.populateCategoryFilters();
+        this.initViewToggle();
     }
 
     setupEventListeners() {
@@ -172,7 +178,7 @@ class AudioLibrary {
                 this.audioFiles = data.audio;
                 this.categories = data.categories;
                 this.updateStats(data);
-                this.renderAudioGrid();
+                this.renderCurrentView();
             }
         } catch (error) {
             console.error('Error loading audio library:', error);
@@ -381,7 +387,7 @@ class AudioLibrary {
 
             if (data.success) {
                 this.audioFiles = data.audio;
-                this.renderAudioGrid();
+                this.renderCurrentView();
             }
         } catch (error) {
             console.error('Error filtering audio files:', error);
@@ -842,7 +848,7 @@ class AudioLibrary {
 
             if (data.success) {
                 this.audioFiles = data.audio;
-                this.renderAudioGrid();
+                this.renderCurrentView();
                 this.updateStats(data);
 
                 // Show search results info
@@ -868,6 +874,262 @@ class AudioLibrary {
         bootstrap.Modal.getInstance(document.getElementById('advancedSearchModal')).hide();
     }
 
+    // ─── View Toggle ──────────────────────────────────────────────────
+
+    initViewToggle() {
+        var saved = localStorage.getItem('monsterbox_audio_library_view');
+        if (saved === 'list' || saved === 'grid') {
+            this.currentView = saved;
+        }
+        this.applyView();
+        this.setupListSortHandlers();
+    }
+
+    setView(viewName) {
+        this.currentView = viewName;
+        localStorage.setItem('monsterbox_audio_library_view', viewName);
+        this.applyView();
+        this.renderCurrentView();
+    }
+
+    applyView() {
+        var gridEl = document.getElementById('audioGrid');
+        var listEl = document.getElementById('audioListContainer');
+        var btnGrid = document.getElementById('viewGrid');
+        var btnList = document.getElementById('viewList');
+
+        if (this.currentView === 'list') {
+            gridEl.style.display = 'none';
+            listEl.style.display = 'block';
+            btnGrid.className = 'btn btn-outline-secondary btn-sm';
+            btnList.className = 'btn btn-primary btn-sm';
+        } else {
+            gridEl.style.display = 'flex';
+            listEl.style.display = 'none';
+            btnGrid.className = 'btn btn-primary btn-sm';
+            btnList.className = 'btn btn-outline-secondary btn-sm';
+        }
+    }
+
+    renderCurrentView() {
+        if (this.currentView === 'list') {
+            this.renderAudioList();
+        } else {
+            this.renderAudioGrid();
+        }
+    }
+
+    renderAudioList() {
+        var tbody = document.getElementById('audioListBody');
+        var emptyState = document.getElementById('emptyState');
+        var listContainer = document.getElementById('audioListContainer');
+
+        if (this.audioFiles.length === 0) {
+            listContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        emptyState.style.display = 'none';
+        if (this.currentView === 'list') {
+            listContainer.style.display = 'block';
+        }
+
+        var self = this;
+        var bulkMode = this.bulkSelectMode;
+        var selectedIds = this.selectedAudioIds;
+
+        tbody.innerHTML = this.audioFiles.map(function(audio) {
+            var format = audio.format || 'audio';
+            var fileSize = audio.fileSize || 0;
+            var uploadedAt = audio.uploadedAt || audio.addedAt || '';
+            var checkboxCell = '';
+            if (bulkMode) {
+                checkboxCell = '<input type="checkbox" class="form-check-input bulk-checkbox" data-audio-id="' + audio.id + '"' +
+                    (selectedIds.has(audio.id) ? ' checked' : '') + '>';
+            }
+
+            return '<tr data-audio-id="' + audio.id + '">' +
+                '<td>' + checkboxCell + '</td>' +
+                '<td><button class="list-fav-btn favorite-btn" data-audio-id="' + audio.id + '" title="Toggle favorite">' +
+                    '<i class="bi bi-heart' + (audio.favorite ? '-fill' : '') + '"></i>' +
+                '</button></td>' +
+                '<td class="title-cell" title="' + self.escapeAttr(audio.title || 'Untitled') + '">' + self.escapeHtml(audio.title || 'Untitled') + '</td>' +
+                '<td><span class="badge bg-secondary">' + self.capitalizeFirst(audio.category || 'other') + '</span></td>' +
+                '<td><span class="badge bg-info">' + format.toUpperCase() + '</span></td>' +
+                '<td>' + self.formatDuration(audio.duration) + '</td>' +
+                '<td>' + self.formatFileSize(fileSize) + '</td>' +
+                '<td>' + (audio.playCount || 0) + '</td>' +
+                '<td>' + self.formatDate(uploadedAt) + '</td>' +
+                '<td>' +
+                    '<div class="btn-group btn-group-sm" role="group">' +
+                        '<button class="btn btn-outline-primary btn-sm play-btn" data-audio-id="' + audio.id + '" title="Play">' +
+                            '<i class="bi bi-play-fill"></i>' +
+                        '</button>' +
+                        '<button class="btn btn-outline-info btn-sm play-character-btn" data-audio-id="' + audio.id + '" title="Play on Character">' +
+                            '<i class="bi bi-speaker"></i>' +
+                        '</button>' +
+                        '<button class="btn btn-outline-secondary btn-sm" onclick="window.open(\'/audio-library/api/audio/' + audio.id + '/download\')" title="Download">' +
+                            '<i class="bi bi-download"></i>' +
+                        '</button>' +
+                        '<button class="btn btn-outline-danger btn-sm delete-btn" data-audio-id="' + audio.id + '" title="Delete">' +
+                            '<i class="bi bi-trash"></i>' +
+                        '</button>' +
+                    '</div>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        this.setupAudioListEvents();
+    }
+
+    setupAudioListEvents() {
+        var self = this;
+        var tbody = document.getElementById('audioListBody');
+
+        // Play buttons
+        tbody.querySelectorAll('.play-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var audioId = btn.dataset.audioId;
+                var audio = self.audioFiles.find(function(a) { return a.id === audioId; });
+                if (audio) self.openAudioPlayer(audio);
+            });
+        });
+
+        // Play on character buttons
+        tbody.querySelectorAll('.play-character-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.playOnCharacter(btn.dataset.audioId);
+            });
+        });
+
+        // Favorite buttons
+        tbody.querySelectorAll('.favorite-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleFavorite(btn.dataset.audioId);
+            });
+        });
+
+        // Delete buttons
+        tbody.querySelectorAll('.delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var audioId = btn.dataset.audioId;
+                var audio = self.audioFiles.find(function(a) { return a.id === audioId; });
+                if (audio) self.deleteAudio(audioId, audio.title);
+            });
+        });
+
+        // Bulk checkboxes
+        if (this.bulkSelectMode) {
+            tbody.querySelectorAll('.bulk-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('change', function(e) {
+                    var audioId = e.target.dataset.audioId;
+                    if (e.target.checked) {
+                        self.selectedAudioIds.add(audioId);
+                    } else {
+                        self.selectedAudioIds.delete(audioId);
+                    }
+                    self.updateSelectedCount();
+                });
+            });
+        }
+    }
+
+    setupListSortHandlers() {
+        var self = this;
+        var headers = document.querySelectorAll('#audioListTable th[data-sort]');
+        headers.forEach(function(th) {
+            th.style.cursor = 'pointer';
+            th.addEventListener('click', function() {
+                var col = th.dataset.sort;
+                if (self.listSortColumn === col) {
+                    self.listSortDirection = self.listSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    self.listSortColumn = col;
+                    self.listSortDirection = 'asc';
+                }
+                self.sortAudioList();
+                self.updateSortIndicators();
+            });
+        });
+    }
+
+    sortAudioList() {
+        var col = this.listSortColumn;
+        var dir = this.listSortDirection === 'asc' ? 1 : -1;
+
+        this.audioFiles.sort(function(a, b) {
+            var valA, valB;
+            switch (col) {
+                case 'title':
+                    valA = (a.title || '').toLowerCase();
+                    valB = (b.title || '').toLowerCase();
+                    return valA < valB ? -dir : valA > valB ? dir : 0;
+                case 'category':
+                    valA = (a.category || '').toLowerCase();
+                    valB = (b.category || '').toLowerCase();
+                    return valA < valB ? -dir : valA > valB ? dir : 0;
+                case 'format':
+                    valA = (a.format || '').toLowerCase();
+                    valB = (b.format || '').toLowerCase();
+                    return valA < valB ? -dir : valA > valB ? dir : 0;
+                case 'duration':
+                    return ((a.duration || 0) - (b.duration || 0)) * dir;
+                case 'fileSize':
+                    return ((a.fileSize || 0) - (b.fileSize || 0)) * dir;
+                case 'playCount':
+                    return ((a.playCount || 0) - (b.playCount || 0)) * dir;
+                case 'uploadedAt':
+                    valA = new Date(a.uploadedAt || 0).getTime();
+                    valB = new Date(b.uploadedAt || 0).getTime();
+                    return (valA - valB) * dir;
+                case 'favorite':
+                    valA = a.favorite ? 1 : 0;
+                    valB = b.favorite ? 1 : 0;
+                    return (valB - valA) * dir;
+                default:
+                    return 0;
+            }
+        });
+
+        this.renderAudioList();
+    }
+
+    updateSortIndicators() {
+        var col = this.listSortColumn;
+        var dir = this.listSortDirection;
+        var headers = document.querySelectorAll('#audioListTable th[data-sort]');
+
+        headers.forEach(function(th) {
+            var icon = th.querySelector('.sort-icon');
+            th.classList.remove('sorted');
+            if (icon) icon.innerHTML = '';
+
+            if (th.dataset.sort === col) {
+                th.classList.add('sorted');
+                if (icon) {
+                    icon.innerHTML = dir === 'asc'
+                        ? '<i class="bi bi-caret-up-fill"></i>'
+                        : '<i class="bi bi-caret-down-fill"></i>';
+                }
+            }
+        });
+    }
+
+    escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    escapeAttr(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     // Bulk operations
     toggleBulkSelect() {
         this.bulkSelectMode = !this.bulkSelectMode;
@@ -887,7 +1149,7 @@ class AudioLibrary {
             this.selectedAudioIds.clear();
         }
 
-        this.renderAudioGrid();
+        this.renderCurrentView();
         this.updateSelectedCount();
     }
 

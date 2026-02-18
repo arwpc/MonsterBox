@@ -16,6 +16,11 @@ class VideoLibrary {
         this.currentPlayer = null;
         this.deploymentInProgress = false;
 
+        // View toggle state
+        this.currentView = 'grid';
+        this.listSortColumn = null;
+        this.listSortDirection = 'asc';
+
         this.init();
     }
 
@@ -27,6 +32,7 @@ class VideoLibrary {
         this.populateCategoryFilters();
         this.updateStats();
         this.startGoblinStatusPolling();
+        this.initViewToggle();
     }
 
     setupEventListeners() {
@@ -115,7 +121,7 @@ class VideoLibrary {
             if (data.success) {
                 this.videoFiles = data.videos;
                 this.categories = data.categories || [];
-                this.renderVideoGrid();
+                this.renderCurrentView();
                 this.updateStats();
             } else {
                 console.error('Failed to load video library:', data.error);
@@ -334,7 +340,7 @@ class VideoLibrary {
                 const video = this.videoFiles.find(v => v.id === videoId);
                 if (video) {
                     video.favorite = data.favorite;
-                    this.renderVideoGrid();
+                    this.renderCurrentView();
                     this.updateStats();
                 }
             }
@@ -515,7 +521,7 @@ class VideoLibrary {
         // Temporarily store filtered results and re-render
         const originalFiles = this.videoFiles;
         this.videoFiles = filtered;
-        this.renderVideoGrid();
+        this.renderCurrentView();
         this.videoFiles = originalFiles;
     }
 
@@ -658,6 +664,251 @@ class VideoLibrary {
         }
     }
 
+    // ─── View Toggle ──────────────────────────────────────────────────
+
+    initViewToggle() {
+        var saved = localStorage.getItem('monsterbox_video_library_view');
+        if (saved === 'list' || saved === 'grid') {
+            this.currentView = saved;
+        }
+        this.applyView();
+        this.setupListSortHandlers();
+    }
+
+    setView(viewName) {
+        this.currentView = viewName;
+        localStorage.setItem('monsterbox_video_library_view', viewName);
+        this.applyView();
+        this.renderCurrentView();
+    }
+
+    applyView() {
+        var gridEl = document.getElementById('videoGrid');
+        var listEl = document.getElementById('videoListContainer');
+        var btnGrid = document.getElementById('viewGrid');
+        var btnList = document.getElementById('viewList');
+
+        if (this.currentView === 'list') {
+            gridEl.style.display = 'none';
+            listEl.style.display = 'block';
+            btnGrid.className = 'btn btn-outline-secondary btn-sm';
+            btnList.className = 'btn btn-primary btn-sm';
+        } else {
+            gridEl.style.display = '';
+            listEl.style.display = 'none';
+            btnGrid.className = 'btn btn-primary btn-sm';
+            btnList.className = 'btn btn-outline-secondary btn-sm';
+        }
+    }
+
+    renderCurrentView() {
+        if (this.currentView === 'list') {
+            this.renderVideoList();
+        } else {
+            this.renderVideoGrid();
+        }
+    }
+
+    renderVideoList() {
+        var tbody = document.getElementById('videoListBody');
+        var emptyState = document.getElementById('emptyState');
+        var listContainer = document.getElementById('videoListContainer');
+
+        if (!this.videoFiles.length) {
+            tbody.innerHTML = '';
+            emptyState.style.display = 'block';
+            if (this.currentView === 'list') {
+                listContainer.style.display = 'none';
+            }
+            return;
+        }
+
+        emptyState.style.display = 'none';
+        if (this.currentView === 'list') {
+            listContainer.style.display = 'block';
+        }
+
+        var self = this;
+        var bulkMode = this.bulkSelectMode;
+        var selectedIds = this.selectedVideoIds;
+
+        tbody.innerHTML = this.videoFiles.map(function(video) {
+            var checkboxCell = '';
+            if (bulkMode) {
+                checkboxCell = '<input type="checkbox" class="form-check-input video-select-checkbox" data-video-id="' + video.id + '"' +
+                    (selectedIds.has(video.id) ? ' checked' : '') + '>';
+            }
+
+            return '<tr data-video-id="' + video.id + '">' +
+                '<td>' + checkboxCell + '</td>' +
+                '<td><button class="list-fav-btn favorite-btn" data-video-id="' + video.id + '">' +
+                    '<i class="bi bi-heart' + (video.favorite ? '-fill' : '') + '"></i>' +
+                '</button></td>' +
+                '<td class="title-cell" title="' + self.escapeAttr(video.title) + '">' + self.escapeHtml(video.title) + '</td>' +
+                '<td><span class="badge bg-info" style="font-size:0.65rem;">' + (video.format || 'vid').toUpperCase() + '</span></td>' +
+                '<td>' + self.formatDuration(video.duration || 0) + '</td>' +
+                '<td>' + self.formatFileSize(video.fileSize || 0) + '</td>' +
+                '<td>' +
+                    '<div class="btn-group btn-group-sm">' +
+                        '<button class="btn btn-outline-success btn-sm deploy-btn" data-video-id="' + video.id + '" title="Deploy">' +
+                            '<i class="bi bi-broadcast"></i>' +
+                        '</button>' +
+                        '<button class="btn btn-outline-danger btn-sm delete-btn" data-video-id="' + video.id + '" title="Delete">' +
+                            '<i class="bi bi-trash"></i>' +
+                        '</button>' +
+                    '</div>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        this.setupVideoListEvents();
+    }
+
+    setupVideoListEvents() {
+        var self = this;
+        var tbody = document.getElementById('videoListBody');
+
+        // Row click plays video
+        tbody.querySelectorAll('tr').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                var videoId = row.dataset.videoId;
+                self.playVideo(videoId);
+            });
+        });
+
+        // Favorite buttons
+        tbody.querySelectorAll('.favorite-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.toggleFavorite(btn.dataset.videoId);
+            });
+        });
+
+        // Deploy buttons
+        tbody.querySelectorAll('.deploy-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.quickDeploy(btn.dataset.videoId);
+            });
+        });
+
+        // Delete buttons
+        tbody.querySelectorAll('.delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var videoId = btn.dataset.videoId;
+                var video = self.videoFiles.find(function(v) { return v.id === videoId; });
+                if (video && confirm('Delete "' + video.title + '"? This cannot be undone.')) {
+                    fetch('/video-library/api/video/' + videoId, { method: 'DELETE' })
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.success) {
+                                self.showSuccess('Deleted "' + video.title + '"');
+                                self.loadVideoLibrary();
+                            } else {
+                                self.showError(data.error || 'Failed to delete');
+                            }
+                        })
+                        .catch(function() { self.showError('Failed to delete video'); });
+                }
+            });
+        });
+
+        // Bulk select checkboxes
+        if (this.bulkSelectMode) {
+            tbody.querySelectorAll('.video-select-checkbox').forEach(function(cb) {
+                cb.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                cb.addEventListener('change', function() {
+                    self.toggleVideoSelection(cb.dataset.videoId);
+                });
+            });
+        }
+    }
+
+    setupListSortHandlers() {
+        var self = this;
+        var headers = document.querySelectorAll('#videoListTable th[data-sort]');
+        headers.forEach(function(th) {
+            th.style.cursor = 'pointer';
+            th.addEventListener('click', function() {
+                var col = th.dataset.sort;
+                if (self.listSortColumn === col) {
+                    self.listSortDirection = self.listSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    self.listSortColumn = col;
+                    self.listSortDirection = 'asc';
+                }
+                self.sortVideoList();
+                self.updateSortIndicators();
+            });
+        });
+    }
+
+    sortVideoList() {
+        var col = this.listSortColumn;
+        var dir = this.listSortDirection === 'asc' ? 1 : -1;
+
+        this.videoFiles.sort(function(a, b) {
+            var valA, valB;
+            switch (col) {
+                case 'title':
+                    valA = (a.title || '').toLowerCase();
+                    valB = (b.title || '').toLowerCase();
+                    return valA < valB ? -dir : valA > valB ? dir : 0;
+                case 'format':
+                    valA = (a.format || '').toLowerCase();
+                    valB = (b.format || '').toLowerCase();
+                    return valA < valB ? -dir : valA > valB ? dir : 0;
+                case 'duration':
+                    return ((a.duration || 0) - (b.duration || 0)) * dir;
+                case 'fileSize':
+                    return ((a.fileSize || 0) - (b.fileSize || 0)) * dir;
+                case 'favorite':
+                    valA = a.favorite ? 1 : 0;
+                    valB = b.favorite ? 1 : 0;
+                    return (valB - valA) * dir;
+                default:
+                    return 0;
+            }
+        });
+
+        this.renderVideoList();
+    }
+
+    updateSortIndicators() {
+        var col = this.listSortColumn;
+        var dir = this.listSortDirection;
+        var headers = document.querySelectorAll('#videoListTable th[data-sort]');
+
+        headers.forEach(function(th) {
+            var icon = th.querySelector('.sort-icon');
+            th.classList.remove('sorted');
+            if (icon) icon.innerHTML = '';
+
+            if (th.dataset.sort === col) {
+                th.classList.add('sorted');
+                if (icon) {
+                    icon.innerHTML = dir === 'asc'
+                        ? '<i class="bi bi-caret-up-fill"></i>'
+                        : '<i class="bi bi-caret-down-fill"></i>';
+                }
+            }
+        });
+    }
+
+    escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    escapeAttr(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     // Bulk operations
     toggleBulkSelect() {
         this.bulkSelectMode = !this.bulkSelectMode;
@@ -674,7 +925,7 @@ class VideoLibrary {
             this.selectedVideoIds.clear();
         }
 
-        this.renderVideoGrid();
+        this.renderCurrentView();
         this.updateSelectedCount();
     }
 
