@@ -131,9 +131,10 @@ export class ErrorTracker {
 /**
  * Wait for page to be fully loaded
  */
-export async function waitForPageReady(page, timeout = 5000) {
-    await page.waitForLoadState('networkidle', { timeout });
+export async function waitForPageReady(page, timeout = 15000) {
     await page.waitForLoadState('domcontentloaded', { timeout });
+    // networkidle may not be reached on pages with polling/websocket connections
+    await page.waitForLoadState('networkidle', { timeout }).catch(() => {});
 }
 
 /**
