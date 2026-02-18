@@ -63,8 +63,13 @@ jobs:
         fi
 
     - name: Run unit tests
-      run: |
-        npm test
+      run: npm run test:unit
+
+    - name: Run system tests
+      run: npm run test:system
+
+    - name: Run browser tests
+      run: npm run test:browser
         
     - name: Run integration tests
       run: |
