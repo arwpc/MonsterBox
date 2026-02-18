@@ -137,11 +137,85 @@ test.describe('Audio Library Page', () => {
 
     test('should validate all interactive elements', async () => {
         tracker.clear();
-        
+
         const elements = await getAllInteractiveElements(page);
         console.log(`Found ${elements.length} interactive elements`);
-        
+
         expect(elements.length).toBeGreaterThan(0);
+        await tracker.logErrors();
+    });
+
+    test('should have view toggle buttons', async () => {
+        tracker.clear();
+
+        const gridBtn = page.locator('#viewGrid');
+        const listBtn = page.locator('#viewList');
+
+        await expect(gridBtn).toBeVisible({ timeout: 5000 });
+        await expect(listBtn).toBeVisible({ timeout: 5000 });
+
+        await tracker.logErrors();
+    });
+
+    test('should switch to list view and back to grid', async () => {
+        tracker.clear();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        const gridContainer = page.locator('#audioGrid');
+        const listContainer = page.locator('#audioListContainer');
+        const gridBtn = page.locator('#viewGrid');
+        const listBtn = page.locator('#viewList');
+
+        // Default should be grid visible, list hidden
+        await expect(gridContainer).toBeVisible();
+        await expect(listContainer).toBeHidden();
+
+        // Switch to list view
+        await listBtn.click();
+        await page.waitForTimeout(500);
+
+        await expect(listContainer).toBeVisible();
+        await expect(gridContainer).toBeHidden();
+
+        // List button should be active, grid should not
+        await expect(listBtn).toHaveClass(/btn-primary/);
+        await expect(gridBtn).toHaveClass(/btn-outline/);
+
+        // Switch back to grid
+        await gridBtn.click();
+        await page.waitForTimeout(500);
+
+        await expect(gridContainer).toBeVisible();
+        await expect(listContainer).toBeHidden();
+
+        await tracker.logErrors();
+    });
+
+    test('should persist view preference across reload', async () => {
+        tracker.clear();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        // Switch to list view
+        await page.locator('#viewList').click();
+        await page.waitForTimeout(500);
+
+        // Reload the page
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        // List view should still be active after reload
+        const listContainer = page.locator('#audioListContainer');
+        const gridContainer = page.locator('#audioGrid');
+        await expect(listContainer).toBeVisible();
+        await expect(gridContainer).toBeHidden();
+
+        // Clean up: reset to grid view
+        await page.locator('#viewGrid').click();
+        await page.waitForTimeout(300);
+
         await tracker.logErrors();
     });
 });

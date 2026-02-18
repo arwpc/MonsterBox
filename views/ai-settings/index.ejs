@@ -8,7 +8,7 @@
     <!-- Configuration Status -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card panel-collapsible" data-panel-id="config-status">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-info-circle"></i> ElevenLabs Configuration Status
@@ -88,7 +88,7 @@
     <div class="row g-4 mt-4">
         <div class="col-lg-8">
             <!-- Inline Chat Panel -->
-            <div class="card border-success">
+            <div class="card border-success panel-collapsible" data-panel-id="chat-panel">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-chat-dots"></i> Chat —
@@ -135,9 +135,9 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-4 sortable-column" data-column-id="ai-sidebar">
             <!-- Quick Stats -->
-            <div class="card mb-3">
+            <div class="card mb-3" data-panel-id="quick-stats">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-graph-up"></i> AI Integration Status
@@ -176,7 +176,7 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="card">
+            <div class="card" data-panel-id="quick-actions">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-tools"></i> Quick Actions
@@ -196,3 +196,5 @@
         </div>
     </div>
 </div>
+<script src="/js/panel-sortable.js"></script>
+<script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('ai-settings'); });</script>

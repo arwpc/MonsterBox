@@ -41,7 +41,7 @@
 <!-- System Status Card -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="system-status">
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-info-circle"></i> PipeWire System Status</h5>
       </div>
@@ -78,9 +78,9 @@
 </div>
 
 <!-- Configuration Cards -->
-<div class="row">
+<div class="row sortable-column" data-column-id="audio-io">
   <!-- Default Audio Input (LEFT PANEL) -->
-  <div class="col-md-6 mb-4">
+  <div class="col-md-6 mb-4" data-panel-id="audio-input">
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-mic"></i> Default Audio Input (Microphones)</h5>
@@ -127,7 +127,7 @@
   </div>
 
   <!-- Default Audio Output (RIGHT PANEL) -->
-  <div class="col-md-6 mb-4">
+  <div class="col-md-6 mb-4" data-panel-id="audio-output">
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-speaker"></i> Default Audio Output (Speakers)</h5>
@@ -177,7 +177,7 @@
 <!-- Microphone Parts Controls -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="mic-parts">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-mic"></i> Microphone Parts Controls</h5>
         <button class="btn btn-outline-secondary btn-sm" onclick="refreshMicParts()">
@@ -196,7 +196,7 @@
 <!-- Advanced Settings -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="advanced-audio">
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-sliders"></i> Advanced Audio Settings</h5>
       </div>
@@ -223,7 +223,7 @@
 <!-- Active Streams -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="streams">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-broadcast"></i> Active Audio Streams</h5>
         <button class="btn btn-outline-secondary btn-sm" onclick="refreshStreams()">
@@ -242,7 +242,7 @@
 <!-- Speaker Test Section (for Playwright compatibility) -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="speaker-test">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Speaker Test</h5>
         <button id="btnSpeakerTest" class="btn btn-outline-primary btn-sm" onclick="testSpeakerSection()">
@@ -259,7 +259,7 @@
 <!-- Test Results -->
 <div class="row mb-4">
   <div class="col-12">
-    <div class="card">
+    <div class="card panel-collapsible" data-panel-id="test-results">
       <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Test Results</h5>
       </div>
@@ -1174,3 +1174,5 @@
   }
 
 </script>
+<script src="/js/panel-sortable.js"></script>
+<script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('audio-setup'); });</script>

@@ -25,8 +25,8 @@
   </div>
 
   <!-- TOP ROW - Webcam (large, prominent, left side) -->
-  <div class="row g-3 mb-3">
-    <div class="col-lg-6">
+  <div class="row g-3 mb-3 sortable-column" data-column-id="dashboard-top">
+    <div class="col-lg-6" data-panel-id="webcam">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
@@ -40,7 +40,7 @@
       </div>
     </div>
     
-    <div class="col-lg-6">
+    <div class="col-lg-6" data-panel-id="scenes">
       <!-- Scenes -->
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -63,10 +63,10 @@
   <div class="row g-3">
     
     <!-- LEFT COLUMN - Main Controls -->
-    <div class="col-lg-8">
+    <div class="col-lg-8 sortable-column" data-column-id="dashboard-left">
       
       <!-- Character Selection -->
-      <div class="card mb-3" id="character-selection-card">
+      <div class="card mb-3" id="character-selection-card" data-panel-id="character-selection">
         <div class="card-header">
           <h6 class="mb-0"><i class="bi bi-person-badge"></i> Character Selection</h6>
         </div>
@@ -79,7 +79,7 @@
       </div>
 
       <!-- AI On (Autonomous) -->
-      <div class="card mb-3">
+      <div class="card mb-3" data-panel-id="ai-on">
         <div class="card-header">
           <h6 class="mb-0"><i class="bi bi-robot"></i> AI On (Autonomous)</h6>
         </div>
@@ -103,7 +103,7 @@
       </div>
 
       <!-- Live Audio (STT) -->
-      <div class="card mb-3">
+      <div class="card mb-3" data-panel-id="live-audio">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-mic"></i> Live Audio (STT)</h6>
           <a href="/ai-settings/stt" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
@@ -126,7 +126,7 @@
       </div>
 
       <!-- Make Character Say -->
-      <div class="card mb-3">
+      <div class="card mb-3" data-panel-id="say">
         <div class="card-header">
           <h6 class="mb-0"><i class="bi bi-send"></i> Make <span id="charName">Character</span> Say</h6>
         </div>
@@ -146,7 +146,7 @@
       </div>
 
       <!-- Hardware Control -->
-      <div class="card mb-3">
+      <div class="card mb-3" data-panel-id="hardware">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-gear"></i> Hardware Control</h6>
           <span class="badge bg-secondary small" id="hardwareCount">0 parts</span>
@@ -164,7 +164,7 @@
     <div class="col-lg-4">
       
       <!-- Monster Features -->
-      <div class="card mb-3">
+      <div class="card mb-3 panel-collapsible" data-panel-id="monster-features">
         <div class="card-header">
           <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
         </div>
@@ -1107,3 +1107,5 @@
     window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadHardwareParts };
   })();
 </script>
+<script src="/js/panel-sortable.js"></script>
+<script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('dashboard'); });</script>
