@@ -1,4 +1,5 @@
 site_name: MonsterBox Documentation
+docs_dir: .
 site_dir: site
 theme:
   name: material
