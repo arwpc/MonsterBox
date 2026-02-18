@@ -16,8 +16,8 @@ test.describe('Conversation Control - Grid Layout', () => {
   });
 
   test('should render page with grid layout', async ({ page }) => {
-    // Check page title — dashboard renders Conversation Control view
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    // Check page title is shown in navbar (headers removed in v6.1.2)
+    await expect(page.locator('#currentPageName')).toContainText('Dashboard');
     
     // Verify grid structure exists (Bootstrap columns with different sizes)
     const lgColumns = page.locator('[class*="col-lg-"]');

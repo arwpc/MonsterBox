@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -26,5 +27,19 @@ export async function updateSelectedCharacter(id) {
   return next;
 }
 
-export default { readConfig, updateSelectedCharacter };
+const ANIMATRONICS_FILE = path.resolve(__dirname, '../config/animatronics.json');
+
+export async function getHostnameCharacterId() {
+  try {
+    const hostname = os.hostname().toLowerCase();
+    const data = await fs.readFile(ANIMATRONICS_FILE, 'utf8');
+    const { animatronics } = JSON.parse(data);
+    const match = animatronics.find(a => a.hostname === hostname);
+    return match ? match.characterId : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+export default { readConfig, updateSelectedCharacter, getHostnameCharacterId };
 

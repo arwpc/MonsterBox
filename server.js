@@ -46,6 +46,7 @@ import scenesApiRoutes from './routes/scenes/api.js';
 import scenesRoutes from './routes/scenes/index.js';
 import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import configApiRoutes from './routes/api/configRoutes.js';
+import { getHostnameCharacterId, updateSelectedCharacter } from './services/configService.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
@@ -71,6 +72,20 @@ const app = express();
 let shuttingDown = false;
 // Configuration
 const config = await loadConfig();
+
+// Auto-select character based on hostname → animatronics.json mapping
+const hostnameCharId = await getHostnameCharacterId();
+if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
+    const prevChar = config.selectedCharacter;
+    const updated = await updateSelectedCharacter(hostnameCharId);
+    Object.assign(config, updated);
+    console.log(`[startup] Hostname "${os.hostname()}" → character ${hostnameCharId} (was ${prevChar}), config updated`);
+} else if (hostnameCharId !== null) {
+    console.log(`[startup] Hostname "${os.hostname()}" → character ${hostnameCharId} (already correct)`);
+} else {
+    console.log(`[startup] Hostname "${os.hostname()}" has no animatronics mapping, keeping character ${config.selectedCharacter}`);
+}
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3000);
 
 // Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident

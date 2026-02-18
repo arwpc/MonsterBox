@@ -123,7 +123,7 @@ html[data-mb-theme="default-dark"] {
 /* Navigation enhancements */
 .navbar-brand {
     font-weight: 600;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
 }
 
 .navbar-nav .nav-link {
@@ -138,6 +138,25 @@ html[data-mb-theme="default-dark"] {
 .navbar-nav .nav-link.active {
     color: var(--mb-primary) !important;
     font-weight: 600;
+}
+
+/* Page title in navbar */
+.mb-page-title {
+    color: var(--mb-primary) !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-left: 2px solid var(--mb-primary);
+    padding-left: 0.75rem;
+    line-height: 1;
+}
+
+/* Sticky nav z-index for dropdowns */
+.navbar.sticky-top {
+    z-index: 1030;
+}
+
+.navbar.sticky-top .dropdown-menu {
+    z-index: 1040;
 }
 
 /* Modal enhancements */

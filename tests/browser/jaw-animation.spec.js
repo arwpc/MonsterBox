@@ -24,7 +24,7 @@ test.describe('Jaw Animation — single-viewport layout', () => {
     test('should load jaw-animation page', async () => {
         const title = await page.title();
         expect(title).toContain('Jaw Animation');
-        await expect(page.locator('h5')).toContainText('Jaw Animation');
+        await expect(page.locator('#currentPageName')).toContainText('Jaw Animation');
     });
 
     // ─── Configuration Controls ─────────────────────────────────────
