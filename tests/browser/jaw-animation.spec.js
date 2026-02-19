@@ -280,8 +280,10 @@ test.describe('Jaw Animation — single-viewport layout', () => {
     });
 
     // ─── Toast Notification ─────────────────────────────────────────
-    test('should have toast container for notifications', async () => {
-        await expect(page.locator('#statusToast')).toBeAttached();
-        await expect(page.locator('#toastMessage')).toBeAttached();
+    // Toast was removed from jaw-animation template in v6.1.5 UI overhaul;
+    // notifications now use inline status badges instead.
+    test('should show status feedback via inline elements', async () => {
+        // TTS status badge serves as the notification mechanism
+        await expect(page.locator('#ttsStatus')).toBeAttached();
     });
 });
