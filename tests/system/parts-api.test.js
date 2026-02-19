@@ -49,16 +49,18 @@ describe('Parts API', function () {
     this.timeout(10000);
 
     describe('GET /api/parts', function () {
-        it('should return an array of parts', async function () {
+        it('should return parts with success wrapper', async function () {
             var res = await apiGet('/api/parts');
             expect(res.status).to.equal(200);
-            expect(res.body).to.be.an('array');
-            expect(res.body.length).to.be.greaterThan(0);
+            expect(res.body).to.have.property('success', true);
+            expect(res.body).to.have.property('parts');
+            expect(res.body.parts).to.be.an('array');
+            expect(res.body.parts.length).to.be.greaterThan(0);
         });
 
         it('each part should have id, name, and type', async function () {
             var res = await apiGet('/api/parts');
-            res.body.forEach(function (part) {
+            res.body.parts.forEach(function (part) {
                 expect(part).to.have.property('id');
                 expect(part).to.have.property('name');
                 expect(part).to.have.property('type');
@@ -69,11 +71,13 @@ describe('Parts API', function () {
     describe('GET /api/parts/:id', function () {
         it('should return a single part by ID', async function () {
             var listRes = await apiGet('/api/parts');
-            var firstPart = listRes.body[0];
+            var firstPart = listRes.body.parts[0];
             var res = await apiGet('/api/parts/' + firstPart.id);
             expect(res.status).to.equal(200);
-            expect(res.body).to.have.property('id', firstPart.id);
-            expect(res.body).to.have.property('name', firstPart.name);
+            expect(res.body).to.have.property('success', true);
+            expect(res.body).to.have.property('part');
+            expect(res.body.part).to.have.property('id', firstPart.id);
+            expect(res.body.part).to.have.property('name', firstPart.name);
         });
 
         it('should return 404 for non-existent part', async function () {
@@ -91,7 +95,7 @@ describe('Parts API', function () {
 
         it('should dispatch motion_sensor parts with testResult', async function () {
             var listRes = await apiGet('/api/parts');
-            var sensor = listRes.body.find(function (p) { return p.type === 'motion_sensor'; });
+            var sensor = listRes.body.parts.find(function (p) { return p.type === 'motion_sensor'; });
             if (!sensor) { this.skip(); return; }
 
             var res = await apiPost('/api/parts/' + sensor.id + '/test', {});
@@ -104,7 +108,7 @@ describe('Parts API', function () {
 
         it('should support detectMotion action for motion_sensor', async function () {
             var listRes = await apiGet('/api/parts');
-            var sensor = listRes.body.find(function (p) { return p.type === 'motion_sensor'; });
+            var sensor = listRes.body.parts.find(function (p) { return p.type === 'motion_sensor'; });
             if (!sensor) { this.skip(); return; }
 
             var res = await apiPost('/api/parts/' + sensor.id + '/test', {
@@ -119,7 +123,7 @@ describe('Parts API', function () {
 
         it('should dispatch servo parts without testResult wrapper', async function () {
             var listRes = await apiGet('/api/parts');
-            var servo = listRes.body.find(function (p) { return p.type === 'servo'; });
+            var servo = listRes.body.parts.find(function (p) { return p.type === 'servo'; });
             if (!servo) { this.skip(); return; }
 
             var res = await apiPost('/api/parts/' + servo.id + '/test', { position: 50, duration: 100 });

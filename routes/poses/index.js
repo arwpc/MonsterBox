@@ -16,6 +16,22 @@ function wantsJson(req) {
     return accept.includes('application/json');
 }
 
+// Pose Editor page
+router.get('/editor', async (req, res) => {
+    res.renderWithLayout('poses/editor', {
+        title: 'Pose Editor - MonsterBox',
+        page: 'poses-editor'
+    });
+});
+
+router.get('/editor/:id', async (req, res) => {
+    res.renderWithLayout('poses/editor', {
+        title: 'Pose Editor - MonsterBox',
+        page: 'poses-editor',
+        editPoseId: parseInt(req.params.id, 10)
+    });
+});
+
 // Get all poses / redirect to Animation Studio
 router.get('/', async (req, res, next) => {
     if (wantsJson(req)) {

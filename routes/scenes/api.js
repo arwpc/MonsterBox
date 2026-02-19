@@ -269,6 +269,28 @@ router.post('/queue/templates/enqueue', express.json(), async (req, res) => {
   }
 });
 
+// === Scene Library Reorder (persist order in scenes.json) ===
+router.post('/reorder', express.json(), async (req, res) => {
+  try {
+    const orderedIds = req.body && req.body.orderedIds;
+    if (!Array.isArray(orderedIds)) return res.status(400).json({ success: false, error: 'orderedIds array required' });
+    const scenes = await scenesService.loadScenes();
+    const byId = {};
+    scenes.forEach(s => { byId[parseInt(s.id, 10)] = s; });
+    const reordered = [];
+    orderedIds.forEach(id => {
+      const scene = byId[parseInt(id, 10)];
+      if (scene) { reordered.push(scene); delete byId[parseInt(id, 10)]; }
+    });
+    // Append any scenes not in orderedIds (safety)
+    Object.values(byId).forEach(s => reordered.push(s));
+    await scenesService.saveScenes(reordered);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // === Standard Scene CRUD (after queue routes) ===
 router.get('/:id', async (req, res) => {
   try {

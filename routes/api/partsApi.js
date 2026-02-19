@@ -46,10 +46,10 @@ async function loadParts() {
 router.get('/', async (req, res) => {
     try {
         const parts = await loadParts();
-        res.json(parts);
+        res.json({ success: true, parts });
     } catch (error) {
         console.error('Error reading parts:', error);
-        res.status(500).json({ error: 'Failed to read parts' });
+        res.status(500).json({ success: false, error: 'Failed to read parts' });
     }
 });
 
@@ -65,10 +65,10 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Part not found' });
         }
 
-        res.json(part);
+        res.json({ success: true, part });
     } catch (error) {
         console.error('Error reading part:', error);
-        res.status(500).json({ error: 'Failed to read part' });
+        res.status(500).json({ success: false, error: 'Failed to read part' });
     }
 });
 

@@ -2,6 +2,29 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.1.5] - 2026-02-18 — Dashboard & Animation Studio Fixes
+
+### Bug Fixes
+- **Fixed Parts API response format** — `GET /api/parts` returned raw array instead of `{ success, parts }` wrapper, causing Dashboard hardware panel and Animation Studio part palette to show empty. Both now display correctly.
+- **Fixed Dashboard panel drag-and-drop** — Bottom row panels (Monster Features, AI On, Live Audio, etc.) are now in a single sortable column, enabling full drag-to-reorder across all Dashboard panels.
+- **Fixed Animation Studio jaw/head-tracking persistence** — Jaw animation and head tracking toggles in the Animation Studio now persist to the server instead of being local-only state. Jaw toggle saves to super-powers.json; head tracking sends start/stop commands.
+
+### Dashboard Scenes Panel Enhancements
+- **Scene reorder** — Drag scenes by grip handle to reorder; order persists to scenes.json via new `/scenes/api/reorder` endpoint.
+- **Scene delete** — Delete button on each scene row with confirmation dialog.
+- **Loop All** — "Loop All" button enqueues all scenes and starts queue in loop mode. "Stop" button to halt the loop.
+- **Playing indicator** — Shows "Looping" badge when scene loop is active.
+
+### New Feature: Pose Editor
+- **Dedicated Pose Editor page** at `/poses/editor` — full-page interface for creating and editing poses.
+- Shows all controllable hardware parts (servos, motors, linear actuators, lights) with type-specific controls: angle sliders for servos, direction/speed/duration for motors and actuators, on/off + brightness for lights.
+- **Test individual parts** or **test full pose** (all parts simultaneously).
+- **Optional audio** — attach a sound file or TTS text to a pose.
+- **Edit existing poses** — click any pose in the saved list or use the edit button in Animation Studio's pose library.
+- Added to Activities navigation dropdown alongside Animation Studio.
+
+---
+
 ## [6.1.2] - 2026-02-16 — Audio Stack Overhaul
 
 ### Critical Bug Fixes

@@ -8,7 +8,7 @@
     overflow-y: auto;
   }
   .conv-part-control {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--bs-border-color);
     padding: 10px 0;
   }
   .conv-part-control:last-child {
@@ -45,7 +45,12 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
-          <a href="/scenes" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
+          <div class="d-flex gap-1 align-items-center">
+            <span id="scenesQueueStatus" class="badge bg-secondary small me-1" style="display:none;"></span>
+            <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i></button>
+            <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i></button>
+            <a href="/scenes" class="btn btn-sm btn-outline-secondary" title="Animation Studio"><i class="bi bi-gear"></i></a>
+          </div>
         </div>
         <div class="card-body" style="max-height: 450px; overflow-y: auto;">
           <div id="scenesContainer">
@@ -59,12 +64,10 @@
     </div>
   </div>
 
-  <!-- BOTTOM ROW - Controls in columns -->
+  <!-- BOTTOM ROW - All controls in single sortable column -->
   <div class="row g-3">
-    
-    <!-- LEFT COLUMN - Main Controls -->
-    <div class="col-lg-8 sortable-column" data-column-id="dashboard-left">
-      
+    <div class="col-12 sortable-column" data-column-id="dashboard-bottom">
+
       <!-- Character Selection -->
       <div class="card mb-3" id="character-selection-card" data-panel-id="character-selection">
         <div class="card-header">
@@ -75,6 +78,38 @@
             <option value="">Loading characters...</option>
           </select>
           <div id="character-select-status" class="form-text text-muted mt-1 small">Active character</div>
+        </div>
+      </div>
+
+      <!-- Monster Features -->
+      <div class="card mb-3" data-panel-id="monster-features">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="jawToggle">
+                <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
+              </div>
+              <small class="text-muted">Sync jaw with speech audio</small>
+            </div>
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="parrotToggle">
+                <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
+              </div>
+              <small class="text-muted">Repeat detected speech</small>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="headTrackToggle">
+                <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
+              </div>
+              <small class="text-muted">Track visitor movement</small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -157,42 +192,7 @@
           </div>
         </div>
       </div>
-      
-    </div>
 
-    <!-- RIGHT COLUMN - Monster Features, etc -->
-    <div class="col-lg-4">
-      
-      <!-- Monster Features -->
-      <div class="card mb-3 panel-collapsible" data-panel-id="monster-features">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
-        </div>
-        <div class="card-body">
-          <div class="mb-2 pb-2 border-bottom">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="jawToggle">
-              <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
-            </div>
-            <small class="text-muted">Sync jaw with speech audio</small>
-          </div>
-          <div class="mb-2 pb-2 border-bottom">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="parrotToggle">
-              <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
-            </div>
-            <small class="text-muted">Repeat detected speech</small>
-          </div>
-          <div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="headTrackToggle">
-              <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
-            </div>
-            <small class="text-muted">Track visitor movement</small>
-          </div>
-        </div>
-      </div>
-      
     </div>
   </div>
 </div>
@@ -429,12 +429,17 @@
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
         parrotEnabled = !!ui.parrotToggle.checked;
       });
-      
-      document.addEventListener('micpanel:user_transcript', ev => { 
-        if (parrotEnabled && ev && ev.detail && ev.detail.text) { 
-          try { if (typeof window.__parrotSay === 'function') { window.__parrotSay(ev.detail.text); } } 
-          catch (e) { } 
-        } 
+
+      const loopBtn = $('btnLoopAll');
+      const stopLoopBtn = $('btnStopLoop');
+      if (loopBtn) loopBtn.addEventListener('click', loopAllScenes);
+      if (stopLoopBtn) stopLoopBtn.addEventListener('click', stopLoop);
+
+      document.addEventListener('micpanel:user_transcript', ev => {
+        if (parrotEnabled && ev && ev.detail && ev.detail.text) {
+          try { if (typeof window.__parrotSay === 'function') { window.__parrotSay(ev.detail.text); } }
+          catch (e) { }
+        }
       });
     }
 
@@ -762,26 +767,22 @@
       log.scrollTop = log.scrollHeight;
     }
 
+    let dashboardScenes = [];
+    let sceneLoopActive = false;
+
     async function loadScenes() {
       const container = $('scenesContainer');
-      
+
       try {
         const r = await fetch('/scenes/api/');
         const j = await r.json();
-        
+
         if (j && j.success && j.scenes && j.scenes.length > 0) {
-          container.innerHTML = j.scenes.map(scene => `
-            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-              <div>
-                <strong class="small">${scene.name}</strong>
-                <div class="text-muted" style="font-size: 0.7rem;">${scene.description || 'No description'}</div>
-              </div>
-              <button class="btn btn-sm btn-primary" onclick="playScene(${scene.id})">
-                <i class="bi bi-play"></i>
-              </button>
-            </div>
-          `).join('');
+          dashboardScenes = j.scenes;
+          renderScenesList();
+          initSceneSortable();
         } else {
+          dashboardScenes = [];
           container.innerHTML = '<div class="text-center text-muted py-2 small">No scenes</div>';
         }
       } catch {
@@ -789,10 +790,78 @@
       }
     }
 
+    function renderScenesList() {
+      const container = $('scenesContainer');
+      if (!dashboardScenes.length) {
+        container.innerHTML = '<div class="text-center text-muted py-2 small">No scenes</div>';
+        return;
+      }
+      container.innerHTML = dashboardScenes.map(scene => `
+        <div class="scene-row d-flex align-items-center mb-1 p-1 rounded border-bottom" data-scene-id="${scene.id}" style="cursor:grab;">
+          <i class="bi bi-grip-vertical text-muted me-2 scene-drag-handle" style="opacity:0.4;"></i>
+          <div class="flex-grow-1 text-truncate">
+            <strong class="small">${scene.name || 'Scene ' + scene.id}</strong>
+            <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">${(scene.steps && scene.steps.length) || 0}</span>
+          </div>
+          <div class="d-flex gap-1 ms-2 flex-shrink-0">
+            <button class="btn btn-sm btn-outline-success p-0 px-1 scene-play-btn" data-id="${scene.id}" title="Play"><i class="bi bi-play-fill"></i></button>
+            <button class="btn btn-sm btn-outline-danger p-0 px-1 scene-del-btn" data-id="${scene.id}" title="Delete"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+
+      // Bind play/delete
+      container.querySelectorAll('.scene-play-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          playScene(parseInt(btn.getAttribute('data-id'), 10));
+        });
+      });
+      container.querySelectorAll('.scene-del-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          deleteScene(parseInt(btn.getAttribute('data-id'), 10));
+        });
+      });
+    }
+
+    function initSceneSortable() {
+      const container = $('scenesContainer');
+      if (typeof Sortable !== 'undefined' && container) {
+        Sortable.create(container, {
+          animation: 150,
+          handle: '.scene-drag-handle',
+          ghostClass: 'sortable-ghost',
+          onEnd: function(evt) {
+            const item = dashboardScenes.splice(evt.oldIndex, 1)[0];
+            dashboardScenes.splice(evt.newIndex, 0, item);
+            // Persist new order to server by saving the scene array
+            saveSceneOrder();
+          }
+        });
+      }
+    }
+
+    async function saveSceneOrder() {
+      try {
+        const orderedIds = dashboardScenes.map(s => s.id);
+        await fetch('/scenes/api/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderedIds })
+        });
+      } catch (e) {
+        console.error('Failed to save scene order:', e);
+      }
+    }
+
     window.playScene = async function (sceneId) {
       try {
-        const r = await fetch(`/scenes/api/${sceneId}/play`, { method: 'POST' });
+        const btn = document.querySelector('.scene-play-btn[data-id="' + sceneId + '"]');
+        if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        const r = await fetch('/scenes/api/' + sceneId + '/play', { method: 'POST' });
         const j = await r.json();
+        if (btn) btn.innerHTML = '<i class="bi bi-play-fill"></i>';
         if (!(j && j.success)) {
           alert('Failed to play scene');
         }
@@ -800,6 +869,68 @@
         alert('Error playing scene: ' + e.message);
       }
     };
+
+    async function deleteScene(sceneId) {
+      const scene = dashboardScenes.find(s => s.id === sceneId);
+      const name = scene ? scene.name : 'Scene ' + sceneId;
+      if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+      try {
+        const r = await fetch('/scenes/api/' + sceneId, { method: 'DELETE' });
+        const j = await r.json();
+        if (j && j.success) {
+          dashboardScenes = dashboardScenes.filter(s => s.id !== sceneId);
+          renderScenesList();
+          initSceneSortable();
+        } else {
+          alert('Failed to delete scene');
+        }
+      } catch (e) {
+        alert('Error deleting scene: ' + e.message);
+      }
+    }
+
+    async function loopAllScenes() {
+      if (!dashboardScenes.length) return;
+      try {
+        // Clear any existing queue, enqueue all in current order, start with loop mode
+        await fetch('/scenes/api/queue/clear', { method: 'POST' });
+        const sceneIds = dashboardScenes.map(s => s.id);
+        await fetch('/scenes/api/queue/start-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'loop_queue', scenes: sceneIds.map(id => ({ sceneId: id })) })
+        });
+        sceneLoopActive = true;
+        updateLoopUI();
+      } catch (e) {
+        alert('Error starting loop: ' + e.message);
+      }
+    }
+
+    async function stopLoop() {
+      try {
+        await fetch('/scenes/api/queue/stop', { method: 'POST' });
+        sceneLoopActive = false;
+        updateLoopUI();
+      } catch (e) {
+        alert('Error stopping loop: ' + e.message);
+      }
+    }
+
+    function updateLoopUI() {
+      const loopBtn = $('btnLoopAll');
+      const stopBtn = $('btnStopLoop');
+      const statusBadge = $('scenesQueueStatus');
+      if (sceneLoopActive) {
+        if (loopBtn) loopBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = '';
+        if (statusBadge) { statusBadge.style.display = ''; statusBadge.textContent = 'Looping'; statusBadge.className = 'badge bg-success small me-1'; }
+      } else {
+        if (loopBtn) loopBtn.style.display = '';
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (statusBadge) statusBadge.style.display = 'none';
+      }
+    }
 
     async function loadHardwareParts() {
       if (!currentCharacterId) return;

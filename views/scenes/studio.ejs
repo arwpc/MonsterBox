@@ -591,6 +591,7 @@
   var jawEnabled = false;
   var headTrackEnabled = false;
   var webcamStreaming = false;
+  var studioCharacterId = <%= typeof currentCharacter !== 'undefined' && currentCharacter ? currentCharacter : 'null' %>;
 
   // ============ HELPERS ============
   function $(id) { return document.getElementById(id); }
@@ -811,6 +812,7 @@
         html += '<span class="text-truncate">' + escHtml(p.name) + '</span>';
         html += '<span class="badge bg-secondary">' + ((p.parts && p.parts.length) || 0) + '</span>';
         html += '<span class="lib-actions">';
+        html += '<a class="btn btn-sm btn-outline-info p-0 px-1" href="/poses/editor/' + p.id + '" title="Edit"><i class="bi bi-pencil"></i></a> ';
         html += '<button class="btn btn-sm btn-outline-success p-0 px-1 pose-test-btn" data-id="' + p.id + '" title="Test"><i class="bi bi-play-fill"></i></button> ';
         html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-delete-btn" data-id="' + p.id + '" title="Delete"><i class="bi bi-trash"></i></button>';
         html += '</span>';
@@ -1543,10 +1545,20 @@
   function toggleJawAnimation(enabled) {
     jawEnabled = enabled;
     renderTimeline();
-    if (enabled) {
-      setStatus('Jaw animation enabled');
+    if (studioCharacterId) {
+      apiGet('/setup/jaw-animation/api/jaw-animation/' + studioCharacterId).then(function(j) {
+        if (j && j.success && j.config) {
+          var cfg = j.config;
+          cfg.enabled = enabled;
+          apiPost('/setup/jaw-animation/api/jaw-animation/' + studioCharacterId, cfg).then(function(r) {
+            if (r && r.success) {
+              setStatus(enabled ? 'Jaw animation enabled (saved)' : 'Jaw animation disabled (saved)');
+            }
+          });
+        }
+      });
     } else {
-      setStatus('Jaw animation disabled');
+      setStatus(enabled ? 'Jaw animation enabled' : 'Jaw animation disabled');
     }
   }
 
@@ -1554,11 +1566,32 @@
     headTrackEnabled = enabled;
     if (enabled) {
       show('headTrackIndicator');
-      setStatus('Head tracking enabled');
     } else {
       hide('headTrackIndicator');
-      setStatus('Head tracking disabled');
     }
+    // Persist via scene step execution (start/stop head tracking)
+    if (studioCharacterId) {
+      apiPost('/scenes/api/test-step', {
+        type: 'head-tracking',
+        action: enabled ? 'start' : 'stop'
+      }).then(function(r) {
+        setStatus(enabled ? 'Head tracking started (saved)' : 'Head tracking stopped (saved)');
+      });
+    } else {
+      setStatus(enabled ? 'Head tracking enabled' : 'Head tracking disabled');
+    }
+  }
+
+  function loadSuperpowerStates() {
+    if (!studioCharacterId) return;
+    apiGet('/setup/jaw-animation/api/jaw-animation/' + studioCharacterId).then(function(j) {
+      if (j && j.success && j.config) {
+        jawEnabled = !!j.config.enabled;
+        var jawToggle = $('jawToggle');
+        if (jawToggle) jawToggle.checked = jawEnabled;
+        renderTimeline();
+      }
+    }).catch(function() {});
   }
 
   // ============ DRAG & DROP ============
@@ -1652,31 +1685,9 @@
       apiPost('/scenes/api/queue/emergency-stop', {}).then(function() { setStatus('EMERGENCY STOP'); loadQueue(); });
     });
 
-    // New Pose
+    // New Pose - open Pose Editor
     $('btnNewPose').addEventListener('click', function() {
-      var modal = new bootstrap.Modal($('newPoseModal'));
-      modal.show();
-    });
-    $('btnCreatePose').addEventListener('click', function() {
-      var name = ($('newPoseName') || {}).value;
-      if (!name) { alert('Enter a name'); return; }
-      var poseData = {
-        name: name,
-        category: ($('newPoseCategory') || {}).value || 'custom',
-        parts: [],
-        concurrent: false
-      };
-      apiPost('/setup/poses/api/poses', poseData).then(function(j) {
-        if (j.success && j.pose) {
-          allPoses.push(j.pose);
-          renderPoseLibrary();
-          var modal = bootstrap.Modal.getInstance($('newPoseModal'));
-          if (modal) modal.hide();
-          setStatus('Pose created: ' + name);
-        } else {
-          alert('Failed: ' + (j.error || j.message || 'Unknown'));
-        }
-      });
+      window.location.href = '/poses/editor';
     });
 
     // Scene search
@@ -1781,6 +1792,7 @@
     setupSectionToggles();
     setupDragDrop();
     loadAllData();
+    loadSuperpowerStates();
 
     // Refresh queue every 2 seconds
     setInterval(loadQueue, 2000);
