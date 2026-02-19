@@ -612,6 +612,42 @@
       "concurrent": false,
       "notes": "Generated from elbow template",
       "created": "2026-02-19T03:50:11.386Z"
+    },
+    {
+      "id": 35,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2026-02-19T05:41:03.559Z"
+    },
+    {
+      "id": 36,
+      "name": "elbow - Half Bend",
+      "description": "Half Bend pose created from elbow template",
+      "parts": [
+        {
+          "partId": 30,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "category": "elbow",
+      "concurrent": false,
+      "notes": "Generated from elbow template",
+      "created": "2026-02-19T05:56:41.868Z"
     }
   ],
   "templates": {}

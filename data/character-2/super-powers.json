@@ -1,12 +1,16 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "10",
     "sensitivity": 1,
     "smoothing": 0.6,
     "volumeThreshold": 0.02,
     "attackTime": 50,
     "releaseTime": 150,
+    "useBandpassFilter": true,
+    "useAGC": true,
+    "quantizationLevels": 10,
+    "preset": "speech",
     "minAngle": 70,
     "maxAngle": 93
   }
