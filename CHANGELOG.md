@@ -2,6 +2,33 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.6.0] - 2026-02-19 — UI Consistency & Theme Compliance (Ready for Testing Gold)
+
+### UI Theme Consistency
+- **Navigation bar** — Removed hardcoded `navbar-dark bg-dark`; now uses `bg-body-tertiary` which adapts to any Bootswatch theme (light or dark)
+- **Footer** — Replaced `bg-dark text-light` with theme-aware `bg-body-tertiary text-body-secondary`
+- **Dashboard** — Replaced hardcoded `#000`, `#111`, `#1a1a1a` backgrounds with `var(--bs-dark)` and `var(--bs-tertiary-bg)` CSS variables
+- **AI Settings** — Removed `bg-success text-white` from chat header, `bg-dark text-light` from chat log, `bg-dark border-secondary` from VU meter; all now use theme-aware variables
+- **Animation Studio** — Replaced 26 hardcoded hex step-type colors with CSS variable references (`var(--mb-step-servo)`, `var(--mb-step-motor)`, etc.) from the design system. Added `--mb-step-askAI` variable. Fixed hover/active backgrounds to use `var(--bs-secondary-bg)` and `color-mix()` instead of hardcoded rgba values
+- **Pose Editor** — Replaced hardcoded type badge colors with CSS variable references; removed `text-light` class assuming dark background
+- **Audio/Video Libraries** — Removed `table-dark` from list view tables; tables now inherit theme styling
+- **Orchestration** — Changed `btn-outline-light` to `btn-outline-secondary` for theme compatibility
+- **Goblin Management** — Removed `text-dark` hardcoded on warning card
+- **Setup hub** — Changed `text-dark` icon and `btn-dark` button to `text-secondary`/`btn-secondary`
+- **First Run** — Changed `btn-outline-light` to `btn-outline-secondary`
+- **Canvas elements** — System gauges, performance charts, and jaw animation visualization now read colors from CSS variables via `getComputedStyle()` instead of using hardcoded hex values
+- **Manual Controls** — Replaced hardcoded `#6f42c1` with `var(--mb-primary)`
+- **Audio Player** — Replaced hardcoded rgba primary/success colors with `color-mix()` CSS variable expressions
+
+### Design System Updates
+- Added `--mb-step-askAI: #3d0f7a` CSS variable to `monsterbox4.css`
+- Fixed `--mb-step-linear-actuator` value from `#0dcaf0` to `#e83e8c` to match actual usage
+
+### Spacing & Layout
+- Reduced `mb-4` margins to `mb-2`/`mb-3` across audio library, video library, goblin management, and orchestration pages to minimize vertical scrolling
+
+---
+
 ## [6.3.0] - 2026-02-19 — Manual Controls Panel + Jaw Animation v2
 
 ### New Feature: Manual Controls Panel

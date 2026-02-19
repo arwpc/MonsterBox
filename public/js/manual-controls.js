@@ -342,7 +342,7 @@
 
       var icon = document.createElement('i');
       icon.className = 'bi bi-play-circle-fill';
-      icon.style.color = '#6f42c1';
+      icon.style.color = 'var(--mb-primary)';
       el.appendChild(icon);
 
       var span = document.createElement('span');

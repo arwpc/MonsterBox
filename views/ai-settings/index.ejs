@@ -85,11 +85,11 @@
     </div>
 
     <!-- Chat Panel + Stats -->
-    <div class="row g-4 mt-4">
+    <div class="row g-4 mt-2">
         <div class="col-lg-8">
             <!-- Inline Chat Panel -->
             <div class="card border-success panel-collapsible" data-panel-id="chat-panel">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
                         <i class="bi bi-chat-dots"></i> Chat —
                         <span id="chatCharacterName">Loading...</span>
@@ -100,18 +100,18 @@
                         </select>
                         <div class="form-check form-switch mb-0" title="Connect to the ElevenLabs conversational AI agent for real-time voice chat. When on, the character listens via microphone and speaks responses through the selected speaker.">
                             <input class="form-check-input" type="checkbox" id="aiAutonomousToggle">
-                            <label class="form-check-label text-white small" for="aiAutonomousToggle">AI On</label>
+                            <label class="form-check-label small" for="aiAutonomousToggle">AI On</label>
                         </div>
                     </div>
                 </div>
                 <div class="card-body p-0">
                     <!-- Chat Log -->
-                    <div id="chatLog" class="bg-dark text-light p-3 font-monospace"
-                        style="height: 300px; overflow-y: auto; font-size: 0.9rem;">
+                    <div id="chatLog" class="p-3 font-monospace"
+                        style="height: 300px; overflow-y: auto; font-size: 0.9rem; background: var(--bs-tertiary-bg);">
                         <div class="text-muted text-center">Chat will appear here...</div>
                     </div>
                     <!-- VU Meter -->
-                    <div class="px-3 py-2 bg-dark border-top border-secondary">
+                    <div class="px-3 py-2 border-top" style="background: var(--bs-tertiary-bg);">
                         <div class="d-flex align-items-center">
                             <small class="text-muted me-2"><i class="bi bi-activity"></i> Mic:</small>
                             <div class="progress flex-grow-1" style="height: 12px;">

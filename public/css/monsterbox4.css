@@ -29,7 +29,8 @@
     /* Animation Studio step-type colors */
     --mb-step-servo: #0d6efd;
     --mb-step-motor: #dc3545;
-    --mb-step-linear-actuator: #0dcaf0;
+    --mb-step-linear-actuator: #e83e8c;
+    --mb-step-askAI: #3d0f7a;
     --mb-step-light: #ffc107;
     --mb-step-audio: #198754;
     --mb-step-speech: #6f42c1;

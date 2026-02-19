@@ -233,13 +233,13 @@ class AdvancedAudioPlayer {
                 }
                 
                 .character-controls .card {
-                    background: rgba(13, 110, 253, 0.1);
-                    border-color: rgba(13, 110, 253, 0.3);
+                    background: color-mix(in srgb, var(--bs-primary) 10%, transparent);
+                    border-color: color-mix(in srgb, var(--bs-primary) 30%, transparent);
                 }
-                
+
                 .editing-tools .card {
-                    background: rgba(25, 135, 84, 0.1);
-                    border-color: rgba(25, 135, 84, 0.3);
+                    background: color-mix(in srgb, var(--bs-success) 10%, transparent);
+                    border-color: color-mix(in srgb, var(--bs-success) 30%, transparent);
                 }
                 
                 .volume-controls .form-range {

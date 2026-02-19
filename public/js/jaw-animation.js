@@ -595,8 +595,15 @@
     var w = rect.width;
     var h = rect.height;
 
+    // Read theme colors from CSS variables
+    var cs = getComputedStyle(document.documentElement);
+    var bgColor = cs.getPropertyValue('--bs-tertiary-bg').trim() || '#1a1a1a';
+    var infoColor = cs.getPropertyValue('--bs-info').trim() || '#0dcaf0';
+    var primaryColor = cs.getPropertyValue('--bs-primary').trim() || '#0d6efd';
+    var borderColor = cs.getPropertyValue('--bs-border-color').trim() || 'rgba(255,255,255,0.15)';
+
     // Clear
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, w, h);
 
     if (frames.length === 0) return;
@@ -622,16 +629,16 @@
       if (amp < 0.05) {
         ctx.fillStyle = '#2d4a6d';
       } else if (amp < 0.3) {
-        ctx.fillStyle = '#0dcaf0';
+        ctx.fillStyle = infoColor;
       } else {
-        ctx.fillStyle = '#0d6efd';
+        ctx.fillStyle = primaryColor;
       }
 
       ctx.fillRect(j * barWidth, h - barH - 2, barWidth - (barWidth > 2 ? 1 : 0), barH);
     }
 
     // Draw midline
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeStyle = borderColor;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(0, h / 2);
