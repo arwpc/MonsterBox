@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "es2022",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "#routes/*": ["./routes/*"],
+      "#services/*": ["./services/*"],
+      "#utils/*": ["./utils/*"]
+    }
+  },
+  "include": [
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "data/audio-library"
+  ]
+}

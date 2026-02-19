@@ -61,8 +61,8 @@
       minAngleUp:          document.getElementById('minAngleUp'),
       maxAngleDown:        document.getElementById('maxAngleDown'),
       maxAngleUp:          document.getElementById('maxAngleUp'),
-      statusToast:         document.getElementById('statusToast'),
-      toastMessage:        document.getElementById('toastMessage')
+      statusToast:         null,
+      toastMessage:        null
     };
   }
 
@@ -505,20 +505,9 @@
   // ─── Toast Notifications ──────────────────────────────────────────
 
   function showToast(message, type) {
-    if (!el.statusToast || !el.toastMessage) return;
-    el.toastMessage.textContent = message;
-    var icon = el.statusToast.querySelector('.toast-header i');
-    if (icon) {
-      icon.className = 'me-2';
-      switch (type) {
-        case 'success': icon.className += ' bi bi-check-circle text-success'; break;
-        case 'error':   icon.className += ' bi bi-exclamation-circle text-danger'; break;
-        case 'warning': icon.className += ' bi bi-exclamation-triangle text-warning'; break;
-        default:        icon.className += ' bi bi-info-circle text-primary';
-      }
+    if (window.showToast) {
+      window.showToast(message, type);
     }
-    var toast = new bootstrap.Toast(el.statusToast);
-    toast.show();
   }
 
   // ─── Bootstrap ────────────────────────────────────────────────────

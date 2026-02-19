@@ -1,14 +1,11 @@
 {
   // --- Copilot Agent: fully autonomous ---
   "chat.tools.global.autoApprove": true,
-  // Terminal auto-approve engine + no interactive hangs
   "chat.tools.terminal.enableAutoApprove": true,
   "chat.tools.terminal.autoReplyToPrompts": true,
-  // (Optional but useful) Make sure Copilot Chat uses bash in terminals
   "chat.tools.terminal.terminalProfile.linux": "bash",
-  // --- Terminal allow/deny map (strictly controls prompts in the terminal) ---
   "chat.tools.terminal.autoApprove": {
-    // Core and filesystem (approve)
+    // Core filesystem (approve)
     "cd": true,
     "pwd": true,
     "echo": true,
@@ -37,6 +34,7 @@
     "df": true,
     "du": true,
     "tree": true,
+    "jq": true,
     // Processes / OS
     "whoami": true,
     "uname": true,
@@ -53,7 +51,7 @@
     "dmesg": true,
     "journalctl": true,
     "systemctl": true,
-    // Networking and transfers
+    // Networking
     "ip": true,
     "ss": true,
     "netstat": true,
@@ -83,34 +81,22 @@
     "node": true,
     "npm": true,
     "npx": true,
+    "mocha": true,
+    "playwright": true,
     "/^npm\\s+(i|install|ci|run|test|start|stop|rebuild)\\b/": true,
     "make": true,
-    "cmake": true,
-    "gcc": true,
-    "g++": true,
-    "docker": true,
-    "/^docker(\\s+compose)?\\s+.*$/": true,
-    // Git (allow broadly, but block branch deletion by name)
+    // Git (allow broadly, block destructive operations)
     "git": true,
     "/^git\\s+(clone|pull|fetch|checkout|status|log|diff|add|commit|push|merge|rebase|tag|stash|cherry-pick)\\b/": true,
     "/^git\\s+branch\\b.*-(d|D|m|M|-delete|-force)\\b/": false,
-    // Approve common pipelines (entire command line)
+    // Common pipelines
     "/^\\s*(ls|cat)\\b[^\\n]*\\|\\s*grep\\b[^\\n]*$/is": true,
     "/^\\s*grep\\b[^|\\n]*\\|\\s*wc\\b\\s*-l\\b[^\\n]*$/is": true,
     "/^\\s*du\\b[^\\n]*\\|\\s*sort\\b[^\\n]*$/is": true,
     "/^\\s*journalctl\\b[^\\n]*\\|\\s*grep\\b[^\\n]*$/is": true,
-    "/^\\s*find\\b(?![^\\n]*-(delete|exec|execdir|ok|okdir|fprint|fprintf|fls)\\b)[^\\n]*\\|\\s*grep\\b[^\\n]*$/is": true,
-    // Approve chains using && or ; (entire line)
-    "/^(?:(?!`|\\$\\(|\\{)[^\\n])+((\\s*(?:&&|;)\\s*)(?:(?!`|\\$\\(|\\{)[^\\n])+)+\\s*)$/is": true,
-    // SSH one-liners (user@host ... then quoted chain)
-    "/^\\s*ssh\\s+\\S+@\\S+\\b[^\\n]*$/is": true,
-    "/^\\s*scp\\s+.+/is": true,
-    "/^\\s*rsync\\s+.+/is": true,
-    // systemctl mutations and reboots
+    // systemctl mutations
     "/^\\s*systemctl\\s+(start|stop|restart|reload|enable|disable|daemon-reload)\\b[^\\n]*$/i": true,
-    "/^\\s*(sudo\\s+)?reboot\\b.*$/i": true,
-    "/^\\s*(sudo\\s+)?shutdown\\b.*$/i": true,
-    // Minimal destructive hard-blocks to prevent fat-finger disasters
+    // Destructive hard-blocks
     "/^\\s*rm\\s+-rf\\s+([/\\\\]|~)\\s*$/i": false,
     "/^\\s*rm\\s+-rf\\s+\\.$/i": false,
     "/^\\s*mkfs(\\.|\\b)/i": false,
@@ -125,33 +111,47 @@
   "claude.enableInlineEdit": true,
   "claude.confirmBeforeExecutingCommands": false,
   "claude.maxContextTokens": 200000,
-  "claude.preferredModel": "claude-sonnet-4-5",
+  "claude.preferredModel": "claude-opus-4-6",
   "claude.showDiffView": true,
   "claude.enableAutoMemory": true,
   "claude.memoryPath": "${workspaceFolder}/.claude/memory",
   "claude-code-usage.showInActivityBar": true,
   "claude-code-usage.enabled": true,
 
-  // --- Performance optimization for RPI4B ---
+  // --- Performance optimization for RPI4B (SD card wear + CPU) ---
   "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
     "**/node_modules/**": true,
     "**/dist/**": true,
     "**/build/**": true,
     "**/.vscode-server/**": true,
+    "**/.windsurf-server/**": true,
+    "**/.copilot/**": true,
     "**/.claude/**": true,
-    "**/data/audio-library/**": true
+    "**/data/audio-library/**": true,
+    "**/data/*/audio/**": true
   },
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/build": true,
-    "**/data/audio-library/**": true
+    "**/.git": true,
+    "**/.claude": true,
+    "**/.vscode-server": true,
+    "**/.windsurf-server": true,
+    "**/data/audio-library/**": true,
+    "**/data/*/audio/**": true
   },
+  "search.followSymlinks": false,
+  "search.smartCase": true,
   "git.autofetch": false,
   "git.autorefresh": false,
   "git.detectSubmodules": false,
 
-  // --- Editor optimizations ---
+  // --- Editor: consistency and quality ---
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
   "editor.quickSuggestions": {
     "other": true,
     "comments": false,
@@ -162,29 +162,37 @@
   "editor.formatOnSave": false,
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
+  "editor.linkedEditing": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // --- ESLint: run on save to reduce CPU load ---
+  "eslint.enable": true,
+  "eslint.run": "onSave",
 
   // --- Python settings for hardware wrappers ---
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "python.defaultInterpreterPath": "/usr/bin/python3",
 
-  // --- Node.js settings ---
+  // --- Node.js / JavaScript ---
   "javascript.updateImportsOnFileMove.enabled": "always",
   "javascript.suggest.autoImports": true,
-  "eslint.enable": true,
+  "js/ts.implicitProjectConfig.module": "ESNext",
 
   // --- Terminal settings ---
   "terminal.integrated.defaultProfile.linux": "bash",
   "terminal.integrated.enablePersistentSessions": false,
   "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.gpuAcceleration": "off",
 
-  // --- Workspace state restoration ---
+  // --- Workspace state ---
   "workbench.startupEditor": "none",
   "window.restoreWindows": "all",
   "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000,
+  "files.autoSaveDelay": 2000,
 
-  // --- Auto-launch configurations ---
+  // --- Task detection ---
   "task.autoDetect": "on",
   "npm.autoDetect": "on"
 }

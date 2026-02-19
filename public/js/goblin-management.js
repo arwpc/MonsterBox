@@ -117,17 +117,17 @@ class GoblinManager {
 
             return `
                 <div class="col-lg-6 col-xl-4">
-                    <div class="card goblin-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')" style="cursor: pointer;">
+                    <div class="card mb-device-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')" style="cursor: pointer;">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
                             <div>
                                 <h6 class="mb-0 d-flex align-items-center">
-                                    <div class="heartbeat-indicator ${heartbeatAge < 60 ? 'active' : 'inactive'}"></div>
+                                    <div class="mb-heartbeat ${heartbeatAge < 60 ? 'active' : 'inactive'}"></div>
                                     ${goblin.name}
                                 </h6>
                                 <small class="text-muted">${goblin.location || goblin.endpoint}</small>
                             </div>
                             <div>
-                                <span class="status-badge ${goblin.status}">${goblin.status}</span>
+                                <span class="mb-status-badge ${goblin.status}">${goblin.status}</span>
                             </div>
                         </div>
                         
@@ -147,7 +147,7 @@ class GoblinManager {
                                     ${lockTimeRemaining > 0 ? `
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <small class="text-muted">Unlock in:</small>
-                                            <small class="lock-timer">${this.formatTime(lockTimeRemaining)}</small>
+                                            <small class="mb-lock-timer">${this.formatTime(lockTimeRemaining)}</small>
                                         </div>
                                     ` : ''}
                                 ` : ''}
@@ -164,7 +164,7 @@ class GoblinManager {
                             ${goblin.capabilities && goblin.capabilities.length ? `
                                 <div class="mb-2">
                                     ${goblin.capabilities.map(cap =>
-                `<span class="badge bg-secondary capability-badge">${cap}</span>`
+                `<span class="mb-capability-badge">${cap}</span>`
             ).join('')}
                                 </div>
                             ` : ''}
@@ -176,16 +176,16 @@ class GoblinManager {
                                         <small class="text-muted">CPU:</small>
                                         <small>${goblin.resources.cpu}%</small>
                                     </div>
-                                    <div class="cpu-usage">
-                                        <div style="width: ${goblin.resources.cpu}%; height: 100%; background: ${goblin.resources.cpu > 80 ? '#dc3545' : goblin.resources.cpu > 50 ? '#ffc107' : '#28a745'}; border-radius: 2px;"></div>
+                                    <div class="mb-usage-bar">
+                                        <div style="width: ${goblin.resources.cpu}%; background: var(--bs-${goblin.resources.cpu > 80 ? 'danger' : goblin.resources.cpu > 50 ? 'warning' : 'success'});"></div>
                                     </div>
-                                    
+
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted">Memory:</small>
                                         <small>${goblin.resources.memory}%</small>
                                     </div>
-                                    <div class="memory-usage">
-                                        <div style="width: ${goblin.resources.memory}%; height: 100%; background: #17a2b8; border-radius: 2px;"></div>
+                                    <div class="mb-usage-bar">
+                                        <div style="width: ${goblin.resources.memory}%; background: var(--bs-info);"></div>
                                     </div>
                                 </div>
                             ` : ''}
@@ -656,7 +656,7 @@ class GoblinManager {
                     <h6>Basic Information</h6>
                     <table class="table table-sm">
                         <tr><td><strong>Name:</strong></td><td>${goblin.name}</td></tr>
-                        <tr><td><strong>Status:</strong></td><td><span class="status-badge ${goblin.status}">${goblin.status}</span></td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="mb-status-badge ${goblin.status}">${goblin.status}</span></td></tr>
                         <tr><td><strong>Endpoint:</strong></td><td class="font-monospace">${goblin.endpoint}</td></tr>
                         <tr><td><strong>Location:</strong></td><td>${goblin.location || 'Not specified'}</td></tr>
                         <tr><td><strong>Registered:</strong></td><td>${this.formatDate(goblin.registeredAt)}</td></tr>
@@ -918,14 +918,14 @@ Success Rate: ${stats.successRate}%`);
         }
 
         logDiv.innerHTML = this.activityLog.map(entry => {
-            const color = {
-                'success': '#0f0',
-                'error': '#f00',
-                'warning': '#ff0',
-                'info': '#0ff'
-            }[entry.type] || '#0f0';
+            const colorClass = {
+                'success': 'text-success',
+                'error': 'text-danger',
+                'warning': 'text-warning',
+                'info': 'text-info'
+            }[entry.type] || 'text-success';
 
-            return `<div style="color: ${color};">[${entry.timestamp}] ${entry.message}</div>`;
+            return `<div class="${colorClass}">[${entry.timestamp}] ${entry.message}</div>`;
         }).join('');
 
         // Scroll to top

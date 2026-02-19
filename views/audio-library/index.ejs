@@ -1,133 +1,3 @@
-<style>
-        .audio-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }
-
-        .audio-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .drag-drop-zone {
-            border: 2px dashed #6c757d;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            background: rgba(108, 117, 125, 0.1);
-        }
-
-        .drag-drop-zone.drag-over {
-            border-color: #0d6efd;
-            background: rgba(13, 110, 253, 0.1);
-        }
-
-        .waveform-container {
-            height: 60px;
-            background: linear-gradient(90deg, #0d6efd 0%, #6610f2 100%);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .waveform-placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: white;
-            font-size: 0.8rem;
-        }
-
-        .audio-controls {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .audio-card:hover .audio-controls {
-            opacity: 1;
-        }
-
-        .tag-badge {
-            font-size: 0.7rem;
-            margin: 1px;
-        }
-
-        .favorite-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.5);
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffc107;
-            transition: all 0.3s;
-        }
-
-        .favorite-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-            color: #ffc107;
-        }
-
-        .upload-progress {
-            display: none;
-        }
-
-        /* List view styles */
-        .audio-list-table th {
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-            font-size: 0.8rem;
-        }
-        .audio-list-table th:hover {
-            color: #0d6efd;
-        }
-        .audio-list-table th .sort-icon {
-            margin-left: 4px;
-            font-size: 0.7rem;
-            opacity: 0.5;
-        }
-        .audio-list-table th.sorted .sort-icon {
-            opacity: 1;
-            color: #0d6efd;
-        }
-        .audio-list-table td {
-            vertical-align: middle;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-        .audio-list-table .title-cell {
-            white-space: normal;
-            max-width: 250px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .audio-list-table tr:hover {
-            background-color: rgba(13, 110, 253, 0.1) !important;
-        }
-        .audio-list-table .list-fav-btn {
-            background: none;
-            border: none;
-            padding: 0;
-            color: #ffc107;
-            cursor: pointer;
-        }
-        .view-toggle .btn {
-            padding: 0.375rem 0.5rem;
-        }
-    </style>
-
             <!-- Toolbar -->
             <div class="row mb-2">
                 <div class="col">
@@ -142,7 +12,7 @@
                                     <i class="bi bi-stop-fill"></i> Stop
                                 </button>
                             </div>
-                            <div class="btn-group me-2 view-toggle" role="group" aria-label="View toggle">
+                            <div class="btn-group me-2 mb-view-toggle" role="group" aria-label="View toggle">
                                 <button class="btn btn-primary btn-sm" id="viewGrid" onclick="audioLibrary.setView('grid')" title="Card Grid View">
                                     <i class="bi bi-grid-3x3-gap"></i>
                                 </button>
@@ -302,7 +172,7 @@
             <!-- Audio Library List View -->
             <div id="audioListContainer" style="display: none;">
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover table-sm audio-list-table" id="audioListTable">
+                    <table class="table table-dark table-hover table-sm mb-list-table" id="audioListTable">
                         <thead>
                             <tr>
                                 <th style="width:32px;" class="bulk-col-header"></th>
@@ -346,7 +216,7 @@
                     </div>
                     <div class="modal-body">
                         <!-- Drag and Drop Zone -->
-                        <div class="drag-drop-zone mb-4" id="dragDropZone">
+                        <div class="mb-drop-zone mb-4" id="dragDropZone">
                             <i class="bi bi-cloud-upload fs-1 text-muted"></i>
                             <h4 class="mt-3">Drag & Drop Audio Files Here</h4>
                             <p class="text-muted">Or click to browse files</p>

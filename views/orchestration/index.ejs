@@ -1,171 +1,3 @@
-<style>
-    .card {
-        background: rgba(30, 30, 46, 0.95);
-        border: 1px solid #ff6b35;
-        box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-        color: white;
-        font-weight: bold;
-    }
-
-    .animatronic-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .animatronic-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(255, 107, 53, 0.5);
-    }
-
-    .status-online {
-        color: #00ff00;
-        animation: pulse 2s infinite;
-    }
-
-    .status-offline {
-        color: #ff0000;
-    }
-
-    @keyframes pulse {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .btn-halloween {
-        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-        border: none;
-        color: white;
-        font-weight: bold;
-    }
-
-    .btn-halloween:hover {
-        background: linear-gradient(135deg, #f7931e 0%, #ff6b35 100%);
-        color: white;
-    }
-
-    .control-section {
-        margin-bottom: 2rem;
-    }
-
-    .log-output {
-        background: #000;
-        color: #0f0;
-        font-family: 'Courier New', monospace;
-        padding: 0.5rem;
-        border-radius: 5px;
-        max-height: 240px;
-        overflow-y: auto;
-        font-size: 0.85rem;
-        line-height: 1.4;
-    }
-
-    .goblin-card {
-        background: rgba(30, 30, 46, 0.95);
-        border: 1px solid #9b59b6;
-        box-shadow: 0 4px 20px rgba(155, 89, 182, 0.3);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .goblin-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 25px rgba(155, 89, 182, 0.5);
-    }
-
-    .goblin-status {
-        font-size: 0.85rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 3px;
-        display: inline-block;
-    }
-
-    .goblin-status.online {
-        background: rgba(0, 255, 0, 0.2);
-        color: #00ff00;
-        border: 1px solid #00ff00;
-    }
-
-    .goblin-status.offline {
-        background: rgba(255, 0, 0, 0.2);
-        color: #ff0000;
-        border: 1px solid #ff0000;
-    }
-
-    .currently-playing {
-        background: rgba(155, 89, 182, 0.2);
-        border: 1px solid #9b59b6;
-        border-radius: 5px;
-        padding: 0.5rem;
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-    }
-
-    .goblin-header {
-        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-    }
-
-    .animatronic-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .animatronic-card[style*="cursor: pointer"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(247, 147, 30, 0.3);
-    }
-
-    .webcam-preview {
-        width: 100%;
-        height: auto;
-        border-radius: 5px;
-        margin-bottom: 0.5rem;
-        background: #000;
-    }
-
-    .audio-control-group {
-        padding: 0.5rem;
-        background: rgba(255, 107, 53, 0.1);
-        border-radius: 5px;
-    }
-
-    .ai-input-group {
-        margin-top: 0.5rem;
-    }
-
-    .character-name {
-        font-size: 0.9rem;
-        color: #f7931e;
-        font-weight: bold;
-    }
-
-    .offline-list {
-        background: rgba(30, 30, 46, 0.5);
-        border: 1px solid #666;
-        border-radius: 5px;
-        padding: 0.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .offline-item {
-        display: inline-block;
-        margin: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        background: rgba(255, 0, 0, 0.2);
-        border: 1px solid #ff0000;
-        border-radius: 3px;
-        font-size: 0.85rem;
-    }
-</style>
-
 <div class="container-fluid">
 
     <!-- Command Log - Moved to Top -->
@@ -179,7 +11,7 @@
                     </button>
                 </div>
                 <div class="card-body p-2">
-                    <div class="log-output" id="commandLog">
+                    <div class="mb-terminal-log" id="commandLog">
                         <div class="log-entry">🎃 Orchestration Control Center initialized...</div>
                     </div>
                 </div>
@@ -199,7 +31,7 @@
                     <button class="btn btn-sm btn-secondary float-end ms-2" onclick="enableAllWebcams()">
                         <i class="bi bi-camera-video"></i> Enable All Webcams
                     </button>
-                    <button class="btn btn-sm btn-halloween float-end" onclick="refreshStatus()">
+                    <button class="btn btn-sm btn-warning float-end" onclick="refreshStatus()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -220,19 +52,19 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header goblin-header">
+                <div class="card-header">
                     <i class="bi bi-display"></i> Goblin Status
-                    <a href="/goblin-management" class="btn btn-sm btn-light float-end" target="_blank">
+                    <a href="/goblin-management" class="btn btn-sm btn-outline-light float-end" target="_blank">
                         <i class="bi bi-box-arrow-up-right"></i> Goblin Management
                     </a>
-                    <button class="btn btn-sm btn-light float-end me-2" onclick="refreshGoblins()">
+                    <button class="btn btn-sm btn-outline-light float-end me-2" onclick="refreshGoblins()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="row" id="goblinsStatus">
                         <div class="col-12 text-center">
-                            <div class="spinner-border text-purple" role="status">
+                            <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
@@ -245,7 +77,7 @@
     <!-- Broadcast Controls -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card control-section">
+            <div class="card mb-4">
                 <div class="card-header">
                     <i class="bi bi-megaphone"></i> Broadcast Speech
                 </div>
@@ -255,7 +87,7 @@
                         <textarea class="form-control" id="broadcastText" rows="3"
                             placeholder="Enter message...">Welcome to Warner Castle!</textarea>
                     </div>
-                    <button class="btn btn-halloween w-100" onclick="sayAll()">
+                    <button class="btn btn-warning w-100" onclick="sayAll()">
                         <i class="bi bi-volume-up"></i> Say to All
                     </button>
                 </div>
@@ -263,7 +95,7 @@
         </div>
 
         <div class="col-md-6">
-            <div class="card control-section">
+            <div class="card mb-4">
                 <div class="card-header">
                     <i class="bi bi-person-arms-up"></i> Random Poses
                 </div>
@@ -326,7 +158,8 @@
 </div>
 
 <script>
-    function log(message, type = 'info') {
+    function log(message, type) {
+        type = type || 'info';
         var logDiv = document.getElementById('commandLog');
         var timestamp = new Date().toLocaleTimeString();
         var icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
@@ -375,11 +208,10 @@
         // Display offline animatronics as compact list
         if (offlineAnimatronics.length > 0) {
             html += '<div class="col-12 mb-3">';
-            html += '  <div class="offline-list">';
+            html += '  <div class="d-flex flex-wrap align-items-center gap-2 p-2 rounded bg-body-secondary border">';
             html += '    <strong>Offline:</strong> ';
-            offlineAnimatronics.forEach(function (anim, index) {
-                if (index > 0) html += ' ';
-                html += '<span class="offline-item">';
+            offlineAnimatronics.forEach(function (anim) {
+                html += '<span class="badge bg-danger">';
                 html += '  <i class="bi bi-exclamation-triangle"></i> ' + anim.name + ' (' + anim.ip + ')';
                 html += '</span>';
             });
@@ -395,7 +227,7 @@
             var adminUrl = 'http://' + hostname + ':' + anim.port;
 
             html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
-            html += '  <div class="card animatronic-card">';
+            html += '  <div class="card mb-media-card">';
             html += '    <div class="card-body" data-agent-id="' + (anim.agentId || '') + '" data-character-id="' + (anim.characterId || '') + '" ondblclick="window.open(\'' + conversationUrl + '\', \'_blank\')" style="cursor: pointer;">';
 
             // Header with name and status
@@ -403,14 +235,14 @@
             html += '        <h5 class="mb-0" onclick="event.stopPropagation(); window.open(\'' + adminUrl + '\', \'_blank\')" style="cursor: pointer;">';
             html += '          <i class="bi bi-box-arrow-up-right"></i> ' + anim.name;
             html += '        </h5>';
-            html += '        <span class="badge bg-success status-online">';
+            html += '        <span class="mb-status-badge online">';
             html += '          <i class="bi bi-circle-fill"></i> ONLINE';
             html += '        </span>';
             html += '      </div>';
 
             // Character name if available
             if (anim.characterName) {
-                html += '      <div class="character-name mb-2">' + anim.characterName + '</div>';
+                html += '      <div class="text-warning fw-bold small mb-2">' + anim.characterName + '</div>';
             }
 
             // Webcam controls and stream (default OFF for performance)
@@ -420,14 +252,14 @@
             html += '        </button>';
             html += '      </div>';
             html += '      <div onclick="event.stopPropagation();">';
-            html += '        <img id="webcam-' + anim.id + '" class="webcam-preview" alt="Live webcam feed" style="display:none;" />';
+            html += '        <img id="webcam-' + anim.id + '" class="w-100 rounded mb-2" alt="Live webcam feed" style="display:none; background: var(--bs-dark);" />';
             html += '        <div id="webcam-loading-' + anim.id + '" class="text-muted text-center py-3">';
             html += '          <i class="bi bi-camera-video-off"></i> Webcam off';
             html += '        </div>';
             html += '      </div>';
 
             // Audio file selector with Play/Loop controls
-            html += '      <div class="audio-control-group mb-2" onclick="event.stopPropagation();">';
+            html += '      <div class="p-2 rounded bg-body-secondary mb-2" onclick="event.stopPropagation();">';
             html += '        <select class="form-select form-select-sm mb-1" id="audio-' + anim.id + '">';
             html += '          <option value="">Select audio file...</option>';
             html += '        </select>';
@@ -441,12 +273,12 @@
             html += '        </div>';
             html += '        <div class="form-check form-check-sm">';
             html += '          <input class="form-check-input" type="checkbox" id="loop-' + anim.id + '">';
-            html += '          <label class="form-check-label" for="loop-' + anim.id + '" style="font-size: 0.8rem;">Loop continuously</label>';
+            html += '          <label class="form-check-label small" for="loop-' + anim.id + '">Loop continuously</label>';
             html += '        </div>';
             html += '      </div>';
 
             // AI interaction input group
-            html += '      <div class="ai-input-group mb-2" onclick="event.stopPropagation();">';
+            html += '      <div class="mb-2" onclick="event.stopPropagation();">';
             html += '        <input type="text" class="form-control form-control-sm mb-1" id="text-' + anim.id + '" placeholder="Type message...">';
             html += '        <div class="btn-group w-100 mb-1" role="group">';
             html += '          <button class="btn btn-sm btn-primary" onclick="askAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
@@ -462,7 +294,7 @@
             html += '      <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">';
             html += '        <input type="number" id="autoai-interval-' + anim.id + '" class="form-control form-control-sm" ';
             html += '               value="30" min="10" max="300" placeholder="Interval (s)" style="width: 80px;">';
-            html += '        <button id="autoai-btn-' + anim.id + '" class="btn btn-sm btn-halloween flex-grow-1" ';
+            html += '        <button id="autoai-btn-' + anim.id + '" class="btn btn-sm btn-warning flex-grow-1" ';
             html += '                onclick="toggleAutoAI(' + anim.id + ')">';
             html += '          <i class="bi bi-robot"></i> <span id="autoai-text-' + anim.id + '">Auto AI</span>';
             html += '        </button>';
@@ -718,13 +550,13 @@
                     .then(function (response) { return response.json(); })
                     .then(function (data) {
                         if (data.success) {
-                            log('✅ Reboot command sent to animatronics', 'success');
+                            log('Reboot command sent to animatronics', 'success');
                         } else {
-                            log('❌ Failed to reboot animatronics: ' + (data.error || 'Unknown error'), 'error');
+                            log('Failed to reboot animatronics: ' + (data.error || 'Unknown error'), 'error');
                         }
                     })
                     .catch(function (error) {
-                        log('❌ Error rebooting animatronics: ' + error.message, 'error');
+                        log('Error rebooting animatronics: ' + error.message, 'error');
                     })
             );
         }
@@ -739,23 +571,23 @@
                     .then(function (response) { return response.json(); })
                     .then(function (data) {
                         if (data.success) {
-                            log('✅ Reboot command sent to goblins', 'success');
+                            log('Reboot command sent to goblins', 'success');
                         } else {
-                            log('❌ Failed to reboot goblins: ' + (data.error || 'Unknown error'), 'error');
+                            log('Failed to reboot goblins: ' + (data.error || 'Unknown error'), 'error');
                         }
                     })
                     .catch(function (error) {
-                        log('❌ Error rebooting goblins: ' + error.message, 'error');
+                        log('Error rebooting goblins: ' + error.message, 'error');
                     })
             );
         }
 
         Promise.allSettled(requests).then(function () {
-            log('⏳ Devices will be back online in ~90 seconds. Auto-refreshing in 2 minutes...');
+            log('Devices will be back online in ~90 seconds. Auto-refreshing in 2 minutes...');
             setTimeout(function () {
                 refreshStatus();
                 refreshGoblins();
-                log('♻️ Auto-refresh complete', 'success');
+                log('Auto-refresh complete', 'success');
             }, 120000);
         });
     }
@@ -786,13 +618,13 @@
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ All queue loops started successfully', 'success');
+                    log('All queue loops started successfully', 'success');
                     if (data.results) {
                         data.results.forEach(function (result) {
                             if (result.success) {
-                                log('  ✓ ' + result.name + ': ' + result.message, 'success');
+                                log('  ' + result.name + ': ' + result.message, 'success');
                             } else {
-                                log('  ✗ ' + result.name + ': ' + result.error, 'error');
+                                log('  ' + result.name + ': ' + result.error, 'error');
                             }
                         });
                     }
@@ -816,7 +648,7 @@
 
         var wsPort = document.body.getAttribute('data-ws-port') || '8795';
         var wsUrl = 'ws://' + ip + ':' + wsPort;
-        console.log('🔌 Connecting to AI WebSocket for ' + name + ':', wsUrl);
+        console.log('Connecting to AI WebSocket for ' + name + ':', wsUrl);
 
         var ws = new WebSocket(wsUrl);
         var wsData = {
@@ -829,7 +661,7 @@
         };
 
         ws.onopen = function () {
-            console.log('✅ AI WebSocket opened for ' + name + ', waiting for server confirmation...');
+            console.log('AI WebSocket opened for ' + name + ', waiting for server confirmation...');
         };
 
         ws.onmessage = function (event) {
@@ -837,7 +669,7 @@
 
             if (message.type === 'connected') {
                 // Now we can start the conversation
-                console.log('✅ AI WebSocket connected for ' + name);
+                console.log('AI WebSocket connected for ' + name);
                 // Send configuration messages with slight delays to ensure processing
                 setTimeout(function () {
                     console.log('Setting character ID:', characterId);
@@ -861,7 +693,7 @@
                     }));
                 }, 150);
             } else if (message.type === 'conversation_started') {
-                console.log('✅ Conversation started with agent for ' + name);
+                console.log('Conversation started with agent for ' + name);
                 wsData.ready = true;
                 // Send any pending message now that conversation is ready
                 if (wsData.pendingMessage) {
@@ -879,13 +711,13 @@
                 // Only log if we have actual text (not just "Audio response")
                 if (responseText && responseText !== 'Audio response') {
                     var displayText = responseText.length > 150 ? responseText.substring(0, 150) + '...' : responseText;
-                    log('🤖 ' + name + ' AI responded: "' + displayText + '"', 'success');
+                    log(name + ' AI responded: "' + displayText + '"', 'success');
                 }
 
                 // Audio should be playing automatically on the server speaker
             } else if (message.type === 'error') {
-                console.error('❌ WebSocket error from ' + name + ':', message);
-                log('❌ ' + name + ' AI error: ' + (message.message || JSON.stringify(message)), 'error');
+                console.error('WebSocket error from ' + name + ':', message);
+                log(name + ' AI error: ' + (message.message || JSON.stringify(message)), 'error');
             } else {
                 // Suppress excessive debug logging
                 if (message.type !== 'debug') {
@@ -895,11 +727,11 @@
         };
 
         ws.onerror = function (error) {
-            console.error('❌ AI WebSocket error for ' + name + ':', error);
+            console.error('AI WebSocket error for ' + name + ':', error);
         };
 
         ws.onclose = function () {
-            console.log('🔌 AI WebSocket closed for ' + name);
+            console.log('AI WebSocket closed for ' + name);
             delete aiWebSockets[animId];
         };
 
@@ -916,7 +748,7 @@
             return;
         }
 
-        log('🤖 Asking AI on ' + name + ': "' + question + '"');
+        log('Asking AI on ' + name + ': "' + question + '"');
 
         // Get agent ID and character ID from the card
         var card = inputEl.closest('.card-body');
@@ -924,7 +756,7 @@
         var characterId = card.getAttribute('data-character-id');
 
         if (!agentId) {
-            log('❌ ' + name + ' has no AI agent configured', 'error');
+            log(name + ' has no AI agent configured', 'error');
             return;
         }
 
@@ -967,14 +799,14 @@
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ ' + name + ' is speaking', 'success');
+                    log(name + ' is speaking', 'success');
                     inputEl.value = '';
                 } else {
-                    log('❌ ' + name + ' speech failed: ' + (data.error || 'Unknown error'), 'error');
+                    log(name + ' speech failed: ' + (data.error || 'Unknown error'), 'error');
                 }
             })
             .catch(function (error) {
-                log('❌ Error making ' + name + ' speak: ' + error.message, 'error');
+                log('Error making ' + name + ' speak: ' + error.message, 'error');
             });
     }
 
@@ -1024,7 +856,7 @@
             } catch (err) {
                 console.error('Attempt ' + attempt + ' failed loading audio files for animId ' + animId + ':', err.message);
                 if (attempt >= maxAttempts) {
-                    log('❌ Failed to load audio files for animatronic ' + animId + ' after ' + maxAttempts + ' attempts', 'error');
+                    log('Failed to load audio files for animatronic ' + animId + ' after ' + maxAttempts + ' attempts', 'error');
                     return;
                 }
                 await new Promise(r => setTimeout(r, 200 * attempt));
@@ -1058,13 +890,13 @@
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ ' + name + ' is playing audio' + (loop ? ' (looping)' : ''), 'success');
+                    log(name + ' is playing audio' + (loop ? ' (looping)' : ''), 'success');
                 } else {
-                    log('❌ ' + name + ' audio playback failed: ' + (data.error || 'Unknown error'), 'error');
+                    log(name + ' audio playback failed: ' + (data.error || 'Unknown error'), 'error');
                 }
             })
             .catch(function (error) {
-                log('❌ Error playing audio on ' + name + ': ' + error.message, 'error');
+                log('Error playing audio on ' + name + ': ' + error.message, 'error');
             });
     }
 
@@ -1079,13 +911,13 @@
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    log('✅ ' + name + ' audio stopped', 'success');
+                    log(name + ' audio stopped', 'success');
                 } else {
-                    log('❌ ' + name + ' audio stop failed: ' + (data.error || 'Unknown error'), 'error');
+                    log(name + ' audio stop failed: ' + (data.error || 'Unknown error'), 'error');
                 }
             })
             .catch(function (error) {
-                log('❌ Error stopping audio on ' + name + ': ' + error.message, 'error');
+                log('Error stopping audio on ' + name + ': ' + error.message, 'error');
             });
     }
 
@@ -1128,7 +960,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    log('✅ Auto AI stopped for animatronic ' + animId, 'success');
+                    log('Auto AI stopped for animatronic ' + animId, 'success');
                     updateAutoAIButton(animId, false);
                 } else {
                     log('Failed to stop Auto AI: ' + (data.error || 'Unknown error'), 'error');
@@ -1146,7 +978,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    log('✅ Auto AI started for animatronic ' + animId, 'success');
+                    log('Auto AI started for animatronic ' + animId, 'success');
                     updateAutoAIButton(animId, true, interval);
                 } else {
                     log('Failed to start Auto AI: ' + (data.error || 'Unknown error'), 'error');
@@ -1158,14 +990,14 @@
     }
 
     function updateAutoAIButton(animId, isActive, interval) {
-        const btn = document.getElementById('autoai-btn-' + animId);
-        const btnText = document.getElementById('autoai-text-' + animId);
-        const intervalInput = document.getElementById('autoai-interval-' + animId);
+        var btn = document.getElementById('autoai-btn-' + animId);
+        var btnText = document.getElementById('autoai-text-' + animId);
+        var intervalInput = document.getElementById('autoai-interval-' + animId);
 
         if (!btn || !btnText) return;
 
         if (isActive) {
-            btn.classList.remove('btn-halloween');
+            btn.classList.remove('btn-warning');
             btn.classList.add('btn-danger');
             btnText.textContent = 'Stop Auto AI';
             if (intervalInput && interval) {
@@ -1174,7 +1006,7 @@
             }
         } else {
             btn.classList.remove('btn-danger');
-            btn.classList.add('btn-halloween');
+            btn.classList.add('btn-warning');
             btnText.textContent = 'Auto AI';
             if (intervalInput) {
                 intervalInput.disabled = false;
@@ -1193,7 +1025,7 @@
                 // cache goblins globally for actions like rebootAll
                 window.currentGoblins = data.goblins || [];
                 displayGoblins(data.goblins);
-                log('✅ Goblin status refreshed (' + data.goblins.length + ' total)', 'success');
+                log('Goblin status refreshed (' + data.goblins.length + ' total)', 'success');
             } else {
                 log('Failed to refresh Goblin status', 'error');
             }
@@ -1216,11 +1048,11 @@
                 var goblinUrl = '/goblin-management?goblin=' + goblin.goblinId;
 
                 html += '<div class="col-md-6 col-lg-4 col-xl-3 mb-3">';
-                html += '  <div class="card goblin-card" ondblclick="window.open(\'' + goblinUrl + '\', \'_blank\')" style="cursor: pointer;">';
+                html += '  <div class="card mb-device-card ' + statusClass + '" ondblclick="window.open(\'' + goblinUrl + '\', \'_blank\')" style="cursor: pointer;">';
                 html += '    <div class="card-body">';
                 html += '      <div class="d-flex justify-content-between align-items-center mb-2">';
                 html += '        <h6 class="mb-0"><i class="bi bi-display"></i> ' + goblin.name + '</h6>';
-                html += '        <span class="goblin-status ' + statusClass + '">' + statusText + '</span>';
+                html += '        <span class="mb-status-badge ' + statusClass + '">' + statusText + '</span>';
                 html += '      </div>';
                 html += '      <div class="text-muted small mb-2">';
                 html += '        <div><strong>ID:</strong> ' + goblin.goblinId + '</div>';
@@ -1230,7 +1062,7 @@
 
                 // Currently Playing section
                 if (goblin.status === 'online' && (goblin.currentVideo || goblin.currentAudio)) {
-                    html += '      <div class="currently-playing">';
+                    html += '      <div class="p-2 rounded bg-body-secondary small mt-2">';
                     html += '        <strong><i class="bi bi-play-circle"></i> Currently Playing:</strong><br>';
 
                     if (goblin.currentVideo) {
@@ -1242,7 +1074,7 @@
 
                     html += '      </div>';
                 } else if (goblin.status === 'online') {
-                    html += '      <div class="currently-playing text-muted">';
+                    html += '      <div class="p-2 rounded bg-body-secondary small mt-2 text-muted">';
                     html += '        <i class="bi bi-pause-circle"></i> Nothing playing';
                     html += '      </div>';
                 }

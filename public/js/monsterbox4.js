@@ -332,4 +332,11 @@ const mb = new MonsterBox();
 
 // Make it globally available
 window.MonsterBox = mb;
+
+// Global showToast alias for backward compatibility
+// Pages that previously defined their own showToast() can now use this
+window.showToast = function(message, type, duration) {
+    var mappedType = type === 'error' ? 'danger' : (type || 'info');
+    mb.showNotification(message, mappedType, duration || 5000);
+};
 }

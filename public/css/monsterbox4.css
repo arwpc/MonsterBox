@@ -1,10 +1,17 @@
 /**
- * MonsterBox 5.5 Custom Styles
- * Bootstrap 5 theme customizations
+ * MonsterBox 6.1 Unified Design System
+ * Bootstrap 5 theme customizations + shared component classes
+ * This is the single source of truth for all MonsterBox custom styles.
  */
 
+/* ═══════════════════════════════════════════════════════════════
+   CSS Variables
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
+    /* Brand colors */
     --mb-primary: #6f42c1;
+    --mb-primary-dark: #5a359a;
     --mb-secondary: #6c757d;
     --mb-success: #198754;
     --mb-warning: #fd7e14;
@@ -12,6 +19,26 @@
     --mb-info: #0dcaf0;
     --mb-dark: #212529;
     --mb-light: #f8f9fa;
+
+    /* Semantic tokens */
+    --mb-terminal-bg: #0a0a0a;
+    --mb-terminal-text: #0f0;
+    --mb-hover-lift: translateY(-2px);
+    --mb-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* Animation Studio step-type colors */
+    --mb-step-servo: #0d6efd;
+    --mb-step-motor: #dc3545;
+    --mb-step-linear-actuator: #0dcaf0;
+    --mb-step-light: #ffc107;
+    --mb-step-audio: #198754;
+    --mb-step-speech: #6f42c1;
+    --mb-step-wait: #6c757d;
+    --mb-step-sensor: #0dcaf0;
+    --mb-step-pose: #fd7e14;
+    --mb-step-goblin-video: #d63384;
+    --mb-step-jaw: #20c997;
+    --mb-step-head-tracking: #0d6efd;
 }
 
 /* Dark theme enhancements (only for default-dark, not Bootswatch dark themes) */
@@ -22,7 +49,10 @@ html[data-mb-theme="default-dark"] {
     --bs-border-color: #30363d;
 }
 
-/* Custom card styles */
+/* ═══════════════════════════════════════════════════════════════
+   Card Styles
+   ═══════════════════════════════════════════════════════════════ */
+
 .card {
     border: 1px solid var(--bs-border-color);
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
@@ -54,7 +84,68 @@ html[data-mb-theme="default-dark"] {
     background-color: rgba(var(--bs-success-rgb), 0.1);
 }
 
-/* Button enhancements */
+/* Device cards (goblins, animatronics) */
+.mb-device-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.mb-device-card:hover {
+    transform: var(--mb-hover-lift);
+    box-shadow: var(--mb-hover-shadow);
+}
+
+.mb-device-card.online {
+    border-left-color: var(--mb-success);
+}
+
+.mb-device-card.offline {
+    border-left-color: var(--mb-secondary);
+}
+
+.mb-device-card.locked {
+    border-left-color: var(--mb-danger);
+}
+
+/* Media cards (audio, video, animatronic) */
+.mb-media-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.mb-media-card:hover {
+    transform: var(--mb-hover-lift);
+    box-shadow: var(--mb-hover-shadow);
+}
+
+/* Stats summary cards */
+.mb-stats-card {
+    color: white;
+    text-align: center;
+    border: none;
+}
+
+.mb-stats-card .card-body i {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.mb-stats-card .card-body h3 {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    font-weight: 700;
+}
+
+.mb-stats-card .card-body small {
+    opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Button Enhancements
+   ═══════════════════════════════════════════════════════════════ */
+
 .btn {
     border-radius: 0.375rem;
     font-weight: 500;
@@ -88,7 +179,53 @@ html[data-mb-theme="default-dark"] {
     transform: translateY(-1px);
 }
 
-/* Status badges */
+/* ═══════════════════════════════════════════════════════════════
+   Status Badges (unified)
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mb-status-badge.online {
+    background-color: var(--mb-success);
+    color: white;
+    animation: mb-pulse 2s infinite;
+}
+
+.mb-status-badge.offline {
+    background-color: var(--mb-secondary);
+    color: white;
+}
+
+.mb-status-badge.locked {
+    background-color: var(--mb-danger);
+    color: white;
+    animation: mb-pulse-danger 2s infinite;
+}
+
+.mb-status-badge.unreachable {
+    background-color: var(--mb-warning);
+    color: #000;
+}
+
+@keyframes mb-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes mb-pulse-danger {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Legacy status badges (kept for backward compatibility) */
 .status-badge {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
@@ -110,17 +247,344 @@ html[data-mb-theme="default-dark"] {
     color: white;
 }
 
-/* Progress bars */
-.progress {
-    border-radius: 0.5rem;
+/* Heartbeat indicator */
+.mb-heartbeat {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.mb-heartbeat.active {
+    background-color: var(--mb-success);
+    animation: mb-heartbeat 1.5s infinite;
+}
+
+.mb-heartbeat.inactive {
+    background-color: var(--mb-secondary);
+}
+
+@keyframes mb-heartbeat {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* Capability and tag badges */
+.mb-capability-badge,
+.mb-tag-badge {
+    font-size: 0.7rem;
+    margin: 1px;
+    padding: 2px 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Terminal Log
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-terminal-log {
+    background: var(--mb-terminal-bg);
+    color: var(--mb-terminal-text);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    padding: 0.5rem;
+    border-radius: 5px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Drag & Drop Zone
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-drop-zone {
+    border: 2px dashed var(--mb-secondary);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: rgba(108, 117, 125, 0.1);
+}
+
+.mb-drop-zone.drag-over {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Favorite Button
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-favorite-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mb-warning);
+    transition: all 0.3s;
+}
+
+.mb-favorite-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--mb-warning);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   List Tables (audio, video libraries)
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-list-table th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    font-size: 0.8rem;
+}
+
+.mb-list-table th:hover {
+    color: var(--bs-primary);
+}
+
+.mb-list-table th .sort-icon {
+    margin-left: 4px;
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.mb-list-table th.sorted .sort-icon {
+    opacity: 1;
+    color: var(--bs-primary);
+}
+
+.mb-list-table td {
+    vertical-align: middle;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.mb-list-table .title-cell {
+    white-space: normal;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mb-list-table tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+}
+
+.mb-list-table .list-fav-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--mb-warning);
+    cursor: pointer;
+}
+
+/* View toggle (grid/list) */
+.mb-view-toggle .btn {
+    padding: 0.375rem 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VU Meters (audio setup, jaw animation)
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-vu-meter {
+    background: var(--bs-dark, #2d2d2d);
+    height: 28px;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color, #444);
+}
+
+.mb-vu-meter-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.05s linear;
+    background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 60%, var(--mb-danger) 90%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Video/Audio Media Overlays
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-media-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.mb-media-card:hover .mb-media-overlay {
+    opacity: 1;
+}
+
+.mb-media-controls {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+}
+
+.mb-media-card:hover .mb-media-controls {
+    opacity: 1;
+}
+
+.mb-media-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    color: white;
+}
+
+.mb-media-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.mb-media-thumbnail {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: var(--bs-secondary-bg, #2b3035);
+}
+
+/* Waveform */
+.mb-waveform {
+    height: 60px;
+    background: linear-gradient(90deg, var(--bs-primary, #0d6efd) 0%, var(--mb-primary) 100%);
+    border-radius: 4px;
+    position: relative;
     overflow: hidden;
 }
 
-.progress-bar {
-    transition: width 0.6s ease;
+.mb-waveform-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: white;
+    font-size: 0.8rem;
 }
 
-/* Navigation enhancements */
+/* Video player elements */
+.main-video-player {
+    background: #000;
+    border-radius: 8px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-placeholder {
+    color: var(--mb-secondary);
+    text-align: center;
+}
+
+.video-preview-player {
+    width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    background: #000;
+}
+
+.video-grid-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Upload progress */
+.upload-progress {
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Character Avatar
+   ═══════════════════════════════════════════════════════════════ */
+
+.character-avatar {
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.character-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.character-avatar img {
+    object-fit: cover;
+}
+
+.character-avatar-fallback {
+    background: linear-gradient(135deg, var(--mb-primary), var(--bs-primary, #0d6efd));
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Registration / Highlighted Form
+   ═══════════════════════════════════════════════════════════════ */
+
+.mb-highlight-form {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border: 1px solid var(--bs-primary);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* Lock timer */
+.mb-lock-timer {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: var(--mb-danger);
+}
+
+/* CPU/Memory usage bars */
+.mb-usage-bar {
+    height: 4px;
+    border-radius: 2px;
+    margin: 5px 0;
+}
+
+.mb-usage-bar.cpu {
+    background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 50%, var(--mb-danger) 100%);
+}
+
+.mb-usage-bar.memory {
+    background: linear-gradient(90deg, var(--mb-info) 0%, var(--mb-primary) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Navigation Enhancements
+   ═══════════════════════════════════════════════════════════════ */
+
 .navbar-brand {
     font-weight: 600;
     font-size: 1.1rem;
@@ -159,7 +623,23 @@ html[data-mb-theme="default-dark"] {
     z-index: 1040;
 }
 
-/* Modal enhancements */
+/* ═══════════════════════════════════════════════════════════════
+   Progress Bars
+   ═══════════════════════════════════════════════════════════════ */
+
+.progress {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Modal Enhancements
+   ═══════════════════════════════════════════════════════════════ */
+
 .modal-content {
     border: none;
     border-radius: 0.5rem;
@@ -175,7 +655,10 @@ html[data-mb-theme="default-dark"] {
     border-top: 1px solid var(--bs-border-color);
 }
 
-/* Form enhancements */
+/* ═══════════════════════════════════════════════════════════════
+   Form Enhancements
+   ═══════════════════════════════════════════════════════════════ */
+
 .form-control, .form-select {
     border-radius: 0.375rem;
     border: 1px solid var(--bs-border-color);
@@ -187,7 +670,10 @@ html[data-mb-theme="default-dark"] {
     box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
-/* Loading states */
+/* ═══════════════════════════════════════════════════════════════
+   Loading States
+   ═══════════════════════════════════════════════════════════════ */
+
 .loading {
     opacity: 0.6;
     pointer-events: none;
@@ -211,23 +697,29 @@ html[data-mb-theme="default-dark"] {
     to { transform: rotate(360deg); }
 }
 
-/* Responsive adjustments */
+/* ═══════════════════════════════════════════════════════════════
+   Responsive Adjustments
+   ═══════════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
     .btn-lg {
         padding: 0.5rem 1rem;
         font-size: 1rem;
     }
-    
+
     .card-body {
         padding: 1rem;
     }
-    
+
     .modal-dialog {
         margin: 0.5rem;
     }
 }
 
-/* Utility classes */
+/* ═══════════════════════════════════════════════════════════════
+   Utility Classes
+   ═══════════════════════════════════════════════════════════════ */
+
 .text-gradient {
     background: linear-gradient(45deg, var(--mb-primary), var(--mb-info));
     -webkit-background-clip: text;

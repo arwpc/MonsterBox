@@ -29,12 +29,12 @@
       padding: 10px;
       font-size: 16px;
       border-radius: 4px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--bs-border-color);
     }
 
     .emergency-stop {
-      background: #dc3545;
-      color: white;
+      background: var(--bs-danger);
+      color: var(--bs-white);
       border: none;
       padding: 15px 30px;
       font-size: 18px;
@@ -46,7 +46,8 @@
     }
 
     .emergency-stop:hover {
-      background: #c82333;
+      background: var(--bs-danger);
+      filter: brightness(0.85);
       transform: scale(1.05);
     }
 
@@ -83,17 +84,18 @@
     }
 
     .cal-panel {
-      background: white;
+      background: var(--bs-body-bg);
       border-radius: 8px;
       padding: 20px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--bs-border-color);
     }
 
     .cal-panel h2 {
       margin: 0 0 15px 0;
       font-size: 20px;
-      color: #333;
-      border-bottom: 2px solid #667eea;
+      color: var(--bs-body-color);
+      border-bottom: 2px solid var(--mb-primary);
       padding-bottom: 10px;
     }
 
@@ -114,27 +116,28 @@
       padding: 15px 25px;
       font-size: 18px;
       font-weight: bold;
-      border: 2px solid #667eea;
-      background: white;
-      color: #667eea;
+      border: 2px solid var(--mb-primary);
+      background: var(--bs-body-bg);
+      color: var(--mb-primary);
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .jog-btn:hover {
-      background: #667eea;
-      color: white;
+      background: var(--mb-primary);
+      color: var(--bs-white);
     }
 
     .jog-btn.stop {
-      background: #ffc107;
-      border-color: #ffc107;
-      color: #333;
+      background: var(--bs-warning);
+      border-color: var(--bs-warning);
+      color: var(--bs-dark);
     }
 
     .jog-btn.stop:hover {
-      background: #ffca28;
+      background: var(--bs-warning);
+      filter: brightness(1.1);
     }
 
     .scale-selector {
@@ -144,17 +147,18 @@
 
     .scale-btn {
       padding: 8px 15px;
-      border: 2px solid #ddd;
-      background: white;
+      border: 2px solid var(--bs-border-color);
+      background: var(--bs-body-bg);
+      color: var(--bs-body-color);
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .scale-btn.active {
-      background: #667eea;
-      color: white;
-      border-color: #667eea;
+      background: var(--mb-primary);
+      color: var(--bs-white);
+      border-color: var(--mb-primary);
     }
 
     .bounds-controls {
@@ -167,7 +171,7 @@
       display: flex;
       justify-content: space-between;
       padding: 15px;
-      background: #f8f9fa;
+      background: var(--bs-tertiary-bg);
       border-radius: 4px;
       font-family: monospace;
     }
@@ -177,11 +181,11 @@
       gap: 10px;
     }
 
-    .btn-primary {
+    .cal-action-btn {
       flex: 1;
       padding: 12px;
-      background: #28a745;
-      color: white;
+      background: var(--bs-success);
+      color: var(--bs-white);
       border: none;
       border-radius: 4px;
       font-size: 16px;
@@ -189,8 +193,9 @@
       transition: all 0.2s;
     }
 
-    .btn-primary:hover {
-      background: #218838;
+    .cal-action-btn:hover {
+      background: var(--bs-success);
+      filter: brightness(0.85);
     }
 
     .presets-list {
@@ -203,10 +208,10 @@
       justify-content: space-between;
       align-items: center;
       padding: 10px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--bs-border-color);
       border-radius: 4px;
       margin-bottom: 10px;
-      background: #f8f9fa;
+      background: var(--bs-tertiary-bg);
     }
 
     .preset-info {
@@ -215,12 +220,12 @@
 
     .preset-name {
       font-weight: bold;
-      color: #333;
+      color: var(--bs-body-color);
     }
 
     .preset-value {
       font-size: 12px;
-      color: #666;
+      color: var(--bs-secondary-color);
       font-family: monospace;
     }
 
@@ -239,21 +244,23 @@
     }
 
     .btn-go {
-      background: #007bff;
-      color: white;
+      background: var(--bs-primary);
+      color: var(--bs-white);
     }
 
     .btn-go:hover {
-      background: #0056b3;
+      background: var(--bs-primary);
+      filter: brightness(0.85);
     }
 
     .btn-delete {
-      background: #dc3545;
-      color: white;
+      background: var(--bs-danger);
+      color: var(--bs-white);
     }
 
     .btn-delete:hover {
-      background: #c82333;
+      background: var(--bs-danger);
+      filter: brightness(0.85);
     }
 
     .add-preset {
@@ -265,20 +272,22 @@
     .add-preset input {
       flex: 1;
       padding: 10px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--bs-border-color);
       border-radius: 4px;
+      background: var(--bs-body-bg);
+      color: var(--bs-body-color);
     }
 
     .learn-panel {
-      background: #fff3cd;
+      background: rgba(var(--bs-warning-rgb), 0.15);
       padding: 15px;
       border-radius: 4px;
-      border: 2px solid #ffc107;
+      border: 2px solid var(--bs-warning);
     }
 
     .learn-panel h3 {
       margin: 0 0 10px 0;
-      color: #856404;
+      color: var(--bs-warning);
     }
 
     .probe-inputs {
@@ -297,8 +306,10 @@
 
     .probe-row input {
       padding: 8px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--bs-border-color);
       border-radius: 4px;
+      background: var(--bs-body-bg);
+      color: var(--bs-body-color);
     }
 
     .status-bar {
@@ -306,8 +317,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: #343a40;
-      color: white;
+      background: var(--bs-dark);
+      color: var(--bs-light);
       padding: 10px 20px;
       display: flex;
       justify-content: space-between;
@@ -327,7 +338,7 @@
 
     .status-label {
       font-size: 12px;
-      color: #adb5bd;
+      color: var(--bs-secondary-color);
     }
 
     .status-value {
@@ -336,29 +347,7 @@
       font-family: monospace;
     }
 
-    .alert {
-      padding: 15px;
-      border-radius: 4px;
-      margin-bottom: 15px;
-    }
-
-    .alert-info {
-      background: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-
-    .alert-warning {
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeaa7;
-    }
-
-    .alert-danger {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
+    /* Alerts use Bootstrap's built-in .alert classes */
 
     .hidden {
       display: none !important;
@@ -367,7 +356,7 @@
     .position-display {
       text-align: center;
       padding: 20px;
-      background: #e9ecef;
+      background: var(--bs-secondary-bg);
       border-radius: 8px;
       margin: 15px 0;
     }
@@ -375,13 +364,13 @@
     .position-value {
       font-size: 48px;
       font-weight: bold;
-      color: #667eea;
+      color: var(--mb-primary);
       font-family: monospace;
     }
 
     .position-label {
       font-size: 14px;
-      color: #666;
+      color: var(--bs-secondary-color);
       margin-top: 5px;
     }
   </style>
@@ -460,8 +449,8 @@
           </div>
 
           <div class="bounds-actions">
-            <button class="btn-primary" id="setMinBtn" disabled>Set Min</button>
-            <button class="btn-primary" id="setMaxBtn" disabled>Set Max</button>
+            <button class="cal-action-btn" id="setMinBtn" disabled>Set Min</button>
+            <button class="cal-action-btn" id="setMaxBtn" disabled>Set Max</button>
           </div>
         </div>
 
@@ -494,7 +483,7 @@
               </div>
             </div>
 
-            <button class="btn-primary" id="saveLearnBtn" disabled>Save Learned Motion</button>
+            <button class="cal-action-btn" id="saveLearnBtn" disabled>Save Learned Motion</button>
           </div>
         </div>
       </div>
@@ -506,7 +495,7 @@
 
           <div class="add-preset">
             <input type="text" id="presetName" placeholder="Preset name..." />
-            <button class="btn-primary" id="addPresetBtn" disabled>Set Here</button>
+            <button class="cal-action-btn" id="addPresetBtn" disabled>Set Here</button>
           </div>
 
           <div class="presets-list" id="presetsList">

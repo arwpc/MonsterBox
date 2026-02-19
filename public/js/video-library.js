@@ -107,7 +107,7 @@ class VideoLibrary {
 
         // Click to browse
         dropZone.addEventListener('click', (e) => {
-            if (e.target === dropZone || e.target.closest('.drag-drop-zone')) {
+            if (e.target === dropZone || e.target.closest('.mb-drop-zone')) {
                 document.getElementById('videoFileInput').click();
             }
         });
@@ -176,7 +176,7 @@ class VideoLibrary {
 
         grid.innerHTML = this.videoFiles.map(video => `
             <div class="col-12 mb-2">
-                <div class="video-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
+                <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
                     ${this.bulkSelectMode ? `
                         <div class="position-absolute top-0 start-0 p-2" style="z-index: 20;">
                             <input type="checkbox" class="form-check-input video-select-checkbox" 
@@ -187,24 +187,24 @@ class VideoLibrary {
                     
                     <div class="position-relative">
                         ${video.thumbnailPath ? `
-                            <img src="/video-library/api/video/${video.id}/thumbnail" class="video-thumbnail" alt="${video.title}">
+                            <img src="/video-library/api/video/${video.id}/thumbnail" class="mb-media-thumbnail" alt="${video.title}">
                         ` : `
-                            <div class="video-thumbnail d-flex align-items-center justify-content-center">
+                            <div class="mb-media-thumbnail d-flex align-items-center justify-content-center">
                                 <i class="bi bi-camera-video fs-1 text-white"></i>
                             </div>
                         `}
                         
-                        <div class="video-overlay"></div>
+                        <div class="mb-media-overlay"></div>
                         
-                        <div class="video-controls">
+                        <div class="mb-media-controls">
                             <button class="btn btn-primary btn-lg rounded-circle">
                                 <i class="bi bi-play-fill"></i>
                             </button>
                         </div>
                         
-                        <div class="video-duration">${this.formatDuration(video.duration || 0)}</div>
+                        <div class="mb-media-duration">${this.formatDuration(video.duration || 0)}</div>
                         
-                        <button class="favorite-btn ${video.favorite ? 'text-warning' : ''}" 
+                        <button class="mb-favorite-btn ${video.favorite ? 'text-warning' : ''}" 
                                 onclick="event.stopPropagation(); videoLibrary.toggleFavorite('${video.id}')">
                             <i class="bi bi-heart${video.favorite ? '-fill' : ''}"></i>
                         </button>
@@ -218,7 +218,7 @@ class VideoLibrary {
                         ${video.tags && video.tags.length ? `
                             <div class="mb-1">
                                 ${video.tags.slice(0, 2).map(tag => `
-                                    <span class="badge bg-secondary tag-badge">${tag}</span>
+                                    <span class="mb-tag-badge badge bg-secondary">${tag}</span>
                                 `).join('')}
                                 ${video.tags.length > 2 ? `<span class="badge bg-secondary tag-badge">+${video.tags.length - 2}</span>` : ''}
                             </div>
@@ -267,7 +267,7 @@ class VideoLibrary {
             const tagsContainer = document.getElementById('currentVideoTags');
             if (video.tags && video.tags.length) {
                 tagsContainer.innerHTML = video.tags.map(tag => 
-                    `<span class="badge bg-secondary tag-badge">${tag}</span>`
+                    `<span class="mb-tag-badge badge bg-secondary">${tag}</span>`
                 ).join('');
             } else {
                 tagsContainer.innerHTML = '';
@@ -605,7 +605,7 @@ class VideoLibrary {
                        ${goblin.locked ? 'disabled' : ''}>
                 <label class="form-check-label small" for="deployGoblin${goblin.id}">
                     <strong>${goblin.name}</strong>
-                    <span class="goblin-status ${goblin.status}">${goblin.status}</span>
+                    <span class="mb-status-badge ${goblin.status}">${goblin.status}</span>
                     ${goblin.locked ? '<br><small class="text-warning">Locked</small>' : ''}
                     <br><small class="text-muted">${goblin.endpoint}</small>
                 </label>
@@ -741,7 +741,7 @@ class VideoLibrary {
 
             return '<tr data-video-id="' + video.id + '">' +
                 '<td>' + checkboxCell + '</td>' +
-                '<td><button class="list-fav-btn favorite-btn" data-video-id="' + video.id + '">' +
+                '<td><button class="list-fav-btn mb-favorite-btn" data-video-id="' + video.id + '">' +
                     '<i class="bi bi-heart' + (video.favorite ? '-fill' : '') + '"></i>' +
                 '</button></td>' +
                 '<td class="title-cell" title="' + self.escapeAttr(video.title) + '">' + self.escapeHtml(video.title) + '</td>' +
@@ -778,7 +778,7 @@ class VideoLibrary {
         });
 
         // Favorite buttons
-        tbody.querySelectorAll('.favorite-btn').forEach(function(btn) {
+        tbody.querySelectorAll('.mb-favorite-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 self.toggleFavorite(btn.dataset.videoId);
@@ -962,7 +962,7 @@ class VideoLibrary {
         if (onlineGoblins.length > 0) {
             statusBar.style.display = 'block';
             statusList.innerHTML = onlineGoblins.map(goblin => `
-                <span class="goblin-status ${goblin.status} me-2">${goblin.name}</span>
+                <span class="mb-status-badge ${goblin.status} me-2">${goblin.name}</span>
             `).join('');
         } else {
             statusBar.style.display = 'none';
@@ -1013,43 +1013,15 @@ class VideoLibrary {
     }
 
     showError(message) {
-        // Create toast notification
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-bg-danger border-0';
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-        
-        toast.addEventListener('hidden.bs.toast', () => {
-            document.body.removeChild(toast);
-        });
+        if (window.showToast) {
+            window.showToast(message, 'error');
+        }
     }
 
     showSuccess(message) {
-        // Create toast notification
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-bg-success border-0';
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-        
-        toast.addEventListener('hidden.bs.toast', () => {
-            document.body.removeChild(toast);
-        });
+        if (window.showToast) {
+            window.showToast(message, 'success');
+        }
     }
 }
 

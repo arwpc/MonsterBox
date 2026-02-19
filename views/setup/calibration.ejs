@@ -8,7 +8,7 @@
   #toast-container, #toast-container .alert { pointer-events: none; }
   .device-list { max-height: calc(100vh - 140px); overflow: auto; }
   .marker-chip { cursor: pointer; }
-  .ghost-tick { position: absolute; height: 6px; width: 2px; background: #8a2be2; top: -2px; }
+  .ghost-tick { position: absolute; height: 6px; width: 2px; background: var(--mb-primary); top: -2px; }
 </style>
 
   <!-- Mode Toggle and Add Part Button -->
@@ -2902,33 +2902,13 @@
       }
     }
 
-    // Show toast notification
-    function showToast(message, type = 'info') {
-      // Create toast element if it doesn't exist
-      let toastContainer = document.getElementById('toast-container');
-      if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
-        document.body.appendChild(toastContainer);
+    // Show toast notification — delegates to global showToast
+    function showToast(message, type) {
+      if (window.showToast && window.showToast !== showToast) {
+        window.showToast(message, type);
+      } else if (window.MonsterBox && window.MonsterBox.showNotification) {
+        window.MonsterBox.showNotification(message, type);
       }
-
-      const toast = document.createElement('div');
-      toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
-      toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
-      toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          `;
-
-      toastContainer.appendChild(toast);
-
-      // Auto-remove after 5 seconds
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.remove();
-        }
-      }, 5000);
     }
 
     // Expose for other inline scripts that run earlier on DOMContentLoaded

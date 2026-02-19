@@ -33,7 +33,7 @@ const imageUrl = activeImage ? `/api/characters/${charId}/images/${activeImage}`
 
 <div class="character-avatar-wrapper d-inline-flex align-items-center <%= className %>" data-character-id="<%= charId %>">
   <div class="character-avatar rounded-circle overflow-hidden d-flex align-items-center justify-content-center" 
-       style="width: <%= size %>px; height: <%= size %>px; min-width: <%= size %>px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; font-size: <%= Math.floor(size * 0.4) %>px;"
+       style="width: <%= size %>px; height: <%= size %>px; min-width: <%= size %>px; background: linear-gradient(135deg, var(--mb-primary) 0%, var(--mb-primary-dark, #5a359a) 100%); color: white; font-weight: bold; font-size: <%= Math.floor(size * 0.4) %>px;"
        title="<%= charName %>">
     <% if (imageUrl) { %>
       <img src="<%= imageUrl %>" 
@@ -51,21 +51,4 @@ const imageUrl = activeImage ? `/api/characters/${charId}/images/${activeImage}`
     <span class="ms-2 character-name"><%= charName %></span>
   <% } %>
 </div>
-
-<style>
-.character-avatar {
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.character-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.character-avatar img {
-  object-fit: cover;
-}
-</style>
 

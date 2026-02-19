@@ -94,7 +94,7 @@ class AudioLibrary {
 
         // Click to browse
         dropZone.addEventListener('click', (e) => {
-            if (e.target === dropZone || e.target.closest('.drag-drop-zone')) {
+            if (e.target === dropZone || e.target.closest('.mb-drop-zone')) {
                 document.getElementById('audioFileInput').click();
             }
         });
@@ -254,7 +254,7 @@ class AudioLibrary {
     createAudioCard(audio) {
         var tags = Array.isArray(audio.tags) ? audio.tags : [];
         var tagsHTML = tags.map(function(tag) {
-            return '<span class="badge bg-secondary tag-badge">' + tag + '</span>';
+            return '<span class="mb-tag-badge badge bg-secondary">' + tag + '</span>';
         }).join('');
         var format = audio.format || 'audio';
         var fileSize = audio.fileSize || 0;
@@ -270,15 +270,15 @@ class AudioLibrary {
 
         return '\
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">\
-                <div class="card audio-card h-100" id="audio-' + audio.id + '">\
+                <div class="card mb-media-card h-100" id="audio-' + audio.id + '">\
                     <div class="position-relative">\
                         ' + bulkCheckbox + '\
-                        <div class="waveform-container">\
-                            <div class="waveform-placeholder">\
+                        <div class="mb-waveform">\
+                            <div class="mb-waveform-placeholder">\
                                 <i class="bi bi-soundwave"></i>\
                                 <span class="ms-2">' + this.formatDuration(audio.duration) + '</span>\
                             </div>\
-                            <div class="audio-controls">\
+                            <div class="mb-media-controls">\
                                 <button class="btn btn-primary btn-sm me-1 play-btn" data-audio-id="' + audio.id + '">\
                                     <i class="bi bi-play-fill"></i>\
                                 </button>\
@@ -287,7 +287,7 @@ class AudioLibrary {
                                 </button>\
                             </div>\
                         </div>\
-                        <button class="favorite-btn ' + (audio.favorite ? 'active' : '') + '" data-audio-id="' + audio.id + '">\
+                        <button class="mb-favorite-btn ' + (audio.favorite ? 'active' : '') + '" data-audio-id="' + audio.id + '">\
                             <i class="bi bi-heart' + (audio.favorite ? '-fill' : '') + '"></i>\
                         </button>\
                     </div>\
@@ -348,7 +348,7 @@ class AudioLibrary {
         });
 
         // Favorite button
-        card.querySelector('.favorite-btn').addEventListener('click', (e) => {
+        card.querySelector('.mb-favorite-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleFavorite(audio.id);
         });
@@ -564,7 +564,7 @@ class AudioLibrary {
 
             if (data.success) {
                 audio.favorite = data.audio.favorite;
-                const btn = document.querySelector(`[data-audio-id="${audioId}"].favorite-btn`);
+                const btn = document.querySelector(`[data-audio-id="${audioId}"].mb-favorite-btn`);
                 const icon = btn.querySelector('i');
 
                 if (audio.favorite) {
@@ -799,13 +799,15 @@ class AudioLibrary {
     }
 
     showSuccess(message) {
-        // Simple alert for now - could be replaced with toast notifications
-        alert('✅ ' + message);
+        if (window.showToast) {
+            window.showToast(message, 'success');
+        }
     }
 
     showError(message) {
-        // Simple alert for now - could be replaced with toast notifications
-        alert('❌ ' + message);
+        if (window.showToast) {
+            window.showToast(message, 'error');
+        }
     }
 
     // Advanced search methods
@@ -951,7 +953,7 @@ class AudioLibrary {
 
             return '<tr data-audio-id="' + audio.id + '">' +
                 '<td>' + checkboxCell + '</td>' +
-                '<td><button class="list-fav-btn favorite-btn" data-audio-id="' + audio.id + '" title="Toggle favorite">' +
+                '<td><button class="list-fav-btn mb-favorite-btn" data-audio-id="' + audio.id + '" title="Toggle favorite">' +
                     '<i class="bi bi-heart' + (audio.favorite ? '-fill' : '') + '"></i>' +
                 '</button></td>' +
                 '<td class="title-cell" title="' + self.escapeAttr(audio.title || 'Untitled') + '">' + self.escapeHtml(audio.title || 'Untitled') + '</td>' +
@@ -1006,7 +1008,7 @@ class AudioLibrary {
         });
 
         // Favorite buttons
-        tbody.querySelectorAll('.favorite-btn').forEach(function(btn) {
+        tbody.querySelectorAll('.mb-favorite-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 self.toggleFavorite(btn.dataset.audioId);
