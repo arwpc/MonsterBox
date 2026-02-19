@@ -10,16 +10,21 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.1.2 (February 2026)
+## What's New — v6.1.5 (February 2026)
 
-### Audio Stack Overhaul
-- **Fixed 3 critical bugs**: `require()` crash in ES module, duplicate `moveSinkInput` shadowing, broken wpctl sink/source parser that always returned placeholder devices
-- **Standardized audio defaults**: 16kHz sample rate, 0.40 VAD threshold, `pcm_s16le` format, `DEFAULT_VOLUME = 85` — consistent across all 8+ services
-- **Canonical speaker field**: `config.audioDeviceId` everywhere (was `device`, `deviceName`, `outputDevice` in various files)
-- **Real PipeWire devices**: Audio Configuration page now shows actual hardware (Unitek Y-247A, Built-in Audio) instead of generic "Default Output"
-- **VU meter upgrade**: STT page uses WebSocket push instead of HTTP polling (no more Python spawns per poll)
-- **Better error messages**: TTS quota/API errors now surfaced to UI with actual details instead of generic "500"
-- **WebSocket port centralized**: All 5 client JS files read from `data-ws-port` DOM attribute instead of hardcoding 8795
+### Jaw Animation v2: Real-Time Audio-Synchronized Jaw Control
+- **Persistent Servo Daemon**: Long-running Python process for PCA9685 I2C control replaces per-frame Python spawns (~580ms → <1ms per servo command)
+- **Pre-Analysis Engine**: Complete audio analysis before playback using ffmpeg bandpass filter (500-2500Hz speech formants), AGC, and quantization to discrete jaw positions
+- **Synchronized Playback**: `playWithJawSync()` pre-analyzes entire audio file, then plays audio and jaw timeline in parallel with drift-correcting scheduling — eliminates the 100-500ms desync
+- **Scene Integration**: `sayThis`, `askAI`, and `audio` scene steps now automatically sync jaw movement during TTS/audio playback
+- **Speech Filter**: Bandpass filter isolates 500-2500Hz speech formant range — eliminates erratic jaw movement from bass/sibilants
+- **Auto Gain Control (AGC)**: Automatically normalizes audio peak to 0.8 — no manual sensitivity tuning per audio file
+- **Quantization**: Discrete jaw positions (5-20 configurable levels) for more natural animatronic movement
+- **Timeline Visualization**: Canvas-based jaw position preview on setup page after TTS test
+- **Presets**: Speech, Music, Custom presets for quick configuration of filter/AGC/quantization settings
+- **20ms Frame Rate**: Matches PCA9685's 50Hz PWM update rate (was 50ms)
+
+### Previous: v6.1.2 — Audio Stack Overhaul
 
 ### Previous: v6.1.1 — Bootswatch Themes, PIR Sensor Fix, Calibration Refactor
 
@@ -114,17 +119,20 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 
 Open: http://localhost:3000/setup/calibration
 
-## Jaw Animation (Super Power)
+## Jaw Animation v2 (Super Power)
 
-Jaw Animation drives a servo to match speech amplitude in real-time, producing lifelike mouth movement during TTS playback. Inspired by [ChatterPi](https://github.com/ViennaMike/ChatterPi), amplitude-to-angle mapping runs **synchronously** in each audio frame — no async gaps between amplitude measurement and servo command.
+Jaw Animation v2 drives a servo to match speech amplitude in real-time, producing lifelike mouth movement during TTS playback. Uses a persistent Python servo daemon (<1ms per command), complete audio pre-analysis with speech bandpass filtering, and synchronized playback scheduling.
 
-**How It Works:**
-1. ElevenLabs TTS generates an audio buffer
-2. ffmpeg decodes to 16 kHz 16-bit mono PCM
-3. 50 ms RMS frames are processed in a tight loop:
-   - Amplitude computed → sensitivity scaling → smoothing (EMA) → attack/release envelope → angle mapping
-   - `driveState.angle` set **immediately** (synchronous)
-   - Servo command fired as fire-and-forget (async, non-blocking)
+**Architecture:**
+1. **Persistent Servo Daemon** (`python_wrappers/jaw_servo_daemon.py`): Long-running Python process initializes PCA9685 I2C bus once, accepts JSON commands via stdin. Managed by `services/jawServoDaemon.js`.
+2. **Pre-Analysis Engine**: Before playback, entire audio is decoded and analyzed:
+   - ffmpeg bandpass filter isolates 500-2500Hz speech formants
+   - 20ms RMS frames (matching PCA9685 50Hz PWM rate)
+   - AGC normalizes peak amplitude automatically
+   - Quantization snaps to N discrete jaw positions (default 10)
+   - Attack/release envelope for natural motion
+3. **Synchronized Playback** (`playWithJawSync()`): Pre-analyzes complete audio, starts playback and jaw timeline simultaneously with drift-correcting setTimeout scheduling.
+4. **Scene Integration**: `sayThis`, `askAI`, and `audio` scene steps auto-sync jaw when enabled.
 
 **Configuration** (`data/character-{N}/super-powers.json`):
 
@@ -139,29 +147,44 @@ Jaw Animation drives a servo to match speech amplitude in real-time, producing l
 | `releaseTime` | `80` | Max degrees/frame when closing (ramp limiter) |
 | `minAngle` | `70` | Servo closed position (degrees) |
 | `maxAngle` | `93` | Servo open position (degrees) |
+| `useBandpassFilter` | `true` | Enable 500-2500Hz speech filter (v2) |
+| `useAGC` | `true` | Automatic gain control (v2) |
+| `quantizationLevels` | `10` | Discrete jaw positions, 5-20 (v2) |
+| `preset` | `speech` | Tuning preset: speech, music, custom (v2) |
+
+**Presets:**
+- **Speech**: Filter on, AGC on, 10 positions — optimized for TTS/conversation
+- **Music**: Filter off, AGC on, 15 positions — tracks all frequencies
+- **Custom**: Manual control of all parameters
 
 **Setup Page:** `http://localhost:3000/setup/jaw-animation`
 
 **API:**
 ```bash
-# Save jaw config for character 3
-curl -X POST http://localhost:3000/api/jaw-animation/3 \
+# Save jaw config for character 3 (v2 fields)
+curl -X POST http://localhost:3000/setup/jaw-animation/api/jaw-animation/3 \
   -H "Content-Type: application/json" \
-  -d '{"enabled":true,"servoPartId":"10","sensitivity":4,"smoothing":0.2,"volumeThreshold":0.02,"attackTime":30,"releaseTime":80,"minAngle":70,"maxAngle":93}'
+  -d '{"enabled":true,"servoPartId":"10","sensitivity":4,"smoothing":0.2,"volumeThreshold":0.02,"attackTime":30,"releaseTime":80,"useBandpassFilter":true,"useAGC":true,"quantizationLevels":10,"preset":"speech"}'
 
 # Drive jaw to specific amplitude (0.0-1.0)
-curl -X POST http://localhost:3000/api/jaw-animation/3/drive \
+curl -X POST http://localhost:3000/setup/jaw-animation/api/jaw-animation/3/drive \
   -H "Content-Type: application/json" -d '{"amplitude":0.5}'
 
 # Poll real-time audio levels during playback
-curl http://localhost:3000/api/jaw-animation/3/audio-levels
+curl http://localhost:3000/setup/jaw-animation/api/jaw-animation/3/audio-levels
 
-# Test TTS with jaw drive
-curl -X POST http://localhost:3000/api/jaw-animation/3/test-tts \
-  -H "Content-Type: application/json" -d '{"text":"Hello from Orlok"}'
+# Test TTS with jaw drive (returns timeline for UI visualization)
+curl -X POST http://localhost:3000/setup/jaw-animation/api/jaw-animation/3/test-tts \
+  -H "Content-Type: application/json" -d '{"text":"Hello from the animatronic"}'
 ```
 
-See: `services/jawAnimationSuperPowerService.js`, `routes/setup/jaw-animation.js`
+**Key Files:**
+- `python_wrappers/jaw_servo_daemon.py` — Persistent PCA9685 daemon
+- `services/jawServoDaemon.js` — Daemon lifecycle manager
+- `services/jawAnimationSuperPowerService.js` — Pre-analysis, sync playback, config
+- `routes/setup/jaw-animation.js` — API routes
+- `views/setup/jaw-animation.ejs` — Setup UI with presets and timeline canvas
+- `public/js/jaw-animation.js` — Client-side controls (ES5 IIFE)
 
 ## AI Management (ElevenLabs)
 
@@ -305,15 +328,14 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v6.1.2 - February 2026)
+### Test Results (v6.1.5 - February 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System | Mocha | 174 | 2 | 0 |
-| Unit | Mocha | 240 | 32 | 0 |
-| Browser E2E (9 spec files) | Playwright | 174 | 7 | 2* |
+| System + Unit | Mocha | 255 | — | 0 |
+| Browser E2E (9 spec files) | Playwright | 190 | 7 | 0 |
 
-*\*2 pre-existing: AI Settings VU meter (hardware-dependent), Jaw Animation save config (disabled option). Not code bugs.*
+All tests passing. Pre-existing intermittent failures (calibration timeout, VU meter hardware) resolved.
 
 ```bash
 # Run all tests

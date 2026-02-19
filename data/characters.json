@@ -14,7 +14,30 @@
     "id": 3,
     "name": "Orlok",
     "elevenLabsAgentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n",
-    "activeImage": "1orlok.png"
+    "activeImage": "1orlok.png",
+    "sttConfig": {
+      "model": "scribe_v2",
+      "language": "en",
+      "sampleRate": 16000,
+      "vadEnabled": true,
+      "vadThreshold": 0.4,
+      "vadSilenceDuration": 600,
+      "captureChunkDuration": 0.5,
+      "sttThrottleInterval": 2500,
+      "minBufferDuration": 2.5,
+      "maxBufferDuration": 6,
+      "microphoneInputGain": 70,
+      "audioFilterEnabled": true,
+      "highpassFreq": 300,
+      "lowpassFreq": 3600,
+      "denoiseLevel": -40,
+      "filterSfx": true,
+      "validateEnglish": true,
+      "minLetterRatio": 55,
+      "requireVowels": true,
+      "microphonePartId": "7",
+      "microphoneDeviceId": "default"
+    }
   },
   {
     "id": 4,

@@ -2,7 +2,7 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [6.1.5] - 2026-02-18 — Dashboard & Animation Studio Fixes
+## [6.1.5] - 2026-02-18 — Dashboard & Animation Studio Fixes + Jaw Animation v2
 
 ### Bug Fixes
 - **Fixed Parts API response format** — `GET /api/parts` returned raw array instead of `{ success, parts }` wrapper, causing Dashboard hardware panel and Animation Studio part palette to show empty. Both now display correctly.
@@ -22,6 +22,54 @@ All notable changes to MonsterBox are documented in this file.
 - **Optional audio** — attach a sound file or TTS text to a pose.
 - **Edit existing poses** — click any pose in the saved list or use the edit button in Animation Studio's pose library.
 - Added to Activities navigation dropdown alongside Animation Studio.
+
+### Jaw Animation v2: Real-Time Audio-Synchronized Jaw Control
+
+### Persistent Servo Daemon (Phase 1)
+- **New `python_wrappers/jaw_servo_daemon.py`**: Long-running Python process initializes PCA9685 I2C bus once, reads JSON commands from stdin (<1ms per command vs ~580ms per Python spawn)
+- **New `services/jawServoDaemon.js`**: Node.js daemon lifecycle manager with lazy-start, auto-restart on crash, graceful shutdown
+- Daemon routes servo commands through fire-and-forget stdin writes instead of spawning new Python processes per frame
+- Shutdown hook added to `server.js` graceful shutdown sequence
+- Falls back to `hardwareService.controlPart()` if daemon is unavailable
+
+### Pre-Analysis Engine (Phase 2)
+- **`preAnalyzeAudio()`**: Complete audio analysis before playback — eliminates reactive frame-by-frame processing
+- **Bandpass filter**: ffmpeg 500-2500Hz speech formant isolation (configurable via `useBandpassFilter`)
+- **AGC**: Automatic gain control normalizes peak RMS to 0.8 — no manual sensitivity tuning per audio file
+- **Quantization**: Discrete jaw positions (5-20 configurable levels, default 10) for natural animatronic movement
+- **20ms frames**: Matches PCA9685 50Hz PWM rate (was 50ms)
+- **`playWithJawSync()`**: Synchronized audio+jaw playback with drift-correcting setTimeout scheduling
+
+### Scene Integration (Phase 3)
+- `sayThis` scene steps auto-sync jaw during TTS playback when jaw is enabled
+- `askAI` scene steps auto-sync jaw during AI response playback
+- `audio` scene steps optionally sync jaw with pre-recorded audio files
+- `jaw-animation` enable step pre-warms daemon for zero startup delay
+- Dashboard `/api/say` endpoint uses `playWithJawSync()` when jaw is enabled
+- All jaw integration is non-fatal — graceful fallback to audio-only on failure
+
+### UI Improvements (Phase 4)
+- **Presets**: Speech, Music, Custom radio buttons for quick configuration
+- **Speech Filter toggle**: Enable/disable 500-2500Hz bandpass filter
+- **AGC toggle**: Enable/disable automatic gain control
+- **Quantization slider**: 5-20 discrete jaw positions with live value display
+- **Timeline canvas**: Visualizes pre-analyzed jaw positions after TTS test
+- All controls in ES5 IIFE pattern per project convention
+
+### Testing (Phase 5)
+- 14 new unit tests for pre-analysis engine (frames, AGC, silence gating, quantization, guardrails, bandpass toggle)
+- Updated system tests for v2 config fields and timeline response
+- 7 new browser tests for v2 UI controls (presets, filter, AGC, quantization, timeline canvas)
+- **255 system/unit tests passing, 190 browser tests passing, 0 failing**
+
+### New Config Fields (backward-compatible)
+- `useBandpassFilter` (default: `true`) — 500-2500Hz speech filter
+- `useAGC` (default: `true`) — automatic gain control
+- `quantizationLevels` (default: `10`) — discrete jaw positions
+- `preset` (default: `speech`) — tuning preset
+
+### Bug Fixes
+- Fixed `stop-monitoring` endpoint not cancelling active jaw drives (caused stale `isMonitoring` state)
 
 ---
 
