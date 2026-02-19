@@ -1,0 +1,152 @@
+/* Manual Controls Canvas */
+#mcCanvas {
+  position: relative;
+  min-height: 350px;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+#mcCanvas.mc-edit-active {
+  border-color: var(--bs-warning);
+  background: rgba(255, 193, 7, 0.03);
+}
+
+/* Base item tile */
+.mc-item {
+  position: absolute;
+  background: var(--bs-card-bg, #1a1a2e);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  min-width: 80px;
+  max-width: 140px;
+  z-index: 1;
+  transition: box-shadow 0.15s, transform 0.1s;
+  touch-action: none;
+}
+
+.mc-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Type-specific left borders */
+.mc-part[data-part-type="servo"] { border-left: 3px solid var(--bs-primary); }
+.mc-part[data-part-type="linear_actuator"] { border-left: 3px solid var(--bs-warning); }
+.mc-part[data-part-type="motor"],
+.mc-part[data-part-type="stepper"] { border-left: 3px solid var(--bs-success); }
+.mc-part[data-part-type="light"],
+.mc-part[data-part-type="led"] { border-left: 3px solid #ffc107; }
+.mc-part[data-part-type="motion_sensor"] { border-left: 3px solid var(--bs-danger); }
+.mc-pose { border-left: 3px solid #6f42c1; }
+.mc-sound { border-left: 3px solid var(--bs-info); }
+
+/* Selected state */
+.mc-item.mc-selected {
+  box-shadow: 0 0 0 2px var(--bs-primary), 0 0 12px rgba(var(--bs-primary-rgb), 0.4);
+  z-index: 10;
+}
+
+/* Fire flash animation */
+.mc-item.mc-fired {
+  animation: mc-fire-flash 0.3s ease-out;
+}
+@keyframes mc-fire-flash {
+  0% { box-shadow: 0 0 0 4px var(--bs-success), 0 0 16px rgba(var(--bs-success-rgb), 0.6); }
+  100% { box-shadow: none; }
+}
+
+/* Edit mode */
+.mc-item.mc-edit-mode {
+  cursor: grab;
+  border-style: dashed;
+}
+.mc-item.mc-edit-mode:active {
+  cursor: grabbing;
+  z-index: 100;
+  opacity: 0.85;
+}
+
+/* Remove button on items (edit mode only) */
+.mc-remove-btn {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bs-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  z-index: 20;
+}
+.mc-item.mc-edit-mode .mc-remove-btn {
+  display: block;
+}
+.mc-remove-btn:hover {
+  background: #c0392b;
+  transform: scale(1.15);
+}
+
+/* Item label */
+.mc-item-label {
+  font-weight: 500;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Mini position bar for servos */
+.mc-position-bar {
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  margin-top: 3px;
+}
+.mc-position-fill {
+  height: 100%;
+  background: var(--bs-primary);
+  border-radius: 2px;
+  transition: width 0.2s;
+}
+
+/* Directional controls toolbar */
+#mcDirectionalControls {
+  background: var(--bs-card-bg, #1e1e2e) !important;
+  border: 1px solid var(--bs-border-color) !important;
+  max-width: 220px;
+}
+
+/* Item drawer in edit mode */
+.mc-drawer {
+  border-top: 1px dashed var(--bs-border-color);
+  padding: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.mc-drawer-item {
+  display: inline-block;
+  padding: 3px 8px;
+  margin: 2px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  background: var(--bs-card-bg, #1a1a2e);
+}
+.mc-drawer-item:hover {
+  background: rgba(var(--bs-primary-rgb), 0.15);
+}

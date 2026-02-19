@@ -2,7 +2,20 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [6.1.5] - 2026-02-18 — Dashboard & Animation Studio Fixes + Jaw Animation v2
+## [6.3.0] - 2026-02-19 — Manual Controls Panel + Jaw Animation v2
+
+### New Feature: Manual Controls Panel
+- **Spatial control surface** on dashboard (`/`) — draggable tiles for parts, poses, and audio files
+- **Three tile types**: hardware parts (servo/actuator/motor/light with colored borders), poses (purple, click to execute), sounds (teal, click to play)
+- **Directional controls**: floating toolbar with type-specific controls (nudge/goto for servos, extend/retract for actuators, fwd/rev for motors, toggle for lights)
+- **Edit Mode**: drag items to arrange spatial layout, "Add Items" drawer shows available items
+- **Named layouts**: multiple arrangements per character (Default, Scare Mode, etc.) with create/rename/delete
+- **Layout persistence**: saved per-character at `data/character-{id}/manual-controls-layout.json`
+- **Fire-and-forget**: all hardware commands dispatched without blocking UI for live show responsiveness
+- **Parts API compatibility**: handles both raw array and `{ success, parts }` wrapper response formats
+- **Character independence**: all data loaded dynamically, canvas reloads on character switch
+
+### Previous (6.1.5): Dashboard & Animation Studio Fixes + Jaw Animation v2
 
 ### Bug Fixes
 - **Fixed Parts API response format** — `GET /api/parts` returned raw array instead of `{ success, parts }` wrapper, causing Dashboard hardware panel and Animation Studio part palette to show empty. Both now display correctly.
