@@ -24,6 +24,17 @@ describe('Jaw Animation Super Power API', () => {
       expect(res.text).to.include('emergencyStopBtn');
     });
 
+    it('should include v2 UI elements (filter, AGC, quantization, presets, timeline)', async () => {
+      const res = await request(BASE_URL).get('/setup/jaw-animation').expect(200);
+      expect(res.text).to.include('bandpassFilter');
+      expect(res.text).to.include('agcEnabled');
+      expect(res.text).to.include('quantizationRange');
+      expect(res.text).to.include('presetSpeech');
+      expect(res.text).to.include('presetMusic');
+      expect(res.text).to.include('presetCustom');
+      expect(res.text).to.include('jawTimelineCanvas');
+    });
+
     it('should load the jaw-animation.js client script', async () => {
       const res = await request(BASE_URL).get('/setup/jaw-animation').expect(200);
       expect(res.text).to.include('jaw-animation.js');
@@ -144,6 +155,37 @@ describe('Jaw Animation Super Power API', () => {
       expect(res.body.config.volumeThreshold).to.equal(0.03);
     });
 
+    it('should save v2 config fields (bandpass, AGC, quantization, preset)', async function() {
+      if (!jawServoId) this.skip();
+      const config = {
+        enabled: true,
+        servoPartId: jawServoId,
+        sensitivity: 1.0,
+        smoothing: 0.6,
+        volumeThreshold: 0.02,
+        attackTime: 50,
+        releaseTime: 150,
+        useBandpassFilter: false,
+        useAGC: true,
+        quantizationLevels: 15,
+        preset: 'music'
+      };
+      const saveRes = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
+        .send(config)
+        .expect(200);
+      expect(saveRes.body.success).to.equal(true);
+
+      // Verify persistence
+      const readRes = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
+        .expect(200);
+      expect(readRes.body.config.useBandpassFilter).to.equal(false);
+      expect(readRes.body.config.useAGC).to.equal(true);
+      expect(readRes.body.config.quantizationLevels).to.equal(15);
+      expect(readRes.body.config.preset).to.equal('music');
+    });
+
     it('should reject enabled config without servo', async () => {
       const res = await request(BASE_URL)
         .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
@@ -167,7 +209,7 @@ describe('Jaw Animation Super Power API', () => {
     });
 
     after(async () => {
-      // Restore default config
+      // Restore default config (including v2 fields)
       if (jawServoId) {
         await request(BASE_URL)
           .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
@@ -178,7 +220,11 @@ describe('Jaw Animation Super Power API', () => {
             smoothing: 0.6,
             volumeThreshold: 0.02,
             attackTime: 50,
-            releaseTime: 150
+            releaseTime: 150,
+            useBandpassFilter: true,
+            useAGC: true,
+            quantizationLevels: 10,
+            preset: 'speech'
           });
       }
     });
@@ -307,6 +353,28 @@ describe('Jaw Animation Super Power API', () => {
       expect(res.body).to.have.property('success', true);
       expect(res.body).to.have.property('message').that.includes('completed');
     }).timeout(10000); // Jaw test takes ~2s for the movement sequence
+  });
+
+  // ─── Test TTS with timeline ────────────────────────────────────────
+  describe('POST /api/jaw-animation/:characterId/test-tts', () => {
+    it('should return timeline array in response', async function() {
+      this.timeout(15000);
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/test-tts`)
+        .send({ text: 'Hello world' })
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body).to.have.property('duration').that.is.a('number');
+      // Timeline should be present (may be null if pre-analysis fails in test mode)
+      if (res.body.timeline !== null) {
+        expect(res.body.timeline).to.be.an('array');
+        if (res.body.timeline.length > 0) {
+          expect(res.body.timeline[0]).to.have.property('time');
+          expect(res.body.timeline[0]).to.have.property('angle');
+          expect(res.body.timeline[0]).to.have.property('amplitude');
+        }
+      }
+    });
   });
 
   // ─── Removed endpoints should not exist ────────────────────────────

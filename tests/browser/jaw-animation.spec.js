@@ -62,6 +62,48 @@ test.describe('Jaw Animation — single-viewport layout', () => {
         await expect(page.locator('#releaseTime')).toBeAttached();
     });
 
+    // ─── v2 Controls: Presets, Filter, AGC, Quantization ────────────
+    test('should have preset radio buttons (Speech, Music, Custom)', async () => {
+        await expect(page.locator('#presetSpeech')).toBeAttached();
+        await expect(page.locator('#presetMusic')).toBeAttached();
+        await expect(page.locator('#presetCustom')).toBeAttached();
+    });
+
+    test('should have speech filter toggle', async () => {
+        await expect(page.locator('#bandpassFilter')).toBeAttached();
+    });
+
+    test('should have AGC toggle', async () => {
+        await expect(page.locator('#agcEnabled')).toBeAttached();
+    });
+
+    test('should have quantization slider with value badge', async () => {
+        await expect(page.locator('#quantizationRange')).toBeAttached();
+        await expect(page.locator('#quantizationValue')).toBeAttached();
+    });
+
+    test('should update quantization display when slider moves', async () => {
+        const jawEnabled = page.locator('#jawEnabled');
+        if (!(await jawEnabled.isChecked())) {
+            await jawEnabled.check();
+            await page.waitForTimeout(500);
+        }
+
+        const slider = page.locator('#quantizationRange');
+        const display = page.locator('#quantizationValue');
+
+        await slider.evaluate(function(el, val) { el.value = val; el.dispatchEvent(new Event('input')); }, '15');
+        await expect(display).toHaveText('15');
+    });
+
+    test('should have timeline canvas (hidden by default)', async () => {
+        await expect(page.locator('#jawTimelineCanvas')).toBeAttached();
+        // Timeline panel should be hidden until TTS test runs
+        const panel = page.locator('#timelinePanel');
+        const display = await panel.evaluate(function(el) { return window.getComputedStyle(el).display; });
+        expect(display).toBe('none');
+    });
+
     // ─── Calibration Quick-Adjust ────────────────────────────────────
     test('should have calibration quick-adjust buttons', async () => {
         await expect(page.locator('#minAngleDown')).toBeAttached();
