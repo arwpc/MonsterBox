@@ -104,7 +104,11 @@ function getDefaultJawConfig() {
     attackTime: 50,  // milliseconds
     releaseTime: 150, // milliseconds
     minAngle: null,   // Will be populated from servo calibration
-    maxAngle: null    // Will be populated from servo calibration
+    maxAngle: null,   // Will be populated from servo calibration
+    useBandpassFilter: true,   // 500-2500Hz speech formant filter
+    useAGC: true,              // automatic gain control
+    quantizationLevels: 10,    // discrete jaw positions (5-20)
+    preset: 'speech'           // 'speech' | 'music' | 'custom'
   };
 }
 
@@ -678,6 +682,250 @@ async function driveFromText({ characterId, text }) {
 }
 
 /**
+ * Pre-analyze an audio buffer into a complete jaw timeline.
+ * Uses bandpass filter (500-2500Hz speech formants), AGC, quantization.
+ *
+ * @param {Buffer} audioBuffer - Raw audio data (MP3/WAV/etc)
+ * @param {string} contentType - MIME type of audio
+ * @param {object} config - Jaw animation config
+ * @param {object} guardrails - { minAngle, maxAngle }
+ * @returns {Promise<{frames: Array<{time, angle, amplitude}>, duration, peakRms}>}
+ */
+async function preAnalyzeAudio(audioBuffer, contentType, config, guardrails) {
+  const SAMPLE_RATE = 16000;
+  const FRAME_DURATION_MS = 20; // Match PCA9685 50Hz PWM rate
+  const FRAME_SIZE = SAMPLE_RATE * (FRAME_DURATION_MS / 1000) * 2; // 640 bytes
+
+  const minAngle = guardrails.minAngle ?? config.minAngle ?? 0;
+  const maxAngle = guardrails.maxAngle ?? config.maxAngle ?? 180;
+  const angleRange = maxAngle - minAngle;
+  const useBandpass = config.useBandpassFilter !== false;
+  const useAGC = config.useAGC !== false;
+  const levels = Math.max(2, Math.min(20, config.quantizationLevels || 10));
+
+  return new Promise((resolve, reject) => {
+    // Build ffmpeg args: optional bandpass filter for speech formants
+    const ffmpegArgs = ['-i', 'pipe:0'];
+    if (useBandpass) {
+      // Bandpass 500-2500Hz (speech formant range, center=1500Hz, width=2000Hz)
+      ffmpegArgs.push('-af', 'bandpass=f=1500:width_type=h:w=2000');
+    }
+    ffmpegArgs.push('-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', '1', 'pipe:1');
+
+    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { stdio: ['pipe', 'pipe', 'pipe'] });
+    const pcmChunks = [];
+
+    ffmpeg.stdout.on('data', (chunk) => pcmChunks.push(chunk));
+    ffmpeg.stderr.on('data', () => {}); // suppress
+
+    ffmpeg.on('error', (err) => {
+      reject(new Error(`ffmpeg error: ${err.message}`));
+    });
+
+    ffmpeg.on('close', (code) => {
+      const pcmBuffer = Buffer.concat(pcmChunks);
+      if (pcmBuffer.length === 0) {
+        resolve({ frames: [], duration: 0, peakRms: 0 });
+        return;
+      }
+
+      // Compute RMS per frame
+      const rmsFrames = [];
+      for (let offset = 0; offset < pcmBuffer.length; offset += FRAME_SIZE) {
+        const end = Math.min(offset + FRAME_SIZE, pcmBuffer.length);
+        const frameData = pcmBuffer.subarray(offset, end);
+        let sum = 0;
+        const sampleCount = Math.floor(frameData.length / 2);
+        for (let i = 0; i < sampleCount; i++) {
+          const sample = frameData.readInt16LE(i * 2);
+          sum += sample * sample;
+        }
+        const rms = sampleCount > 0 ? Math.sqrt(sum / sampleCount) / 32768 : 0;
+        rmsFrames.push(rms);
+      }
+
+      // AGC: normalize so peak = 0.8
+      let peakRms = 0;
+      for (const r of rmsFrames) { if (r > peakRms) peakRms = r; }
+
+      const agcGain = (useAGC && peakRms > 0.001) ? (0.8 / peakRms) : 1.0;
+
+      // Build timeline with angle mapping, envelope, and quantization
+      const frames = [];
+      let prevAngle = minAngle;
+      let prevTime = 0;
+
+      for (let i = 0; i < rmsFrames.length; i++) {
+        const time = i * FRAME_DURATION_MS;
+        const rawAmp = Math.min(1.0, rmsFrames[i] * agcGain);
+
+        // Volume threshold
+        let amplitude;
+        if (rawAmp < (config.volumeThreshold || 0.02)) {
+          amplitude = 0;
+        } else {
+          amplitude = Math.min(1.0, rawAmp * (config.sensitivity || 1.0));
+        }
+
+        // Map to angle
+        let targetAngle = amplitude > 0
+          ? minAngle + (amplitude * angleRange)
+          : minAngle;
+
+        // Attack/release envelope
+        const dt = i === 0 ? FRAME_DURATION_MS : FRAME_DURATION_MS;
+        if (targetAngle > prevAngle) {
+          const attackTime = config.attackTime || 50;
+          const maxDelta = (angleRange * dt) / Math.max(1, attackTime);
+          targetAngle = Math.min(targetAngle, prevAngle + maxDelta);
+        } else if (targetAngle < prevAngle) {
+          const releaseTime = config.releaseTime || 150;
+          const maxDelta = (angleRange * dt) / Math.max(1, releaseTime);
+          targetAngle = Math.max(targetAngle, prevAngle - maxDelta);
+        }
+
+        // Clamp
+        targetAngle = Math.max(minAngle, Math.min(maxAngle, targetAngle));
+
+        // Quantize to N discrete positions
+        const step = angleRange / (levels - 1);
+        const quantized = step > 0
+          ? minAngle + Math.round((targetAngle - minAngle) / step) * step
+          : minAngle;
+
+        frames.push({
+          time,
+          angle: Math.max(minAngle, Math.min(maxAngle, quantized)),
+          amplitude: rawAmp
+        });
+
+        prevAngle = quantized;
+      }
+
+      const duration = rmsFrames.length * FRAME_DURATION_MS;
+      resolve({ frames, duration, peakRms });
+    });
+
+    ffmpeg.stdin.write(audioBuffer);
+    ffmpeg.stdin.end();
+  });
+}
+
+/**
+ * Play audio with synchronized jaw movement.
+ * Pre-analyzes the complete audio, then plays audio and jaw timeline in parallel.
+ * This eliminates the audio/jaw desync of the old fire-and-forget approach.
+ *
+ * @param {string|number} characterId
+ * @param {Buffer} audioBuffer
+ * @param {string} contentType
+ * @param {object} [options] - { skipAudio: false } to skip audio playback (jaw only)
+ * @returns {Promise<{success, duration, frameCount, timeline?}>}
+ */
+async function playWithJawSync(characterId, audioBuffer, contentType, options = {}) {
+  // Cancel any existing drive for this character
+  cancelJawDrive(characterId);
+
+  const cid = String(characterId);
+  const config = characterConfigs.get(cid) || await readJawConfig(characterId);
+  if (!config.enabled || !config.servoPartId) {
+    return { success: false, message: 'Jaw animation disabled or no servo configured' };
+  }
+
+  const parts = await loadPartsSafe(characterId);
+  const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
+  if (!jawServo) {
+    return { success: false, message: 'Jaw servo not found' };
+  }
+
+  const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
+  const closedAngle = guardrails.minAngle ?? config.minAngle ?? 0;
+
+  // Pre-analyze audio -> complete jaw timeline
+  let analysis;
+  try {
+    analysis = await preAnalyzeAudio(audioBuffer, contentType, config, guardrails);
+  } catch (err) {
+    console.error('Pre-analysis failed:', err.message);
+    return { success: false, message: `Pre-analysis failed: ${err.message}` };
+  }
+
+  if (analysis.frames.length === 0) {
+    return { success: false, message: 'No audio frames to animate' };
+  }
+
+  // Ensure daemon is running
+  try { await jawServoDaemon.ensureRunning(); } catch (_) { /* fallback OK */ }
+
+  // Set up drive state for monitoring/cancel
+  const driveState = { cancelled: false, timer: null, amplitude: 0, angle: closedAngle };
+  activeJawDrives.set(cid, driveState);
+  const monState = audioMonitoringState.get(cid) || { isMonitoring: false, lastAmplitude: 0, smoothedAmplitude: 0 };
+  monState.isMonitoring = true;
+  audioMonitoringState.set(cid, monState);
+
+  // Start audio playback (fire-and-forget — we sync jaw from pre-analyzed timeline)
+  if (!options.skipAudio) {
+    try {
+      const serverPlaybackService = (await import('./serverPlaybackService.js')).default;
+      serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+        contentType, characterId
+      }).catch((err) => {
+        console.error('Jaw sync audio playback error:', err.message);
+      });
+    } catch (err) {
+      console.error('Could not start audio playback:', err.message);
+    }
+  }
+
+  // Play jaw timeline synchronized to audio start
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    let frameIndex = 0;
+
+    function scheduleNext() {
+      if (driveState.cancelled || frameIndex >= analysis.frames.length) {
+        // Done — close jaw
+        sendJawAngleCmd(jawServo, closedAngle);
+        driveState.amplitude = 0;
+        driveState.angle = closedAngle;
+        const ms = audioMonitoringState.get(cid);
+        if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
+        activeJawDrives.delete(cid);
+        resolve({ success: true, duration: analysis.duration, frameCount: analysis.frames.length });
+        return;
+      }
+
+      const frame = analysis.frames[frameIndex];
+
+      // Update state for polling endpoint
+      driveState.amplitude = frame.amplitude;
+      driveState.angle = frame.angle;
+      const ms = audioMonitoringState.get(cid);
+      if (ms) { ms.lastAmplitude = frame.amplitude; ms.smoothedAmplitude = frame.amplitude; }
+
+      // Send angle to servo
+      sendJawAngleCmd(jawServo, frame.angle);
+
+      frameIndex++;
+
+      // Schedule next frame relative to startTime to self-correct for drift
+      if (frameIndex < analysis.frames.length) {
+        const nextTime = analysis.frames[frameIndex].time;
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(0, nextTime - elapsed);
+        driveState.timer = setTimeout(scheduleNext, delay);
+      } else {
+        // Schedule final cleanup after last frame's duration
+        driveState.timer = setTimeout(scheduleNext, 20);
+      }
+    }
+
+    scheduleNext();
+  });
+}
+
+/**
  * Drive jaw servo from an audio buffer (MP3/WAV).
  * Decodes to raw PCM via ffmpeg, computes RMS per 50ms frame,
  * and drives the jaw synchronously each frame (ChatterPi-style).
@@ -964,6 +1212,8 @@ export {
   testServoPosition,
   testJawWithAudio,
   driveFromText,
+  preAnalyzeAudio,
+  playWithJawSync,
   driveJawFromAudioBuffer,
   cancelJawDrive,
   getJawDriveState,
