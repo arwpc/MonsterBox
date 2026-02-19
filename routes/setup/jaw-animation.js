@@ -229,6 +229,8 @@ router.post('/api/jaw-animation/:characterId/start-monitoring', async (req, res)
 router.post('/api/jaw-animation/:characterId/stop-monitoring', async (req, res) => {
   try {
     const { characterId } = req.params;
+    // Also cancel any active jaw drive so audio-levels reports isMonitoring=false
+    jawAnimationService.cancelJawDrive(characterId);
     const result = await jawAnimationService.stopAudioMonitoring(characterId);
     res.json(result);
   } catch (error) {
