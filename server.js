@@ -52,6 +52,7 @@ import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import goblinManagerService from './services/goblinManagerService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
+import jawServoDaemon from './services/jawServoDaemon.js';
 import pipewireService from './services/pipewireService.js';
 import serverPlaybackService from './services/serverPlaybackService.js';
 import systemService from './services/systemService.js';
@@ -752,6 +753,13 @@ async function gracefulShutdown(signal) {
         jawAnimationAudioIntegration.stopAudioMonitoring();
     } catch (error) {
         console.warn('Jaw animation cleanup error:', (error && error.message) || error);
+    }
+
+    try {
+        // Shut down persistent jaw servo daemon
+        await jawServoDaemon.shutdown();
+    } catch (error) {
+        console.warn('Jaw servo daemon cleanup error:', (error && error.message) || error);
     }
 
     clearTimeout(hardExitTimer);

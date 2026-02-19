@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import hardwareService from './hardwareService/index.js';
+import jawServoDaemon from './jawServoDaemon.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 
@@ -144,6 +145,36 @@ function getCalibrationFromMarkers(part) {
     minAngle: minMarker ? parseFloat(minMarker.value) : null,
     maxAngle: maxMarker ? parseFloat(maxMarker.value) : null
   };
+}
+
+/**
+ * Extract PCA9685 channel and address from a servo part config.
+ * Returns { channel, address, isPCA9685 }.
+ */
+function getDaemonParams(part) {
+  const cfg = part.config || {};
+  const isPCA9685 = part.usePCA9685 === true ||
+    part.controllerType === 'pca9685' ||
+    cfg.controllerType === 'pca9685';
+  if (!isPCA9685) return { channel: null, address: null, isPCA9685: false };
+  const channel = cfg.channel != null ? cfg.channel : part.channel;
+  let address = (part.pca9685Settings && part.pca9685Settings.address) || cfg.address || 0x40;
+  if (typeof address === 'string' && address.startsWith('0x')) address = parseInt(address, 16);
+  return { channel: Number(channel), address: Number(address), isPCA9685: true };
+}
+
+/**
+ * Send jaw angle via daemon (fast path) or fall back to hardwareService.
+ * Fire-and-forget — does not await.
+ */
+function sendJawAngleCmd(jawServo, angleDeg) {
+  const { channel, address, isPCA9685 } = getDaemonParams(jawServo);
+  if (isPCA9685 && channel != null && jawServoDaemon.isRunning()) {
+    jawServoDaemon.sendAngle(channel, angleDeg, address);
+  } else {
+    // Fallback to full hardware service path
+    hardwareService.controlPart(jawServo.id, 'moveToAngle', { angleDeg }).catch(() => {});
+  }
 }
 
 /**
@@ -352,10 +383,21 @@ async function testJawMovement(characterId) {
       { angle: minAngle, duration: 500 }
     ];
 
+    // Try daemon fast path
+    const { channel, address, isPCA9685 } = getDaemonParams(jawServo);
+    const useDaemon = isPCA9685 && channel != null;
+    if (useDaemon) {
+      try { await jawServoDaemon.ensureRunning(); } catch (_) { /* fallback below */ }
+    }
+
     for (const step of testSequence) {
-      await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
-        angleDeg: step.angle
-      });
+      if (useDaemon && jawServoDaemon.isRunning()) {
+        jawServoDaemon.sendAngle(channel, step.angle, address);
+      } else {
+        await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
+          angleDeg: step.angle
+        });
+      }
 
       // Wait for movement
       await new Promise(resolve => setTimeout(resolve, step.duration));
@@ -593,6 +635,13 @@ async function moveJawToAngle(characterId, angleDeg) {
     const hi = maxAngle ?? 180;
     const clamped = Math.max(lo, Math.min(hi, angleDeg));
 
+    // Use daemon fast path when available
+    const { channel, address, isPCA9685 } = getDaemonParams(jawServo);
+    if (isPCA9685 && channel != null && jawServoDaemon.isRunning()) {
+      jawServoDaemon.sendAngle(channel, clamped, address);
+      return { success: true, angleDeg: clamped };
+    }
+
     const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
       angleDeg: clamped
     });
@@ -674,6 +723,9 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
   const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
   const closedAngle = guardrails.minAngle ?? config.minAngle ?? 0;
 
+  // Pre-warm the daemon so servo commands are <1ms
+  try { await jawServoDaemon.ensureRunning(); } catch (_) { /* fallback to hardwareService */ }
+
   return new Promise((resolve, reject) => {
     // Decode audio to raw PCM: signed 16-bit little-endian, 16kHz, mono
     const ffmpeg = spawn('ffmpeg', [
@@ -740,7 +792,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
       function nextFrame() {
         if (driveState.cancelled || frameIndex >= frames.length) {
           // Done — close jaw (fire-and-forget servo command)
-          hardwareService.controlPart(jawServo.id, 'moveToAngle', { angleDeg: closedAngle }).catch(() => {});
+          sendJawAngleCmd(jawServo, closedAngle);
           driveState.amplitude = 0;
           driveState.angle = closedAngle;
           const ms = audioMonitoringState.get(cid);
@@ -774,11 +826,8 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
           ms.smoothedAmplitude = smoothedAmplitude;
         }
 
-        // Fire servo command async (don't wait — like ChatterPi
-        // which sets servo.angle and lets hardware handle PWM).
-        hardwareService.controlPart(jawServo.id, 'moveToAngle', {
-          angleDeg: targetAngle
-        }).catch(() => {});
+        // Fire servo command (daemon: <1ms, fallback: hardwareService)
+        sendJawAngleCmd(jawServo, targetAngle);
 
         frameIndex++;
         driveState.timer = setTimeout(nextFrame, FRAME_DURATION_MS);
@@ -901,6 +950,7 @@ export {
   getDefaultJawConfig,
   getAvailableServos,
   getCalibrationFromMarkers,
+  getDaemonParams,
   driveJawFromAmplitude,
   moveJawToAngle,
   testJawMovement,
@@ -917,5 +967,6 @@ export {
   driveJawFromAudioBuffer,
   cancelJawDrive,
   getJawDriveState,
-  simulateJawDrive
+  simulateJawDrive,
+  jawServoDaemon
 };
