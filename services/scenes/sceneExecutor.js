@@ -157,6 +157,28 @@ async function executeAudioStep(step, characterId, emit) {
   if (!filename) throw new Error('audio.step requires audioId');
   const deviceId = await findSpeakerDeviceForCharacter(characterId);
   emit && emit({ type: 'step', status: 'start', stepType: 'audio', audioId: step.audioId, deviceId });
+
+  // If jaw sync is enabled and step opts in, read file and use playWithJawSync
+  if (step.jawSync !== false) {
+    try {
+      const jawService = await import('../jawAnimationSuperPowerService.js');
+      const jawConfig = await jawService.readJawConfig(characterId);
+      if (jawConfig.enabled && jawConfig.servoPartId) {
+        const audioBuffer = await fs.readFile(filename);
+        const ext = path.extname(filename).toLowerCase();
+        const contentType = ext === '.wav' ? 'audio/wav' : 'audio/mpeg';
+        const result = await jawService.playWithJawSync(characterId, audioBuffer, contentType);
+        emit && emit({ type: 'step', status: result.success ? 'complete' : 'error', stepType: 'audio', audioId: step.audioId, result });
+        if (!result.success) throw new Error(result.message || 'Jaw-synced audio failed');
+        return result;
+      }
+    } catch (jawErr) {
+      if (jawErr.message && !jawErr.message.includes('disabled')) {
+        console.warn('Scene audio jaw sync failed, falling back:', jawErr.message);
+      }
+    }
+  }
+
   const r = await hardwareService.HARDWARE_CONTROLLERS.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 80 });
   emit && emit({ type: 'step', status: r.success ? 'complete' : 'error', stepType: 'audio', audioId: step.audioId, result: r });
   if (!r.success) throw new Error(r.error || 'Audio play failed');
@@ -193,6 +215,23 @@ async function executeSayThisStep(step, characterId, emit) {
   if (!gen.success) {
     emit && emit({ type: 'step', status: 'error', stepType: 'sayThis', error: gen.error });
     throw new Error(gen.error || 'TTS generation failed');
+  }
+
+  // Use jaw-synced playback when jaw animation is enabled
+  try {
+    const jawService = await import('../jawAnimationSuperPowerService.js');
+    const jawConfig = await jawService.readJawConfig(characterId);
+    if (jawConfig.enabled && jawConfig.servoPartId) {
+      const result = await jawService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType);
+      emit && emit({ type: 'step', status: result.success ? 'complete' : 'error', stepType: 'sayThis', result });
+      if (!result.success) throw new Error(result.message || 'Jaw-synced playback failed');
+      return result;
+    }
+  } catch (jawErr) {
+    // Non-fatal: fall through to normal playback
+    if (jawErr.message && !jawErr.message.includes('disabled')) {
+      console.warn('Scene sayThis jaw sync failed, falling back:', jawErr.message);
+    }
   }
 
   const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
@@ -238,6 +277,22 @@ async function executeAskAIStep(step, characterId, emit) {
   if (!gen.success) {
     emit && emit({ type: 'step', status: 'error', stepType: 'askAI', error: gen.error });
     throw new Error(gen.error || 'TTS generation failed');
+  }
+
+  // Use jaw-synced playback when jaw animation is enabled
+  try {
+    const jawService = await import('../jawAnimationSuperPowerService.js');
+    const jawConfig = await jawService.readJawConfig(characterId);
+    if (jawConfig.enabled && jawConfig.servoPartId) {
+      const result = await jawService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType);
+      emit && emit({ type: 'step', status: result.success ? 'complete' : 'error', stepType: 'askAI', result, response: responseText });
+      if (!result.success) throw new Error(result.message || 'Jaw-synced playback failed');
+      return { ...result, response: responseText };
+    }
+  } catch (jawErr) {
+    if (jawErr.message && !jawErr.message.includes('disabled')) {
+      console.warn('Scene askAI jaw sync failed, falling back:', jawErr.message);
+    }
   }
 
   const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
@@ -562,7 +617,7 @@ async function executeJawAnimationStep(step, characterId, emit) {
   emit && emit({ type: 'step', status: 'start', stepType: 'jaw-animation', action });
 
   try {
-    const { default: jawService } = await import('../jawAnimationSuperPowerService.js');
+    const jawService = await import('../jawAnimationSuperPowerService.js');
     if (action === 'enable') {
       // Read jaw config to verify it's configured
       const config = await jawService.readJawConfig(characterId);
@@ -570,6 +625,8 @@ async function executeJawAnimationStep(step, characterId, emit) {
         emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action, warning: 'Jaw animation not configured for this character' });
         return { success: true, action, warning: 'Jaw not configured' };
       }
+      // Pre-warm the daemon so subsequent speech steps don't have startup delay
+      try { await jawService.jawServoDaemon.ensureRunning(); } catch (_) {}
       emit && emit({ type: 'step', status: 'complete', stepType: 'jaw-animation', action });
       return { success: true, action: 'enable' };
     } else {

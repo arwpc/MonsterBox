@@ -199,15 +199,24 @@ router.post('/api/say', express.json(), async (req, res) => {
     const gen = await elevenLabsTTSService.generateSpeech(text, ttsCfg.voice_id, ttsCfg);
     if (!gen.success) return res.status(500).json({ success: false, error: gen.error || 'TTS generation failed' });
 
-    const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
-      contentType: gen.contentType, characterId, speakerPartId: req.body.speakerPartId || undefined
-    });
-    if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
+    // Use jaw-synced playback when jaw animation is enabled
+    let jawSynced = false;
+    try {
+      const jawConfig = await jawAnimationService.readJawConfig(characterId);
+      if (jawConfig.enabled && jawConfig.servoPartId) {
+        jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+        jawSynced = true;
+      }
+    } catch (_) {}
 
-    // Fire-and-forget jaw animation driven by real audio amplitude
-    try { jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType).catch(() => { }); } catch (_) { }
+    if (!jawSynced) {
+      const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
+        contentType: gen.contentType, characterId, speakerPartId: req.body.speakerPartId || undefined
+      });
+      if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
+    }
 
-    res.json({ success: true, device: play.deviceId });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -539,6 +548,153 @@ router.get('/api/ai-status', async (req, res) => {
       characterId: state.characterId || null,
       timestamp: state.timestamp || null
     });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// GET /conversation/api/manual-controls-layout?name=LayoutName
+// Returns the named layout (or active layout if no name given), plus the list of all layout names
+router.get('/api/manual-controls-layout', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.json({ success: true, layout: null, layouts: [], activeLayout: null });
+
+    const dataDir = await getDataDir();
+    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+
+    let data;
+    try {
+      const content = await fs.readFile(layoutFile, 'utf8');
+      data = JSON.parse(content);
+    } catch {
+      return res.json({ success: true, layout: null, layouts: [], activeLayout: null });
+    }
+
+    const layoutNames = Object.keys(data.layouts || {});
+    const requestedName = req.query.name || data.activeLayout || layoutNames[0] || null;
+    const layout = requestedName && data.layouts[requestedName] ? data.layouts[requestedName] : null;
+
+    res.json({ success: true, layout, layoutName: requestedName, layouts: layoutNames, activeLayout: data.activeLayout });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/manual-controls-layout  { layoutName, items, canvasHeight }
+// Saves a named layout (creates or overwrites)
+router.post('/api/manual-controls-layout', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+
+    const layoutName = (req.body.layoutName || 'Default').trim();
+    const items = req.body.items || [];
+    const canvasHeight = req.body.canvasHeight || 350;
+
+    const dataDir = await getDataDir();
+    const charDir = path.resolve(dataDir, `character-${characterId}`);
+    const layoutFile = path.resolve(charDir, 'manual-controls-layout.json');
+
+    let data = { version: 1, activeLayout: layoutName, layouts: {} };
+    try {
+      const existing = await fs.readFile(layoutFile, 'utf8');
+      data = JSON.parse(existing);
+      if (!data.layouts) data.layouts = {};
+    } catch {
+      // File doesn't exist yet, use default structure
+    }
+
+    data.layouts[layoutName] = { canvasHeight, items, updatedAt: new Date().toISOString() };
+    data.activeLayout = layoutName;
+
+    await fs.mkdir(charDir, { recursive: true });
+    await fs.writeFile(layoutFile, JSON.stringify(data, null, 2), 'utf8');
+
+    res.json({ success: true, layoutName, layouts: Object.keys(data.layouts) });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// DELETE /conversation/api/manual-controls-layout?name=LayoutName
+// Deletes a named layout (cannot delete the last one)
+router.delete('/api/manual-controls-layout', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+
+    const layoutName = (req.query.name || '').trim();
+    if (!layoutName) return res.status(400).json({ success: false, error: 'Layout name required' });
+
+    const dataDir = await getDataDir();
+    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+
+    let data;
+    try {
+      const content = await fs.readFile(layoutFile, 'utf8');
+      data = JSON.parse(content);
+    } catch {
+      return res.status(404).json({ success: false, error: 'No layouts file found' });
+    }
+
+    if (!data.layouts || !data.layouts[layoutName]) {
+      return res.status(404).json({ success: false, error: 'Layout not found' });
+    }
+
+    const names = Object.keys(data.layouts);
+    if (names.length <= 1) {
+      return res.status(400).json({ success: false, error: 'Cannot delete the last layout' });
+    }
+
+    delete data.layouts[layoutName];
+    if (data.activeLayout === layoutName) {
+      data.activeLayout = Object.keys(data.layouts)[0];
+    }
+
+    await fs.writeFile(layoutFile, JSON.stringify(data, null, 2), 'utf8');
+    res.json({ success: true, layouts: Object.keys(data.layouts), activeLayout: data.activeLayout });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/manual-controls-layout/rename  { oldName, newName }
+// Renames a layout
+router.post('/api/manual-controls-layout/rename', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+
+    const oldName = (req.body.oldName || '').trim();
+    const newName = (req.body.newName || '').trim();
+    if (!oldName || !newName) return res.status(400).json({ success: false, error: 'oldName and newName required' });
+    if (oldName === newName) return res.json({ success: true, layouts: [] });
+
+    const dataDir = await getDataDir();
+    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+
+    let data;
+    try {
+      const content = await fs.readFile(layoutFile, 'utf8');
+      data = JSON.parse(content);
+    } catch {
+      return res.status(404).json({ success: false, error: 'No layouts file found' });
+    }
+
+    if (!data.layouts || !data.layouts[oldName]) {
+      return res.status(404).json({ success: false, error: 'Layout not found' });
+    }
+    if (data.layouts[newName]) {
+      return res.status(409).json({ success: false, error: 'A layout with that name already exists' });
+    }
+
+    data.layouts[newName] = data.layouts[oldName];
+    delete data.layouts[oldName];
+    if (data.activeLayout === oldName) data.activeLayout = newName;
+
+    await fs.writeFile(layoutFile, JSON.stringify(data, null, 2), 'utf8');
+    res.json({ success: true, layouts: Object.keys(data.layouts), activeLayout: data.activeLayout });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }

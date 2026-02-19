@@ -299,31 +299,37 @@ router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
       return res.status(500).json({ success: false, error: gen.error || 'TTS generation failed' });
     }
 
-    // Play audio on character's speaker (fire-and-forget — don't block the response)
-    serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
-      contentType: gen.contentType,
-      characterId: characterId
-    }).catch((err) => {
-      console.error('TTS playback error:', err.message);
-    });
-
-    // Drive jaw from audio buffer simultaneously (fire-and-forget)
-    jawAnimationService.driveJawFromAudioBuffer(characterId, gen.audioBuffer, gen.contentType)
-      .catch((err) => {
-        console.error('Jaw drive error:', err.message);
-      });
-
-    // Estimate duration from buffer size (rough: MP3 at ~128kbps or WAV)
-    const contentType = gen.contentType || 'audio/mpeg';
-    let estimatedDuration = 3000;
-    if (contentType.includes('mpeg') || contentType.includes('mp3')) {
-      estimatedDuration = Math.round((gen.audioBuffer.length * 8) / 128000 * 1000);
-    } else {
-      // Assume WAV 16kHz 16bit mono
-      estimatedDuration = Math.round((gen.audioBuffer.length / (16000 * 2)) * 1000);
+    // Pre-analyze audio for jaw timeline (used for both playback and UI visualization)
+    let timeline = null;
+    let analysisResult = null;
+    try {
+      const jawConfig = await jawAnimationService.readJawConfig(characterId);
+      const guardrails = await jawAnimationService.loadCalibrationGuardrails(
+        jawConfig.servoPartId, characterId
+      );
+      analysisResult = await jawAnimationService.preAnalyzeAudio(
+        gen.audioBuffer, gen.contentType, jawConfig, guardrails
+      );
+      // Downsample timeline to max 200 points for UI
+      if (analysisResult.frames.length > 200) {
+        const step = Math.ceil(analysisResult.frames.length / 200);
+        timeline = analysisResult.frames.filter((_, i) => i % step === 0);
+      } else {
+        timeline = analysisResult.frames;
+      }
+    } catch (err) {
+      console.warn('Pre-analysis for test-tts failed:', err.message);
     }
 
-    res.json({ success: true, duration: estimatedDuration });
+    // Use playWithJawSync for synchronized playback (fire-and-forget)
+    jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType)
+      .catch((err) => {
+        console.error('Jaw sync playback error:', err.message);
+      });
+
+    const estimatedDuration = analysisResult ? analysisResult.duration : 3000;
+
+    res.json({ success: true, duration: estimatedDuration, timeline });
   } catch (error) {
     console.error('Error in test-tts:', error);
     res.status(500).json({ success: false, error: error.message });

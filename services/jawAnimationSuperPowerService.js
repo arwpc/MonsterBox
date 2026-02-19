@@ -1199,6 +1199,7 @@ export {
   getAvailableServos,
   getCalibrationFromMarkers,
   getDaemonParams,
+  loadCalibrationGuardrails,
   driveJawFromAmplitude,
   moveJawToAngle,
   testJawMovement,
