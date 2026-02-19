@@ -61,8 +61,18 @@
       minAngleUp:          document.getElementById('minAngleUp'),
       maxAngleDown:        document.getElementById('maxAngleDown'),
       maxAngleUp:          document.getElementById('maxAngleUp'),
-      statusToast:         null,
-      toastMessage:        null
+      statusToast:         document.getElementById('statusToast'),
+      toastMessage:        document.getElementById('toastMessage'),
+      // Phase 2 controls
+      bandpassFilter:      document.getElementById('bandpassFilter'),
+      agcEnabled:          document.getElementById('agcEnabled'),
+      quantizationRange:   document.getElementById('quantizationRange'),
+      quantizationValue:   document.getElementById('quantizationValue'),
+      presetSpeech:        document.getElementById('presetSpeech'),
+      presetMusic:         document.getElementById('presetMusic'),
+      presetCustom:        document.getElementById('presetCustom'),
+      jawTimelineCanvas:   document.getElementById('jawTimelineCanvas'),
+      timelinePanel:       document.getElementById('timelinePanel')
     };
   }
 
@@ -102,6 +112,23 @@
     if (el.minAngleUp)   el.minAngleUp.addEventListener('click',   function() { adjustCalibration('Min',  1); });
     if (el.maxAngleDown) el.maxAngleDown.addEventListener('click', function() { adjustCalibration('Max', -1); });
     if (el.maxAngleUp)   el.maxAngleUp.addEventListener('click',   function() { adjustCalibration('Max',  1); });
+
+    // Quantization slider live value
+    if (el.quantizationRange) {
+      el.quantizationRange.addEventListener('input', function() {
+        if (el.quantizationValue) el.quantizationValue.textContent = this.value;
+        selectPreset('custom');
+      });
+    }
+
+    // Preset radio buttons
+    if (el.presetSpeech) el.presetSpeech.addEventListener('change', function() { applyPreset('speech'); });
+    if (el.presetMusic)  el.presetMusic.addEventListener('change',  function() { applyPreset('music'); });
+    if (el.presetCustom) el.presetCustom.addEventListener('change', function() { /* custom — no auto-set */ });
+
+    // Filter/AGC toggles switch to custom preset
+    if (el.bandpassFilter) el.bandpassFilter.addEventListener('change', function() { selectPreset('custom'); });
+    if (el.agcEnabled)     el.agcEnabled.addEventListener('change',     function() { selectPreset('custom'); });
   }
 
   function readCharacterFromNav() {
@@ -166,6 +193,15 @@
     if (el.volumeThresholdValue) el.volumeThresholdValue.textContent = config.volumeThreshold || 0.02;
     if (el.attackTime)  el.attackTime.value = config.attackTime || 50;
     if (el.releaseTime) el.releaseTime.value = config.releaseTime || 150;
+
+    // Phase 2 controls
+    if (el.bandpassFilter) el.bandpassFilter.checked = config.useBandpassFilter !== false;
+    if (el.agcEnabled)     el.agcEnabled.checked = config.useAGC !== false;
+    if (el.quantizationRange) {
+      el.quantizationRange.value = config.quantizationLevels || 10;
+      if (el.quantizationValue) el.quantizationValue.textContent = config.quantizationLevels || 10;
+    }
+    selectPreset(config.preset || 'speech');
   }
 
   function onServoChange() {
@@ -205,7 +241,8 @@
     var enabled = el.jawEnabled ? el.jawEnabled.checked : false;
     var inputs = [
       el.jawServoSelect, el.sensitivityRange, el.smoothingRange,
-      el.volumeThresholdRange, el.attackTime, el.releaseTime
+      el.volumeThresholdRange, el.attackTime, el.releaseTime,
+      el.bandpassFilter, el.agcEnabled, el.quantizationRange
     ];
     inputs.forEach(function(inp) { if (inp) inp.disabled = !enabled; });
 
@@ -226,13 +263,17 @@
   function saveConfiguration() {
     if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
     var config = {
-      enabled:         el.jawEnabled ? el.jawEnabled.checked : false,
-      servoPartId:     el.jawServoSelect ? (el.jawServoSelect.value || null) : null,
-      sensitivity:     parseFloat(el.sensitivityRange ? el.sensitivityRange.value : 1.0),
-      smoothing:       parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.6),
-      volumeThreshold: parseFloat(el.volumeThresholdRange ? el.volumeThresholdRange.value : 0.02),
-      attackTime:      parseInt(el.attackTime ? el.attackTime.value : 50, 10),
-      releaseTime:     parseInt(el.releaseTime ? el.releaseTime.value : 150, 10)
+      enabled:             el.jawEnabled ? el.jawEnabled.checked : false,
+      servoPartId:         el.jawServoSelect ? (el.jawServoSelect.value || null) : null,
+      sensitivity:         parseFloat(el.sensitivityRange ? el.sensitivityRange.value : 1.0),
+      smoothing:           parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.6),
+      volumeThreshold:     parseFloat(el.volumeThresholdRange ? el.volumeThresholdRange.value : 0.02),
+      attackTime:          parseInt(el.attackTime ? el.attackTime.value : 50, 10),
+      releaseTime:         parseInt(el.releaseTime ? el.releaseTime.value : 150, 10),
+      useBandpassFilter:   el.bandpassFilter ? el.bandpassFilter.checked : true,
+      useAGC:              el.agcEnabled ? el.agcEnabled.checked : true,
+      quantizationLevels:  parseInt(el.quantizationRange ? el.quantizationRange.value : 10, 10),
+      preset:              getSelectedPreset()
     };
     if (config.enabled && !config.servoPartId) {
       showToast('Please select a servo when jaw animation is enabled', 'error');
@@ -290,6 +331,10 @@
       if (data.success) {
         setStatus('Playing');
         if (el.playTtsBtn) el.playTtsBtn.innerHTML = '<i class="bi bi-play-fill"></i> Playing...';
+        // Draw timeline visualization if returned
+        if (data.timeline && data.timeline.length > 0) {
+          drawTimeline(data.timeline);
+        }
         startPolling();
         // Auto-stop after duration + buffer
         var duration = (data.duration || 3000) + 500;
@@ -500,6 +545,99 @@
       console.error('Adjust calibration error:', err);
       showToast('Calibration adjust failed', 'error');
     });
+  }
+
+  // ─── Presets ──────────────────────────────────────────────────────
+
+  function applyPreset(name) {
+    if (name === 'speech') {
+      if (el.bandpassFilter)    el.bandpassFilter.checked = true;
+      if (el.agcEnabled)        el.agcEnabled.checked = true;
+      if (el.quantizationRange) { el.quantizationRange.value = 10; }
+      if (el.quantizationValue) el.quantizationValue.textContent = '10';
+    } else if (name === 'music') {
+      if (el.bandpassFilter)    el.bandpassFilter.checked = false;
+      if (el.agcEnabled)        el.agcEnabled.checked = true;
+      if (el.quantizationRange) { el.quantizationRange.value = 15; }
+      if (el.quantizationValue) el.quantizationValue.textContent = '15';
+    }
+    // 'custom' does nothing — user sets values manually
+  }
+
+  function selectPreset(name) {
+    if (name === 'speech' && el.presetSpeech) el.presetSpeech.checked = true;
+    else if (name === 'music' && el.presetMusic) el.presetMusic.checked = true;
+    else if (el.presetCustom) el.presetCustom.checked = true;
+  }
+
+  function getSelectedPreset() {
+    if (el.presetSpeech && el.presetSpeech.checked) return 'speech';
+    if (el.presetMusic  && el.presetMusic.checked)  return 'music';
+    return 'custom';
+  }
+
+  // ─── Jaw Timeline Canvas ────────────────────────────────────────
+
+  function drawTimeline(frames) {
+    if (!el.jawTimelineCanvas || !el.timelinePanel) return;
+    el.timelinePanel.style.display = 'block';
+
+    var canvas = el.jawTimelineCanvas;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas resolution to match display size
+    var rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * (window.devicePixelRatio || 1);
+    canvas.height = rect.height * (window.devicePixelRatio || 1);
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+    var w = rect.width;
+    var h = rect.height;
+
+    // Clear
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, w, h);
+
+    if (frames.length === 0) return;
+
+    // Find angle range from frames
+    var minA = frames[0].angle;
+    var maxA = frames[0].angle;
+    for (var i = 1; i < frames.length; i++) {
+      if (frames[i].angle < minA) minA = frames[i].angle;
+      if (frames[i].angle > maxA) maxA = frames[i].angle;
+    }
+    var range = maxA - minA;
+    if (range < 1) range = 1;
+
+    var barWidth = Math.max(1, w / frames.length);
+
+    for (var j = 0; j < frames.length; j++) {
+      var pct = (frames[j].angle - minA) / range;
+      var barH = Math.max(1, pct * (h - 4));
+
+      // Color based on amplitude
+      var amp = frames[j].amplitude || 0;
+      if (amp < 0.05) {
+        ctx.fillStyle = '#2d4a6d';
+      } else if (amp < 0.3) {
+        ctx.fillStyle = '#0dcaf0';
+      } else {
+        ctx.fillStyle = '#0d6efd';
+      }
+
+      ctx.fillRect(j * barWidth, h - barH - 2, barWidth - (barWidth > 2 ? 1 : 0), barH);
+    }
+
+    // Draw midline
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // ─── Toast Notifications ──────────────────────────────────────────
