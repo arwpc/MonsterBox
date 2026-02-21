@@ -19,7 +19,7 @@ export class OpenLoopLinearAdapter {
     return candidates[0] || (this.motion.bins && this.motion.bins[0]) || { pwmPct: 50, unitsPerSec: 0.2 };
   }
 
-  calculateMoveTime(deltaP, pwmPct) { const bin = this.selectBin(pwmPct); const timeMs = (Math.abs(deltaP) / bin.unitsPerSec) * 1000 + (this.motion.settleMs || 120); return Math.max(100, timeMs); }
+  calculateMoveTime(deltaP, pwmPct) { const bin = this.selectBin(pwmPct); const timeMs = (Math.abs(deltaP) / bin.unitsPerSec) * 1000 + (this.motion.settleMs || 120); return Math.max(100, Math.round(timeMs)); }
 
   async nudge(dir, scale) { const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med; const newP = dir === 'max' ? Math.min(1, this.currentP + delta) : Math.max(0, this.currentP - delta); await this.gotoNormalized(newP, { speedPct: 50 }); }
 

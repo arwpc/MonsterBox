@@ -226,11 +226,11 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 0
+      "channel": 12
     },
     "created": "2025-10-06T02:24:37.393Z",
     "enabled": true,
-    "updated": "2026-01-10T23:28:33.068Z",
+    "updated": "2026-02-21T19:11:12.240Z",
     "modelId": "servo_gobilda_stingray2"
   },
   {

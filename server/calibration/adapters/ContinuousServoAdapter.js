@@ -40,38 +40,36 @@ export default class ContinuousServoAdapter {
   }
 
   /**
-   * Nudge the servo in a direction
-   * @param {number} delta - Normalized delta (-1 to +1), positive = CW
-   * @param {Object} opts - { speedPct, durationMs }
+   * Nudge the servo in a direction (matches AbsoluteServoAdapter/OpenLoopLinearAdapter interface)
+   * @param {string} dir - 'min' (CCW) or 'max' (CW)
+   * @param {string} scale - 'fine', 'med', or 'coarse'
    */
-  async nudge(delta, opts = {}) {
-    const speedPct = opts.speedPct ?? this.motion.defaultSpeedPct ?? 30;
-    const durationMs = opts.durationMs ?? this.motion.defaultDurationMs ?? 500;
-    
-    // Determine direction from delta sign
-    let direction = delta > 0 ? 'cw' : 'ccw';
+  async nudge(dir, scale) {
+    const NUDGE_DURATIONS = { fine: 200, med: 500, coarse: 1000 };
+    const durationMs = NUDGE_DURATIONS[scale] || NUDGE_DURATIONS.med;
+    const speedPct = this.motion.defaultSpeedPct ?? 30;
+
+    let direction = dir === 'max' ? 'cw' : 'ccw';
     direction = this.effectiveDirection(direction);
-    
-    // Scale duration by delta magnitude (optional, for fine control)
-    const actualDuration = Math.round(Math.abs(delta) * durationMs);
-    
-    console.log(`ContinuousServoAdapter: nudge partId=${this.partId}, dir=${direction}, speed=${speedPct}%, duration=${actualDuration}ms`);
-    
+
+    console.log(`ContinuousServoAdapter: nudge partId=${this.partId}, dir=${direction}, speed=${speedPct}%, duration=${durationMs}ms, ch=${this.channel}`);
+
     try {
       this.isRunning = true;
-      const args = ['rotate_continuous_pca', String(this.channel), direction, String(speedPct), String(actualDuration)];
+      const args = ['rotate_continuous_pca', String(this.channel), direction, String(speedPct), String(durationMs)];
       if (this.address !== 64) {
         args.push(String(this.address));
       }
-      
-      await runWrapper('servo_cli.py', args, { timeoutMs: actualDuration + 5000 });
-      
+
+      await runWrapper('servo_cli.py', args, { timeoutMs: durationMs + 5000 });
+
       // Update estimated position (rough tracking)
-      const positionDelta = (direction === 'cw' ? 1 : -1) * (actualDuration / 1000) * (speedPct / 100);
+      const positionDelta = (direction === 'cw' ? 1 : -1) * (durationMs / 1000) * (speedPct / 100);
       this.estimatedPosition = Math.max(-1, Math.min(1, this.estimatedPosition + positionDelta * 0.1));
-      
+      this.currentP = (this.estimatedPosition + 1) / 2;
+
       this.isRunning = false;
-      return { success: true, direction, speedPct, durationMs: actualDuration };
+      return { success: true, direction, speedPct, durationMs };
     } catch (err) {
       this.isRunning = false;
       throw err;

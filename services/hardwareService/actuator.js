@@ -53,7 +53,7 @@ export async function controlActuator({
             lpwmPin: Number(lpwmPin),
             direction: direction,
             speed: Number(speed),
-            duration: Number(duration)
+            duration: Math.round(Number(duration))
         };
 
         if (pwmFrequency != null) config.pwmFrequency = Number(pwmFrequency);
@@ -73,10 +73,10 @@ export async function controlActuator({
         String(directionPin),
         String(pwmPin),
         direction,
-        String(speed),
-        String(duration),
-        String(maxExtension),
-        String(maxRetraction)
+        String(Math.round(speed)),
+        String(Math.round(duration)),
+        String(Math.round(maxExtension)),
+        String(Math.round(maxRetraction))
     ];
 
     return await runWrapper('actuator_cli.py', args);
