@@ -1,9 +1,0 @@
-{
-  "defaultProvider": "openai",
-  "defaultModel": "gpt-4",
-  "defaultTemperature": 0.7,
-  "defaultMaxTokens": 100,
-  "contextLength": 3,
-  "responseTimeout": 20000,
-  "testMode": true
-}

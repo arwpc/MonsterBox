@@ -1,1 +1,0 @@
-Results written to /home/remote/MonsterBox/test-results-summary.txt

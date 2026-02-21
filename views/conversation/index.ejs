@@ -152,6 +152,13 @@
           </div>
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="translateToggle">
+              <label class="form-check-label fw-bold" for="translateToggle">Translate</label>
+            </div>
+            <small class="text-muted">AI-restate speech in character</small>
+          </div>
+          <div class="col-md-3 mb-2 mb-md-0">
+            <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="headTrackToggle">
               <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
             </div>
@@ -265,6 +272,7 @@
       jawToggle: null,
       headTrackToggle: null,
       parrotToggle: null,
+      translateToggle: null,
     };
 
     let currentCharacterId = null;
@@ -324,6 +332,47 @@
       });
     }
     try { window.__parrotSay = parrotSay; } catch (e) { }
+
+    // Translate Mode
+    var translateEnabled = false;
+    var lastTranslateAt = 0;
+    function translateSay(text) {
+      var t = (text || '').trim();
+      if (!t) return;
+      var now = Date.now();
+      if (now - lastTranslateAt < 2000) {
+        console.log('[Translate] Throttled — too soon since last translate');
+        return;
+      }
+      lastTranslateAt = now;
+      var spkId = chatSpeakerPartId || selectedSpeakerPartId || undefined;
+      console.log('[Translate] Translating: "' + t.slice(0, 80) + '" via speaker=' + spkId);
+      ui.sayStatus.innerHTML = '<span class="text-info">Translating...</span>';
+      fetch('/conversation/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: t, speakerPartId: spkId })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(j) {
+        if (j && j.success) {
+          console.log('[Translate] Success: "' + (j.translatedText || '').slice(0, 80) + '"');
+          ui.sayStatus.innerHTML = '<span class="text-success">Translated</span>';
+          if (j.translatedText) {
+            appendChatMessage('AI', j.translatedText);
+          }
+        } else {
+          var errMsg = (j && j.error) || 'unknown';
+          console.error('[Translate] Failed:', errMsg);
+          ui.sayStatus.innerHTML = '<span class="text-danger">Translate failed: ' + errMsg.replace(/</g, '&lt;').slice(0, 100) + '</span>';
+        }
+      })
+      .catch(function(e) {
+        console.error('[Translate] Error:', e);
+        ui.sayStatus.innerHTML = '<span class="text-danger">Translate error: ' + ((e && e.message) || '').replace(/</g, '&lt;').slice(0, 100) + '</span>';
+      });
+    }
+    try { window.__translateSay = translateSay; } catch (e) { }
 
     // Browser PCM audio player for AI speech output
     const BrowserAudioPlayer = (() => {
@@ -459,6 +508,7 @@
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
       ui.parrotToggle = $('parrotToggle');
+      ui.translateToggle = $('translateToggle');
       currentCharacterId = getCurrentCharacterIdFromLabel();
 
       setCharName();
