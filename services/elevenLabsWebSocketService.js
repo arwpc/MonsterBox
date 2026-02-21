@@ -1426,6 +1426,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
         }
     }
 
+    /**
+     * Suppress mic input for all active sessions of a character (echo suppression for parrot mode).
+     * @param {number} characterId - Character ID to suppress
+     * @param {number} durationMs - Duration in milliseconds
+     */
+    suppressMicForCharacter(characterId, durationMs) {
+        const suppressUntil = Date.now() + durationMs;
+        for (const [, connection] of this.activeConnections) {
+            if (connection.characterId === characterId || characterId == null) {
+                connection.suppressMicUntilMs = Math.max(
+                    connection.suppressMicUntilMs || 0,
+                    suppressUntil
+                );
+            }
+        }
+    }
+
     async stopWebSocketServer() {
         // Clear session cleanup timer to prevent leaks
         if (this._cleanupTimer) {

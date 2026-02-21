@@ -5,13 +5,6 @@
 <link rel="stylesheet" href="/css/manual-controls.css">
 
 <div class="container-fluid">
-  <div class="d-flex justify-content-end mb-2">
-    <div class="d-flex align-items-center gap-2">
-      <a class="btn btn-outline-secondary btn-sm" href="/ai-settings/stt"><i class="bi bi-sliders"></i> STT Config</a>
-      <a class="btn btn-outline-secondary btn-sm" href="/ai-settings/tts"><i class="bi bi-volume-up"></i> TTS Config</a>
-    </div>
-  </div>
-
   <!-- All panels in single sortable column — drag any panel to reorder -->
   <div class="sortable-column" data-column-id="dashboard">
 
@@ -21,10 +14,35 @@
         <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
         <small class="text-muted" id="webcamHint"></small>
       </div>
-      <div class="card-body text-center p-2">
+      <div class="card-body text-center p-2" style="resize: both; overflow: hidden; min-height: 100px; min-width: 200px;">
         <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border"
-          style="width: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark);">
+          style="width: 100%; height: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark);">
         <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
+      </div>
+    </div>
+
+    <!-- Live Console -->
+    <div class="card mb-3" data-panel-id="console">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-terminal"></i> Live Console</h6>
+        <div class="d-flex gap-1 align-items-center">
+          <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;">
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+          <div class="form-check form-switch mb-0 ms-1">
+            <input class="form-check-input" type="checkbox" id="consoleLive" checked>
+            <label class="form-check-label small" for="consoleLive">Live</label>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" id="btnConsoleRefresh" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0" style="resize: vertical; overflow: hidden; min-height: 100px; max-height: 500px; height: 250px;">
+        <pre id="consoleOutput" class="mb-0 p-2" style="height: 100%; overflow-y: auto; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; background: var(--mb-terminal-bg, #0a0a0a); color: var(--mb-terminal-text, #0f0); margin: 0;">Loading console...</pre>
       </div>
     </div>
 
@@ -265,6 +283,10 @@
     let _lastPartialEl = null;
     let chatSpeakerPartId = null;
 
+    // Mic transcript deduplication (stt_committed + user_transcript can fire for same text)
+    var _recentMicTexts = [];
+    var _recentMicTextMaxAge = 3000;
+
     // Parrot Mode
     var parrotEnabled = false;
     var lastParrotAt = 0;
@@ -272,23 +294,34 @@
       var t = (text || '').trim();
       if (!t) return;
       var now = Date.now();
-      if (now - lastParrotAt < 800) return;
+      if (now - lastParrotAt < 800) {
+        console.log('[Parrot] Throttled — too soon since last parrot');
+        return;
+      }
       lastParrotAt = now;
+      var spkId = chatSpeakerPartId || selectedSpeakerPartId || undefined;
+      console.log('[Parrot] Saying: "' + t.slice(0, 80) + '" via speaker=' + spkId);
       ui.sayStatus.innerHTML = '<span class="text-info">Parrot: "' + t.replace(/</g, '&lt;').slice(0, 140) + '"</span>';
       fetch('/conversation/api/say', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: t, speakerPartId: chatSpeakerPartId || selectedSpeakerPartId || undefined })
+        body: JSON.stringify({ text: t, speakerPartId: spkId })
       })
-      .then(r => r.json())
-      .then(j => {
+      .then(function(r) { return r.json(); })
+      .then(function(j) {
         if (j && j.success) {
+          console.log('[Parrot] Success');
           ui.sayStatus.innerHTML = '<span class="text-success">Parrot spoke</span>';
         } else {
-          ui.sayStatus.innerHTML = '<span class="text-danger">Parrot failed</span>';
+          var errMsg = (j && j.error) || 'unknown';
+          console.error('[Parrot] Failed:', errMsg);
+          ui.sayStatus.innerHTML = '<span class="text-danger">Parrot failed: ' + errMsg.replace(/</g, '&lt;').slice(0, 100) + '</span>';
         }
       })
-      .catch(() => ui.sayStatus.innerHTML = '<span class="text-danger">Parrot error</span>');
+      .catch(function(e) {
+        console.error('[Parrot] Error:', e);
+        ui.sayStatus.innerHTML = '<span class="text-danger">Parrot error: ' + ((e && e.message) || '').replace(/</g, '&lt;').slice(0, 100) + '</span>';
+      });
     }
     try { window.__parrotSay = parrotSay; } catch (e) { }
 
@@ -759,6 +792,17 @@
       if (sender === 'AI') {
         text = text.replace(/\[.*?\]/g, '').replace(/\s{2,}/g, ' ').trim();
         if (!text) return;
+      }
+
+      // Deduplicate mic transcripts (stt_committed and user_transcript can fire for same text)
+      if (sender === 'You (mic)') {
+        var now = Date.now();
+        _recentMicTexts = _recentMicTexts.filter(function(e) { return now - e.ts < _recentMicTextMaxAge; });
+        var normalized = (text || '').toLowerCase().trim();
+        for (var i = 0; i < _recentMicTexts.length; i++) {
+          if (_recentMicTexts[i].text === normalized) return;
+        }
+        _recentMicTexts.push({ text: normalized, ts: now });
       }
 
       // Remove partial transcript when committing mic text
@@ -1352,6 +1396,53 @@
       }
     }
 
+    // ─── Live Console ────────────────────────────────────────────────────────────
+    var _consoleTimer = null;
+
+    function loadConsole() {
+      var linesEl = document.getElementById('consoleLines');
+      var n = linesEl ? linesEl.value : '100';
+      fetch('/api/system/console?lines=' + n + '&source=stdout')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var el = document.getElementById('consoleOutput');
+          if (el && data && data.output) {
+            var wasAtBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 30;
+            el.textContent = data.output;
+            if (wasAtBottom) el.scrollTop = el.scrollHeight;
+          }
+        })
+        .catch(function() {});
+    }
+
+    function startConsolePolling() {
+      loadConsole();
+      if (_consoleTimer) clearInterval(_consoleTimer);
+      _consoleTimer = setInterval(loadConsole, 3000);
+    }
+
+    function stopConsolePolling() {
+      if (_consoleTimer) { clearInterval(_consoleTimer); _consoleTimer = null; }
+    }
+
+    function initConsolePanel() {
+      var consoleLive = document.getElementById('consoleLive');
+      var consoleRefresh = document.getElementById('btnConsoleRefresh');
+      var consoleLines = document.getElementById('consoleLines');
+
+      if (consoleLive) {
+        consoleLive.addEventListener('change', function() {
+          if (consoleLive.checked) startConsolePolling();
+          else stopConsolePolling();
+        });
+      }
+      if (consoleRefresh) consoleRefresh.addEventListener('click', loadConsole);
+      if (consoleLines) consoleLines.addEventListener('change', loadConsole);
+
+      if (consoleLive && consoleLive.checked) startConsolePolling();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() { initConsolePanel(); });
     document.addEventListener('DOMContentLoaded', init);
     window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadPoses };
   })();

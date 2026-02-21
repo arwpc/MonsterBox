@@ -1,6 +1,6 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "10",
     "sensitivity": 1,
     "smoothing": 0.6,

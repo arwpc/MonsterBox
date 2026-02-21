@@ -443,6 +443,146 @@ async function deleteTemplate(id) {
     }
 }
 
+// ─── Console Output (reads /var/log/monsterbox.log or .err) ────────────────────
+
+async function getConsoleOutput(lines, source) {
+    var n = parseInt(lines, 10) || 100;
+    if (n > 2000) n = 2000;
+
+    var logFile = (source === 'stderr')
+        ? '/var/log/monsterbox.err'
+        : '/var/log/monsterbox.log';
+
+    try {
+        var result = await execAsync(
+            'tail -n ' + n + ' ' + logFile,
+            { timeout: 10000, maxBuffer: 2 * 1024 * 1024 }
+        );
+        return result.stdout || '';
+    } catch (err) {
+        return err.stdout || err.message || 'Failed to read console output';
+    }
+}
+
+// ─── RPi Performance Presets ───────────────────────────────────────────────────
+
+var RPI_PRESETS = {
+    'rpi3b-performance': {
+        label: 'RPi 3B — Performance',
+        description: 'Max CPU for real-time audio and servo control on Pi 3B',
+        model: 'Raspberry Pi 3 Model B',
+        settings: {
+            governor: 'performance',
+            gpu_mem: 32,
+            arm_freq: 1200,
+            over_voltage: 0,
+            i2c_baudrate: 400000
+        }
+    },
+    'rpi3bplus-performance': {
+        label: 'RPi 3B+ — Performance',
+        description: 'Max CPU for real-time audio and servo control on Pi 3B+',
+        model: 'Raspberry Pi 3 Model B Plus',
+        settings: {
+            governor: 'performance',
+            gpu_mem: 32,
+            arm_freq: 1400,
+            over_voltage: 0,
+            i2c_baudrate: 400000
+        }
+    },
+    'rpi4b-performance': {
+        label: 'RPi 4B — Performance (Lifelike)',
+        description: 'Max CPU, fast I2C for smooth servo motion and low-latency audio/TTS',
+        model: 'Raspberry Pi 4 Model B',
+        settings: {
+            governor: 'performance',
+            gpu_mem: 64,
+            arm_freq: 1800,
+            over_voltage: 0,
+            i2c_baudrate: 400000
+        }
+    },
+    'rpi4b-balanced': {
+        label: 'RPi 4B — Balanced',
+        description: 'Dynamic CPU scaling, moderate power usage',
+        model: 'Raspberry Pi 4 Model B',
+        settings: {
+            governor: 'ondemand',
+            gpu_mem: 64,
+            arm_freq: 1800,
+            over_voltage: 0,
+            i2c_baudrate: 100000
+        }
+    },
+    'rpi5-performance': {
+        label: 'RPi 5 — Performance (Lifelike)',
+        description: 'Max CPU on Pi 5 for ultra-smooth animation and real-time audio',
+        model: 'Raspberry Pi 5',
+        settings: {
+            governor: 'performance',
+            gpu_mem: 64,
+            arm_freq: 2400,
+            over_voltage: 0,
+            i2c_baudrate: 400000
+        }
+    },
+    'rpi5-balanced': {
+        label: 'RPi 5 — Balanced',
+        description: 'Dynamic CPU scaling on Pi 5, moderate power usage',
+        model: 'Raspberry Pi 5',
+        settings: {
+            governor: 'ondemand',
+            gpu_mem: 64,
+            arm_freq: 2400,
+            over_voltage: 0,
+            i2c_baudrate: 100000
+        }
+    }
+};
+
+function getPerformancePresets() {
+    return RPI_PRESETS;
+}
+
+async function applyPerformancePreset(presetId) {
+    var preset = RPI_PRESETS[presetId];
+    if (!preset) return { success: false, error: 'Unknown preset: ' + presetId };
+
+    var results = [];
+
+    // Apply CPU governor (immediate, no reboot required)
+    if (preset.settings.governor) {
+        try {
+            await execAsync(
+                'echo ' + preset.settings.governor + ' | sudo tee /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor',
+                { timeout: 5000 }
+            );
+            results.push({ key: 'governor', success: true, value: preset.settings.governor });
+        } catch (e) {
+            results.push({ key: 'governor', success: false, error: e.message });
+        }
+    }
+
+    // Boot config changes require editing /boot/firmware/config.txt and rebooting
+    var bootChanges = [];
+    if (preset.settings.gpu_mem) bootChanges.push('gpu_mem=' + preset.settings.gpu_mem);
+    if (preset.settings.arm_freq) bootChanges.push('arm_freq=' + preset.settings.arm_freq);
+    if (preset.settings.over_voltage != null) bootChanges.push('over_voltage=' + preset.settings.over_voltage);
+    if (preset.settings.i2c_baudrate) bootChanges.push('dtparam=i2c_arm=on,i2c_arm_baudrate=' + preset.settings.i2c_baudrate);
+
+    if (bootChanges.length > 0) {
+        results.push({
+            key: 'boot_config',
+            success: true,
+            requiresReboot: true,
+            message: 'Add to /boot/firmware/config.txt and reboot: ' + bootChanges.join(', ')
+        });
+    }
+
+    return { success: true, preset: presetId, label: preset.label, results: results };
+}
+
 export default {
     getPerformanceSnapshot,
     getPerformanceHistory,
@@ -451,6 +591,9 @@ export default {
     stopPerformanceCollector,
     getAvailableServices,
     getServiceLogs,
+    getConsoleOutput,
+    getPerformancePresets,
+    applyPerformancePreset,
     getSystemSettings,
     updateSystemSetting,
     getStartupTasks,

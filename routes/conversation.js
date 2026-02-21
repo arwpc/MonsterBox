@@ -16,6 +16,7 @@ import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
 import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
+import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -215,6 +216,13 @@ router.post('/api/say', express.json(), async (req, res) => {
       });
       if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
     }
+
+    // Suppress mic echo for parrot mode — estimate duration from word count
+    try {
+      const wordCount = text.split(/\s+/).length;
+      const estimatedMs = (wordCount * 150) + 2000;
+      elevenLabsWebSocketService.suppressMicForCharacter(characterId, estimatedMs);
+    } catch (_) {}
 
     res.json({ success: true });
   } catch (e) {

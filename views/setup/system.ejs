@@ -168,6 +168,13 @@
       <div class="card-header">
         <div class="row align-items-center g-2">
           <div class="col-auto">
+            <select class="form-select form-select-sm" id="logSource">
+              <option value="journal" selected>Journal (systemd)</option>
+              <option value="console">Console Output (stdout)</option>
+              <option value="errors">Error Output (stderr)</option>
+            </select>
+          </div>
+          <div class="col-auto">
             <select class="form-select form-select-sm" id="logService">
               <option value="monsterbox">monsterbox</option>
               <option value="mjpg-streamer">mjpg-streamer</option>
@@ -261,6 +268,20 @@
         <div id="startupSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body" id="startupTasksList">
             <p class="text-muted">Loading startup tasks...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Presets -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#presetSettings">Performance Presets</button></h2>
+        <div id="presetSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body">
+            <p class="text-muted mb-3">Select a preset optimized for your Raspberry Pi model. CPU governor changes apply immediately. Boot config changes require manual editing of <code>/boot/firmware/config.txt</code> and a reboot.</p>
+            <div id="presetsList" class="row g-2">
+              <p class="text-muted">Loading presets...</p>
+            </div>
+            <div id="presetMessage" class="mt-3"></div>
           </div>
         </div>
       </div>
@@ -655,17 +676,32 @@
   var logAutoTimer = null;
 
   function loadLogs() {
-    var service = $('#logService').value;
+    var source = $('#logSource').value;
     var lines = $('#logLines').value;
-    apiGet('/api/system/logs?service=' + encodeURIComponent(service) + '&lines=' + lines, function (err, data) {
-      if (err || !data) { $('#logOutput').textContent = 'Error loading logs'; return; }
-      $('#logOutput').textContent = data.logs || 'No logs available';
-      var el = $('#logOutput');
-      el.scrollTop = el.scrollHeight;
-    });
+
+    if (source === 'console' || source === 'errors') {
+      var src = (source === 'errors') ? 'stderr' : 'stdout';
+      $('#logService').disabled = true;
+      apiGet('/api/system/console?lines=' + lines + '&source=' + src, function (err, data) {
+        if (err || !data) { $('#logOutput').textContent = 'Error loading console output'; return; }
+        $('#logOutput').textContent = data.output || 'No output available';
+        var el = $('#logOutput');
+        el.scrollTop = el.scrollHeight;
+      });
+    } else {
+      $('#logService').disabled = false;
+      var service = $('#logService').value;
+      apiGet('/api/system/logs?service=' + encodeURIComponent(service) + '&lines=' + lines, function (err, data) {
+        if (err || !data) { $('#logOutput').textContent = 'Error loading logs'; return; }
+        $('#logOutput').textContent = data.logs || 'No logs available';
+        var el = $('#logOutput');
+        el.scrollTop = el.scrollHeight;
+      });
+    }
   }
 
   $('#btnRefreshLogs').addEventListener('click', loadLogs);
+  $('#logSource').addEventListener('change', loadLogs);
   $('#logService').addEventListener('change', loadLogs);
   $('#logLines').addEventListener('change', loadLogs);
   $('#logAutoRefresh').addEventListener('change', function () {
@@ -747,6 +783,66 @@
       }
     });
   });
+
+  /* ─── Performance Presets ──────────────────────────────────────────────────── */
+  function loadPresets() {
+    apiGet('/api/system/presets', function (err, data) {
+      if (err || !data || !data.success) return;
+      var presets = data.presets || {};
+      var html = '';
+      var keys = Object.keys(presets);
+      for (var i = 0; i < keys.length; i++) {
+        var id = keys[i];
+        var p = presets[id];
+        var s = p.settings || {};
+        html += '<div class="col-md-6 col-lg-4">' +
+          '<div class="card h-100">' +
+          '<div class="card-body p-2">' +
+          '<h6 class="card-title mb-1">' + p.label + '</h6>' +
+          '<p class="card-text small text-muted mb-2">' + p.description + '</p>' +
+          '<ul class="list-unstyled small mb-2">' +
+          '<li>Governor: <strong>' + s.governor + '</strong></li>' +
+          '<li>GPU Mem: <strong>' + s.gpu_mem + ' MB</strong></li>' +
+          '<li>ARM Freq: <strong>' + s.arm_freq + ' MHz</strong></li>' +
+          '<li>I2C: <strong>' + (s.i2c_baudrate / 1000) + ' kHz</strong></li>' +
+          '</ul>' +
+          '<button class="btn btn-sm btn-outline-primary w-100 preset-apply-btn" data-preset="' + id + '">Apply</button>' +
+          '</div></div></div>';
+      }
+      $('#presetsList').innerHTML = html || '<p class="text-muted">No presets available</p>';
+
+      var btns = $$('.preset-apply-btn');
+      for (var b = 0; b < btns.length; b++) {
+        btns[b].addEventListener('click', function () {
+          var presetId = this.getAttribute('data-preset');
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = 'Applying...';
+          apiPost('/api/system/presets/apply', { presetId: presetId }, function (err2, res) {
+            btn.disabled = false;
+            btn.textContent = 'Apply';
+            if (err2 || !res || !res.success) {
+              showAlert('presetMessage', 'danger', 'Failed: ' + ((res && res.error) || 'Unknown error'));
+              return;
+            }
+            var msgs = [];
+            var results = res.results || [];
+            for (var r = 0; r < results.length; r++) {
+              if (results[r].key === 'governor' && results[r].success) {
+                msgs.push('CPU governor set to <strong>' + results[r].value + '</strong>');
+              } else if (results[r].key === 'boot_config') {
+                msgs.push('<span class="text-warning">' + results[r].message + '</span>');
+              } else if (!results[r].success) {
+                msgs.push('<span class="text-danger">' + results[r].key + ': ' + results[r].error + '</span>');
+              }
+            }
+            showAlert('presetMessage', 'info', 'Preset <strong>' + (res.label || presetId) + '</strong> applied.<br>' + msgs.join('<br>'));
+            loadSettings();
+          });
+        });
+      }
+    });
+  }
 
   /* ─── Tab 5: SSH Keys ──────────────────────────────────────────────────────── */
   function loadSSHKeys() {
@@ -1061,7 +1157,7 @@
       else { stopGaugeRefresh(); }
       if (target === '#performance') { loadPerfHistory(currentPeriod); }
       if (target === '#logs') { loadLogs(); }
-      if (target === '#settings') { loadSettings(); }
+      if (target === '#settings') { loadSettings(); loadPresets(); }
       if (target === '#ssh') { loadSSHKeys(); }
       if (target === '#templates') { loadTemplates(); }
     });

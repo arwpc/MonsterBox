@@ -98,6 +98,43 @@ router.get('/logs/services', (req, res) => {
 });
 
 /**
+ * GET /api/system/console - Console output from /var/log/monsterbox.log or .err
+ */
+router.get('/console', async (req, res) => {
+    try {
+        var lines = req.query.lines || 100;
+        var source = req.query.source || 'stdout';
+        var output = await systemService.getConsoleOutput(lines, source);
+        res.json({ success: true, source: source, output: output });
+    } catch (error) {
+        console.error('Error getting console output:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/system/presets - Performance presets for RPi models
+ */
+router.get('/presets', (req, res) => {
+    res.json({ success: true, presets: systemService.getPerformancePresets() });
+});
+
+/**
+ * POST /api/system/presets/apply - Apply a performance preset
+ */
+router.post('/presets/apply', express.json(), async (req, res) => {
+    try {
+        var presetId = req.body && req.body.presetId;
+        if (!presetId) return res.status(400).json({ success: false, error: 'presetId required' });
+        var result = await systemService.applyPerformancePreset(presetId);
+        res.json(result);
+    } catch (error) {
+        console.error('Error applying preset:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * GET /api/system/settings - All system settings
  */
 router.get('/settings', async (req, res) => {

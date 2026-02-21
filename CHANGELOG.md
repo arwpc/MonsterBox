@@ -2,6 +2,33 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.7.0] - 2026-02-20 — Dashboard Enhancements, Parrot Fix & RPi Presets
+
+### Bug Fixes
+- **STT text duplication** — Fixed duplicate mic transcripts in chat log caused by both `stt_committed` (Scribe v2 Realtime) and `user_transcript` (ConvAI agent) firing for the same speech. Added client-side deduplication with a 3-second rolling window.
+- **Parrot mode not working** — Added `suppressMicForCharacter()` echo suppression to prevent the server mic from re-transcribing parrot TTS playback. Enhanced `parrotSay()` with console logging and detailed error display for diagnostics.
+
+### Dashboard Changes
+- **Removed STT/TTS Config buttons** from dashboard top bar (still accessible via AI Settings page)
+- **Resizable webcam panel** — Webcam card-body now supports CSS `resize: both` for horizontal and vertical resizing
+- **Live Console panel** — New terminal-styled panel below webcam showing real-time MonsterBox console output. Features: 3-second auto-polling, line count selector (50/100/200/500), Live toggle, manual refresh. Green-on-black theme using `--mb-terminal-bg`/`--mb-terminal-text` CSS variables. Inherits SortableJS drag/collapse. Dashboard now has 8 sortable panels (was 7).
+
+### System Settings
+- **Console output API** — New `GET /api/system/console` endpoint reads `/var/log/monsterbox.log` and `.err` directly (the actual console.log output, not just systemd lifecycle events from journalctl)
+- **Log source selector** — System > Logs tab now has a "Log Source" dropdown: Journal (systemd), Console Output (stdout), Error Output (stderr). Service dropdown disables when viewing console output.
+- **RPi performance presets** — Six presets for RPi 3B, 3B+, 4B, and 5 in System > Settings > Performance Presets. CPU governor applies immediately; boot config changes (gpu_mem, arm_freq, i2c_baudrate) are documented for manual `/boot/firmware/config.txt` editing. Presets: RPi 3B Performance, RPi 3B+ Performance, RPi 4B Performance (Lifelike), RPi 4B Balanced, RPi 5 Performance (Lifelike), RPi 5 Balanced.
+
+### Files Changed
+- `views/conversation/index.ejs` — Dashboard template (buttons removed, webcam resize, console panel, dedup, parrot diagnostics)
+- `services/elevenLabsWebSocketService.js` — `suppressMicForCharacter()` method
+- `routes/conversation.js` — Echo suppression call after parrot TTS playback
+- `services/systemService.js` — `getConsoleOutput()`, `getPerformancePresets()`, `applyPerformancePreset()`
+- `routes/api/systemRoutes.js` — `/console`, `/presets`, `/presets/apply` endpoints
+- `views/setup/system.ejs` — Log source selector, performance presets UI
+- `tests/browser/conversation-refactor.spec.js` — Panel count updated 7 → 8
+
+---
+
 ## [6.6.0] - 2026-02-19 — UI Consistency & Theme Compliance (Ready for Testing Gold)
 
 ### UI Theme Consistency
