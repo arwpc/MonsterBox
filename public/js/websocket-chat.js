@@ -200,6 +200,23 @@ WebSocketChatClient.prototype.handleServerMessage = function (message) {
             if (this.onDebug) this.onDebug(message);
             break;
 
+        case 'audio_chunk':
+            // Handled by page-specific override (e.g., BrowserAudioPlayer)
+            break;
+
+        case 'audio_level':
+            // Handled by page-specific override
+            break;
+
+        case 'user_transcript':
+            // Handled by page-specific override
+            if (this.onUserTranscript) this.onUserTranscript(message);
+            break;
+
+        case 'stt_committed':
+            // Handled by page-specific override
+            break;
+
         default:
             console.log('📨 Unknown message type:', message.type, message);
     }

@@ -4,6 +4,132 @@
  * Includes inline chat panel
  */
 
+// Browser PCM audio player — plays base64 PCM16LE chunks through browser speaker (ES5)
+var BrowserAudioPlayer = (function () {
+    var audioCtx = null;
+    var isEnabled = false;
+    var nextStartTime = 0;
+    var SAMPLE_RATE = 16000;
+
+    function enable() {
+        if (!audioCtx) {
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new Ctx({ sampleRate: SAMPLE_RATE });
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        isEnabled = true;
+        nextStartTime = 0;
+    }
+
+    function disable() {
+        isEnabled = false;
+        nextStartTime = 0;
+    }
+
+    function playChunk(base64Pcm) {
+        if (!isEnabled || !audioCtx) return;
+        var raw = atob(base64Pcm);
+        var bytes = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        var samples = bytes.length / 2;
+        if (samples === 0) return;
+        var float32 = new Float32Array(samples);
+        var view = new DataView(bytes.buffer);
+        for (var j = 0; j < samples; j++) {
+            float32[j] = view.getInt16(j * 2, true) / 32768;
+        }
+        var buffer = audioCtx.createBuffer(1, samples, SAMPLE_RATE);
+        buffer.getChannelData(0).set(float32);
+        var source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        var now = audioCtx.currentTime;
+        if (nextStartTime < now) nextStartTime = now;
+        source.start(nextStartTime);
+        nextStartTime += buffer.duration;
+    }
+
+    function reset() { nextStartTime = 0; }
+
+    return { enable: enable, disable: disable, playChunk: playChunk, reset: reset,
+        isEnabled: function () { return isEnabled; } };
+})();
+
+// Browser microphone capture — captures PCM16LE from browser mic and sends via WS (ES5)
+var BrowserMicCapture = (function () {
+    var stream = null;
+    var micAudioCtx = null;
+    var processor = null;
+    var isActive = false;
+    var TARGET_RATE = 16000;
+    var wsSender = null; // function(base64) to send audio chunk
+
+    function start(sendFn) {
+        if (isActive) return Promise.resolve();
+
+        // Check browser support for getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            var isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+            if (!isSecure) {
+                return Promise.reject(new Error('Browser mic requires HTTPS. Access via https:// or localhost.'));
+            }
+            return Promise.reject(new Error('Browser does not support getUserMedia'));
+        }
+
+        wsSender = sendFn;
+        console.log('BrowserMicCapture: requesting getUserMedia...');
+        return navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                sampleRate: { ideal: 16000 }
+            }
+        }).then(function (s) {
+            console.log('BrowserMicCapture: getUserMedia granted, tracks:', s.getAudioTracks().length);
+            stream = s;
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            micAudioCtx = new Ctx();
+            var source = micAudioCtx.createMediaStreamSource(stream);
+            processor = micAudioCtx.createScriptProcessor(4096, 1, 1);
+            var nativeRate = micAudioCtx.sampleRate;
+            console.log('BrowserMicCapture: native sample rate =', nativeRate, '-> downsampling to', TARGET_RATE);
+
+            processor.onaudioprocess = function (e) {
+                if (!isActive || !wsSender) return;
+                var input = e.inputBuffer.getChannelData(0);
+                var ratio = nativeRate / TARGET_RATE;
+                var outputLen = Math.floor(input.length / ratio);
+                var pcm16 = new Int16Array(outputLen);
+                for (var i = 0; i < outputLen; i++) {
+                    var srcIdx = Math.floor(i * ratio);
+                    pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[srcIdx] * 32768)));
+                }
+                var byteArr = new Uint8Array(pcm16.buffer);
+                var binary = '';
+                for (var j = 0; j < byteArr.length; j++) {
+                    binary += String.fromCharCode(byteArr[j]);
+                }
+                wsSender(btoa(binary));
+            };
+
+            source.connect(processor);
+            processor.connect(micAudioCtx.destination);
+            isActive = true;
+        });
+    }
+
+    function stop() {
+        isActive = false;
+        wsSender = null;
+        if (processor) { try { processor.disconnect(); } catch (_) {} processor = null; }
+        if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+        if (micAudioCtx) { try { micAudioCtx.close(); } catch (_) {} micAudioCtx = null; }
+    }
+
+    return { start: start, stop: stop, isActive: function () { return isActive; } };
+})();
+
 // ES5 syntax as per user requirements
 function AISettingsManager() {
     this.config = {
@@ -214,6 +340,7 @@ AISettingsManager.prototype.bindEvents = function () {
                 self.connectChatWebSocket();
             } else {
                 self._audioPlaybackEnabled = false;
+                try { BrowserMicCapture.stop(); } catch (_) {}
                 if (self.chatWs && self.chatConnected) {
                     try {
                         self.chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: false }));
@@ -246,6 +373,87 @@ AISettingsManager.prototype.bindEvents = function () {
             self._pendingChatMessage = greeting;
             self.appendChatMessage('You', greeting);
             self.showAlert('AI conversation started — sending greeting...', 'success');
+        });
+    }
+
+    // Mute Speaker toggle
+    var chatMuteSpeaker = document.getElementById('chatMuteSpeaker');
+    if (chatMuteSpeaker) {
+        // Load initial state
+        fetch('/conversation/api/speaker-mute')
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (j && j.success) chatMuteSpeaker.checked = !!j.muted;
+            })
+            .catch(function () {});
+
+        chatMuteSpeaker.addEventListener('change', function () {
+            fetch('/conversation/api/speaker-mute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ muted: chatMuteSpeaker.checked })
+            }).catch(function () {});
+            // Also toggle WS audioPlaybackEnabled
+            if (self.chatWs && self.chatConnected) {
+                try {
+                    self.chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !chatMuteSpeaker.checked }));
+                } catch (_) {}
+            }
+        });
+    }
+
+    // Browser Speaker toggle
+    var chatBrowserSpeaker = document.getElementById('chatBrowserSpeaker');
+    if (chatBrowserSpeaker) {
+        chatBrowserSpeaker.addEventListener('change', function () {
+            var statusEl = document.getElementById('chatAudioStatus');
+            if (chatBrowserSpeaker.checked) {
+                BrowserAudioPlayer.enable();
+                if (statusEl) statusEl.textContent = 'Browser speaker active';
+                if (self.chatWs && self.chatConnected) {
+                    try { self.chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'local' })); } catch (_) {}
+                }
+            } else {
+                BrowserAudioPlayer.disable();
+                if (statusEl) statusEl.textContent = '';
+                if (self.chatWs && self.chatConnected) {
+                    try { self.chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'server' })); } catch (_) {}
+                }
+            }
+        });
+    }
+
+    // Browser Mic toggle
+    var chatBrowserMic = document.getElementById('chatBrowserMic');
+    if (chatBrowserMic) {
+        chatBrowserMic.addEventListener('change', function () {
+            var statusEl = document.getElementById('chatAudioStatus');
+            if (chatBrowserMic.checked) {
+                BrowserMicCapture.start(function (base64) {
+                    if (self.chatWs && self.chatConnected) {
+                        try {
+                            self.chatWs.send(JSON.stringify({ type: 'browser_audio_chunk', audio: base64 }));
+                        } catch (_) {}
+                    }
+                }).then(function () {
+                    if (statusEl) statusEl.textContent = 'Browser mic active';
+                    if (self.chatWs && self.chatConnected) {
+                        try { self.chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'browser' })); } catch (_) {}
+                    }
+                }).catch(function (e) {
+                    chatBrowserMic.checked = false;
+                    var errMsg = e.message || String(e);
+                    if (statusEl) statusEl.innerHTML = '<span class="text-danger">' + errMsg + '</span>';
+                    self.appendChatMessage('System', 'Browser mic failed: ' + errMsg);
+                    console.error('BrowserMicCapture error:', e);
+                });
+            } else {
+                BrowserMicCapture.stop();
+                if (statusEl) statusEl.textContent = '';
+                if (self.chatWs && self.chatConnected) {
+                    try { self.chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'server' })); } catch (_) {}
+                }
+            }
         });
     }
 
@@ -410,9 +618,12 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
     // Track whether conversation is fully ready (after conversation_started from server)
     self._conversationReady = false;
 
-    var protocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-    var wsPort = document.body.getAttribute('data-ws-port') || '8795';
-    var wsUrl = protocol + '//' + window.location.hostname + ':' + wsPort;
+    var isSecure = window.location.protocol === 'https:';
+    var wsProto = isSecure ? 'wss:' : 'ws:';
+    // On HTTPS, use path-based WSS on same host; on HTTP, use dedicated WS port
+    var wsUrl = isSecure
+        ? (wsProto + '//' + window.location.host + '/ai-chat')
+        : (wsProto + '//' + window.location.hostname + ':' + (document.body.getAttribute('data-ws-port') || '8795'));
 
     try {
         self.chatWs = new WebSocket(wsUrl);
@@ -424,9 +635,19 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
             if (self.chatCharacterId) {
                 self.chatWs.send(JSON.stringify({ type: 'set_character', characterId: self.chatCharacterId }));
             }
-            self.chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'server' }));
+            // Use browser mic if toggle active, otherwise server mic
+            var useBrowserMic = document.getElementById('chatBrowserMic');
+            self.chatWs.send(JSON.stringify({ type: 'set_mic_source', source: (useBrowserMic && useBrowserMic.checked) ? 'browser' : 'server' }));
             // Tell server whether to play audio through character speaker
-            self.chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: self._audioPlaybackEnabled }));
+            var muteSpeaker = document.getElementById('chatMuteSpeaker');
+            var isMuted = muteSpeaker && muteSpeaker.checked;
+            self.chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !isMuted && self._audioPlaybackEnabled }));
+            // Apply browser speaker state
+            var browserSpeaker = document.getElementById('chatBrowserSpeaker');
+            if (browserSpeaker && browserSpeaker.checked) {
+                self.chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'local' }));
+                BrowserAudioPlayer.enable();
+            }
             // Send speaker part selection if user picked one
             if (self.chatSpeakerPartId) {
                 self.chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: self.chatSpeakerPartId }));
@@ -444,8 +665,11 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
                 var msg = JSON.parse(ev.data);
                 if (!msg) return;
 
-                // Audio chunks are for speaker playback only — never display
-                if (msg.type === 'audio_chunk') return;
+                // Audio chunks — play through browser speaker if enabled
+                if (msg.type === 'audio_chunk') {
+                    if (msg.audio) BrowserAudioPlayer.playChunk(msg.audio);
+                    return;
+                }
 
                 // VU meter — update from server mic audio level
                 if (msg.type === 'audio_level') {
@@ -480,6 +704,7 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
                 if (msg.type === 'interruption') {
                     // Barge-in: agent was interrupted by user speaking
                     self._lastPartialEl = null;
+                    BrowserAudioPlayer.reset();
                     return;
                 }
 
@@ -529,6 +754,7 @@ AISettingsManager.prototype.connectChatWebSocket = function () {
             self._conversationReady = false;
             self.chatWs = null;
             self.updateChatStatus(false);
+            try { BrowserMicCapture.stop(); } catch (_) {}
         };
 
         self.chatWs.onerror = function () {

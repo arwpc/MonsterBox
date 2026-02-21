@@ -2,7 +2,6 @@
   "model": "scribe_v2",
   "language": "en",
   "sampleRate": 16000,
-  "vadEnabled": true,
   "vadThreshold": 0.4,
   "vadSilenceDuration": 600,
   "captureChunkDuration": 0.5,
@@ -18,6 +17,7 @@
   "validateEnglish": true,
   "minLetterRatio": 55,
   "requireVowels": true,
+  "vadEnabled": false,
   "microphonePartId": "7",
   "microphoneDeviceId": "default"
 }

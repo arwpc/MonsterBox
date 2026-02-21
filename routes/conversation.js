@@ -502,6 +502,20 @@ router.get('/api/listen-in-url', async (req, res) => {
   }
 });
 
+// POST /conversation/api/speaker-mute { muted: true/false }
+// Toggle global speaker mute
+router.post('/api/speaker-mute', express.json(), (req, res) => {
+  const muted = !!(req.body && req.body.muted);
+  serverPlaybackService.setSpeakerMuted(muted);
+  res.json({ success: true, muted });
+});
+
+// GET /conversation/api/speaker-mute
+// Get current speaker mute state
+router.get('/api/speaker-mute', (req, res) => {
+  res.json({ success: true, muted: serverPlaybackService.isSpeakerMuted() });
+});
+
 // POST /conversation/api/ai-on { enabled }
 // Toggle ElevenLabs Conversational AI Agent
 router.post('/api/ai-on', express.json(), async (req, res) => {

@@ -15,45 +15,41 @@ test.describe('Conversation Control - Grid Layout', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should render page with grid layout', async ({ page }) => {
+  test('should render page with sortable panels', async ({ page }) => {
     // Check page title is shown in navbar (headers removed in v6.1.2)
     await expect(page.locator('#currentPageName')).toContainText('Dashboard');
-    
-    // Verify grid structure exists (Bootstrap columns with different sizes)
-    const lgColumns = page.locator('[class*="col-lg-"]');
-    const count = await lgColumns.count();
-    expect(count).toBeGreaterThan(0);
+
+    // Verify single sortable column with draggable panels
+    const sortableColumn = page.locator('.sortable-column[data-column-id="dashboard"]');
+    await expect(sortableColumn).toBeVisible();
+    const panels = sortableColumn.locator('> [data-panel-id]');
+    const count = await panels.count();
+    expect(count).toBe(7);
   });
 
-  test('should have Character Selection panel', async ({ page }) => {
-    const card = page.locator('#character-selection-card');
-    await expect(card).toBeVisible();
-    
-    // Check for character dropdown
-    const select = page.locator('#character-select');
-    await expect(select).toBeVisible();
-    await expect(select).toBeEnabled({ timeout: 5000 });
-    
-    // Should have at least one option after loading
-    const options = select.locator('option');
-    const count = await options.count();
-    expect(count).toBeGreaterThan(0);
-  });
+  test('should have Chat panel', async ({ page }) => {
+    // Chat log area
+    await expect(page.locator('#chatLog')).toBeVisible();
 
-  test('should have Live Audio (STT) panel', async ({ page }) => {
-    const card = page.locator('text=Live Audio (STT)').locator('..');
-    await expect(card).toBeVisible();
-    
-    // Check for mic controls
-    await expect(page.locator('#micStart')).toBeVisible();
-    await expect(page.locator('#micStop')).toBeVisible();
-    await expect(page.locator('#listenInBtn')).toBeVisible();
-    
-    // Check for transcript area
-    await expect(page.locator('#transcript')).toBeVisible();
-    
-    // Check for audio level progress bar
-    await expect(page.locator('#audioLevel')).toBeVisible();
+    // AI On toggle
+    const aiToggle = page.locator('#chatAiOnToggle');
+    await expect(aiToggle).toBeVisible();
+    await expect(aiToggle).toHaveAttribute('type', 'checkbox');
+
+    // Chat input and send button
+    await expect(page.locator('#chatInput')).toBeVisible();
+    await expect(page.locator('#chatSendBtn')).toBeVisible();
+
+    // VU meter (label badge is always visible; bar itself starts at 0% width)
+    await expect(page.locator('#chatVULabel')).toBeVisible();
+
+    // Audio controls
+    await expect(page.locator('#chatMuteSpeaker')).toBeVisible();
+    await expect(page.locator('#chatBrowserSpeaker')).toBeVisible();
+    await expect(page.locator('#chatBrowserMic')).toBeVisible();
+
+    // Speaker select
+    await expect(page.locator('#chatSpeakerSelect')).toBeVisible();
   });
 
   test('should have Make Character Say panel', async ({ page }) => {
@@ -68,18 +64,8 @@ test.describe('Conversation Control - Grid Layout', () => {
     await expect(page.locator('#sayBtn')).toBeVisible();
   });
 
-  test('should have AI On autonomous panel (inline)', async ({ page }) => {
-    // The AI On panel provides autonomous AI conversation
-    const aiToggle = page.locator('#aiOnToggle');
-    await expect(aiToggle).toBeVisible();
-    
-    // Check for chat log area
-    const chatLog = page.locator('#aiChatLog');
-    await expect(chatLog).toBeVisible();
-  });
-
   test.skip('should have Ask AI panel (inline, no modal) - DEPRECATED', async ({ page }) => {
-    // This test is deprecated - Ask AI is now integrated into AI On panel
+    // This test is deprecated - Ask AI is now integrated into Chat panel
     const card = page.locator('text=Ask AI').locator('..');
     await expect(card).toBeVisible();
   });
@@ -88,41 +74,6 @@ test.describe('Conversation Control - Grid Layout', () => {
     // This test is deprecated - Audio functionality moved to Audio Library page
     const card = page.locator('text=Audio Files').locator('..');
     await expect(card).toBeVisible();
-  });
-
-  test('should have AI On autonomous panel with toggles', async ({ page }) => {
-    const card = page.locator('text=AI On (Autonomous)').locator('..');
-    await expect(card).toBeVisible();
-    
-    // Check for AI On toggle
-    const aiToggle = page.locator('#aiOnToggle');
-    await expect(aiToggle).toBeVisible();
-    await expect(aiToggle).toHaveAttribute('type', 'checkbox');
-    
-    // Check for microphone toggle
-    const micToggle = page.locator('#aiMicToggle');
-    await expect(micToggle).toBeVisible();
-    await expect(micToggle).toHaveAttribute('type', 'checkbox');
-    
-    // Check for chat log area (should be inline, not modal)
-    const chatLog = page.locator('#aiChatLog');
-    await expect(chatLog).toBeVisible();
-    
-    // Verify NO modal container
-    const modal = page.locator('.modal');
-    await expect(modal).toHaveCount(0);
-  });
-
-  test('should have Hardware Control panel for all part types', async ({ page }) => {
-    const card = page.locator('text=Hardware Control').locator('..');
-    await expect(card).toBeVisible();
-    
-    // Check for hardware list container
-    const list = page.locator('#hardwareList');
-    await expect(list).toBeVisible();
-    
-    // Check for parts count badge
-    await expect(page.locator('#hardwareCount')).toBeVisible();
   });
 
   test('should have Monster Features panel', async ({ page }) => {
@@ -150,59 +101,17 @@ test.describe('Conversation Control - Grid Layout', () => {
     await expect(page.locator('#scenesContainer')).toBeVisible();
   });
 
+  test('should have Poses panel', async ({ page }) => {
+    // Check for poses container
+    await expect(page.locator('#posesContainer')).toBeVisible();
+  });
+
   test('should have Webcam panel', async ({ page }) => {
     // Check for webcam image and status directly
     await expect(page.locator('#webcamImg')).toBeVisible();
     
     // Check for status text
     await expect(page.locator('#webcamStatus')).toBeVisible();
-  });
-});
-
-test.describe('Conversation Control - Character Selection', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
-  });
-
-  test('should load and display characters', async ({ page }) => {
-    const select = page.locator('#character-select');
-    await expect(select).toBeEnabled({ timeout: 5000 });
-    
-    const options = select.locator('option');
-    const count = await options.count();
-    
-    // Should have at least one character
-    expect(count).toBeGreaterThan(0);
-    
-    // First option should not be "Loading..."
-    const firstText = await options.first().textContent();
-    expect(firstText).not.toContain('Loading');
-  });
-
-  test('should change character and update page', async ({ page }) => {
-    const select = page.locator('#character-select');
-    await expect(select).toBeEnabled({ timeout: 5000 });
-    
-    const options = select.locator('option');
-    const count = await options.count();
-    
-    if (count > 1) {
-      // Get second character value
-      const secondOption = options.nth(1);
-      const value = await secondOption.getAttribute('value');
-      
-      // Change to second character
-      await select.selectOption(value);
-      
-      // Wait for status update
-      await page.waitForTimeout(500);
-      
-      // Verify status shows something (switching or updated)
-      const status = page.locator('#character-select-status');
-      const statusText = await status.textContent();
-      expect(statusText.length).toBeGreaterThan(0);
-    }
   });
 });
 
@@ -273,47 +182,13 @@ test.describe('Conversation Control - Audio Files', () => {
   });
 });
 
-test.describe('Conversation Control - Hardware Control', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+test.describe('Conversation Control - Hardware Control - DEPRECATED', () => {
+  test.skip('should load hardware parts for character - DEPRECATED', async ({ page }) => {
+    // Hardware Control panel removed in v6.7.0 — replaced by Chat panel
   });
 
-  test('should load hardware parts for character', async ({ page }) => {
-    const list = page.locator('#hardwareList');
-    const count = page.locator('#hardwareCount');
-    
-    // Wait for loading
-    await page.waitForTimeout(1500);
-    
-    // Should show parts count
-    await expect(count).toBeVisible();
-    
-    // List should have content
-    const content = await list.textContent();
-    expect(content.length).toBeGreaterThan(0);
-  });
-
-  test('should render type-specific controls for parts', async ({ page }) => {
-    const list = page.locator('#hardwareList');
-    
-    // Wait for loading
-    await page.waitForTimeout(1500);
-    
-    const partControls = list.locator('.conv-part-control');
-    const controlCount = await partControls.count();
-    
-    if (controlCount > 0) {
-      // Check first part has type badge
-      const firstPart = partControls.first();
-      const badge = firstPart.locator('.badge');
-      await expect(badge).toBeVisible();
-      
-      // Should have at least one button
-      const buttons = firstPart.locator('button');
-      const btnCount = await buttons.count();
-      expect(btnCount).toBeGreaterThan(0);
-    }
+  test.skip('should render type-specific controls for parts - DEPRECATED', async ({ page }) => {
+    // Hardware Control panel removed in v6.7.0 — replaced by Chat panel
   });
 });
 
@@ -372,26 +247,25 @@ test.describe('Conversation Control - Monster Features', () => {
   });
 });
 
-test.describe('Conversation Control - AI On Autonomous', () => {
+test.describe('Conversation Control - Chat Panel', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
     await page.waitForLoadState('networkidle');
   });
 
-  test('should have AI On inline panel (no modal)', async ({ page }) => {
-    const chatLog = page.locator('#aiChatLog');
-    
+  test('should have Chat panel inline (no modal)', async ({ page }) => {
+    const chatLog = page.locator('#chatLog');
+
     // Chat log should be visible inline
     await expect(chatLog).toBeVisible();
-    
+
     // Should NOT be in a modal
-    const parent = page.locator('.modal');
-    await expect(parent).toHaveCount(0);
+    const modal = page.locator('.modal');
+    await expect(modal).toHaveCount(0);
   });
 
-  test('should toggle AI On', async ({ page }) => {
-    const toggle = page.locator('#aiOnToggle');
-    const status = page.locator('#aiOnStatus');
+  test('should toggle AI On via Chat panel', async ({ page }) => {
+    const toggle = page.locator('#chatAiOnToggle');
 
     // Initially off
     await expect(toggle).not.toBeChecked();
@@ -402,9 +276,7 @@ test.describe('Conversation Control - AI On Autonomous', () => {
 
     const isNowChecked = await toggle.isChecked();
     if (isNowChecked) {
-      // Toggle succeeded — verify status text and turn off
-      const statusText = await status.textContent();
-      expect(statusText.length).toBeGreaterThan(0);
+      // Toggle succeeded — turn off
       await toggle.click();
     } else {
       // Toggle was prevented (no AI service in CI) — just verify no crash
@@ -412,19 +284,17 @@ test.describe('Conversation Control - AI On Autonomous', () => {
     }
   });
 
-  test('should toggle microphone mode', async ({ page }) => {
-    const micToggle = page.locator('#aiMicToggle');
-    
-    // Initially checked (use mic)
-    await expect(micToggle).toBeChecked();
-    
-    // Uncheck for auto-generation mode
-    await micToggle.uncheck();
-    await expect(micToggle).not.toBeChecked();
-    
-    // Check again
-    await micToggle.check();
-    await expect(micToggle).toBeChecked();
+  test('should have chat input with send button', async ({ page }) => {
+    const input = page.locator('#chatInput');
+    const sendBtn = page.locator('#chatSendBtn');
+
+    await expect(input).toBeVisible();
+    await expect(sendBtn).toBeVisible();
+
+    // Type a test message
+    await input.fill('Hello from Playwright');
+    const val = await input.inputValue();
+    expect(val).toBe('Hello from Playwright');
   });
 });
 
@@ -439,9 +309,6 @@ test.describe('Conversation Control - Responsive Layout', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     
     // Core panels should still be visible
-    await expect(page.locator('#character-selection-card')).toBeVisible();
-    
-    // Check for scenes container instead of text (avoids nav menu match)
     await expect(page.locator('#scenesContainer')).toBeVisible();
   });
 
@@ -450,8 +317,7 @@ test.describe('Conversation Control - Responsive Layout', () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     
     // Core panels should still be visible
-    await expect(page.locator('#character-selection-card')).toBeVisible();
-    await expect(page.locator('#aiOnToggle')).toBeVisible();
+    await expect(page.locator('#chatAiOnToggle')).toBeVisible();
     await expect(page.locator('#webcamImg')).toBeVisible();
   });
 });

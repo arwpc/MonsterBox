@@ -80,6 +80,12 @@ describe('MonsterBox Basic Tests', () => {
             expect(response.body).to.have.property('success', true);
             expect(response.body).to.have.property('pose');
             expect(response.body.pose).to.have.property('name');
+
+            // Clean up: delete the pose we just created to avoid accumulating test data
+            const poseId = response.body.pose.id;
+            if (poseId) {
+                await request(BASE_URL).delete('/poses/' + poseId).expect(200);
+            }
         });
     });
 

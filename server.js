@@ -8,6 +8,7 @@
 
 import express from 'express';
 import fs from 'fs/promises';
+import https from 'https';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -88,6 +89,10 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
 }
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3000);
+
+// Initialize app.locals.config so the very first request gets the startup character
+app.locals.config = config;
+app.locals._mainPort = PORT;
 
 // Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident
 try {
@@ -181,9 +186,15 @@ app.post('/__errors/reset', (req, res) => {
 
 app.use(async (req, res, next) => {
     try {
-        // Refresh from disk so a just-selected character is reflected immediately after redirect
+        // Refresh non-character config from disk (theme, etc.); selectedCharacter
+        // is authoritative from in-memory (set at startup via hostname detection and
+        // only changed via POST /setup/characters/api/select).
         const latest = await loadConfig();
-        const merged = Object.assign({}, req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : {}, latest);
+        const inMemory = req.app && req.app.locals && req.app.locals.config ? req.app.locals.config : {};
+        const merged = Object.assign({}, latest, {
+            selectedCharacter: inMemory.selectedCharacter || latest.selectedCharacter,
+            dataPath: inMemory.dataPath || latest.dataPath
+        });
         req.app.locals.config = merged;
         res.locals.config = merged;
         res.locals.currentCharacter = merged.selectedCharacter || null;
@@ -601,12 +612,46 @@ function getLanAddresses() {
 
 
 
-// Start server on primary port
-const server = app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🎭 MonsterBox ${pkg.version} server running on port ${PORT}`);
-    console.log(`📱 Dashboard: http://localhost:${PORT}`);
-    console.log(`⚙️  Setup: http://localhost:${PORT}/setup`);
-    console.log(`🎬 Live Mode: http://localhost:${PORT}/live`);
+// HTTPS setup: if certs exist, primary port serves HTTPS; otherwise plain HTTP
+let httpsServer = null;
+let sslOptions = null;
+try {
+    const certsDir = path.join(__dirname, 'certs');
+    const keyPath = path.join(certsDir, 'server.key');
+    const certPath = path.join(certsDir, 'server.cert');
+    const [keyFile, certFile] = await Promise.all([
+        fs.readFile(keyPath, 'utf8'),
+        fs.readFile(certPath, 'utf8')
+    ]);
+    sslOptions = { key: keyFile, cert: certFile };
+    console.log(`🔒 SSL certificates loaded from certs/`);
+} catch (e) {
+    console.warn(`⚠️  No SSL certs found — running HTTP only. Browser mic requires HTTPS.`);
+    console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj "/CN=orlok"`);
+}
+
+// Start primary server: HTTPS if certs available, HTTP otherwise
+let server;
+if (sslOptions) {
+    httpsServer = https.createServer(sslOptions, app);
+    server = httpsServer;
+    httpsServer.listen(PORT, '0.0.0.0', async () => {
+        await onServerReady('https');
+    });
+    httpsServer.on('error', (e) => {
+        console.error(`❌ HTTPS server failed:`, e.message);
+    });
+} else {
+    server = app.listen(PORT, '0.0.0.0', async () => {
+        await onServerReady('http');
+    });
+}
+
+async function onServerReady(protocol) {
+    console.log(`🎭 MonsterBox ${pkg.version} server running on ${protocol}://localhost:${PORT}`);
+    console.log(`📱 Dashboard: ${protocol}://localhost:${PORT}`);
+    console.log(`⚙️  Setup: ${protocol}://localhost:${PORT}/setup`);
+    console.log(`🎬 Live Mode: ${protocol}://localhost:${PORT}/live`);
 
     // LAN addresses for convenience
     try {
@@ -614,9 +659,9 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         if (ips.length) {
             console.log('🌐 LAN access:');
             for (const ip of ips) {
-                console.log(`   - http://${ip}:${PORT} (Dashboard)`);
-                console.log(`   - http://${ip}:${PORT}/demo (Demo)`);
-                console.log(`   - ws://${ip}:8795 (Real-time chat WS)`);
+                console.log(`   - ${protocol}://${ip}:${PORT} (Dashboard)`);
+                if (protocol === 'https') console.log(`   - wss://${ip}:${PORT}/ai-chat (Secure chat WS)`);
+                else console.log(`   - ws://${ip}:8795 (Real-time chat WS)`);
             }
         }
     } catch (e) { /* ignore */ }
@@ -633,10 +678,11 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
         console.log(`   To enable webcam streaming, run: sudo systemctl start mjpg-streamer`);
     }
 
-    // Start WebSocket server for real-time AI chat
+    // Start WebSocket server for real-time AI chat (pass httpsServer for WSS support)
     try {
-        await elevenLabsWebSocketService.startWebSocketServer();
+        await elevenLabsWebSocketService.startWebSocketServer(httpsServer);
         console.log(`🚀 Real-time AI chat: ws://localhost:8795`);
+        if (httpsServer) console.log(`🔒 Secure AI chat: wss://localhost:${PORT}/ai-chat`);
     } catch (error) {
         console.error(`❌ Failed to start WebSocket server:`, error.message);
         console.log(`   AI chat will use HTTP fallback (slower responses)`);
@@ -691,8 +737,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
             }
         }, 5000);
     } catch { }
-
-});
+}
 
 // Also expose a secondary test port (3100) to satisfy CI tests that expect this base URL
 // This creates a separate HTTP server instance to avoid conflicts
@@ -746,6 +791,13 @@ async function gracefulShutdown(signal) {
         await elevenLabsWebSocketService.stopWebSocketServer();
     } catch (error) {
         console.warn('WebSocket server cleanup error:', (error && error.message) || error);
+    }
+
+    try {
+        // Close primary server (HTTP or HTTPS)
+        if (server) server.close();
+    } catch (error) {
+        console.warn('Server cleanup error:', (error && error.message) || error);
     }
 
     try {

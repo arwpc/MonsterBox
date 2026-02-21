@@ -53,9 +53,9 @@ router.post('/theme', express.json(), async (req, res) => {
         
         await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
         
-        // Update app.locals if available
-        if (req.app && req.app.locals) {
-            req.app.locals.config = config;
+        // Update theme in app.locals without overwriting selectedCharacter/dataPath
+        if (req.app && req.app.locals && req.app.locals.config) {
+            req.app.locals.config.theme = theme;
         }
         
         res.json({

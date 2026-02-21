@@ -7,6 +7,7 @@ MonsterBox*.log
 /log/
 .env
 *.env
+certs/
 
 # Added by Task Master AI
 # Logs

@@ -1,38 +1,5 @@
 [
   {
-    "id": 100,
-    "name": "Halloween Audio Loop - Orlok",
-    "loop": true,
-    "steps": [
-      {
-        "type": "audio",
-        "audioFile": "206c8836-bc34-4ac9-a426-f773eaf943c8.mp3",
-        "volume": 80
-      },
-      {
-        "type": "delay",
-        "duration": 277000
-      }
-    ],
-    "created": "2025-10-31T21:45:00.000Z"
-  },
-  {
-    "id": 101,
-    "name": "Servo & Wait Test",
-    "steps": [
-      {
-        "type": "servo",
-        "partId": "4",
-        "angle": 90,
-        "duration": 1000
-      },
-      {
-        "type": "wait"
-      }
-    ],
-    "created": "2026-01-06T22:38:06.912Z"
-  },
-  {
     "id": 102,
     "name": "Linear Actuator Test",
     "steps": [
@@ -85,21 +52,6 @@
       }
     ],
     "created": "2026-01-06T22:42:08.489Z"
-  },
-  {
-    "id": 105,
-    "name": "Sensor Trigger Test",
-    "steps": [
-      {
-        "type": "sensor",
-        "partId": "14"
-      },
-      {
-        "type": "sayThis",
-        "text": "I sense your presence, mortal! You dare approach Castle Orlok?"
-      }
-    ],
-    "created": "2026-01-06T22:43:01.132Z"
   },
   {
     "id": 106,
@@ -163,38 +115,62 @@
   },
   {
     "id": 109,
-    "name": "Dance Party",
-    "steps": [],
-    "created": "2026-02-16T15:31:11.772Z"
-  },
-  {
-    "id": 110,
-    "name": "Heather's",
-    "steps": [],
-    "created": "2026-02-17T01:04:28.068Z"
-  },
-  {
-    "id": 111,
-    "name": "bingo",
+    "name": "A Blessing",
     "steps": [
       {
-        "type": "audio",
-        "volume": 80,
-        "audioId": "04 - Windstorm & Thunder.mp3",
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "",
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 10000,
         "concurrent": false
       },
       {
         "type": "jaw-animation",
         "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Hello Polly!! Welcome to Warner Castle!!!",
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Enjoy your stay",
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 12000,
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "askAI",
+        "question": "us who we are",
         "concurrent": false
       }
     ],
-    "created": "2026-02-19T01:04:55.350Z",
-    "updated": "2026-02-19T01:09:22.030Z"
+    "created": "2026-02-20T23:53:16.344Z",
+    "updated": "2026-02-21T00:00:45.885Z"
   }
 ]

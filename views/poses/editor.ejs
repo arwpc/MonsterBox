@@ -51,6 +51,7 @@
   <div class="d-flex gap-2 align-items-center">
     <button id="btnTestPose" class="btn btn-sm btn-outline-info" title="Test all parts simultaneously"><i class="bi bi-play-fill"></i> Test Pose</button>
     <button id="btnSavePose" class="btn btn-sm btn-primary"><i class="bi bi-save"></i> Save Pose</button>
+    <button id="btnDeletePose" class="btn btn-sm btn-outline-danger d-none" title="Delete this pose"><i class="bi bi-trash"></i> Delete</button>
   </div>
 </div>
 
@@ -174,6 +175,10 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     }).then(function(r) { return r.json(); });
+  }
+
+  function apiDelete(url) {
+    return fetch(url, { method: 'DELETE' }).then(function(r) { return r.json(); });
   }
 
   // ============ LOAD DATA ============
@@ -601,12 +606,42 @@
       }
     });
 
+    updateDeleteButton();
     setStatus('Loaded pose: ' + pose.name);
+  }
+
+  // ============ DELETE POSE ============
+  function deletePose(poseId) {
+    var pose = allPoses.find(function(p) { return p.id === poseId; });
+    var name = pose ? pose.name : 'Pose ' + poseId;
+    if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+
+    setStatus('Deleting...');
+    apiDelete('/poses/' + poseId).then(function(j) {
+      if (j.success) {
+        setStatus('Pose deleted');
+        if (editingPoseId === poseId) clearForm();
+        loadAll();
+      } else {
+        setStatus('Delete failed: ' + (j.error || j.message || 'unknown'));
+      }
+    }).catch(function() { setStatus('Delete error'); });
+  }
+
+  function updateDeleteButton() {
+    var btn = $('btnDeletePose');
+    if (!btn) return;
+    if (editingPoseId) {
+      btn.classList.remove('d-none');
+    } else {
+      btn.classList.add('d-none');
+    }
   }
 
   // ============ RENDER POSES LIST ============
   function renderPosesList() {
     var container = $('posesList');
+    updateDeleteButton();
     if (allPoses.length === 0) {
       container.innerHTML = '<div class="text-muted text-center py-2 small">No poses saved</div>';
       return;
@@ -617,15 +652,25 @@
       html += '<div class="d-flex align-items-center py-1 px-1 rounded mb-1 pose-list-item' + (isActive ? ' bg-primary bg-opacity-10' : '') + '" data-pose-id="' + p.id + '" style="cursor:pointer;">';
       html += '<span class="badge bg-secondary me-1" style="font-size:0.6rem;">' + (p.category || '') + '</span>';
       html += '<span class="small flex-grow-1 text-truncate">' + (p.name || 'Pose ' + p.id) + '</span>';
-      html += '<span class="badge bg-dark" style="font-size:0.6rem;">' + ((p.parts && p.parts.length) || 0) + '</span>';
+      html += '<span class="badge bg-dark me-1" style="font-size:0.6rem;">' + ((p.parts && p.parts.length) || 0) + '</span>';
+      html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-delete-btn" data-pose-id="' + p.id + '" title="Delete pose"><i class="bi bi-trash"></i></button>';
       html += '</div>';
     });
     container.innerHTML = html;
 
     container.querySelectorAll('.pose-list-item').forEach(function(el) {
-      el.addEventListener('click', function() {
+      el.addEventListener('click', function(e) {
+        if (e.target.closest('.pose-delete-btn')) return;
         var id = parseInt(el.getAttribute('data-pose-id'), 10);
         loadPoseIntoEditor(id);
+      });
+    });
+
+    container.querySelectorAll('.pose-delete-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = parseInt(btn.getAttribute('data-pose-id'), 10);
+        deletePose(id);
       });
     });
   }
@@ -667,6 +712,7 @@
       var card = cb.closest('.part-card');
       if (card) card.classList.remove('included');
     });
+    updateDeleteButton();
     renderPosesList();
     setStatus('Ready for new pose');
   }
@@ -676,6 +722,7 @@
     $('btnSavePose').addEventListener('click', savePose);
     $('btnTestPose').addEventListener('click', testFullPose);
     $('btnNewPose').addEventListener('click', clearForm);
+    $('btnDeletePose').addEventListener('click', function() { if (editingPoseId) deletePose(editingPoseId); });
     $('audioType').addEventListener('change', toggleAudioSection);
   }
 

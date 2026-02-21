@@ -3,19 +3,6 @@
 </script>
 
 <link rel="stylesheet" href="/css/manual-controls.css">
-<style>
-  .conv-hardware-list {
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  .conv-part-control {
-    border-bottom: 1px solid var(--bs-border-color);
-    padding: 10px 0;
-  }
-  .conv-part-control:last-child {
-    border-bottom: none;
-  }
-</style>
 
 <div class="container-fluid">
   <div class="d-flex justify-content-end mb-2">
@@ -25,244 +12,234 @@
     </div>
   </div>
 
-  <!-- TOP ROW - Webcam (large, prominent, left side) -->
-  <div class="row g-3 mb-3 sortable-column" data-column-id="dashboard-top">
-    <div class="col-lg-6" data-panel-id="webcam">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
-          <small class="text-muted" id="webcamHint"></small>
-        </div>
-        <div class="card-body text-center p-2">
-          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border" 
-            style="width: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark);">
-          <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
-        </div>
+  <!-- All panels in single sortable column — drag any panel to reorder -->
+  <div class="sortable-column" data-column-id="dashboard">
+
+    <!-- Webcam -->
+    <div class="card mb-3" data-panel-id="webcam">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
+        <small class="text-muted" id="webcamHint"></small>
+      </div>
+      <div class="card-body text-center p-2">
+        <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border"
+          style="width: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark);">
+        <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
       </div>
     </div>
-    
-    <div class="col-lg-6" data-panel-id="scenes">
-      <!-- Scenes -->
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
-          <div class="d-flex gap-1 align-items-center">
-            <span id="scenesQueueStatus" class="badge bg-secondary small me-1" style="display:none;"></span>
-            <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i></button>
-            <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i></button>
-            <a href="/scenes" class="btn btn-sm btn-outline-secondary" title="Animation Studio"><i class="bi bi-gear"></i></a>
-          </div>
+
+    <!-- Scenes -->
+    <div class="card mb-3" data-panel-id="scenes">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
+        <div class="d-flex gap-1 align-items-center">
+          <span id="scenesQueueStatus" class="badge bg-secondary small me-1" style="display:none;"></span>
+          <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i></button>
+          <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i></button>
+          <a href="/scenes" class="btn btn-sm btn-outline-secondary" title="Animation Studio"><i class="bi bi-gear"></i></a>
         </div>
-        <div class="card-body" style="max-height: 450px; overflow-y: auto;">
-          <div id="scenesContainer">
-            <div class="text-center text-muted py-3">
-              <div class="spinner-border spinner-border-sm"></div>
-              <p class="mt-2 mb-0 small">Loading scenes...</p>
-            </div>
+      </div>
+      <div class="card-body" style="max-height: 450px; overflow-y: auto;">
+        <div id="scenesContainer">
+          <div class="text-center text-muted py-3">
+            <div class="spinner-border spinner-border-sm"></div>
+            <p class="mt-2 mb-0 small">Loading scenes...</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- MANUAL CONTROLS ROW -->
-  <div class="row g-3 mb-3">
-    <div class="col-12">
-      <div class="card" id="manual-controls-card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">
-            <i class="bi bi-joystick"></i> Manual Controls
-            <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
-          </h6>
-          <div class="d-flex gap-2 align-items-center">
-            <!-- Layout selector dropdown -->
-            <div class="input-group input-group-sm" style="width: auto;">
-              <select id="mcLayoutSelect" class="form-select form-select-sm" style="width:140px; font-size:0.75rem;">
-                <option value="Default">Default</option>
-              </select>
-              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutNewBtn" title="New layout">
-                <i class="bi bi-plus"></i>
-              </button>
-              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutRenameBtn" title="Rename layout">
-                <i class="bi bi-pencil-square"></i>
-              </button>
-              <button class="btn btn-outline-danger btn-sm" id="mcLayoutDeleteBtn" title="Delete layout">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-            <button class="btn btn-sm btn-outline-warning" id="mcEditToggle" title="Toggle edit mode">
-              <i class="bi bi-pencil"></i> Edit Layout
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
-                    data-bs-target="#mcCanvasBody" aria-expanded="true" title="Collapse">
-              <i class="bi bi-chevron-up"></i>
-            </button>
-          </div>
-        </div>
-        <div class="collapse show" id="mcCanvasBody">
-          <div class="card-body p-2" style="position:relative;">
-            <div id="mcDirectionalControls" class="d-none position-absolute bg-dark border rounded p-2 shadow"
-                 style="top:16px; right:16px; z-index:20; min-width:200px;">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong class="small text-truncate" id="mcSelectedPartName">--</strong>
-                <button class="btn-close btn-close-white btn-sm" id="mcDeselectBtn" title="Deselect"></button>
-              </div>
-              <div id="mcControlsBody"></div>
-              <div class="small text-muted mt-1" id="mcControlStatus"></div>
-            </div>
-            <div id="mcCanvas"></div>
-            <div id="mcDrawer" class="mc-drawer d-none">
-              <small class="text-muted d-block mb-1">Click to add items to the canvas:</small>
-              <div id="mcDrawerItems"></div>
-            </div>
+    <!-- Poses -->
+    <div class="card mb-3" data-panel-id="poses">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-person-arms-up"></i> Poses</h6>
+        <a href="/poses/editor" class="btn btn-sm btn-outline-secondary" title="Pose Editor"><i class="bi bi-pencil"></i></a>
+      </div>
+      <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+        <div id="posesContainer">
+          <div class="text-center text-muted py-3">
+            <div class="spinner-border spinner-border-sm"></div>
+            <p class="mt-2 mb-0 small">Loading poses...</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- BOTTOM ROW - All controls in single sortable column -->
-  <div class="row g-3">
-    <div class="col-12 sortable-column" data-column-id="dashboard-bottom">
-
-      <!-- Character Selection -->
-      <div class="card mb-3" id="character-selection-card" data-panel-id="character-selection">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-person-badge"></i> Character Selection</h6>
-        </div>
-        <div class="card-body">
-          <select id="character-select" class="form-select form-select-sm" data-testid="character-selector">
-            <option value="">Loading characters...</option>
-          </select>
-          <div id="character-select-status" class="form-text text-muted mt-1 small">Active character</div>
-        </div>
-      </div>
-
-      <!-- Monster Features -->
-      <div class="card mb-3" data-panel-id="monster-features">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-4 mb-2 mb-md-0">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="jawToggle">
-                <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
-              </div>
-              <small class="text-muted">Sync jaw with speech audio</small>
-            </div>
-            <div class="col-md-4 mb-2 mb-md-0">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="parrotToggle">
-                <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
-              </div>
-              <small class="text-muted">Repeat detected speech</small>
-            </div>
-            <div class="col-md-4">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="headTrackToggle">
-                <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
-              </div>
-              <small class="text-muted">Track visitor movement</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI On (Autonomous) -->
-      <div class="card mb-3" data-panel-id="ai-on">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-robot"></i> AI On (Autonomous)</h6>
-        </div>
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="aiOnToggle">
-              <label class="form-check-label fw-bold" for="aiOnToggle">AI On</label>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="aiMicToggle" checked>
-              <label class="form-check-label small" for="aiMicToggle">Use Microphone</label>
-            </div>
-          </div>
-          <small class="text-muted d-block mb-2">When ON with mic: responds to speech. Without mic: auto-generates comments.</small>
-          <div id="aiChatLog" class="border rounded p-2 small" style="height: 150px; overflow-y: auto; background: var(--bs-tertiary-bg);">
-            <div class="text-muted">AI chat log will appear here...</div>
-          </div>
-          <div id="aiOnStatus" class="mt-2 small text-info"></div>
-        </div>
-      </div>
-
-      <!-- Live Audio (STT) -->
-      <div class="card mb-3" data-panel-id="live-audio">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-mic"></i> Live Audio (STT)</h6>
-          <a href="/ai-settings/stt" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear"></i></a>
-        </div>
-        <div class="card-body">
-          <div id="micStatus" class="small text-muted mb-2">Configure VAD and input device</div>
-          <div class="progress mb-2" style="height: 10px;">
-            <div id="audioLevel" class="progress-bar bg-success" style="width: 5%"></div>
-          </div>
-          <div class="d-flex gap-2 mb-2">
-            <button id="micStart" class="btn btn-success btn-sm"><i class="bi bi-mic-fill"></i> Start</button>
-            <button id="micStop" class="btn btn-outline-danger btn-sm"><i class="bi bi-mic-mute"></i> Stop</button>
-            <button id="listenInBtn" class="btn btn-outline-info btn-sm"><i class="bi bi-headphones"></i> Listen In</button>
-          </div>
-          <label class="form-label small text-muted">Transcription</label>
-          <div id="transcript" class="border rounded p-2 small" style="min-height: 60px; max-height: 100px; overflow-y: auto; background: var(--bs-tertiary-bg);">
-            <span class="text-muted">Transcription will appear here...</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Make Character Say -->
-      <div class="card mb-3" data-panel-id="say">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-send"></i> Make <span id="charName">Character</span> Say</h6>
-        </div>
-        <div class="card-body">
-          <div class="mb-2">
-            <label for="convSpeakerSelect" class="form-label small text-muted">Speaker</label>
-            <select id="convSpeakerSelect" class="form-select form-select-sm">
-              <option value="">Loading...</option>
+    <!-- Manual Controls -->
+    <div class="card mb-3" data-panel-id="manual-controls" id="manual-controls-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-joystick"></i> Manual Controls
+          <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
+        </h6>
+        <div class="d-flex gap-2 align-items-center">
+          <!-- Layout selector dropdown -->
+          <div class="input-group input-group-sm" style="width: auto;">
+            <select id="mcLayoutSelect" class="form-select form-select-sm" style="width:140px; font-size:0.75rem;">
+              <option value="Default">Default</option>
             </select>
+            <button class="btn btn-outline-secondary btn-sm" id="mcLayoutNewBtn" title="New layout">
+              <i class="bi bi-plus"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="mcLayoutRenameBtn" title="Rename layout">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <button class="btn btn-outline-danger btn-sm" id="mcLayoutDeleteBtn" title="Delete layout">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
-          <div class="input-group input-group-sm">
-            <input id="sayInput" type="text" class="form-control" placeholder="Type something spooky...">
-            <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
-          </div>
-          <div id="sayStatus" class="mt-2 small"></div>
+          <button class="btn btn-sm btn-outline-warning" id="mcEditToggle" title="Toggle edit mode">
+            <i class="bi bi-pencil"></i> Edit Layout
+          </button>
         </div>
       </div>
-
-      <!-- Hardware Control -->
-      <div class="card mb-3" data-panel-id="hardware">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-gear"></i> Hardware Control</h6>
-          <span class="badge bg-secondary small" id="hardwareCount">0 parts</span>
-        </div>
-        <div class="card-body p-0">
-          <div id="hardwareList" class="conv-hardware-list p-2">
-            <div class="text-muted text-center py-3 small">Select a character to see hardware parts</div>
+      <div class="card-body p-2" style="position:relative;">
+        <div id="mcDirectionalControls" class="d-none position-absolute bg-dark border rounded p-2 shadow"
+             style="top:16px; right:16px; z-index:20; min-width:200px;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="small text-truncate" id="mcSelectedPartName">--</strong>
+            <button class="btn-close btn-close-white btn-sm" id="mcDeselectBtn" title="Deselect"></button>
           </div>
+          <div id="mcControlsBody"></div>
+          <div class="small text-muted mt-1" id="mcControlStatus"></div>
+        </div>
+        <div id="mcCanvas"></div>
+        <div id="mcDrawer" class="mc-drawer d-none">
+          <small class="text-muted d-block mb-1">Click to add items to the canvas:</small>
+          <div id="mcDrawerItems"></div>
         </div>
       </div>
-
     </div>
+
+    <!-- Monster Features -->
+    <div class="card mb-3" data-panel-id="monster-features">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-2 mb-md-0">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="jawToggle">
+              <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
+            </div>
+            <small class="text-muted">Sync jaw with speech audio</small>
+          </div>
+          <div class="col-md-3 mb-2 mb-md-0">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="parrotToggle">
+              <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
+            </div>
+            <small class="text-muted">Repeat detected speech</small>
+          </div>
+          <div class="col-md-3 mb-2 mb-md-0">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="headTrackToggle">
+              <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
+            </div>
+            <small class="text-muted">Track visitor movement</small>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="speakerMuteToggle">
+              <label class="form-check-label fw-bold" for="speakerMuteToggle">Mute Speaker</label>
+            </div>
+            <small class="text-muted">Silence character speaker</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="card mb-3" data-panel-id="chat">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-chat-dots"></i> Chat —
+          <span id="chatCharacterName">Loading...</span>
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+          <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;">
+            <option value="">Audio: Auto</option>
+          </select>
+          <div class="form-check form-switch mb-0" title="Connect to ElevenLabs conversational AI agent for real-time voice chat">
+            <input class="form-check-input" type="checkbox" id="chatAiOnToggle">
+            <label class="form-check-label small" for="chatAiOnToggle">AI On</label>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <!-- Chat Log -->
+        <div id="chatLog" class="p-3 font-monospace"
+             style="height: 300px; overflow-y: auto; font-size: 0.9rem; background: var(--bs-tertiary-bg);">
+          <div class="text-muted text-center">Chat will appear here...</div>
+        </div>
+        <!-- VU Meter -->
+        <div class="px-3 py-2 border-top" style="background: var(--bs-tertiary-bg);">
+          <div class="d-flex align-items-center">
+            <small class="text-muted me-2"><i class="bi bi-activity"></i> Mic:</small>
+            <div class="progress flex-grow-1" style="height: 12px;">
+              <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
+                   style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <span id="chatVULabel" class="ms-2 badge bg-secondary" style="font-size: 0.7rem;">0%</span>
+          </div>
+        </div>
+        <!-- Audio Controls -->
+        <div class="px-3 py-2 border-top d-flex flex-wrap align-items-center gap-3" style="background: var(--bs-tertiary-bg);">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="chatMuteSpeaker">
+            <label class="form-check-label small" for="chatMuteSpeaker"><i class="bi bi-volume-mute"></i> Mute Speaker</label>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
+            <label class="form-check-label small" for="chatBrowserSpeaker"><i class="bi bi-broadcast"></i> Browser Speaker</label>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="chatBrowserMic">
+            <label class="form-check-label small" for="chatBrowserMic"><i class="bi bi-mic"></i> Browser Mic</label>
+          </div>
+          <small id="chatAudioStatus" class="text-info"></small>
+        </div>
+        <!-- Chat Input -->
+        <div class="p-3 border-top">
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control" id="chatInput" placeholder="Type a message..." autocomplete="off">
+            <button class="btn btn-success" type="button" id="chatSendBtn">
+              <i class="bi bi-send"></i> Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Make Character Say -->
+    <div class="card mb-3" data-panel-id="say">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-send"></i> Make <span id="charName">Character</span> Say</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-2">
+          <label for="convSpeakerSelect" class="form-label small text-muted">Speaker</label>
+          <select id="convSpeakerSelect" class="form-select form-select-sm">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div class="input-group input-group-sm">
+          <input id="sayInput" type="text" class="form-control" placeholder="Type something spooky...">
+          <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
+        </div>
+        <div id="sayStatus" class="mt-2 small"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<script src="/js/mic-panel.js"></script>
-<script src="/js/websocket-chat.js"></script>
 <script src="/js/manual-controls.js"></script>
 
 <script>
   (function () {
     const ui = {
-      levelBar: null,
-      transcript: null,
       sayBtn: null,
       sayInput: null,
       sayStatus: null,
@@ -270,59 +247,178 @@
       jawToggle: null,
       headTrackToggle: null,
       parrotToggle: null,
-      listenInBtn: null,
-      aiOnToggle: null,
-      aiMicToggle: null,
-      aiChatLog: null,
-      aiOnStatus: null,
-      characterSelect: null,
-      characterSelectStatus: null,
-      hardwareList: null,
-      hardwareCount: null,
     };
-    
-    let characters = [];
+
     let currentCharacterId = null;
-    let isSwitchingCharacter = false;
     let speakers = [];
     let selectedSpeakerPartId = null;
-    let listenInAudio = null;
-    let currentParts = [];
-    var aiChatClient = null;
-    var aiOnActive = false;
+
+    // Chat panel state
+    let chatWs = null;
+    let chatConnected = false;
+    let chatAgentId = null;
+    let chatVUTimer = null;
+    let _lastAgentText = '';
+    let _pendingChatMessage = null;
+    let _audioPlaybackEnabled = true;
+    let _conversationReady = false;
+    let _lastPartialEl = null;
+    let chatSpeakerPartId = null;
 
     // Parrot Mode
     var parrotEnabled = false;
     var lastParrotAt = 0;
     function parrotSay(text) {
-      var t = (text || '').trim(); 
+      var t = (text || '').trim();
       if (!t) return;
-      var now = Date.now(); 
-      if (now - lastParrotAt < 800) return; 
+      var now = Date.now();
+      if (now - lastParrotAt < 800) return;
       lastParrotAt = now;
       ui.sayStatus.innerHTML = '<span class="text-info">Parrot: "' + t.replace(/</g, '&lt;').slice(0, 140) + '"</span>';
-      fetch('/conversation/api/say', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ text: t, speakerPartId: selectedSpeakerPartId || undefined }) 
+      fetch('/conversation/api/say', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: t, speakerPartId: chatSpeakerPartId || selectedSpeakerPartId || undefined })
       })
       .then(r => r.json())
       .then(j => {
-        if (j && j.success) { 
-          ui.sayStatus.innerHTML = '<span class="text-success">Parrot spoke</span>'; 
-        } else { 
-          ui.sayStatus.innerHTML = '<span class="text-danger">Parrot failed</span>'; 
+        if (j && j.success) {
+          ui.sayStatus.innerHTML = '<span class="text-success">Parrot spoke</span>';
+        } else {
+          ui.sayStatus.innerHTML = '<span class="text-danger">Parrot failed</span>';
         }
       })
       .catch(() => ui.sayStatus.innerHTML = '<span class="text-danger">Parrot error</span>');
     }
     try { window.__parrotSay = parrotSay; } catch (e) { }
 
+    // Browser PCM audio player for AI speech output
+    const BrowserAudioPlayer = (() => {
+      let audioCtx = null;
+      let isEnabled = false;
+      let nextStartTime = 0;
+      const SAMPLE_RATE = 16000;
+
+      function enable() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        isEnabled = true;
+        nextStartTime = 0;
+      }
+
+      function disable() {
+        isEnabled = false;
+        nextStartTime = 0;
+      }
+
+      function playChunk(base64Pcm) {
+        if (!isEnabled || !audioCtx) return;
+        const raw = atob(base64Pcm);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+        const samples = bytes.length / 2;
+        if (samples === 0) return;
+        const float32 = new Float32Array(samples);
+        const view = new DataView(bytes.buffer);
+        for (let i = 0; i < samples; i++) {
+          float32[i] = view.getInt16(i * 2, true) / 32768;
+        }
+        const buffer = audioCtx.createBuffer(1, samples, SAMPLE_RATE);
+        buffer.getChannelData(0).set(float32);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        if (nextStartTime < now) nextStartTime = now;
+        source.start(nextStartTime);
+        nextStartTime += buffer.duration;
+      }
+
+      function reset() { nextStartTime = 0; }
+
+      return { enable, disable, playChunk, reset, isEnabled: () => isEnabled };
+    })();
+
+    // Browser microphone capture and streaming
+    const BrowserMicCapture = (() => {
+      let stream = null;
+      let micAudioCtx = null;
+      let processor = null;
+      let isActive = false;
+      const TARGET_RATE = 16000;
+
+      async function start() {
+        if (isActive) return;
+
+        // Check browser support — getUserMedia requires HTTPS or localhost
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          const isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+          if (!isSecure) {
+            throw new Error('Browser mic requires HTTPS. Access this page via https:// or localhost.');
+          }
+          throw new Error('Browser does not support getUserMedia');
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: { ideal: 16000 }
+          }
+        });
+
+        micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = micAudioCtx.createMediaStreamSource(stream);
+        processor = micAudioCtx.createScriptProcessor(4096, 1, 1);
+        const nativeRate = micAudioCtx.sampleRate;
+
+        processor.onaudioprocess = function (e) {
+          if (!isActive || !chatWs || chatWs.readyState !== WebSocket.OPEN) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const ratio = nativeRate / TARGET_RATE;
+          const outputLen = Math.floor(input.length / ratio);
+          const pcm16 = new Int16Array(outputLen);
+          for (let i = 0; i < outputLen; i++) {
+            const srcIdx = Math.floor(i * ratio);
+            pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[srcIdx] * 32768)));
+          }
+          const byteArr = new Uint8Array(pcm16.buffer);
+          let binary = '';
+          for (let j = 0; j < byteArr.length; j++) {
+            binary += String.fromCharCode(byteArr[j]);
+          }
+          try {
+            chatWs.send(JSON.stringify({ type: 'browser_audio_chunk', audio: btoa(binary) }));
+          } catch (_) {}
+        };
+
+        source.connect(processor);
+        processor.connect(micAudioCtx.destination);
+        isActive = true;
+      }
+
+      function stop() {
+        isActive = false;
+        if (processor) { try { processor.disconnect(); } catch (_) {} processor = null; }
+        if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+        if (micAudioCtx) { try { micAudioCtx.close(); } catch (_) {} micAudioCtx = null; }
+      }
+
+      return { start, stop, isActive: () => isActive };
+    })();
+
     function $(id) { return document.getElementById(id); }
 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     async function init() {
-      ui.levelBar = $('audioLevel');
-      ui.transcript = $('transcript');
       ui.sayBtn = $('sayBtn');
       ui.sayInput = $('sayInput');
       ui.sayStatus = $('sayStatus');
@@ -330,40 +426,18 @@
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
       ui.parrotToggle = $('parrotToggle');
-      ui.listenInBtn = $('listenInBtn');
-      ui.aiOnToggle = $('aiOnToggle');
-      ui.aiMicToggle = $('aiMicToggle');
-      ui.aiChatLog = $('aiChatLog');
-      ui.aiOnStatus = $('aiOnStatus');
-      ui.characterSelect = $('character-select');
-      ui.characterSelectStatus = $('character-select-status');
-      ui.hardwareList = $('hardwareList');
-      ui.hardwareCount = $('hardwareCount');
-      
       currentCharacterId = getCurrentCharacterIdFromLabel();
-      
+
       setCharName();
       bindEvents();
-      await loadCharacters();
       await loadSpeakers();
-      
-      try { 
-        MicPanel.init({ 
-          levelBarId: 'audioLevel', 
-          startBtnId: 'micStart', 
-          stopBtnId: 'micStop', 
-          statusId: 'micStatus', 
-          transcriptId: 'transcript', 
-          jawToggleId: 'jawToggle', 
-          enableStt: true 
-        }); 
-      } catch (_) { }
+      await initChat();
 
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
       await loadScenes();
-      await loadHardwareParts();
+      await loadPoses();
 
       if (typeof ManualControls !== 'undefined') {
         await ManualControls.init({ characterId: currentCharacterId, canvasId: 'mcCanvas' });
@@ -384,90 +458,6 @@
       return Number.isFinite(parsed) ? parsed : null;
     }
 
-    async function loadCharacters() {
-      if (!ui.characterSelect) return;
-      ui.characterSelect.disabled = true;
-      ui.characterSelectStatus.textContent = 'Loading...';
-      
-      try {
-        const r = await fetch('/setup/characters/api/characters');
-        const j = await r.json();
-        if (j && j.success && Array.isArray(j.characters)) {
-          characters = j.characters;
-          renderCharacterOptions();
-        } else {
-          throw new Error('Invalid response');
-        }
-      } catch (error) {
-        console.error('Failed to load characters:', error);
-        ui.characterSelectStatus.textContent = 'Failed to load characters.';
-      }
-    }
-
-    function renderCharacterOptions() {
-      if (!ui.characterSelect) return;
-      ui.characterSelect.innerHTML = '';
-      
-      if (!characters.length) {
-        ui.characterSelect.appendChild(new Option('No characters available', ''));
-        ui.characterSelect.disabled = true;
-        ui.characterSelectStatus.textContent = 'No characters configured.';
-        return;
-      }
-      
-      characters.forEach(char => {
-        const opt = new Option(char.name || ('Character ' + char.id), String(char.id));
-        ui.characterSelect.appendChild(opt);
-      });
-      
-      const match = characters.find(c => Number(c.id) === Number(currentCharacterId));
-      if (match) {
-        ui.characterSelect.value = String(match.id);
-      } else {
-        currentCharacterId = characters[0].id;
-        ui.characterSelect.value = String(currentCharacterId);
-      }
-      
-      ui.characterSelect.disabled = false;
-      ui.characterSelectStatus.textContent = 'Active character';
-    }
-
-    async function handleCharacterChange() {
-      if (!ui.characterSelect || isSwitchingCharacter) return;
-      const selected = parseInt(ui.characterSelect.value, 10);
-      if (!Number.isFinite(selected) || selected === currentCharacterId) return;
-      
-      isSwitchingCharacter = true;
-      ui.characterSelect.disabled = true;
-      ui.characterSelectStatus.textContent = 'Switching...';
-      
-      try {
-        const resp = await fetch('/setup/characters/api/select', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: selected })
-        });
-        const payload = await resp.json().catch(() => ({}));
-        
-        if (resp.ok && payload && payload.success) {
-          currentCharacterId = selected;
-          await refreshPageState();
-          ui.characterSelectStatus.textContent = 'Character updated.';
-        } else {
-          throw new Error(payload && payload.error ? payload.error : 'Unknown error');
-        }
-      } catch (error) {
-        console.error('Character switch failed:', error);
-        ui.characterSelectStatus.textContent = 'Failed to switch.';
-        if (ui.characterSelect && currentCharacterId !== null) {
-          ui.characterSelect.value = String(currentCharacterId);
-        }
-      } finally {
-        ui.characterSelect.disabled = false;
-        isSwitchingCharacter = false;
-      }
-    }
-
     async function refreshPageState() {
       setCharName();
       await loadSpeakers();
@@ -475,7 +465,13 @@
       await loadJawSettings();
       await loadHeadTrackStatus();
       await loadScenes();
-      await loadHardwareParts();
+      await loadPoses();
+
+      // Update chat panel for new character
+      const chatCharNameEl = $('chatCharacterName');
+      const label = document.querySelector('#charLabel');
+      if (chatCharNameEl && label) chatCharNameEl.textContent = label.textContent?.trim() || 'Character';
+      chatAgentId = await getCharacterAgentId();
 
       if (typeof ManualControls !== 'undefined') {
         await ManualControls.reload(currentCharacterId);
@@ -485,191 +481,126 @@
     function bindEvents() {
       ui.sayBtn.addEventListener('click', sendSay);
       ui.sayInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendSay(); } });
-      
+
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
-      ui.listenInBtn && ui.listenInBtn.addEventListener('click', toggleListenIn);
-      ui.aiOnToggle && ui.aiOnToggle.addEventListener('change', toggleAiOn);
-      ui.characterSelect && ui.characterSelect.addEventListener('change', handleCharacterChange);
-      
+
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
         parrotEnabled = !!ui.parrotToggle.checked;
+        // Notify server to suppress ConvAI audio during parrot mode
+        if (chatWs && chatWs.readyState === WebSocket.OPEN) {
+          chatWs.send(JSON.stringify({ type: 'set_parrot_mode', enabled: parrotEnabled }));
+        }
+        // Auto-start AI On when parrot is enabled (single-click parrot)
+        const aiToggle = $('chatAiOnToggle');
+        if (parrotEnabled && (!chatWs || !chatConnected)) {
+          if (aiToggle && !aiToggle.checked) aiToggle.checked = true;
+          _audioPlaybackEnabled = true;
+          connectChatWebSocket();
+        }
       });
+
+      // Monster Features Mute Speaker toggle — syncs with chat panel
+      const muteToggle = $('speakerMuteToggle');
+      if (muteToggle) {
+        muteToggle.addEventListener('change', async function () {
+          try {
+            await fetch('/conversation/api/speaker-mute', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ muted: muteToggle.checked })
+            });
+            const chatMute = $('chatMuteSpeaker');
+            if (chatMute) chatMute.checked = muteToggle.checked;
+            if (chatWs && chatConnected) {
+              try { chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !muteToggle.checked })); } catch (_) {}
+            }
+          } catch (e) { console.error('Mute toggle error:', e); }
+        });
+      }
 
       const loopBtn = $('btnLoopAll');
       const stopLoopBtn = $('btnStopLoop');
       if (loopBtn) loopBtn.addEventListener('click', loopAllScenes);
       if (stopLoopBtn) stopLoopBtn.addEventListener('click', stopLoop);
 
-      document.addEventListener('micpanel:user_transcript', ev => {
-        if (parrotEnabled && ev && ev.detail && ev.detail.text) {
-          try { if (typeof window.__parrotSay === 'function') { window.__parrotSay(ev.detail.text); } }
-          catch (e) { }
+      // Chat panel events
+      bindChatEvents();
+    }
+
+    // ─── Chat Panel ──────────────────────────────────────────
+
+    async function initChat() {
+      // Resolve character name
+      const label = document.querySelector('#charLabel');
+      const chatCharNameEl = $('chatCharacterName');
+      if (label && chatCharNameEl) {
+        const name = (label.textContent || '').trim();
+        if (name && name !== 'No Character') {
+          chatCharNameEl.textContent = name;
         }
-      });
-    }
+      }
 
-    async function loadSpeakers() {
+      // Get agent ID for character
+      if (currentCharacterId) {
+        chatAgentId = await getCharacterAgentId();
+      }
+
+      // Load speaker parts into chat speaker dropdown
+      await loadChatSpeakers();
+
+      // Load mute state
       try {
-        const r = await fetch('/conversation/api/speakers');
-        const j = await r.json();
-        if (j && j.success) { 
-          speakers = j.speakers || []; 
-          renderSpeakerSelect(); 
-        } else { 
-          renderSpeakerSelect([]); 
+        const muteResp = await fetch('/conversation/api/speaker-mute');
+        const muteJson = await muteResp.json();
+        if (muteJson && muteJson.success) {
+          const chatMute = $('chatMuteSpeaker');
+          const featureMute = $('speakerMuteToggle');
+          if (chatMute) chatMute.checked = !!muteJson.muted;
+          if (featureMute) featureMute.checked = !!muteJson.muted;
         }
-      } catch { 
-        renderSpeakerSelect([]); 
-      }
-    }
+      } catch (_) {}
 
-    function renderSpeakerSelect() {
-      const sel = ui.speakerSelect; 
-      sel.innerHTML = '';
-      
-      if (!speakers.length) { 
-        sel.appendChild(new Option('Default System Output', '')); 
-        sel.disabled = true; 
-        return; 
-      }
-      
-      speakers.forEach(sp => { 
-        const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : ''); 
-        const opt = new Option(label, sp.id); 
-        sel.appendChild(opt); 
-      });
-      
-      selectedSpeakerPartId = speakers[0].id; 
-      sel.value = String(selectedSpeakerPartId); 
-      sel.disabled = false;
-      sel.addEventListener('change', e => { selectedSpeakerPartId = e.target.value || null; });
-    }
-
-    async function loadWebcam() {
-      const img = $('webcamImg'); 
-      const status = $('webcamStatus'); 
-      const hint = $('webcamHint');
-      
-      try {
-        const r = await fetch('/conversation/api/webcam-stream-url'); 
-        const j = await r.json();
-        
-        if (j && j.success && j.url) { 
-          img.src = j.url + '?_=' + Date.now(); 
-          status.textContent = 'Streaming'; 
-          if (hint) hint.textContent = j.url; 
-        } else { 
-          status.textContent = 'No webcam configured'; 
-        }
-      } catch { 
-        status.textContent = 'Failed to locate webcam'; 
-      }
-    }
-
-    async function loadHeadTrackStatus() {
-      try {
-        const r = await fetch('/conversation/api/head-tracking-status');
-        const j = await r.json();
-        if (j && j.success && ui.headTrackToggle) { 
-          ui.headTrackToggle.checked = !!(j.headTracking && j.headTracking.enabled); 
-        }
-      } catch { }
-    }
-
-    async function saveHeadTrackSettings() {
-      try {
-        await fetch('/conversation/api/head-tracking', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ enabled: !!(ui.headTrackToggle && ui.headTrackToggle.checked) }) 
-        });
-      } catch { }
-    }
-
-    async function loadJawSettings() {
-      try { 
-        const r = await fetch('/conversation/api/jaw-settings'); 
-        const j = await r.json(); 
-        if (j && j.success) { 
-          ui.jawToggle.checked = !!j.enabled; 
-        } 
-      } catch { }
-    }
-
-    async function saveJawSettings() {
-      try { 
-        await fetch('/conversation/api/jaw-settings', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ enabled: ui.jawToggle.checked }) 
-        }); 
-      } catch { }
-    }
-
-    async function sendSay() {
-      const text = (ui.sayInput.value || '').trim(); 
-      if (!text) { 
-        ui.sayStatus.innerHTML = '<span class="text-warning">Enter text</span>'; 
-        return; 
-      }
-      
-      ui.sayBtn.disabled = true; 
-      ui.sayBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
-      
-      try {
-        const r = await fetch('/conversation/api/say', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ text, speakerPartId: selectedSpeakerPartId || undefined }) 
-        });
-        const j = await r.json();
-        
-        if (j && j.success) { 
-          ui.sayStatus.innerHTML = '<span class="text-success">Done</span>'; 
-        } else { 
-          ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>'; 
-        }
-      } catch (e) { 
-        ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>'; 
-      } finally { 
-        ui.sayBtn.disabled = false; 
-        ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak'; 
-      }
-    }
-
-    function toggleListenIn() {
-      if (listenInAudio) {
-        listenInAudio.pause();
-        listenInAudio = null;
-        ui.listenInBtn.innerHTML = '<i class="bi bi-headphones"></i> Listen In';
-        ui.listenInBtn.classList.remove('active');
-      } else {
-        fetch('/conversation/api/listen-in-url')
-          .then(r => r.json())
-          .then(j => {
-            if (j && j.success && j.url) {
-              listenInAudio = new Audio(j.url);
-              listenInAudio.play();
-              ui.listenInBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Stop Listening';
-              ui.listenInBtn.classList.add('active');
-            } else {
-              alert('No microphone configured');
+      // Poll for character changes (10 second interval)
+      setInterval(async () => {
+        try {
+          const resp = await fetch('/setup/characters/api/current');
+          const j = await resp.json();
+          const newId = j && j.selectedCharacter ? parseInt(j.selectedCharacter, 10) : null;
+          if (newId && newId !== currentCharacterId) {
+            const newName = (j && j.characterName) ? j.characterName : ('Character ' + newId);
+            currentCharacterId = newId;
+            if (chatCharNameEl) chatCharNameEl.textContent = newName;
+            chatAgentId = await getCharacterAgentId();
+            if (chatWs && chatConnected) {
+              try { chatWs.close(); } catch (_) {}
+              chatWs = null;
+              chatConnected = false;
+              _conversationReady = false;
+              appendChatMessage('System', 'Character changed to ' + newName + '. Reconnecting...');
+              setTimeout(() => connectChatWebSocket(), 1000);
             }
-          })
-          .catch(e => alert('Failed to start Listen In: ' + e.message));
-      }
+          }
+        } catch (_) {}
+      }, 10000);
     }
 
-    async function toggleAiOn() {
-      const enabled = ui.aiOnToggle.checked;
-      const useMic = ui.aiMicToggle.checked;
-      
-      if (enabled) {
-        startAiOn(useMic);
-      } else {
-        stopAiOn();
-      }
+    async function loadChatSpeakers() {
+      const select = $('chatSpeakerSelect');
+      if (!select) return;
+      try {
+        const resp = await fetch('/conversation/api/speakers');
+        const data = await resp.json();
+        if (!data || !data.speakers) return;
+        data.speakers.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = String(s.id);
+          let label = s.name || ('Speaker #' + s.id);
+          if (s.characterId) label += ' (char ' + s.characterId + ')';
+          opt.textContent = label;
+          select.appendChild(opt);
+        });
+      } catch (_) {}
     }
 
     async function getCharacterAgentId() {
@@ -681,157 +612,485 @@
       } catch (_) { return null; }
     }
 
-    async function startAiOn(useMic) {
-      ui.aiOnStatus.innerHTML = '<span class="text-info">Connecting...</span>';
-      logAiChat('System', 'Starting AI autonomous mode...');
+    function connectChatWebSocket() {
+      if (chatWs && chatConnected) return;
+      _conversationReady = false;
 
-      // Check if ElevenLabs is configured
-      try {
-        var statusResp = await fetch('/conversation/api/agent-status');
-        var statusJson = await statusResp.json();
-        if (!statusJson.configured) {
-          ui.aiOnStatus.innerHTML = '<span class="text-danger">ElevenLabs not configured</span>';
-          logAiChat('System', 'Error: ElevenLabs API key not configured. Go to AI Settings.');
-          ui.aiOnToggle.checked = false;
-          return;
-        }
-      } catch (_) {}
-
-      // Get character's agent ID
-      var agentId = await getCharacterAgentId();
-      if (!agentId) {
-        ui.aiOnStatus.innerHTML = '<span class="text-danger">No AI agent assigned</span>';
-        logAiChat('System', 'Error: No AI agent assigned to this character. Configure in character settings.');
-        ui.aiOnToggle.checked = false;
+      if (!chatAgentId) {
+        appendChatMessage('System', 'No AI agent assigned to this character.');
+        const toggle = $('chatAiOnToggle');
+        if (toggle) toggle.checked = false;
         return;
       }
 
-      // Create WebSocket chat client
-      aiChatClient = new WebSocketChatClient();
+      const isSecure = window.location.protocol === 'https:';
+      const wsProto = isSecure ? 'wss:' : 'ws:';
+      const wsUrl = isSecure
+        ? (wsProto + '//' + window.location.host + '/ai-chat')
+        : (wsProto + '//' + window.location.hostname + ':' + (document.body.getAttribute('data-ws-port') || '8795'));
 
-      aiChatClient.onConnectionStatusChange = function(connected) {
-        if (connected) {
-          ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - Connected</span>';
-        } else if (aiOnActive) {
-          ui.aiOnStatus.innerHTML = '<span class="text-warning">AI On - Reconnecting...</span>';
+      try {
+        chatWs = new WebSocket(wsUrl);
+
+        chatWs.onopen = () => {
+          chatConnected = true;
+          appendChatMessage('System', 'Connected to AI service');
+
+          if (currentCharacterId) {
+            chatWs.send(JSON.stringify({ type: 'set_character', characterId: currentCharacterId }));
+          }
+          const useBrowserMic = $('chatBrowserMic');
+          chatWs.send(JSON.stringify({ type: 'set_mic_source', source: (useBrowserMic && useBrowserMic.checked) ? 'browser' : 'server' }));
+          const chatMute = $('chatMuteSpeaker');
+          const isMuted = chatMute && chatMute.checked;
+          chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !isMuted && _audioPlaybackEnabled }));
+          const browserSpeaker = $('chatBrowserSpeaker');
+          if (browserSpeaker && browserSpeaker.checked) {
+            chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'local' }));
+            BrowserAudioPlayer.enable();
+          }
+          if (chatSpeakerPartId) {
+            chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: chatSpeakerPartId }));
+          }
+          if (parrotEnabled) {
+            chatWs.send(JSON.stringify({ type: 'set_parrot_mode', enabled: true }));
+          }
+          if (chatAgentId) {
+            chatWs.send(JSON.stringify({ type: 'start_conversation', agentId: chatAgentId }));
+          }
+        };
+
+        chatWs.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg) handleChatMessage(msg);
+          } catch (e) { console.error('Chat WS parse error:', e); }
+        };
+
+        chatWs.onclose = () => {
+          chatConnected = false;
+          _conversationReady = false;
+          chatWs = null;
+          try { BrowserMicCapture.stop(); } catch (_) {}
+        };
+
+        chatWs.onerror = () => {
+          chatConnected = false;
+          _conversationReady = false;
+        };
+      } catch (e) {
+        console.error('Chat WS connect error:', e);
+      }
+    }
+
+    function handleChatMessage(msg) {
+      if (msg.type === 'audio_chunk') {
+        if (msg.audio) BrowserAudioPlayer.playChunk(msg.audio);
+        return;
+      }
+      if (msg.type === 'audio_level') {
+        updateVUMeter(msg.level || 0);
+        return;
+      }
+      if (msg.type === 'conversation_started') {
+        _conversationReady = true;
+        appendChatMessage('System', 'Conversation started');
+        if (_pendingChatMessage) {
+          const pending = _pendingChatMessage;
+          _pendingChatMessage = null;
+          if (chatWs && chatConnected) chatWs.send(JSON.stringify({ type: 'send_message', text: pending }));
         }
-      };
-
-      aiChatClient.onConversationStarted = function(msg) {
-        ui.aiOnStatus.innerHTML = '<span class="text-success">AI On - ' + (useMic ? 'Listening' : 'Active') + '</span>';
-        logAiChat('System', 'Conversation started with AI agent');
-      };
-
-      aiChatClient.onAgentResponse = function(msg) {
-        var text = msg.text || (msg.agent_response_event && msg.agent_response_event.agent_response) || '';
-        if (text) {
-          logAiChat('AI', text);
+        return;
+      }
+      if (msg.type === 'conversation_ended') {
+        _conversationReady = false;
+        appendChatMessage('System', 'Conversation ended');
+        return;
+      }
+      if (msg.type === 'error') {
+        appendChatMessage('System', 'Error: ' + (msg.message || msg.error || 'Unknown'));
+        return;
+      }
+      if (msg.type === 'interruption') {
+        _lastPartialEl = null;
+        BrowserAudioPlayer.reset();
+        return;
+      }
+      if (msg.type === 'agent_response' || msg.type === 'agent_response_event') {
+        let text = '';
+        if (msg.agent_response_event && msg.agent_response_event.agent_response) {
+          text = msg.agent_response_event.agent_response;
+        } else if (msg.agent_response) {
+          text = msg.agent_response;
+        } else if (msg.text) {
+          text = msg.text;
         }
-      };
-
-      aiChatClient.onConversationEnded = function(msg) {
-        logAiChat('System', 'Conversation ended');
-        if (aiOnActive) {
-          ui.aiOnStatus.innerHTML = '<span class="text-warning">Conversation ended</span>';
+        if (!text || text === 'Audio response' || text === 'Text response') return;
+        if (text === _lastAgentText) return;
+        _lastAgentText = text;
+        appendChatMessage('AI', text);
+      }
+      else if (msg.type === 'user_transcript' && msg.user_transcription_event) {
+        const userText = msg.user_transcription_event.user_transcript;
+        if (userText) {
+          _lastPartialEl = null;
+          appendChatMessage('You (mic)', userText);
         }
-      };
+      }
+      else if (msg.type === 'stt_committed' && msg.text) {
+        _lastPartialEl = null;
+        appendChatMessage('You (mic)', msg.text);
+        // Trigger parrot mode from Scribe STT
+        if (parrotEnabled) {
+          try { parrotSay(msg.text); } catch (_) {}
+        }
+      }
+      else if (msg.type === 'stt_partial' && msg.text) {
+        if (msg.final) return;
+        updatePartialTranscript(msg.text);
+      }
+    }
 
-      aiChatClient.onError = function(msg) {
-        logAiChat('System', 'Error: ' + (msg.message || 'Unknown error'));
-        ui.aiOnStatus.innerHTML = '<span class="text-danger">Error: ' + (msg.message || '') + '</span>';
-      };
+    function appendChatMessage(sender, text) {
+      const chatLog = $('chatLog');
+      if (!chatLog) return;
 
-      // Override handleServerMessage to catch user transcripts and other messages
-      var origHandler = aiChatClient.handleServerMessage.bind(aiChatClient);
-      aiChatClient.handleServerMessage = function(message) {
-        if (message.type === 'user_transcript' && message.user_transcription_event) {
-          var transcript = message.user_transcription_event.user_transcript;
-          if (transcript) {
-            logAiChat('You', transcript);
-            if (ui.transcript) {
-              ui.transcript.innerHTML = '<span class="text-info">You: ' + transcript.replace(/</g, '&lt;') + '</span>';
+      // Strip stage directions from AI text
+      if (sender === 'AI') {
+        text = text.replace(/\[.*?\]/g, '').replace(/\s{2,}/g, ' ').trim();
+        if (!text) return;
+      }
+
+      // Remove partial transcript when committing mic text
+      if (sender === 'You (mic)' && _lastPartialEl && _lastPartialEl.parentNode) {
+        _lastPartialEl.parentNode.removeChild(_lastPartialEl);
+        _lastPartialEl = null;
+      }
+
+      // Clear placeholder
+      const placeholder = chatLog.querySelector('.text-muted.text-center');
+      if (placeholder) placeholder.remove();
+
+      const time = new Date().toLocaleTimeString();
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'mb-1';
+      const senderClass = (sender === 'You' || sender === 'You (mic)') ? 'text-info' :
+        sender === 'AI' ? 'text-success' : 'text-warning';
+      msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
+        '<strong class="' + senderClass + '">' + sender + ':</strong> ' +
+        '<span>' + escapeHtml(text) + '</span>';
+
+      chatLog.appendChild(msgDiv);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function updatePartialTranscript(text) {
+      const chatLog = $('chatLog');
+      if (!chatLog) return;
+
+      if (_lastPartialEl && _lastPartialEl.parentNode === chatLog) {
+        const span = _lastPartialEl.querySelector('.partial-text');
+        if (span) span.textContent = text;
+      } else {
+        const placeholder = chatLog.querySelector('.text-muted.text-center');
+        if (placeholder) placeholder.remove();
+        const time = new Date().toLocaleTimeString();
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'mb-1';
+        msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
+          '<strong class="text-info">You (mic):</strong> ' +
+          '<span class="partial-text" style="opacity:0.7"></span>';
+        const span = msgDiv.querySelector('.partial-text');
+        if (span) span.textContent = text;
+        chatLog.appendChild(msgDiv);
+        _lastPartialEl = msgDiv;
+      }
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function updateVUMeter(level) {
+      const meter = $('chatVUMeter');
+      const label = $('chatVULabel');
+      if (meter) {
+        meter.style.width = level + '%';
+        meter.setAttribute('aria-valuenow', level);
+        if (level > 70) meter.className = 'progress-bar bg-danger';
+        else if (level > 40) meter.className = 'progress-bar bg-warning';
+        else meter.className = 'progress-bar bg-success';
+      }
+      if (label) label.textContent = level + '%';
+      if (chatVUTimer) clearTimeout(chatVUTimer);
+      chatVUTimer = setTimeout(() => {
+        if (meter) { meter.style.width = '0%'; meter.setAttribute('aria-valuenow', 0); meter.className = 'progress-bar bg-success'; }
+        if (label) label.textContent = '0%';
+      }, 800);
+    }
+
+    function sendChatMessage() {
+      const input = $('chatInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage('You', text);
+      input.value = '';
+
+      if (chatWs && chatConnected) {
+        chatWs.send(JSON.stringify({ type: 'send_message', text: text }));
+      } else {
+        _pendingChatMessage = text;
+        _audioPlaybackEnabled = true;
+        connectChatWebSocket();
+      }
+    }
+
+    function disconnectChat() {
+      _audioPlaybackEnabled = false;
+      _conversationReady = false;
+      try { BrowserMicCapture.stop(); } catch (_) {}
+      if (chatWs && chatConnected) {
+        try {
+          chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: false }));
+          chatWs.send(JSON.stringify({ type: 'end_conversation' }));
+        } catch (_) {}
+        chatWs.close();
+        chatWs = null;
+        chatConnected = false;
+      }
+      appendChatMessage('System', 'AI disconnected');
+    }
+
+    function bindChatEvents() {
+      // AI On toggle
+      const aiToggle = $('chatAiOnToggle');
+      if (aiToggle) {
+        aiToggle.addEventListener('change', () => {
+          if (aiToggle.checked) {
+            _audioPlaybackEnabled = true;
+            connectChatWebSocket();
+          } else {
+            disconnectChat();
+          }
+        });
+      }
+
+      // Chat send
+      const chatSendBtn = $('chatSendBtn');
+      const chatInput = $('chatInput');
+      if (chatSendBtn) chatSendBtn.addEventListener('click', sendChatMessage);
+      if (chatInput) chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+      });
+
+      // Speaker select
+      const speakerSelect = $('chatSpeakerSelect');
+      if (speakerSelect) {
+        speakerSelect.addEventListener('change', () => {
+          chatSpeakerPartId = speakerSelect.value || null;
+          if (chatWs && chatConnected) {
+            try { chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: chatSpeakerPartId })); } catch (_) {}
+          }
+        });
+      }
+
+      // Mute Speaker (chat panel)
+      const chatMute = $('chatMuteSpeaker');
+      if (chatMute) {
+        chatMute.addEventListener('change', () => {
+          fetch('/conversation/api/speaker-mute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ muted: chatMute.checked })
+          }).catch(() => {});
+          const featureMute = $('speakerMuteToggle');
+          if (featureMute) featureMute.checked = chatMute.checked;
+          if (chatWs && chatConnected) {
+            try { chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !chatMute.checked })); } catch (_) {}
+          }
+        });
+      }
+
+      // Browser Speaker
+      const chatBrowserSpeaker = $('chatBrowserSpeaker');
+      if (chatBrowserSpeaker) {
+        chatBrowserSpeaker.addEventListener('change', () => {
+          const statusEl = $('chatAudioStatus');
+          if (chatBrowserSpeaker.checked) {
+            BrowserAudioPlayer.enable();
+            if (statusEl) statusEl.textContent = 'Browser speaker active';
+            if (chatWs && chatConnected) {
+              try { chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'local' })); } catch (_) {}
+            }
+          } else {
+            BrowserAudioPlayer.disable();
+            if (statusEl) statusEl.textContent = '';
+            if (chatWs && chatConnected) {
+              try { chatWs.send(JSON.stringify({ type: 'set_output_mode', mode: 'server' })); } catch (_) {}
             }
           }
-        }
-        if (message.type === 'stt_partial' && message.text) {
-          if (ui.transcript) {
-            ui.transcript.innerHTML = '<span class="text-muted">Hearing: ' + message.text.replace(/</g, '&lt;') + '</span>';
-          }
-        }
-        if (message.type === 'audio_level' && typeof message.level !== 'undefined') {
-          if (ui.levelBar) {
-            ui.levelBar.style.width = Math.round(message.level * 100) + '%';
-          }
-        }
-        origHandler(message);
-      };
-
-      aiOnActive = true;
-      aiChatClient.connect();
-
-      // Wait for connection, then start conversation
-      var connectAttempts = 0;
-      var waitForConnect = setInterval(function() {
-        connectAttempts++;
-        if (aiChatClient && aiChatClient.isConnected) {
-          clearInterval(waitForConnect);
-          aiChatClient.sendMessage({ type: 'set_character', characterId: currentCharacterId });
-          if (useMic) {
-            aiChatClient.sendMessage({ type: 'set_mic_source', source: 'server' });
-          }
-          aiChatClient.startConversation(agentId);
-          logAiChat('System', 'AI autonomous mode active' + (useMic ? ' with microphone' : ''));
-        }
-        if (connectAttempts > 50) { // 10 second timeout
-          clearInterval(waitForConnect);
-          if (aiChatClient && !aiChatClient.isConnected && aiOnActive) {
-            ui.aiOnStatus.innerHTML = '<span class="text-danger">Connection timeout</span>';
-            logAiChat('System', 'Failed to connect to AI service. Check that WebSocket server is running.');
-            stopAiOn();
-            ui.aiOnToggle.checked = false;
-          }
-        }
-      }, 200);
-
-      // Save state to server
-      fetch('/conversation/api/ai-on', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: true, characterId: currentCharacterId })
-      }).catch(function() {});
-    }
-
-    function stopAiOn() {
-      aiOnActive = false;
-      if (aiChatClient) {
-        try { aiChatClient.endConversation(); } catch (_) {}
-        setTimeout(function() {
-          try { aiChatClient.disconnect(); } catch (_) {}
-          aiChatClient = null;
-        }, 500);
+        });
       }
-      ui.aiOnStatus.innerHTML = '';
-      logAiChat('System', 'AI autonomous mode stopped');
 
-      // Save state to server
-      fetch('/conversation/api/ai-on', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: false })
-      }).catch(function() {});
+      // Browser Mic
+      const chatBrowserMic = $('chatBrowserMic');
+      if (chatBrowserMic) {
+        chatBrowserMic.addEventListener('change', async () => {
+          const statusEl = $('chatAudioStatus');
+          if (chatBrowserMic.checked) {
+            try {
+              await BrowserMicCapture.start();
+              if (statusEl) statusEl.textContent = 'Browser mic active';
+              if (chatWs && chatConnected) {
+                try { chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'browser' })); } catch (_) {}
+              }
+            } catch (e) {
+              chatBrowserMic.checked = false;
+              if (statusEl) statusEl.innerHTML = '<span class="text-danger">' + escapeHtml(e.message || String(e)) + '</span>';
+              appendChatMessage('System', 'Browser mic failed: ' + (e.message || String(e)));
+            }
+          } else {
+            BrowserMicCapture.stop();
+            if (statusEl) statusEl.textContent = '';
+            if (chatWs && chatConnected) {
+              try { chatWs.send(JSON.stringify({ type: 'set_mic_source', source: 'server' })); } catch (_) {}
+            }
+          }
+        });
+      }
     }
 
-    function logAiChat(sender, message) {
-      const log = ui.aiChatLog;
-      if (!log) return;
-      
-      const colorClass = sender === 'System' ? 'text-warning' : sender === 'You' ? 'text-info' : 'text-success';
-      const msg = document.createElement('div');
-      msg.className = 'mb-1 ' + colorClass;
-      msg.innerHTML = '<strong>' + sender + ':</strong> ' + message;
-      log.appendChild(msg);
-      log.scrollTop = log.scrollHeight;
+    // ─── Speakers, Webcam, Settings ──────────────────────────
+
+    async function loadSpeakers() {
+      try {
+        const r = await fetch('/conversation/api/speakers');
+        const j = await r.json();
+        if (j && j.success) {
+          speakers = j.speakers || [];
+          renderSpeakerSelect();
+        } else {
+          renderSpeakerSelect([]);
+        }
+      } catch {
+        renderSpeakerSelect([]);
+      }
     }
+
+    function renderSpeakerSelect() {
+      const sel = ui.speakerSelect;
+      sel.innerHTML = '';
+
+      if (!speakers.length) {
+        sel.appendChild(new Option('Default System Output', ''));
+        sel.disabled = true;
+        return;
+      }
+
+      speakers.forEach(sp => {
+        const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : '');
+        const opt = new Option(label, sp.id);
+        sel.appendChild(opt);
+      });
+
+      selectedSpeakerPartId = speakers[0].id;
+      sel.value = String(selectedSpeakerPartId);
+      sel.disabled = false;
+      sel.addEventListener('change', e => { selectedSpeakerPartId = e.target.value || null; });
+    }
+
+    async function loadWebcam() {
+      const img = $('webcamImg');
+      const status = $('webcamStatus');
+      const hint = $('webcamHint');
+
+      try {
+        const r = await fetch('/conversation/api/webcam-stream-url');
+        const j = await r.json();
+
+        if (j && j.success && j.url) {
+          img.src = j.url + '?_=' + Date.now();
+          status.textContent = 'Streaming';
+          if (hint) hint.textContent = j.url;
+        } else {
+          status.textContent = 'No webcam configured';
+        }
+      } catch {
+        status.textContent = 'Failed to locate webcam';
+      }
+    }
+
+    async function loadHeadTrackStatus() {
+      try {
+        const r = await fetch('/conversation/api/head-tracking-status');
+        const j = await r.json();
+        if (j && j.success && ui.headTrackToggle) {
+          ui.headTrackToggle.checked = !!(j.headTracking && j.headTracking.enabled);
+        }
+      } catch { }
+    }
+
+    async function saveHeadTrackSettings() {
+      try {
+        await fetch('/conversation/api/head-tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !!(ui.headTrackToggle && ui.headTrackToggle.checked) })
+        });
+      } catch { }
+    }
+
+    async function loadJawSettings() {
+      try {
+        const r = await fetch('/conversation/api/jaw-settings');
+        const j = await r.json();
+        if (j && j.success) {
+          ui.jawToggle.checked = !!j.enabled;
+        }
+      } catch { }
+    }
+
+    async function saveJawSettings() {
+      try {
+        await fetch('/conversation/api/jaw-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: ui.jawToggle.checked })
+        });
+      } catch { }
+    }
+
+    async function sendSay() {
+      const text = (ui.sayInput.value || '').trim();
+      if (!text) {
+        ui.sayStatus.innerHTML = '<span class="text-warning">Enter text</span>';
+        return;
+      }
+
+      ui.sayBtn.disabled = true;
+      ui.sayBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
+
+      try {
+        const r = await fetch('/conversation/api/say', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, speakerPartId: selectedSpeakerPartId || undefined })
+        });
+        const j = await r.json();
+
+        if (j && j.success) {
+          ui.sayStatus.innerHTML = '<span class="text-success">Done</span>';
+        } else {
+          ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>';
+        }
+      } catch (e) {
+        ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
+      } finally {
+        ui.sayBtn.disabled = false;
+        ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak';
+      }
+    }
+
+    // ─── Scenes ──────────────────────────────────────────────
 
     let dashboardScenes = [];
     let sceneLoopActive = false;
@@ -876,7 +1135,6 @@
         </div>
       `).join('');
 
-      // Bind play/delete
       container.querySelectorAll('.scene-play-btn').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
@@ -901,7 +1159,6 @@
           onEnd: function(evt) {
             const item = dashboardScenes.splice(evt.oldIndex, 1)[0];
             dashboardScenes.splice(evt.newIndex, 0, item);
-            // Persist new order to server by saving the scene array
             saveSceneOrder();
           }
         });
@@ -958,7 +1215,6 @@
     async function loopAllScenes() {
       if (!dashboardScenes.length) return;
       try {
-        // Clear any existing queue, enqueue all in current order, start with loop mode
         await fetch('/scenes/api/queue/clear', { method: 'POST' });
         const sceneIds = dashboardScenes.map(s => s.id);
         await fetch('/scenes/api/queue/start-config', {
@@ -998,310 +1254,106 @@
       }
     }
 
-    async function loadHardwareParts() {
-      if (!currentCharacterId) return;
-      
+    // ─── Poses ──────────────────────────────────────────────
+
+    var dashboardPoses = [];
+
+    async function loadPoses() {
+      var container = $('posesContainer');
+
       try {
-        const r = await fetch(`/api/parts?characterId=${currentCharacterId}`);
-        const j = await r.json();
-        
-        if (j && j.success && j.parts && j.parts.length > 0) {
-          currentParts = j.parts;
-          renderHardwareParts();
+        var r = await fetch('/poses/api/poses');
+        var j = await r.json();
+
+        if (j && Array.isArray(j) && j.length > 0) {
+          dashboardPoses = j;
+          renderPosesList();
+        } else if (j && j.poses && j.poses.length > 0) {
+          dashboardPoses = j.poses;
+          renderPosesList();
         } else {
-          ui.hardwareList.innerHTML = '<div class="text-muted text-center py-3 small">No hardware parts</div>';
-          ui.hardwareCount.textContent = '0 parts';
+          dashboardPoses = [];
+          container.innerHTML = '<div class="text-center text-muted py-2 small">No poses</div>';
         }
       } catch (e) {
-        console.error('Failed to load hardware parts:', e);
-        ui.hardwareList.innerHTML = '<div class="text-danger text-center py-3 small">Error loading</div>';
+        container.innerHTML = '<div class="text-center text-danger py-2 small">Failed to load</div>';
       }
     }
 
-    function renderHardwareParts() {
-      ui.hardwareList.innerHTML = '';
-      ui.hardwareCount.textContent = currentParts.length + ' parts';
-      
-      currentParts.forEach(part => {
-        const partDiv = document.createElement('div');
-        partDiv.className = 'conv-part-control';
-        partDiv.innerHTML = renderPartControl(part);
-        ui.hardwareList.appendChild(partDiv);
-      });
-      
-      bindHardwareControls();
-    }
-
-    function renderPartControl(part) {
-      const type = part.type.toLowerCase();
-      
-      let html = `<div class="d-flex justify-content-between align-items-center mb-2">
-        <strong class="small">${part.name}</strong>
-        <span class="badge bg-secondary" style="font-size: 0.65rem;">${part.type}</span>
-      </div>`;
-      
-      // Richer, calibration-like controls per type (compact for conversation page)
-      if (type === 'servo') {
-        const isCont = String(part.config && part.config.servoType || 'standard') === 'continuous';
-        if (isCont) {
-          html += `<div class="d-flex gap-1 align-items-center">
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="ccw">CCW</button>
-            <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="cw">CW</button>
-            <input type="number" id="servo-spd-${part.id}" class="form-control form-control-sm" value="35" style="width:70px; margin-left:6px">%
-            <input type="number" id="servo-dur-${part.id}" class="form-control form-control-sm" value="300" style="width:90px">ms
-          </div>`;
-        } else {
-          html += `<div class="d-flex gap-2 align-items-center">
-            <input type="range" id="servo-${part.id}" class="form-range" min="0" max="180" value="90" style="width:180px">
-            <input type="number" id="servo-num-${part.id}" class="form-control form-control-sm" min="0" max="180" value="90" style="width:80px">
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="move">Move</button>
-          </div>`;
-        }
-      } else if (type === 'linear_actuator') {
-        html += `<div class="d-flex gap-1 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="extend">Extend</button>
-          <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="retract">Retract</button>
-          <input type="number" id="la-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="la-dur-${part.id}" class="form-control form-control-sm" value="500" style="width:90px">ms
-        </div>`;
-      } else if (type === 'motor') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select class="form-select form-select-sm" id="motor-dir-${part.id}" style="width:110px;">
-            <option value="forward">Forward</option>
-            <option value="reverse">Reverse</option>
-          </select>
-          <input type="number" id="motor-spd-${part.id}" class="form-control form-control-sm" value="50" style="width:70px">%
-          <input type="number" id="motor-dur-${part.id}" class="form-control form-control-sm" value="15000" style="width:90px">ms
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="run">Run</button>
-          <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-        </div>`;
-      } else if (type === 'stepper') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <select id="st-dir-${part.id}" class="form-select form-select-sm" style="width:90px;"><option value="cw">CW</option><option value="ccw">CCW</option></select>
-          <input id="st-steps-${part.id}" type="number" class="form-control form-control-sm" value="200" style="width:100px">steps
-          <input id="st-delay-${part.id}" type="number" class="form-control form-control-sm" value="800" style="width:110px">us
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="moveSteps">Move</button>
-          <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stop">Stop</button>
-        </div>`;
-      } else if (type === 'light') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="toggle">Toggle</button>
-        </div>`;
-      } else if (type === 'led') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <input id="led-bri-${part.id}" type="range" class="form-range" min="0" max="100" value="50" style="width:160px">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="setBrightness">Set</button>
-        </div>`;
-      } else if (type === 'speaker') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="playPreview">Play Preview</button>
-        </div>`;
-      } else if (type === 'microphone') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <div class="progress" style="width:160px;height:12px"><div id="mic-vu-${part.id}" class="progress-bar" style="width:0%"></div></div>
-          <span id="mic-level-${part.id}" class="small ms-2">0</span>
-          <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="pollMic">Poll</button>
-        </div>`;
-      } else if (type === 'webcam') {
-        html += `<div class="d-flex flex-column align-items-stretch gap-2">
-          <a class="btn btn-sm btn-outline-primary" href="/setup/calibration/api/webcam/parts/${encodeURIComponent(part.id)}/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>
-          <div class="d-flex gap-2 align-items-center">
-            <label class="form-label small mb-0">Zoom</label>
-            <input id="cam-zoom-${part.id}" type="range" class="form-range" min="100" max="300" value="100" style="width:120px">
-            <button class="btn btn-sm btn-outline-secondary" data-part="${part.id}" data-action="capture">Capture</button>
-          </div>
-        </div>`;
-      } else if (type === 'head_tracking') {
-        html += `<div class="d-flex gap-2 align-items-center">
-          <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="getPosition">Get Position</button>
-        </div>`;
-      } else if (type === 'motion_sensor') {
-        const enabled = part.config && part.config.enabled ? 'checked' : '';
-        html += `<div class="d-flex flex-column gap-1">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="motion-toggle-${part.id}" ${enabled}>
-            <label class="form-check-label small" for="motion-toggle-${part.id}">Sensor Enabled</label>
-          </div>
-          <div class="d-flex gap-2 align-items-center">
-            <button class="btn btn-sm btn-outline-info" data-part="${part.id}" data-action="readMotion">Read</button>
-            <button class="btn btn-sm btn-primary" data-part="${part.id}" data-action="detectMotion">Detect</button>
-            <button class="btn btn-sm btn-success" data-part="${part.id}" data-action="startLiveTest">Start Live</button>
-            <button class="btn btn-sm btn-danger" data-part="${part.id}" data-action="stopLiveTest" style="display:none;">Stop</button>
-          </div>
-        </div>`;
-      } else {
-        html += `<button class="btn btn-sm btn-secondary w-100" data-part="${part.id}" data-action="test">Test</button>`;
+    function renderPosesList() {
+      var container = $('posesContainer');
+      if (!dashboardPoses.length) {
+        container.innerHTML = '<div class="text-center text-muted py-2 small">No poses</div>';
+        return;
       }
+      container.innerHTML = dashboardPoses.map(function(pose) {
+        var name = pose.name || 'Pose ' + pose.id;
+        var category = pose.category || '';
+        var partsCount = (pose.parts && pose.parts.length) || 0;
+        var categoryBadge = category ? '<span class="badge bg-info ms-1" style="font-size:0.6rem;">' + category + '</span>' : '';
+        return '<div class="pose-row d-flex align-items-center mb-1 p-1 rounded border-bottom">' +
+          '<div class="flex-grow-1 text-truncate">' +
+            '<strong class="small">' + name + '</strong>' +
+            categoryBadge +
+            '<span class="badge bg-secondary ms-1" style="font-size:0.6rem;">' + partsCount + ' parts</span>' +
+          '</div>' +
+          '<div class="d-flex gap-1 ms-2 flex-shrink-0">' +
+            '<button class="btn btn-sm btn-outline-success p-0 px-1 pose-play-btn" data-id="' + pose.id + '" title="Play"><i class="bi bi-play-fill"></i></button>' +
+            '<a href="/poses/editor/' + pose.id + '" class="btn btn-sm btn-outline-secondary p-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>' +
+            '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-del-btn" data-id="' + pose.id + '" title="Delete"><i class="bi bi-trash"></i></button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
 
-      html += `<div class="mt-1 small text-info" id="status-${part.id}"></div>`;
-
-      return html;
-    }
-
-    function bindHardwareControls() {
-      ui.hardwareList.querySelectorAll('button[data-part]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const partId = btn.getAttribute('data-part');
-          const action = btn.getAttribute('data-action');
-          await executeHardwareAction(partId, action);
+      container.querySelectorAll('.pose-play-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          playPose(parseInt(btn.getAttribute('data-id'), 10));
         });
       });
-      
-      ui.hardwareList.querySelectorAll('input[type="range"][id^="servo-"]').forEach(range => {
-        const partId = range.id.split('-')[1];
-        const numInput = $(`servo-num-${partId}`);
-        if (numInput) {
-          range.addEventListener('input', () => { numInput.value = range.value; });
-          numInput.addEventListener('input', () => { range.value = numInput.value; });
-        }
-      });
-
-      // Motion sensor toggles (enable/disable)
-      ui.hardwareList.querySelectorAll('input[id^="motion-toggle-"]').forEach(cb => {
-        if (cb.dataset._bound) return; cb.dataset._bound = '1';
-        cb.addEventListener('change', async (e) => {
-          const id = (cb.id || '').split('-').pop();
-          const enabled = !!cb.checked;
-          try {
-            await fetch(`/api/parts/${encodeURIComponent(id)}`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ config: Object.assign({}, (currentParts.find(p=>String(p.id)===String(id)) || {}).config, { enabled: enabled }) })
-            });
-            // reflect change in local cache
-            const p = currentParts.find(p=>String(p.id)===String(id)); if (p) p.config = p.config || {}; p.config.enabled = enabled;
-          } catch (err) {
-            console.error('Failed to update motion sensor config', err);
-            cb.checked = !enabled;
-          }
+      container.querySelectorAll('.pose-del-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          deletePose(parseInt(btn.getAttribute('data-id'), 10));
         });
       });
     }
 
-    async function executeHardwareAction(partId, action) {
-      const part = currentParts.find(p => String(p.id) === String(partId));
-      if (!part) return;
-      
-      const statusEl = $(`status-${partId}`);
-      if (statusEl) statusEl.textContent = 'Processing...';
-      
+    async function playPose(poseId) {
       try {
-        const type = part.type.toLowerCase();
-        let endpoint = `/api/parts/${partId}/test`;
-        let body = {};
-        // Map actions for various types; default endpoint is /api/parts/:id/test
-        if (type === 'servo') {
-          if (action === 'move') {
-            const angle = parseInt($(`servo-num-${partId}`).value || '90', 10);
-            const p = angle / 180.0;
-            endpoint = `/api/calibration/${partId}/goto`;
-            body = { p };
-          } else if (action === 'cw' || action === 'ccw' || action === 'stop') {
-            let delta = action === 'cw' ? 0.1 : action === 'ccw' ? -0.1 : 0;
-            const spd = parseInt($(`servo-spd-${partId}`) ? $(`servo-spd-${partId}`).value : 35, 10) || 35;
-            const dur = parseInt($(`servo-dur-${partId}`) ? $(`servo-dur-${partId}`).value : 300, 10) || 300;
-            endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta, speedPct: spd, durationMs: dur };
-          }
-        } else if (type === 'linear_actuator') {
-          if (action === 'extend') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
-            endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: 0.1, speedPct: spd, durationMs: dur };
-          } else if (action === 'retract') {
-            const spd = parseInt($(`la-spd-${partId}`) ? $(`la-spd-${partId}`).value : 50, 10) || 50;
-            const dur = parseInt($(`la-dur-${partId}`) ? $(`la-dur-${partId}`).value : 500, 10) || 500;
-            endpoint = `/api/calibration/${partId}/nudge`;
-            body = { delta: -0.1, speedPct: spd, durationMs: dur };
-          } else if (action === 'stop') {
-            endpoint = `/setup/calibration/api/linear_actuator/${partId}/stop`;
-            body = {};
-          }
-        } else if (type === 'motor') {
-          if (action === 'run') {
-            const dir = $(`motor-dir-${partId}`) ? $(`motor-dir-${partId}`).value : 'forward';
-            const speed = parseInt($(`motor-spd-${partId}`) ? $(`motor-spd-${partId}`).value : 50, 10) || 50;
-            const duration = parseInt($(`motor-dur-${partId}`) ? $(`motor-dur-${partId}`).value : 15000, 10) || 15000;
-            body = { action: 'control', params: { direction: dir, speed: speed, duration: duration } };
-          } else if (action === 'stop') {
-            body = { action: 'stop', params: {} };
-          }
-        } else if (type === 'stepper') {
-          if (action === 'moveSteps') {
-            const dir = $(`st-dir-${partId}`) ? $(`st-dir-${partId}`).value : 'cw';
-            const steps = parseInt($(`st-steps-${partId}`) ? $(`st-steps-${partId}`).value : 200, 10) || 200;
-            const stepDelayUs = parseInt($(`st-delay-${partId}`) ? $(`st-delay-${partId}`).value : 800, 10) || 800;
-            body = { action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } };
-          } else if (action === 'stop') {
-            body = { action: 'stop' };
-          }
-        } else if (type === 'led') {
-          if (action === 'setBrightness') {
-            const bri = parseInt($(`led-bri-${partId}`) ? $(`led-bri-${partId}`).value : 50, 10) || 50;
-            body = { action: 'setBrightness', params: { brightness: bri } };
-          }
-        } else if (type === 'speaker') {
-          if (action === 'playPreview') {
-            // Mirror calibration behavior: get selected character then request TTS play
-            try {
-              const cur = await fetch('/setup/characters/api/current');
-              const cj = await cur.json();
-              const cid = cj && cj.selectedCharacter;
-              if (!cid) {
-                throw new Error('No character selected');
-              }
-              await fetch('/api/elevenlabs/generate-and-play', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid }) });
-              if (statusEl) statusEl.textContent = 'Done';
-              setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1000);
-              return;
-            } catch (e) {
-              if (statusEl) statusEl.textContent = 'Error: ' + (e && e.message ? e.message : e);
-              return;
-            }
-          }
-        } else if (type === 'microphone') {
-          if (action === 'pollMic') {
-            // Use generic test action - server/test harness can respond
-            body = { action: 'pollMic' };
-          }
-        } else if (type === 'webcam') {
-          if (action === 'capture') {
-            body = { action: 'capture' };
-          }
-        } else if (type === 'head_tracking') {
-          if (action === 'getPosition') {
-            body = { action: 'getPosition' };
-          }
-        } else if (type === 'motion_sensor') {
-          if (action === 'readMotion') {
-            body = { action: 'read' };
-          } else if (action === 'detectMotion') {
-            body = { action: 'detectMotion', params: { duration: 10 } };
-          } else if (action === 'startLiveTest' || action === 'stopLiveTest') {
-            body = { action: action };
-          }
-        }
-        
-        const r = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const j = await r.json();
-        
-        if (statusEl) {
-          statusEl.textContent = j.success !== false ? 'Done' : ('Failed: ' + (j.error || 'Unknown'));
-          setTimeout(() => { statusEl.textContent = ''; }, 2000);
+        var btn = document.querySelector('.pose-play-btn[data-id="' + poseId + '"]');
+        if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        var r = await fetch('/poses/api/poses/' + poseId + '/execute', { method: 'POST' });
+        var j = await r.json();
+        if (btn) btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        if (!(j && j.success)) {
+          alert('Failed to execute pose');
         }
       } catch (e) {
-        if (statusEl) statusEl.textContent = 'Error: ' + e.message;
+        alert('Error executing pose: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    async function deletePose(poseId) {
+      var pose = dashboardPoses.find(function(p) { return p.id === poseId; });
+      var name = pose ? pose.name : 'Pose ' + poseId;
+      if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+      try {
+        var r = await fetch('/poses/' + poseId, { method: 'DELETE' });
+        var j = await r.json();
+        if (j && j.success) {
+          dashboardPoses = dashboardPoses.filter(function(p) { return p.id !== poseId; });
+          renderPosesList();
+        } else {
+          alert('Failed to delete pose');
+        }
+      } catch (e) {
+        alert('Error deleting pose: ' + (e && e.message ? e.message : e));
       }
     }
 
     document.addEventListener('DOMContentLoaded', init);
-    window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadHardwareParts };
+    window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadPoses };
   })();
 </script>
 <script src="/js/panel-sortable.js"></script>

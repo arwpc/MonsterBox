@@ -4419,6 +4419,34 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1771632057956gmlwhqanv",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-02-21T00:00:57.956Z",
+      "startTime": "2026-02-20T23:59:09.714Z",
+      "endTime": "2026-02-21T00:00:57.927Z",
+      "duration": 108213,
+      "stepsExecuted": 8,
+      "totalSteps": 8,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1771632159315lwt4znyjw",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-02-21T00:02:39.315Z",
+      "startTime": "2026-02-21T00:00:52.190Z",
+      "endTime": "2026-02-21T00:02:39.308Z",
+      "duration": 107118,
+      "stepsExecuted": 8,
+      "totalSteps": 8,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4643,6 +4671,14 @@
       "characterId": 3,
       "executionCount": 1,
       "lastExecuted": "2026-02-07T17:51:09.311Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_109": {
+      "sceneId": 109,
+      "characterId": 3,
+      "executionCount": 2,
+      "lastExecuted": "2026-02-21T00:02:39.320Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

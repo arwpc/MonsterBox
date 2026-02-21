@@ -17,7 +17,7 @@ export default defineConfig({
   outputDir: 'tests/test-results',
   
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3100',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -35,7 +35,7 @@ export default defineConfig({
   // Run local dev server before tests
   webServer: process.env.CI ? undefined : {
     command: 'MB_TEST_MODE=1 npm start',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3100',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     stdout: 'pipe',

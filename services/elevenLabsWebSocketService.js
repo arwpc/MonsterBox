@@ -208,10 +208,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
     /**
      * Start WebSocket server for real-time chat
+     * @param {object} [httpsServer] - Optional HTTPS server to attach WSS to at /ai-chat
      */
-    async startWebSocketServer() {
+    async startWebSocketServer(httpsServer) {
         return new Promise((resolve, reject) => {
             try {
+                // Primary WS server on dedicated port (HTTP clients)
                 this.wsServer = new WebSocketServer({
                     port: this.port,
                     host: '0.0.0.0', // Explicitly bind to IPv4
@@ -228,6 +230,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 this.wsServer.on('listening', () => {
                     console.log(`🌐 ElevenLabs Chat WebSocket server listening on port ${this.port}`);
+
+                    // Attach secondary WSS to HTTPS server at /ai-chat (HTTPS clients)
+                    if (httpsServer) {
+                        try {
+                            this.wssServer = new WebSocketServer({
+                                server: httpsServer,
+                                path: '/ai-chat',
+                                perMessageDeflate: false
+                            });
+                            this.wssServer.on('connection', (ws, req) => {
+                                this.handleClientConnection(ws, req);
+                            });
+                            console.log(`🔒 Secure WebSocket (WSS) attached to HTTPS server at /ai-chat`);
+                        } catch (e) {
+                            console.warn(`⚠️  Failed to attach WSS to HTTPS server:`, e.message);
+                        }
+                    }
 
                     // Start periodic cleanup
                     this._cleanupTimer = setInterval(() => {
@@ -275,6 +294,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
             _dbgLastTs: 0,           // throttle for client debug breadcrumbs
             sttLanguage: null,       // per-connection STT language override
             suppressMicUntilMs: 0,   // suppress server mic during server playback
+            // Duration-based echo suppression (tracks actual audio playback time)
+            aiSpeaking: false,          // true while AI is generating audio
+            speechStartedAt: 0,         // Date.now() when first audio chunk of current utterance arrives
+            accumulatedAudioMs: 0,      // total audio duration accumulated from PCM chunk sizes
             audioBuffer: [],         // base64 MP3 frames from ElevenLabs
             audioPlaying: false,     // audio playback loop active flag
             // Scribe v2 Realtime STT session (replaces batch STT polling)
@@ -417,12 +440,27 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     } catch (_) { /* noop */ }
                     break;
 
+                case 'set_parrot_mode':
+                    connection.parrotMode = !!(message && message.enabled);
+                    console.log(`🦜 Parrot mode ${connection.parrotMode ? 'ON' : 'OFF'} for session ${sessionId}`);
+                    this.sendToClient(sessionId, { type: 'debug', originalType: 'set_parrot_mode', data: { enabled: connection.parrotMode } });
+                    break;
+
                 case 'browser_audio_chunk':
-                    // Forward browser-sent PCM16k (base64) directly to ElevenLabs
+                    // Forward browser-sent PCM16k (base64) to ElevenLabs ConvAI + Scribe STT
                     try {
-                        if (connection && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
-                            const audio64 = (message && message.audio) ? String(message.audio) : '';
+                        const audio64 = (message && message.audio) ? String(message.audio) : '';
+                        if (!audio64) break;
+
+                        // Forward to ElevenLabs ConvAI agent (skip during parrot mode — no AI responses)
+                        if (connection && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                             connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: audio64 }));
+                        }
+
+                        // Also forward to Scribe v2 Realtime STT for live transcription
+                        if (connection && connection.realtimeSTTSession && connection.realtimeSTTSession.isConnected) {
+                            const rawPcm = Buffer.from(audio64, 'base64');
+                            connection.realtimeSTTSession.sendPCMBuffer(rawPcm);
                         }
                     } catch (_) { /* noop */ }
                     break;
@@ -662,6 +700,32 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                         const c = this.activeConnections.get(sessionId);
 
+                        // Track accumulated audio duration for accurate echo suppression
+                        if (c && audioData) {
+                            const audioBuffer = Buffer.from(audioData, 'base64');
+                            const fmt = c.audioOutputFormat || 'pcm_16000';
+
+                            if (!c.aiSpeaking) {
+                                // First chunk of a new utterance
+                                c.aiSpeaking = true;
+                                c.speechStartedAt = Date.now();
+                                c.accumulatedAudioMs = 0;
+                            }
+
+                            // Calculate chunk duration: PCM16LE mono = 2 bytes/sample
+                            if (fmt.startsWith('pcm_')) {
+                                const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
+                                c.accumulatedAudioMs += (audioBuffer.length / (sampleRate * 2)) * 1000;
+                            } else {
+                                // MP3: estimate ~128kbps → duration_ms ≈ bytes * 8 / 128
+                                c.accumulatedAudioMs += (audioBuffer.length * 8 / 128);
+                            }
+
+                            // Suppress mic for the full estimated playback duration + tail buffer
+                            const TAIL_BUFFER_MS = 1500;
+                            c.suppressMicUntilMs = c.speechStartedAt + c.accumulatedAudioMs + TAIL_BUFFER_MS;
+                        }
+
                         // Play AI audio through server speakers if enabled
                         try {
                             if (c && audioData && c.audioPlaybackEnabled !== false) {
@@ -702,9 +766,6 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                         console.error(`❌ AI audio playback ERROR:`, err);
                                     });
                                 }
-
-                                // Suppress mic to avoid echo (3 seconds)
-                                c.suppressMicUntilMs = Date.now() + 3000;
                             }
                         } catch (e) { 
                             console.error('❌ CRITICAL: Error playing AI audio:', e); 
@@ -790,6 +851,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 case 'conversation_end':
                     console.log(`🔚 Conversation ended by ElevenLabs for ${sessionId}`);
+                    if (connection) {
+                        connection.aiSpeaking = false;
+                        connection.speechStartedAt = 0;
+                        connection.accumulatedAudioMs = 0;
+                    }
                     this.sendToClient(sessionId, {
                         type: 'conversation_ended',
                         message: 'Conversation ended by agent'
@@ -805,6 +871,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             serverPlaybackService.stopAll();
                         }
                     } catch (_) { /* best-effort */ }
+                    // Reset echo suppression tracking
+                    if (connection) {
+                        connection.aiSpeaking = false;
+                        connection.speechStartedAt = 0;
+                        connection.accumulatedAudioMs = 0;
+                        connection.suppressMicUntilMs = Date.now() + 500; // short tail for reverb
+                    }
                     this.sendToClient(sessionId, {
                         type: 'interruption',
                         reason: message.interruption_event?.reason || 'Unknown'
@@ -1087,8 +1160,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     const now = Date.now();
                     const suppressed = connection.suppressMicUntilMs && (now < connection.suppressMicUntilMs);
 
-                    // 1) Stream to ElevenLabs ConvAI real-time agent (unless suppressed)
-                    if (!suppressed && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                    // 1) Stream to ElevenLabs ConvAI real-time agent (unless suppressed or parrot mode)
+                    if (!suppressed && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                         const b64 = raw.toString('base64');
                         connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
                     }
@@ -1335,8 +1408,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     console.error(`❌ Audio playback failed: ${result.error}`);
                 }
 
-                // Extend mic suppression during server playback to avoid echo
-                c.suppressMicUntilMs = Date.now() + 1500;
+                // Extend mic suppression: estimate audio duration from PCM buffer
+                const chunkFmt = c.audioOutputFormat || 'pcm_16000';
+                if (chunkFmt.startsWith('pcm_')) {
+                    const sr = parseInt(chunkFmt.split('_')[1]) || 16000;
+                    const durationMs = (audioBuffer.length / (sr * 2)) * 1000;
+                    c.suppressMicUntilMs = Math.max(c.suppressMicUntilMs, Date.now() + durationMs + 1500);
+                } else {
+                    c.suppressMicUntilMs = Math.max(c.suppressMicUntilMs, Date.now() + 3000);
+                }
             }
         } catch (error) {
             console.error(`❌ Error in audio playback loop:`, error.message);
@@ -1373,6 +1453,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
             }
 
             this.activeConnections.clear();
+
+            // Close WSS server if attached
+            if (this.wssServer) {
+                try { this.wssServer.close(); } catch (_) { /* noop */ }
+                this.wssServer = null;
+            }
 
             return new Promise((resolve) => {
                 this.wsServer.close(() => {

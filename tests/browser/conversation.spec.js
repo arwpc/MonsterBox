@@ -102,18 +102,18 @@ test.describe('AI Conversation Page', () => {
 
     test('should handle microphone permissions gracefully', async () => {
         tracker.clear();
-        
+
         // Grant microphone permission in test context
         await page.context().grantPermissions(['microphone']);
-        
-        // Find start mic button (use specific ID)
-        const startButton = page.locator('#micStart');
-        
-        if (await startButton.isVisible()) {
-            await startButton.click();
+
+        // Find browser mic toggle in Chat panel
+        const micToggle = page.locator('#chatBrowserMic');
+
+        if (await micToggle.isVisible()) {
+            await micToggle.click();
             await page.waitForTimeout(2000);
         }
-        
+
         // Page should handle mic access without critical JS errors
         await tracker.logErrors();
     });

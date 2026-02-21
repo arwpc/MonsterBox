@@ -1,0 +1,27 @@
+{
+  "id": "tpl_1771634213373",
+  "name": "ARW 2.20.26",
+  "description": "basic v6.00 tuning. ",
+  "created": "2026-02-21T00:36:53.373Z",
+  "settings": {
+    "cpu": {
+      "governor": "performance",
+      "availableGovernors": [
+        "conservative",
+        "ondemand",
+        "userspace",
+        "powersave",
+        "performance",
+        "schedutil"
+      ]
+    },
+    "gpu": {
+      "memory": "512M"
+    },
+    "memory": {
+      "swapTotalMB": 511,
+      "swapUsedMB": 511
+    },
+    "startup": []
+  }
+}

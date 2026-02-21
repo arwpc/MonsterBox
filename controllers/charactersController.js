@@ -129,6 +129,13 @@ export async function setSelected(req, res) {
   var id = parseId(req.body && req.body.id);
   if (id === null) return res.status(400).json({ success: false, error: 'Invalid id' });
   try {
+    // Detect whether this request came in on the main production port or a test port.
+    // The production server exposes port 3100 as a test proxy using the same app.
+    // Test-port requests must NOT modify the production in-memory character selection.
+    var mainPort = (req.app && req.app.locals && req.app.locals._mainPort) || 3000;
+    var reqPort = req.socket && req.socket.localPort;
+    var isProductionPort = !reqPort || reqPort === mainPort;
+
     var inTest = (process && process.env && (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true'));
     if (inTest) {
       // Fast path: update in-memory immediately and respond; persist to disk in background
@@ -141,9 +148,11 @@ export async function setSelected(req, res) {
       try { updateSelectedCharacter(id).catch(function () { /* ignore */ }); } catch (_) { /* no-op */ }
       return;
     }
-    // Production path: persist then respond
+    // Production path: persist to disk always
     var cfg = await updateSelectedCharacter(id);
-    if (req.app && req.app.locals) {
+    // Only update in-memory config for production-port requests.
+    // Test-port (3100) requests write to disk but do NOT change the running server's character.
+    if (isProductionPort && req.app && req.app.locals) {
       req.app.locals.config = Object.assign({}, req.app.locals.config || {}, cfg);
     }
     res.json({ success: true, selectedCharacter: cfg.selectedCharacter });

@@ -1,25 +1,6 @@
 {
   "characterId": 5,
-  "poses": [
-    {
-      "id": 1,
-      "name": "elbow - Half Bend",
-      "description": "Half Bend pose created from elbow template",
-      "parts": [
-        {
-          "partId": 1,
-          "type": "servo",
-          "target": {
-            "angleDeg": 45
-          }
-        }
-      ],
-      "category": "elbow",
-      "concurrent": false,
-      "notes": "Generated from elbow template",
-      "created": "2025-10-17T18:05:55.764Z"
-    }
-  ],
+  "poses": [],
   "templates": {
     "elbow": {
       "description": "Elbow bend presets",

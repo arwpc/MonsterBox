@@ -94,9 +94,18 @@ class ServerPlaybackService {
     this._pcmStreams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
     this._lastAIPlay = null; // dedicated telemetry for AI playback
+    this._speakerMuted = false; // global speaker mute flag
     this._mpg123Available = this._detectMpg123();
     this._ffmpegAvailable = this._detectCmd('ffmpeg');
     this._pwplayAvailable = this._detectCmd('pw-play');
+  }
+
+  setSpeakerMuted(muted) {
+    this._speakerMuted = !!muted;
+  }
+
+  isSpeakerMuted() {
+    return this._speakerMuted;
   }
 
   _detectMpg123() {
@@ -187,6 +196,7 @@ class ServerPlaybackService {
 
   async writeMp3Stream(buffer, opts = {}) {
     if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    if (this._speakerMuted) return { success: true, muted: true };
     if (!this._mpg123Available) {
       return { success: false, error: 'mpg123_not_available' };
     }
@@ -273,6 +283,7 @@ class ServerPlaybackService {
    */
   async writePcmStream(buffer, opts = {}) {
     if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
+    if (this._speakerMuted) return { success: true, muted: true };
     if (!this._pwplayAvailable) {
       return { success: false, error: 'pw-play_not_available' };
     }
@@ -557,6 +568,7 @@ class ServerPlaybackService {
       if (!buffer || !buffer.length) {
         return { success: false, error: 'No audio buffer provided' };
       }
+      if (this._speakerMuted) return { success: true, muted: true };
       const characterId = opts.characterId || null;
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
