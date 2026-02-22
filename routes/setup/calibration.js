@@ -72,21 +72,18 @@ const linearActuatorCalibration = {
 const router = express.Router();
 
 // Character-aware parts loading and saving functions
-// IMPORTANT: Honor app-config.dataPath which may already point to a character directory
+// Always resolve from the global data root (not cfg.dataPath which is character-scoped)
 async function loadCharacterParts(characterId) {
     try {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '..', '..');
-        // If cfg.dataPath is set, it may already be character-scoped (e.g., data/character-1)
-        const baseDataRoot = cfg && cfg.dataPath ? path.resolve(appRoot, cfg.dataPath) : path.resolve(appRoot, 'data');
+        // Always use the global data root so we can reliably find any character's directory
+        const dataRoot = path.resolve(appRoot, 'data');
         const effectiveCharId = characterId || cfg.selectedCharacter || null;
 
         // Prefer character-specific parts.json when a character is selected
         if (effectiveCharId) {
-            // If baseDataRoot already ends with character-{id}, use it directly; otherwise nest character-{id}
-            const alreadyCharScoped = new RegExp(`(^|/)character-${effectiveCharId}(/|$)`).test(baseDataRoot.replace(/\\/g, '/'));
-            const perCharDir = alreadyCharScoped ? baseDataRoot : path.resolve(baseDataRoot, `character-${effectiveCharId}`);
-            const perCharPath = path.resolve(perCharDir, 'parts.json');
+            const perCharPath = path.resolve(dataRoot, `character-${effectiveCharId}`, 'parts.json');
             try {
                 const raw = await fs.readFile(perCharPath, 'utf8');
                 const parts = JSON.parse(raw || '[]');
@@ -98,7 +95,7 @@ async function loadCharacterParts(characterId) {
             }
         }
         // Global fallback
-        const partsPath = path.resolve(baseDataRoot, 'parts.json');
+        const partsPath = path.resolve(dataRoot, 'parts.json');
         const raw = await fs.readFile(partsPath, 'utf8').catch(() => '[]');
         const parts = JSON.parse(raw || '[]');
         console.log(`✅ Loaded ${parts.length} parts from ${partsPath} (selectedCharacter=${cfg.selectedCharacter}, requestedCharacterId=${characterId || 'n/a'})`);
@@ -113,15 +110,14 @@ async function saveCharacterParts(characterId, parts) {
     try {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '..', '..');
-        const baseDataRoot = cfg && cfg.dataPath ? path.resolve(appRoot, cfg.dataPath) : path.resolve(appRoot, 'data');
+        const dataRoot = path.resolve(appRoot, 'data');
         const effectiveCharId = characterId || cfg.selectedCharacter || null;
 
         let targetDir;
         if (effectiveCharId) {
-            const alreadyCharScoped = new RegExp(`(^|/)character-${effectiveCharId}(/|$)`).test(baseDataRoot.replace(/\\/g, '/'));
-            targetDir = alreadyCharScoped ? baseDataRoot : path.resolve(baseDataRoot, `character-${effectiveCharId}`);
+            targetDir = path.resolve(dataRoot, `character-${effectiveCharId}`);
         } else {
-            targetDir = baseDataRoot;
+            targetDir = dataRoot;
         }
         const partsPath = path.resolve(targetDir, 'parts.json');
         // Ensure directory exists
@@ -166,10 +162,14 @@ router.get('/unified', async (req, res) => {
 // Setup calibration main page - Parts CRUD + Calibration Management
 router.get('/', async (req, res) => {
     try {
+        // Read selected character from config (same pattern as jaw-animation)
+        const cfg = await readConfig();
+        const currentCharacterId = cfg.selectedCharacter || null;
+
         res.renderWithLayout('setup/calibration', {
             title: 'Setup Calibration - MonsterBox',
             page: 'setup-calibration',
-
+            currentCharacterId,
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')
         });
     } catch (error) {

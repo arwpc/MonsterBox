@@ -1,6 +1,8 @@
 <script>
   try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
   try { if (window.MB_TEST_MODE) document.documentElement.classList.add('mb-test-mode'); } catch (e) { }
+  // Server-provided character ID — avoids extra API call and race conditions
+  window.__MB_CHAR_ID = <%= typeof currentCharacterId !== 'undefined' && currentCharacterId ? JSON.stringify(currentCharacterId) : 'null' %>;
 </script>
 <style>
   #deviceList .list-group-item { scroll-margin-top: 80px; }
@@ -552,14 +554,26 @@
     if (globalSpeedCap) globalSpeedCap.addEventListener('input', () => { if (globalSpeedCapVal) globalSpeedCapVal.textContent = globalSpeedCap.value + '%'; });
 
     async function loadParts() {
-      // Get current character first
-      let characterId = null;
-      try {
-        const currentRes = await fetch('/setup/characters/api/current');
-        const currentData = await currentRes.json();
-        characterId = currentData.selectedCharacter;
-      } catch (e) {
-        console.warn('Could not get current character:', e);
+      // Use server-provided character ID (set at render time, no extra API call needed)
+      let characterId = window.__MB_CHAR_ID || null;
+
+      // Fallback: read from nav DOM element
+      if (!characterId) {
+        try {
+          var charLabel = document.getElementById('charLabel');
+          if (charLabel && charLabel.dataset.charId) characterId = charLabel.dataset.charId;
+        } catch (e) {}
+      }
+
+      // Last resort: API call
+      if (!characterId) {
+        try {
+          const currentRes = await fetch('/setup/characters/api/current');
+          const currentData = await currentRes.json();
+          characterId = currentData.selectedCharacter;
+        } catch (e) {
+          console.warn('Could not get current character:', e);
+        }
       }
 
       const url = characterId ? `/setup/calibration/api/parts?characterId=${characterId}` : '/setup/calibration/api/parts';
@@ -1104,10 +1118,19 @@
     // Clear all calibrations for current character
     async function clearAllCalibrations() {
       try {
-        // Get current character
-        const currentRes = await fetch('/setup/characters/api/current');
-        const currentData = await currentRes.json();
-        const characterId = currentData.selectedCharacter;
+        // Use server-provided character ID, fall back to API
+        let characterId = window.__MB_CHAR_ID || null;
+        if (!characterId) {
+          try {
+            var charLabel = document.getElementById('charLabel');
+            if (charLabel && charLabel.dataset.charId) characterId = charLabel.dataset.charId;
+          } catch (e) {}
+        }
+        if (!characterId) {
+          const currentRes = await fetch('/setup/characters/api/current');
+          const currentData = await currentRes.json();
+          characterId = currentData.selectedCharacter;
+        }
 
         if (!characterId) {
           alert('No character selected');
@@ -2170,10 +2193,12 @@
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#spkPlay').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
-          fetch('/setup/characters/api/current')
-            .then(function (r) { return r.json(); })
-            .then(function (j) { var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; })
-            .then(function (cid) {
+          var cidPromise;
+          var cachedCid = window.__MB_CHAR_ID || null;
+          if (!cachedCid) { try { var cl = document.getElementById('charLabel'); if (cl && cl.dataset.charId) cachedCid = cl.dataset.charId; } catch (e) {} }
+          if (cachedCid) { cidPromise = Promise.resolve(cachedCid); }
+          else { cidPromise = fetch('/setup/characters/api/current').then(function (r) { return r.json(); }).then(function (j) { var cid = j && j.selectedCharacter; if (!cid) throw new Error('No character selected'); return cid; }); }
+          cidPromise.then(function (cid) {
               return fetch('/api/elevenlabs/generate-and-play', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Speaker preview test', characterId: cid })
               });
