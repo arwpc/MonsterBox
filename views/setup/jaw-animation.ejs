@@ -27,10 +27,30 @@
   </div>
   <% } %>
 
-  <div class="d-flex justify-content-end mb-2">
-    <button type="button" class="btn btn-primary btn-sm" id="saveConfigBtn">
-      <i class="bi bi-save"></i> Save Config
-    </button>
+  <!-- Config Selector Bar -->
+  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+    <div class="input-group input-group-sm" style="max-width:280px;">
+      <label class="input-group-text" for="configSelector"><i class="bi bi-collection"></i></label>
+      <select class="form-select form-select-sm" id="configSelector">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn btn-outline-success" id="saveAsNewBtn" title="Save current settings as a new config">
+        <i class="bi bi-plus-lg"></i> Save As New
+      </button>
+      <button type="button" class="btn btn-outline-info" id="renameConfigBtn" title="Rename current config">
+        <i class="bi bi-pencil"></i> Rename
+      </button>
+      <button type="button" class="btn btn-outline-danger" id="deleteConfigBtn" title="Delete current config">
+        <i class="bi bi-trash"></i> Delete
+      </button>
+    </div>
+    <div class="ms-auto">
+      <button type="button" class="btn btn-primary btn-sm" id="saveConfigBtn">
+        <i class="bi bi-save"></i> Save Config
+      </button>
+    </div>
   </div>
 
   <% if (currentCharacter) { %>

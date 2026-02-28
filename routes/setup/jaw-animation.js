@@ -106,17 +106,23 @@ router.get('/', async (req, res) => {
 });
 
 // Get jaw animation configuration for a character
+// Returns the flat active config + configs list for the UI config selector
 router.get('/api/jaw-animation/:characterId', async (req, res) => {
   try {
     const { characterId } = req.params;
 
-    const config = await jawAnimationService.readJawConfig(characterId);
-    const servos = await jawAnimationService.getAvailableServos(characterId);
+    const [config, configsList, servos] = await Promise.all([
+      jawAnimationService.readJawConfig(characterId),
+      jawAnimationService.listJawConfigs(characterId),
+      jawAnimationService.getAvailableServos(characterId)
+    ]);
     const monitoringState = jawAnimationService.getAudioMonitoringState(characterId);
 
     res.json({
       success: true,
       config,
+      configs: configsList.configs,
+      activeConfigId: configsList.activeConfigId,
       availableServos: servos,
       monitoringState
     });
@@ -169,6 +175,130 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
     res.json({ success: true, message: 'Jaw animation configuration saved' });
   } catch (error) {
     console.error('Error saving jaw animation config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ─── Multi-Config CRUD Endpoints ─────────────────────────────────
+
+// List all configs for a character
+router.get('/api/jaw-animation/:characterId/configs', async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const result = await jawAnimationService.listJawConfigs(characterId);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error listing jaw configs:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create a new config (clone from active or default)
+router.post('/api/jaw-animation/:characterId/configs', async (req, res) => {
+  try {
+    const { characterId } = req.params;
+    const { name, cloneFrom } = req.body || {};
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ success: false, error: 'name is required' });
+    }
+
+    const configId = jawAnimationService.generateConfigId();
+
+    // Clone tuning params from an existing config or use defaults
+    let baseParams = {};
+    if (cloneFrom) {
+      const source = await jawAnimationService.getJawConfigById(characterId, cloneFrom);
+      if (source) {
+        const { id: _id, name: _name, ...rest } = source;
+        baseParams = rest;
+      }
+    }
+    if (Object.keys(baseParams).length === 0) {
+      const def = jawAnimationService.getDefaultJawConfig();
+      const { enabled: _e, servoPartId: _s, ...rest } = def;
+      baseParams = rest;
+    }
+
+    const saved = await jawAnimationService.saveJawConfigById(characterId, configId, {
+      name: String(name).trim(),
+      ...baseParams
+    });
+
+    res.json({ success: true, config: saved });
+  } catch (error) {
+    console.error('Error creating jaw config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update an existing config
+router.put('/api/jaw-animation/:characterId/configs/:configId', async (req, res) => {
+  try {
+    const { characterId, configId } = req.params;
+    const params = req.body || {};
+
+    const existing = await jawAnimationService.getJawConfigById(characterId, configId);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Config not found' });
+    }
+
+    const saved = await jawAnimationService.saveJawConfigById(characterId, configId, params);
+    res.json({ success: true, config: saved });
+  } catch (error) {
+    console.error('Error updating jaw config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete a config
+router.delete('/api/jaw-animation/:characterId/configs/:configId', async (req, res) => {
+  try {
+    const { characterId, configId } = req.params;
+    const result = await jawAnimationService.deleteJawConfigById(characterId, configId);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    console.error('Error deleting jaw config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Set active config
+router.post('/api/jaw-animation/:characterId/configs/:configId/activate', async (req, res) => {
+  try {
+    const { characterId, configId } = req.params;
+    const flat = await jawAnimationService.setActiveJawConfig(characterId, configId);
+    res.json({ success: true, config: flat });
+  } catch (error) {
+    console.error('Error activating jaw config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Rename a config
+router.post('/api/jaw-animation/:characterId/configs/:configId/rename', async (req, res) => {
+  try {
+    const { characterId, configId } = req.params;
+    const { name } = req.body || {};
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ success: false, error: 'name is required' });
+    }
+
+    const existing = await jawAnimationService.getJawConfigById(characterId, configId);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Config not found' });
+    }
+
+    const saved = await jawAnimationService.saveJawConfigById(characterId, configId, {
+      name: String(name).trim()
+    });
+    res.json({ success: true, config: saved });
+  } catch (error) {
+    console.error('Error renaming jaw config:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

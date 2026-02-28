@@ -2,6 +2,23 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.7.0] - 2026-02-28 — Jaw Animation CRUD, Calibration Unification, Audio, and System Fixes
+
+### Jaw Animation Multi-Config CRUD
+- **Multiple named jaw configs per character** — Each character can now save, load, rename, and delete multiple jaw animation configurations. The active config selector appears at the top of the Jaw Animation setup page.
+- **Auto-migration** — Existing single-config `super-powers.json` files are automatically migrated to the new `configs[]` array format on first read. The existing config becomes "Default".
+- **Backward-compatible API** — The existing `GET /api/jaw-animation/:charId` and `POST /api/jaw-animation/:charId` endpoints continue to work unchanged. `readJawConfig()` returns a flat config for all consumers.
+- **New CRUD endpoints:**
+  - `GET /api/jaw-animation/:charId/configs` — list all configs
+  - `POST /api/jaw-animation/:charId/configs` — create new config (with optional clone)
+  - `PUT /api/jaw-animation/:charId/configs/:configId` — update config
+  - `DELETE /api/jaw-animation/:charId/configs/:configId` — delete config (cannot delete active)
+  - `POST /api/jaw-animation/:charId/configs/:configId/activate` — switch active config
+  - `POST /api/jaw-animation/:charId/configs/:configId/rename` — rename config
+- **UI controls** — Config selector dropdown, "Save As New", "Rename", and "Delete" buttons added to the jaw animation page.
+
+---
+
 ## [6.7.0] - 2026-02-28 — Calibration Unification, Jaw Animation, Audio, and System Fixes
 
 ### Calibration Angle Unification

@@ -2,16 +2,23 @@
   "jawAnimation": {
     "enabled": true,
     "servoPartId": "10",
-    "sensitivity": 5,
-    "smoothing": 0.4,
-    "volumeThreshold": 0.02,
-    "attackTime": 50,
-    "releaseTime": 150,
-    "useBandpassFilter": true,
-    "useAGC": true,
-    "quantizationLevels": 20,
-    "preset": "custom",
-    "minAngle": 54,
-    "maxAngle": 100
+    "activeConfigId": "config-1",
+    "configs": [
+      {
+        "id": "config-1",
+        "name": "Default",
+        "sensitivity": 5,
+        "smoothing": 0.4,
+        "volumeThreshold": 0.02,
+        "attackTime": 50,
+        "releaseTime": 150,
+        "useBandpassFilter": true,
+        "useAGC": true,
+        "quantizationLevels": 20,
+        "preset": "custom",
+        "minAngle": 54,
+        "maxAngle": 100
+      }
+    ]
   }
 }

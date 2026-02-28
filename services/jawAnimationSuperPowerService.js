@@ -39,33 +39,123 @@ async function getCharacterDataDir(characterId) {
 }
 
 /**
+ * Read the raw jawAnimation object from super-powers.json.
+ * Auto-migrates old flat format → multi-config format on first read.
+ */
+async function readRawJawSection(characterId) {
+  const dataDir = await getCharacterDataDir(characterId);
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) {
+    // File missing — return default multi-config structure
+    return buildDefaultMultiConfig();
+  }
+
+  let jaw = fileConfig.jawAnimation;
+  if (!jaw) return buildDefaultMultiConfig();
+
+  // Auto-migrate: if there's no configs array, this is the old flat format
+  if (!Array.isArray(jaw.configs)) {
+    jaw = migrateToMultiConfig(jaw);
+    // Persist the migration
+    fileConfig.jawAnimation = jaw;
+    try {
+      await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+    } catch (writeErr) {
+      console.warn('Could not persist jaw config migration:', writeErr.message);
+    }
+  }
+
+  return jaw;
+}
+
+/**
+ * Migrate a flat jaw config to multi-config format.
+ * The existing config becomes the first entry in configs[].
+ */
+function migrateToMultiConfig(flat) {
+  const { enabled, servoPartId, ...params } = flat;
+  const configId = 'config-1';
+  return {
+    enabled: !!enabled,
+    servoPartId: servoPartId || null,
+    activeConfigId: configId,
+    configs: [{
+      id: configId,
+      name: 'Default',
+      ...params
+    }]
+  };
+}
+
+/**
+ * Build a default multi-config structure for new characters.
+ */
+function buildDefaultMultiConfig() {
+  const def = getDefaultJawConfig();
+  const { enabled, servoPartId, ...params } = def;
+  return {
+    enabled: false,
+    servoPartId: null,
+    activeConfigId: 'config-1',
+    configs: [{
+      id: 'config-1',
+      name: 'Default',
+      ...params
+    }]
+  };
+}
+
+/**
  * Read jaw animation configuration for a character.
- * Also pre-warms the servo daemon if jaw is enabled (avoids cold-start lag on first TTS).
+ * Returns a flat config (backward-compatible): { enabled, servoPartId, sensitivity, ... }
+ * The active config's params are merged into the top-level object.
+ * Also pre-warms the servo daemon if jaw is enabled.
  */
 async function readJawConfig(characterId) {
   try {
-    const dataDir = await getCharacterDataDir(characterId);
-    const configFile = path.join(dataDir, 'super-powers.json');
-
-    const data = await fs.readFile(configFile, 'utf8');
-    const config = JSON.parse(data);
-
-    const jawConfig = config.jawAnimation || getDefaultJawConfig();
+    const jaw = await readRawJawSection(characterId);
+    const flat = flattenJawConfig(jaw);
 
     // Pre-warm daemon so it's ready when playWithJawSync is called
-    if (jawConfig.enabled && jawConfig.servoPartId) {
+    if (flat.enabled && flat.servoPartId) {
       jawServoDaemon.ensureRunning().catch(() => {});
     }
 
-    return jawConfig;
+    return flat;
   } catch (error) {
-    // Return default config if file doesn't exist
     return getDefaultJawConfig();
   }
 }
 
 /**
- * Write jaw animation configuration for a character
+ * Flatten a multi-config jawAnimation section into the legacy flat format.
+ * Merges the active config's params (sensitivity, smoothing, etc.) into top level.
+ */
+function flattenJawConfig(jaw) {
+  const configs = jaw.configs || [];
+  const active = configs.find(c => c.id === jaw.activeConfigId) || configs[0];
+
+  if (!active) return getDefaultJawConfig();
+
+  // Merge: top-level enabled/servoPartId + active config's tuning params
+  const { id, name, ...tuningParams } = active;
+  return {
+    enabled: !!jaw.enabled,
+    servoPartId: jaw.servoPartId || null,
+    activeConfigId: jaw.activeConfigId,
+    ...tuningParams
+  };
+}
+
+/**
+ * Write jaw animation configuration for a character.
+ * Accepts either a flat config (from legacy POST /api/jaw-animation/:charId)
+ * or params to update the active config. Updates the active config entry in configs[].
  */
 async function writeJawConfig(characterId, jawConfig) {
   try {
@@ -74,29 +164,200 @@ async function writeJawConfig(characterId, jawConfig) {
 
     const configFile = path.join(dataDir, 'super-powers.json');
 
-    // Read existing config or create new one
-    let config = {};
+    let fileConfig = {};
     try {
       const data = await fs.readFile(configFile, 'utf8');
-      config = JSON.parse(data);
-    } catch (error) {
-      // File doesn't exist, start with empty config
+      fileConfig = JSON.parse(data);
+    } catch (_) {
+      // File doesn't exist, start fresh
     }
 
-    // Update jaw animation section
-    config.jawAnimation = jawConfig;
+    // Read existing multi-config structure (or migrate)
+    let jaw = fileConfig.jawAnimation;
+    if (!jaw || !Array.isArray(jaw.configs)) {
+      jaw = jaw ? migrateToMultiConfig(jaw) : buildDefaultMultiConfig();
+    }
 
-    // Write back to file
-    await fs.writeFile(configFile, JSON.stringify(config, null, 2));
+    // Update top-level fields
+    if (jawConfig.enabled !== undefined) jaw.enabled = !!jawConfig.enabled;
+    if (jawConfig.servoPartId !== undefined) jaw.servoPartId = jawConfig.servoPartId;
 
-    // Update in-memory cache
-    characterConfigs.set(String(characterId), jawConfig);
+    // Update the active config's tuning params
+    const activeId = jaw.activeConfigId || (jaw.configs[0] && jaw.configs[0].id);
+    const activeIdx = jaw.configs.findIndex(c => c.id === activeId);
+    if (activeIdx >= 0) {
+      const tuningKeys = [
+        'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
+        'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
+        'minAngle', 'maxAngle'
+      ];
+      for (const key of tuningKeys) {
+        if (jawConfig[key] !== undefined) {
+          jaw.configs[activeIdx][key] = jawConfig[key];
+        }
+      }
+    }
+
+    fileConfig.jawAnimation = jaw;
+    await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+
+    // Update in-memory cache with flat config
+    characterConfigs.set(String(characterId), flattenJawConfig(jaw));
 
     return true;
   } catch (error) {
     console.error('Error writing jaw config:', error);
     throw error;
   }
+}
+
+// ─── Multi-Config CRUD ──────────────────────────────────────────────
+
+/**
+ * List all jaw configs for a character.
+ * Returns { enabled, servoPartId, activeConfigId, configs: [{ id, name, ... }] }
+ */
+async function listJawConfigs(characterId) {
+  const jaw = await readRawJawSection(characterId);
+  return {
+    enabled: !!jaw.enabled,
+    servoPartId: jaw.servoPartId || null,
+    activeConfigId: jaw.activeConfigId,
+    configs: (jaw.configs || []).map(c => ({
+      id: c.id,
+      name: c.name,
+      preset: c.preset || 'custom'
+    }))
+  };
+}
+
+/**
+ * Get a specific jaw config by ID.
+ */
+async function getJawConfigById(characterId, configId) {
+  const jaw = await readRawJawSection(characterId);
+  const config = (jaw.configs || []).find(c => c.id === configId);
+  if (!config) return null;
+  return { ...config };
+}
+
+/**
+ * Create or update a jaw config entry.
+ * If configId exists, updates it. Otherwise creates a new entry.
+ * Returns the saved config object.
+ */
+async function saveJawConfigById(characterId, configId, params) {
+  const dataDir = await getCharacterDataDir(characterId);
+  await fs.mkdir(dataDir, { recursive: true });
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) {}
+
+  let jaw = fileConfig.jawAnimation;
+  if (!jaw || !Array.isArray(jaw.configs)) {
+    jaw = jaw ? migrateToMultiConfig(jaw) : buildDefaultMultiConfig();
+  }
+
+  const idx = jaw.configs.findIndex(c => c.id === configId);
+  if (idx >= 0) {
+    // Update existing
+    Object.assign(jaw.configs[idx], params);
+    jaw.configs[idx].id = configId; // Ensure ID is not overwritten
+  } else {
+    // Create new
+    jaw.configs.push({ id: configId, name: params.name || 'Unnamed', ...params });
+  }
+
+  fileConfig.jawAnimation = jaw;
+  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+
+  // Refresh cache
+  characterConfigs.set(String(characterId), flattenJawConfig(jaw));
+
+  return jaw.configs.find(c => c.id === configId);
+}
+
+/**
+ * Delete a jaw config entry. Cannot delete the active config.
+ * Returns { success, error? }
+ */
+async function deleteJawConfigById(characterId, configId) {
+  const dataDir = await getCharacterDataDir(characterId);
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) {
+    return { success: false, error: 'Config file not found' };
+  }
+
+  let jaw = fileConfig.jawAnimation;
+  if (!jaw || !Array.isArray(jaw.configs)) {
+    return { success: false, error: 'No configs found' };
+  }
+
+  if (jaw.configs.length <= 1) {
+    return { success: false, error: 'Cannot delete the last config' };
+  }
+
+  if (jaw.activeConfigId === configId) {
+    return { success: false, error: 'Cannot delete the active config. Switch to another config first.' };
+  }
+
+  jaw.configs = jaw.configs.filter(c => c.id !== configId);
+  fileConfig.jawAnimation = jaw;
+  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+
+  characterConfigs.set(String(characterId), flattenJawConfig(jaw));
+
+  return { success: true };
+}
+
+/**
+ * Set the active jaw config for a character.
+ */
+async function setActiveJawConfig(characterId, configId) {
+  const dataDir = await getCharacterDataDir(characterId);
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) {
+    throw new Error('Config file not found');
+  }
+
+  let jaw = fileConfig.jawAnimation;
+  if (!jaw || !Array.isArray(jaw.configs)) {
+    throw new Error('No configs found');
+  }
+
+  const exists = jaw.configs.some(c => c.id === configId);
+  if (!exists) {
+    throw new Error('Config not found: ' + configId);
+  }
+
+  jaw.activeConfigId = configId;
+  fileConfig.jawAnimation = jaw;
+  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+
+  characterConfigs.set(String(characterId), flattenJawConfig(jaw));
+
+  return flattenJawConfig(jaw);
+}
+
+/**
+ * Generate a unique config ID.
+ */
+function generateConfigId() {
+  return 'config-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
 }
 
 /**
@@ -1231,5 +1492,12 @@ export {
   cancelJawDrive,
   getJawDriveState,
   simulateJawDrive,
-  jawServoDaemon
+  jawServoDaemon,
+  // Multi-config CRUD
+  listJawConfigs,
+  getJawConfigById,
+  saveJawConfigById,
+  deleteJawConfigById,
+  setActiveJawConfig,
+  generateConfigId
 };

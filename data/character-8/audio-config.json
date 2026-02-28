@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2026-02-28T02:20:28.216Z",
+  "lastUpdated": "2026-02-28T03:14:16.588Z",
   "characterId": 8,
-  "created": "2026-02-28T02:20:28.215Z",
+  "created": "2026-02-28T03:14:16.588Z",
   "microphone": {
     "enabled": true,
     "sensitivity": 1,
@@ -52,7 +52,7 @@
     "contextAwareness": true,
     "personalityAdjustments": true
   },
-  "lastModified": "2026-02-28T02:20:28.216Z",
+  "lastModified": "2026-02-28T03:14:16.588Z",
   "speaker": {
     "defaultSpeakerId": null,
     "outputDevice": "default",

@@ -13,6 +13,8 @@
   var playbackTimer = null;
   var currentConfig = {};
   var availableServos = [];
+  var configsList = [];       // Array of { id, name, preset }
+  var activeConfigId = null;  // Currently active config ID
   var el = {};
 
   // ─── Initialization ───────────────────────────────────────────────
@@ -72,7 +74,12 @@
       presetMusic:         document.getElementById('presetMusic'),
       presetCustom:        document.getElementById('presetCustom'),
       jawTimelineCanvas:   document.getElementById('jawTimelineCanvas'),
-      timelinePanel:       document.getElementById('timelinePanel')
+      timelinePanel:       document.getElementById('timelinePanel'),
+      // Config selector
+      configSelector:      document.getElementById('configSelector'),
+      saveAsNewBtn:        document.getElementById('saveAsNewBtn'),
+      renameConfigBtn:     document.getElementById('renameConfigBtn'),
+      deleteConfigBtn:     document.getElementById('deleteConfigBtn')
     };
   }
 
@@ -129,9 +136,21 @@
     // Filter/AGC toggles switch to custom preset
     if (el.bandpassFilter) el.bandpassFilter.addEventListener('change', function() { selectPreset('custom'); });
     if (el.agcEnabled)     el.agcEnabled.addEventListener('change',     function() { selectPreset('custom'); });
+
+    // Config selector
+    if (el.configSelector)  el.configSelector.addEventListener('change', onConfigSwitch);
+    if (el.saveAsNewBtn)    el.saveAsNewBtn.addEventListener('click', saveAsNewConfig);
+    if (el.renameConfigBtn) el.renameConfigBtn.addEventListener('click', renameConfig);
+    if (el.deleteConfigBtn) el.deleteConfigBtn.addEventListener('click', deleteConfig);
   }
 
   function readCharacterFromNav() {
+    // Prefer server-provided character ID
+    var mbId = window.__MB_CHAR_ID || null;
+    if (mbId) {
+      currentCharacterId = parseInt(mbId, 10) || null;
+      return;
+    }
     var charLabel = document.getElementById('charLabel');
     if (charLabel) {
       var id = charLabel.getAttribute('data-char-id');
@@ -150,6 +169,9 @@
         if (data.success) {
           currentConfig = data.config;
           availableServos = data.availableServos || [];
+          configsList = data.configs || [];
+          activeConfigId = data.activeConfigId || (data.config && data.config.activeConfigId) || null;
+          populateConfigSelector();
           populateServoDropdown(availableServos);
           populateForm(data.config);
           updateFormState();
@@ -645,6 +667,169 @@
     ctx.lineTo(w, h / 2);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // ─── Config Selector / CRUD ─────────────────────────────────────
+
+  function populateConfigSelector() {
+    if (!el.configSelector) return;
+    el.configSelector.innerHTML = '';
+    for (var i = 0; i < configsList.length; i++) {
+      var c = configsList[i];
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + (c.id === activeConfigId ? ' \u2713' : '');
+      if (c.id === activeConfigId) opt.selected = true;
+      el.configSelector.appendChild(opt);
+    }
+    updateConfigButtons();
+  }
+
+  function updateConfigButtons() {
+    // Disable delete if only one config or the active one is selected
+    if (el.deleteConfigBtn) {
+      var selectedId = el.configSelector ? el.configSelector.value : '';
+      el.deleteConfigBtn.disabled = configsList.length <= 1 || selectedId === activeConfigId;
+    }
+  }
+
+  function onConfigSwitch() {
+    if (!currentCharacterId || !el.configSelector) return;
+    var selectedId = el.configSelector.value;
+    if (!selectedId || selectedId === activeConfigId) {
+      updateConfigButtons();
+      return;
+    }
+
+    // Activate the selected config
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + selectedId + '/activate', {
+      method: 'POST'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        activeConfigId = selectedId;
+        currentConfig = data.config;
+        populateForm(data.config);
+        populateConfigSelector();
+        showToast('Switched to config', 'success');
+      } else {
+        showToast('Switch failed: ' + (data.error || 'Unknown'), 'error');
+        // Reset selector to current active
+        if (el.configSelector) el.configSelector.value = activeConfigId;
+      }
+    })
+    .catch(function(err) {
+      console.error('Config switch error:', err);
+      showToast('Failed to switch config', 'error');
+      if (el.configSelector) el.configSelector.value = activeConfigId;
+    });
+  }
+
+  function saveAsNewConfig() {
+    if (!currentCharacterId) return;
+    var name = prompt('Name for the new config:');
+    if (!name || !name.trim()) return;
+
+    // Clone from the currently active config
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim(), cloneFrom: activeConfigId })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success && data.config) {
+        // Add to list and switch to it
+        configsList.push({ id: data.config.id, name: data.config.name, preset: data.config.preset || 'custom' });
+        // Activate the new config
+        return fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + data.config.id + '/activate', {
+          method: 'POST'
+        }).then(function(r2) { return r2.json(); }).then(function(d2) {
+          if (d2.success) {
+            activeConfigId = data.config.id;
+            currentConfig = d2.config;
+            populateForm(d2.config);
+            populateConfigSelector();
+            showToast('Created and switched to "' + name.trim() + '"', 'success');
+          }
+        });
+      } else {
+        showToast('Create failed: ' + (data.error || 'Unknown'), 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Save as new error:', err);
+      showToast('Failed to create config', 'error');
+    });
+  }
+
+  function renameConfig() {
+    if (!currentCharacterId || !activeConfigId) return;
+    var currentName = '';
+    for (var i = 0; i < configsList.length; i++) {
+      if (configsList[i].id === activeConfigId) { currentName = configsList[i].name; break; }
+    }
+    var name = prompt('New name for this config:', currentName);
+    if (!name || !name.trim() || name.trim() === currentName) return;
+
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + activeConfigId + '/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        for (var j = 0; j < configsList.length; j++) {
+          if (configsList[j].id === activeConfigId) { configsList[j].name = name.trim(); break; }
+        }
+        populateConfigSelector();
+        showToast('Renamed to "' + name.trim() + '"', 'success');
+      } else {
+        showToast('Rename failed: ' + (data.error || 'Unknown'), 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Rename error:', err);
+      showToast('Failed to rename config', 'error');
+    });
+  }
+
+  function deleteConfig() {
+    if (!currentCharacterId || !el.configSelector) return;
+    var selectedId = el.configSelector.value;
+    if (!selectedId) return;
+
+    if (selectedId === activeConfigId) {
+      showToast('Cannot delete the active config. Switch to another first.', 'error');
+      return;
+    }
+
+    var selectedName = '';
+    for (var i = 0; i < configsList.length; i++) {
+      if (configsList[i].id === selectedId) { selectedName = configsList[i].name; break; }
+    }
+
+    if (!confirm('Delete config "' + selectedName + '"? This cannot be undone.')) return;
+
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + selectedId, {
+      method: 'DELETE'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        configsList = configsList.filter(function(c) { return c.id !== selectedId; });
+        populateConfigSelector();
+        showToast('Deleted "' + selectedName + '"', 'success');
+      } else {
+        showToast('Delete failed: ' + (data.error || 'Unknown'), 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Delete error:', err);
+      showToast('Failed to delete config', 'error');
+    });
   }
 
   // ─── Toast Notifications ──────────────────────────────────────────
