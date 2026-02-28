@@ -25,7 +25,7 @@ async function getOrAutoCreateProfile(partId) {
     let capability, motion;
     if (part.type === 'linear_actuator') {
       capability = { kind: 'openloop-linear' };
-      motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.2 }, { pwmPct: 90, unitsPerSec: 0.4 }], settleMs: 120 };
+      motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.2 }, { pwmPct: 90, unitsPerSec: 0.4 }], settleMs: 150 };
     } else if (part.type === 'servo') {
       const servoType = part.config && part.config.servoType;
       if (servoType === 'continuous') {
@@ -141,6 +141,29 @@ router.post('/:partId/stop', async (req, res) => {
     await adapter.stop();
     res.json({ success: true, message: 'Part stopped' });
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to stop', message: String(err) }); }
+});
+
+// Drive to a physical endstop to reset accumulated open-loop drift.
+// After homing, the position tracker is reset to the exact endpoint (0 or 1).
+router.post('/:partId/home', express.json(), async (req, res) => {
+  try {
+    const partId = parseInt(req.params.partId, 10);
+    const { direction, speedPct } = req.body || {};
+    const dir = direction === 'extend' ? 'extend' : 'retract';
+    const profile = await getOrAutoCreateProfile(partId);
+    if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
+    const adapter = getOrCreateAdapter(partId, profile);
+    if (typeof adapter.home !== 'function') {
+      return res.status(400).json({ success: false, error: 'Part type does not support homing' });
+    }
+    await adapter.home(dir, speedPct);
+    const currentP = adapter.currentP !== undefined ? adapter.currentP : (dir === 'retract' ? 0 : 1);
+    positionState.set(partId, { currentP, lastUpdated: new Date().toISOString() });
+    res.json({ success: true, message: `Homed to ${dir} endstop`, currentP });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Failed to home', message: String(err) });
+  }
 });
 
 router.post('/:partId/goto', express.json(), async (req, res) => {

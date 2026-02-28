@@ -2,6 +2,29 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.7.0] - 2026-02-27 — Calibration Drift Fix for Open-Loop Parts
+
+### Bug Fixes
+- **Linear actuator calibration drift** — Fixed progressive positional drift during sweep tests and repeated movements for open-loop parts (linear actuators, continuous servos). Root cause: `settleMs` (mechanical damping delay) was incorrectly added to motor drive time, causing the motor to run longer than calculated on every movement. Now `settleMs` is applied as a post-movement delay after the motor stops.
+- **Sweep test re-anchoring** — Sweep tests for open-loop parts now home to a physical endstop before each cycle, resetting the position tracker and eliminating accumulated drift across cycles.
+
+### Calibration Improvements
+- **Endpoint overdrive** — When moving to positions near physical endstops (0% or 100%), extra drive time is automatically added to guarantee the actuator contacts the mechanical stop. This resets accumulated open-loop tracking error.
+- **Home operation** — New `POST /api/calibration/:partId/home` endpoint drives a part to a physical endstop with generous overdrive and resets position tracking. Used internally by sweep tests and available for manual drift correction.
+- **Separated drive vs settle timing** — `OpenLoopLinearAdapter.calculateDriveTime()` now returns pure motor-on time. `settleMs` is waited separately after motor stops, preventing timing contamination across movement calculations.
+- **Motion planner fix** — `planner.js planTimeAtSpeed()` now returns `driveMs` and `settleMs` separately instead of combining them into `durationMs`.
+
+### Files Changed
+- `server/calibration/adapters/OpenLoopLinearAdapter.js` — Separated settle from drive time, added `home()` method, endpoint overdrive
+- `server/calibration/adapters/ContinuousServoAdapter.js` — Added `home()` method, endpoint overdrive, post-movement settle delay
+- `server/calibration/router.js` — Added `POST /:partId/home` endpoint, updated default settleMs to 150ms
+- `server/calibration/planner.js` — Separated settle time from drive duration in `planTimeAtSpeed()`
+- `views/setup/calibration.ejs` — Sweep test now homes before each cycle for open-loop parts
+- `data/calibration_profiles.json` — Updated settleMs from 120ms to 150ms
+- `tests/unit/calibration-unified-api.test.js` — Increased timeout to accommodate settle delays
+
+---
+
 ## [6.7.0] - 2026-02-20 — Dashboard Enhancements, Parrot Fix & RPi Presets
 
 ### Bug Fixes

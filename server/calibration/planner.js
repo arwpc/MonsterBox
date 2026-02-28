@@ -63,7 +63,11 @@ export function planTimeAtSpeed(motionModel, fromP, toP) {
     if (Math.abs(currentP - targetP) < 0.001) break;
   }
 
-  return { durationMs: Math.round(totalMs + settleMs) };
+  // Return drive time and settle time separately.
+  // driveMs = motor-on time, settleMs = post-movement mechanical damping delay.
+  // durationMs kept for backward compat but now excludes settle (caller should wait).
+  const driveMs = Math.round(totalMs);
+  return { durationMs: driveMs, driveMs, settleMs };
 }
 
 export function planMotion(motionModel, fromP, toP) {

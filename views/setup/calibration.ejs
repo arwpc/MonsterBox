@@ -1,8 +1,6 @@
 <script>
   try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
   try { if (window.MB_TEST_MODE) document.documentElement.classList.add('mb-test-mode'); } catch (e) { }
-  // Server-provided character ID — avoids extra API call and race conditions
-  window.__MB_CHAR_ID = <%= typeof currentCharacterId !== 'undefined' && currentCharacterId ? JSON.stringify(currentCharacterId) : 'null' %>;
 </script>
 <style>
   #deviceList .list-group-item { scroll-margin-top: 80px; }
@@ -836,7 +834,10 @@
 
     window.setCalibrationBound = setCalibrationBound;
 
-    // Sweep test: move from min to max 3 times at 100% speed
+    // Sweep test: move from min to max 3 times at 100% speed.
+    // For open-loop parts (linear actuators, continuous servos), homes to
+    // a physical endstop before starting and between each cycle to prevent
+    // accumulated positional drift.
     async function runSweepTest() {
       var partId = window.selectedPartId;
       if (!partId) { alert('No part selected'); return; }
@@ -864,9 +865,26 @@
 
       var SWEEPS = 3;
       var SPEED = 100;
+      // Detect open-loop parts that need homing to correct drift
+      var capKind = currentCalProfile.capability && currentCalProfile.capability.kind;
+      var needsHoming = (capKind === 'openloop-linear' || capKind === 'continuous-servo');
 
       try {
         for (var i = 0; i < SWEEPS; i++) {
+          // For open-loop parts, home to retract endstop before each cycle
+          // to reset accumulated positional drift
+          if (needsHoming) {
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
+            var homeRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/home', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ direction: 'retract', speedPct: SPEED })
+            });
+            var homeData = await homeRes.json();
+            if (homeData.currentP != null) updateCurrentPositionDisplay(homeData.currentP);
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweep ' + (i + 1) + '/' + SWEEPS + '...';
+          }
+
           // Go to min
           var res1 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
             method: 'POST',
@@ -876,11 +894,6 @@
           var d1 = await res1.json();
           if (d1.targetP != null) updateCurrentPositionDisplay(d1.targetP);
 
-          // Pause to let the servo/actuator reach position
-          var range = maxP - minP;
-          var travelMs = Math.max(300, Math.round(range * 1500));
-          await new Promise(function (r) { setTimeout(r, travelMs); });
-
           // Go to max
           var res2 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
             method: 'POST',
@@ -889,8 +902,6 @@
           });
           var d2 = await res2.json();
           if (d2.targetP != null) updateCurrentPositionDisplay(d2.targetP);
-
-          await new Promise(function (r) { setTimeout(r, travelMs); });
         }
 
         // Return to midpoint after sweep

@@ -8,7 +8,9 @@ import request from 'supertest';
 import express from 'express';
 import router from '../../server/calibration/router.js';
 
-describe('Unified Calibration API', () => {
+describe('Unified Calibration API', function () {
+  // Calibration operations include post-movement settle delays for open-loop parts
+  this.timeout(10000);
   let app;
 
   before(() => {
