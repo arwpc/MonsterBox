@@ -292,24 +292,6 @@
         var sr = document.getElementById('sources-count'); if (sr && sr.textContent === '0') sr.textContent = '1';
       }
     } catch (e) { }
-    // Early bind critical click handlers before any other init (robust against init errors)
-    try {
-      var outBtn0 = document.getElementById('btnTestAudioOutput');
-      if (outBtn0) outBtn0.addEventListener('click', function (e) { e.preventDefault(); testAudioOutput(this); });
-    } catch (e) { }
-    try {
-      var inBtn0 = document.getElementById('btnTestAudioInput');
-      if (inBtn0) inBtn0.addEventListener('click', function (e) { e.preventDefault(); testAudioInput(this); });
-    } catch (e) { }
-    try {
-      var toggleOut0 = document.getElementById('btnToggleOutputVU');
-      if (toggleOut0) toggleOut0.addEventListener('click', function (e) { e.preventDefault(); toggleOutputVUMeter(); });
-    } catch (e) { }
-    try {
-      var toggleIn0 = document.getElementById('btnToggleInputVU');
-      if (toggleIn0) toggleIn0.addEventListener('click', function (e) { e.preventDefault(); toggleInputVUMeter(); });
-    } catch (e) { }
-
     console.log('🎵 PipeWire Audio Configuration page loaded');
     loadSystemConfiguration();
 
@@ -371,26 +353,6 @@
         console.warn('Failed to save source to localStorage:', e);
       }
     });
-    // Bind explicit click handlers for test buttons to ensure reliability in tests
-    try {
-      var outBtn = document.getElementById('btnTestAudioOutput');
-      if (outBtn) outBtn.addEventListener('click', function (e) { e.preventDefault(); testAudioOutput(this); });
-    } catch (e) { }
-    try {
-      var inBtn = document.getElementById('btnTestAudioInput');
-      if (inBtn) inBtn.addEventListener('click', function (e) { e.preventDefault(); testAudioInput(this); });
-    } catch (e) { }
-    // Bind click handlers for VU monitoring toggle buttons as well
-    try {
-      var toggleOut = document.getElementById('btnToggleOutputVU');
-      if (toggleOut) toggleOut.addEventListener('click', function (e) { e.preventDefault(); toggleOutputVUMeter(); });
-    } catch (e) { }
-    try {
-      var toggleIn = document.getElementById('btnToggleInputVU');
-      if (toggleIn) toggleIn.addEventListener('click', function (e) { e.preventDefault(); toggleInputVUMeter(); });
-    } catch (e) { }
-
-
   });
 
   // Show notification — delegates to global showToast
@@ -815,7 +777,10 @@
   }
 
   // Test audio output
+  let _testOutputRunning = false;
   async function testAudioOutput(testBtn) {
+    if (_testOutputRunning) return; // prevent re-entrant clicks
+    _testOutputRunning = true;
     try { console.log('TEST:testAudioOutput clicked'); } catch (e) { }
     let deviceId = document.getElementById('default-sink').value;
     // Button element is passed from onclick
@@ -829,7 +794,6 @@
       testBtn.disabled = true;
       testBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Test Audio Output — Playing...';
       try { console.log('TEST:output button set to Playing'); } catch (e) { }
-      try { await new Promise(r => setTimeout(r, 50)); } catch (e) { }
     }
 
     // Start VU meter monitoring for output
@@ -843,6 +807,7 @@
         testBtn.disabled = false;
         testBtn.innerHTML = '<i class="bi bi-play-circle"></i> Test Audio Output';
       }
+      _testOutputRunning = false;
 
       // Stop VU meter monitoring after test
       setTimeout(function () {
@@ -852,7 +817,10 @@
   }
 
   // Test audio input
+  let _testInputRunning = false;
   async function testAudioInput(testBtn) {
+    if (_testInputRunning) return; // prevent re-entrant clicks
+    _testInputRunning = true;
     try { console.log('TEST:testAudioInput clicked'); } catch (e) { }
     let deviceId = document.getElementById('default-source').value;
     // Button element is passed from onclick
@@ -866,7 +834,6 @@
       testBtn.disabled = true;
       testBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Test Audio Input — Testing...';
       try { console.log('TEST:input button set to Testing'); } catch (e) { }
-      try { await new Promise(r => setTimeout(r, 50)); } catch (e) { }
     }
 
     // Start VU meter monitoring for input
@@ -880,6 +847,7 @@
         testBtn.disabled = false;
         testBtn.innerHTML = '<i class="bi bi-mic"></i> Test Audio Input';
       }
+      _testInputRunning = false;
 
       // Stop VU meter monitoring after test
       setTimeout(function () {
