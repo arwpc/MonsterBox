@@ -136,26 +136,26 @@
     "id": "8",
     "name": "Hand of Azura",
     "type": "light",
-    "pin": 26,
-    "description": "basic on/off lighting",
+    "pin": 16,
+    "description": "ACEIRMC 3V opto-isolated relay module switching 12V light via GPIO 16 (jumper on H, active-HIGH)",
     "config": {
       "brightness": 100
     },
     "created": "2025-10-05T22:59:52.554Z",
     "enabled": true,
-    "modelId": "light_generic_12v",
-    "updated": "2025-10-28T20:36:52.505Z"
+    "modelId": "relay_aceirmc_3v_1ch",
+    "updated": "2026-02-27T23:00:00.000Z"
   },
   {
     "id": "9",
     "name": "Eye of Orlok",
     "type": "webcam",
     "pin": null,
-    "description": "video capture devices",
+    "description": "Arducam B0205 wide-angle 1080p USB camera with IR night vision",
     "config": {
       "devicePath": "/dev/video1",
-      "deviceId": "video1",
-      "modelId": "default-uvc-1",
+      "deviceId": 1,
+      "modelId": "arducam-b0205",
       "motionTracking": {
         "motionThreshold": 42,
         "minContourArea": 500,
@@ -170,8 +170,8 @@
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2026-02-21T18:40:00.358Z",
-    "modelId": "default-uvc-1"
+    "updated": "2026-02-22T22:00:00.000Z",
+    "modelId": "arducam-b0205"
   },
   {
     "id": "10",
@@ -180,12 +180,11 @@
     "pin": null,
     "description": "precise angle control: standard, continuous, feedback",
     "config": {
-      "modelId": "servo_miuzei_25kg",
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 8,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 3
     },
     "created": "2025-10-06T02:21:04.041Z",
     "enabled": true,
@@ -213,36 +212,38 @@
       }
     ],
     "modelId": "servo_miuzei_25kg",
-    "updated": "2026-02-17T01:07:25.592Z"
-  },
-  {
-    "id": "11",
-    "name": "Head on a Swivel",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "continuous",
-      "controllerType": "pca9685",
-      "address": 64,
-      "pca9685Frequency": 50,
-      "channel": 12
-    },
-    "created": "2025-10-06T02:24:37.393Z",
-    "enabled": true,
-    "updated": "2026-02-21T19:11:12.240Z",
-    "modelId": "servo_gobilda_stingray2"
+    "updated": "2026-02-22T22:32:47.602Z"
   },
   {
     "id": "14",
     "name": "Sensor for Orlok",
     "type": "motion_sensor",
-    "pin": 16,
+    "pin": 27,
     "description": "PIR motion detection",
-    "config": {},
+    "config": {
+      "sensitivity": 5,
+      "windowMs": 100
+    },
     "created": "2025-10-07T00:53:34.885Z",
     "enabled": true,
     "modelId": "pir_generic",
-    "updated": "2025-10-28T20:38:11.352Z"
+    "updated": "2026-02-22T22:39:43.265Z"
+  },
+  {
+    "name": "Head on a Swivel",
+    "type": "servo",
+    "description": "",
+    "config": {
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 0
+    },
+    "id": "15",
+    "enabled": true,
+    "created": "2026-02-22T21:43:45.126Z",
+    "updated": "2026-02-22T22:30:02.746Z",
+    "modelId": "servo_miuzei_25kg"
   }
 ]

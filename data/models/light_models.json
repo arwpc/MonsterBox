@@ -10,5 +10,70 @@
     "meta": {
       "manufacturer": "Generic"
     }
+  },
+  {
+    "id": "relay_tongling_jqc3ff",
+    "name": "Tongling JQC-3FF-S-Z 12V Relay",
+    "description": "SPDT PCB relay, 12VDC coil, 10A switching, GPIO-driven on/off for 12V lighting",
+    "defaults": {
+      "brightness": 100
+    },
+    "controlsSchema": {},
+    "meta": {
+      "manufacturer": "Tongling (Donghai Tongling Electric Appliances Co., Ltd.)",
+      "modelNumber": "JQC-3FF-S-Z",
+      "type": "SPDT relay (Form C, 1H/1Z)",
+      "contactMaterial": "Silver Alloy",
+      "coilVoltage": "12VDC",
+      "coilResistance": "400 ohm",
+      "coilPower": "360mW",
+      "pickupVoltage": "9.0VDC",
+      "dropoutVoltage": "1.2VDC",
+      "maxCoilVoltage": "15.6VDC",
+      "maxSwitchingVoltage": "250VAC / 30VDC",
+      "maxSwitchingCurrent": "15A at 125VAC, 10A at 250VAC",
+      "maxSwitchingPower": "2500VA / 240W",
+      "minLoad": "100mA 5VDC",
+      "contactResistance": "100 mohm max at 6VDC 1A",
+      "operateTime": "10ms",
+      "releaseTime": "5ms",
+      "insulationResistance": "100 Mohm min at 500VDC",
+      "dielectricStrengthOpen": "750VAC 50/60Hz 1min",
+      "dielectricStrengthCoilToContact": "1500VAC 50/60Hz 1min",
+      "temperatureRange": "-40C to +85C",
+      "humidity": "40-85%",
+      "mechanicalDurability": "18000 ops/hr",
+      "electricalDurability": "1800 ops/hr",
+      "dimensions": "19.2 x 15.4 x 15.4 mm",
+      "weight": "10g",
+      "mounting": "PCB pin mount",
+      "notes": "Simple GPIO HIGH/LOW switches the relay coil. Drives 12V light load on the normally-open contact."
+    }
+  },
+  {
+    "id": "relay_aceirmc_3v_1ch",
+    "name": "ACEIRMC 3V 1-Channel Opto-Isolated Relay Module",
+    "description": "3V opto-isolated relay module with jumper-selectable HIGH/LOW trigger, screw terminals (NC/COM/NO), suitable for RPi 3.3V GPIO direct drive",
+    "defaults": {
+      "brightness": 100
+    },
+    "controlsSchema": {},
+    "meta": {
+      "manufacturer": "ACEIRMC",
+      "type": "1-Channel opto-isolated relay module",
+      "coilVoltage": "3VDC (operates on 3.3-5V supply)",
+      "maxSwitchingVoltage": "250VAC / 30VDC",
+      "maxSwitchingCurrent": "10A",
+      "triggerMode": "Jumper selectable: H=active-HIGH, L=active-LOW",
+      "isolation": "PC814 optocoupler",
+      "operateTime": "20ms",
+      "mechanicalDurability": "100000 operations",
+      "mechanicalRate": "18000 ops/hr",
+      "terminals": "NC / COM / NO screw terminals",
+      "headerPins": "DC+ (3.3-5V), DC- (GND), IN (signal)",
+      "mounting": "Screw hole",
+      "amazonASIN": "B09MHYPPPH",
+      "notes": "Jumper must be on H for RPi GPIO HIGH=on. 12V load wiring: COM=12V+, NO=light+, light- to 12V GND. Do not feed 12V to DC+ header. Safe for short strobe bursts at 25Hz max; sustained blink recommended at 5-10Hz."
+    }
   }
 ]
