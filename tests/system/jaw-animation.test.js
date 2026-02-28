@@ -539,8 +539,8 @@ describe('Jaw Animation Super Power API', () => {
         .expect(200);
       expect(res.body).to.have.property('success', true);
       expect(res.body).to.have.property('duration').that.is.a('number');
-      // Timeline should be present (may be null if pre-analysis fails in test mode)
-      if (res.body.timeline !== null) {
+      // Timeline should be present (may be null/undefined if TTS unavailable in CI)
+      if (res.body.timeline != null) {
         expect(res.body.timeline).to.be.an('array');
         if (res.body.timeline.length > 0) {
           expect(res.body.timeline[0]).to.have.property('time');
