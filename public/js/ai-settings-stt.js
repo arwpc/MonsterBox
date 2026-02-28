@@ -1290,12 +1290,361 @@ STTManager.prototype.runTwoSecondTest = function () {
 };
 
 
+// ============================================================
+// Browser Audio Bridge — Listen In (Browser Speaker) & Talk Through (Browser Mic)
+// ============================================================
+
+STTManager.prototype.initBrowserAudioBridge = function () {
+    var self = this;
+
+    // Load audio devices for the bridge selectors
+    self._loadBridgeDevices();
+
+    // Check HTTPS for browser mic
+    var isSecure = window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+    var httpsWarn = document.getElementById('stt-talkthrough-https-warn');
+    if (!isSecure && httpsWarn) {
+        httpsWarn.classList.remove('d-none');
+        var btn = document.getElementById('btn-stt-talkthrough');
+        if (btn) btn.disabled = true;
+    }
+
+    // Bind buttons
+    var listenBtn = document.getElementById('btn-stt-listenin');
+    var talkBtn = document.getElementById('btn-stt-talkthrough');
+    if (listenBtn) {
+        listenBtn.addEventListener('click', function () { self.toggleListenIn(); });
+    }
+    if (talkBtn) {
+        talkBtn.addEventListener('click', function () { self.toggleTalkThrough(); });
+    }
+
+    // Bridge state
+    self._listenInES = null;       // EventSource
+    self._listenInCtx = null;      // AudioContext for playback
+    self._listenInNextStart = 0;
+    self._talkThroughStream = null; // MediaStream
+    self._talkThroughCtx = null;    // AudioContext for capture
+    self._talkThroughProc = null;   // ScriptProcessor
+    self._talkThroughActive = false;
+};
+
+STTManager.prototype._loadBridgeDevices = function () {
+    // Fetch audio inputs for Listen In source selector
+    fetch('/setup/audio/api/inputs')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data || !data.success) return;
+            var sel = document.getElementById('stt-listenin-source');
+            if (!sel || !data.inputs || !data.inputs.length) return;
+            sel.innerHTML = '';
+            for (var i = 0; i < data.inputs.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = data.inputs[i].id || data.inputs[i].name;
+                opt.textContent = data.inputs[i].description || data.inputs[i].name || data.inputs[i].id;
+                sel.appendChild(opt);
+            }
+        })
+        .catch(function (e) { console.warn('Failed to load audio inputs for bridge:', e); });
+
+    // Fetch audio outputs for Talk Through sink selector
+    fetch('/setup/audio/api/outputs')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data || !data.success) return;
+            var sel = document.getElementById('stt-talkthrough-sink');
+            if (!sel || !data.outputs || !data.outputs.length) return;
+            sel.innerHTML = '';
+            for (var i = 0; i < data.outputs.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = data.outputs[i].id || data.outputs[i].name;
+                opt.textContent = data.outputs[i].description || data.outputs[i].name || data.outputs[i].id;
+                sel.appendChild(opt);
+            }
+        })
+        .catch(function (e) { console.warn('Failed to load audio outputs for bridge:', e); });
+};
+
+// ------- Listen In (Browser Speaker) -------
+
+STTManager.prototype.toggleListenIn = function () {
+    if (this._listenInES) {
+        this.stopListenIn();
+    } else {
+        this.startListenIn_Bridge();
+    }
+};
+
+STTManager.prototype.startListenIn_Bridge = function () {
+    var self = this;
+    var sourceSelect = document.getElementById('stt-listenin-source');
+    var deviceId = sourceSelect ? sourceSelect.value : 'default';
+    var statusBadge = document.getElementById('stt-listenin-status');
+    var toggleText = document.getElementById('stt-listenin-text');
+    var btn = document.getElementById('btn-stt-listenin');
+
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Connecting...';
+    if (btn) btn.disabled = true;
+
+    // Create AudioContext for playback
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    self._listenInCtx = new Ctx({ sampleRate: 16000 });
+    self._listenInNextStart = 0;
+
+    // Open SSE connection
+    var url = '/setup/audio/api/mic-stream?deviceId=' + encodeURIComponent(deviceId);
+    self._listenInES = new EventSource(url);
+
+    self._listenInES.onmessage = function (event) {
+        try {
+            var msg = JSON.parse(event.data);
+            if (msg.type === 'started') {
+                if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'badge bg-success'; }
+                if (toggleText) toggleText.textContent = 'Stop Listening';
+                if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+            } else if (msg.type === 'audio') {
+                self._playListenInChunk(msg.audio);
+            } else if (msg.type === 'error') {
+                console.error('Listen In error:', msg.error);
+                self.showAlert('Listen In error: ' + msg.error, 'danger');
+                self.stopListenIn();
+            } else if (msg.type === 'ended') {
+                self.stopListenIn();
+            }
+        } catch (e) {
+            console.warn('Listen In parse error:', e);
+        }
+    };
+
+    self._listenInES.onerror = function () {
+        console.warn('Listen In SSE connection error');
+        self.stopListenIn();
+    };
+};
+
+STTManager.prototype._playListenInChunk = function (base64Pcm) {
+    if (!this._listenInCtx || !base64Pcm) return;
+
+    // Decode base64 to PCM16LE
+    var raw = atob(base64Pcm);
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    var samples = bytes.length / 2;
+    if (samples === 0) return;
+
+    var float32 = new Float32Array(samples);
+    var view = new DataView(bytes.buffer);
+    for (var j = 0; j < samples; j++) {
+        float32[j] = view.getInt16(j * 2, true) / 32768;
+    }
+
+    // VU meter
+    var sumSq = 0;
+    for (var k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
+    var rms = Math.sqrt(sumSq / float32.length);
+    var pct = Math.min(100, Math.round(rms * 500));
+    var vuBar = document.getElementById('stt-listenin-vu');
+    var vuLabel = document.getElementById('stt-listenin-vu-label');
+    if (vuBar) { vuBar.style.width = pct + '%'; }
+    if (vuLabel) { vuLabel.textContent = pct + '%'; }
+
+    // Apply volume
+    var volSlider = document.getElementById('stt-listenin-volume');
+    var volume = volSlider ? (parseInt(volSlider.value, 10) / 100) : 0.75;
+    for (var m = 0; m < float32.length; m++) float32[m] *= volume;
+
+    // Play through browser speaker
+    if (this._listenInCtx.state === 'suspended') this._listenInCtx.resume();
+    var buffer = this._listenInCtx.createBuffer(1, samples, 16000);
+    buffer.getChannelData(0).set(float32);
+    var source = this._listenInCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this._listenInCtx.destination);
+
+    var now = this._listenInCtx.currentTime;
+    if (this._listenInNextStart < now) this._listenInNextStart = now;
+    source.start(this._listenInNextStart);
+    this._listenInNextStart += buffer.duration;
+};
+
+STTManager.prototype.stopListenIn = function () {
+    if (this._listenInES) {
+        this._listenInES.close();
+        this._listenInES = null;
+    }
+    if (this._listenInCtx) {
+        try { this._listenInCtx.close(); } catch (_) {}
+        this._listenInCtx = null;
+    }
+    this._listenInNextStart = 0;
+
+    var statusBadge = document.getElementById('stt-listenin-status');
+    var toggleText = document.getElementById('stt-listenin-text');
+    var btn = document.getElementById('btn-stt-listenin');
+    var vuBar = document.getElementById('stt-listenin-vu');
+    var vuLabel = document.getElementById('stt-listenin-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start Listening';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-info btn-sm'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+};
+
+// ------- Talk Through (Browser Mic) -------
+
+STTManager.prototype.toggleTalkThrough = function () {
+    if (this._talkThroughActive) {
+        this.stopTalkThrough();
+    } else {
+        this.startTalkThrough_Bridge();
+    }
+};
+
+STTManager.prototype.startTalkThrough_Bridge = function () {
+    var self = this;
+    var sinkSelect = document.getElementById('stt-talkthrough-sink');
+    var deviceId = sinkSelect ? sinkSelect.value : 'default';
+    var statusBadge = document.getElementById('stt-talkthrough-status');
+    var toggleText = document.getElementById('stt-talkthrough-text');
+    var btn = document.getElementById('btn-stt-talkthrough');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        self.showAlert('Browser does not support microphone capture', 'danger');
+        return;
+    }
+
+    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Requesting...';
+    if (btn) btn.disabled = true;
+
+    navigator.mediaDevices.getUserMedia({
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: { ideal: 16000 }
+        }
+    }).then(function (stream) {
+        self._talkThroughStream = stream;
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        self._talkThroughCtx = new Ctx();
+        var source = self._talkThroughCtx.createMediaStreamSource(stream);
+        self._talkThroughProc = self._talkThroughCtx.createScriptProcessor(4096, 1, 1);
+        var nativeRate = self._talkThroughCtx.sampleRate;
+        var targetDeviceId = deviceId;
+
+        self._talkThroughProc.onaudioprocess = function (e) {
+            if (!self._talkThroughActive) return;
+            var input = e.inputBuffer.getChannelData(0);
+
+            // VU meter
+            var sumSq = 0;
+            for (var i = 0; i < input.length; i++) sumSq += input[i] * input[i];
+            var rms = Math.sqrt(sumSq / input.length);
+            var pct = Math.min(100, Math.round(rms * 500));
+            var vuBar = document.getElementById('stt-talkthrough-vu');
+            var vuLabel = document.getElementById('stt-talkthrough-vu-label');
+            if (vuBar) vuBar.style.width = pct + '%';
+            if (vuLabel) vuLabel.textContent = pct + '%';
+
+            // Downsample to 16kHz
+            var ratio = nativeRate / 16000;
+            var outputLen = Math.floor(input.length / ratio);
+            var pcm16 = new Int16Array(outputLen);
+            for (var ii = 0; ii < outputLen; ii++) {
+                var srcIdx = Math.floor(ii * ratio);
+                pcm16[ii] = Math.max(-32768, Math.min(32767, Math.round(input[srcIdx] * 32768)));
+            }
+
+            // Base64 encode
+            var byteArr = new Uint8Array(pcm16.buffer);
+            var binary = '';
+            for (var jj = 0; jj < byteArr.length; jj++) {
+                binary += String.fromCharCode(byteArr[jj]);
+            }
+            var b64 = btoa(binary);
+
+            // Send to character speaker
+            fetch('/setup/audio/api/browser-mic-chunk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ audio: b64, deviceId: targetDeviceId })
+            }).catch(function (err) {
+                console.warn('Talk Through send error:', err);
+            });
+        };
+
+        source.connect(self._talkThroughProc);
+        self._talkThroughProc.connect(self._talkThroughCtx.destination);
+        self._talkThroughActive = true;
+
+        if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'badge bg-success'; }
+        if (toggleText) toggleText.textContent = 'Stop Talking';
+        if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+    }).catch(function (err) {
+        console.error('Talk Through start error:', err);
+        self.showAlert('Microphone error: ' + (err.message || err), 'danger');
+        if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
+        if (toggleText) toggleText.textContent = 'Start Talking';
+        if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+    });
+};
+
+STTManager.prototype.stopTalkThrough = function () {
+    this._talkThroughActive = false;
+
+    if (this._talkThroughProc) {
+        try { this._talkThroughProc.disconnect(); } catch (_) {}
+        this._talkThroughProc = null;
+    }
+    if (this._talkThroughStream) {
+        this._talkThroughStream.getTracks().forEach(function (t) { t.stop(); });
+        this._talkThroughStream = null;
+    }
+    if (this._talkThroughCtx) {
+        try { this._talkThroughCtx.close(); } catch (_) {}
+        this._talkThroughCtx = null;
+    }
+
+    // Stop server-side pw-play stream
+    fetch('/setup/audio/api/browser-mic/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+    }).catch(function () {});
+
+    var statusBadge = document.getElementById('stt-talkthrough-status');
+    var toggleText = document.getElementById('stt-talkthrough-text');
+    var btn = document.getElementById('btn-stt-talkthrough');
+    var vuBar = document.getElementById('stt-talkthrough-vu');
+    var vuLabel = document.getElementById('stt-talkthrough-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start Talking';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+};
+
+// Cleanup on page unload
+STTManager.prototype._bridgeCleanup = function () {
+    if (this._listenInES) this.stopListenIn();
+    if (this._talkThroughActive) this.stopTalkThrough();
+};
+
+
 // Initialize when DOM is loaded (or immediately if already loaded)
 (function () {
     function boot() {
         var sttManager = new STTManager();
         sttManager.init();
+        sttManager.initBrowserAudioBridge();
         window.sttManager = sttManager; // for debugging
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function () {
+            sttManager._bridgeCleanup();
+        });
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
