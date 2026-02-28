@@ -68,6 +68,7 @@ apps/monsterbox4/tests/ui/traces/
 .augment/
 .cursor/
 
-# Claude Code session data and cache
-.claude/
-!.claude/memory/
+# Claude Code — ignore session data, keep commands and settings
+.claude/*
+!.claude/commands/
+!.claude/settings.json

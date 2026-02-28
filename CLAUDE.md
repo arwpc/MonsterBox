@@ -2,10 +2,10 @@
 
 ## Project Identity
 - **Application:** MonsterBox — RPi4b-based animatronic character control system
-- **Version:** 6.1.5
+- **Version:** Read from `package.json` (currently 6.7.0) — NEVER hardcode version strings
 - **Owner:** Aaron Warner, Coralville, Iowa
 - **Stack:** Node.js, Express, EJS templates, Python hardware scripts, Raspberry Pi 4B
-- **Repository:** Local git, commit frequently with descriptive messages
+- **Repository:** Local git, commit frequently with descriptive messages; remote at github.com/arwpc/MonsterBox
 - **Package type:** ES modules (`"type": "module"` in package.json)
 
 ## Architecture Constraints — READ FIRST
@@ -31,7 +31,7 @@
 ```
 MonsterBox/
 ├── server.js              # Express app entry point
-├── package.json           # Version source of truth (v6.1.5)
+├── package.json           # Version source of truth (read dynamically)
 ├── CLAUDE.md              # This file
 ├── routes/                # Express route handlers
 │   ├── api/               # JSON API endpoints
@@ -85,7 +85,7 @@ Each character at `data/character-{id}/` contains:
 - Part IDs: **strings** in scenes.json, **numbers** in poses.json — executor uses `String(partId)`
 
 ## Key API Endpoints
-- `GET /api/parts` → `{ success, parts }` — character-aware parts list (reads `selectedCharacter` from config)
+- `GET /api/parts` → raw array of parts (NOTE: returns array directly, not `{ success, parts }` wrapper)
 - `GET /api/parts/:id` → `{ success, part }` — single part by ID
 - `POST /api/parts/:id/test` → test hardware part (type-aware dispatch)
 - `GET /scenes/api/` → `{ success, scenes }` — list all scenes for current character
@@ -139,9 +139,9 @@ Each character at `data/character-{id}/` contains:
 
 ## Git Workflow
 - Commit after each logical unit of work (not at end of session)
-- Commit message format: `v6.1.5: [phase] brief description`
-- Example: `v6.1.5: [animation-studio] add jaw-animation step type to executor`
-- Tag final version: `git tag -a v6.1.5 -m "MonsterBox 6.1.2 release"`
+- Commit message format: `vX.Y.Z: [phase] brief description` (use current version from package.json)
+- Example: `v6.7.0: [animation-studio] add jaw-animation step type to executor`
+- Tag final version: `git tag -a vX.Y.Z -m "MonsterBox X.Y.Z release"`
 
 ## Performance Notes (RPi4B)
 - 8GB RAM, quad-core ARM Cortex-A72 — capable but not a desktop
@@ -150,13 +150,29 @@ Each character at `data/character-{id}/` contains:
 - Keep API responses lean; avoid loading entire files when partial reads suffice
 - Use streaming for large audio file operations where possible
 
+## Claude Code Custom Skills
+Custom slash commands are available in `.claude/commands/`:
+- `/learn-monsterbox` — Full codebase onboarding: reads all key docs, code, and memory files, then reports readiness. Use at the start of any session for deep context.
+- `/check-health` — Quick health check: git status, test baseline, config, version, service status.
+
+## Shared Memory System
+Persistent knowledge base at `~/.claude/projects/-home-remote-MonsterBox/memory/`:
+- `MEMORY.md` — Quick reference (auto-loaded every session, keep under 200 lines)
+- `architecture.md` — Full architecture, service map, route structure, data storage
+- `characters.md` — Character details, parts, GPIO pins, Goblins
+- `ai-services.md` — ElevenLabs integration, speech pipeline, config
+- `testing.md` — Test infrastructure, commands, file structure
+- `api-reference.md` — Full API endpoint reference
+- `hardware.md` — Hardware types, wiring, Python wrappers, relay wiring
+
+When you learn something new about the codebase that will be useful across sessions, update the relevant memory file. Keep MEMORY.md under 200 lines.
+
 ## Session Startup Checklist
-1. Read `README.md` completely
-2. Read `install.sh` completely
-3. Read this CLAUDE.md
-4. Run `npm test` to establish baseline
-5. Run `git status` to check for uncommitted work
-6. Review any `CHANGELOG.md` or `docs/` directory for current state
+1. Read this CLAUDE.md
+2. Consult shared memory (`MEMORY.md` is auto-loaded; read topic files as needed)
+3. Run `git status` to check for uncommitted work
+4. Run `git log --oneline -10` for recent history
+5. For deep onboarding, use `/learn-monsterbox` skill
 
 ## Session Cleanup Checklist
 1. Run full test suite — all tests must pass
@@ -166,3 +182,4 @@ Each character at `data/character-{id}/` contains:
 5. Update `CHANGELOG.md` with summary of changes
 6. Commit all changes with descriptive message
 7. Run `git log --oneline -5` and confirm clean history
+8. Update shared memory files if new knowledge was gained
