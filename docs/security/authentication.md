@@ -1,207 +1,46 @@
-# Authentication System
+# Security Model
 
-MonsterBox implements a comprehensive JWT-based authentication system for secure access to animatronic controls.
+## No Authentication Required
 
-## Overview
+MonsterBox is a **local-network animatronic control tool** designed to run on a private home network (MonsterNet). It does **not** implement user authentication, login systems, JWT tokens, or session management.
 
-The authentication system provides:
-- JWT-based token authentication
-- Session management
-- Multi-factor authentication (MFA) support
-- Secure password handling
-- Audit logging
+All HTTP endpoints on port 3000 are accessible without credentials to any device on the local network.
 
-## Architecture
+## Why No Auth?
 
-### Core Components
+MonsterBox controls physical animatronics (servos, motors, LEDs) on Raspberry Pi hardware for Halloween displays. The system is:
 
-1. **AuthService** (`services/auth/authService.js`)
-   - User authentication
-   - Token generation and validation
-   - Session management
+- **Single-operator** — one person manages the animatronics from a browser
+- **Local-network only** — runs on MonsterNet (192.168.8.x), not exposed to the internet
+- **Physical-access equivalent** — anyone on the network can already see and touch the hardware
 
-2. **JWT Configuration** (`config/auth/jwt-config.js`)
-   - JWT settings and utilities
-   - Token payload generation
-   - Security configuration
+Adding authentication would add complexity without meaningful security benefit for this use case.
 
-3. **Auth Middleware** (`middleware/auth.js`)
-   - Request authentication
-   - Token validation
-   - User context injection
+## Network Isolation
 
-## JWT Implementation
+Security is provided by **network-level isolation** rather than application-level authentication:
 
-### Token Structure
-```javascript
-{
-  "sub": "user_id",
-  "username": "user_name",
-  "role": "admin",
-  "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
-  "permissions": ["read", "write", "control"],
-  "sessionId": "session_uuid",
-  "iat": 1234567890,
-  "exp": 1234567890,
-  "iss": "MonsterBox",
-  "aud": "MonsterBox-Animatronics"
-}
-```
+- **MonsterNet** is a dedicated WiFi network for animatronic devices
+- The MonsterBox server (port 3000) is only reachable from devices on this network
+- SSH access to individual Raspberry Pis uses key-based authentication (see [Remote Access](remote-access.md))
+- The ElevenLabs API key is stored securely at `/etc/monsterbox/elevenlabs.key` with restricted file permissions (mode 600)
 
-### Token Types
-- **Access Token**: Short-lived (24 hours)
-- **Refresh Token**: Long-lived (7 days)
+## API Access
 
-## Authentication Flow
+All API endpoints respond to unauthenticated HTTP requests:
 
-### Login Process
-1. User submits credentials
-2. System validates username/password
-3. Generate JWT tokens
-4. Create session record
-5. Return tokens to client
-
-### Token Validation
-1. Extract token from request header
-2. Verify JWT signature
-3. Check token expiration
-4. Validate session
-5. Inject user context
-
-## Security Features
-
-### Password Security
-- bcrypt hashing with 12 rounds
-- Password complexity requirements
-- Account lockout after failed attempts
-
-### Rate Limiting
-- 5 attempts per 15-minute window
-- IP-based rate limiting
-- Progressive delays for repeated failures
-
-### Session Management
-- Secure session storage
-- Session timeout handling
-- Concurrent session limits
-
-## API Endpoints
-
-### Authentication Routes
-```javascript
-POST /auth/login          # User login
-POST /auth/logout         # User logout
-POST /auth/refresh        # Token refresh
-GET  /auth/profile        # User profile
-PUT  /auth/profile        # Update profile
-POST /auth/change-password # Change password
-```
-
-### MFA Routes
-```javascript
-POST /auth/mfa/setup      # Setup MFA
-POST /auth/mfa/verify     # Verify MFA token
-POST /auth/mfa/disable    # Disable MFA
-GET  /auth/mfa/recovery   # Get recovery codes
-```
-
-## Usage Examples
-
-### Login Request
-```javascript
-const response = await fetch('/auth/login', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    username: 'admin',
-    password: 'secure_password'
-  })
-});
-
-const { tokens, user } = await response.json();
-```
-
-### Authenticated Request
-```javascript
-const response = await fetch('/api/characters', {
-  headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
-});
-```
-
-### Token Refresh
-```javascript
-const response = await fetch('/auth/refresh', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${refreshToken}`
-  }
-});
-```
-
-## Configuration
-
-### Environment Variables
 ```bash
-JWT_SECRET=your-super-secret-jwt-key-here
-JWT_EXPIRES_IN=24h
-JWT_REFRESH_SECRET=your-refresh-token-secret
-JWT_REFRESH_EXPIRES_IN=7d
-BCRYPT_ROUNDS=12
+# No auth headers needed
+curl http://localhost:3000/api/parts
+curl http://localhost:3000/health
 ```
 
-### Security Settings
-```javascript
-{
-  rateLimit: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per window
-    skipSuccessfulRequests: true
-  },
-  sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
-  maxConcurrentSessions: 3
-}
-```
+See the [API Reference](../api/api-documentation.md) for the complete endpoint list.
 
-## Troubleshooting
+## Recommendations
 
-### Common Issues
+If you need to expose MonsterBox beyond your local network:
 
-1. **Token Expired**
-   - Use refresh token to get new access token
-   - Check system clock synchronization
-
-2. **Invalid Signature**
-   - Verify JWT_SECRET configuration
-   - Check for key rotation issues
-
-3. **Session Not Found**
-   - Session may have expired
-   - Check session storage configuration
-
-### Debug Mode
-```bash
-DEBUG=auth:* npm start
-```
-
-## Security Best Practices
-
-1. **Token Storage**
-   - Store tokens securely (httpOnly cookies recommended)
-   - Never store tokens in localStorage for production
-
-2. **HTTPS Only**
-   - Always use HTTPS in production
-   - Set secure cookie flags
-
-3. **Token Rotation**
-   - Implement token rotation for long-lived sessions
-   - Revoke tokens on logout
-
-4. **Monitoring**
-   - Log authentication events
-   - Monitor for suspicious activity
-   - Set up alerts for failed login attempts
+1. Use a VPN (e.g., WireGuard or Tailscale) to extend MonsterNet access
+2. Place MonsterBox behind a reverse proxy (nginx) with basic auth
+3. Never expose port 3000 directly to the internet
