@@ -53,6 +53,9 @@ nav:
       - Orlok: character_orlok.md
       - Coffin Breaker: character_coffin_breaker.md
       - PumpkinHead: character_pumpkinhead.md
+      - Skulltalker: character_skulltalker.md
+      - Groundbreaker: character_groundbreaker.md
+      - Spinster: character_spinster.md
       - PumpkinHead Parts List: characters/PUMPKINHEAD_COMPLETE_PARTS_LIST.md
       - Groundbreaker Setup: characters/GROUNDBREAKER_SETUP_INSTRUCTIONS.md
       - Groundbreaker Installation: characters/GROUNDBREAKER_INSTALLATION_PACKAGE.md
@@ -105,7 +108,7 @@ nav:
 
   - Security:
       - MCP Setup Notes: security/MCP-SETUP-NOTES.md
-      - Authentication: security/authentication.md
+      - Security Model: security/authentication.md
       - Authorization: security/authorization.md
       - Remote Access: security/remote-access.md
 
@@ -131,5 +134,6 @@ nav:
       - Final Presentation: animatronics/presentation.md
 
   - Release Notes:
+      - Changelog: changelog.md
       - v6 Audit Report: v6-audit.md
       - v6 Final Report: v6-final-report.md
