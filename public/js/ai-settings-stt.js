@@ -48,27 +48,20 @@ STTManager.prototype.loadCharacterBanner = function () {
     var bannerName = document.getElementById('sttCharacterName');
     if (!bannerName) return;
 
-    // Try navbar first
+    // Try navbar label first (set server-side, always available)
     if (label && label.textContent.trim() && label.textContent.trim() !== 'No Character') {
         bannerName.textContent = label.textContent.trim();
         return;
     }
 
-    // Fallback to REST
-    fetch('/setup/characters/api/current')
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            if (j && j.characterName) {
-                bannerName.textContent = j.characterName;
-            } else if (j && j.selectedCharacter) {
-                bannerName.textContent = 'Character ' + j.selectedCharacter;
-            } else {
-                bannerName.textContent = 'No character selected';
-            }
-        })
-        .catch(function () {
-            bannerName.textContent = 'Unknown';
-        });
+    // Fallback: use server-provided character ID
+    var charId = window.__MB_CHAR_ID || null;
+    if (charId) {
+        bannerName.textContent = 'Character ' + charId;
+        return;
+    }
+
+    bannerName.textContent = 'No character selected';
 };
 
 STTManager.prototype.loadFilterPresets = function () {
@@ -963,6 +956,10 @@ STTManager.prototype.showAlert = function (message, type) {
 };
 // Helpers for Character and Microphone
 STTManager.prototype.getCurrentCharacterId = function () {
+    // Prefer server-provided character ID
+    var cid = window.__MB_CHAR_ID || null;
+    if (!cid) { try { var cl = document.getElementById('charLabel'); if (cl && cl.dataset.charId) cid = cl.dataset.charId; } catch(e){} }
+    if (cid) return Promise.resolve(cid);
     return fetch('/setup/characters/api/current')
         .then(function (r) { return r.json(); })
         .then(function (d) { return d && d.selectedCharacter ? d.selectedCharacter : null; })
@@ -1027,8 +1024,10 @@ STTManager.prototype.appendTranscript = function (text) {
     area.scrollTop = area.scrollHeight;
 };
 
-// Get current character ID from page (synchronous, from DOM)
+// Get current character ID from page (synchronous)
 STTManager.prototype.getCurrentCharacterIdSync = function () {
+    // Prefer server-provided value
+    if (window.__MB_CHAR_ID) { var n0 = parseInt(window.__MB_CHAR_ID, 10); if (Number.isFinite(n0)) return n0; }
     var label = document.getElementById('charLabel');
     var cid = label && label.getAttribute('data-char-id');
     var n = parseInt(cid, 10);

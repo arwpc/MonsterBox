@@ -534,6 +534,8 @@
     }
 
     function getCurrentCharacterIdFromLabel() {
+      // Prefer server-provided character ID from master layout
+      if (window.__MB_CHAR_ID) { const n = parseInt(window.__MB_CHAR_ID, 10); if (Number.isFinite(n)) return n; }
       const label = document.querySelector('#charLabel');
       if (!label) return null;
       const idAttr = label.getAttribute('data-char-id');

@@ -200,14 +200,14 @@
         "name": "Max",
         "kind": "absolute",
         "locked": false,
-        "value": 93,
+        "value": 100,
         "unit": "deg"
       },
       {
         "name": "Min",
         "kind": "absolute",
         "locked": false,
-        "value": 70,
+        "value": 54,
         "unit": "deg"
       }
     ],

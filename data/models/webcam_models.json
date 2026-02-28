@@ -39,5 +39,61 @@
       "vendor": "UVC",
       "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply"
     }
+  },
+  {
+    "id": "arducam-b0205",
+    "name": "Arducam B0205 Wide-Angle USB Camera",
+    "description": "Arducam 1080p 200-degree wide-angle USB camera with infrared night vision, auto-focus, f/1.6 aperture, 1/2.7-inch CMOS sensor",
+    "defaults": {
+      "resolution": "1920x1080",
+      "fps": 30,
+      "quality": 90
+    },
+    "controlsSchema": {
+      "brightness": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "contrast": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "saturation": {
+        "type": "range",
+        "min": 0,
+        "max": 255,
+        "step": 1,
+        "default": 128
+      },
+      "ir_cut": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "meta": {
+      "vendor": "Arducam",
+      "modelNumber": "B0205",
+      "asin": "B0829HZ3Q7",
+      "sensorType": "CMOS",
+      "sensorSize": "1/2.7-inch",
+      "maxResolution": "1920x1080",
+      "fieldOfView": 200,
+      "focusType": "Auto Focus",
+      "maxAperture": "f/1.6",
+      "minFocalLength": "3.30mm",
+      "nightVision": true,
+      "nightVisionType": "Infrared",
+      "connectivity": "USB",
+      "dimensions": "1.5 x 1.5 x 1.5 inches",
+      "weight": "0.07 kg",
+      "maxOperatingTemp": "158F / 70C",
+      "notes": "Compact 200-degree fisheye lens with IR night vision. Ideal for wide-angle motion tracking. No water resistance."
+    }
   }
 ]

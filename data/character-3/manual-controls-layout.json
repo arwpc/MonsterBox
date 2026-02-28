@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "activeLayout": "Default",
+  "layouts": {
+    "Default": {
+      "canvasHeight": 348,
+      "items": [
+        {
+          "type": "part",
+          "id": "15",
+          "x": 848,
+          "y": 43
+        },
+        {
+          "type": "part",
+          "id": "8",
+          "x": 1199,
+          "y": 37
+        },
+        {
+          "type": "part",
+          "id": "3",
+          "x": 849,
+          "y": 108
+        },
+        {
+          "type": "part",
+          "id": "2",
+          "x": 683,
+          "y": 110
+        },
+        {
+          "type": "part",
+          "id": "1",
+          "x": 1029,
+          "y": 82
+        }
+      ],
+      "updatedAt": "2026-02-28T00:20:04.219Z"
+    }
+  }
+}

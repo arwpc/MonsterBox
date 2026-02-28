@@ -6,7 +6,7 @@
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { createPart, deletePart, loadParts, saveParts } from '../../controllers/partsController.js';
+import { loadParts, saveParts } from '../../controllers/partsController.js';
 import * as actuatorService from '../../services/hardwareService/actuator.js';
 import hardwareService from '../../services/hardwareService/index.js';
 
@@ -285,8 +285,52 @@ router.get('/api/parts', async (req, res) => {
 });
 
 // CRUD operations for parts in calibration interface
-// Create new part
-router.post('/api/parts', express.json(), createPart);
+// Create new part - character-aware version
+router.post('/api/parts', express.json(), async (req, res) => {
+    try {
+        const payload = req.body || {};
+        if (!payload.name || !payload.type) {
+            return res.status(400).json({ success: false, error: 'name and type are required' });
+        }
+
+        // Get current character from config
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (e) {
+            console.warn('Could not get current character for part create:', e);
+        }
+
+        const parts = await loadCharacterParts(characterId);
+
+        // Generate new ID (max existing + 1)
+        const maxId = parts.reduce((max, p) => Math.max(max, parseInt(p.id) || 0), 0);
+        const newPart = {
+            ...payload,
+            id: String(maxId + 1),
+            enabled: true,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString()
+        };
+
+        parts.push(newPart);
+        await saveCharacterParts(characterId, parts);
+
+        res.json({
+            success: true,
+            part: newPart,
+            message: `Part "${newPart.name}" created successfully`
+        });
+    } catch (error) {
+        console.error('Error creating part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create part',
+            message: error.message
+        });
+    }
+});
 
 // Update existing part - character-aware version
 router.put('/api/parts/:id', express.json(), async (req, res) => {
@@ -338,8 +382,45 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
     }
 });
 
-// Delete part
-router.delete('/api/parts/:id', deletePart);
+// Delete part - character-aware version
+router.delete('/api/parts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get current character from config
+        let characterId = null;
+        try {
+            const config = await readConfig();
+            characterId = config.selectedCharacter;
+        } catch (e) {
+            console.warn('Could not get current character for part delete:', e);
+        }
+
+        const parts = await loadCharacterParts(characterId);
+        const filtered = parts.filter(p => String(p.id) !== String(id));
+
+        if (filtered.length === parts.length) {
+            return res.status(404).json({
+                success: false,
+                error: 'Part not found'
+            });
+        }
+
+        await saveCharacterParts(characterId, filtered);
+
+        res.json({
+            success: true,
+            message: 'Part deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting part:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete part',
+            message: error.message
+        });
+    }
+});
 
 // Assign/update model for a part
 router.post('/api/parts/:id/model', express.json(), async (req, res) => {

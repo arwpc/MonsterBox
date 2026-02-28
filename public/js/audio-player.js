@@ -23,18 +23,26 @@ class AdvancedAudioPlayer {
 
     async loadCurrentCharacter() {
         try {
-            const response = await fetch('/setup/characters/api/current');
-            const data = await response.json();
+            // Use server-provided character ID from master layout
+            var charId = window.__MB_CHAR_ID || null;
+            if (!charId) {
+                try { var cl = document.getElementById('charLabel'); if (cl && cl.dataset.charId) charId = cl.dataset.charId; } catch (e) {}
+            }
+            if (!charId) {
+                const response = await fetch('/setup/characters/api/current');
+                const data = await response.json();
+                charId = (data.success && data.selectedCharacter) ? data.selectedCharacter : null;
+            }
 
-            if (data.success && data.selectedCharacter) {
+            if (charId) {
                 // Get character details
-                const charResponse = await fetch(`/setup/characters/api/characters/${data.selectedCharacter}`);
+                const charResponse = await fetch(`/setup/characters/api/characters/${charId}`);
                 const charData = await charResponse.json();
 
                 if (charData.success && charData.character) {
                     this.currentCharacter = charData.character;
                 } else {
-                    this.currentCharacter = { id: data.selectedCharacter, name: `Character ${data.selectedCharacter}` };
+                    this.currentCharacter = { id: charId, name: `Character ${charId}` };
                 }
             } else {
                 this.currentCharacter = { id: 1, name: 'Default' };

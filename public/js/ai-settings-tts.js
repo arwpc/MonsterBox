@@ -28,27 +28,20 @@ TTSManager.prototype.loadCharacterBanner = function () {
     var bannerName = document.getElementById('ttsCharacterName');
     if (!bannerName) return;
 
-    // Try navbar first
+    // Try navbar label first (set server-side, always available)
     if (label && label.textContent.trim() && label.textContent.trim() !== 'No Character') {
         bannerName.textContent = label.textContent.trim();
         return;
     }
 
-    // Fallback to REST
-    fetch('/setup/characters/api/current')
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            if (j && j.characterName) {
-                bannerName.textContent = j.characterName;
-            } else if (j && j.selectedCharacter) {
-                bannerName.textContent = 'Character ' + j.selectedCharacter;
-            } else {
-                bannerName.textContent = 'No character selected';
-            }
-        })
-        .catch(function () {
-            bannerName.textContent = 'Unknown';
-        });
+    // Fallback: use server-provided character ID
+    var charId = window.__MB_CHAR_ID || null;
+    if (charId) {
+        bannerName.textContent = 'Character ' + charId;
+        return;
+    }
+
+    bannerName.textContent = 'No character selected';
 };
 
 TTSManager.prototype.loadCharacterVoiceConfig = function () {
@@ -552,8 +545,11 @@ TTSManager.prototype.playAudioThroughSpeaker = function (audioBlob, speakerId) {
         });
     }
 
-    // Fetch current character id
+    // Get current character id — prefer server-provided value
     function getCurrentCharacterId(){
+        var cid = window.__MB_CHAR_ID || null;
+        if (!cid) { try { var cl = document.getElementById('charLabel'); if (cl && cl.dataset.charId) cid = cl.dataset.charId; } catch(e){} }
+        if (cid) return Promise.resolve(cid);
         return fetch('/setup/characters/api/current')
             .then(function(r){ return r.json(); })
             .then(function(j){ return (j && typeof j.selectedCharacter !== 'undefined') ? j.selectedCharacter : null; })
@@ -668,10 +664,12 @@ TTSManager.prototype.testSpeakerIntegration = function () {
     }
 
     // Generate TTS and play through the character's speaker
-    fetch('/setup/characters/api/current')
-        .then(function (r) { return r.json(); })
-        .then(function (j) {
-            var charId = j && j.selectedCharacter;
+    var charIdPromise;
+    var cachedCharId = window.__MB_CHAR_ID || null;
+    if (!cachedCharId) { try { var cl = document.getElementById('charLabel'); if (cl && cl.dataset.charId) cachedCharId = cl.dataset.charId; } catch(e){} }
+    if (cachedCharId) { charIdPromise = Promise.resolve(cachedCharId); }
+    else { charIdPromise = fetch('/setup/characters/api/current').then(function(r){ return r.json(); }).then(function(j){ return j && j.selectedCharacter; }); }
+    charIdPromise.then(function (charId) {
             if (!charId) throw new Error('No character selected');
             return fetch('/api/elevenlabs/generate-and-play', {
                 method: 'POST',

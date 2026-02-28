@@ -172,5 +172,32 @@
     ],
     "created": "2026-02-20T23:53:16.344Z",
     "updated": "2026-02-21T00:00:45.885Z"
+  },
+  {
+    "id": 110,
+    "name": "Kiley's Jump",
+    "steps": [
+      {
+        "type": "audio",
+        "volume": 80,
+        "audioId": "04 - Windstorm & Thunder.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 10000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Kiley is the Koolest and Nugget is Queen Skribidi! ",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-02-28T00:50:32.759Z",
+    "updated": "2026-02-28T00:51:46.259Z"
   }
 ]

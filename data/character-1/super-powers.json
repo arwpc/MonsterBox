@@ -11,7 +11,7 @@
     "useAGC": true,
     "quantizationLevels": 10,
     "preset": "speech",
-    "minAngle": 70,
-    "maxAngle": 93
+    "minAngle": 54,
+    "maxAngle": 100
   }
 }

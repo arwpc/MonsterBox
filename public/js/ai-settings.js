@@ -492,33 +492,19 @@ AISettingsManager.prototype.showAlert = function (message, type) {
 AISettingsManager.prototype.initChat = function () {
     var self = this;
 
-    // Load character info
+    // Load character info — prefer server-provided ID from master layout
     var label = document.getElementById('charLabel');
     var chatCharName = document.getElementById('chatCharacterName');
-    var charId = label && label.getAttribute('data-char-id');
+    var charId = window.__MB_CHAR_ID || (label && label.getAttribute('data-char-id')) || null;
     self.chatCharacterId = charId ? parseInt(charId, 10) : null;
 
     if (chatCharName) {
         if (label && label.textContent.trim() && label.textContent.trim() !== 'No Character') {
             chatCharName.textContent = label.textContent.trim();
+        } else if (self.chatCharacterId) {
+            chatCharName.textContent = 'Character ' + self.chatCharacterId;
         } else {
-            // Fallback
-            fetch('/setup/characters/api/current')
-                .then(function (r) { return r.json(); })
-                .then(function (j) {
-                    if (j && j.characterName) {
-                        chatCharName.textContent = j.characterName;
-                        if (!self.chatCharacterId && j.selectedCharacter) {
-                            self.chatCharacterId = parseInt(j.selectedCharacter, 10);
-                        }
-                    } else if (j && j.selectedCharacter) {
-                        chatCharName.textContent = 'Character ' + j.selectedCharacter;
-                        self.chatCharacterId = parseInt(j.selectedCharacter, 10);
-                    }
-                })
-                .catch(function () {
-                    chatCharName.textContent = 'Unknown';
-                });
+            chatCharName.textContent = 'No Character';
         }
     }
 

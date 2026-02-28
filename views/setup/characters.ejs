@@ -160,16 +160,15 @@
         }
 
         function load() {
-          var p1 = fetch('/setup/characters/api/current').then(function (r) { return r.json(); }).catch(function () { return { selectedCharacter: null }; });
           var p2 = fetch('/setup/characters/api/characters').then(function (r) { return r.json(); }).catch(function () { return { success: false, characters: [] }; });
           var p3 = fetch('/api/elevenlabs/agents').then(function (r) { return r.json(); }).catch(function () { return { success: false, agents: [] }; });
 
-          Promise.all([p1, p2, p3]).then(function (arr) {
-            var current = arr[0];
-            var list = arr[1];
-            var agentsData = arr[2];
+          Promise.all([p2, p3]).then(function (arr) {
+            var list = arr[0];
+            var agentsData = arr[1];
 
-            state.selected = current && typeof current.selectedCharacter !== 'undefined' ? current.selectedCharacter : null;
+            // Use server-provided character ID from master layout
+            state.selected = window.__MB_CHAR_ID || null;
             state.characters = list && list.success ? list.characters : [];
             state.agents = agentsData && agentsData.success ? agentsData.agents : [];
 

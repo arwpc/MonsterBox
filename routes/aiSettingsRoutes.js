@@ -123,9 +123,9 @@ router.get('/api/settings', async (req, res) => {
         const appRoot = path.resolve(__dirname, '..');
         const appConfig = await readConfig();
         const characterId = parseInt(appConfig.selectedCharacter, 10) || null;
-        const dataPath = appConfig.dataPath
-            ? path.resolve(appRoot, appConfig.dataPath)
-            : path.resolve(appRoot, 'data', `character-${characterId}`);
+        const dataPath = characterId
+            ? path.resolve(appRoot, 'data', `character-${characterId}`)
+            : path.resolve(appRoot, 'data');
         const aiConfigDir = path.join(dataPath, 'ai-config');
 
         const [sttConfigRaw, ttsConfigRaw] = await Promise.all([
