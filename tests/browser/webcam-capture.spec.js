@@ -12,6 +12,10 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 const WEBCAM_PART_ID = '9';
 const MJPG_SNAPSHOT_URL = 'http://127.0.0.1:8090/?action=snapshot';
 
+// These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer
+// Skip in CI where MB_TEST_MODE defaults to char_id=1 and no camera hardware
+test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');
+
 /**
  * Fetch a binary buffer from a URL via Node http
  */

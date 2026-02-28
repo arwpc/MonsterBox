@@ -9,6 +9,10 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 const RELAY_PART_ID = '8';
 
+// These tests require Orlok (char_id=3) with specific hardware parts
+// Skip in CI where MB_TEST_MODE defaults to char_id=1
+test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');
+
 test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
   let page;
 
