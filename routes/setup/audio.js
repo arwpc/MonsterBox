@@ -359,6 +359,9 @@ router.post('/api/system-config', async (req, res) => {
 router.post('/api/test-system', async (req, res) => {
     try {
         const { testType, deviceId } = req.body;
+        if (!['speaker', 'microphone'].includes(testType)) {
+            return res.status(400).json({ success: false, error: 'Invalid test type' });
+        }
         if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
             return res.json({ success: true, testType, deviceId: deviceId || 'default', result: 'skipped in test mode' });
         }

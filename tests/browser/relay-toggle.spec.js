@@ -6,7 +6,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
 const RELAY_PART_ID = '8';
 
 // These tests require Orlok (char_id=3) with specific hardware parts

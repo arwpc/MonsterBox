@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 import http from 'http';
 import fs from 'fs';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
 const WEBCAM_PART_ID = '9';
 const MJPG_SNAPSHOT_URL = 'http://127.0.0.1:8090/?action=snapshot';
 

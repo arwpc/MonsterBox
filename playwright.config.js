@@ -3,6 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for MonsterBox browser tests
  * Tests every page and validates all interactive elements
+ *
+ * Uses PORT=3200 so the test server doesn't collide with the production
+ * monsterbox.service which listens on 3000 + 3100.  The test server runs
+ * with MB_TEST_MODE=1 so API endpoints return mocked data.
  */
 export default defineConfig({
   testDir: './tests/browser',
@@ -15,9 +19,9 @@ export default defineConfig({
     ['html', { outputFolder: 'tests/playwright-report', open: 'never' }]
   ],
   outputDir: 'tests/test-results',
-  
+
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3100',
+    baseURL: process.env.BASE_URL || 'http://localhost:3200',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -32,10 +36,11 @@ export default defineConfig({
     },
   ],
 
-  // Run local dev server before tests
+  // Run local dev server before tests on HTTP port 3200 (avoids conflict with production on 3000/3100)
+  // TEST_PORT tells server.js to open an extra HTTP listener on 3200 for Playwright
   webServer: process.env.CI ? undefined : {
-    command: 'MB_TEST_MODE=1 npm start',
-    url: 'http://localhost:3100',
+    command: 'MB_TEST_MODE=1 TEST_PORT=3200 npm start',
+    url: 'http://localhost:3200',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     stdout: 'pipe',

@@ -744,18 +744,20 @@ async function onServerReady(protocol) {
     } catch { }
 }
 
-// Also expose a secondary test port (3100) to satisfy CI tests that expect this base URL
-// This creates a separate HTTP server instance to avoid conflicts
+// Expose HTTP test port(s) for CI and Playwright tests
+// Default: 3100 (for system tests). TEST_PORT env var adds an extra listener (for Playwright).
 try {
-    const TEST_PORT = 3100;
-    if (PORT !== TEST_PORT) {
+    const testPorts = new Set([3100]);
+    if (process.env.TEST_PORT) testPorts.add(parseInt(process.env.TEST_PORT, 10));
+    for (const tp of testPorts) {
+        if (tp === PORT) continue;
         import('http').then(({ default: http }) => {
             const testServer = http.createServer(app);
-            testServer.listen(TEST_PORT, '0.0.0.0', () => {
-                console.log(`🧪 Test port listener active on ${TEST_PORT}`);
+            testServer.listen(tp, '0.0.0.0', () => {
+                console.log(`🧪 Test port listener active on ${tp}`);
             });
             testServer.on('error', (e) => {
-                console.warn('Test port listener setup failed:', e.message);
+                console.warn(`Test port ${tp} listener setup failed:`, e.message);
             });
         });
     }
