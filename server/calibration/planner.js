@@ -4,8 +4,12 @@ let globalSpeedCap = 1.0;
 export function setGlobalSpeedCap(pct) { globalSpeedCap = Math.max(0, Math.min(1, pct)); }
 export function getGlobalSpeedCap() { return globalSpeedCap; }
 
-export function clampP(p) {
-  return Math.max(0, Math.min(1, p));
+export function clampP(p, bounds) {
+  let v = Math.max(0, Math.min(1, p));
+  if (bounds && typeof bounds.minP === 'number' && typeof bounds.maxP === 'number') {
+    v = Math.max(bounds.minP, Math.min(bounds.maxP, v));
+  }
+  return v;
 }
 
 export function planDirectMap(motionModel, fromP, toP) {

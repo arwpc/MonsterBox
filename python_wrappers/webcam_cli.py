@@ -64,17 +64,36 @@ if __name__ == '__main__':
             code, out = run_cmd(['v4l2-ctl', '-d', f'/dev/video{dev}', '--list-ctrls'])
             if code != 0:
                 fail('v4l2-ctl list failed', rawOutput=out, deviceId=dev)
-            # Return raw output and a naive parsed list of names
-            names = []
+            # Parse v4l2-ctl output into {name: {type, value, min, max, step, default}, ...}
+            import re
+            controls = {}
             for line in out.splitlines():
                 line = line.strip()
-                if not line:
+                if not line or ':' not in line:
                     continue
-                # each line starts with name/flags: e.g., brightness 0x00980900 (int)    : min=0 max=255 step=1 default=128 value=128
-                parts = line.split()[0:1]
-                if parts:
-                    names.append(parts[0])
-            ok(deviceId=dev, rawOutput=out, controls=names, message='Listed controls')
+                left, right = line.split(':', 1)
+                tokens = left.split()
+                if len(tokens) < 2:
+                    continue
+                name = tokens[0]
+                # Extract type from (int), (bool), (menu) token
+                ctrl_type = 'int'
+                for t in tokens:
+                    if t.startswith('(') and t.endswith(')'):
+                        ctrl_type = t[1:-1]
+                        break
+                # Parse key=value pairs from right side
+                attrs = {}
+                for m in re.finditer(r'(\w+)=(-?\d+)', right):
+                    attrs[m.group(1)] = int(m.group(2))
+                entry = {'type': ctrl_type}
+                for key in ('value', 'min', 'max', 'step', 'default'):
+                    if key in attrs:
+                        entry[key] = attrs[key]
+                if 'flags' in right and 'inactive' in right:
+                    entry['inactive'] = True
+                controls[name] = entry
+            ok(deviceId=dev, rawOutput=out, controls=controls, message='Listed controls')
         elif cmd == 'set_ctrls':
             _, dev, kv = args
             if not kv:

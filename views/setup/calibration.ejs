@@ -997,24 +997,29 @@
         return;
       }
 
-      // For now, prompt for position value since we don't have real-time position tracking yet
-      const posStr = prompt('Enter position value (0.0 to 1.0):', '0.5');
-      if (!posStr) return;
-
-      const position = parseFloat(posStr);
-      if (isNaN(position) || position < 0 || position > 1) {
-        alert('Invalid position. Must be between 0.0 and 1.0');
-        return;
-      }
-
       try {
+        // Fetch current position from server
+        const posRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/position');
+        const posData = await posRes.json();
+        if (!posData.success || posData.currentP == null) {
+          alert('Cannot capture position — move the part first, then try again.');
+          return;
+        }
+
+        const position = posData.currentP;
+        const presetData = { name, position };
+        // For absolute servos, also store the angle
+        if (posData.currentAngle != null) {
+          presetData.angle = posData.currentAngle;
+        }
+
         // Update profile with new preset
         const updatedPresets = [...(currentCalProfile.presets || [])];
         const existingIndex = updatedPresets.findIndex(p => p.name === name);
         if (existingIndex >= 0) {
-          updatedPresets[existingIndex].position = position;
+          updatedPresets[existingIndex] = presetData;
         } else {
-          updatedPresets.push({ name, position });
+          updatedPresets.push(presetData);
         }
 
         // Send complete updated profile
@@ -1078,15 +1083,29 @@
       }
 
       try {
+        // Use angle-based goto for absolute servos if angle is available
+        const body = (currentPartIsAbsoluteServo && preset.angle != null)
+          ? { angle: preset.angle }
+          : { p: preset.position };
+
         const res = await fetch(`/api/calibration/${partId}/goto`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p: preset.position })
+          body: JSON.stringify(body)
         });
 
         const data = await res.json();
         if (!data.success) {
           alert('Goto preset failed: ' + (data.error || 'Unknown error'));
+        } else {
+          // Sync position display
+          if (data.targetP != null) {
+            updateCurrentPositionDisplay(data.targetP, data.targetAngle);
+          }
+          // Sync LA slider if present
+          if (typeof window._syncLASlider === 'function' && data.targetP != null) {
+            window._syncLASlider(data.targetP);
+          }
         }
       } catch (err) {
         console.error('Goto preset error:', err);
@@ -2062,7 +2081,16 @@
           });
         }
       } else if (part.type === 'linear_actuator') {
-        el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
+        el.innerHTML = '<div class="mb-3">' +
+          '<label class="form-label fw-bold">Position Slider</label>' +
+          '<div class="d-flex align-items-center gap-2">' +
+          '<span class="text-muted small">0</span>' +
+          '<input type="range" id="laPosSlider" class="form-range flex-fill" min="0" max="1" step="0.01" value="0.5">' +
+          '<span class="text-muted small">1</span>' +
+          '<input type="number" id="laPosNum" class="form-control" min="0" max="1" step="0.01" value="0.50" style="width:90px">' +
+          '<button class="btn btn-success" id="laPosGoBtn">Go</button>' +
+          '</div></div>' +
+          '<div class="d-flex align-items-center flex-wrap gap-2">' +
           '<button class="btn btn-primary btn-lg" id="extendBtn"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
           '<button class="btn btn-danger btn-lg" id="stopBtn"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '<button class="btn btn-primary btn-lg" id="retractBtn"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
@@ -2070,6 +2098,55 @@
           '<input type="number" id="laDur" class="form-control form-control-lg" value="1500" style="width:140px"> ms' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+
+        // Sync slider and numeric input
+        const slider = el.querySelector('#laPosSlider');
+        const numInput = el.querySelector('#laPosNum');
+        slider.addEventListener('input', function() { numInput.value = parseFloat(slider.value).toFixed(2); });
+        numInput.addEventListener('input', function() {
+          var v = parseFloat(numInput.value);
+          if (!isNaN(v) && v >= 0 && v <= 1) slider.value = v;
+        });
+
+        // Helper to sync slider/numeric to a position value
+        function syncLASlider(p) {
+          if (p == null) return;
+          var sv = document.getElementById('laPosSlider');
+          var nv = document.getElementById('laPosNum');
+          if (sv) sv.value = p;
+          if (nv) nv.value = parseFloat(p).toFixed(2);
+        }
+        // Expose for use by gotoPreset
+        window._syncLASlider = syncLASlider;
+
+        // Go button — goto the slider position
+        el.querySelector('#laPosGoBtn').addEventListener('click', async function() {
+          const st = document.getElementById('ctrlStatus');
+          const targetP = parseFloat(slider.value);
+          if (isNaN(targetP) || targetP < 0 || targetP > 1) return;
+          try {
+            if (st) st.textContent = 'Moving to ' + targetP.toFixed(2) + '…';
+            const response = await fetch('/api/calibration/' + encodeURIComponent(part.id) + '/goto', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ p: targetP })
+            });
+            const data = await response.json();
+            if (data.success) {
+              if (st) st.textContent = 'Moved to ' + (data.targetP != null ? data.targetP.toFixed(2) : targetP.toFixed(2));
+              if (data.targetP != null) {
+                syncLASlider(data.targetP);
+                updateCurrentPositionDisplay(data.targetP);
+              }
+            } else {
+              if (st) st.textContent = 'Move failed: ' + (data.error || 'unknown');
+            }
+            setTimeout(function() { if (st) st.textContent = ''; }, 2000);
+          } catch (e) {
+            if (st) st.textContent = 'Move error';
+          }
+        });
+
         const spd = () => parseInt(document.getElementById('laSpd').value || '90', 10);
         const dur = () => parseInt(document.getElementById('laDur').value || '1500', 10);
         el.querySelector('#extendBtn').addEventListener('click', async () => {
@@ -2094,7 +2171,10 @@
             });
             const data = await response.json();
             if (st) st.textContent = 'Done';
-            if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
+            if (data.currentP != null) {
+              updateCurrentPositionDisplay(data.currentP);
+              syncLASlider(data.currentP);
+            }
             const d = 800;
             setTimeout(() => { if (st) st.textContent = ''; }, d);
           } catch (e) {
@@ -2123,7 +2203,10 @@
             });
             const data = await response.json();
             if (st) st.textContent = 'Done';
-            if (data.currentP != null) updateCurrentPositionDisplay(data.currentP);
+            if (data.currentP != null) {
+              updateCurrentPositionDisplay(data.currentP);
+              syncLASlider(data.currentP);
+            }
             const d = 800;
             setTimeout(() => { if (st) st.textContent = ''; }, d);
           } catch (e) {
@@ -2280,7 +2363,7 @@
         }
         var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
       } else if (part.type === 'webcam') {
-        // Webcam live preview + typical controls (brightness, contrast, saturation, IR if available) and digital zoom
+        // Webcam live preview + dynamic controls from device + Night Mode toggle
         el.innerHTML = '' +
           '<div class="row g-3 align-items-start">' +
           '<div class="col-md-6">' +
@@ -2298,28 +2381,19 @@
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>' +
           '<div class="col-md-6">' +
+          '<div class="form-check form-switch mb-3 p-2 border rounded bg-light">' +
+          '<input class="form-check-input ms-0 me-2" type="checkbox" id="ctrl_nightMode" style="font-size:1.3em">' +
+          '<label class="form-check-label fw-bold" for="ctrl_nightMode"><i class="bi bi-moon-stars"></i> Night Mode (IR Optimized)</label>' +
+          '</div>' +
           '<div class="d-flex justify-content-between align-items-center mb-2">' +
           '<h6 class="mb-0"><i class="bi bi-sliders"></i> Controls</h6>' +
           '<div class="d-flex gap-2">' +
-          '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info"><i class="bi bi-arrow-repeat"></i> Load</button>' +
+          '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info"><i class="bi bi-arrow-repeat"></i> Refresh</button>' +
           '<button id="applyCamCtrls" class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
           '</div>' +
           '</div>' +
-          '<div class="mb-2">' +
-          '<label class="form-label">Brightness <span id="lbl_brightness" class="text-muted"></span></label>' +
-          '<input id="ctrl_brightness" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
-          '</div>' +
-          '<div class="mb-2">' +
-          '<label class="form-label">Contrast <span id="lbl_contrast" class="text-muted"></span></label>' +
-          '<input id="ctrl_contrast" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
-          '</div>' +
-          '<div class="mb-2">' +
-          '<label class="form-label">Saturation <span id="lbl_saturation" class="text-muted"></span></label>' +
-          '<input id="ctrl_saturation" type="range" class="form-range" min="0" max="255" step="1" value="128">' +
-          '</div>' +
-          '<div class="form-check form-switch mb-2">' +
-          '<input class="form-check-input" type="checkbox" id="ctrl_ir">' +
-          '<label class="form-check-label" for="ctrl_ir">IR Cut / Night Mode</label>' +
+          '<div id="dynamicControls" style="max-height:400px;overflow-y:auto">' +
+          '<div class="text-muted small">Loading controls from device...</div>' +
           '</div>' +
           '</div>' +
           '</div>';
@@ -2340,33 +2414,224 @@
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
 
-        // Controls load/apply
-        function setIf(elm, v, min, max) { if (!elm) return; var nv = (typeof v === 'number') ? v : (parseInt(v, 10) || 0); if (typeof min === 'number') nv = Math.max(min, nv); if (typeof max === 'number') nv = Math.min(max, nv); elm.value = String(nv); var lbl = el.querySelector('#lbl_' + (elm.id.split('_')[1] || '')); if (lbl) lbl.textContent = '(' + nv + ')'; }
+        // Dynamic controls rendering
+        var dynContainer = el.querySelector('#dynamicControls');
+        var _camCtrlMeta = {}; // stores {name: {type, min, max, step, default}} from device
+
+        function formatCtrlName(name) {
+          return name.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        }
+
+        function renderDynamicControls(ctrls) {
+          // ctrls is {name: {type, value, min, max, step, default}, ...} from list_ctrls
+          _camCtrlMeta = ctrls;
+          var html = '';
+          var names = Object.keys(ctrls);
+          for (var i = 0; i < names.length; i++) {
+            var name = names[i];
+            var c = ctrls[name];
+            var val = (c.value != null) ? c.value : (c['default'] != null ? c['default'] : 0);
+            var label = formatCtrlName(name);
+            if (c.inactive) continue; // skip inactive controls
+            if (c.type === 'bool') {
+              html += '<div class="form-check form-switch mb-2">' +
+                '<input class="form-check-input" type="checkbox" id="ctrl_' + name + '"' + (val ? ' checked' : '') + '>' +
+                '<label class="form-check-label" for="ctrl_' + name + '">' + label + '</label>' +
+                '</div>';
+            } else if (c.type === 'menu') {
+              html += '<div class="mb-2">' +
+                '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
+                '<select id="ctrl_' + name + '" class="form-select form-select-sm">';
+              var lo = (c.min != null) ? c.min : 0;
+              var hi = (c.max != null) ? c.max : lo;
+              for (var m = lo; m <= hi; m++) {
+                html += '<option value="' + m + '"' + (m === val ? ' selected' : '') + '>' + m + '</option>';
+              }
+              html += '</select></div>';
+            } else {
+              // range (int)
+              var mn = (c.min != null) ? c.min : 0;
+              var mx = (c.max != null) ? c.max : 255;
+              var stp = (c.step != null) ? c.step : 1;
+              html += '<div class="mb-2">' +
+                '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
+                '<input id="ctrl_' + name + '" type="range" class="form-range" min="' + mn + '" max="' + mx + '" step="' + stp + '" value="' + val + '">' +
+                '</div>';
+            }
+          }
+          if (!html) html = '<div class="text-muted small">No controls available</div>';
+          dynContainer.innerHTML = html;
+          // Attach live value labels to sliders
+          var sliders = dynContainer.querySelectorAll('input[type="range"]');
+          for (var s = 0; s < sliders.length; s++) {
+            (function (slider) {
+              slider.addEventListener('input', function () {
+                var cname = slider.id.replace('ctrl_', '');
+                var lbl = dynContainer.querySelector('#lbl_' + cname);
+                if (lbl) lbl.textContent = '(' + slider.value + ')';
+              });
+            })(sliders[s]);
+          }
+          // Attach live labels to selects
+          var selects = dynContainer.querySelectorAll('select');
+          for (var x = 0; x < selects.length; x++) {
+            (function (sel) {
+              sel.addEventListener('change', function () {
+                var cname = sel.id.replace('ctrl_', '');
+                var lbl = dynContainer.querySelector('#lbl_' + cname);
+                if (lbl) lbl.textContent = '(' + sel.value + ')';
+              });
+            })(selects[x]);
+          }
+        }
+
         function readControlsFromUI() {
           var o = {};
-          var b = el.querySelector('#ctrl_brightness'); if (b) o.brightness = parseInt(b.value, 10);
-          var c = el.querySelector('#ctrl_contrast'); if (c) o.contrast = parseInt(c.value, 10);
-          var s = el.querySelector('#ctrl_saturation'); if (s) o.saturation = parseInt(s.value, 10);
-          var ir = el.querySelector('#ctrl_ir'); if (ir) o.ir_cut = ir.checked ? 1 : 0;
+          var inputs = dynContainer.querySelectorAll('[id^="ctrl_"]');
+          for (var i = 0; i < inputs.length; i++) {
+            var inp = inputs[i];
+            var name = inp.id.replace('ctrl_', '');
+            if (inp.type === 'checkbox') {
+              o[name] = inp.checked ? 1 : 0;
+            } else {
+              o[name] = parseInt(inp.value, 10);
+            }
+          }
+          // Include nightMode state
+          var nm = el.querySelector('#ctrl_nightMode');
+          if (nm) o.nightMode = nm.checked ? 1 : 0;
           return o;
         }
-        var loadBtn = el.querySelector('#loadCamCtrls');
-        if (loadBtn) loadBtn.addEventListener('click', function () {
+
+        function loadControlsFromDevice() {
           if (st) st.textContent = 'Loading controls…';
           fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/list')
             .then(function (r) { return r.json(); })
             .then(function (j) {
-              if (!j || j.success === false) { if (st) st.textContent = 'Failed to load controls'; return; }
+              if (!j || j.success === false) {
+                dynContainer.innerHTML = '<div class="text-warning small">Could not load controls from device. Using model defaults.</div>';
+                loadControlsFromModel();
+                return;
+              }
               var ctrls = j.controls || {};
-              // Common V4L2 control keys
-              setIf(el.querySelector('#ctrl_brightness'), ctrls.brightness, 0, 255);
-              setIf(el.querySelector('#ctrl_contrast'), ctrls.contrast, 0, 255);
-              setIf(el.querySelector('#ctrl_saturation'), ctrls.saturation, 0, 255);
-              var ir = el.querySelector('#ctrl_ir'); if (ir) { var v = (ctrls.ir_cut != null ? ctrls.ir_cut : (ctrls.infrared != null ? ctrls.infrared : 0)); ir.checked = !!(+v); }
-              if (st) st.textContent = 'Controls loaded'; setTimeout(function () { if (st) st.textContent = ''; }, 800);
+              // list_ctrls now returns {name: {type, value, ...}}
+              if (typeof ctrls === 'object' && !Array.isArray(ctrls) && Object.keys(ctrls).length > 0) {
+                renderDynamicControls(ctrls);
+              } else {
+                // Fallback to model schema
+                loadControlsFromModel();
+              }
+              if (st) st.textContent = 'Controls loaded';
+              setTimeout(function () { if (st) st.textContent = ''; }, 800);
             })
-            .catch(function () { if (st) st.textContent = 'Failed to load controls'; });
-        });
+            .catch(function () {
+              dynContainer.innerHTML = '<div class="text-warning small">Failed to query device. Using model defaults.</div>';
+              loadControlsFromModel();
+            });
+        }
+
+        function loadControlsFromModel() {
+          // Build controls from model schema as fallback
+          var modelId = (part.config && part.config.modelId) || '';
+          fetch('/setup/calibration/api/webcam/models')
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              if (!j || !j.success || !j.models) return;
+              var model = null;
+              for (var i = 0; i < j.models.length; i++) {
+                if (j.models[i].id === modelId) { model = j.models[i]; break; }
+              }
+              if (!model && j.models.length > 0) model = j.models[0];
+              if (model && model.controlsSchema) {
+                var ctrls = {};
+                var keys = Object.keys(model.controlsSchema);
+                for (var k = 0; k < keys.length; k++) {
+                  var name = keys[k];
+                  var s = model.controlsSchema[name];
+                  var ctrlType = 'int';
+                  if (s.type === 'boolean') ctrlType = 'bool';
+                  else if (s.type === 'menu') ctrlType = 'menu';
+                  ctrls[name] = { type: ctrlType, value: s['default'] || 0, min: s.min, max: s.max, step: s.step, 'default': s['default'] };
+                }
+                renderDynamicControls(ctrls);
+              }
+            })
+            .catch(function () { /* ignore */ });
+        }
+
+        // Night Mode toggle
+        var nightToggle = el.querySelector('#ctrl_nightMode');
+        if (nightToggle) {
+          // Restore persisted nightMode state
+          if (part.config && part.config.controls && part.config.controls.nightMode) {
+            nightToggle.checked = true;
+          }
+          nightToggle.addEventListener('change', function () {
+            var isNight = nightToggle.checked;
+            if (st) st.textContent = isNight ? 'Applying Night Mode…' : 'Applying Day Mode…';
+            // Fetch model presets
+            var modelId = (part.config && part.config.modelId) || '';
+            fetch('/setup/calibration/api/webcam/models')
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                var preset = null;
+                if (j && j.success && j.models) {
+                  for (var i = 0; i < j.models.length; i++) {
+                    if (j.models[i].id === modelId) {
+                      preset = isNight ? j.models[i].nightModePreset : j.models[i].dayModePreset;
+                      break;
+                    }
+                  }
+                  // Fallback to first model with presets
+                  if (!preset) {
+                    for (var k = 0; k < j.models.length; k++) {
+                      var p = isNight ? j.models[k].nightModePreset : j.models[k].dayModePreset;
+                      if (p) { preset = p; break; }
+                    }
+                  }
+                }
+                if (!preset) {
+                  if (st) st.textContent = 'No preset found for this model';
+                  setTimeout(function () { if (st) st.textContent = ''; }, 1500);
+                  return;
+                }
+                // Apply preset to UI controls
+                var names = Object.keys(preset);
+                for (var n = 0; n < names.length; n++) {
+                  var ctrl = dynContainer.querySelector('#ctrl_' + names[n]);
+                  if (ctrl) {
+                    if (ctrl.type === 'checkbox') {
+                      ctrl.checked = !!preset[names[n]];
+                    } else {
+                      ctrl.value = String(preset[names[n]]);
+                    }
+                    // Update label
+                    var lbl = dynContainer.querySelector('#lbl_' + names[n]);
+                    if (lbl) lbl.textContent = '(' + preset[names[n]] + ')';
+                  }
+                }
+                // Send preset + nightMode to device
+                var controls = Object.assign({}, preset, { nightMode: isNight ? 1 : 0 });
+                fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
+                }).then(function (r) { return r.json(); }).then(function (res) {
+                  if (res && res.success) { if (st) st.textContent = isNight ? 'Night Mode ON' : 'Day Mode restored'; }
+                  else { if (st) st.textContent = 'Failed: ' + (res && res.error || ''); }
+                  setTimeout(function () { if (st) st.textContent = ''; }, 1200);
+                }).catch(function () { if (st) st.textContent = 'Failed to apply preset'; });
+              })
+              .catch(function () { if (st) st.textContent = 'Failed to load model presets'; });
+          });
+        }
+
+        // Auto-load controls from device on selection
+        loadControlsFromDevice();
+
+        // Refresh button
+        var loadBtn = el.querySelector('#loadCamCtrls');
+        if (loadBtn) loadBtn.addEventListener('click', function () { loadControlsFromDevice(); });
+
+        // Apply & Save
         var applyBtn = el.querySelector('#applyCamCtrls');
         if (applyBtn) applyBtn.addEventListener('click', function () {
           if (st) st.textContent = 'Applying…';

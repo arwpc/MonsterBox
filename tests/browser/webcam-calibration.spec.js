@@ -68,40 +68,36 @@ test.describe('Webcam in Calibration Page', () => {
     await expect(controlsArea).not.toHaveText('Select a device to show controls.');
   });
 
-  test('should have brightness slider for webcam', async () => {
+  test('should have dynamic controls area for webcam', async () => {
     const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem.click();
-    await page.waitForTimeout(500);
+    // Wait for async control loading
+    await page.waitForTimeout(2000);
 
-    const brightnessSlider = page.locator('#ctrl_brightness');
-    await expect(brightnessSlider).toBeVisible();
+    const dynControls = page.locator('#dynamicControls');
+    await expect(dynControls).toBeVisible();
+    // Should have at least one control rendered (from device or model fallback)
+    const controlInputs = dynControls.locator('[id^="ctrl_"]');
+    const count = await controlInputs.count();
+    expect(count).toBeGreaterThan(0);
   });
 
-  test('should have contrast slider for webcam', async () => {
+  test('should have brightness control for webcam', async () => {
     const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(2000);
 
-    const contrastSlider = page.locator('#ctrl_contrast');
-    await expect(contrastSlider).toBeVisible();
+    const brightnessCtrl = page.locator('#ctrl_brightness');
+    await expect(brightnessCtrl).toBeVisible();
   });
 
-  test('should have saturation slider for webcam', async () => {
+  test('should have Night Mode toggle for webcam', async () => {
     const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
 
-    const satSlider = page.locator('#ctrl_saturation');
-    await expect(satSlider).toBeVisible();
-  });
-
-  test('should have IR Cut toggle for webcam', async () => {
-    const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
-    await webcamItem.click();
-    await page.waitForTimeout(500);
-
-    const irToggle = page.locator('#ctrl_ir');
-    await expect(irToggle).toBeVisible();
+    const nightToggle = page.locator('#ctrl_nightMode');
+    await expect(nightToggle).toBeVisible();
   });
 
   test('should have zoom slider for webcam', async () => {

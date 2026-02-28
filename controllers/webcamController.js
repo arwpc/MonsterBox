@@ -227,10 +227,14 @@ export const setControls = async (req, res) => {
     if (part.type !== 'webcam') return res.status(400).json({ success: false, error: 'Part is not a webcam' });
     const deviceId = (part.config && (part.config.deviceId || part.config.cameraId)) != null ? (part.config.deviceId || part.config.cameraId) : 0;
 
-    const result = await hardwareService.HARDWARE_CONTROLLERS.webcam.setControls({ deviceId, controls });
+    // Strip UI-only flags (nightMode) before sending to V4L2
+    const v4l2Controls = Object.assign({}, controls);
+    delete v4l2Controls.nightMode;
+
+    const result = await hardwareService.HARDWARE_CONTROLLERS.webcam.setControls({ deviceId, controls: v4l2Controls });
     if (!result.success) return res.status(400).json({ success: false, error: result.error || 'Failed to set controls', rawOutput: result.rawOutput });
 
-    // Persist to part config if requested
+    // Persist to part config if requested (include nightMode flag for UI state)
     if (persist) {
       const nextCfg = Object.assign({}, part.config || {}, { controls: Object.assign({}, (part.config && part.config.controls) || {}, controls) });
       parts[idx] = Object.assign({}, part, { config: nextCfg, updated: new Date().toISOString() });
@@ -550,7 +554,26 @@ export const applyDeviceToService = async (req, res) => {
         logs = jl.stdout || jl.stderr || '';
       } catch (_) { /* ignore */ }
       const active = (r3.stdout || '').trim() === 'active';
-      return res.json({ success: active, devicePath, flags: { resolution, fps, quality }, overridePath, dryRun: false, steps, results, logs, needsSudo: false });
+
+      // Reapply saved V4L2 controls after service restart
+      let controlsReapplied = false;
+      if (active && part.config && part.config.controls) {
+        try {
+          const savedControls = Object.assign({}, part.config.controls);
+          delete savedControls.nightMode; // UI-only flag
+          if (Object.keys(savedControls).length > 0) {
+            // Brief delay for mjpg-streamer to fully initialize the device
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await hardwareService.HARDWARE_CONTROLLERS.webcam.setControls({ deviceId, controls: savedControls });
+            controlsReapplied = true;
+            steps.push('Reapplied saved V4L2 controls after restart');
+          }
+        } catch (ctrlErr) {
+          steps.push('Warning: failed to reapply controls: ' + (ctrlErr.message || ctrlErr));
+        }
+      }
+
+      return res.json({ success: active, devicePath, flags: { resolution, fps, quality }, overridePath, dryRun: false, steps, results, logs, needsSudo: false, controlsReapplied });
     }
 
     // Dry-run response
