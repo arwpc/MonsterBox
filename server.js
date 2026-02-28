@@ -45,7 +45,6 @@ import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
 import scenesRoutes from './routes/scenes/index.js';
-import setupCharacterAudioRoutes from './routes/setup/characterAudio.js';
 import configApiRoutes from './routes/api/configRoutes.js';
 import { getHostnameCharacterId, updateSelectedCharacter } from './services/configService.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
@@ -302,7 +301,6 @@ app.use('/setup/super-powers', (req, res) => res.redirect(301, req.originalUrl.r
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
 app.use('/setup/characters', setupCharactersRoutes);
-app.use('/setup/character-audio', setupCharacterAudioRoutes);
 app.use('/audio-library', audioLibraryRoutes);
 app.use('/video-library', videoLibraryRoutes);
 app.use('/goblin-management', goblinManagementRoutes);
