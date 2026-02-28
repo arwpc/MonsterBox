@@ -4,27 +4,31 @@
 
 | Field | Value |
 |-------|-------|
-| **Character ID** | 7 |
+| **Character ID** | 7 (registered), 5 (legacy data) |
 | **IP Address** | 192.168.8.200 |
 | **Status** | Active |
-| **Data Directory** | `data/character-7/` |
+| **Data Directory** | `data/character-5/` (parts), `data/character-7/` (registered, empty) |
 
-Groundbreaker is a ground-emerging animatronic character. Registered as Character ID 7 in the current `characters.json` registry (legacy data may exist in `data/character-5/`).
+Groundbreaker is a ground-emerging animatronic character. It is registered as Character ID 7 in `characters.json`, but its hardware parts are stored under the legacy `data/character-5/` directory. The `data/character-7/` directory exists but has an empty parts list.
 
-## Hardware Parts
+!!! warning "ID Mismatch"
+    Character 7 is registered in `characters.json` with no parts. The actual hardware definitions (4 parts) live in `data/character-5/parts.json` with `characterId: 5`. This split happened during character re-registration.
+
+## Hardware Parts (from `data/character-5/parts.json`)
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Groundbreaker Motor | motor | BTS7960 driver, GPIO 27/22/17/17 |
+| 1 | Groundbreaker Motor | motor | BTS7960 driver, GPIO 27 (RPWM) / 22 (LPWM) / 17 (R_EN) / 17 (L_EN), 12V Jeep Wagoneer wiper motor |
 | 2 | Groundbreaker Webcam | webcam | USB, 1920x1080 @ 30fps |
-| 3 | Groundbreaker Speaker | speaker | Volume 85 |
-| 4 | Groundbreaker Microphone | microphone | USB device, 16000 Hz sample rate |
+| 3 | Groundbreaker Speaker | speaker | Default audio device, volume 85 |
+| 4 | Groundbreaker Microphone | microphone | USB HHWei device, 16000 Hz mono |
 
 **Total: 4 parts** — 1 motor, 1 webcam, 1 speaker, 1 microphone
 
 ## Key Features
 
-- **BTS7960 motor driver** — H-bridge motor control for the ground-breaking mechanism
+- **BTS7960 motor driver** — H-bridge motor control for the ground-breaking mechanism using a 12V Jeep Wagoneer wiper motor
+- **Shared R_EN/L_EN** — Both enable pins wired to GPIO 17 (`dual` enable mode)
 - **HD Webcam** — 1920x1080 @ 30fps USB camera
 - **Audio I/O** — Speaker and USB microphone for TTS/STT interaction
 
@@ -35,6 +39,7 @@ Groundbreaker is a ground-emerging animatronic character. Registered as Characte
 
 ## Configuration Files
 
-- `data/character-7/parts.json` — 4 hardware parts
+- `data/character-5/parts.json` — 4 hardware parts (legacy directory)
+- `data/character-7/parts.json` — Empty (registered ID)
 - `data/character-7/poses.json` — Named poses
 - `data/character-7/scenes.json` — Animation sequences

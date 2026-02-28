@@ -15,15 +15,15 @@ Coffin Breaker is a coffin-themed animatronic with a motorized door, jaw servo, 
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Jaw of Coffin | servo | PCA9685 channel 1, addr 0x40 |
-| 2 | Neck Movement | servo | PCA9685 channel 0, continuous rotation |
-| 3 | Eye Servos | servo | PCA9685 channel 2 |
-| 4 | Coffin Door | linear_actuator | MDD10A driver, GPIO 5 (dir) / 13 (pwm) |
-| 5 | Burning Rose | light | GPIO 16 |
-| 6 | Speaker Coffin | speaker | Volume 85 |
-| 7 | Coffin Cam | webcam | /dev/video0 |
+| 1 | Jaw of Coffin | servo | PCA9685 channel 1, addr 0x40, model: Miuzei MG90S |
+| 2 | Neck Movement | servo | PCA9685 channel 0, continuous rotation, model: Miuzei MG90S |
+| 3 | Eye Servos | servo | PCA9685 channel 2, model: Miuzei MG90S |
+| 4 | Coffin Door | linear_actuator | MDD10A driver, GPIO 5 (dir) / 13 (pwm), 15s max extend/retract |
+| 5 | Burning Rose | light | GPIO 16, model: generic 12V light |
+| 6 | Speaker Coffin | speaker | Default audio device, volume 85 |
+| 7 | Coffin Cam | webcam | /dev/video0, motion tracking enabled |
 | 8 | Webcam Microphone | microphone | Default audio input device |
-| 9 | PIR Motion Sensor | motion_sensor | GPIO 26 |
+| 9 | PIR Motion Sensor | motion_sensor | GPIO 26, PIR generic |
 
 **Total: 9 parts** — 3 servos, 1 linear actuator, 1 light, 1 speaker, 1 webcam, 1 microphone, 1 PIR sensor
 

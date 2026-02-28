@@ -15,12 +15,12 @@ Skulltalker is a skull-based animatronic with head movement, jaw servo, and a "m
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Head Servo | servo | PCA9685 channel 0 |
-| 2 | Jaw Servo | servo | PCA9685 channel 8 |
-| 3 | Magic Box Servo | servo | PCA9685 channel 12 |
+| 1 | Head Servo | servo | PCA9685 channel 0, model: Miuzei 25kg |
+| 2 | Jaw Servo | servo | PCA9685 channel 8, model: Miuzei 25kg |
+| 3 | Magic Box Servo | servo | PCA9685 channel 12, model: Miuzei 25kg |
 | 4 | Skulltalker Cam | webcam | /dev/video0 |
 | 5 | Webcam Microphone | microphone | Default audio input device |
-| 6 | Speaker Skulltalker | speaker | Volume 85 |
+| 6 | Speaker Skulltalker | speaker | Default audio device, volume 85 |
 
 **Total: 6 parts** — 3 servos, 1 webcam, 1 microphone, 1 speaker
 
