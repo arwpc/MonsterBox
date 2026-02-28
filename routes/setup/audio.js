@@ -4,8 +4,10 @@
  */
 
 import express from 'express';
+import { spawn } from 'child_process';
 import { runWrapper } from '../../services/hardwareService/exec.js';
 import pipewireService from '../../services/pipewireService.js';
+import serverPlaybackService from '../../services/serverPlaybackService.js';
 
 const router = express.Router();
 
@@ -650,6 +652,168 @@ router.get('/api/audio-levels', async (req, res) => {
     } catch (error) {
         console.error('Error getting audio levels:', error.message);
         res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: deviceType || 'unknown' });
+    }
+});
+
+// Track active mic-stream SSE connections for cleanup
+const activeMicStreams = new Map();
+
+// GET /api/mic-stream — SSE endpoint: streams character mic audio as base64 PCM16LE chunks
+// Used by Browser Speaker (Listen In) on the audio config page
+router.get('/api/mic-stream', (req, res) => {
+    // Test mode: send a few silent chunks then close
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
+        res.write('data: {"type":"started","deviceId":"default"}\n\n');
+        const silent = Buffer.alloc(3200).toString('base64'); // 100ms of silence at 16kHz
+        res.write('data: {"type":"audio","audio":"' + silent + '"}\n\n');
+        setTimeout(() => { try { res.end(); } catch (_) {} }, 200);
+        return;
+    }
+
+    const deviceId = String(req.query.deviceId || 'default').replace(/[^a-zA-Z0-9._:\-]/g, '');
+    const streamId = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+    console.log(`🎧 Starting mic-stream SSE: device=${deviceId}, stream=${streamId}`);
+
+    // SSE headers
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    });
+
+    // Spawn pw-record to capture from the specified PipeWire source
+    const pwArgs = ['--format', 's16', '--rate', '16000', '--channels', '1'];
+    if (deviceId && deviceId !== 'default') {
+        pwArgs.push('--target', deviceId);
+    }
+    pwArgs.push('-'); // write to stdout
+
+    let proc;
+    try {
+        proc = spawn('pw-record', pwArgs);
+    } catch (err) {
+        console.error('Failed to spawn pw-record:', err.message);
+        res.write('data: {"type":"error","error":"pw-record not available"}\n\n');
+        res.end();
+        return;
+    }
+
+    activeMicStreams.set(streamId, proc);
+
+    // Notify client that streaming has started
+    res.write('data: {"type":"started","deviceId":"' + deviceId + '","streamId":"' + streamId + '"}\n\n');
+
+    // Stream audio chunks as they arrive from pw-record stdout
+    proc.stdout.on('data', (chunk) => {
+        try {
+            const b64 = chunk.toString('base64');
+            res.write('data: {"type":"audio","audio":"' + b64 + '"}\n\n');
+        } catch (_) {
+            // Client likely disconnected
+        }
+    });
+
+    proc.stderr.on('data', (data) => {
+        const msg = data.toString().trim();
+        if (msg) console.warn(`pw-record stderr [${streamId}]:`, msg);
+    });
+
+    proc.on('error', (err) => {
+        console.error(`pw-record error [${streamId}]:`, err.message);
+        try {
+            res.write('data: {"type":"error","error":"' + err.message.replace(/"/g, '\\"') + '"}\n\n');
+            res.end();
+        } catch (_) {}
+        activeMicStreams.delete(streamId);
+    });
+
+    proc.on('exit', (code, signal) => {
+        console.log(`pw-record exited [${streamId}]: code=${code}, signal=${signal}`);
+        try {
+            res.write('data: {"type":"ended","code":' + code + '}\n\n');
+            res.end();
+        } catch (_) {}
+        activeMicStreams.delete(streamId);
+    });
+
+    // Cleanup when client disconnects
+    req.on('close', () => {
+        console.log(`🎧 Mic-stream client disconnected [${streamId}]`);
+        if (proc && !proc.killed) {
+            try { proc.kill('SIGTERM'); } catch (_) {}
+        }
+        activeMicStreams.delete(streamId);
+    });
+});
+
+// POST /api/mic-stream/stop — Stop a specific mic stream (or all)
+router.post('/api/mic-stream/stop', express.json(), (req, res) => {
+    const { streamId } = req.body || {};
+    if (streamId) {
+        const proc = activeMicStreams.get(streamId);
+        if (proc && !proc.killed) {
+            try { proc.kill('SIGTERM'); } catch (_) {}
+        }
+        activeMicStreams.delete(streamId);
+        return res.json({ success: true, stopped: streamId });
+    }
+    // Stop all
+    for (const [id, proc] of activeMicStreams) {
+        if (proc && !proc.killed) {
+            try { proc.kill('SIGTERM'); } catch (_) {}
+        }
+    }
+    const count = activeMicStreams.size;
+    activeMicStreams.clear();
+    res.json({ success: true, stoppedAll: count });
+});
+
+// POST /api/browser-mic-chunk — Receive base64 PCM16LE audio from browser mic, play on character speaker
+router.post('/api/browser-mic-chunk', express.json({ limit: '1mb' }), async (req, res) => {
+    try {
+        const { audio, deviceId } = req.body || {};
+        if (!audio) {
+            return res.status(400).json({ success: false, error: 'audio (base64 PCM16LE) required' });
+        }
+
+        // Test mode: acknowledge without playing
+        if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+            return res.json({ success: true, played: false, testMode: true });
+        }
+
+        const buffer = Buffer.from(audio, 'base64');
+        if (buffer.length === 0) {
+            return res.json({ success: true, played: false, error: 'empty audio' });
+        }
+
+        const result = await serverPlaybackService.writePcmStream(buffer, {
+            deviceId: deviceId || 'default',
+            sampleRate: 16000,
+            volume: 85,
+            kind: 'browser-mic'
+        });
+
+        res.json({ success: true, played: true, deviceId: deviceId || 'default', streamed: buffer.length });
+    } catch (error) {
+        console.error('Error playing browser mic audio:', error.message);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/browser-mic/stop — Stop the pw-play PCM stream used for browser mic playback
+router.post('/api/browser-mic/stop', express.json(), async (req, res) => {
+    try {
+        await serverPlaybackService.stopPcmStream({ characterId: 'default' });
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
     }
 });
 

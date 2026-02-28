@@ -193,6 +193,89 @@
   </div>
 </div>
 
+<!-- Browser Audio Bridge -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card panel-collapsible" data-panel-id="browser-audio-bridge">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-headset"></i> Browser Audio Bridge</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Listen to the character's microphone through your browser speaker, or speak through your browser microphone to the character's speaker.
+        </p>
+        <div class="row">
+          <!-- Listen In: Browser Speaker -->
+          <div class="col-md-6 mb-3 mb-md-0">
+            <div class="card bg-dark border-info">
+              <div class="card-header bg-dark text-info border-info">
+                <h6 class="mb-0"><i class="bi bi-headphones"></i> Listen In (Browser Speaker)</h6>
+              </div>
+              <div class="card-body">
+                <p class="small text-muted mb-2">Hear what the character's microphone picks up through your browser.</p>
+                <div class="mb-2">
+                  <label class="form-label small">Source Microphone</label>
+                  <select id="listenin-source-select" class="form-select form-select-sm">
+                    <option value="default">System Default Input</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Browser Volume</label>
+                  <input type="range" id="listenin-volume" class="form-range" min="0" max="100" value="75" step="5">
+                </div>
+                <div class="vu-meter-container mb-2">
+                  <div class="vu-meter" style="flex:1">
+                    <div id="listenin-vu-bar" class="vu-bar" style="width:0%"></div>
+                  </div>
+                  <span id="listenin-vu-label" class="vu-label small text-muted">0%</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button id="btn-listenin-toggle" class="btn btn-info btn-sm" onclick="toggleListenIn()">
+                    <i class="bi bi-headphones"></i> <span id="listenin-toggle-text">Start Listening</span>
+                  </button>
+                  <span id="listenin-status" class="badge bg-secondary">Off</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Talk Through: Browser Mic -->
+          <div class="col-md-6">
+            <div class="card bg-dark border-warning">
+              <div class="card-header bg-dark text-warning border-warning">
+                <h6 class="mb-0"><i class="bi bi-mic-fill"></i> Talk Through (Browser Mic)</h6>
+              </div>
+              <div class="card-body">
+                <p class="small text-muted mb-2">Speak into your browser mic and hear it through the character's speaker.</p>
+                <div class="mb-2">
+                  <label class="form-label small">Target Speaker</label>
+                  <select id="talkthrough-sink-select" class="form-select form-select-sm">
+                    <option value="default">System Default Output</option>
+                  </select>
+                </div>
+                <div class="vu-meter-container mb-2">
+                  <div class="vu-meter" style="flex:1">
+                    <div id="talkthrough-vu-bar" class="vu-bar" style="width:0%"></div>
+                  </div>
+                  <span id="talkthrough-vu-label" class="vu-label small text-muted">0%</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button id="btn-talkthrough-toggle" class="btn btn-warning btn-sm" onclick="toggleTalkThrough()">
+                    <i class="bi bi-mic-fill"></i> <span id="talkthrough-toggle-text">Start Talking</span>
+                  </button>
+                  <span id="talkthrough-status" class="badge bg-secondary">Off</span>
+                </div>
+                <div id="talkthrough-https-warning" class="alert alert-warning small mt-2 d-none">
+                  <i class="bi bi-shield-lock"></i> Browser microphone requires HTTPS or localhost.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Advanced Settings -->
 <div class="row mb-4">
   <div class="col-12">
@@ -408,6 +491,11 @@
 
     // Update microphone parts controls
     updateMicPartsUI();
+
+    // Populate Browser Audio Bridge selectors
+    if (typeof populateBridgeSelectors === 'function') {
+      setTimeout(populateBridgeSelectors, 100);
+    }
   }
 
   // Update system status indicators
@@ -1146,6 +1234,339 @@
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-megaphone"></i> Test Speaker'; }
     }
   }
+
+  // ============================================================
+  // Browser Audio Bridge — Listen In (Browser Speaker) & Talk Through (Browser Mic)
+  // ============================================================
+
+  // State for Listen In
+  let listenInEventSource = null;
+  let listenInAudioCtx = null;
+  let listenInNextStart = 0;
+  const LISTEN_IN_RATE = 16000;
+
+  // State for Talk Through
+  let talkThroughStream = null;
+  let talkThroughAudioCtx = null;
+  let talkThroughProcessor = null;
+  let talkThroughActive = false;
+  let talkThroughVuTimer = null;
+  const TALK_THROUGH_RATE = 16000;
+
+  // Populate the Browser Audio Bridge device selectors after system config loads
+  function populateBridgeSelectors() {
+    const sourceSelect = document.getElementById('listenin-source-select');
+    const sinkSelect = document.getElementById('talkthrough-sink-select');
+    if (!sourceSelect || !sinkSelect) return;
+
+    // Copy options from the main device selectors
+    const mainSource = document.getElementById('default-source');
+    const mainSink = document.getElementById('default-sink');
+
+    if (mainSource && mainSource.options.length > 1) {
+      sourceSelect.innerHTML = '';
+      for (let i = 0; i < mainSource.options.length; i++) {
+        const opt = mainSource.options[i];
+        const newOpt = document.createElement('option');
+        newOpt.value = opt.value;
+        newOpt.textContent = opt.textContent;
+        if (opt.selected) newOpt.selected = true;
+        sourceSelect.appendChild(newOpt);
+      }
+    }
+
+    if (mainSink && mainSink.options.length > 1) {
+      sinkSelect.innerHTML = '';
+      for (let i = 0; i < mainSink.options.length; i++) {
+        const opt = mainSink.options[i];
+        const newOpt = document.createElement('option');
+        newOpt.value = opt.value;
+        newOpt.textContent = opt.textContent;
+        if (opt.selected) newOpt.selected = true;
+        sinkSelect.appendChild(newOpt);
+      }
+    }
+
+    // Check HTTPS for browser mic
+    const isSecure = window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+    const httpsWarn = document.getElementById('talkthrough-https-warning');
+    if (!isSecure && httpsWarn) {
+      httpsWarn.classList.remove('d-none');
+      const btn = document.getElementById('btn-talkthrough-toggle');
+      if (btn) btn.disabled = true;
+    }
+  }
+
+  // Fallback: populate bridge selectors after delay in case updateUI was not called
+  setTimeout(populateBridgeSelectors, 3000);
+
+  // ------- Listen In (Browser Speaker) -------
+
+  function toggleListenIn() {
+    if (listenInEventSource) {
+      stopListenIn();
+    } else {
+      startListenIn();
+    }
+  }
+
+  function startListenIn() {
+    const sourceSelect = document.getElementById('listenin-source-select');
+    const deviceId = sourceSelect ? sourceSelect.value : 'default';
+    const statusBadge = document.getElementById('listenin-status');
+    const toggleText = document.getElementById('listenin-toggle-text');
+    const btn = document.getElementById('btn-listenin-toggle');
+
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Connecting...';
+    if (btn) btn.disabled = true;
+
+    // Create AudioContext for playback
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    listenInAudioCtx = new Ctx({ sampleRate: LISTEN_IN_RATE });
+    listenInNextStart = 0;
+
+    // Open SSE connection to mic-stream endpoint
+    const url = '/setup/audio/api/mic-stream?deviceId=' + encodeURIComponent(deviceId);
+    listenInEventSource = new EventSource(url);
+
+    listenInEventSource.onmessage = function(event) {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'started') {
+          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'badge bg-success'; }
+          if (toggleText) toggleText.textContent = 'Stop Listening';
+          if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+        } else if (msg.type === 'audio') {
+          playListenInChunk(msg.audio);
+        } else if (msg.type === 'error') {
+          console.error('Listen In error:', msg.error);
+          showNotification('Listen In error: ' + msg.error, 'error');
+          stopListenIn();
+        } else if (msg.type === 'ended') {
+          stopListenIn();
+        }
+      } catch (e) {
+        console.warn('Listen In parse error:', e);
+      }
+    };
+
+    listenInEventSource.onerror = function() {
+      console.warn('Listen In SSE connection error');
+      stopListenIn();
+    };
+  }
+
+  function playListenInChunk(base64Pcm) {
+    if (!listenInAudioCtx || !base64Pcm) return;
+
+    // Decode base64 to PCM16LE
+    const raw = atob(base64Pcm);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const samples = bytes.length / 2;
+    if (samples === 0) return;
+
+    // Convert to Float32
+    const float32 = new Float32Array(samples);
+    const view = new DataView(bytes.buffer);
+    for (let j = 0; j < samples; j++) {
+      float32[j] = view.getInt16(j * 2, true) / 32768;
+    }
+
+    // Compute RMS for VU meter
+    let sumSq = 0;
+    for (let k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
+    const rms = Math.sqrt(sumSq / float32.length);
+    const pct = Math.min(100, Math.round(rms * 500)); // Scale for visibility
+    const vuBar = document.getElementById('listenin-vu-bar');
+    const vuLabel = document.getElementById('listenin-vu-label');
+    if (vuBar) vuBar.style.width = pct + '%';
+    if (vuLabel) vuLabel.textContent = pct + '%';
+
+    // Apply volume control
+    const volSlider = document.getElementById('listenin-volume');
+    const volume = volSlider ? (parseInt(volSlider.value, 10) / 100) : 0.75;
+    for (let m = 0; m < float32.length; m++) float32[m] *= volume;
+
+    // Create AudioBuffer and play
+    if (listenInAudioCtx.state === 'suspended') listenInAudioCtx.resume();
+    const buffer = listenInAudioCtx.createBuffer(1, samples, LISTEN_IN_RATE);
+    buffer.getChannelData(0).set(float32);
+    const source = listenInAudioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(listenInAudioCtx.destination);
+
+    const now = listenInAudioCtx.currentTime;
+    if (listenInNextStart < now) listenInNextStart = now;
+    source.start(listenInNextStart);
+    listenInNextStart += buffer.duration;
+  }
+
+  function stopListenIn() {
+    if (listenInEventSource) {
+      listenInEventSource.close();
+      listenInEventSource = null;
+    }
+    if (listenInAudioCtx) {
+      try { listenInAudioCtx.close(); } catch (_) {}
+      listenInAudioCtx = null;
+    }
+    listenInNextStart = 0;
+
+    const statusBadge = document.getElementById('listenin-status');
+    const toggleText = document.getElementById('listenin-toggle-text');
+    const btn = document.getElementById('btn-listenin-toggle');
+    const vuBar = document.getElementById('listenin-vu-bar');
+    const vuLabel = document.getElementById('listenin-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start Listening';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-info btn-sm'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+  }
+
+  // ------- Talk Through (Browser Mic) -------
+
+  function toggleTalkThrough() {
+    if (talkThroughActive) {
+      stopTalkThrough();
+    } else {
+      startTalkThrough();
+    }
+  }
+
+  async function startTalkThrough() {
+    const sinkSelect = document.getElementById('talkthrough-sink-select');
+    const deviceId = sinkSelect ? sinkSelect.value : 'default';
+    const statusBadge = document.getElementById('talkthrough-status');
+    const toggleText = document.getElementById('talkthrough-toggle-text');
+    const btn = document.getElementById('btn-talkthrough-toggle');
+
+    // Check browser support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showNotification('Browser does not support microphone capture', 'error');
+      return;
+    }
+
+    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Requesting...';
+    if (btn) btn.disabled = true;
+
+    try {
+      talkThroughStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: { ideal: 16000 }
+        }
+      });
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      talkThroughAudioCtx = new Ctx();
+      const source = talkThroughAudioCtx.createMediaStreamSource(talkThroughStream);
+      talkThroughProcessor = talkThroughAudioCtx.createScriptProcessor(4096, 1, 1);
+      const nativeRate = talkThroughAudioCtx.sampleRate;
+      const targetDeviceId = deviceId;
+
+      talkThroughProcessor.onaudioprocess = function(e) {
+        if (!talkThroughActive) return;
+        const input = e.inputBuffer.getChannelData(0);
+
+        // Compute RMS for VU meter
+        let sumSq = 0;
+        for (let i = 0; i < input.length; i++) sumSq += input[i] * input[i];
+        const rms = Math.sqrt(sumSq / input.length);
+        const pct = Math.min(100, Math.round(rms * 500));
+        const vuBar = document.getElementById('talkthrough-vu-bar');
+        const vuLabel = document.getElementById('talkthrough-vu-label');
+        if (vuBar) vuBar.style.width = pct + '%';
+        if (vuLabel) vuLabel.textContent = pct + '%';
+
+        // Downsample to 16kHz
+        const ratio = nativeRate / TALK_THROUGH_RATE;
+        const outputLen = Math.floor(input.length / ratio);
+        const pcm16 = new Int16Array(outputLen);
+        for (let i = 0; i < outputLen; i++) {
+          const srcIdx = Math.floor(i * ratio);
+          pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[srcIdx] * 32768)));
+        }
+
+        // Base64 encode
+        const byteArr = new Uint8Array(pcm16.buffer);
+        let binary = '';
+        for (let j = 0; j < byteArr.length; j++) {
+          binary += String.fromCharCode(byteArr[j]);
+        }
+        const b64 = btoa(binary);
+
+        // Send to server (fire and forget)
+        fetch('/setup/audio/api/browser-mic-chunk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audio: b64, deviceId: targetDeviceId })
+        }).catch(function(err) {
+          console.warn('Talk Through send error:', err);
+        });
+      };
+
+      source.connect(talkThroughProcessor);
+      talkThroughProcessor.connect(talkThroughAudioCtx.destination);
+      talkThroughActive = true;
+
+      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'badge bg-success'; }
+      if (toggleText) toggleText.textContent = 'Stop Talking';
+      if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+    } catch (err) {
+      console.error('Talk Through start error:', err);
+      showNotification('Microphone error: ' + (err.message || err), 'error');
+      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
+      if (toggleText) toggleText.textContent = 'Start Talking';
+      if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+    }
+  }
+
+  function stopTalkThrough() {
+    talkThroughActive = false;
+
+    if (talkThroughProcessor) {
+      try { talkThroughProcessor.disconnect(); } catch (_) {}
+      talkThroughProcessor = null;
+    }
+    if (talkThroughStream) {
+      talkThroughStream.getTracks().forEach(function(t) { t.stop(); });
+      talkThroughStream = null;
+    }
+    if (talkThroughAudioCtx) {
+      try { talkThroughAudioCtx.close(); } catch (_) {}
+      talkThroughAudioCtx = null;
+    }
+
+    // Tell server to stop the pw-play stream
+    fetch('/setup/audio/api/browser-mic/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).catch(function() {});
+
+    const statusBadge = document.getElementById('talkthrough-status');
+    const toggleText = document.getElementById('talkthrough-toggle-text');
+    const btn = document.getElementById('btn-talkthrough-toggle');
+    const vuBar = document.getElementById('talkthrough-vu-bar');
+    const vuLabel = document.getElementById('talkthrough-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start Talking';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', function() {
+    if (listenInEventSource) stopListenIn();
+    if (talkThroughActive) stopTalkThrough();
+  });
 
 </script>
 <script src="/js/panel-sortable.js"></script>
