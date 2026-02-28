@@ -39,7 +39,8 @@ async function getCharacterDataDir(characterId) {
 }
 
 /**
- * Read jaw animation configuration for a character
+ * Read jaw animation configuration for a character.
+ * Also pre-warms the servo daemon if jaw is enabled (avoids cold-start lag on first TTS).
  */
 async function readJawConfig(characterId) {
   try {
@@ -49,7 +50,14 @@ async function readJawConfig(characterId) {
     const data = await fs.readFile(configFile, 'utf8');
     const config = JSON.parse(data);
 
-    return config.jawAnimation || getDefaultJawConfig();
+    const jawConfig = config.jawAnimation || getDefaultJawConfig();
+
+    // Pre-warm daemon so it's ready when playWithJawSync is called
+    if (jawConfig.enabled && jawConfig.servoPartId) {
+      jawServoDaemon.ensureRunning().catch(() => {});
+    }
+
+    return jawConfig;
   } catch (error) {
     // Return default config if file doesn't exist
     return getDefaultJawConfig();
@@ -854,8 +862,12 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
     return { success: false, message: 'No audio frames to animate' };
   }
 
-  // Ensure daemon is running
-  try { await jawServoDaemon.ensureRunning(); } catch (_) { /* fallback OK */ }
+  // Ensure daemon is running — await fully before starting audio
+  try {
+    await jawServoDaemon.ensureRunning();
+  } catch (daemonErr) {
+    console.warn('Jaw servo daemon not available, using hardwareService fallback (slower):', daemonErr.message);
+  }
 
   // Set up drive state for monitoring/cancel
   const driveState = { cancelled: false, timer: null, amplitude: 0, angle: closedAngle };

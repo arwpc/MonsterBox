@@ -376,14 +376,55 @@ router.post('/api/test-system', async (req, res) => {
                 '--device', deviceId || 'default'
             ]);
         } else if (testType === 'microphone') {
-            // Test microphone level
-            result = await runWrapper('microphone_cli.py', [
-                'get_level',
-                deviceId || 'default',
-                '16000',
-                '1',
-                '1.0'
-            ]);
+            // Test microphone level with fallback (mirrors input-level endpoint logic)
+            const dev = deviceId || 'default';
+            async function probeMic(d) {
+                const out = await runWrapper('microphone_cli.py', [
+                    'get_level', d, '16000', '1', '1.0'
+                ], { enableLogging: false, timeoutMs: 5000 });
+                let p = null;
+                try { p = JSON.parse(out); } catch (_) { /* ignore */ }
+                return p;
+            }
+
+            let parsed = null;
+            let usedDevice = dev;
+            try {
+                parsed = await probeMic(dev);
+            } catch (_) {
+                parsed = null;
+            }
+            if (!parsed || parsed.status !== 'success') {
+                // Fallback to other device IDs
+                const fallbacks = ['default', 'pulse'].filter(d => d !== dev);
+                for (const fb of fallbacks) {
+                    try {
+                        const p = await probeMic(fb);
+                        if (p && p.status === 'success') {
+                            parsed = p;
+                            usedDevice = fb;
+                            break;
+                        }
+                    } catch (_) { /* continue */ }
+                }
+            }
+            if (!parsed || parsed.status !== 'success') {
+                return res.json({
+                    success: false,
+                    testType,
+                    deviceId: dev,
+                    error: (parsed && parsed.message) || 'Microphone test failed — no input device responded'
+                });
+            }
+            return res.json({
+                success: true,
+                testType,
+                deviceId: usedDevice,
+                output: JSON.stringify(parsed),
+                parsed,
+                message: parsed.message || 'Microphone test completed',
+                fallbackUsed: usedDevice !== dev
+            });
         } else {
             return res.status(400).json({ success: false, error: 'Invalid test type' });
         }
@@ -406,7 +447,8 @@ router.post('/api/test-system', async (req, res) => {
         });
     } catch (error) {
         console.error('Error testing audio system:', error.message);
-        res.status(500).json({ success: false, error: error.message });
+        // Return as JSON 200 with success:false rather than HTTP 500
+        res.json({ success: false, testType: req.body && req.body.testType, error: error.message });
     }
 });
 

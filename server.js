@@ -144,8 +144,15 @@ app.use((req, res, next) => {
             content: ''
         };
 
-        // Render the content template first
-        res.render(contentTemplate, options, (err, html) => {
+        // Render the content template first — include common variables
+        // so content templates can access currentCharacter, config, etc.
+        const contentOptions = {
+            ...options,
+            config: req.app.locals.config,
+            currentCharacter: res.locals.currentCharacter,
+            testMode: layoutOptions.testMode
+        };
+        res.render(contentTemplate, contentOptions, (err, html) => {
             if (err) return res.status(500).send(err.message);
 
             // Then render with master layout

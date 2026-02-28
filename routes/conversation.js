@@ -28,11 +28,11 @@ function getCurrentCharacterId(req) {
   return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
 }
 
-async function getDataDir() {
-  const cfg = await readConfig();
-  // App root is repository app folder two levels up from routes/
-  const appRoot = path.resolve(__dirname, '..', '..');
-  return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : 'data');
+function getDataDir(characterId) {
+  // App root is one level up from routes/
+  const appRoot = path.resolve(__dirname, '..');
+  if (characterId) return path.resolve(appRoot, 'data', `character-${characterId}`);
+  return path.resolve(appRoot, 'data');
 }
 
 // Prefer canonical loader
@@ -437,18 +437,31 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       const fallbackResponse = `I heard your question about "${question}", but I'm having trouble connecting to my AI service right now. Please try again later.`;
       
       try {
-        // Direct TTS fallback (no HTTP loopback)
+        // Direct TTS fallback (no HTTP loopback) — use jaw sync when available
         const ttsCfg = await getTTSConfigForCharacter(characterId);
         const gen = await elevenLabsTTSService.generateSpeech(fallbackResponse, ttsCfg.voice_id, ttsCfg);
         let audioPlayed = false;
         if (gen.success) {
-          const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
-            characterId,
-            contentType: gen.contentType || 'audio/wav',
-            volume: 85,
-            kind: 'ai'
-          });
-          audioPlayed = playResult.success;
+          // Use jaw-synced playback when jaw animation is enabled (same as /api/say)
+          let jawSynced = false;
+          try {
+            const jawConfig = await jawAnimationService.readJawConfig(characterId);
+            if (jawConfig.enabled && jawConfig.servoPartId) {
+              jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+              jawSynced = true;
+              audioPlayed = true;
+            }
+          } catch (_) {}
+
+          if (!jawSynced) {
+            const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
+              characterId,
+              contentType: gen.contentType || 'audio/wav',
+              volume: 85,
+              kind: 'ai'
+            });
+            audioPlayed = playResult.success;
+          }
         }
         
         return res.json({
@@ -532,7 +545,7 @@ router.post('/api/ai-on', express.json(), async (req, res) => {
     if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
 
     const enabled = !!req.body.enabled;
-    const dataDir = await getDataDir();
+    const dataDir = getDataDir(characterId);
     const aiStateFile = path.resolve(dataDir, 'ai_agent_state.json');
 
     // Store AI agent state
@@ -553,7 +566,8 @@ router.post('/api/ai-on', express.json(), async (req, res) => {
 // Get current AI agent status
 router.get('/api/ai-status', async (req, res) => {
   try {
-    const dataDir = await getDataDir();
+    const characterId = getCurrentCharacterId(req);
+    const dataDir = getDataDir(characterId);
     const aiStateFile = path.resolve(dataDir, 'ai_agent_state.json');
 
     let state = { enabled: false };
@@ -582,8 +596,8 @@ router.get('/api/manual-controls-layout', async (req, res) => {
     const characterId = getCurrentCharacterId(req);
     if (!characterId) return res.json({ success: true, layout: null, layouts: [], activeLayout: null });
 
-    const dataDir = await getDataDir();
-    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+    const dataDir = getDataDir(characterId);
+    const layoutFile = path.resolve(dataDir, 'manual-controls-layout.json');
 
     let data;
     try {
@@ -614,8 +628,7 @@ router.post('/api/manual-controls-layout', express.json(), async (req, res) => {
     const items = req.body.items || [];
     const canvasHeight = req.body.canvasHeight || 350;
 
-    const dataDir = await getDataDir();
-    const charDir = path.resolve(dataDir, `character-${characterId}`);
+    const charDir = getDataDir(characterId);
     const layoutFile = path.resolve(charDir, 'manual-controls-layout.json');
 
     let data = { version: 1, activeLayout: layoutName, layouts: {} };
@@ -649,8 +662,8 @@ router.delete('/api/manual-controls-layout', async (req, res) => {
     const layoutName = (req.query.name || '').trim();
     if (!layoutName) return res.status(400).json({ success: false, error: 'Layout name required' });
 
-    const dataDir = await getDataDir();
-    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+    const dataDir = getDataDir(characterId);
+    const layoutFile = path.resolve(dataDir, 'manual-controls-layout.json');
 
     let data;
     try {
@@ -693,8 +706,8 @@ router.post('/api/manual-controls-layout/rename', express.json(), async (req, re
     if (!oldName || !newName) return res.status(400).json({ success: false, error: 'oldName and newName required' });
     if (oldName === newName) return res.json({ success: true, layouts: [] });
 
-    const dataDir = await getDataDir();
-    const layoutFile = path.resolve(dataDir, `character-${characterId}`, 'manual-controls-layout.json');
+    const dataDir = getDataDir(characterId);
+    const layoutFile = path.resolve(dataDir, 'manual-controls-layout.json');
 
     let data;
     try {

@@ -678,10 +678,10 @@
 
         // Also fetch current position
         try {
-          const posRes = await fetch(`/api/calibration/${partId}/position`);
-          const posData = await posRes.json();
-          if (posData.success && posData.currentP != null) {
-            updateCurrentPositionDisplay(posData.currentP);
+          var posRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/position');
+          var posData = await posRes.json();
+          if (posData.success) {
+            updateCurrentPositionDisplay(posData.currentP, posData.currentAngle);
           }
         } catch (posErr) {
           console.warn('Could not fetch current position:', posErr);
@@ -693,34 +693,47 @@
       }
     }
 
+    // Track whether the currently selected part is an absolute servo
+    var currentPartIsAbsoluteServo = false;
+
     function updateCalibrationUI(profile, partData) {
-      const panel = document.getElementById('unifiedCalPanel');
+      var panel = document.getElementById('unifiedCalPanel');
       if (!panel) return;
 
+      // Determine if this is an absolute servo
+      currentPartIsAbsoluteServo = profile && profile.capability && profile.capability.kind === 'absolute-servo';
+
       // Show/hide learn-movement section based on part capability
-      const learnSection = document.getElementById('learnMovementSection');
-      const isOpenloop = partData && partData.config && partData.config.capability === 'openloop-linear';
+      var learnSection = document.getElementById('learnMovementSection');
+      var isOpenloop = partData && partData.config && partData.config.capability === 'openloop-linear';
       if (learnSection) {
         learnSection.style.display = isOpenloop ? 'block' : 'none';
       }
 
-      // Update bounds displays
-      const minDisplay = document.getElementById('calMinDisplay');
-      const maxDisplay = document.getElementById('calMaxDisplay');
+      // Update bounds displays — use angle for absolute servos, normalized for others
+      var minDisplay = document.getElementById('calMinDisplay');
+      var maxDisplay = document.getElementById('calMaxDisplay');
       if (profile) {
-        if (minDisplay) minDisplay.textContent = profile.bounds && profile.bounds.minP != null ? profile.bounds.minP.toFixed(3) : '—';
-        if (maxDisplay) maxDisplay.textContent = profile.bounds && profile.bounds.maxP != null ? profile.bounds.maxP.toFixed(3) : '—';
+        if (currentPartIsAbsoluteServo) {
+          var minA = profile.bounds && profile.bounds.minAngle != null ? profile.bounds.minAngle : null;
+          var maxA = profile.bounds && profile.bounds.maxAngle != null ? profile.bounds.maxAngle : null;
+          if (minDisplay) minDisplay.textContent = minA != null ? minA + '\u00B0' : '\u2014';
+          if (maxDisplay) maxDisplay.textContent = maxA != null ? maxA + '\u00B0' : '\u2014';
+        } else {
+          if (minDisplay) minDisplay.textContent = profile.bounds && profile.bounds.minP != null ? profile.bounds.minP.toFixed(3) : '\u2014';
+          if (maxDisplay) maxDisplay.textContent = profile.bounds && profile.bounds.maxP != null ? profile.bounds.maxP.toFixed(3) : '\u2014';
+        }
       } else {
-        if (minDisplay) minDisplay.textContent = '—';
-        if (maxDisplay) maxDisplay.textContent = '—';
+        if (minDisplay) minDisplay.textContent = '\u2014';
+        if (maxDisplay) maxDisplay.textContent = '\u2014';
       }
 
       // Update presets list
       renderPresetsUI(profile ? profile.presets : null);
 
       // Update position display (placeholder for now - API doesn't have status endpoint yet)
-      const posDisplay = document.getElementById('calPositionDisplay');
-      if (posDisplay) posDisplay.textContent = '—';
+      var posDisplay = document.getElementById('calPositionDisplay');
+      if (posDisplay) posDisplay.textContent = '\u2014';
     }
 
     // Jog controls
@@ -766,8 +779,10 @@
         if (!data.success) {
           alert('Jog failed: ' + (data.error || 'Unknown error'));
         } else {
-          // Update current position display if returned
-          if (typeof data.currentP === 'number') {
+          // Update current position display — prefer angle for absolute servos
+          if (currentPartIsAbsoluteServo && typeof data.currentAngle === 'number') {
+            updateCurrentPositionDisplay(null, data.currentAngle);
+          } else if (typeof data.currentP === 'number') {
             updateCurrentPositionDisplay(data.currentP);
           }
         }
@@ -781,10 +796,16 @@
     window.jogPart = jogPart;
 
     // Helper function to update current position display
-    function updateCurrentPositionDisplay(p) {
-      const el = document.getElementById('calPositionDisplay');
-      if (el) {
-        el.textContent = typeof p === 'number' ? p.toFixed(3) : '—';
+    // For absolute servos, shows angle in degrees. For others, shows normalized 0-1.
+    function updateCurrentPositionDisplay(p, angle) {
+      var el = document.getElementById('calPositionDisplay');
+      if (!el) return;
+      if (currentPartIsAbsoluteServo && typeof angle === 'number') {
+        el.textContent = angle + '\u00B0';
+      } else if (typeof p === 'number') {
+        el.textContent = currentPartIsAbsoluteServo ? Math.round(p * 180) + '\u00B0' : p.toFixed(3);
+      } else {
+        el.textContent = '\u2014';
       }
     }
 
@@ -794,10 +815,10 @@
       if (!partId) return;
 
       try {
-        const res = await fetch(`/api/calibration/${partId}/position`);
-        const data = await res.json();
-        if (data.success && data.currentP != null) {
-          updateCurrentPositionDisplay(data.currentP);
+        var res = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/position');
+        var data = await res.json();
+        if (data.success) {
+          updateCurrentPositionDisplay(data.currentP, data.currentAngle);
         }
       } catch (err) {
         console.warn('Could not fetch current position:', err);
@@ -846,13 +867,28 @@
         return;
       }
       var bounds = currentCalProfile.bounds;
-      var minP = bounds.minP;
-      var maxP = bounds.maxP;
-      if (minP == null || maxP == null) {
-        alert('Both Min and Max bounds must be set for sweep test.');
-        return;
+      var capKind = currentCalProfile.capability && currentCalProfile.capability.kind;
+      var isServo = (capKind === 'absolute-servo');
+      var needsHoming = (capKind === 'openloop-linear' || capKind === 'continuous-servo');
+
+      // Use angle for absolute servos, normalized p for others
+      var sweepMin, sweepMax;
+      if (isServo) {
+        sweepMin = bounds.minAngle;
+        sweepMax = bounds.maxAngle;
+        if (sweepMin == null || sweepMax == null) {
+          alert('Both Min and Max angle bounds must be set for sweep test.');
+          return;
+        }
+      } else {
+        sweepMin = bounds.minP;
+        sweepMax = bounds.maxP;
+        if (sweepMin == null || sweepMax == null) {
+          alert('Both Min and Max bounds must be set for sweep test.');
+          return;
+        }
       }
-      if (minP >= maxP) {
+      if (sweepMin >= sweepMax) {
         alert('Min must be less than Max to sweep.');
         return;
       }
@@ -865,14 +901,16 @@
 
       var SWEEPS = 3;
       var SPEED = 100;
-      // Detect open-loop parts that need homing to correct drift
-      var capKind = currentCalProfile.capability && currentCalProfile.capability.kind;
-      var needsHoming = (capKind === 'openloop-linear' || capKind === 'continuous-servo');
+
+      // Build goto payload based on part type
+      function gotoPayload(val) {
+        if (isServo) return { angle: val, speedPct: SPEED };
+        return { p: val, speedPct: SPEED };
+      }
 
       try {
         for (var i = 0; i < SWEEPS; i++) {
           // For open-loop parts, home to retract endstop before each cycle
-          // to reset accumulated positional drift
           if (needsHoming) {
             if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
             var homeRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/home', {
@@ -881,38 +919,39 @@
               body: JSON.stringify({ direction: 'retract', speedPct: SPEED })
             });
             var homeData = await homeRes.json();
-            if (homeData.currentP != null) updateCurrentPositionDisplay(homeData.currentP);
-            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweep ' + (i + 1) + '/' + SWEEPS + '...';
+            updateCurrentPositionDisplay(homeData.currentP, homeData.currentAngle);
           }
+          if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweep ' + (i + 1) + '/' + SWEEPS + '...';
 
           // Go to min
           var res1 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ p: minP, speedPct: SPEED })
+            body: JSON.stringify(gotoPayload(sweepMin))
           });
           var d1 = await res1.json();
-          if (d1.targetP != null) updateCurrentPositionDisplay(d1.targetP);
+          updateCurrentPositionDisplay(d1.targetP, d1.targetAngle);
 
           // Go to max
           var res2 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ p: maxP, speedPct: SPEED })
+            body: JSON.stringify(gotoPayload(sweepMax))
           });
           var d2 = await res2.json();
-          if (d2.targetP != null) updateCurrentPositionDisplay(d2.targetP);
+          updateCurrentPositionDisplay(d2.targetP, d2.targetAngle);
         }
 
         // Return to midpoint after sweep
-        var mid = (minP + maxP) / 2;
+        var mid = (sweepMin + sweepMax) / 2;
+        if (isServo) mid = Math.round(mid);
         var res3 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p: mid, speedPct: SPEED })
+          body: JSON.stringify(gotoPayload(mid))
         });
         var d3 = await res3.json();
-        if (d3.targetP != null) updateCurrentPositionDisplay(d3.targetP);
+        updateCurrentPositionDisplay(d3.targetP, d3.targetAngle);
       } catch (err) {
         console.error('Sweep test error:', err);
         alert('Sweep test failed: ' + err.message);
@@ -1966,46 +2005,49 @@
             }
           }));
         } else {
+          // Absolute servo: use angle (0-180°) controls
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<input id="ang" type="range" min="0" max="1000" value="500" class="form-range" style="width:320px">' +
-            '<input id="angNum" type="number" class="form-control form-control-lg" value="0.500" step="0.001" min="0" max="1" style="width:130px">' +
+            '<input id="ang" type="range" min="0" max="180" value="90" class="form-range" style="width:320px">' +
+            '<div class="input-group" style="width:150px"><input id="angNum" type="number" class="form-control form-control-lg" value="90" step="1" min="0" max="180">' +
+            '<span class="input-group-text">\u00B0</span></div>' +
             '<button id="goAng" class="btn btn-success btn-lg"><i class="bi bi-cursor"></i> Move</button>' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
-          const s = el.querySelector('#ang');
-          const n = el.querySelector('#angNum');
-          s.addEventListener('input', () => { n.value = (parseInt(s.value, 10) / 1000).toFixed(3); });
-          n.addEventListener('input', () => { s.value = Math.round(parseFloat(n.value || '0.5') * 1000); });
-          el.querySelector('#goAng').addEventListener('click', async () => {
-            const p = parseFloat(n.value || '0.5');
-            if (isNaN(p) || p < 0 || p > 1) { alert('Position must be between 0.000 and 1.000'); return; }
-            const st = document.getElementById('ctrlStatus');
-            if (st) st.textContent = `Moving ${part.name} to ${p.toFixed(3)}…`;
-            console.log(`Moving servo: ${part.name} (ID: ${part.id}) to position: ${p.toFixed(3)}`);
+          var s = el.querySelector('#ang');
+          var n = el.querySelector('#angNum');
+          s.addEventListener('input', function() { n.value = s.value; });
+          n.addEventListener('input', function() { s.value = n.value; });
+          el.querySelector('#goAng').addEventListener('click', async function() {
+            var angle = parseFloat(n.value || '90');
+            if (isNaN(angle) || angle < 0 || angle > 180) { alert('Angle must be between 0 and 180'); return; }
+            var st = document.getElementById('ctrlStatus');
+            if (st) st.textContent = 'Moving ' + part.name + ' to ' + angle + '\u00B0\u2026';
+            console.log('Moving servo: ' + part.name + ' (ID: ' + part.id + ') to angle: ' + angle + '\u00B0');
             try {
               // Deterministic status in test mode
               if (window && window.MB_TEST_MODE) {
                 if (st) st.textContent = 'Done';
-                setTimeout(() => { if (st) st.textContent = ''; }, 2000);
-                fetch(`/api/calibration/${encodeURIComponent(part.id)}/goto`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p })
-                }).catch(() => { });
+                setTimeout(function() { if (st) st.textContent = ''; }, 2000);
+                fetch('/api/calibration/' + encodeURIComponent(part.id) + '/goto', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: angle })
+                }).catch(function() { });
                 return;
               }
-              const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/goto`, {
+              var response = await fetch('/api/calibration/' + encodeURIComponent(part.id) + '/goto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ p })
+                body: JSON.stringify({ angle: angle })
               });
-              const data = await response.json();
+              var data = await response.json();
               if (response.ok && data.success) {
-                if (st) st.textContent = `${part.name} moved to ${(data.targetP != null ? data.targetP : p).toFixed(3)}`;
-                console.log(`Successfully moved servo ${part.name} to ${p.toFixed(3)}`);
-                if (data.targetP != null) {
-                  updateCurrentPositionDisplay(data.targetP);
-                  // Sync controls to actual clamped position
-                  n.value = data.targetP.toFixed(3);
-                  s.value = Math.round(data.targetP * 1000);
+                var targetAngle = data.targetAngle != null ? data.targetAngle : angle;
+                if (st) st.textContent = part.name + ' moved to ' + targetAngle + '\u00B0';
+                console.log('Successfully moved servo ' + part.name + ' to ' + targetAngle + '\u00B0');
+                if (data.targetAngle != null) {
+                  updateCurrentPositionDisplay(data.targetP, data.targetAngle);
+                  // Sync controls to actual position
+                  n.value = Math.round(data.targetAngle);
+                  s.value = Math.round(data.targetAngle);
                 }
               } else {
                 if (st) st.textContent = 'Move failed: ' + (data.error || 'unknown');

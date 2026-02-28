@@ -11,6 +11,15 @@ const store = getCalibrationStore();
 const adapterCache = new Map();
 const positionState = new Map();
 
+/** Check if a profile represents an absolute servo */
+function isAbsoluteServo(profile) {
+  return profile && profile.capability && profile.capability.kind === 'absolute-servo';
+}
+
+/** Convert between angle and normalized p */
+function angleToP(angle) { return Math.max(0, Math.min(1, angle / 180)); }
+function pToAngle(p) { return Math.round(Math.max(0, Math.min(1, p)) * 180 * 10) / 10; }
+
 // Auto-create a default calibration profile based on part type
 async function getOrAutoCreateProfile(partId) {
   let profile = await store.get(partId);
@@ -22,29 +31,34 @@ async function getOrAutoCreateProfile(partId) {
     const part = parts.find(p => String(p.id) === String(partId));
     if (!part) return null;
 
-    let capability, motion;
+    let capability, motion, bounds;
     if (part.type === 'linear_actuator') {
       capability = { kind: 'openloop-linear' };
       motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.2 }, { pwmPct: 90, unitsPerSec: 0.4 }], settleMs: 150 };
+      bounds = { minP: 0, maxP: 1 };
     } else if (part.type === 'servo') {
       const servoType = part.config && part.config.servoType;
       if (servoType === 'continuous') {
         capability = { kind: 'continuous-servo', channel: part.config.channel || 0, address: part.config.address || 64 };
         motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.3 }], settleMs: 100 };
+        bounds = { minP: 0, maxP: 1 };
       } else {
         capability = { kind: 'absolute-servo', usMin: 500, usMax: 2500 };
         motion = {};
+        // Absolute servos use angle bounds (degrees)
+        bounds = { minAngle: 0, maxAngle: 180 };
       }
     } else {
       // Non-movable part types (speaker, light, webcam, etc.)
       capability = { kind: part.type };
       motion = {};
+      bounds = {};
     }
 
     profile = {
       partId,
       capability,
-      bounds: { minP: 0, maxP: 1 },
+      bounds,
       presets: [],
       motion,
       version: 1,
@@ -73,8 +87,17 @@ router.get('/:partId/position', async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const state = positionState.get(partId);
-    const currentP = (state && state.currentP != null) ? state.currentP : null;
-    res.json({ success: true, currentP, lastUpdated: state ? state.lastUpdated : null });
+    const profile = await getOrAutoCreateProfile(partId);
+
+    if (isAbsoluteServo(profile)) {
+      // Return angle for absolute servos
+      const currentAngle = (state && state.currentAngle != null) ? state.currentAngle : null;
+      const currentP = currentAngle != null ? angleToP(currentAngle) : null;
+      res.json({ success: true, currentAngle, currentP, kind: 'absolute-servo', lastUpdated: state ? state.lastUpdated : null });
+    } else {
+      const currentP = (state && state.currentP != null) ? state.currentP : null;
+      res.json({ success: true, currentP, lastUpdated: state ? state.lastUpdated : null });
+    }
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to get position', message: String(err) }); }
 });
 
@@ -104,9 +127,16 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         return res.status(400).json({ success: false, error: 'Invalid dir or scale' });
       }
       await adapter.nudge(dir, scale);
-      const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
-      positionState.set(partId, { currentP, lastUpdated: new Date().toISOString() });
-      res.json({ success: true, message: `Nudged ${dir} at ${scale}`, currentP });
+
+      if (isAbsoluteServo(profile)) {
+        const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
+        positionState.set(partId, { currentAngle, currentP: angleToP(currentAngle), lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Nudged ${dir} at ${scale}`, currentAngle, currentP: angleToP(currentAngle) });
+      } else {
+        const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
+        positionState.set(partId, { currentP, lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Nudged ${dir} at ${scale}`, currentP });
+      }
     } else if (req.body.delta !== undefined) {
       // New format: { delta: number, speedPct?: number, durationMs?: number }
       const { delta, speedPct, durationMs } = req.body;
@@ -114,11 +144,21 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         console.error(`Invalid nudge delta for part ${partId}:`, { delta, type: typeof delta, body: req.body });
         return res.status(400).json({ success: false, error: 'Invalid delta - must be a number' });
       }
-      const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
-      const newP = Math.max(0, Math.min(1, currentP + delta));
-      await adapter.gotoNormalized(newP, { speedPct, durationMs });
-      positionState.set(partId, { currentP: newP, lastUpdated: new Date().toISOString() });
-      res.json({ success: true, message: `Nudged by ${delta}`, currentP: newP });
+
+      if (isAbsoluteServo(profile)) {
+        // Delta is in degrees for absolute servos
+        const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
+        const newAngle = Math.max(0, Math.min(180, currentAngle + delta));
+        await adapter.gotoAngle(newAngle, { speedPct, durationMs });
+        positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle), lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Nudged by ${delta}°`, currentAngle: newAngle, currentP: angleToP(newAngle) });
+      } else {
+        const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
+        const newP = Math.max(0, Math.min(1, currentP + delta));
+        await adapter.gotoNormalized(newP, { speedPct, durationMs });
+        positionState.set(partId, { currentP: newP, lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Nudged by ${delta}`, currentP: newP });
+      }
     } else {
       console.error(`Invalid nudge request for part ${partId} - missing parameters:`, req.body);
       return res.status(400).json({ success: false, error: 'Must provide either (dir, scale) or (delta)' });
@@ -169,18 +209,39 @@ router.post('/:partId/home', express.json(), async (req, res) => {
 router.post('/:partId/goto', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
-    const { p, speedPct } = req.body;
-    if (typeof p !== 'number' || p < 0 || p > 1) {
-      console.error(`Invalid goto request for part ${partId}:`, { p, speedPct, body: req.body });
-      return res.status(400).json({ success: false, error: 'Invalid p - must be number between 0 and 1', received: { p, type: typeof p } });
-    }
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
-    const clampedP = clampP(p, profile.bounds || { minP: 0, maxP: 1 });
     const adapter = getOrCreateAdapter(partId, profile);
-    await adapter.gotoNormalized(clampedP, { speedPct });
-    positionState.set(partId, { currentP: clampedP, lastUpdated: new Date().toISOString() });
-    res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });
+
+    if (isAbsoluteServo(profile) && req.body.angle !== undefined) {
+      // Angle-based goto for absolute servos (primary interface)
+      const { angle, speedPct } = req.body;
+      if (typeof angle !== 'number' || angle < 0 || angle > 180) {
+        return res.status(400).json({ success: false, error: 'Invalid angle - must be number between 0 and 180', received: { angle, type: typeof angle } });
+      }
+      await adapter.gotoAngle(angle, { speedPct });
+      positionState.set(partId, { currentAngle: angle, currentP: angleToP(angle), lastUpdated: new Date().toISOString() });
+      res.json({ success: true, message: `Moved to ${angle}°`, targetAngle: angle, targetP: angleToP(angle) });
+    } else {
+      // Normalized goto (linear actuators, continuous servos, backward compat)
+      const { p, speedPct } = req.body;
+      if (typeof p !== 'number' || p < 0 || p > 1) {
+        console.error(`Invalid goto request for part ${partId}:`, { p, speedPct, body: req.body });
+        return res.status(400).json({ success: false, error: 'Invalid p - must be number between 0 and 1', received: { p, type: typeof p } });
+      }
+      const bounds = profile.bounds || { minP: 0, maxP: 1 };
+      const clampedP = clampP(p, bounds);
+      await adapter.gotoNormalized(clampedP, { speedPct });
+
+      if (isAbsoluteServo(profile)) {
+        const targetAngle = pToAngle(clampedP);
+        positionState.set(partId, { currentAngle: targetAngle, currentP: clampedP, lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Moved to ${targetAngle}°`, targetP: clampedP, targetAngle });
+      } else {
+        positionState.set(partId, { currentP: clampedP, lastUpdated: new Date().toISOString() });
+        res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });
+      }
+    }
   } catch (err) {
     if (String(err).includes('Unsupported capability')) {
       return res.status(400).json({ success: false, error: String(err) });
@@ -196,10 +257,18 @@ router.post('/:partId/set-min', express.json(), async (req, res) => {
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const state = positionState.get(partId);
-    const currentP = (state && state.currentP) || 0;
-    profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { minP: currentP });
-    await store.upsert(profile);
-    res.json({ success: true, message: `Min set to ${currentP}`, bounds: profile.bounds });
+
+    if (isAbsoluteServo(profile)) {
+      const currentAngle = (state && state.currentAngle != null) ? state.currentAngle : 0;
+      profile.bounds = Object.assign({}, profile.bounds || {}, { minAngle: currentAngle });
+      await store.upsert(profile);
+      res.json({ success: true, message: `Min set to ${currentAngle}°`, bounds: profile.bounds });
+    } else {
+      const currentP = (state && state.currentP) || 0;
+      profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { minP: currentP });
+      await store.upsert(profile);
+      res.json({ success: true, message: `Min set to ${currentP}`, bounds: profile.bounds });
+    }
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to set min', message: String(err) }); }
 });
 
@@ -209,10 +278,18 @@ router.post('/:partId/set-max', express.json(), async (req, res) => {
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const state = positionState.get(partId);
-    const currentP = (state && state.currentP) || 1;
-    profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { maxP: currentP });
-    await store.upsert(profile);
-    res.json({ success: true, message: `Max set to ${currentP}`, bounds: profile.bounds });
+
+    if (isAbsoluteServo(profile)) {
+      const currentAngle = (state && state.currentAngle != null) ? state.currentAngle : 180;
+      profile.bounds = Object.assign({}, profile.bounds || {}, { maxAngle: currentAngle });
+      await store.upsert(profile);
+      res.json({ success: true, message: `Max set to ${currentAngle}°`, bounds: profile.bounds });
+    } else {
+      const currentP = (state && state.currentP) || 1;
+      profile.bounds = Object.assign({}, profile.bounds || { minP: 0, maxP: 1 }, { maxP: currentP });
+      await store.upsert(profile);
+      res.json({ success: true, message: `Max set to ${currentP}`, bounds: profile.bounds });
+    }
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to set max', message: String(err) }); }
 });
 

@@ -2,6 +2,45 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.7.0] - 2026-02-28 — Calibration Unification, Jaw Animation, Audio, and System Fixes
+
+### Calibration Angle Unification
+- **Absolute servos now use angle (0-180°)** instead of normalized 0-1 across the entire calibration system. The calibration page, API, profiles, sweep test, and scene executor all use angle for absolute servos. Other part types (linear actuators, continuous servos) retain normalized 0-1.
+- **Calibration profiles migrated** — Absolute servo bounds now stored as `minAngle`/`maxAngle` (degrees) instead of `minP`/`maxP` (normalized). Backward-compatible: `p`-based API still accepted.
+- **Calibration UI updated** — Absolute servo slider shows 0-180° with degree symbol. Position display shows angle degrees. Bounds display shows angle with ° suffix.
+- **Scene executor updated** — Preset resolution (`__MIN__`, `__MAX__`) reads angle bounds for absolute servos.
+
+### Jaw Animation Fixes
+- **Dashboard/Chat jaw sync** — Fixed jaw animation not working in Dashboard/Chat by pre-warming the servo daemon when jaw config is read. Previously, daemon startup lag caused frames to fall back to slow hardwareService path (~580ms per command vs <1ms daemon).
+- **Ask AI fallback now jaw-synced** — The TTS fallback path in Ask AI now uses `playWithJawSync()` when jaw animation is enabled (previously used plain audio playback with no jaw movement).
+- **Daemon error logging** — `playWithJawSync()` now logs a warning when the daemon fails to start instead of silently swallowing the error.
+
+### Audio Configuration Fix
+- **Microphone test 500 fix** — The `POST /setup/audio/api/test-system` endpoint for microphone testing now includes device fallback logic (tries 'default' and 'pulse' if the selected device fails) and returns JSON `success: false` instead of HTTP 500 on errors.
+
+### Scenes Page Fix
+- **Character selection** — The Scenes page (Animation Studio) now correctly loads the currently selected character instead of defaulting to PumpkinHead. Fixed by passing `currentCharacter` and `config` to content templates in the `renderWithLayout` helper.
+
+### Log Cleanup System
+- **Automatic log cleanup** — New `scripts/log-cleanup.sh` with systemd timer runs daily to prevent logs from using more than 40% of disk space. Vacuums journald to 500MB, cleans rotated logs, test artifacts, and apt cache.
+- **Journald limits** — Set `SystemMaxUse=2G` and `MaxRetentionSec=30day` via journald.conf.d drop-in.
+- **Initial cleanup freed ~2GB** of journal logs.
+
+### Files Changed
+- `server/calibration/adapters/AbsoluteServoAdapter.js` — Rewritten: works in angle space, `gotoAngle()` primary method, backward-compat `gotoNormalized()`
+- `server/calibration/router.js` — Type-aware API: absolute servos accept/return angle, others use normalized. New `isAbsoluteServo()`, `angleToP()`, `pToAngle()` helpers
+- `views/setup/calibration.ejs` — Angle-based UI for absolute servos: 0-180° slider, degree display, sweep test with angle
+- `data/calibration_profiles.json` — Migrated absolute servo bounds from `minP`/`maxP` to `minAngle`/`maxAngle`
+- `services/scenes/sceneExecutor.js` — `resolvePresetToAngle()` reads angle bounds for absolute servos
+- `services/jawAnimationSuperPowerService.js` — Pre-warms daemon on config read, improved daemon error logging
+- `routes/conversation.js` — Ask AI fallback TTS uses jaw sync
+- `routes/setup/audio.js` — Microphone test with fallback, no more HTTP 500
+- `server.js` — `renderWithLayout` passes `currentCharacter` and `config` to content templates
+- `scripts/log-cleanup.sh` — New log cleanup script with systemd timer
+- `tests/unit/calibration-unified-api.test.js` — Added angle-based tests for absolute servos
+
+---
+
 ## [6.7.0] - 2026-02-27 — Calibration Drift Fix for Open-Loop Parts
 
 ### Bug Fixes

@@ -51,6 +51,26 @@ async function resolvePresetToAngle(partId, presetName) {
     return 90;
   }
   
+  const isAbsServo = profile.capability && profile.capability.kind === 'absolute-servo';
+
+  if (isAbsServo && (profile.bounds?.minAngle != null || profile.bounds?.maxAngle != null)) {
+    // Absolute servo with angle-based bounds
+    if (presetName === '__MIN__') {
+      return profile.bounds.minAngle ?? 0;
+    } else if (presetName === '__MAX__') {
+      return profile.bounds.maxAngle ?? 180;
+    } else {
+      const preset = profile.presets?.find(p => p.name === presetName);
+      if (!preset) {
+        console.warn(`Preset "${presetName}" not found for part ${partId}, using min angle`);
+        return profile.bounds.minAngle ?? 0;
+      }
+      // Presets may store angle directly or normalized p
+      return preset.angle != null ? preset.angle : Math.round((preset.p ?? 0.5) * 180);
+    }
+  }
+
+  // Legacy normalized path (backward compat for old profiles)
   let targetP;
   if (presetName === '__MIN__') {
     targetP = profile.bounds?.minP ?? 0;
@@ -65,7 +85,7 @@ async function resolvePresetToAngle(partId, presetName) {
       targetP = preset.p;
     }
   }
-  
+
   // Convert normalized position (0-1) to angle (0-180)
   return Math.round(targetP * 180);
 }
