@@ -553,7 +553,7 @@ router.post('/api/move-stream', async (req, res) => {
 
 // Real-time audio level monitoring with caching for performance
 const audioLevelCache = new Map();
-const CACHE_TTL = 120; // Cache for 120ms to reduce overlapping Python wrapper calls
+const CACHE_TTL = 80; // Cache for 80ms — short enough for responsive VU meters
 
 // Periodic cache cleanup to prevent memory leaks
 setInterval(() => {

@@ -925,7 +925,7 @@
 
   // Peak hold state for smooth VU decay
   const vuPeakLevels = {};
-  const VU_DECAY_RATE = 0.85; // Decay multiplier per update (smooth falloff)
+  const VU_DECAY_RATE = 0.7; // Faster decay for responsive meter movement
 
   function updateVUMeter(meterId, level) {
     const meter = document.getElementById(meterId);
@@ -941,11 +941,10 @@
     const labelId = meterId.includes('-vu-') ? meterId + '-level-text' : meterId.replace('-vu-meter', '-level-text');
     const label = document.getElementById(labelId);
 
-    // Apply amplification: raw levels from the mic are typically 0.01-0.15 for normal speech.
-    // Scale so that 0.05 maps to ~40% and 0.15 maps to ~80%, with a gentle logarithmic curve.
-    // Formula: amplified = min(1, level * 8) then apply sqrt for perceptual scaling
-    const amplified = Math.min(1, level * 8);
-    const scaled = Math.sqrt(amplified); // perceptual loudness curve
+    // Subtract noise floor so background hum reads near zero, then scale linearly.
+    // Background noise ~0.04-0.07 → 3-12%, normal speech ~0.15-0.40 → 36-100%.
+    const gated = Math.max(0, level - 0.03);
+    const scaled = Math.min(1, gated * 3);
 
     // Peak hold with smooth decay — keeps the bar from flickering
     const prev = vuPeakLevels[meterId] || 0;
