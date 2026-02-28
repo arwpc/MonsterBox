@@ -40,6 +40,14 @@ describe('Jaw Animation Super Power API', () => {
       expect(res.text).to.include('jaw-animation.js');
     });
 
+    it('should include multi-config CRUD UI elements', async () => {
+      const res = await request(BASE_URL).get('/setup/jaw-animation').expect(200);
+      expect(res.text).to.include('configSelector');
+      expect(res.text).to.include('saveAsNewBtn');
+      expect(res.text).to.include('renameConfigBtn');
+      expect(res.text).to.include('deleteConfigBtn');
+    });
+
     it('should serve the jaw-animation.js static file', async () => {
       const res = await request(BASE_URL).get('/js/jaw-animation.js').expect(200);
       expect(res.text).to.include('pollAudioLevels');
@@ -227,6 +235,172 @@ describe('Jaw Animation Super Power API', () => {
             preset: 'speech'
           });
       }
+    });
+  });
+
+  // ─── Multi-Config CRUD ───────────────────────────────────────────
+  describe('Multi-Config CRUD', () => {
+    let createdConfigId = null;
+
+    it('GET /configs should return configs list with activeConfigId', async () => {
+      const res = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body).to.have.property('activeConfigId').that.is.a('string');
+      expect(res.body).to.have.property('configs').that.is.an('array');
+      expect(res.body.configs.length).to.be.greaterThan(0);
+      res.body.configs.forEach(c => {
+        expect(c).to.have.property('id');
+        expect(c).to.have.property('name');
+      });
+    });
+
+    it('GET /jaw-animation/:charId should include configs in response', async () => {
+      const res = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
+        .expect(200);
+      expect(res.body).to.have.property('configs').that.is.an('array');
+      expect(res.body).to.have.property('activeConfigId').that.is.a('string');
+    });
+
+    it('POST /configs should create a new config', async () => {
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .send({ name: 'Test Config' })
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body).to.have.property('config');
+      expect(res.body.config).to.have.property('id').that.is.a('string');
+      expect(res.body.config).to.have.property('name', 'Test Config');
+      createdConfigId = res.body.config.id;
+    });
+
+    it('POST /configs with cloneFrom should copy tuning params', async () => {
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .send({ name: 'Cloned Config', cloneFrom: 'config-1' })
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body.config).to.have.property('sensitivity');
+      expect(res.body.config).to.have.property('smoothing');
+      // Clean up the cloned config
+      const clonedId = res.body.config.id;
+      await request(BASE_URL)
+        .delete(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${clonedId}`)
+        .expect(200);
+    });
+
+    it('POST /configs should reject empty name', async () => {
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .send({ name: '' })
+        .expect(400);
+      expect(res.body).to.have.property('success', false);
+    });
+
+    it('POST /configs/:id/rename should rename a config', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}/rename`)
+        .send({ name: 'Renamed Config' })
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body.config).to.have.property('name', 'Renamed Config');
+    });
+
+    it('POST /configs/:id/rename should reject empty name', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}/rename`)
+        .send({ name: '  ' })
+        .expect(400);
+      expect(res.body).to.have.property('success', false);
+    });
+
+    it('PUT /configs/:id should update config params', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .put(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}`)
+        .send({ sensitivity: 3.5, smoothing: 0.8 })
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body.config).to.have.property('sensitivity', 3.5);
+      expect(res.body.config).to.have.property('smoothing', 0.8);
+    });
+
+    it('PUT /configs/:id should return 404 for non-existent config', async () => {
+      const res = await request(BASE_URL)
+        .put(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/nonexistent-id`)
+        .send({ sensitivity: 1.0 })
+        .expect(404);
+      expect(res.body).to.have.property('success', false);
+    });
+
+    it('POST /configs/:id/activate should switch active config', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}/activate`)
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+      expect(res.body).to.have.property('config');
+      expect(res.body.config).to.have.property('activeConfigId', createdConfigId);
+    });
+
+    it('after activate, GET should return new active config params', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
+        .expect(200);
+      expect(res.body.activeConfigId).to.equal(createdConfigId);
+      expect(res.body.config.sensitivity).to.equal(3.5);
+    });
+
+    it('DELETE should not allow deleting the active config', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .delete(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}`)
+        .expect(400);
+      expect(res.body).to.have.property('success', false);
+      expect(res.body.error).to.include('active');
+    });
+
+    it('should switch back to original config before cleanup', async function() {
+      if (!createdConfigId) this.skip();
+      await request(BASE_URL)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/config-1/activate`)
+        .expect(200);
+    });
+
+    it('DELETE should delete a non-active config', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .delete(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}`)
+        .expect(200);
+      expect(res.body).to.have.property('success', true);
+    });
+
+    it('after delete, configs list should not contain deleted config', async function() {
+      if (!createdConfigId) this.skip();
+      const res = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .expect(200);
+      const ids = res.body.configs.map(c => c.id);
+      expect(ids).to.not.include(createdConfigId);
+    });
+
+    it('DELETE should not allow deleting the last config', async () => {
+      // Get configs to find the only remaining one
+      const listRes = await request(BASE_URL)
+        .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
+        .expect(200);
+      if (listRes.body.configs.length !== 1) return; // Only test when exactly 1 config
+      const lastId = listRes.body.configs[0].id;
+      const res = await request(BASE_URL)
+        .delete(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${lastId}`)
+        .expect(400);
+      expect(res.body).to.have.property('success', false);
+      expect(res.body.error).to.include('last');
     });
   });
 
