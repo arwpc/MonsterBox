@@ -10,7 +10,15 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.1.5 (February 2026)
+## What's New — v6.7.7 (February 2026)
+
+### Consistency Audit & CI Fixes
+- **Dead code removed** — Orphaned services (`characterAudioConfigService`, `microphoneService`), deprecated 410 conversation endpoints, and their routes/tests cleaned up
+- **All CI pipelines green** — Added ffmpeg to GitHub Actions, fixed test assertions for CI, hardware-dependent tests auto-skip in CI
+- **MkDocs documentation expanded** — 40+ docs now in navigation, Help link added to MonsterBox navbar
+- **Full documentation** at [arwpc.github.io/MonsterBox](https://arwpc.github.io/MonsterBox/)
+
+### Previous: v6.1.5 (February 2026)
 
 ### Jaw Animation v2: Real-Time Audio-Synchronized Jaw Control
 - **Persistent Servo Daemon**: Long-running Python process for PCA9685 I2C control replaces per-frame Python spawns (~580ms → <1ms per servo command)

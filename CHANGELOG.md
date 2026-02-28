@@ -2,6 +2,26 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.7.6] - 2026-02-28 — Consistency Audit, CI Fixes, MkDocs & Help Link
+
+### Consistency Audit (v6.7.1–v6.7.3)
+- **Removed deprecated HTTP conversation endpoints** — Three 410 "Gone" tombstone routes (`/conversation/test`, `/conversation`, `/conversation/play`) removed from `elevenLabsApiRoutes.js`. Deleted the test file (`conversation-route.test.js`) and utility script (`simulate-conv.js`) that only targeted these dead endpoints.
+- **Removed orphaned character-audio config subsystem** — Deleted `characterAudioConfigService.js`, `microphoneService.js`, and `routes/setup/characterAudio.js`. These had zero consumers (no UI, no tests, no service-to-service imports). Canonical configs remain in `aiConfigStore` (STT/TTS) and `jawAnimationSuperPowerService` (jaw).
+- **Documented character ID access patterns** — Added note to `CLAUDE.md` documenting three patterns for accessing the current character ID, with `req.app.locals.config.selectedCharacter` (Pattern B) as preferred for new routes.
+
+### CI Fixes (v6.7.4–v6.7.6)
+- **Added ffmpeg to all GitHub Actions workflows** — All four CI pipelines (`ci.yml`, `node.js.yml`, `ssh-deploy.yml`, `deep-functionality-tests.yml`) now install ffmpeg, fixing the Jaw Pre-Analysis Engine test failures (`spawn ffmpeg ENOENT`).
+- **Fixed jaw animation test-tts assertion** — Changed `!== null` to `!= null` guard so the test handles both `null` and `undefined` timeline responses in CI.
+- **Skip hardware-dependent browser tests in CI** — `relay-toggle.spec.js` and `webcam-capture.spec.js` now auto-skip when `MB_TEST_MODE` is set, since they require Orlok hardware (char_id=3) not available in CI.
+- **All 5 GitHub Actions pipelines now pass green.**
+
+### Documentation & Help (v6.7.7)
+- **MkDocs nav expanded** — Added 40+ previously unlisted documentation files to the MkDocs navigation, including character sheets, setup guides, hardware docs, integration guides, API reference, development docs, troubleshooting, and release notes.
+- **Help link in navigation** — Added a Help link (question-circle icon) to the MonsterBox navbar that opens the GitHub Pages documentation site.
+- **Testing docs updated** — Refreshed test file structure, counts, and CI notes to reflect current state (v6.7.6).
+
+---
+
 ## [6.7.0] - 2026-02-28 — Jaw Animation CRUD, Calibration Unification, Audio, and System Fixes
 
 ### Jaw Animation Multi-Config CRUD
