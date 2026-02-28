@@ -636,8 +636,14 @@
       });
     }
 
-    // Ensure initial selection is Auto so tests can change it deterministically
-    try { sinkSelect.value = 'auto'; } catch (e) { }
+    // If no device matched the server default, keep 'auto' selected (it's first option)
+    // Then overlay with localStorage preference if present (user's last explicit choice)
+    try {
+      var lsSink = localStorage.getItem('setupAudio.defaultSink');
+      if (!window._forceSelectedSink && lsSink && sinkSelect.querySelector('option[value="' + lsSink + '"]')) {
+        sinkSelect.value = lsSink;
+      }
+    } catch (e) { }
 
     // Update hardware inputs dropdown
     const sourceSelect = document.getElementById('default-source');
@@ -657,16 +663,9 @@
         sourceSelect.appendChild(option);
       });
     }
-    // Ensure initial selection is Auto so tests can change it deterministically
-    try { sourceSelect.value = 'auto'; } catch (e) { }
 
-
-    // If we have a locally remembered selection, prefer it when present
+    // Overlay with localStorage preference if present
     try {
-      var lsSink = localStorage.getItem('setupAudio.defaultSink');
-      if (!window._forceSelectedSink && lsSink && sinkSelect.querySelector('option[value="' + lsSink + '"]')) {
-        sinkSelect.value = lsSink;
-      }
       var lsSource = localStorage.getItem('setupAudio.defaultSource');
       if (!window._forceSelectedSource && lsSource && sourceSelect.querySelector('option[value="' + lsSource + '"]')) {
         sourceSelect.value = lsSource;
@@ -773,20 +772,22 @@
   // Save configuration
   async function saveConfiguration() {
     try {
-      const defaultSink = document.getElementById('default-sink').value;
-      const defaultSource = document.getElementById('default-source').value;
+      const sinkVal = document.getElementById('default-sink').value;
+      const sourceVal = document.getElementById('default-source').value;
+
+      // Map 'auto' to 'default' for the server — 'auto' means "use system default"
+      const defaultSink = (sinkVal === 'auto') ? 'default' : sinkVal;
+      const defaultSource = (sourceVal === 'auto') ? 'default' : sourceVal;
 
       console.log('💾 Saving configuration:', { defaultSink, defaultSource });
 
-      // Persist user choice locally and force-select immediately so the UI reflects the user's choice
-      try { localStorage.setItem('setupAudio.defaultSink', defaultSink); } catch (e) { }
-      try { localStorage.setItem('setupAudio.defaultSource', defaultSource); } catch (e) { }
-      window._forceSelectedSink = defaultSink;
-      window._forceSelectedSource = defaultSource;
-      const sinkSelectEl = document.getElementById('default-sink');
-      const sourceSelectEl = document.getElementById('default-source');
-      if (sinkSelectEl && sinkSelectEl.querySelector('option[value="' + defaultSink + '"]')) sinkSelectEl.value = defaultSink;
-      if (sourceSelectEl && sourceSelectEl.querySelector('option[value="' + defaultSource + '"]')) sourceSelectEl.value = defaultSource;
+      // Persist user choice locally so UI restores after reload
+      try { localStorage.setItem('setupAudio.defaultSink', sinkVal); } catch (e) { }
+      try { localStorage.setItem('setupAudio.defaultSource', sourceVal); } catch (e) { }
+
+      // Set force flags so updateDeviceSelectors keeps the user's choice during refresh
+      window._forceSelectedSink = sinkVal;
+      window._forceSelectedSource = sourceVal;
 
       const response = await fetch('/setup/audio/api/system-config', {
         method: 'POST',
@@ -802,11 +803,11 @@
       } else {
         showNotification('Failed to save configuration: ' + data.error, 'error');
       }
-      // Clear force after a short delay to allow UI to stabilize
+      // Clear force after UI has refreshed
       setTimeout(function () {
         window._forceSelectedSink = null;
         window._forceSelectedSource = null;
-      }, 800);
+      }, 500);
     } catch (error) {
       console.error('Error saving configuration:', error);
       showNotification('Error saving configuration', 'error');
@@ -917,9 +918,24 @@
       const data = await response.json();
 
       if (data.success) {
-
         testResults.textContent += '[' + new Date().toLocaleTimeString() + '] Test completed successfully!\n';
-        if (data.result) {
+
+        // Show microphone-specific details (level, device used, fallback)
+        if (testType === 'microphone' && data.parsed) {
+          const level = data.parsed.level || 0;
+          const pct = Math.round(level * 100);
+          testResults.textContent += 'Device: ' + (data.deviceId || deviceId) + '\n';
+          testResults.textContent += 'Peak Level: ' + level.toFixed(4) + ' (' + pct + '%)\n';
+          if (data.parsed.avg) {
+            testResults.textContent += 'Average Level: ' + data.parsed.avg.toFixed(4) + '\n';
+          }
+          if (data.fallbackUsed) {
+            testResults.textContent += 'Note: Fallback device used (requested device unavailable)\n';
+          }
+          testResults.textContent += 'Message: ' + (data.message || '') + '\n';
+        } else if (data.message) {
+          testResults.textContent += 'Result: ' + data.message + '\n';
+        } else if (data.result) {
           testResults.textContent += 'Result: ' + data.result + '\n';
         }
         showNotification(testType + ' test completed successfully', 'success');
@@ -939,30 +955,43 @@
   // VU Meter Management
   let vuMeterIntervals = {};
 
+  // Peak hold state for smooth VU decay
+  const vuPeakLevels = {};
+  const VU_DECAY_RATE = 0.85; // Decay multiplier per update (smooth falloff)
+
   function updateVUMeter(meterId, level) {
     const meter = document.getElementById(meterId);
     if (!meter) {
-      console.warn('VU meter element not found:', meterId);
       return;
     }
 
     const bar = meter.querySelector('.vu-bar');
     if (!bar) {
-      console.warn('VU meter bar not found for:', meterId);
       return;
     }
 
     const labelId = meterId.includes('-vu-') ? meterId + '-level-text' : meterId.replace('-vu-meter', '-level-text');
     const label = document.getElementById(labelId);
 
-    const percentage = Math.min(Math.max(level * 100, 0), 100);
+    // Apply amplification: raw levels from the mic are typically 0.01-0.15 for normal speech.
+    // Scale so that 0.05 maps to ~40% and 0.15 maps to ~80%, with a gentle logarithmic curve.
+    // Formula: amplified = min(1, level * 8) then apply sqrt for perceptual scaling
+    const amplified = Math.min(1, level * 8);
+    const scaled = Math.sqrt(amplified); // perceptual loudness curve
+
+    // Peak hold with smooth decay — keeps the bar from flickering
+    const prev = vuPeakLevels[meterId] || 0;
+    const displayed = scaled > prev ? scaled : prev * VU_DECAY_RATE;
+    vuPeakLevels[meterId] = displayed;
+
+    const percentage = Math.min(Math.max(displayed * 100, 0), 100);
 
     bar.style.width = percentage + '%';
     if (label) {
       label.textContent = Math.round(percentage) + '%';
     }
 
-    if (percentage > 5) {
+    if (percentage > 3) {
       meter.classList.add('active');
     } else {
       meter.classList.remove('active');
@@ -1027,7 +1056,7 @@
       } finally {
         vuMeterBusy[meterId] = false;
       }
-    }, 100); // 100ms = 10 Hz refresh rate
+    }, 150); // 150ms refresh — matches 100ms sample duration
   }
 
   function stopVUMeterMonitoring(meterId) {

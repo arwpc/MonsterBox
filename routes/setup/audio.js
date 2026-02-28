@@ -553,7 +553,7 @@ router.post('/api/move-stream', async (req, res) => {
 
 // Real-time audio level monitoring with caching for performance
 const audioLevelCache = new Map();
-const CACHE_TTL = 100; // Cache for 100ms to reduce Python wrapper calls
+const CACHE_TTL = 120; // Cache for 120ms to reduce overlapping Python wrapper calls
 
 // Periodic cache cleanup to prevent memory leaks
 setInterval(() => {
@@ -582,15 +582,15 @@ router.get('/api/audio-levels', async (req, res) => {
                 return res.json(cached.data);
             }
 
-            // Get microphone level with ultra-short duration for snappy VU (20ms)
+            // Get microphone level — 100ms sample for reliable peak detection
             if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for input device: ${deviceId}`);
             const result = await runWrapper('microphone_cli.py', [
                 'get_level',
                 deviceId || 'default',
                 '16000',  // Sample rate
                 '1',
-                '0.02'     // Ultra-short duration for snappy VU (20ms, reduced from 30ms)
-            ], { timeoutMs: 1500, enableLogging: false });
+                '0.1'     // 100ms sample for accurate peak detection
+            ], { timeoutMs: 2000, enableLogging: false });
 
             if (result) {
                 try {
