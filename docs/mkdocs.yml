@@ -1,20 +1,29 @@
 site_name: MonsterBox Documentation
 site_url: https://arwpc.github.io/MonsterBox/
+site_author: Aaron Warner
+repo_url: https://github.com/arwpc/MonsterBox
+repo_name: arwpc/MonsterBox
 docs_dir: .
 site_dir: ../mkdocs-site
 theme:
   name: material
   palette:
-    primary: indigo
+    scheme: slate
+    primary: deep orange
     accent: deep orange
   features:
     - navigation.instant
     - navigation.sections
     - navigation.expand
+    - navigation.top
     - toc.integrate
     - content.code.annotate
     - search.suggest
     - search.highlight
+    - search.share
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search
