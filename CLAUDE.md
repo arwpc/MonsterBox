@@ -75,6 +75,10 @@ MonsterBox/
 - **Animation Studio:** Unified scene/pose editor at `/scenes` — three-panel layout with timeline editor, drag-and-drop, and live preview. Replaces the separate Scenes and Poses pages (legacy routes redirect to `/scenes`)
 - **Pose Editor:** Dedicated page at `/poses/editor` for visually positioning hardware parts and saving as named poses. Supports servo angles, motor/actuator controls, lights, and optional audio (file or TTS)
 - **Dashboard (`/`):** Primary operator interface with draggable/reorderable panels. Scenes panel supports drag-reorder, delete, play individual, and loop-all. Monster Features panel has jaw/head-tracking/parrot toggles
+- **Character ID in routes:** Three patterns exist — **prefer Pattern B** for new code:
+  - **A:** `(await readConfig()).selectedCharacter` — re-reads config file each call
+  - **B:** `req.app.locals.config.selectedCharacter` — in-memory, fastest (preferred)
+  - **C:** `req.query.characterId` — explicit override (used in calibration unified view)
 
 ## Character Data Files
 Each character at `data/character-{id}/` contains:
