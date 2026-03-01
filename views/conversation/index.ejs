@@ -237,6 +237,81 @@
       </div>
     </div>
 
+    <!-- Browser Audio Bridge -->
+    <div class="card mb-3" data-panel-id="audio-bridge">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-headset"></i> Browser Audio Bridge</h6>
+        <small class="text-muted">Independent of AI chat</small>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Listen In: Browser Speaker -->
+          <div class="col-md-6 mb-2 mb-md-0">
+            <div class="card bg-dark border-info">
+              <div class="card-header bg-dark text-info border-info py-2">
+                <small class="fw-bold"><i class="bi bi-headphones"></i> Listen In (Browser Speaker)</small>
+              </div>
+              <div class="card-body py-2">
+                <div class="mb-1">
+                  <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.8rem;">
+                    <option value="default">System Default Input</option>
+                  </select>
+                </div>
+                <div class="mb-1">
+                  <div class="d-flex align-items-center gap-1">
+                    <small class="text-muted" style="min-width: 28px;">Vol</small>
+                    <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;">
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <div class="progress flex-grow-1" style="height: 10px;">
+                    <div id="bridge-listenin-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                  <span id="bridge-listenin-vu-label" class="badge bg-secondary" style="font-size: 0.65rem; min-width: 32px;">0%</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.75rem;">
+                    <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
+                  </button>
+                  <span id="bridge-listenin-status" class="badge bg-secondary" style="font-size: 0.65rem;">Off</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Talk Through: Browser Mic -->
+          <div class="col-md-6">
+            <div class="card bg-dark border-warning">
+              <div class="card-header bg-dark text-warning border-warning py-2">
+                <small class="fw-bold"><i class="bi bi-mic-fill"></i> Talk Through (Browser Mic)</small>
+              </div>
+              <div class="card-body py-2">
+                <div class="mb-1">
+                  <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.8rem;">
+                    <option value="default">System Default Output</option>
+                  </select>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <div class="progress flex-grow-1" style="height: 10px;">
+                    <div id="bridge-talkthrough-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                  <span id="bridge-talkthrough-vu-label" class="badge bg-secondary" style="font-size: 0.65rem; min-width: 32px;">0%</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.75rem;">
+                    <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
+                  </button>
+                  <span id="bridge-talkthrough-status" class="badge bg-secondary" style="font-size: 0.65rem;">Off</span>
+                </div>
+                <div id="bridge-talkthrough-https-warn" class="alert alert-warning small mt-1 mb-0 py-1 d-none" style="font-size: 0.75rem;">
+                  <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Make Character Say -->
     <div class="card mb-3" data-panel-id="say">
       <div class="card-header">
@@ -1498,6 +1573,260 @@
     document.addEventListener('DOMContentLoaded', init);
     window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadPoses };
   })();
+</script>
+<script>
+// Browser Audio Bridge — standalone Listen In / Talk Through (independent of AI chat)
+(function () {
+  const RATE = 16000;
+  let listenInES = null, listenInCtx = null, listenInNextStart = 0;
+  let ttStream = null, ttCtx = null, ttProc = null, ttActive = false;
+
+  function loadBridgeDevices() {
+    fetch('/setup/audio/api/inputs').then(r => r.json()).then(data => {
+      if (!data || !data.success) return;
+      const sel = document.getElementById('bridge-listenin-source');
+      if (!sel || !data.inputs || !data.inputs.length) return;
+      sel.innerHTML = '';
+      data.inputs.forEach(inp => {
+        const o = document.createElement('option');
+        o.value = inp.id || inp.name;
+        o.textContent = inp.description || inp.name || inp.id;
+        sel.appendChild(o);
+      });
+    }).catch(() => {});
+
+    fetch('/setup/audio/api/outputs').then(r => r.json()).then(data => {
+      if (!data || !data.success) return;
+      const sel = document.getElementById('bridge-talkthrough-sink');
+      if (!sel || !data.outputs || !data.outputs.length) return;
+      sel.innerHTML = '';
+      data.outputs.forEach(out => {
+        const o = document.createElement('option');
+        o.value = out.id || out.name;
+        o.textContent = out.description || out.name || out.id;
+        sel.appendChild(o);
+      });
+    }).catch(() => {});
+  }
+
+  // ------- Listen In (Browser Speaker) -------
+
+  function startListenIn() {
+    const sourceSelect = document.getElementById('bridge-listenin-source');
+    const deviceId = sourceSelect ? sourceSelect.value : 'default';
+    const statusBadge = document.getElementById('bridge-listenin-status');
+    const toggleText = document.getElementById('bridge-listenin-text');
+    const btn = document.getElementById('btn-bridge-listenin');
+
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Connecting...';
+    if (btn) btn.disabled = true;
+
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    listenInCtx = new Ctx({ sampleRate: RATE });
+    listenInNextStart = 0;
+
+    const url = '/setup/audio/api/mic-stream?deviceId=' + encodeURIComponent(deviceId);
+    listenInES = new EventSource(url);
+
+    listenInES.onmessage = function (event) {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'started') {
+          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'badge bg-success'; }
+          if (toggleText) toggleText.textContent = 'Stop';
+          if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
+        } else if (msg.type === 'audio') {
+          playListenInChunk(msg.audio);
+        } else if (msg.type === 'error' || msg.type === 'ended') {
+          stopListenIn();
+        }
+      } catch (_) {}
+    };
+
+    listenInES.onerror = function () { stopListenIn(); };
+  }
+
+  function playListenInChunk(base64Pcm) {
+    if (!listenInCtx || !base64Pcm) return;
+    const raw = atob(base64Pcm);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    const samples = bytes.length / 2;
+    if (samples === 0) return;
+
+    const float32 = new Float32Array(samples);
+    const view = new DataView(bytes.buffer);
+    for (let j = 0; j < samples; j++) float32[j] = view.getInt16(j * 2, true) / 32768;
+
+    // VU meter
+    let sumSq = 0;
+    for (let k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
+    const pct = Math.min(100, Math.round(Math.sqrt(sumSq / float32.length) * 500));
+    const vuBar = document.getElementById('bridge-listenin-vu');
+    const vuLabel = document.getElementById('bridge-listenin-vu-label');
+    if (vuBar) vuBar.style.width = pct + '%';
+    if (vuLabel) vuLabel.textContent = pct + '%';
+
+    // Volume
+    const volSlider = document.getElementById('bridge-listenin-volume');
+    const volume = volSlider ? (parseInt(volSlider.value, 10) / 100) : 0.75;
+    for (let m = 0; m < float32.length; m++) float32[m] *= volume;
+
+    if (listenInCtx.state === 'suspended') listenInCtx.resume();
+    const buffer = listenInCtx.createBuffer(1, samples, RATE);
+    buffer.getChannelData(0).set(float32);
+    const source = listenInCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(listenInCtx.destination);
+    const now = listenInCtx.currentTime;
+    if (listenInNextStart < now) listenInNextStart = now;
+    source.start(listenInNextStart);
+    listenInNextStart += buffer.duration;
+  }
+
+  function stopListenIn() {
+    if (listenInES) { listenInES.close(); listenInES = null; }
+    if (listenInCtx) { try { listenInCtx.close(); } catch (_) {} listenInCtx = null; }
+    listenInNextStart = 0;
+
+    const statusBadge = document.getElementById('bridge-listenin-status');
+    const toggleText = document.getElementById('bridge-listenin-text');
+    const btn = document.getElementById('btn-bridge-listenin');
+    const vuBar = document.getElementById('bridge-listenin-vu');
+    const vuLabel = document.getElementById('bridge-listenin-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-info btn-sm'; btn.style.fontSize = '0.75rem'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+  }
+
+  function toggleListenIn() {
+    if (listenInES) stopListenIn(); else startListenIn();
+  }
+
+  // ------- Talk Through (Browser Mic) -------
+
+  function startTalkThrough() {
+    const sinkSelect = document.getElementById('bridge-talkthrough-sink');
+    const deviceId = sinkSelect ? sinkSelect.value : 'default';
+    const statusBadge = document.getElementById('bridge-talkthrough-status');
+    const toggleText = document.getElementById('bridge-talkthrough-text');
+    const btn = document.getElementById('btn-bridge-talkthrough');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+
+    if (statusBadge) { statusBadge.textContent = 'Requesting...'; statusBadge.className = 'badge bg-warning'; }
+    if (toggleText) toggleText.textContent = 'Requesting...';
+    if (btn) btn.disabled = true;
+
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: { ideal: 16000 } }
+    }).then(stream => {
+      ttStream = stream;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      ttCtx = new Ctx();
+      const src = ttCtx.createMediaStreamSource(stream);
+      ttProc = ttCtx.createScriptProcessor(4096, 1, 1);
+      const nativeRate = ttCtx.sampleRate;
+      const targetDevice = deviceId;
+
+      ttProc.onaudioprocess = function (e) {
+        if (!ttActive) return;
+        const input = e.inputBuffer.getChannelData(0);
+
+        // VU
+        let sumSq = 0;
+        for (let i = 0; i < input.length; i++) sumSq += input[i] * input[i];
+        const pct = Math.min(100, Math.round(Math.sqrt(sumSq / input.length) * 500));
+        const vuBar = document.getElementById('bridge-talkthrough-vu');
+        const vuLabel = document.getElementById('bridge-talkthrough-vu-label');
+        if (vuBar) vuBar.style.width = pct + '%';
+        if (vuLabel) vuLabel.textContent = pct + '%';
+
+        // Downsample to 16kHz PCM16LE
+        const ratio = nativeRate / RATE;
+        const outLen = Math.floor(input.length / ratio);
+        const pcm16 = new Int16Array(outLen);
+        for (let i = 0; i < outLen; i++) {
+          pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[Math.floor(i * ratio)] * 32768)));
+        }
+        const byteArr = new Uint8Array(pcm16.buffer);
+        let binary = '';
+        for (let j = 0; j < byteArr.length; j++) binary += String.fromCharCode(byteArr[j]);
+
+        fetch('/setup/audio/api/browser-mic-chunk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audio: btoa(binary), deviceId: targetDevice })
+        }).catch(() => {});
+      };
+
+      src.connect(ttProc);
+      ttProc.connect(ttCtx.destination);
+      ttActive = true;
+
+      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'badge bg-success'; }
+      if (toggleText) toggleText.textContent = 'Stop';
+      if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
+    }).catch(err => {
+      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
+      if (toggleText) toggleText.textContent = 'Start';
+      if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; btn.style.fontSize = '0.75rem'; }
+    });
+  }
+
+  function stopTalkThrough() {
+    ttActive = false;
+    if (ttProc) { try { ttProc.disconnect(); } catch (_) {} ttProc = null; }
+    if (ttStream) { ttStream.getTracks().forEach(t => t.stop()); ttStream = null; }
+    if (ttCtx) { try { ttCtx.close(); } catch (_) {} ttCtx = null; }
+
+    fetch('/setup/audio/api/browser-mic/stop', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+    }).catch(() => {});
+
+    const statusBadge = document.getElementById('bridge-talkthrough-status');
+    const toggleText = document.getElementById('bridge-talkthrough-text');
+    const btn = document.getElementById('btn-bridge-talkthrough');
+    const vuBar = document.getElementById('bridge-talkthrough-vu');
+    const vuLabel = document.getElementById('bridge-talkthrough-vu-label');
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (toggleText) toggleText.textContent = 'Start';
+    if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; btn.style.fontSize = '0.75rem'; }
+    if (vuBar) vuBar.style.width = '0%';
+    if (vuLabel) vuLabel.textContent = '0%';
+  }
+
+  function toggleTalkThrough() {
+    if (ttActive) stopTalkThrough(); else startTalkThrough();
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', function () {
+    loadBridgeDevices();
+
+    // HTTPS check
+    const isSecure = window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+    if (!isSecure) {
+      const warn = document.getElementById('bridge-talkthrough-https-warn');
+      if (warn) warn.classList.remove('d-none');
+      const btn = document.getElementById('btn-bridge-talkthrough');
+      if (btn) btn.disabled = true;
+    }
+
+    const listenBtn = document.getElementById('btn-bridge-listenin');
+    const talkBtn = document.getElementById('btn-bridge-talkthrough');
+    if (listenBtn) listenBtn.addEventListener('click', toggleListenIn);
+    if (talkBtn) talkBtn.addEventListener('click', toggleTalkThrough);
+  });
+
+  window.addEventListener('beforeunload', function () {
+    if (listenInES) stopListenIn();
+    if (ttActive) stopTalkThrough();
+  });
+})();
 </script>
 <script src="/js/panel-sortable.js"></script>
 <script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('dashboard'); });</script>
