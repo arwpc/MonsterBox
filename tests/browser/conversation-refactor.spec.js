@@ -24,7 +24,7 @@ test.describe('Conversation Control - Grid Layout', () => {
     await expect(sortableColumn).toBeVisible();
     const panels = sortableColumn.locator('> [data-panel-id]');
     const count = await panels.count();
-    expect(count).toBe(8);
+    expect(count).toBe(9);
   });
 
   test('should have Chat panel', async ({ page }) => {
