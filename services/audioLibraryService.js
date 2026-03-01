@@ -16,12 +16,43 @@ const __dirname = path.dirname(__filename);
 const lockfilePath = path.join(__dirname, '..', 'data', 'audio-library', 'library.lock');
 let isLocked = false;
 
+async function isProcessAlive(pid) {
+    try {
+        process.kill(pid, 0); // signal 0 = check existence only
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function cleanStaleLock() {
+    try {
+        const content = await fs.readFile(lockfilePath, 'utf8');
+        const pid = parseInt(content.trim(), 10);
+        if (!isNaN(pid) && pid !== process.pid && !(await isProcessAlive(pid))) {
+            console.warn(`Audio library: removing stale lock from dead process ${pid}`);
+            await fs.unlink(lockfilePath);
+            return true;
+        }
+    } catch (err) {
+        if (err.code === 'ENOENT') return false; // no lockfile
+    }
+    return false;
+}
+
 async function acquireLock() {
     const timeout = 5000; // 5 seconds
     const waitInterval = 100; // 100 ms
     const startTime = Date.now();
 
+    // On first attempt, check for stale locks from crashed processes
+    let staleCleaned = false;
+
     while (isLocked || await fs.access(lockfilePath).then(() => true).catch(() => false)) {
+        if (!staleCleaned) {
+            staleCleaned = true;
+            if (await cleanStaleLock()) continue; // lock was stale, retry immediately
+        }
         if (Date.now() - startTime > timeout) {
             throw new Error('Failed to acquire lock on audio library within 5 seconds.');
         }

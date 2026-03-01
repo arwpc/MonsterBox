@@ -36,9 +36,9 @@ export default defineConfig({
     },
   ],
 
-  // Run local dev server before tests on HTTP port 3200 (avoids conflict with production on 3000/3100)
+  // Run dev server before tests on HTTP port 3200 (avoids conflict with production on 3000/3100)
   // TEST_PORT tells server.js to open an extra HTTP listener on 3200 for Playwright
-  webServer: process.env.CI ? undefined : {
+  webServer: {
     command: 'MB_TEST_MODE=1 TEST_PORT=3200 npm start',
     url: 'http://localhost:3200',
     reuseExistingServer: !process.env.CI,

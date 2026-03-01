@@ -130,7 +130,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
             }
         } else if (partType === 'servo') {
             const { position = 50, duration = 1000 } = req.body;
-            const result = await controlPart(part.id, 'move', { position: parseInt(position), duration: parseInt(duration) });
+            const result = await controlPart(part.id, 'moveToAngle', { angleDeg: parseInt(position) });
             return res.json({
                 success: result.success !== false,
                 message: `Part ${part.name} tested at position ${position}`,

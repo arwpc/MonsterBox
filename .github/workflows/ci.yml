@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ELEVENLABS_API_KEY: test-dummy-key
+      MB_TEST_MODE: '1'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,7 +27,26 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run unit tests
         run: npm run test:unit
+      - name: Start server for system tests
+        run: |
+          npm start &
+          echo $! > /tmp/monsterbox-server.pid
+          # Wait for the server to be ready on port 3100
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3100/ > /dev/null 2>&1; then
+              echo "Server ready on port 3100"
+              break
+            fi
+            sleep 1
+          done
       - name: Run system tests
         run: npm run test:system
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/monsterbox-server.pid ]; then
+            kill $(cat /tmp/monsterbox-server.pid) 2>/dev/null || true
+            rm -f /tmp/monsterbox-server.pid
+          fi
       - name: Run browser tests
         run: npm run test:browser:quick
