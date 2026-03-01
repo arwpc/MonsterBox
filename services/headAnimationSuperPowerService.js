@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { getCalibrationStore } from '../server/calibration/store.js';
 
 /**
  * Head Animation Super Power Service
@@ -20,6 +21,7 @@ function getCharacterDataDir(characterId) {
  */
 function getDefaultHeadTrackingConfig() {
   return {
+    opencvEnabled: true,
     enabled: false,
     panServoId: null,
     webcamPartId: null,
@@ -106,30 +108,65 @@ async function writeHeadTrackingConfig(characterId, config) {
 }
 
 /**
- * Get available servo parts for a character with calibration markers.
+ * Get available servo parts for a character with calibration bounds.
+ * Reads from calibration_profiles.json (primary) with fallback to parts.json markers.
  */
 async function getAvailableServos(characterId) {
   try {
     const parts = await loadPartsSafe(characterId);
     if (!Array.isArray(parts)) return [];
 
-    return parts
-      .filter(p => p.type === 'servo')
-      .map(servo => {
+    const calibrationStore = getCalibrationStore();
+    const servos = parts.filter(p => p.type === 'servo');
+    const results = [];
+
+    for (const servo of servos) {
+      let minAngle = null;
+      let maxAngle = null;
+      let calibrated = false;
+      let servoKind = 'absolute-servo';
+
+      // Primary: calibration_profiles.json bounds
+      try {
+        const profile = await calibrationStore.get(servo.id);
+        if (profile) {
+          if (profile.capability && profile.capability.kind) {
+            servoKind = profile.capability.kind;
+          }
+          if (profile.bounds) {
+            if (typeof profile.bounds.minAngle === 'number' && typeof profile.bounds.maxAngle === 'number') {
+              minAngle = profile.bounds.minAngle;
+              maxAngle = profile.bounds.maxAngle;
+              calibrated = true;
+            }
+          }
+        }
+      } catch (_) { /* calibration read failed, fall through */ }
+
+      // Fallback: parts.json markers
+      if (!calibrated) {
         const markers = servo.markers || [];
         const minMarker = markers.find(m => m.name === 'Min');
         const maxMarker = markers.find(m => m.name === 'Max');
-        const calibrated = !!(minMarker && maxMarker);
+        if (minMarker && maxMarker) {
+          minAngle = parseFloat(minMarker.value);
+          maxAngle = parseFloat(maxMarker.value);
+          calibrated = true;
+        }
+      }
 
-        return {
-          id: String(servo.id),
-          name: servo.name || `Servo #${servo.id}`,
-          calibrated,
-          minAngle: minMarker ? parseFloat(minMarker.value) : null,
-          maxAngle: maxMarker ? parseFloat(maxMarker.value) : null,
-          config: servo.config || {}
-        };
+      results.push({
+        id: String(servo.id),
+        name: servo.name || `Servo #${servo.id}`,
+        calibrated,
+        minAngle,
+        maxAngle,
+        servoKind,
+        config: servo.config || {}
       });
+    }
+
+    return results;
   } catch (error) {
     console.error('Error getting available servos:', error);
     return [];

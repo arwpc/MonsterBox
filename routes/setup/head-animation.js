@@ -17,7 +17,8 @@ const router = express.Router();
 
 /**
  * Head Animation Setup Routes
- * Configures and tests OpenCV-based head tracking with servo mapping.
+ * Configures and tests OpenCV-based motion detection and head tracking servo mapping.
+ * OpenCV detection and head tracking are independent — OpenCV can run without servos.
  */
 
 // In-memory cache for status polling — avoids reading super-powers.json from disk every 60ms
@@ -98,10 +99,13 @@ router.get('/api/head-tracking/:charId', async (req, res) => {
     // Get tracking status if a webcam is configured
     let trackingActive = false;
     let trackingStatus = null;
+    let headTrackingEnabled = false;
     if (config.webcamPartId) {
       const status = getTrackingStatusForWebcam(String(config.webcamPartId));
       trackingActive = status.active;
       trackingStatus = status.status;
+      const htState = getHeadTrackingStateForWebcam(String(config.webcamPartId));
+      headTrackingEnabled = htState.enabled || false;
     }
 
     res.json({
@@ -110,7 +114,8 @@ router.get('/api/head-tracking/:charId', async (req, res) => {
       availableServos: servos,
       availableWebcams: webcams,
       trackingActive,
-      trackingStatus
+      trackingStatus,
+      headTrackingEnabled
     });
   } catch (error) {
     console.error('Error getting head tracking config:', error);
@@ -124,6 +129,7 @@ router.post('/api/head-tracking/:charId', async (req, res) => {
     const { charId } = req.params;
     const htConfig = req.body;
 
+    // Only require servo when head tracking (servo mapping) is explicitly enabled
     if (htConfig.enabled && !htConfig.panServoId) {
       return res.status(400).json({
         success: false,
@@ -131,10 +137,11 @@ router.post('/api/head-tracking/:charId', async (req, res) => {
       });
     }
 
-    if (htConfig.enabled && !htConfig.webcamPartId) {
+    // OpenCV requires a webcam
+    if (htConfig.opencvEnabled !== false && !htConfig.webcamPartId) {
       return res.status(400).json({
         success: false,
-        error: 'Webcam is required when head tracking is enabled'
+        error: 'Webcam is required when OpenCV detection is enabled'
       });
     }
 
@@ -184,6 +191,7 @@ router.get('/api/head-tracking/:charId/status', async (req, res) => {
       targetDetected: status.target_detected || false,
       targetPosition: status.target_position || [50, 50],
       targetSize: status.target_size || 0,
+      bbox: status.bbox || null,
       fps: status.fps || 0,
       frameCount: status.frame_count || 0,
       headTrackingEnabled: htState.enabled || false,
@@ -195,7 +203,7 @@ router.get('/api/head-tracking/:charId/status', async (req, res) => {
   }
 });
 
-// ─── Start tracking ──────────────────────────────────────────────────
+// ─── Start OpenCV motion tracking (no servo required) ────────────────
 router.post('/api/head-tracking/:charId/start', async (req, res) => {
   try {
     const { charId } = req.params;
@@ -207,7 +215,7 @@ router.post('/api/head-tracking/:charId/start', async (req, res) => {
 
     const webcamId = String(config.webcamPartId);
 
-    // Start motion tracking Python process
+    // Start motion tracking Python process (OpenCV only — no servo mapping here)
     const motionParams = {
       motionThreshold: config.motionThreshold,
       minContourArea: config.minContourArea,
@@ -220,31 +228,19 @@ router.post('/api/head-tracking/:charId/start', async (req, res) => {
 
     const startResult = await startTrackingForWebcam(webcamId, motionParams);
 
-    // Enable head tracking servo mapping if servo is configured
-    if (config.panServoId) {
-      enableHeadTrackingForWebcam(webcamId, {
-        panServoId: config.panServoId,
-        centerDeg: config.centerDeg,
-        rangeDeg: config.rangeDeg,
-        invertPan: config.invertPan,
-        smoothing: config.smoothing,
-        deadzone: config.deadzone
-      });
-    }
-
     res.json({
       success: true,
-      message: 'Head tracking started',
+      message: 'OpenCV motion detection started',
       webcamId,
       config: startResult.config
     });
   } catch (error) {
-    console.error('Error starting head tracking:', error);
+    console.error('Error starting OpenCV tracking:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// ─── Stop tracking ───────────────────────────────────────────────────
+// ─── Stop OpenCV + head tracking ─────────────────────────────────────
 router.post('/api/head-tracking/:charId/stop', async (req, res) => {
   try {
     const { charId } = req.params;
@@ -256,9 +252,66 @@ router.post('/api/head-tracking/:charId/stop', async (req, res) => {
       await stopTrackingForWebcam(webcamId);
     }
 
-    res.json({ success: true, message: 'Head tracking stopped' });
+    res.json({ success: true, message: 'OpenCV and head tracking stopped' });
   } catch (error) {
     console.error('Error stopping head tracking:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ─── Enable head tracking servo mapping (while OpenCV is running) ────
+router.post('/api/head-tracking/:charId/enable-servo', async (req, res) => {
+  try {
+    const { charId } = req.params;
+    const { panServoId, centerDeg, rangeDeg, invertPan, smoothing, deadzone } = req.body;
+
+    if (!panServoId) {
+      return res.status(400).json({ success: false, error: 'panServoId is required' });
+    }
+
+    const config = await headAnimationService.readHeadTrackingConfig(charId);
+    const webcamId = config.webcamPartId ? String(config.webcamPartId) : null;
+
+    if (!webcamId) {
+      return res.status(400).json({ success: false, error: 'No webcam configured' });
+    }
+
+    // Check that OpenCV is actually running
+    const motionStatus = getTrackingStatusForWebcam(webcamId);
+    if (!motionStatus.active) {
+      return res.status(400).json({ success: false, error: 'OpenCV must be running before enabling head tracking' });
+    }
+
+    enableHeadTrackingForWebcam(webcamId, {
+      panServoId,
+      centerDeg: typeof centerDeg === 'number' ? centerDeg : config.centerDeg,
+      rangeDeg: typeof rangeDeg === 'number' ? rangeDeg : config.rangeDeg,
+      invertPan: invertPan !== undefined ? invertPan : config.invertPan,
+      smoothing: typeof smoothing === 'number' ? smoothing : config.smoothing,
+      deadzone: typeof deadzone === 'number' ? deadzone : config.deadzone
+    });
+
+    res.json({ success: true, message: 'Head tracking servo mapping enabled' });
+  } catch (error) {
+    console.error('Error enabling head tracking servo:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ─── Disable head tracking servo mapping (OpenCV keeps running) ──────
+router.post('/api/head-tracking/:charId/disable-servo', async (req, res) => {
+  try {
+    const { charId } = req.params;
+    const config = await headAnimationService.readHeadTrackingConfig(charId);
+    const webcamId = config.webcamPartId ? String(config.webcamPartId) : null;
+
+    if (webcamId) {
+      disableHeadTrackingForWebcam(webcamId);
+    }
+
+    res.json({ success: true, message: 'Head tracking servo mapping disabled' });
+  } catch (error) {
+    console.error('Error disabling head tracking servo:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -287,18 +340,21 @@ router.post('/api/head-tracking/:charId/params', async (req, res) => {
       updateTrackingParamsForWebcam(webcamId, motionParams);
     }
 
-    // Update head tracking servo params in memory
+    // Update head tracking servo params in memory (if head tracking is active)
     if (params.smoothing !== undefined || params.deadzone !== undefined ||
         params.centerDeg !== undefined || params.rangeDeg !== undefined ||
         params.invertPan !== undefined) {
-      enableHeadTrackingForWebcam(webcamId, {
-        panServoId: config.panServoId,
-        centerDeg: params.centerDeg !== undefined ? params.centerDeg : config.centerDeg,
-        rangeDeg: params.rangeDeg !== undefined ? params.rangeDeg : config.rangeDeg,
-        invertPan: params.invertPan !== undefined ? params.invertPan : config.invertPan,
-        smoothing: params.smoothing !== undefined ? params.smoothing : config.smoothing,
-        deadzone: params.deadzone !== undefined ? params.deadzone : config.deadzone
-      });
+      const htState = getHeadTrackingStateForWebcam(webcamId);
+      if (htState.enabled) {
+        enableHeadTrackingForWebcam(webcamId, {
+          panServoId: htState.panServoId || config.panServoId,
+          centerDeg: params.centerDeg !== undefined ? params.centerDeg : config.centerDeg,
+          rangeDeg: params.rangeDeg !== undefined ? params.rangeDeg : config.rangeDeg,
+          invertPan: params.invertPan !== undefined ? params.invertPan : config.invertPan,
+          smoothing: params.smoothing !== undefined ? params.smoothing : config.smoothing,
+          deadzone: params.deadzone !== undefined ? params.deadzone : config.deadzone
+        });
+      }
     }
 
     res.json({ success: true, message: 'Parameters updated' });

@@ -1,6 +1,8 @@
 <style>
   .head-page { max-height: calc(100vh - 56px); overflow: hidden; }
   .head-section { background: rgba(13,13,13,0.6); border-left: 3px solid var(--bs-primary, #0d6efd); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; }
+  .head-section.opencv-section { border-left-color: var(--bs-success, #198754); }
+  .head-section.servo-section { border-left-color: var(--bs-warning, #ffc107); }
   .compact-label { font-size: 0.85rem; margin-bottom: 0.25rem; }
   .form-range { height: 1.2rem; }
   .webcam-container { position: relative; background: #000; border-radius: 6px; overflow: hidden; min-height: 240px; }
@@ -14,6 +16,8 @@
   .status-dot.detecting { background: var(--mb-warning, #ffc107); animation: statusPulse 0.5s ease-in-out infinite; }
   @keyframes statusPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
   .fps-badge { font-variant-numeric: tabular-nums; min-width: 2.5em; }
+  .servo-bounds-info { font-size: 0.8rem; color: var(--bs-info, #0dcaf0); margin-top: 0.25rem; }
+  .toggle-disabled-hint { font-size: 0.75rem; color: var(--bs-secondary, #6c757d); margin-left: 0.5rem; }
 </style>
 
 <div class="head-page">
@@ -28,18 +32,11 @@
   <div class="row g-2">
     <!-- LEFT COLUMN: Configuration -->
     <div class="col-lg-5">
-      <!-- Enable Toggle & Part Selection -->
-      <div class="head-section">
+      <!-- OpenCV Detection Toggle & Webcam -->
+      <div class="head-section opencv-section">
         <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="htEnabled">
-          <label class="form-check-label" for="htEnabled"><strong>Enable Head Tracking</strong></label>
-        </div>
-
-        <div class="mb-2">
-          <label for="panServoSelect" class="compact-label"><i class="bi bi-robot"></i> Pan Servo</label>
-          <select class="form-select form-select-sm" id="panServoSelect">
-            <option value="">Select a servo...</option>
-          </select>
+          <input class="form-check-input" type="checkbox" role="switch" id="ocvEnabled">
+          <label class="form-check-label" for="ocvEnabled"><strong><i class="bi bi-eye-fill text-success"></i> OpenCV Detection</strong></label>
         </div>
 
         <div class="mb-2">
@@ -50,44 +47,9 @@
         </div>
       </div>
 
-      <!-- Tracking Tuning -->
-      <div class="head-section">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-sliders"></i> Tracking Tuning</h6>
-
-        <div class="mb-2">
-          <label for="smoothingRange" class="compact-label">
-            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.3</span>
-          </label>
-          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.3">
-        </div>
-
-        <div class="mb-2">
-          <label for="deadzoneRange" class="compact-label">
-            Deadzone <span class="badge bg-secondary ms-1" id="deadzoneValue">5</span>
-          </label>
-          <input type="range" class="form-range" id="deadzoneRange" min="1" max="25" step="1" value="5">
-        </div>
-
-        <div class="row g-2 mb-2">
-          <div class="col-6">
-            <label for="centerDeg" class="compact-label">Center (&deg;)</label>
-            <input type="number" class="form-control form-control-sm" id="centerDeg" min="-90" max="90" value="0">
-          </div>
-          <div class="col-6">
-            <label for="rangeDeg" class="compact-label">Range (&deg;)</label>
-            <input type="number" class="form-control form-control-sm" id="rangeDeg" min="10" max="180" value="60">
-          </div>
-        </div>
-
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="invertPan">
-          <label class="form-check-label compact-label" for="invertPan">Invert Pan Direction</label>
-        </div>
-      </div>
-
       <!-- OpenCV Parameters -->
-      <div class="head-section">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-eye"></i> OpenCV Parameters</h6>
+      <div class="head-section opencv-section">
+        <h6 class="text-success mb-2" style="font-size:0.9rem;"><i class="bi bi-eye"></i> OpenCV Parameters</h6>
 
         <div class="mb-2">
           <label for="motionThresholdRange" class="compact-label">
@@ -122,6 +84,58 @@
         </div>
       </div>
 
+      <!-- Head Tracking Toggle & Servo -->
+      <div class="head-section servo-section">
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="htEnabled">
+          <label class="form-check-label" for="htEnabled"><strong><i class="bi bi-robot text-warning"></i> Head Tracking (Servo)</strong></label>
+          <span class="toggle-disabled-hint" id="htDisabledHint" style="display:none;">Requires OpenCV</span>
+        </div>
+
+        <div class="mb-2">
+          <label for="panServoSelect" class="compact-label"><i class="bi bi-robot"></i> Pan Servo</label>
+          <select class="form-select form-select-sm" id="panServoSelect">
+            <option value="">Select a servo...</option>
+          </select>
+          <div class="servo-bounds-info" id="servoBoundsInfo" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Tracking Tuning -->
+      <div class="head-section servo-section">
+        <h6 class="text-warning mb-2" style="font-size:0.9rem;"><i class="bi bi-sliders"></i> Servo Tuning</h6>
+
+        <div class="mb-2">
+          <label for="smoothingRange" class="compact-label">
+            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.3</span>
+          </label>
+          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.3">
+        </div>
+
+        <div class="mb-2">
+          <label for="deadzoneRange" class="compact-label">
+            Deadzone <span class="badge bg-secondary ms-1" id="deadzoneValue">5</span>
+          </label>
+          <input type="range" class="form-range" id="deadzoneRange" min="1" max="25" step="1" value="5">
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label for="centerDeg" class="compact-label">Center (&deg;)</label>
+            <input type="number" class="form-control form-control-sm" id="centerDeg" value="0">
+          </div>
+          <div class="col-6">
+            <label for="rangeDeg" class="compact-label">Range (&deg;)</label>
+            <input type="number" class="form-control form-control-sm" id="rangeDeg" min="1" max="180" value="60">
+          </div>
+        </div>
+
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="invertPan">
+          <label class="form-check-label compact-label" for="invertPan">Invert Pan Direction</label>
+        </div>
+      </div>
+
       <!-- Save Button -->
       <div class="d-flex gap-2 mb-2">
         <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="saveConfigBtn">
@@ -144,13 +158,13 @@
         </div>
       </div>
 
-      <!-- Start / Stop Controls -->
+      <!-- Start / Stop OpenCV -->
       <div class="d-flex gap-2 mb-2">
         <button type="button" class="btn btn-success btn-sm flex-grow-1" id="startTrackingBtn">
-          <i class="bi bi-play-fill"></i> Start Tracking
+          <i class="bi bi-play-fill"></i> Start OpenCV
         </button>
         <button type="button" class="btn btn-danger btn-sm flex-grow-1" id="stopTrackingBtn" disabled>
-          <i class="bi bi-stop-fill"></i> Stop Tracking
+          <i class="bi bi-stop-fill"></i> Stop OpenCV
         </button>
       </div>
 
@@ -167,13 +181,17 @@
         </div>
 
         <div class="row g-2">
-          <div class="col-6">
+          <div class="col-4">
             <small class="text-muted">Target</small>
             <div class="fw-bold" id="targetStatus">No target</div>
           </div>
-          <div class="col-6">
+          <div class="col-4">
             <small class="text-muted">Position</small>
             <div class="fw-bold" id="targetPosition">--</div>
+          </div>
+          <div class="col-4">
+            <small class="text-muted">Head Tracking</small>
+            <div class="fw-bold" id="headTrackingStatus">Off</div>
           </div>
         </div>
       </div>
