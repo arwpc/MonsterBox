@@ -2381,7 +2381,7 @@
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>' +
           '<div class="col-md-6">' +
-          '<div class="form-check form-switch mb-3 p-2 border rounded bg-light">' +
+          '<div class="form-check form-switch mb-3 p-2 border rounded bg-body-secondary">' +
           '<input class="form-check-input ms-0 me-2" type="checkbox" id="ctrl_nightMode" style="font-size:1.3em">' +
           '<label class="form-check-label fw-bold" for="ctrl_nightMode"><i class="bi bi-moon-stars"></i> Night Mode (IR Optimized)</label>' +
           '</div>' +
@@ -2615,9 +2615,14 @@
                 fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
                 }).then(function (r) { return r.json(); }).then(function (res) {
-                  if (res && res.success) { if (st) st.textContent = isNight ? 'Night Mode ON' : 'Day Mode restored'; }
-                  else { if (st) st.textContent = 'Failed: ' + (res && res.error || ''); }
-                  setTimeout(function () { if (st) st.textContent = ''; }, 1200);
+                  if (res && res.success && res.hardwareApplied) {
+                    if (st) st.textContent = isNight ? 'Night Mode ON' : 'Day Mode restored';
+                  } else if (res && res.success && !res.hardwareApplied) {
+                    if (st) st.textContent = (isNight ? 'Night Mode' : 'Day Mode') + ' saved (device offline)';
+                  } else {
+                    if (st) st.textContent = 'Failed: ' + (res && res.error || '');
+                  }
+                  setTimeout(function () { if (st) st.textContent = ''; }, 2000);
                 }).catch(function () { if (st) st.textContent = 'Failed to apply preset'; });
               })
               .catch(function () { if (st) st.textContent = 'Failed to load model presets'; });
@@ -2639,9 +2644,10 @@
           fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
           }).then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.success) { if (st) st.textContent = 'Applied'; }
+            if (j && j.success && j.hardwareApplied) { if (st) st.textContent = 'Applied & Saved'; }
+            else if (j && j.success && !j.hardwareApplied) { if (st) st.textContent = 'Saved (device offline)'; }
             else { if (st) st.textContent = 'Failed: ' + (j && j.error || ''); }
-            setTimeout(function () { if (st) st.textContent = ''; }, 1000);
+            setTimeout(function () { if (st) st.textContent = ''; }, 2000);
           }).catch(function () { if (st) st.textContent = 'Failed'; });
         });
       } else if (part.type === 'head_tracking') {
