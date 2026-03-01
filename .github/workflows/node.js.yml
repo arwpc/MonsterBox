@@ -16,6 +16,7 @@ jobs:
       SKIP_CI_INTEGRATION: true
       NODE_ENV: test
       PORT: 3000
+      MB_TEST_MODE: '1'
       SESSION_SECRET: test-session-secret-for-ci
       ANTHROPIC_API_KEY: your_anthropic_api_key_here
       ELEVENLABS_API_KEY: test-dummy-key
@@ -44,8 +45,26 @@ jobs:
       run: npx playwright install --with-deps chromium
     - name: Run Unit Tests
       run: npm run test:unit
+    - name: Start server for system tests
+      run: |
+        npm start &
+        echo $! > /tmp/monsterbox-server.pid
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:3100/ > /dev/null 2>&1; then
+            echo "Server ready on port 3100"
+            break
+          fi
+          sleep 1
+        done
     - name: Run System Tests
       run: npm run test:system
+    - name: Stop server
+      if: always()
+      run: |
+        if [ -f /tmp/monsterbox-server.pid ]; then
+          kill $(cat /tmp/monsterbox-server.pid) 2>/dev/null || true
+          rm -f /tmp/monsterbox-server.pid
+        fi
     - name: Run Browser Tests
       run: npm run test:browser
     - name: Upload Test Results

@@ -31,9 +31,10 @@ jobs:
   deep-functionality-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
+
     env:
       ELEVENLABS_API_KEY: test-dummy-key
+      MB_TEST_MODE: '1'
 
     strategy:
       matrix:
@@ -63,9 +64,30 @@ jobs:
       if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'unit' || github.event.inputs.test_suite == ''
       run: npm run test:unit
 
+    - name: Start server for system tests
+      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'system' || github.event.inputs.test_suite == ''
+      run: |
+        npm start &
+        echo $! > /tmp/monsterbox-server.pid
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:3100/ > /dev/null 2>&1; then
+            echo "Server ready on port 3100"
+            break
+          fi
+          sleep 1
+        done
+
     - name: Run System Tests
       if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'system' || github.event.inputs.test_suite == ''
       run: npm run test:system
+
+    - name: Stop server after system tests
+      if: always()
+      run: |
+        if [ -f /tmp/monsterbox-server.pid ]; then
+          kill $(cat /tmp/monsterbox-server.pid) 2>/dev/null || true
+          rm -f /tmp/monsterbox-server.pid
+        fi
 
     - name: Run Browser Tests
       if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'browser' || github.event.inputs.test_suite == ''
@@ -76,7 +98,7 @@ jobs:
     - name: Run Integration Tests
       if: github.event.inputs.test_suite == 'integration'
       run: |
-        MB_TEST_MODE=1 npm start &
+        npm start &
         APP_PID=$!
         sleep 15
         # Wait for application to be ready
