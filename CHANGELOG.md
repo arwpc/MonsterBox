@@ -2,6 +2,89 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.8.0] - 2026-02-28 — Head Tracking Setup Page
+
+### Head Animation Setup (`/setup/head-animation`)
+- **New setup page** for configuring OpenCV-based motion tracking with servo head mapping
+- **OpenCV motion detection** — background subtraction with configurable threshold, contour area filtering, and noise reduction kernel size
+- **Servo mapping** — maps detected motion centroid to pan servo position with configurable center degree, range, deadzone, and smoothing
+- **Positional and continuous servo support** — works with both absolute position servos and continuous rotation servos
+- **Calibration guardrails** — respects servo Min/Max calibration markers to prevent over-rotation
+- **Live webcam overlay** — real-time motion tracking visualization on webcam stream
+- **Hot-parameter tuning** — adjust motion threshold, contour area, background learning rate, smoothing, and deadzone without restarting tracking
+- **Test sweep** — sweep servo through full range to verify wiring and calibration
+- **Config persistence** — saved per-character in `super-powers.json` `headTracking` section
+
+### Service Layer Fixes
+- **Character independence** — `getCharacterDataDir()` and `loadPartsSafe()` in head animation service always resolve per-character paths, never relying on global dataPath
+- **Cleaned up debug emoji logs** in motion tracking controller
+
+### API Endpoints
+- `GET /setup/head-animation/api/head-tracking/:charId` — read config + available servos/webcams
+- `POST /setup/head-animation/api/head-tracking/:charId` — save config
+- `GET /setup/head-animation/api/head-tracking/:charId/status` — tracking status
+- `POST /setup/head-animation/api/head-tracking/:charId/start` — start tracking
+- `POST /setup/head-animation/api/head-tracking/:charId/stop` — stop tracking
+- `POST /setup/head-animation/api/head-tracking/:charId/params` — hot-update parameters
+- `GET /setup/head-animation/api/head-tracking/:charId/requirements` — check OpenCV/webcam availability
+- `POST /setup/head-animation/api/head-tracking/:charId/test-sweep` — servo sweep test
+
+### Key Files
+- `views/setup/head-animation.ejs` — Setup page with two-column layout (config + webcam)
+- `public/js/head-animation.js` — Client-side controls (ES5 IIFE, 653 lines)
+- `routes/setup/head-animation.js` — API routes (9 endpoints)
+- `services/headAnimationSuperPowerService.js` — Config persistence service
+- `controllers/motionTrackingController.js` — Extended with webcam-specific tracking functions
+
+### Testing
+- 21 new system tests for head animation API and config persistence
+- Navigation updated with Head Animation link under Setup
+
+---
+
+## [6.7.8] - 2026-02-28 — Browser Audio Bridge, Security Update & CI Fixes
+
+### Browser Audio Bridge
+- **Browser Audio Bridge** added to Dashboard, `/ai-settings/stt`, and `/setup/audio` pages — harmonized across all three
+- **VU meter fixes** — resolved meters stuck at 60% on audio setup page
+- **Triple-firing buttons fixed** on `/setup/audio` page
+- **Save config and test input fixes** on `/setup/audio`
+
+### Security
+- **Multer 2.0.2 → 2.1.0** — fixes DoS vulnerabilities in file upload middleware
+
+### Calibration
+- **Webcam theme fix** — calibration webcam overlay now respects selected theme
+- **IR mode error fix** — resolved error when toggling IR mode
+- **Dynamic webcam controls** — live control adjustments on calibration page
+
+### CI/CD
+- **All CI workflows fixed** — server startup and MB_TEST_MODE configuration corrected
+- **Remaining browser test failures resolved** — stable green CI pipelines
+
+### Testing
+- Comprehensive Playwright tests for `/setup/audio` page
+- Browser test fixes for CI environment
+
+---
+
+## [6.7.7] - 2026-02-28 — MkDocs Overhaul & Calibration Enhancements
+
+### MkDocs Documentation
+- **Halloween dark theme** with slate scheme and custom CSS
+- **Core docs rewritten** — index, install, usage, config, structure, FAQ, networking
+- **Replaced fabricated content** — removed inaccurate API/auth/RBAC docs, replaced with accurate content
+- **Character pages updated** — all parts listed from actual JSON data (Orlok, PumpkinHead, Coffin Breaker, Skulltalker, Groundbreaker, Spinster)
+- **Nav structure finalized** — 40+ docs in navigation, Help link added to MonsterBox navbar
+
+### Calibration
+- **Dynamic webcam controls** — live camera control adjustments
+- **Night mode** for webcam overlay
+- **Linear actuator position slider** improvements
+- **Bounds fixes** for calibration markers
+
+---
+
 ## [6.7.6] - 2026-02-28 — Consistency Audit, CI Fixes, MkDocs & Help Link
 
 ### Consistency Audit (v6.7.1–v6.7.3)
