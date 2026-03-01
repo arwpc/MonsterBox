@@ -230,7 +230,7 @@
                   <span id="listenin-vu-label" class="vu-label small text-muted">0%</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <button id="btn-listenin-toggle" class="btn btn-info btn-sm" onclick="toggleListenIn()">
+                  <button id="btn-listenin-toggle" class="btn btn-info btn-sm" type="button">
                     <i class="bi bi-headphones"></i> <span id="listenin-toggle-text">Start Listening</span>
                   </button>
                   <span id="listenin-status" class="badge bg-secondary">Off</span>
@@ -259,7 +259,7 @@
                   <span id="talkthrough-vu-label" class="vu-label small text-muted">0%</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <button id="btn-talkthrough-toggle" class="btn btn-warning btn-sm" onclick="toggleTalkThrough()">
+                  <button id="btn-talkthrough-toggle" class="btn btn-warning btn-sm" type="button">
                     <i class="bi bi-mic-fill"></i> <span id="talkthrough-toggle-text">Start Talking</span>
                   </button>
                   <span id="talkthrough-status" class="badge bg-secondary">Off</span>
@@ -1253,39 +1253,33 @@
   let talkThroughVuTimer = null;
   const TALK_THROUGH_RATE = 16000;
 
-  // Populate the Browser Audio Bridge device selectors after system config loads
+  // Populate the Browser Audio Bridge device selectors from API
   function populateBridgeSelectors() {
-    const sourceSelect = document.getElementById('listenin-source-select');
-    const sinkSelect = document.getElementById('talkthrough-sink-select');
-    if (!sourceSelect || !sinkSelect) return;
+    fetch('/setup/audio/api/inputs').then(r => r.json()).then(data => {
+      if (!data || !data.success) return;
+      const sel = document.getElementById('listenin-source-select');
+      if (!sel || !data.inputs || !data.inputs.length) return;
+      sel.innerHTML = '';
+      data.inputs.forEach(inp => {
+        const o = document.createElement('option');
+        o.value = inp.id || inp.name;
+        o.textContent = inp.description || inp.name || inp.id;
+        sel.appendChild(o);
+      });
+    }).catch(() => {});
 
-    // Copy options from the main device selectors
-    const mainSource = document.getElementById('default-source');
-    const mainSink = document.getElementById('default-sink');
-
-    if (mainSource && mainSource.options.length > 1) {
-      sourceSelect.innerHTML = '';
-      for (let i = 0; i < mainSource.options.length; i++) {
-        const opt = mainSource.options[i];
-        const newOpt = document.createElement('option');
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        if (opt.selected) newOpt.selected = true;
-        sourceSelect.appendChild(newOpt);
-      }
-    }
-
-    if (mainSink && mainSink.options.length > 1) {
-      sinkSelect.innerHTML = '';
-      for (let i = 0; i < mainSink.options.length; i++) {
-        const opt = mainSink.options[i];
-        const newOpt = document.createElement('option');
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        if (opt.selected) newOpt.selected = true;
-        sinkSelect.appendChild(newOpt);
-      }
-    }
+    fetch('/setup/audio/api/outputs').then(r => r.json()).then(data => {
+      if (!data || !data.success) return;
+      const sel = document.getElementById('talkthrough-sink-select');
+      if (!sel || !data.outputs || !data.outputs.length) return;
+      sel.innerHTML = '';
+      data.outputs.forEach(out => {
+        const o = document.createElement('option');
+        o.value = out.id || out.name;
+        o.textContent = out.description || out.name || out.id;
+        sel.appendChild(o);
+      });
+    }).catch(() => {});
 
     // Check HTTPS for browser mic
     const isSecure = window.isSecureContext || window.location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
@@ -1296,9 +1290,6 @@
       if (btn) btn.disabled = true;
     }
   }
-
-  // Fallback: populate bridge selectors after delay in case updateUI was not called
-  setTimeout(populateBridgeSelectors, 3000);
 
   // ------- Listen In (Browser Speaker) -------
 
@@ -1561,6 +1552,15 @@
     if (vuBar) vuBar.style.width = '0%';
     if (vuLabel) vuLabel.textContent = '0%';
   }
+
+  // Init bridge: load devices and bind buttons
+  document.addEventListener('DOMContentLoaded', function () {
+    populateBridgeSelectors();
+    const listenBtn = document.getElementById('btn-listenin-toggle');
+    const talkBtn = document.getElementById('btn-talkthrough-toggle');
+    if (listenBtn) listenBtn.addEventListener('click', toggleListenIn);
+    if (talkBtn) talkBtn.addEventListener('click', toggleTalkThrough);
+  });
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', function() {

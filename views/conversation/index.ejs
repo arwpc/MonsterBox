@@ -1638,13 +1638,21 @@
           if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
         } else if (msg.type === 'audio') {
           playListenInChunk(msg.audio);
-        } else if (msg.type === 'error' || msg.type === 'ended') {
+        } else if (msg.type === 'error') {
+          console.error('Listen In error:', msg.error);
+          const statusEl = document.getElementById('bridge-listenin-status');
+          if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'badge bg-danger'; }
+          stopListenIn();
+        } else if (msg.type === 'ended') {
           stopListenIn();
         }
       } catch (_) {}
     };
 
-    listenInES.onerror = function () { stopListenIn(); };
+    listenInES.onerror = function () {
+      console.warn('Listen In SSE connection error');
+      stopListenIn();
+    };
   }
 
   function playListenInChunk(base64Pcm) {
@@ -1771,6 +1779,7 @@
       if (toggleText) toggleText.textContent = 'Stop';
       if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
     }).catch(err => {
+      console.error('Talk Through mic error:', err);
       if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
       if (toggleText) toggleText.textContent = 'Start';
       if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; btn.style.fontSize = '0.75rem'; }
