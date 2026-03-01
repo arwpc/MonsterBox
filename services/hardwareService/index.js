@@ -1335,50 +1335,36 @@ const HARDWARE_CONTROLLERS = {
  */
 export async function controlPart(partId, action, params = {}) {
     try {
-        // Load part configuration from configured dataPath
+        // Load part configuration using selectedCharacter from config
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '../..');
-        const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
+        const characterId = cfg && cfg.selectedCharacter;
 
-        // Try to load from character-specific parts file first
         let parts = [];
         let part = null;
 
-        // Get current character ID
-        let characterId = null;
-        try {
-            const characterDataPath = path.resolve(appRoot, dataDir, 'current-character.json');
-            const characterData = await fs.readFile(characterDataPath, 'utf8');
-            const characterInfo = JSON.parse(characterData);
-            characterId = characterInfo.selectedCharacter;
-        } catch (e) {
-            // No current character set, will try global parts.json
-        }
-
-        // Try character-specific parts file
+        // Try character-specific parts file using selectedCharacter
         if (characterId) {
             try {
-                const characterPartsPath = path.resolve(appRoot, dataDir, `character-${characterId}`, 'parts.json');
+                const characterPartsPath = path.resolve(appRoot, `data/character-${characterId}`, 'parts.json');
                 const partsData = await fs.readFile(characterPartsPath, 'utf8');
                 parts = JSON.parse(partsData);
                 part = parts.find(p => String(p.id) === String(partId));
             } catch (e) {
-                // Character parts file doesn't exist, will try global
+                // Character parts file doesn't exist, will try fallback
             }
         }
 
-        // Fall back to global parts.json if not found in character-specific file
+        // Fall back to dataPath-based parts.json
         if (!part) {
             try {
+                const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
                 const partsPath = path.resolve(appRoot, dataDir, 'parts.json');
                 const partsData = await fs.readFile(partsPath, 'utf8');
                 parts = JSON.parse(partsData);
-                // Filter by characterId if available to avoid wrong character parts
-                part = characterId 
-                    ? parts.find(p => String(p.id) === String(partId) && String(p.characterId) === String(characterId))
-                    : parts.find(p => String(p.id) === String(partId));
+                part = parts.find(p => String(p.id) === String(partId));
             } catch (e) {
-                // Global parts file doesn't exist
+                // Fallback parts file doesn't exist
             }
         }
 

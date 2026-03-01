@@ -20,6 +20,22 @@ const router = express.Router();
  * Configures and tests OpenCV-based head tracking with servo mapping.
  */
 
+// In-memory cache for status polling — avoids reading super-powers.json from disk every 60ms
+const _statusCache = new Map(); // charId → { webcamId, timestamp }
+const STATUS_CACHE_TTL = 5000;  // 5 seconds
+
+function getCachedWebcamId(charId) {
+  const entry = _statusCache.get(String(charId));
+  if (entry && (Date.now() - entry.timestamp) < STATUS_CACHE_TTL) {
+    return entry.webcamId;
+  }
+  return undefined; // cache miss
+}
+
+function setCachedWebcamId(charId, webcamId) {
+  _statusCache.set(String(charId), { webcamId, timestamp: Date.now() });
+}
+
 // ─── Main page ───────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
@@ -123,6 +139,8 @@ router.post('/api/head-tracking/:charId', async (req, res) => {
     }
 
     await headAnimationService.writeHeadTrackingConfig(charId, htConfig);
+    // Invalidate status cache so polling picks up new webcamPartId
+    _statusCache.delete(String(charId));
     res.json({ success: true, message: 'Head tracking configuration saved' });
   } catch (error) {
     console.error('Error saving head tracking config:', error);
@@ -134,8 +152,14 @@ router.post('/api/head-tracking/:charId', async (req, res) => {
 router.get('/api/head-tracking/:charId/status', async (req, res) => {
   try {
     const { charId } = req.params;
-    const config = await headAnimationService.readHeadTrackingConfig(charId);
-    const webcamId = config.webcamPartId ? String(config.webcamPartId) : null;
+
+    // Use cached webcamId to avoid reading super-powers.json from disk every 60ms
+    let webcamId = getCachedWebcamId(charId);
+    if (webcamId === undefined) {
+      const config = await headAnimationService.readHeadTrackingConfig(charId);
+      webcamId = config.webcamPartId ? String(config.webcamPartId) : null;
+      setCachedWebcamId(charId, webcamId);
+    }
 
     if (!webcamId) {
       return res.json({

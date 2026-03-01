@@ -19,16 +19,24 @@ const __dirname = path.dirname(__filename);
 async function getPartsFilePath() {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..');
+  const charId = cfg && cfg.selectedCharacter;
+  if (charId) {
+    const charPath = path.resolve(appRoot, `data/character-${charId}`, 'parts.json');
+    try {
+      await fs.access(charPath);
+      return charPath;
+    } catch (_) { /* fall through */ }
+  }
   const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
   return path.resolve(appRoot, dataDir, 'parts.json');
 }
 
 async function loadParts() {
-  const filePath = await getPartsFilePath();
   try {
+    const filePath = await getPartsFilePath();
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data);
-  } catch (e) {
+  } catch (_) {
     return [];
   }
 }
@@ -379,26 +387,20 @@ export const streamMJPEG = async (req, res) => {
     res.setHeader('Connection', 'close');
     res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=--myboundary');
 
-    // Proxy the stream from mjpg-streamer with retry logic
+    // Proxy the stream from mjpg-streamer with minimal retry (health check already passed)
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 2;
     let streamResponse = null;
-    // Hoisted controller and timeout for proper cleanup
     let abortController = null;
     let timeoutId = null;
 
-
-    console.log(`📹 Attempting to fetch MJPEG stream from ${MJPG_STREAM_ENDPOINT} for part ${id}`);
     while (retryCount < maxRetries && !streamResponse) {
       try {
-        // Create an AbortController for better timeout management
         abortController = new AbortController();
         timeoutId = setTimeout(() => {
-          console.log(`⏱️ Fetch timeout after 60s, aborting...`);
           abortController.abort();
-        }, 60000); // 60 second timeout for streaming data
+        }, 5000); // 5 second connect timeout
 
-        console.log(`🔄 Fetch attempt ${retryCount + 1}/${maxRetries}...`);
         streamResponse = await nodeFetch(MJPG_STREAM_ENDPOINT, {
           signal: abortController.signal,
           headers: {
@@ -407,20 +409,14 @@ export const streamMJPEG = async (req, res) => {
           }
         });
 
-        console.log(`✅ Fetch successful, status: ${streamResponse.status}`);
-        // Clear timeout if fetch succeeds
         clearTimeout(timeoutId);
         break;
       } catch (fetchErr) {
-        console.error(`❌ Fetch attempt ${retryCount + 1} failed:`, fetchErr.message);
+        clearTimeout(timeoutId);
         retryCount++;
         if (retryCount < maxRetries) {
-          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-          const backoffMs = Math.pow(2, retryCount - 1) * 1000;
-          console.log(`mjpg-streamer connection attempt ${retryCount} failed, retrying in ${backoffMs}ms...`);
-          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-          console.error(`❌ All ${maxRetries} fetch attempts failed`);
           throw fetchErr;
         }
       }

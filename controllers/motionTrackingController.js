@@ -33,11 +33,19 @@ const DEFAULT_CONFIG = {
   noiseReductionKernelSize: 3
 };
 
-// Resolve parts.json honoring dynamic dataPath
+// Resolve parts.json using selectedCharacter for correct character isolation
 async function getPartsFilePath() {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..');
-  const dataDir = (cfg && cfg.dataPath) ? cfg.dataPath : '../data';
+  const charId = cfg && cfg.selectedCharacter;
+  if (charId) {
+    const charPath = path.resolve(appRoot, `data/character-${charId}`, 'parts.json');
+    try {
+      await fs.access(charPath);
+      return charPath;
+    } catch (_) { /* fall through */ }
+  }
+  const dataDir = (cfg && cfg.dataPath) ? cfg.dataPath : 'data';
   return path.resolve(appRoot, dataDir, 'parts.json');
 }
 

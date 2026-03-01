@@ -117,15 +117,19 @@
     // Enable toggle
     if (el.htEnabled) el.htEnabled.addEventListener('change', updateFormState);
 
-    // Page unload — stop tracking to clean up Python process
-    window.addEventListener('beforeunload', function() {
+    // Page unload — stop tracking and clean up timers
+    function onPageLeave() {
+      stopPolling();
+      if (hotUpdateTimer) { clearTimeout(hotUpdateTimer); hotUpdateTimer = null; }
       if (isTracking && currentCharacterId) {
         navigator.sendBeacon(
           '/setup/head-animation/api/head-tracking/' + currentCharacterId + '/stop',
           ''
         );
       }
-    });
+    }
+    window.addEventListener('pagehide', onPageLeave);
+    window.addEventListener('beforeunload', onPageLeave);
   }
 
   function readCharacterFromNav() {
@@ -262,23 +266,44 @@
 
   function showWebcamStream(webcamId) {
     if (!el.webcamStream || !el.webcamPlaceholder) return;
-    // Reuse existing calibration webcam proxy
-    el.webcamStream.src = '/setup/calibration/api/webcam/parts/' + webcamId + '/stream';
-    el.webcamStream.style.display = 'block';
-    el.webcamPlaceholder.style.display = 'none';
 
-    // Size overlay canvas to match stream once loaded
+    // Show stream immediately — MJPEG multipart streams may not fire onload
+    el.webcamPlaceholder.style.display = 'none';
+    el.webcamStream.style.display = 'block';
+
+    // Error handler — fires if server returns non-image (e.g. 404/503 JSON)
+    el.webcamStream.onerror = function() {
+      el.webcamStream.style.display = 'none';
+      if (el.webcamPlaceholder) {
+        el.webcamPlaceholder.style.display = 'flex';
+        el.webcamPlaceholder.innerHTML = '<div class="text-center text-warning">' +
+          '<i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>' +
+          '<p class="mb-0 mt-1">Webcam stream unavailable. Check mjpg-streamer.</p>' +
+          '<button class="btn btn-outline-warning btn-sm mt-2" onclick="document.getElementById(\'webcamSelect\').dispatchEvent(new Event(\'change\'))">Retry</button>' +
+          '</div>';
+      }
+    };
+
+    // Size overlay canvas when first frame arrives
     el.webcamStream.onload = function() {
       sizeOverlayCanvas();
     };
+
+    // Reuse existing calibration webcam proxy
+    el.webcamStream.src = '/setup/calibration/api/webcam/parts/' + webcamId + '/stream';
   }
 
   function hideWebcamStream() {
     if (el.webcamStream) {
+      el.webcamStream.onerror = null;
+      el.webcamStream.onload = null;
       el.webcamStream.src = '';
       el.webcamStream.style.display = 'none';
     }
-    if (el.webcamPlaceholder) el.webcamPlaceholder.style.display = 'flex';
+    if (el.webcamPlaceholder) {
+      el.webcamPlaceholder.style.display = 'flex';
+      el.webcamPlaceholder.innerHTML = '<div class="text-center"><i class="bi bi-webcam" style="font-size:2rem;"></i><p class="mb-0 mt-1">Select a webcam to preview</p></div>';
+    }
     clearOverlay();
   }
 
@@ -372,14 +397,37 @@
   function startTracking() {
     if (!currentCharacterId || isTracking) return;
 
+    // Validate selections
+    var panServoId = el.panServoSelect ? el.panServoSelect.value : '';
+    var webcamId = el.webcamSelect ? el.webcamSelect.value : '';
+    if (!panServoId) { showToast('Please select a pan servo first', 'error'); return; }
+    if (!webcamId) { showToast('Please select a webcam first', 'error'); return; }
+
     if (el.startTrackingBtn) {
       el.startTrackingBtn.disabled = true;
       el.startTrackingBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Starting...';
     }
 
-    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/start', {
+    // Auto-save current form state before starting so the server has the right config
+    var config = buildConfigFromForm();
+    config.enabled = true; // force enabled when starting
+
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(saveData) {
+      if (!saveData.success) {
+        throw new Error('Save failed: ' + (saveData.error || 'Unknown'));
+      }
+      currentConfig = config;
+      // Now start tracking
+      return fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -398,7 +446,7 @@
     })
     .catch(function(err) {
       console.error('Start tracking error:', err);
-      showToast('Failed to start tracking', 'error');
+      showToast('Failed to start tracking: ' + err.message, 'error');
       if (el.startTrackingBtn) {
         el.startTrackingBtn.disabled = false;
         el.startTrackingBtn.innerHTML = '<i class="bi bi-play-fill"></i> Start Tracking';
@@ -538,10 +586,8 @@
 
   // ─── Save Configuration ───────────────────────────────────────────
 
-  function saveConfiguration() {
-    if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
-
-    var config = {
+  function buildConfigFromForm() {
+    return {
       enabled:                  el.htEnabled ? el.htEnabled.checked : false,
       panServoId:               el.panServoSelect ? (el.panServoSelect.value || null) : null,
       webcamPartId:             el.webcamSelect ? (el.webcamSelect.value || null) : null,
@@ -556,6 +602,12 @@
       backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.02),
       noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 3, 10)
     };
+  }
+
+  function saveConfiguration() {
+    if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
+
+    var config = buildConfigFromForm();
 
     if (config.enabled && !config.panServoId) {
       showToast('Please select a pan servo when head tracking is enabled', 'error');
