@@ -28,13 +28,16 @@ function getDefaultHeadTrackingConfig() {
     centerDeg: 0,
     rangeDeg: 60,
     invertPan: false,
-    smoothing: 0.3,
+    smoothing: 0.25,
     deadzone: 5,
-    motionThreshold: 30,
-    minContourArea: 300,
-    maxContourArea: 30000,
-    backgroundLearningRate: 0.02,
-    noiseReductionKernelSize: 3
+    motionThreshold: 25,
+    minContourArea: 3000,
+    maxContourArea: 100000,
+    backgroundLearningRate: 0.005,
+    noiseReductionKernelSize: 5,
+    blurSize: 5,
+    dilateSize: 9,
+    varThreshold: 25
   };
 }
 

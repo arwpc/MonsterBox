@@ -1,11 +1,11 @@
 /**
  * Head Animation Configuration JavaScript (ES5)
  * MonsterBox — Head tracking tuning page with webcam overlay
- * Handles webcam preview, tracking overlay, start/stop, save, and hot-update.
  *
  * Two independent toggles:
- *   1. OpenCV Detection — starts Python motion tracking, shows overlays (webcam only)
- *   2. Head Tracking — enables servo movement from detected motion (requires OpenCV)
+ *   1. OpenCV Detection toggle — starts/stops Python motion tracking process
+ *   2. Head Tracking toggle — enables/disables servo movement (requires OpenCV)
+ * All parameter changes are hot-updated immediately to the running process.
  */
 
 (function() {
@@ -13,13 +13,13 @@
 
   var currentCharacterId = null;
   var pollingInterval = null;
-  var isOpenCVActive = false;      // Python motion tracking process running
-  var isHeadTrackingOn = false;    // Servo mapping enabled on server
+  var isOpenCVActive = false;
+  var isHeadTrackingOn = false;
   var currentConfig = {};
   var availableServos = [];
   var availableWebcams = [];
   var hotUpdateTimer = null;
-  var selectedServoData = null;    // calibration data for selected servo
+  var selectedServoData = null;
   var el = {};
 
   // ─── Initialization ───────────────────────────────────────────────
@@ -56,9 +56,13 @@
       bgLearningRateValue:  document.getElementById('bgLearningRateValue'),
       noiseKernelRange:     document.getElementById('noiseKernelRange'),
       noiseKernelValue:     document.getElementById('noiseKernelValue'),
+      blurSizeRange:        document.getElementById('blurSizeRange'),
+      blurSizeValue:        document.getElementById('blurSizeValue'),
+      dilateSizeRange:      document.getElementById('dilateSizeRange'),
+      dilateSizeValue:      document.getElementById('dilateSizeValue'),
+      varThresholdRange:    document.getElementById('varThresholdRange'),
+      varThresholdValue:    document.getElementById('varThresholdValue'),
       saveConfigBtn:        document.getElementById('saveConfigBtn'),
-      startTrackingBtn:     document.getElementById('startTrackingBtn'),
-      stopTrackingBtn:      document.getElementById('stopTrackingBtn'),
       testSweepBtn:         document.getElementById('testSweepBtn'),
       emergencyStopBtn:     document.getElementById('emergencyStopBtn'),
       webcamStream:         document.getElementById('webcamStream'),
@@ -75,39 +79,17 @@
   }
 
   function bindEvents() {
-    // Slider live value displays
-    if (el.smoothingRange) {
-      el.smoothingRange.addEventListener('input', function() {
-        if (el.smoothingValue) el.smoothingValue.textContent = this.value;
-        scheduleHotUpdate();
-      });
-    }
-    if (el.deadzoneRange) {
-      el.deadzoneRange.addEventListener('input', function() {
-        if (el.deadzoneValue) el.deadzoneValue.textContent = this.value;
-        scheduleHotUpdate();
-      });
-    }
-    if (el.motionThresholdRange) {
-      el.motionThresholdRange.addEventListener('input', function() {
-        if (el.motionThresholdValue) el.motionThresholdValue.textContent = this.value;
-        scheduleHotUpdate();
-      });
-    }
-    if (el.bgLearningRateRange) {
-      el.bgLearningRateRange.addEventListener('input', function() {
-        if (el.bgLearningRateValue) el.bgLearningRateValue.textContent = this.value;
-        scheduleHotUpdate();
-      });
-    }
-    if (el.noiseKernelRange) {
-      el.noiseKernelRange.addEventListener('input', function() {
-        if (el.noiseKernelValue) el.noiseKernelValue.textContent = this.value;
-        scheduleHotUpdate();
-      });
-    }
+    // Slider live value displays + hot-update
+    bindSlider(el.smoothingRange, el.smoothingValue);
+    bindSlider(el.deadzoneRange, el.deadzoneValue);
+    bindSlider(el.motionThresholdRange, el.motionThresholdValue);
+    bindSlider(el.bgLearningRateRange, el.bgLearningRateValue);
+    bindSlider(el.noiseKernelRange, el.noiseKernelValue);
+    bindSlider(el.blurSizeRange, el.blurSizeValue);
+    bindSlider(el.dilateSizeRange, el.dilateSizeValue);
+    bindSlider(el.varThresholdRange, el.varThresholdValue);
 
-    // Number inputs also trigger hot-update
+    // Number inputs trigger hot-update
     if (el.centerDeg)       el.centerDeg.addEventListener('change', function() { scheduleHotUpdate(); });
     if (el.rangeDeg)        el.rangeDeg.addEventListener('change', function() { scheduleHotUpdate(); });
     if (el.minContourArea)  el.minContourArea.addEventListener('change', function() { scheduleHotUpdate(); });
@@ -116,24 +98,22 @@
 
     // Buttons
     if (el.saveConfigBtn)    el.saveConfigBtn.addEventListener('click', saveConfiguration);
-    if (el.startTrackingBtn) el.startTrackingBtn.addEventListener('click', startOpenCV);
-    if (el.stopTrackingBtn)  el.stopTrackingBtn.addEventListener('click', stopOpenCV);
     if (el.testSweepBtn)     el.testSweepBtn.addEventListener('click', testSweep);
     if (el.emergencyStopBtn) el.emergencyStopBtn.addEventListener('click', emergencyStop);
 
-    // Webcam dropdown — show stream on selection
+    // Webcam dropdown
     if (el.webcamSelect) el.webcamSelect.addEventListener('change', onWebcamChange);
 
-    // Pan servo dropdown — update calibration bounds display
+    // Pan servo dropdown
     if (el.panServoSelect) el.panServoSelect.addEventListener('change', onServoChange);
 
-    // OpenCV toggle — controls webcam + opencv params
-    if (el.ocvEnabled) el.ocvEnabled.addEventListener('change', updateFormState);
+    // OpenCV toggle — directly starts/stops the Python process
+    if (el.ocvEnabled) el.ocvEnabled.addEventListener('change', onOpenCVToggle);
 
-    // Head Tracking toggle — controls servo params, requires OpenCV
+    // Head Tracking toggle — enables/disables servo mapping
     if (el.htEnabled) el.htEnabled.addEventListener('change', onHeadTrackingToggle);
 
-    // Page unload — stop tracking and clean up timers
+    // Page unload
     function onPageLeave() {
       stopPolling();
       if (hotUpdateTimer) { clearTimeout(hotUpdateTimer); hotUpdateTimer = null; }
@@ -146,6 +126,15 @@
     }
     window.addEventListener('pagehide', onPageLeave);
     window.addEventListener('beforeunload', onPageLeave);
+  }
+
+  function bindSlider(range, badge) {
+    if (range) {
+      range.addEventListener('input', function() {
+        if (badge) badge.textContent = this.value;
+        scheduleHotUpdate();
+      });
+    }
   }
 
   function readCharacterFromNav() {
@@ -176,18 +165,19 @@
           populateServoDropdown(availableServos);
           populateWebcamDropdown(availableWebcams);
           populateForm(data.config);
-          updateFormState();
 
-          // If OpenCV was already active, resume polling
+          // If OpenCV was already active, resume
           if (data.trackingActive) {
             isOpenCVActive = true;
+            if (el.ocvEnabled) el.ocvEnabled.checked = true;
             updateOpenCVUI(true);
             startPolling();
-            // Check if head tracking was also enabled
             if (data.headTrackingEnabled) {
               isHeadTrackingOn = true;
+              if (el.htEnabled) el.htEnabled.checked = true;
             }
           }
+          updateFormState();
           updateHeadTrackingStatusDisplay();
         } else {
           showToast('Error loading config: ' + (data.error || 'Unknown'), 'error');
@@ -217,7 +207,6 @@
       el.panServoSelect.appendChild(opt);
     });
 
-    // Show bounds for initially selected servo
     onServoChange();
   }
 
@@ -233,7 +222,6 @@
       el.webcamSelect.appendChild(opt);
     });
 
-    // Show stream if webcam already selected
     if (currentConfig.webcamPartId) {
       showWebcamStream(currentConfig.webcamPartId);
     }
@@ -245,66 +233,165 @@
     if (config.panServoId && el.panServoSelect) el.panServoSelect.value = config.panServoId;
     if (config.webcamPartId && el.webcamSelect) el.webcamSelect.value = config.webcamPartId;
 
-    if (el.smoothingRange)       { el.smoothingRange.value = config.smoothing || 0.3; }
-    if (el.smoothingValue)       el.smoothingValue.textContent = config.smoothing || 0.3;
-    if (el.deadzoneRange)        { el.deadzoneRange.value = config.deadzone || 5; }
-    if (el.deadzoneValue)        el.deadzoneValue.textContent = config.deadzone || 5;
-    if (el.centerDeg)            el.centerDeg.value = config.centerDeg != null ? config.centerDeg : 0;
-    if (el.rangeDeg)             el.rangeDeg.value = config.rangeDeg || 60;
-    if (el.invertPan)            el.invertPan.checked = config.invertPan || false;
+    setSlider(el.smoothingRange, el.smoothingValue, config.smoothing, 0.25);
+    setSlider(el.deadzoneRange, el.deadzoneValue, config.deadzone, 5);
+    setSlider(el.motionThresholdRange, el.motionThresholdValue, config.motionThreshold, 25);
+    setSlider(el.bgLearningRateRange, el.bgLearningRateValue, config.backgroundLearningRate, 0.005);
+    setSlider(el.noiseKernelRange, el.noiseKernelValue, config.noiseReductionKernelSize, 5);
+    setSlider(el.blurSizeRange, el.blurSizeValue, config.blurSize, 5);
+    setSlider(el.dilateSizeRange, el.dilateSizeValue, config.dilateSize, 9);
+    setSlider(el.varThresholdRange, el.varThresholdValue, config.varThreshold, 25);
 
-    if (el.motionThresholdRange) { el.motionThresholdRange.value = config.motionThreshold || 30; }
-    if (el.motionThresholdValue) el.motionThresholdValue.textContent = config.motionThreshold || 30;
-    if (el.minContourArea)       el.minContourArea.value = config.minContourArea || 300;
-    if (el.maxContourArea)       el.maxContourArea.value = config.maxContourArea || 30000;
-    if (el.bgLearningRateRange)  { el.bgLearningRateRange.value = config.backgroundLearningRate || 0.02; }
-    if (el.bgLearningRateValue)  el.bgLearningRateValue.textContent = config.backgroundLearningRate || 0.02;
-    if (el.noiseKernelRange)     { el.noiseKernelRange.value = config.noiseReductionKernelSize || 3; }
-    if (el.noiseKernelValue)     el.noiseKernelValue.textContent = config.noiseReductionKernelSize || 3;
+    if (el.centerDeg) el.centerDeg.value = config.centerDeg != null ? config.centerDeg : 0;
+    if (el.rangeDeg)  el.rangeDeg.value = config.rangeDeg || 60;
+    if (el.invertPan) el.invertPan.checked = config.invertPan || false;
+  }
+
+  function setSlider(range, badge, val, fallback) {
+    var v = val != null ? val : fallback;
+    if (range) range.value = v;
+    if (badge) badge.textContent = v;
   }
 
   function updateFormState() {
     var ocvOn = el.ocvEnabled ? el.ocvEnabled.checked : false;
     var htOn = el.htEnabled ? el.htEnabled.checked : false;
 
-    // If OpenCV is off, force head tracking off
+    // Head tracking requires OpenCV
     if (!ocvOn && htOn) {
       if (el.htEnabled) el.htEnabled.checked = false;
       htOn = false;
-      // If head tracking was active on server, disable it
-      if (isHeadTrackingOn) {
-        disableHeadTrackingOnServer();
-      }
+      if (isHeadTrackingOn) disableHeadTrackingOnServer();
     }
 
-    // Head tracking toggle is disabled when OpenCV is off
-    if (el.htEnabled) el.htEnabled.disabled = !ocvOn;
-    if (el.htDisabledHint) el.htDisabledHint.style.display = ocvOn ? 'none' : 'inline';
+    if (el.htEnabled) el.htEnabled.disabled = !isOpenCVActive;
+    if (el.htDisabledHint) el.htDisabledHint.style.display = isOpenCVActive ? 'none' : 'inline';
 
-    // OpenCV-related inputs: webcam, opencv params
+    // OpenCV inputs
     var ocvInputs = [
       el.webcamSelect, el.motionThresholdRange, el.minContourArea,
-      el.maxContourArea, el.bgLearningRateRange, el.noiseKernelRange
+      el.maxContourArea, el.bgLearningRateRange, el.noiseKernelRange,
+      el.blurSizeRange, el.dilateSizeRange, el.varThresholdRange
     ];
     ocvInputs.forEach(function(inp) { if (inp) inp.disabled = !ocvOn; });
 
-    // Servo-related inputs: pan servo, tracking tuning
+    // Servo inputs
     var servoInputs = [
       el.panServoSelect, el.smoothingRange, el.deadzoneRange,
       el.centerDeg, el.rangeDeg, el.invertPan
     ];
     servoInputs.forEach(function(inp) { if (inp) inp.disabled = !htOn; });
 
-    // Start OpenCV: requires OpenCV enabled + webcam selected
-    var hasWebcam = el.webcamSelect && el.webcamSelect.value;
-    if (el.startTrackingBtn) el.startTrackingBtn.disabled = !ocvOn || !hasWebcam || isOpenCVActive;
-    if (el.stopTrackingBtn)  el.stopTrackingBtn.disabled = !isOpenCVActive;
-
-    // Test sweep: requires head tracking enabled + servo selected
     var hasServo = el.panServoSelect && el.panServoSelect.value;
     if (el.testSweepBtn) el.testSweepBtn.disabled = !htOn || !hasServo;
 
     updateHeadTrackingStatusDisplay();
+  }
+
+  // ─── OpenCV Toggle — start/stop ────────────────────────────────────
+
+  function onOpenCVToggle() {
+    var ocvOn = el.ocvEnabled ? el.ocvEnabled.checked : false;
+    if (ocvOn) {
+      startOpenCV();
+    } else {
+      stopOpenCV();
+    }
+  }
+
+  function startOpenCV() {
+    if (!currentCharacterId || isOpenCVActive) { updateFormState(); return; }
+
+    var webcamId = el.webcamSelect ? el.webcamSelect.value : '';
+    if (!webcamId) {
+      showToast('Please select a webcam first', 'error');
+      if (el.ocvEnabled) el.ocvEnabled.checked = false;
+      updateFormState();
+      return;
+    }
+
+    // Save config so the server has current params
+    var config = buildConfigFromForm();
+    config.opencvEnabled = true;
+
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(saveData) {
+      if (!saveData.success) throw new Error('Save failed: ' + (saveData.error || 'Unknown'));
+      currentConfig = config;
+      return fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        isOpenCVActive = true;
+        updateOpenCVUI(true);
+        startPolling();
+        showToast('OpenCV started', 'success');
+
+        // Auto-enable head tracking if toggle is on and servo selected
+        var htOn = el.htEnabled ? el.htEnabled.checked : false;
+        var hasServo = el.panServoSelect && el.panServoSelect.value;
+        if (htOn && hasServo) enableHeadTrackingOnServer();
+      } else {
+        showToast('Start failed: ' + (data.error || 'Unknown'), 'error');
+        if (el.ocvEnabled) el.ocvEnabled.checked = false;
+      }
+      updateFormState();
+    })
+    .catch(function(err) {
+      console.error('Start OpenCV error:', err);
+      showToast('Failed to start: ' + err.message, 'error');
+      if (el.ocvEnabled) el.ocvEnabled.checked = false;
+      updateFormState();
+    });
+  }
+
+  function stopOpenCV() {
+    if (!currentCharacterId) return;
+
+    if (isHeadTrackingOn) disableHeadTrackingOnServer();
+
+    stopPolling();
+    isOpenCVActive = false;
+    isHeadTrackingOn = false;
+    updateOpenCVUI(false);
+    clearOverlay();
+    updateStatusDisplay(null);
+    updateFormState();
+
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/stop', {
+      method: 'POST'
+    }).catch(function() {});
+
+    showToast('OpenCV stopped', 'success');
+  }
+
+  function emergencyStop() {
+    if (el.ocvEnabled) el.ocvEnabled.checked = false;
+    if (el.htEnabled) el.htEnabled.checked = false;
+    stopOpenCV();
+    showToast('Emergency stop activated', 'warning');
+    if (el.emergencyStopBtn) {
+      el.emergencyStopBtn.classList.add('btn-danger');
+      el.emergencyStopBtn.classList.remove('btn-outline-danger');
+      setTimeout(function() {
+        el.emergencyStopBtn.classList.remove('btn-danger');
+        el.emergencyStopBtn.classList.add('btn-outline-danger');
+      }, 2000);
+    }
+  }
+
+  function updateOpenCVUI(active) {
+    if (el.trackingDot) el.trackingDot.className = 'status-dot ' + (active ? 'active' : 'inactive');
+    if (el.trackingStatusText) el.trackingStatusText.textContent = active ? 'OpenCV Running' : 'Stopped';
   }
 
   // ─── Servo Selection ────────────────────────────────────────────────
@@ -314,7 +401,6 @@
     selectedServoData = null;
 
     if (servoId) {
-      // Find servo data from loaded list
       for (var i = 0; i < availableServos.length; i++) {
         if (availableServos[i].id === servoId) {
           selectedServoData = availableServos[i];
@@ -323,7 +409,6 @@
       }
     }
 
-    // Show calibration bounds info
     if (el.servoBoundsInfo) {
       if (selectedServoData && selectedServoData.calibrated) {
         var minA = selectedServoData.minAngle;
@@ -334,31 +419,25 @@
           minA + '\u00B0 \u2013 ' + maxA + '\u00B0 (center ' + midA + '\u00B0, range ' + rangeA + '\u00B0)';
         el.servoBoundsInfo.style.display = 'block';
 
-        // Auto-set center and range from calibration if they are still defaults
         if (el.centerDeg && el.rangeDeg) {
           var curCenter = parseInt(el.centerDeg.value, 10);
           var curRange = parseInt(el.rangeDeg.value, 10);
-          // Only auto-fill if user hasn't customized (still at defaults 0/60)
           if ((curCenter === 0 && curRange === 60) || !currentConfig.panServoId) {
             el.centerDeg.value = midA;
             el.rangeDeg.value = Math.floor(rangeA / 2);
-            // Set min/max constraints on center input
             el.centerDeg.min = minA;
             el.centerDeg.max = maxA;
           }
         }
       } else if (selectedServoData) {
-        el.servoBoundsInfo.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Not calibrated \u2014 using default limits';
+        el.servoBoundsInfo.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Not calibrated';
         el.servoBoundsInfo.style.display = 'block';
       } else {
         el.servoBoundsInfo.style.display = 'none';
       }
     }
 
-    // If head tracking is live, hot-update the servo mapping
-    if (isHeadTrackingOn && isOpenCVActive) {
-      scheduleHotUpdate();
-    }
+    if (isHeadTrackingOn && isOpenCVActive) scheduleHotUpdate();
     updateFormState();
   }
 
@@ -368,21 +447,19 @@
     var htOn = el.htEnabled ? el.htEnabled.checked : false;
 
     if (htOn) {
-      // Enable head tracking — requires OpenCV active + servo
-      var hasServo = el.panServoSelect && el.panServoSelect.value;
       if (!isOpenCVActive) {
-        showToast('Start OpenCV first before enabling head tracking', 'error');
+        showToast('Start OpenCV first', 'error');
         if (el.htEnabled) el.htEnabled.checked = false;
         return;
       }
+      var hasServo = el.panServoSelect && el.panServoSelect.value;
       if (!hasServo) {
-        showToast('Select a pan servo to enable head tracking', 'error');
+        showToast('Select a pan servo first', 'error');
         if (el.htEnabled) el.htEnabled.checked = false;
         return;
       }
       enableHeadTrackingOnServer();
     } else {
-      // Disable head tracking
       disableHeadTrackingOnServer();
     }
     updateFormState();
@@ -390,29 +467,26 @@
 
   function enableHeadTrackingOnServer() {
     if (!currentCharacterId || !isOpenCVActive) return;
-
     var panServoId = el.panServoSelect ? el.panServoSelect.value : '';
     if (!panServoId) return;
-
-    var params = {
-      panServoId: panServoId,
-      centerDeg:  parseInt(el.centerDeg ? el.centerDeg.value : 0, 10),
-      rangeDeg:   parseInt(el.rangeDeg ? el.rangeDeg.value : 60, 10),
-      invertPan:  el.invertPan ? el.invertPan.checked : false,
-      smoothing:  parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.3),
-      deadzone:   parseInt(el.deadzoneRange ? el.deadzoneRange.value : 5, 10)
-    };
 
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/enable-servo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
+      body: JSON.stringify({
+        panServoId: panServoId,
+        centerDeg:  parseInt(el.centerDeg ? el.centerDeg.value : 0, 10),
+        rangeDeg:   parseInt(el.rangeDeg ? el.rangeDeg.value : 60, 10),
+        invertPan:  el.invertPan ? el.invertPan.checked : false,
+        smoothing:  parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.25),
+        deadzone:   parseInt(el.deadzoneRange ? el.deadzoneRange.value : 5, 10)
+      })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
         isHeadTrackingOn = true;
-        showToast('Head tracking servo enabled', 'success');
+        showToast('Head tracking enabled', 'success');
       } else {
         showToast('Failed: ' + (data.error || 'Unknown'), 'error');
         if (el.htEnabled) el.htEnabled.checked = false;
@@ -421,17 +495,14 @@
     })
     .catch(function(err) {
       console.error('Enable head tracking error:', err);
-      showToast('Failed to enable head tracking', 'error');
       if (el.htEnabled) el.htEnabled.checked = false;
     });
   }
 
   function disableHeadTrackingOnServer() {
     if (!currentCharacterId) return;
-
     isHeadTrackingOn = false;
     updateHeadTrackingStatusDisplay();
-
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/disable-servo', {
       method: 'POST'
     }).catch(function() {});
@@ -463,12 +534,9 @@
 
   function showWebcamStream(webcamId) {
     if (!el.webcamStream || !el.webcamPlaceholder) return;
-
-    // Show stream immediately — MJPEG multipart streams may not fire onload
     el.webcamPlaceholder.style.display = 'none';
     el.webcamStream.style.display = 'block';
 
-    // Error handler — fires if server returns non-image (e.g. 404/503 JSON)
     el.webcamStream.onerror = function() {
       el.webcamStream.style.display = 'none';
       if (el.webcamPlaceholder) {
@@ -480,13 +548,7 @@
           '</div>';
       }
     };
-
-    // Size overlay canvas when first frame arrives
-    el.webcamStream.onload = function() {
-      sizeOverlayCanvas();
-    };
-
-    // Reuse existing calibration webcam proxy
+    el.webcamStream.onload = function() { sizeOverlayCanvas(); };
     el.webcamStream.src = '/setup/calibration/api/webcam/parts/' + webcamId + '/stream';
   }
 
@@ -518,7 +580,6 @@
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Resize if needed
     if (el.webcamStream && el.webcamStream.clientWidth > 0) {
       if (canvas.width !== el.webcamStream.clientWidth || canvas.height !== el.webcamStream.clientHeight) {
         canvas.width = el.webcamStream.clientWidth;
@@ -532,19 +593,19 @@
 
     if (!status || !status.active) return;
 
-    // Draw deadzone indicator (vertical band in center)
+    // Deadzone band
     var dead = parseInt(el.deadzoneRange ? el.deadzoneRange.value : 5, 10);
     if (dead > 0) {
-      var dzLeft = ((50 - dead) / 100) * w;
-      var dzRight = ((50 + dead) / 100) * w;
+      var dzL = ((50 - dead) / 100) * w;
+      var dzR = ((50 + dead) / 100) * w;
       ctx.fillStyle = 'rgba(100, 100, 255, 0.08)';
-      ctx.fillRect(dzLeft, 0, dzRight - dzLeft, h);
+      ctx.fillRect(dzL, 0, dzR - dzL, h);
       ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
       ctx.lineWidth = 1;
       ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.moveTo(dzLeft, 0); ctx.lineTo(dzLeft, h);
-      ctx.moveTo(dzRight, 0); ctx.lineTo(dzRight, h);
+      ctx.moveTo(dzL, 0); ctx.lineTo(dzL, h);
+      ctx.moveTo(dzR, 0); ctx.lineTo(dzR, h);
       ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -553,65 +614,52 @@
     var x = (pos[0] / 100) * w;
     var y = (pos[1] / 100) * h;
 
-    // Draw bounding box if available
+    // Bounding box
     if (status.bbox) {
-      var bx = (status.bbox.x / 100) * w;
-      var by = (status.bbox.y / 100) * h;
-      var bw = (status.bbox.w / 100) * w;
-      var bh = (status.bbox.h / 100) * h;
       ctx.strokeStyle = 'rgba(0, 200, 255, 0.6)';
       ctx.lineWidth = 2;
-      ctx.strokeRect(bx, by, bw, bh);
+      ctx.strokeRect(
+        (status.bbox.x / 100) * w,
+        (status.bbox.y / 100) * h,
+        (status.bbox.w / 100) * w,
+        (status.bbox.h / 100) * h
+      );
     }
 
     if (status.targetDetected) {
-      // Green crosshair when target detected
       ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
       ctx.lineWidth = 2;
 
-      // Crosshair
-      var crossSize = 20;
+      var cs = 20;
       ctx.beginPath();
-      ctx.moveTo(x - crossSize, y);
-      ctx.lineTo(x + crossSize, y);
-      ctx.moveTo(x, y - crossSize);
-      ctx.lineTo(x, y + crossSize);
+      ctx.moveTo(x - cs, y); ctx.lineTo(x + cs, y);
+      ctx.moveTo(x, y - cs); ctx.lineTo(x, y + cs);
       ctx.stroke();
 
-      // Circle around target
       var radius = Math.max(15, (status.targetSize || 0) * 0.3);
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Position text
       ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
       ctx.font = '12px monospace';
-      ctx.fillText(Math.round(pos[0]) + '%, ' + Math.round(pos[1]) + '%', x + crossSize + 4, y - 4);
+      ctx.fillText(Math.round(pos[0]) + '%, ' + Math.round(pos[1]) + '%', x + cs + 4, y - 4);
 
-      // Head tracking indicator
       if (isHeadTrackingOn) {
         ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
         ctx.font = '10px monospace';
-        ctx.fillText('SERVO', x + crossSize + 4, y + 12);
+        ctx.fillText('SERVO', x + cs + 4, y + 12);
       }
     } else {
-      // Red "no target" indicator
       ctx.strokeStyle = 'rgba(255, 50, 50, 0.6)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
-
-      // Center crosshair (dimmed)
-      var cx = w / 2;
-      var cy = h / 2;
+      var cx = w / 2, cy = h / 2;
       ctx.beginPath();
-      ctx.moveTo(cx - 15, cy);
-      ctx.lineTo(cx + 15, cy);
-      ctx.moveTo(cx, cy - 15);
-      ctx.lineTo(cx, cy + 15);
+      ctx.moveTo(cx - 15, cy); ctx.lineTo(cx + 15, cy);
+      ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 15);
       ctx.stroke();
       ctx.setLineDash([]);
-
       ctx.fillStyle = 'rgba(255, 50, 50, 0.7)';
       ctx.font = '11px monospace';
       ctx.fillText('No target', cx + 18, cy - 4);
@@ -622,126 +670,6 @@
     if (!el.trackingOverlay) return;
     var ctx = el.trackingOverlay.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, el.trackingOverlay.width, el.trackingOverlay.height);
-  }
-
-  // ─── Start / Stop OpenCV ───────────────────────────────────────────
-
-  function startOpenCV() {
-    if (!currentCharacterId || isOpenCVActive) return;
-
-    // Only require webcam for OpenCV
-    var webcamId = el.webcamSelect ? el.webcamSelect.value : '';
-    if (!webcamId) { showToast('Please select a webcam first', 'error'); return; }
-
-    if (el.startTrackingBtn) {
-      el.startTrackingBtn.disabled = true;
-      el.startTrackingBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Starting...';
-    }
-
-    // Save config first so the server has the right params
-    var config = buildConfigFromForm();
-    config.opencvEnabled = true;
-
-    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(saveData) {
-      if (!saveData.success) {
-        throw new Error('Save failed: ' + (saveData.error || 'Unknown'));
-      }
-      currentConfig = config;
-      // Start OpenCV motion tracking
-      return fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        isOpenCVActive = true;
-        updateOpenCVUI(true);
-        startPolling();
-        showToast('OpenCV motion detection started', 'success');
-
-        // If head tracking toggle is on and servo is selected, enable servo mapping
-        var htOn = el.htEnabled ? el.htEnabled.checked : false;
-        var hasServo = el.panServoSelect && el.panServoSelect.value;
-        if (htOn && hasServo) {
-          enableHeadTrackingOnServer();
-        }
-      } else {
-        showToast('Start failed: ' + (data.error || 'Unknown'), 'error');
-        if (el.startTrackingBtn) {
-          el.startTrackingBtn.disabled = false;
-          el.startTrackingBtn.innerHTML = '<i class="bi bi-play-fill"></i> Start OpenCV';
-        }
-      }
-    })
-    .catch(function(err) {
-      console.error('Start OpenCV error:', err);
-      showToast('Failed to start OpenCV: ' + err.message, 'error');
-      if (el.startTrackingBtn) {
-        el.startTrackingBtn.disabled = false;
-        el.startTrackingBtn.innerHTML = '<i class="bi bi-play-fill"></i> Start OpenCV';
-      }
-    });
-  }
-
-  function stopOpenCV() {
-    if (!currentCharacterId) return;
-
-    // Disable head tracking first
-    if (isHeadTrackingOn) {
-      disableHeadTrackingOnServer();
-    }
-
-    stopPolling();
-    isOpenCVActive = false;
-    isHeadTrackingOn = false;
-    updateOpenCVUI(false);
-    clearOverlay();
-    updateStatusDisplay(null);
-    updateFormState();
-
-    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/stop', {
-      method: 'POST'
-    }).catch(function() {});
-
-    showToast('OpenCV stopped', 'success');
-  }
-
-  function emergencyStop() {
-    stopOpenCV();
-    showToast('Emergency stop activated', 'warning');
-    if (el.emergencyStopBtn) {
-      el.emergencyStopBtn.classList.add('btn-danger');
-      el.emergencyStopBtn.classList.remove('btn-outline-danger');
-      setTimeout(function() {
-        el.emergencyStopBtn.classList.remove('btn-danger');
-        el.emergencyStopBtn.classList.add('btn-outline-danger');
-      }, 2000);
-    }
-  }
-
-  function updateOpenCVUI(active) {
-    if (el.startTrackingBtn) {
-      el.startTrackingBtn.disabled = active;
-      el.startTrackingBtn.innerHTML = '<i class="bi bi-play-fill"></i> Start OpenCV';
-    }
-    if (el.stopTrackingBtn) {
-      el.stopTrackingBtn.disabled = !active;
-    }
-    if (el.trackingDot) {
-      el.trackingDot.className = 'status-dot ' + (active ? 'active' : 'inactive');
-    }
-    if (el.trackingStatusText) {
-      el.trackingStatusText.textContent = active ? 'OpenCV Running' : 'Stopped';
-    }
-    updateFormState();
   }
 
   // ─── Status Polling ───────────────────────────────────────────────
@@ -782,8 +710,8 @@
     if (el.fpsDisplay) el.fpsDisplay.textContent = (data.fps || 0) + ' FPS';
 
     if (data.targetDetected) {
-      if (el.targetStatus)   el.targetStatus.textContent = 'Target detected';
-      if (el.trackingDot)    el.trackingDot.className = 'status-dot detecting';
+      if (el.targetStatus) el.targetStatus.textContent = 'Target detected';
+      if (el.trackingDot)  el.trackingDot.className = 'status-dot detecting';
       var pos = data.targetPosition || [50, 50];
       if (el.targetPosition) el.targetPosition.textContent = Math.round(pos[0]) + '%, ' + Math.round(pos[1]) + '%';
     } else {
@@ -792,7 +720,6 @@
       if (el.targetPosition) el.targetPosition.textContent = '--';
     }
 
-    // Update head tracking status from server response
     if (data.headTrackingEnabled !== undefined) {
       isHeadTrackingOn = data.headTrackingEnabled;
       updateHeadTrackingStatusDisplay();
@@ -807,23 +734,26 @@
     hotUpdateTimer = setTimeout(function() {
       hotUpdateTimer = null;
       sendHotUpdate();
-    }, 200);
+    }, 150);
   }
 
   function sendHotUpdate() {
     if (!currentCharacterId || !isOpenCVActive) return;
 
     var params = {
-      smoothing:                parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.3),
+      smoothing:                parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.25),
       deadzone:                 parseInt(el.deadzoneRange ? el.deadzoneRange.value : 5, 10),
       centerDeg:                parseInt(el.centerDeg ? el.centerDeg.value : 0, 10),
       rangeDeg:                 parseInt(el.rangeDeg ? el.rangeDeg.value : 60, 10),
       invertPan:                el.invertPan ? el.invertPan.checked : false,
-      motionThreshold:          parseInt(el.motionThresholdRange ? el.motionThresholdRange.value : 30, 10),
-      minContourArea:           parseInt(el.minContourArea ? el.minContourArea.value : 300, 10),
-      maxContourArea:           parseInt(el.maxContourArea ? el.maxContourArea.value : 30000, 10),
-      backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.02),
-      noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 3, 10)
+      motionThreshold:          parseInt(el.motionThresholdRange ? el.motionThresholdRange.value : 25, 10),
+      minContourArea:           parseInt(el.minContourArea ? el.minContourArea.value : 3000, 10),
+      maxContourArea:           parseInt(el.maxContourArea ? el.maxContourArea.value : 100000, 10),
+      backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.005),
+      noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 5, 10),
+      blurSize:                 parseInt(el.blurSizeRange ? el.blurSizeRange.value : 5, 10),
+      dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
+      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10)
     };
 
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/params', {
@@ -843,30 +773,32 @@
       enabled:                  el.htEnabled ? el.htEnabled.checked : false,
       panServoId:               el.panServoSelect ? (el.panServoSelect.value || null) : null,
       webcamPartId:             el.webcamSelect ? (el.webcamSelect.value || null) : null,
-      smoothing:                parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.3),
+      smoothing:                parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.25),
       deadzone:                 parseInt(el.deadzoneRange ? el.deadzoneRange.value : 5, 10),
       centerDeg:                parseInt(el.centerDeg ? el.centerDeg.value : 0, 10),
       rangeDeg:                 parseInt(el.rangeDeg ? el.rangeDeg.value : 60, 10),
       invertPan:                el.invertPan ? el.invertPan.checked : false,
-      motionThreshold:          parseInt(el.motionThresholdRange ? el.motionThresholdRange.value : 30, 10),
-      minContourArea:           parseInt(el.minContourArea ? el.minContourArea.value : 300, 10),
-      maxContourArea:           parseInt(el.maxContourArea ? el.maxContourArea.value : 30000, 10),
-      backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.02),
-      noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 3, 10)
+      motionThreshold:          parseInt(el.motionThresholdRange ? el.motionThresholdRange.value : 25, 10),
+      minContourArea:           parseInt(el.minContourArea ? el.minContourArea.value : 3000, 10),
+      maxContourArea:           parseInt(el.maxContourArea ? el.maxContourArea.value : 100000, 10),
+      backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.005),
+      noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 5, 10),
+      blurSize:                 parseInt(el.blurSizeRange ? el.blurSizeRange.value : 5, 10),
+      dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
+      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10)
     };
   }
 
   function saveConfiguration() {
     if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
-
     var config = buildConfigFromForm();
 
     if (config.enabled && !config.panServoId) {
-      showToast('Please select a pan servo when head tracking is enabled', 'error');
+      showToast('Select a pan servo when head tracking is enabled', 'error');
       return;
     }
     if (config.opencvEnabled && !config.webcamPartId) {
-      showToast('Please select a webcam when OpenCV is enabled', 'error');
+      showToast('Select a webcam when OpenCV is enabled', 'error');
       return;
     }
 
@@ -907,7 +839,6 @@
 
   function testSweep() {
     if (!currentCharacterId) return;
-
     if (el.testSweepBtn) {
       el.testSweepBtn.disabled = true;
       el.testSweepBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sweeping...';
@@ -923,7 +854,7 @@
         el.testSweepBtn.innerHTML = '<i class="bi bi-arrow-left-right"></i> Test Sweep';
       }
       if (data.success) {
-        showToast('Sweep completed (' + data.minAngle + '\u00B0\u2013' + data.maxAngle + '\u00B0)', 'success');
+        showToast('Sweep: ' + data.minAngle + '\u00B0\u2013' + data.maxAngle + '\u00B0', 'success');
       } else {
         showToast('Sweep failed: ' + (data.error || 'Unknown'), 'error');
       }
@@ -938,12 +869,10 @@
     });
   }
 
-  // ─── Toast Notifications ──────────────────────────────────────────
+  // ─── Toast ─────────────────────────────────────────────────────────
 
   function showToast(message, type) {
-    if (window.showToast) {
-      window.showToast(message, type);
-    }
+    if (window.showToast) window.showToast(message, type);
   }
 
   // ─── Bootstrap ────────────────────────────────────────────────────

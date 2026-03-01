@@ -23,13 +23,12 @@ describe('Head Animation API', () => {
     it('should include head animation UI elements', async () => {
       const res = await request(BASE_URL).get('/setup/head-animation').expect(200);
       expect(res.text).to.include('htEnabled');
+      expect(res.text).to.include('ocvEnabled');
       expect(res.text).to.include('panServoSelect');
       expect(res.text).to.include('webcamSelect');
       expect(res.text).to.include('smoothingRange');
       expect(res.text).to.include('deadzoneRange');
       expect(res.text).to.include('motionThresholdRange');
-      expect(res.text).to.include('startTrackingBtn');
-      expect(res.text).to.include('stopTrackingBtn');
       expect(res.text).to.include('emergencyStopBtn');
     });
 
@@ -115,6 +114,7 @@ describe('Head Animation API', () => {
 
     it('should save a valid head tracking configuration', async () => {
       const config = {
+        opencvEnabled: false,
         enabled: false,
         panServoId: null,
         webcamPartId: null,
@@ -257,6 +257,7 @@ describe('Head Animation API', () => {
       await request(BASE_URL)
         .post(`/setup/head-animation/api/head-tracking/${CHARACTER_ID}`)
         .send({
+          opencvEnabled: false,
           enabled: false,
           panServoId: calibratedServo.id,
           webcamPartId: null,

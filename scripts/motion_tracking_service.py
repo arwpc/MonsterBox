@@ -3,13 +3,16 @@
 Motion Tracking Service for MonsterBox
 Provides real-time motion detection and tracking using OpenCV
 Outputs JSON status updates for integration with Node.js controller
+Reads stdin for live config updates from the parent Node process.
 """
 
 import cv2
 import numpy as np
 import json
 import sys
+import os
 import time
+import select
 import signal
 import argparse
 import logging
@@ -39,7 +42,14 @@ class MotionTracker:
         self.target_size = 0.0
         self.last_detection_time = None
 
-        # Performance tracking
+        # Temporal smoothing — exponential moving average of target position
+        self.smoothed_x = 50.0
+        self.smoothed_y = 50.0
+        self.position_smoothing = config.get('tracking_smoothing', 0.3)
+
+        # Target persistence — keep reporting last position briefly after lost
+        self.target_lost_time = None
+        self.persistence_sec = 0.5  # report last pos for 0.5s after losing target
 
         # MJPEG stream state
         self.stream_url = config.get('stream_url') if isinstance(config, dict) else None
@@ -52,14 +62,21 @@ class MotionTracker:
 
         self.frame_times = []
 
+        # Stdin buffer for config updates
+        self._stdin_buf = ''
+
     def initialize(self) -> bool:
         """Initialize camera and OpenCV components"""
         try:
-            # Initialize background subtractor
+            # Initialize background subtractor with configurable params
+            var_threshold = self.config.get('var_threshold', 16)
+            history = self.config.get('history', 500)
+            detect_shadows = self.config.get('detect_shadows', True)
+
             self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-                detectShadows=True,
-                varThreshold=16,
-                history=500
+                detectShadows=detect_shadows,
+                varThreshold=var_threshold,
+                history=history
             )
 
             # If a stream URL is provided, prefer MJPEG HTTP stream
@@ -101,7 +118,6 @@ class MotionTracker:
                     pass
                 self.stream_conn = None
             req = urllib.request.Request(self.stream_url, headers={'User-Agent': 'MonsterBox/4.0'})
-            # Reduced timeout to 3 seconds to prevent long hangs
             old_timeout = socket.getdefaulttimeout(); socket.setdefaulttimeout(3)
             try:
                 self.stream_conn = urllib.request.urlopen(req)
@@ -111,7 +127,6 @@ class MotionTracker:
             self.last_stream_connect = time.time()
             return True
         except Exception as e:
-            # Only log connection errors occasionally to reduce noise
             if time.time() - getattr(self, '_last_error_log', 0) > 30:
                 logger.warning(f"Stream connect failed: {e}")
                 self._last_error_log = time.time()
@@ -120,18 +135,15 @@ class MotionTracker:
 
     def _read_mjpeg_frame(self) -> Optional[np.ndarray]:
         if not self.stream_conn:
-            # Exponential backoff for reconnection attempts
             backoff_time = getattr(self, '_reconnect_backoff', 1.0)
             if time.time() - self.last_stream_connect > backoff_time:
                 if self._connect_stream():
-                    self._reconnect_backoff = 1.0  # Reset backoff on success
+                    self._reconnect_backoff = 1.0
                 else:
-                    # Increase backoff time, max 30 seconds
                     self._reconnect_backoff = min(backoff_time * 2, 30.0)
             return None
         try:
-            # Read larger chunks for better performance and lower latency
-            chunk = self.stream_conn.read(32768)  # Increased from 4096 to 32KB
+            chunk = self.stream_conn.read(32768)
             if not chunk:
                 try:
                     self.stream_conn.close()
@@ -141,7 +153,6 @@ class MotionTracker:
                 return None
             self.frame_buffer += chunk
 
-            # Find the most recent complete frame to reduce latency
             last_frame = None
             while True:
                 soi = self.frame_buffer.find(b'\xff\xd8')
@@ -150,22 +161,18 @@ class MotionTracker:
                 eoi = self.frame_buffer.find(b'\xff\xd9', soi+2)
                 if eoi == -1:
                     break
-
-                # Extract frame
                 jpeg = self.frame_buffer[soi:eoi+2]
                 self.frame_buffer = self.frame_buffer[eoi+2:]
                 last_frame = jpeg
 
-            # Aggressively trim buffer to prevent buildup
-            if len(self.frame_buffer) > 512*1024:  # Reduced from 1MB to 512KB
-                self.frame_buffer = self.frame_buffer[-32768:]  # Keep only last 32KB
+            if len(self.frame_buffer) > 512*1024:
+                self.frame_buffer = self.frame_buffer[-32768:]
 
             if last_frame:
                 arr = np.frombuffer(last_frame, dtype=np.uint8)
                 return cv2.imdecode(arr, cv2.IMREAD_COLOR)
             return None
         except Exception as e:
-            # Only log read errors occasionally to reduce noise
             if time.time() - getattr(self, '_last_read_error_log', 0) > 30:
                 logger.warning(f"Stream read error: {e}")
                 self._last_read_error_log = time.time()
@@ -187,10 +194,29 @@ class MotionTracker:
             return None
         return frame
 
+    def _check_stdin(self):
+        """Non-blocking stdin read for config updates from Node parent."""
+        try:
+            while select.select([sys.stdin], [], [], 0)[0]:
+                line = sys.stdin.readline()
+                if not line:
+                    return  # EOF
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    msg = json.loads(line)
+                    if msg.get('type') == 'update_config':
+                        new_cfg = msg.get('config', {})
+                        self.update_config(new_cfg)
+                except json.JSONDecodeError:
+                    pass
+        except Exception:
+            pass  # stdin not selectable on some platforms
+
     def process_frame(self) -> Optional[Dict[str, Any]]:
         """Process a single frame and return tracking status"""
         try:
-            # Read frame from MJPEG stream or camera
             frame = self._read_frame()
             if frame is None:
                 return None
@@ -201,16 +227,33 @@ class MotionTracker:
             # Convert to grayscale for processing
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+            # Gaussian blur to reduce noise before background subtraction
+            blur_size = self.config.get('blur_size', 5)
+            if blur_size > 1:
+                gray = cv2.GaussianBlur(gray, (blur_size, blur_size), 0)
+
             # Apply background subtraction
             fg_mask = self.bg_subtractor.apply(
                 gray,
                 learningRate=self.config['background_learning_rate']
             )
 
-            # Noise reduction
+            # Threshold to remove shadows (MOG2 marks shadows as 127)
+            _, fg_mask = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)
+
+            # Noise reduction — open removes small noise, close fills gaps in large objects
             kernel_size = self.config['noise_kernel_size']
+            if kernel_size < 1:
+                kernel_size = 3
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
             fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
+
+            # Dilate + close to merge nearby fragments into one big blob
+            dilate_size = self.config.get('dilate_size', 7)
+            if dilate_size > 1:
+                dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size, dilate_size))
+                fg_mask = cv2.dilate(fg_mask, dilate_kernel, iterations=2)
+                fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, dilate_kernel)
 
             # Find contours
             contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -220,20 +263,19 @@ class MotionTracker:
             max_area = self.config['max_contour_area']
             valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
 
-            # Process largest contour
+            # Process largest contour only — track the biggest moving object
             bbox = None
+            raw_x, raw_y = None, None
             if valid_contours:
                 largest_contour = max(valid_contours, key=cv2.contourArea)
                 x, y, w, h = cv2.boundingRect(largest_contour)
 
-                # Calculate center and normalized position
                 center_x = x + w // 2
                 center_y = y + h // 2
 
-                norm_x = (center_x / frame.shape[1]) * 100
-                norm_y = (center_y / frame.shape[0]) * 100
+                raw_x = (center_x / frame.shape[1]) * 100
+                raw_y = (center_y / frame.shape[0]) * 100
 
-                # Calculate normalized bounding box (percentages)
                 bbox = {
                     'x': (x / frame.shape[1]) * 100,
                     'y': (y / frame.shape[0]) * 100,
@@ -241,16 +283,30 @@ class MotionTracker:
                     'h': (h / frame.shape[0]) * 100
                 }
 
-                # Update tracking state
+                # Temporal smoothing — EMA toward new position
+                alpha = self.position_smoothing
+                self.smoothed_x = self.smoothed_x + (raw_x - self.smoothed_x) * alpha
+                self.smoothed_y = self.smoothed_y + (raw_y - self.smoothed_y) * alpha
+
                 self.target_detected = True
-                self.target_position = (norm_x, norm_y)
+                self.target_position = (self.smoothed_x, self.smoothed_y)
                 self.target_size = (cv2.contourArea(largest_contour) / (frame.shape[0] * frame.shape[1])) * 100
                 self.last_detection_time = time.time()
                 self.last_bbox = bbox
+                self.target_lost_time = None
 
             else:
-                self.target_detected = False
-                self.last_bbox = None
+                # Target lost — persist briefly
+                now = time.time()
+                if self.target_lost_time is None:
+                    self.target_lost_time = now
+
+                if self.last_detection_time and (now - self.last_detection_time) < self.persistence_sec:
+                    # Keep reporting last known position during persistence window
+                    self.target_detected = True
+                else:
+                    self.target_detected = False
+                    self.last_bbox = None
 
             # Calculate FPS
             frame_time = time.time() - frame_start
@@ -264,7 +320,6 @@ class MotionTracker:
                 self.frame_count = 0
                 self.last_fps_time = current_time
 
-            # Return status with bbox
             status = {
                 'initialized': True,
                 'active': True,
@@ -278,7 +333,6 @@ class MotionTracker:
                 'timestamp': time.time()
             }
 
-            # Add bbox if target detected
             if self.last_bbox:
                 status['bbox'] = self.last_bbox
 
@@ -289,9 +343,34 @@ class MotionTracker:
             return None
 
     def update_config(self, new_config: Dict[str, Any]):
-        """Update tracking configuration"""
-        self.config.update(new_config)
-        logger.info(f"Configuration updated: {new_config}")
+        """Update tracking configuration from hot-update message."""
+        # Map Node param names to Python config keys
+        key_map = {
+            'motionThreshold': 'motion_threshold',
+            'minContourArea': 'min_contour_area',
+            'maxContourArea': 'max_contour_area',
+            'trackingSmoothing': 'tracking_smoothing',
+            'trackingDeadzone': 'tracking_deadzone',
+            'backgroundLearningRate': 'background_learning_rate',
+            'noiseReductionKernelSize': 'noise_kernel_size',
+            'noiseKernelSize': 'noise_kernel_size',
+            'blurSize': 'blur_size',
+            'dilateSize': 'dilate_size',
+            'varThreshold': 'var_threshold',
+        }
+
+        mapped = {}
+        for k, v in new_config.items():
+            py_key = key_map.get(k, k)
+            mapped[py_key] = v
+
+        self.config.update(mapped)
+
+        # Update position smoothing factor if changed
+        if 'tracking_smoothing' in mapped:
+            self.position_smoothing = float(mapped['tracking_smoothing'])
+
+        logger.info(f"Config hot-updated: {list(mapped.keys())}")
 
     def run(self):
         """Main tracking loop"""
@@ -300,7 +379,7 @@ class MotionTracker:
 
         self.running = True
         last_output_time = 0
-        output_interval = 1.0 / 25.0  # ~25 FPS output for responsive tracking
+        output_interval = 1.0 / 25.0  # ~25 FPS output
 
         # Send initialization status
         init_status = {
@@ -314,15 +393,16 @@ class MotionTracker:
 
         try:
             while self.running:
+                # Check for config updates from Node parent (non-blocking)
+                self._check_stdin()
+
                 status = self.process_frame()
                 if status:
-                    # Throttle output to prevent overwhelming the Pi
                     current_time = time.time()
                     if current_time - last_output_time >= output_interval:
                         print(json.dumps(status), flush=True)
                         last_output_time = current_time
 
-                # Minimal delay for responsive tracking
                 time.sleep(0.01)
 
         except KeyboardInterrupt:
@@ -358,22 +438,24 @@ def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description='MonsterBox Motion Tracking Service')
     parser.add_argument('--device', default='/dev/video0', help='Camera device path')
-    parser.add_argument('--stream-url', help='MJPEG stream URL (e.g., http://localhost:8090/?action=stream)')
+    parser.add_argument('--stream-url', help='MJPEG stream URL')
     parser.add_argument('--motion-threshold', type=int, default=25, help='Motion detection threshold')
-    parser.add_argument('--min-contour-area', type=int, default=500, help='Minimum contour area')
-    parser.add_argument('--max-contour-area', type=int, default=50000, help='Maximum contour area')
-    parser.add_argument('--tracking-smoothing', type=float, default=0.3, help='Tracking smoothing factor')
-    parser.add_argument('--tracking-deadzone', type=float, default=5.0, help='Tracking deadzone percentage')
-    parser.add_argument('--background-learning-rate', type=float, default=0.01, help='Background learning rate')
-    parser.add_argument('--noise-kernel-size', type=int, default=3, help='Noise reduction kernel size')
+    parser.add_argument('--min-contour-area', type=int, default=3000, help='Minimum contour area (px)')
+    parser.add_argument('--max-contour-area', type=int, default=100000, help='Maximum contour area (px)')
+    parser.add_argument('--tracking-smoothing', type=float, default=0.25, help='Position smoothing (0=frozen, 1=instant)')
+    parser.add_argument('--tracking-deadzone', type=float, default=5.0, help='Tracking deadzone %%')
+    parser.add_argument('--background-learning-rate', type=float, default=0.005, help='Background learning rate')
+    parser.add_argument('--noise-kernel-size', type=int, default=5, help='Noise reduction kernel size')
+    parser.add_argument('--blur-size', type=int, default=5, help='Gaussian blur kernel size')
+    parser.add_argument('--dilate-size', type=int, default=9, help='Dilation kernel to merge fragments')
+    parser.add_argument('--var-threshold', type=int, default=25, help='MOG2 variance threshold')
+    parser.add_argument('--history', type=int, default=500, help='MOG2 history frames')
 
     args = parser.parse_args()
 
-    # Set up signal handlers
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Configuration
     config = {
         'device': args.device,
         'stream_url': args.stream_url,
@@ -383,10 +465,14 @@ def main():
         'tracking_smoothing': args.tracking_smoothing,
         'tracking_deadzone': args.tracking_deadzone,
         'background_learning_rate': args.background_learning_rate,
-        'noise_kernel_size': args.noise_kernel_size
+        'noise_kernel_size': args.noise_kernel_size,
+        'blur_size': args.blur_size,
+        'dilate_size': args.dilate_size,
+        'var_threshold': args.var_threshold,
+        'history': args.history,
+        'detect_shadows': True,
     }
 
-    # Create and run tracker
     tracker = MotionTracker(config)
 
     try:

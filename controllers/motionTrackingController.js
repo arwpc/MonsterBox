@@ -22,15 +22,18 @@ const headTrackingGuardrails = new Map(); // servoId -> { minAngle, maxAngle } -
 
 const MJPG_STREAM_URL = 'http://localhost:8090/?action=stream';
 
-// Default motion tracking configuration - optimized for speed
+// Default motion tracking configuration — tuned for large-body tracking
 const DEFAULT_CONFIG = {
-  motionThreshold: 30,
-  minContourArea: 300,
-  maxContourArea: 30000,
-  trackingSmoothing: 0.2,
-  trackingDeadzone: 3.0,
-  backgroundLearningRate: 0.02,
-  noiseReductionKernelSize: 3
+  motionThreshold: 25,
+  minContourArea: 3000,
+  maxContourArea: 100000,
+  trackingSmoothing: 0.25,
+  trackingDeadzone: 5.0,
+  backgroundLearningRate: 0.005,
+  noiseReductionKernelSize: 5,
+  blurSize: 5,
+  dilateSize: 9,
+  varThreshold: 25
 };
 
 // Resolve parts.json using selectedCharacter for correct character isolation
@@ -330,13 +333,16 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       scriptPath,
       '--device', devicePath,
       '--stream-url', MJPG_STREAM_URL,
-      '--motion-threshold', config.motionThreshold.toString(),
-      '--min-contour-area', config.minContourArea.toString(),
-      '--max-contour-area', config.maxContourArea.toString(),
-      '--tracking-smoothing', config.trackingSmoothing.toString(),
-      '--tracking-deadzone', config.trackingDeadzone.toString(),
-      '--background-learning-rate', config.backgroundLearningRate.toString(),
-      '--noise-kernel-size', config.noiseReductionKernelSize.toString()
+      '--motion-threshold', (config.motionThreshold || 25).toString(),
+      '--min-contour-area', (config.minContourArea || 3000).toString(),
+      '--max-contour-area', (config.maxContourArea || 100000).toString(),
+      '--tracking-smoothing', (config.trackingSmoothing || 0.25).toString(),
+      '--tracking-deadzone', (config.trackingDeadzone || 5.0).toString(),
+      '--background-learning-rate', (config.backgroundLearningRate || 0.005).toString(),
+      '--noise-kernel-size', (config.noiseReductionKernelSize || 5).toString(),
+      '--blur-size', (config.blurSize || 5).toString(),
+      '--dilate-size', (config.dilateSize || 9).toString(),
+      '--var-threshold', (config.varThreshold || 25).toString()
     ];
 
     const tracker = spawn('python3', args, {

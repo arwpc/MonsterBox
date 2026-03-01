@@ -223,7 +223,10 @@ router.post('/api/head-tracking/:charId/start', async (req, res) => {
       trackingSmoothing: config.smoothing,
       trackingDeadzone: config.deadzone,
       backgroundLearningRate: config.backgroundLearningRate,
-      noiseReductionKernelSize: config.noiseReductionKernelSize
+      noiseReductionKernelSize: config.noiseReductionKernelSize,
+      blurSize: config.blurSize,
+      dilateSize: config.dilateSize,
+      varThreshold: config.varThreshold
     };
 
     const startResult = await startTrackingForWebcam(webcamId, motionParams);
@@ -334,6 +337,9 @@ router.post('/api/head-tracking/:charId/params', async (req, res) => {
     if (params.minContourArea !== undefined) motionParams.minContourArea = params.minContourArea;
     if (params.maxContourArea !== undefined) motionParams.maxContourArea = params.maxContourArea;
     if (params.backgroundLearningRate !== undefined) motionParams.backgroundLearningRate = params.backgroundLearningRate;
+    if (params.blurSize !== undefined) motionParams.blurSize = params.blurSize;
+    if (params.dilateSize !== undefined) motionParams.dilateSize = params.dilateSize;
+    if (params.varThreshold !== undefined) motionParams.varThreshold = params.varThreshold;
     if (params.noiseReductionKernelSize !== undefined) motionParams.noiseReductionKernelSize = params.noiseReductionKernelSize;
 
     if (Object.keys(motionParams).length > 0) {

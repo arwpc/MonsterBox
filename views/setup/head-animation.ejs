@@ -18,6 +18,7 @@
   .fps-badge { font-variant-numeric: tabular-nums; min-width: 2.5em; }
   .servo-bounds-info { font-size: 0.8rem; color: var(--bs-info, #0dcaf0); margin-top: 0.25rem; }
   .toggle-disabled-hint { font-size: 0.75rem; color: var(--bs-secondary, #6c757d); margin-left: 0.5rem; }
+  .left-scroll { max-height: calc(100vh - 70px); overflow-y: auto; overflow-x: hidden; padding-right: 0.25rem; }
 </style>
 
 <div class="head-page">
@@ -30,8 +31,8 @@
 
   <% if (currentCharacter) { %>
   <div class="row g-2">
-    <!-- LEFT COLUMN: Configuration -->
-    <div class="col-lg-5">
+    <!-- LEFT COLUMN: Configuration (scrollable) -->
+    <div class="col-lg-5 left-scroll">
       <!-- OpenCV Detection Toggle & Webcam -->
       <div class="head-section opencv-section">
         <div class="form-check form-switch mb-2">
@@ -39,7 +40,7 @@
           <label class="form-check-label" for="ocvEnabled"><strong><i class="bi bi-eye-fill text-success"></i> OpenCV Detection</strong></label>
         </div>
 
-        <div class="mb-2">
+        <div class="mb-0">
           <label for="webcamSelect" class="compact-label"><i class="bi bi-webcam"></i> Webcam</label>
           <select class="form-select form-select-sm" id="webcamSelect">
             <option value="">Select a webcam...</option>
@@ -53,34 +54,55 @@
 
         <div class="mb-2">
           <label for="motionThresholdRange" class="compact-label">
-            Motion Threshold <span class="badge bg-secondary ms-1" id="motionThresholdValue">30</span>
+            Motion Threshold <span class="badge bg-secondary ms-1" id="motionThresholdValue">25</span>
           </label>
-          <input type="range" class="form-range" id="motionThresholdRange" min="5" max="100" step="1" value="30">
+          <input type="range" class="form-range" id="motionThresholdRange" min="5" max="100" step="1" value="25">
         </div>
 
         <div class="row g-2 mb-2">
           <div class="col-6">
             <label for="minContourArea" class="compact-label">Min Contour</label>
-            <input type="number" class="form-control form-control-sm" id="minContourArea" min="50" max="5000" value="300">
+            <input type="number" class="form-control form-control-sm" id="minContourArea" min="100" max="50000" step="100" value="3000">
           </div>
           <div class="col-6">
             <label for="maxContourArea" class="compact-label">Max Contour</label>
-            <input type="number" class="form-control form-control-sm" id="maxContourArea" min="1000" max="100000" value="30000">
+            <input type="number" class="form-control form-control-sm" id="maxContourArea" min="1000" max="300000" step="1000" value="100000">
           </div>
         </div>
 
         <div class="mb-2">
           <label for="bgLearningRateRange" class="compact-label">
-            BG Learning Rate <span class="badge bg-secondary ms-1" id="bgLearningRateValue">0.02</span>
+            BG Learning Rate <span class="badge bg-secondary ms-1" id="bgLearningRateValue">0.005</span>
           </label>
-          <input type="range" class="form-range" id="bgLearningRateRange" min="0.001" max="0.1" step="0.001" value="0.02">
+          <input type="range" class="form-range" id="bgLearningRateRange" min="0.001" max="0.1" step="0.001" value="0.005">
         </div>
 
         <div class="mb-2">
           <label for="noiseKernelRange" class="compact-label">
-            Noise Kernel <span class="badge bg-secondary ms-1" id="noiseKernelValue">3</span>
+            Noise Kernel <span class="badge bg-secondary ms-1" id="noiseKernelValue">5</span>
           </label>
-          <input type="range" class="form-range" id="noiseKernelRange" min="1" max="9" step="2" value="3">
+          <input type="range" class="form-range" id="noiseKernelRange" min="1" max="11" step="2" value="5">
+        </div>
+
+        <div class="mb-2">
+          <label for="blurSizeRange" class="compact-label">
+            Blur Size <span class="badge bg-secondary ms-1" id="blurSizeValue">5</span>
+          </label>
+          <input type="range" class="form-range" id="blurSizeRange" min="1" max="15" step="2" value="5">
+        </div>
+
+        <div class="mb-2">
+          <label for="dilateSizeRange" class="compact-label">
+            Dilate/Merge Size <span class="badge bg-secondary ms-1" id="dilateSizeValue">9</span>
+          </label>
+          <input type="range" class="form-range" id="dilateSizeRange" min="1" max="21" step="2" value="9">
+        </div>
+
+        <div class="mb-2">
+          <label for="varThresholdRange" class="compact-label">
+            MOG2 Var Threshold <span class="badge bg-secondary ms-1" id="varThresholdValue">25</span>
+          </label>
+          <input type="range" class="form-range" id="varThresholdRange" min="5" max="80" step="1" value="25">
         </div>
       </div>
 
@@ -92,7 +114,7 @@
           <span class="toggle-disabled-hint" id="htDisabledHint" style="display:none;">Requires OpenCV</span>
         </div>
 
-        <div class="mb-2">
+        <div class="mb-0">
           <label for="panServoSelect" class="compact-label"><i class="bi bi-robot"></i> Pan Servo</label>
           <select class="form-select form-select-sm" id="panServoSelect">
             <option value="">Select a servo...</option>
@@ -107,9 +129,9 @@
 
         <div class="mb-2">
           <label for="smoothingRange" class="compact-label">
-            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.3</span>
+            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.25</span>
           </label>
-          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.3">
+          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.25">
         </div>
 
         <div class="mb-2">
@@ -156,16 +178,6 @@
             <p class="mb-0 mt-1">Select a webcam to preview</p>
           </div>
         </div>
-      </div>
-
-      <!-- Start / Stop OpenCV -->
-      <div class="d-flex gap-2 mb-2">
-        <button type="button" class="btn btn-success btn-sm flex-grow-1" id="startTrackingBtn">
-          <i class="bi bi-play-fill"></i> Start OpenCV
-        </button>
-        <button type="button" class="btn btn-danger btn-sm flex-grow-1" id="stopTrackingBtn" disabled>
-          <i class="bi bi-stop-fill"></i> Stop OpenCV
-        </button>
       </div>
 
       <!-- Tracking Status Panel -->
