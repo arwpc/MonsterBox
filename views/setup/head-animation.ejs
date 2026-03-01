@@ -1,0 +1,201 @@
+<style>
+  .head-page { max-height: calc(100vh - 56px); overflow: hidden; }
+  .head-section { background: rgba(13,13,13,0.6); border-left: 3px solid var(--bs-primary, #0d6efd); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; }
+  .compact-label { font-size: 0.85rem; margin-bottom: 0.25rem; }
+  .form-range { height: 1.2rem; }
+  .webcam-container { position: relative; background: #000; border-radius: 6px; overflow: hidden; min-height: 240px; }
+  .webcam-stream { width: 100%; display: block; border-radius: 6px; }
+  .tracking-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .tracking-status-panel { background: rgba(13,13,13,0.6); border: 1px solid var(--bs-border-color, #444); border-radius: 6px; padding: 0.75rem; }
+  .servo-test-panel { background: rgba(13,13,13,0.6); border: 1px solid var(--bs-border-color, #444); border-radius: 6px; padding: 0.75rem; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .status-dot.active { background: var(--mb-success, #198754); animation: statusPulse 1s ease-in-out infinite; }
+  .status-dot.inactive { background: var(--mb-secondary, #6c757d); }
+  .status-dot.detecting { background: var(--mb-warning, #ffc107); animation: statusPulse 0.5s ease-in-out infinite; }
+  @keyframes statusPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .fps-badge { font-variant-numeric: tabular-nums; min-width: 2.5em; }
+</style>
+
+<div class="head-page">
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert alert-warning alert-dismissible py-2 mb-2" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> <%= error %>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+  </div>
+  <% } %>
+
+  <% if (currentCharacter) { %>
+  <div class="row g-2">
+    <!-- LEFT COLUMN: Configuration -->
+    <div class="col-lg-5">
+      <!-- Enable Toggle & Part Selection -->
+      <div class="head-section">
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="htEnabled">
+          <label class="form-check-label" for="htEnabled"><strong>Enable Head Tracking</strong></label>
+        </div>
+
+        <div class="mb-2">
+          <label for="panServoSelect" class="compact-label"><i class="bi bi-robot"></i> Pan Servo</label>
+          <select class="form-select form-select-sm" id="panServoSelect">
+            <option value="">Select a servo...</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label for="webcamSelect" class="compact-label"><i class="bi bi-webcam"></i> Webcam</label>
+          <select class="form-select form-select-sm" id="webcamSelect">
+            <option value="">Select a webcam...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tracking Tuning -->
+      <div class="head-section">
+        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-sliders"></i> Tracking Tuning</h6>
+
+        <div class="mb-2">
+          <label for="smoothingRange" class="compact-label">
+            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.3</span>
+          </label>
+          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.3">
+        </div>
+
+        <div class="mb-2">
+          <label for="deadzoneRange" class="compact-label">
+            Deadzone <span class="badge bg-secondary ms-1" id="deadzoneValue">5</span>
+          </label>
+          <input type="range" class="form-range" id="deadzoneRange" min="1" max="25" step="1" value="5">
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label for="centerDeg" class="compact-label">Center (&deg;)</label>
+            <input type="number" class="form-control form-control-sm" id="centerDeg" min="-90" max="90" value="0">
+          </div>
+          <div class="col-6">
+            <label for="rangeDeg" class="compact-label">Range (&deg;)</label>
+            <input type="number" class="form-control form-control-sm" id="rangeDeg" min="10" max="180" value="60">
+          </div>
+        </div>
+
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="invertPan">
+          <label class="form-check-label compact-label" for="invertPan">Invert Pan Direction</label>
+        </div>
+      </div>
+
+      <!-- OpenCV Parameters -->
+      <div class="head-section">
+        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-eye"></i> OpenCV Parameters</h6>
+
+        <div class="mb-2">
+          <label for="motionThresholdRange" class="compact-label">
+            Motion Threshold <span class="badge bg-secondary ms-1" id="motionThresholdValue">30</span>
+          </label>
+          <input type="range" class="form-range" id="motionThresholdRange" min="5" max="100" step="1" value="30">
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label for="minContourArea" class="compact-label">Min Contour</label>
+            <input type="number" class="form-control form-control-sm" id="minContourArea" min="50" max="5000" value="300">
+          </div>
+          <div class="col-6">
+            <label for="maxContourArea" class="compact-label">Max Contour</label>
+            <input type="number" class="form-control form-control-sm" id="maxContourArea" min="1000" max="100000" value="30000">
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label for="bgLearningRateRange" class="compact-label">
+            BG Learning Rate <span class="badge bg-secondary ms-1" id="bgLearningRateValue">0.02</span>
+          </label>
+          <input type="range" class="form-range" id="bgLearningRateRange" min="0.001" max="0.1" step="0.001" value="0.02">
+        </div>
+
+        <div class="mb-2">
+          <label for="noiseKernelRange" class="compact-label">
+            Noise Kernel <span class="badge bg-secondary ms-1" id="noiseKernelValue">3</span>
+          </label>
+          <input type="range" class="form-range" id="noiseKernelRange" min="1" max="9" step="2" value="3">
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="saveConfigBtn">
+          <i class="bi bi-save"></i> Save Config
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Webcam Preview & Controls -->
+    <div class="col-lg-7">
+      <!-- Webcam Preview with Overlay -->
+      <div class="webcam-container mb-2" id="webcamContainer">
+        <img id="webcamStream" class="webcam-stream" alt="Webcam stream" style="display:none;">
+        <canvas id="trackingOverlay" class="tracking-overlay"></canvas>
+        <div class="d-flex justify-content-center align-items-center h-100 text-muted" id="webcamPlaceholder" style="min-height:240px;">
+          <div class="text-center">
+            <i class="bi bi-webcam" style="font-size:2rem;"></i>
+            <p class="mb-0 mt-1">Select a webcam to preview</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start / Stop Controls -->
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-success btn-sm flex-grow-1" id="startTrackingBtn">
+          <i class="bi bi-play-fill"></i> Start Tracking
+        </button>
+        <button type="button" class="btn btn-danger btn-sm flex-grow-1" id="stopTrackingBtn" disabled>
+          <i class="bi bi-stop-fill"></i> Stop Tracking
+        </button>
+      </div>
+
+      <!-- Tracking Status Panel -->
+      <div class="tracking-status-panel mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <span class="status-dot inactive" id="trackingDot"></span>
+            <span class="fw-bold" id="trackingStatusText">Stopped</span>
+          </div>
+          <div>
+            <span class="badge bg-secondary fps-badge" id="fpsDisplay">0 FPS</span>
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <small class="text-muted">Target</small>
+            <div class="fw-bold" id="targetStatus">No target</div>
+          </div>
+          <div class="col-6">
+            <small class="text-muted">Position</small>
+            <div class="fw-bold" id="targetPosition">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servo Test Panel -->
+      <div class="servo-test-panel">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testSweepBtn">
+            <i class="bi bi-arrow-left-right"></i> Test Sweep
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn">
+            <i class="bi bi-exclamation-triangle"></i> E-Stop
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="alert alert-info py-2" role="alert">
+    <i class="bi bi-info-circle"></i> No character selected. Please select a character from the navigation menu.
+  </div>
+  <% } %>
+</div>
+
+<script src="/js/head-animation.js?v=<%= Date.now() %>"></script>

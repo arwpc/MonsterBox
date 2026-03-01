@@ -478,7 +478,9 @@ async function getAvailableServoParts() {
 }
 
 /**
- * Load calibration guardrails (Min/Max) from markers for head tracking servo
+ * Load calibration guardrails (Min/Max) from calibration profile for head tracking servo.
+ * Uses calibration_profiles.json bounds (minAngle/maxAngle) for absolute-servo parts.
+ * Falls back to parts.json markers if no calibration profile exists.
  */
 async function loadHeadTrackingGuardrails(servoId) {
   try {
@@ -487,24 +489,77 @@ async function loadHeadTrackingGuardrails(servoId) {
       return headTrackingGuardrails.get(servoId);
     }
 
-    const calibrationStore = getCalibrationStore();
-    const markers = calibrationStore.getMarkersForPart(servoId);
-    const minMarker = markers.find(m => m.name === 'Min');
-    const maxMarker = markers.find(m => m.name === 'Max');
+    let minAngle = -90;
+    let maxAngle = 90;
 
-    const guardrails = {
-      minAngle: minMarker ? parseFloat(minMarker.value) : -90,
-      maxAngle: maxMarker ? parseFloat(maxMarker.value) : 90
-    };
+    // Primary source: calibration_profiles.json via calibration store
+    const calibrationStore = getCalibrationStore();
+    const profile = await calibrationStore.get(servoId);
+
+    if (profile && profile.bounds) {
+      if (typeof profile.bounds.minAngle === 'number') minAngle = profile.bounds.minAngle;
+      if (typeof profile.bounds.maxAngle === 'number') maxAngle = profile.bounds.maxAngle;
+    } else {
+      // Fallback: read markers from parts.json
+      try {
+        const partsPath = await getPartsFilePath();
+        const partsData = await fs.readFile(partsPath, 'utf8');
+        const parts = JSON.parse(partsData);
+        const part = parts.find(p => String(p.id) === String(servoId));
+        if (part && Array.isArray(part.markers)) {
+          const minMarker = part.markers.find(m => m.name === 'Min');
+          const maxMarker = part.markers.find(m => m.name === 'Max');
+          if (minMarker) minAngle = parseFloat(minMarker.value);
+          if (maxMarker) maxAngle = parseFloat(maxMarker.value);
+        }
+      } catch (partsError) {
+        console.warn('Could not read parts.json markers for guardrails:', partsError.message);
+      }
+    }
+
+    const guardrails = { minAngle, maxAngle };
 
     // Cache for 60 seconds
     headTrackingGuardrails.set(servoId, guardrails);
     setTimeout(() => headTrackingGuardrails.delete(servoId), 60000);
 
+    console.log('Loaded head tracking guardrails for servo ' + servoId + ': ' + minAngle + '°..' + maxAngle + '°');
     return guardrails;
   } catch (error) {
     console.warn('Could not load head tracking guardrails:', error.message);
     return { minAngle: -90, maxAngle: 90 };
+  }
+}
+
+/**
+ * Detect servo type (standard vs continuous) from calibration profile or parts.json.
+ * Returns 'continuous' or 'standard'.
+ */
+async function detectServoType(servoId) {
+  try {
+    // Primary: calibration_profiles.json capability.kind
+    const calibrationStore = getCalibrationStore();
+    const profile = await calibrationStore.get(servoId);
+    if (profile && profile.capability && profile.capability.kind) {
+      if (profile.capability.kind === 'continuous-servo') return 'continuous';
+      if (profile.capability.kind === 'absolute-servo') return 'standard';
+    }
+
+    // Fallback: parts.json config.servoType
+    try {
+      const partsPath = await getPartsFilePath();
+      const partsData = await fs.readFile(partsPath, 'utf8');
+      const parts = JSON.parse(partsData);
+      const part = parts.find(p => String(p.id) === String(servoId));
+      if (part && part.config && part.config.servoType === 'continuous') return 'continuous';
+    } catch (e) {
+      // ignore
+    }
+
+    return 'standard';
+  } catch (e) {
+    console.warn('Could not detect servo type for servo ' + servoId + ':', e.message);
+    return 'standard';
   }
 }
 
@@ -522,19 +577,10 @@ async function maybeDriveHead(webcamId, status) {
   const minIntervalMs = 50; // faster servo commands for responsive tracking
   if (now - state.lastCmdAt < minIntervalMs) return;
 
-  // Get servo configuration to determine type FIRST
+  // Detect servo type dynamically from calibration profile or parts.json
   if (!state.servoType) {
-    // For now, hardcode servo 4 as continuous since we know it from parts.json
-    // TODO: Make this dynamic by reading parts.json properly
-    if (String(cfg.panServoId) === '4') {
-      state.servoType = 'continuous';
-      console.log('🔧 Hardcoded servo type: continuous for servo 4');
-    } else {
-      state.servoType = 'standard';
-      console.log('🔧 Default servo type: standard for servo ' + cfg.panServoId);
-    }
-
-    // Store the updated state immediately
+    state.servoType = await detectServoType(cfg.panServoId);
+    console.log('Detected servo type: ' + state.servoType + ' for servo ' + cfg.panServoId);
     headTrackingStates.set(webcamId, state);
   }
 
@@ -550,14 +596,14 @@ async function maybeDriveHead(webcamId, status) {
   var invert = !!cfg.invertPan;
 
   if (cfg.panServoId != null) {
-    console.log('🔍 Debug: servoType=' + state.servoType + ', panServoId=' + cfg.panServoId);
+    // Servo type already logged on first detection
     if (state.servoType === 'continuous') {
       // Continuous servo: rotate in direction of target with proportional control
       var direction = err > 0 ? (invert ? 'ccw' : 'cw') : (invert ? 'cw' : 'ccw');
       var speed = Math.round(Math.min(100, Math.max(15, Math.abs(err) * 1.5))); // Integer speed 15-100
       var duration = Math.round(Math.min(300, Math.max(50, Math.abs(err) * 5))); // Integer duration 50-300ms
 
-      console.log('🎯 Head tracking (continuous): target_x=' + x.toFixed(1) + ', error=' + err.toFixed(1) + ', direction=' + direction + ', speed=' + speed + ', duration=' + duration + 'ms, servo=' + cfg.panServoId);
+      console.log('Head tracking (continuous): err=' + err.toFixed(1) + ', dir=' + direction + ', speed=' + speed + ', duration=' + duration + 'ms');
 
       hardwareService.controlPart(cfg.panServoId, 'rotateContinuous', {
         direction: direction,
@@ -589,7 +635,7 @@ async function maybeDriveHead(webcamId, status) {
         if (next > maxLimit) next = maxLimit;
         if (next < minLimit) next = minLimit;
 
-        console.log('🎯 Head tracking (positional): target=' + target.toFixed(1) + '°, smoothed=' + next.toFixed(1) + '°, limits=[' + minLimit + '°..' + maxLimit + '°], servo=' + cfg.panServoId);
+        console.log('Head tracking (positional): target=' + target.toFixed(1) + ', smoothed=' + next.toFixed(1) + ', limits=[' + minLimit + '..' + maxLimit + ']');
 
         hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next })
           .then(function (result) {
@@ -685,3 +731,122 @@ export const cleanup = async () => {
 
 // Note: Signal handlers removed to prevent conflicts with main server cleanup
 // The main server should call cleanup() during its shutdown process
+
+// ─── Named exports for head-animation route ─────────────────────────────
+// These allow the head-animation route to call tracking logic directly
+// without constructing mock req/res objects.
+
+/**
+ * Start motion tracking for a webcam (programmatic, no req/res)
+ */
+export async function startTrackingForWebcam(webcamId, params = {}) {
+  if (!webcamId) throw new Error('webcamId is required');
+
+  // Stop existing tracker if running
+  if (activeTrackers.has(webcamId)) {
+    await stopMotionTrackingInternal(webcamId);
+  }
+
+  const config = { ...DEFAULT_CONFIG, ...params };
+  trackingConfigs.set(webcamId, config);
+
+  const devicePath = await getWebcamDevicePath(webcamId);
+  if (!devicePath) throw new Error('Webcam device not found');
+
+  const tracker = await startMotionTrackingProcess(webcamId, devicePath, config);
+  activeTrackers.set(webcamId, tracker);
+
+  trackingStatus.set(webcamId, {
+    active: true,
+    target_detected: false,
+    target_position: [50, 50],
+    target_size: 0,
+    last_detection_time: null,
+    fps: 0,
+    frame_count: 0
+  });
+
+  return { success: true, webcamId, config };
+}
+
+/**
+ * Stop motion tracking for a webcam (programmatic, no req/res)
+ */
+export async function stopTrackingForWebcam(webcamId) {
+  if (!webcamId) throw new Error('webcamId is required');
+  await stopMotionTrackingInternal(webcamId);
+  return { success: true, webcamId };
+}
+
+/**
+ * Enable head tracking for a webcam (programmatic, no req/res)
+ */
+export function enableHeadTrackingForWebcam(webcamId, config) {
+  if (!webcamId || config.panServoId == null) {
+    throw new Error('webcamId and panServoId are required');
+  }
+  const cfg = {
+    enabled: true,
+    panServoId: config.panServoId,
+    tiltServoId: config.tiltServoId || null,
+    centerDeg: typeof config.centerDeg === 'number' ? config.centerDeg : 0,
+    rangeDeg: typeof config.rangeDeg === 'number' ? config.rangeDeg : 60,
+    invertPan: !!config.invertPan,
+    smoothing: typeof config.smoothing === 'number' ? config.smoothing : 0.3,
+    deadzone: typeof config.deadzone === 'number' ? config.deadzone : 5
+  };
+  headTrackingConfigs.set(webcamId, cfg);
+  return { success: true, webcamId, headTracking: cfg };
+}
+
+/**
+ * Disable head tracking for a webcam (programmatic, no req/res)
+ */
+export function disableHeadTrackingForWebcam(webcamId) {
+  if (!webcamId) throw new Error('webcamId is required');
+  const cfg = headTrackingConfigs.get(webcamId);
+  if (cfg) cfg.enabled = false;
+  headTrackingConfigs.set(webcamId, cfg || { enabled: false });
+  return { success: true, webcamId };
+}
+
+/**
+ * Get motion tracking status for a webcam (programmatic, no req/res)
+ */
+export function getTrackingStatusForWebcam(webcamId) {
+  const status = trackingStatus.get(webcamId);
+  const isActive = activeTrackers.has(webcamId);
+  return {
+    active: isActive,
+    status: status || null
+  };
+}
+
+/**
+ * Get head tracking state for a webcam (programmatic, no req/res)
+ */
+export function getHeadTrackingStateForWebcam(webcamId) {
+  return headTrackingConfigs.get(webcamId) || { enabled: false };
+}
+
+/**
+ * Update tracking params for a running tracker (programmatic, no req/res)
+ */
+export function updateTrackingParamsForWebcam(webcamId, params) {
+  if (!webcamId || !params) throw new Error('webcamId and params are required');
+
+  const currentConfig = trackingConfigs.get(webcamId) || DEFAULT_CONFIG;
+  const newConfig = { ...currentConfig, ...params };
+  trackingConfigs.set(webcamId, newConfig);
+
+  const tracker = activeTrackers.get(webcamId);
+  if (tracker && tracker.stdin && !tracker.killed) {
+    try {
+      tracker.stdin.write(JSON.stringify({ type: 'update_config', config: newConfig }) + '\n');
+    } catch (writeError) {
+      console.warn('Failed to update tracker config:', writeError.message);
+    }
+  }
+
+  return { success: true, webcamId, config: newConfig };
+}
