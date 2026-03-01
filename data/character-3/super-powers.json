@@ -23,7 +23,7 @@
   },
   "headTracking": {
     "enabled": false,
-    "panServoId": null,
+    "panServoId": "10",
     "webcamPartId": null,
     "centerDeg": 0,
     "rangeDeg": 60,
