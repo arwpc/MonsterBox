@@ -1137,6 +1137,14 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
   monState.isMonitoring = true;
   audioMonitoringState.set(cid, monState);
 
+  // Echo suppression: suppress mic for audio duration + buffer
+  try {
+    if (analysis.duration > 0) {
+      const { default: wsService } = await import('./elevenLabsWebSocketService.js');
+      wsService.suppressMicForCharacter(characterId, analysis.duration + 1000);
+    }
+  } catch (_) { /* best-effort */ }
+
   // Start audio playback (fire-and-forget — we sync jaw from pre-analyzed timeline)
   if (!options.skipAudio) {
     try {

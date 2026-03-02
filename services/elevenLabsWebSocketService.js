@@ -722,7 +722,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             }
 
                             // Suppress mic for the full estimated playback duration + tail buffer
-                            const TAIL_BUFFER_MS = 1500;
+                            const TAIL_BUFFER_MS = 2500; // extra room reverb tolerance
                             c.suppressMicUntilMs = c.speechStartedAt + c.accumulatedAudioMs + TAIL_BUFFER_MS;
                         }
 

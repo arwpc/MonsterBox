@@ -342,6 +342,23 @@ class ServerPlaybackService {
       // Stop any managed stream for this character so AI gets exclusive path
       try { await this.stopStream({ characterId }); } catch (_) { /* best-effort */ }
 
+      // Echo suppression: estimate duration and suppress mic for non-ConvAI paths
+      try {
+        const ct = String(contentType).toLowerCase();
+        let estimatedMs = 0;
+        if (ct.includes('wav') || ct.includes('pcm')) {
+          estimatedMs = (buffer.length / (16000 * 2)) * 1000;
+        } else if (ct.includes('mpeg') || ct.includes('mp3')) {
+          estimatedMs = (buffer.length * 8 / 128);
+        } else {
+          estimatedMs = 3000;
+        }
+        if (estimatedMs > 0) {
+          const { default: wsService } = await import('./elevenLabsWebSocketService.js');
+          wsService.suppressMicForCharacter(characterId, estimatedMs + 1000);
+        }
+      } catch (_) { /* best-effort echo suppression */ }
+
       // Test mode: record telemetry only
       if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
         this._lastPlay = {
@@ -572,6 +589,25 @@ class ServerPlaybackService {
       const characterId = opts.characterId || null;
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
+
+      // Echo suppression: estimate audio duration and suppress mic
+      try {
+        const ct = String(contentType).toLowerCase();
+        let estimatedMs = 0;
+        if (ct.includes('wav') || ct.includes('pcm')) {
+          // PCM16LE mono 16kHz: 2 bytes/sample
+          estimatedMs = (buffer.length / (16000 * 2)) * 1000;
+        } else if (ct.includes('mpeg') || ct.includes('mp3')) {
+          // ~128kbps MP3
+          estimatedMs = (buffer.length * 8 / 128);
+        } else {
+          estimatedMs = 3000; // fallback estimate
+        }
+        if (estimatedMs > 0) {
+          const { default: wsService } = await import('./elevenLabsWebSocketService.js');
+          wsService.suppressMicForCharacter(characterId, estimatedMs + 1000);
+        }
+      } catch (_) { /* best-effort echo suppression */ }
 
       // In automated test mode, avoid invoking system audio; just record telemetry
       if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
