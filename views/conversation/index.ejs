@@ -139,28 +139,28 @@
         <div class="row">
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="jawToggle">
+              <input class="form-check-input" type="checkbox" id="jawToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
               <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
             </div>
             <small class="text-muted">Sync jaw with speech audio</small>
           </div>
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="parrotToggle">
+              <input class="form-check-input" type="checkbox" id="parrotToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
               <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
             </div>
             <small class="text-muted">Repeat detected speech</small>
           </div>
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="translateToggle">
+              <input class="form-check-input" type="checkbox" id="translateToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="AI restates heard speech in character voice and persona">
               <label class="form-check-label fw-bold" for="translateToggle">Translate</label>
             </div>
             <small class="text-muted">AI-restate speech in character</small>
           </div>
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="form-check form-switch d-flex align-items-center">
-              <input class="form-check-input" type="checkbox" id="headTrackToggle">
+              <input class="form-check-input" type="checkbox" id="headTrackToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
               <label class="form-check-label fw-bold ms-1" for="headTrackToggle">Head Tracking</label>
               <span id="headTrackStatusBadge" class="badge bg-secondary ms-2 d-none" style="font-size:0.7rem;">Off</span>
             </div>
@@ -168,7 +168,7 @@
           </div>
           <div class="col-md-3">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="speakerMuteToggle">
+              <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
               <label class="form-check-label fw-bold" for="speakerMuteToggle">Mute Speaker</label>
             </div>
             <small class="text-muted">Silence character speaker</small>
@@ -602,6 +602,9 @@
       if (typeof ManualControls !== 'undefined') {
         await ManualControls.init({ characterId: currentCharacterId, canvasId: 'mcCanvas' });
       }
+
+      // Initialize Bootstrap tooltips on Monster Features toggles
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
     }
 
     function setCharName() {
