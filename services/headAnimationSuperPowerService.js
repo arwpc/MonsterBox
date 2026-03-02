@@ -37,7 +37,9 @@ function getDefaultHeadTrackingConfig() {
     noiseReductionKernelSize: 5,
     blurSize: 5,
     dilateSize: 9,
-    varThreshold: 25
+    varThreshold: 25,
+    targetLockStrength: 5,
+    confirmFrames: 3
   };
 }
 

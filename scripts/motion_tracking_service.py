@@ -51,6 +51,13 @@ class MotionTracker:
         self.target_lost_time = None
         self.persistence_sec = 0.5  # report last pos for 0.5s after losing target
 
+        # Multi-frame tracking state
+        self.tracked_objects = []  # list of tracked contour objects
+        self.next_track_id = 1
+        self.locked_target_id = None  # ID of currently locked target
+        self.target_lock_strength = config.get('target_lock_strength', 5)
+        self.confirm_frames = config.get('confirm_frames', 3)
+
         # MJPEG stream state
         self.stream_url = config.get('stream_url') if isinstance(config, dict) else None
         self.stream_conn = None
@@ -263,24 +270,110 @@ class MotionTracker:
             max_area = self.config['max_contour_area']
             valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
 
-            # Process largest contour only — track the biggest moving object
+            # Multi-frame tracking: match contours to tracked objects
+            frame_h, frame_w = frame.shape[:2]
+            match_radius = max(frame_w, frame_h) * 0.20  # 20% of frame size
+
+            # Build list of new detections with center, bbox, area
+            new_detections = []
+            for c in valid_contours:
+                x, y, w, h = cv2.boundingRect(c)
+                cx = x + w // 2
+                cy = y + h // 2
+                new_detections.append({
+                    'contour': c,
+                    'center': (cx, cy),
+                    'bbox': (x, y, w, h),
+                    'area': cv2.contourArea(c),
+                    'matched': False
+                })
+
+            # Match new detections to existing tracked objects (nearest center)
+            for tobj in self.tracked_objects:
+                best_dist = match_radius
+                best_idx = -1
+                for i, det in enumerate(new_detections):
+                    if det['matched']:
+                        continue
+                    dx = tobj['center'][0] - det['center'][0]
+                    dy = tobj['center'][1] - det['center'][1]
+                    dist = (dx * dx + dy * dy) ** 0.5
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_idx = i
+
+                if best_idx >= 0:
+                    det = new_detections[best_idx]
+                    det['matched'] = True
+                    # Update tracked object with new detection
+                    old_cx, old_cy = tobj['center']
+                    new_cx, new_cy = det['center']
+                    tobj['velocity'] = (new_cx - old_cx, new_cy - old_cy)
+                    tobj['center'] = det['center']
+                    tobj['bbox'] = det['bbox']
+                    tobj['area'] = det['area']
+                    tobj['age'] += 1
+                    tobj['lost_count'] = 0
+                else:
+                    tobj['lost_count'] += 1
+
+            # Create new tracked objects for unmatched detections
+            for det in new_detections:
+                if not det['matched']:
+                    self.tracked_objects.append({
+                        'id': self.next_track_id,
+                        'center': det['center'],
+                        'bbox': det['bbox'],
+                        'area': det['area'],
+                        'age': 1,
+                        'lost_count': 0,
+                        'velocity': (0, 0)
+                    })
+                    self.next_track_id += 1
+
+            # Cleanup: remove objects lost for too long (>30 frames ~1s at 25fps)
+            self.tracked_objects = [t for t in self.tracked_objects if t['lost_count'] <= 30]
+
+            # Select target: prefer locked target, then largest confirmed object
+            confirm_frames = self.confirm_frames
+            lock_lost_limit = self.target_lock_strength * 3
+
+            # Find the locked target if still alive
+            locked_obj = None
+            if self.locked_target_id is not None:
+                for tobj in self.tracked_objects:
+                    if tobj['id'] == self.locked_target_id:
+                        locked_obj = tobj
+                        break
+
+            # Determine if locked target should be released
+            if locked_obj is not None and locked_obj['lost_count'] > lock_lost_limit:
+                locked_obj = None
+                self.locked_target_id = None
+
+            # If no locked target, pick the largest confirmed object
+            target_obj = locked_obj
+            if target_obj is None:
+                confirmed = [t for t in self.tracked_objects
+                             if t['age'] >= confirm_frames and t['lost_count'] == 0]
+                if confirmed:
+                    target_obj = max(confirmed, key=lambda t: t['area'])
+                    self.locked_target_id = target_obj['id']
+
+            # Generate output from selected target
             bbox = None
-            raw_x, raw_y = None, None
-            if valid_contours:
-                largest_contour = max(valid_contours, key=cv2.contourArea)
-                x, y, w, h = cv2.boundingRect(largest_contour)
+            if target_obj is not None and target_obj['lost_count'] == 0:
+                tx, ty, tw, th = target_obj['bbox']
+                cx, cy = target_obj['center']
 
-                center_x = x + w // 2
-                center_y = y + h // 2
-
-                raw_x = (center_x / frame.shape[1]) * 100
-                raw_y = (center_y / frame.shape[0]) * 100
+                raw_x = (cx / frame_w) * 100
+                raw_y = (cy / frame_h) * 100
 
                 bbox = {
-                    'x': (x / frame.shape[1]) * 100,
-                    'y': (y / frame.shape[0]) * 100,
-                    'w': (w / frame.shape[1]) * 100,
-                    'h': (h / frame.shape[0]) * 100
+                    'x': (tx / frame_w) * 100,
+                    'y': (ty / frame_h) * 100,
+                    'w': (tw / frame_w) * 100,
+                    'h': (th / frame_h) * 100
                 }
 
                 # Temporal smoothing — EMA toward new position
@@ -290,7 +383,7 @@ class MotionTracker:
 
                 self.target_detected = True
                 self.target_position = (self.smoothed_x, self.smoothed_y)
-                self.target_size = (cv2.contourArea(largest_contour) / (frame.shape[0] * frame.shape[1])) * 100
+                self.target_size = (target_obj['area'] / (frame_h * frame_w)) * 100
                 self.last_detection_time = time.time()
                 self.last_bbox = bbox
                 self.target_lost_time = None
@@ -302,7 +395,6 @@ class MotionTracker:
                     self.target_lost_time = now
 
                 if self.last_detection_time and (now - self.last_detection_time) < self.persistence_sec:
-                    # Keep reporting last known position during persistence window
                     self.target_detected = True
                 else:
                     self.target_detected = False
@@ -357,6 +449,8 @@ class MotionTracker:
             'blurSize': 'blur_size',
             'dilateSize': 'dilate_size',
             'varThreshold': 'var_threshold',
+            'targetLockStrength': 'target_lock_strength',
+            'confirmFrames': 'confirm_frames',
         }
 
         mapped = {}
@@ -369,6 +463,12 @@ class MotionTracker:
         # Update position smoothing factor if changed
         if 'tracking_smoothing' in mapped:
             self.position_smoothing = float(mapped['tracking_smoothing'])
+
+        # Update multi-frame tracking params if changed
+        if 'target_lock_strength' in mapped:
+            self.target_lock_strength = int(mapped['target_lock_strength'])
+        if 'confirm_frames' in mapped:
+            self.confirm_frames = int(mapped['confirm_frames'])
 
         logger.info(f"Config hot-updated: {list(mapped.keys())}")
 
@@ -450,6 +550,8 @@ def main():
     parser.add_argument('--dilate-size', type=int, default=9, help='Dilation kernel to merge fragments')
     parser.add_argument('--var-threshold', type=int, default=25, help='MOG2 variance threshold')
     parser.add_argument('--history', type=int, default=500, help='MOG2 history frames')
+    parser.add_argument('--target-lock-strength', type=int, default=5, help='Target lock strength (1-10)')
+    parser.add_argument('--confirm-frames', type=int, default=3, help='Frames before confirming target (1-10)')
 
     args = parser.parse_args()
 
@@ -470,6 +572,8 @@ def main():
         'dilate_size': args.dilate_size,
         'var_threshold': args.var_threshold,
         'history': args.history,
+        'target_lock_strength': args.target_lock_strength,
+        'confirm_frames': args.confirm_frames,
         'detect_shadows': True,
     }
 

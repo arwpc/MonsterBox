@@ -33,7 +33,9 @@ const DEFAULT_CONFIG = {
   noiseReductionKernelSize: 5,
   blurSize: 5,
   dilateSize: 9,
-  varThreshold: 25
+  varThreshold: 25,
+  targetLockStrength: 5,
+  confirmFrames: 3
 };
 
 // Resolve parts.json using selectedCharacter for correct character isolation
@@ -342,7 +344,9 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       '--noise-kernel-size', (config.noiseReductionKernelSize || 5).toString(),
       '--blur-size', (config.blurSize || 5).toString(),
       '--dilate-size', (config.dilateSize || 9).toString(),
-      '--var-threshold', (config.varThreshold || 25).toString()
+      '--var-threshold', (config.varThreshold || 25).toString(),
+      '--target-lock-strength', (config.targetLockStrength || 5).toString(),
+      '--confirm-frames', (config.confirmFrames || 3).toString()
     ];
 
     const tracker = spawn('python3', args, {

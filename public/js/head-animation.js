@@ -62,6 +62,13 @@
       dilateSizeValue:      document.getElementById('dilateSizeValue'),
       varThresholdRange:    document.getElementById('varThresholdRange'),
       varThresholdValue:    document.getElementById('varThresholdValue'),
+      targetLockRange:      document.getElementById('targetLockRange'),
+      targetLockValue:      document.getElementById('targetLockValue'),
+      confirmFramesRange:   document.getElementById('confirmFramesRange'),
+      confirmFramesValue:   document.getElementById('confirmFramesValue'),
+      presetPerson:         document.getElementById('presetPerson'),
+      presetNoisy:          document.getElementById('presetNoisy'),
+      presetSensitive:      document.getElementById('presetSensitive'),
       saveConfigBtn:        document.getElementById('saveConfigBtn'),
       testSweepBtn:         document.getElementById('testSweepBtn'),
       emergencyStopBtn:     document.getElementById('emergencyStopBtn'),
@@ -88,6 +95,13 @@
     bindSlider(el.blurSizeRange, el.blurSizeValue);
     bindSlider(el.dilateSizeRange, el.dilateSizeValue);
     bindSlider(el.varThresholdRange, el.varThresholdValue);
+    bindSlider(el.targetLockRange, el.targetLockValue);
+    bindSlider(el.confirmFramesRange, el.confirmFramesValue);
+
+    // Preset buttons
+    if (el.presetPerson)    el.presetPerson.addEventListener('click', function() { applyPreset('person'); });
+    if (el.presetNoisy)     el.presetNoisy.addEventListener('click', function() { applyPreset('noisy'); });
+    if (el.presetSensitive) el.presetSensitive.addEventListener('click', function() { applyPreset('sensitive'); });
 
     // Number inputs trigger hot-update
     if (el.centerDeg)       el.centerDeg.addEventListener('change', function() { scheduleHotUpdate(); });
@@ -241,6 +255,8 @@
     setSlider(el.blurSizeRange, el.blurSizeValue, config.blurSize, 5);
     setSlider(el.dilateSizeRange, el.dilateSizeValue, config.dilateSize, 9);
     setSlider(el.varThresholdRange, el.varThresholdValue, config.varThreshold, 25);
+    setSlider(el.targetLockRange, el.targetLockValue, config.targetLockStrength, 5);
+    setSlider(el.confirmFramesRange, el.confirmFramesValue, config.confirmFrames, 3);
 
     if (el.centerDeg) el.centerDeg.value = config.centerDeg != null ? config.centerDeg : 0;
     if (el.rangeDeg)  el.rangeDeg.value = config.rangeDeg || 60;
@@ -271,7 +287,8 @@
     var ocvInputs = [
       el.webcamSelect, el.motionThresholdRange, el.minContourArea,
       el.maxContourArea, el.bgLearningRateRange, el.noiseKernelRange,
-      el.blurSizeRange, el.dilateSizeRange, el.varThresholdRange
+      el.blurSizeRange, el.dilateSizeRange, el.varThresholdRange,
+      el.targetLockRange, el.confirmFramesRange
     ];
     ocvInputs.forEach(function(inp) { if (inp) inp.disabled = !ocvOn; });
 
@@ -753,7 +770,9 @@
       noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 5, 10),
       blurSize:                 parseInt(el.blurSizeRange ? el.blurSizeRange.value : 5, 10),
       dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
-      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10)
+      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
+      targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
+      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10)
     };
 
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/params', {
@@ -785,7 +804,9 @@
       noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 5, 10),
       blurSize:                 parseInt(el.blurSizeRange ? el.blurSizeRange.value : 5, 10),
       dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
-      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10)
+      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
+      targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
+      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10)
     };
   }
 
@@ -875,12 +896,61 @@
     if (window.showToast) window.showToast(message, type);
   }
 
+  // ─── Presets ───────────────────────────────────────────────────────
+
+  var PRESETS = {
+    person: {
+      motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000,
+      backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7,
+      dilateSize: 11, varThreshold: 30, targetLockStrength: 7, confirmFrames: 4
+    },
+    noisy: {
+      motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000,
+      backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9,
+      dilateSize: 13, varThreshold: 50, targetLockStrength: 9, confirmFrames: 6
+    },
+    sensitive: {
+      motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000,
+      backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 3,
+      dilateSize: 7, varThreshold: 16, targetLockStrength: 4, confirmFrames: 2
+    }
+  };
+
+  function applyPreset(name) {
+    var preset = PRESETS[name];
+    if (!preset) return;
+
+    setSlider(el.motionThresholdRange, el.motionThresholdValue, preset.motionThreshold);
+    if (el.minContourArea) el.minContourArea.value = preset.minContourArea;
+    if (el.maxContourArea) el.maxContourArea.value = preset.maxContourArea;
+    setSlider(el.bgLearningRateRange, el.bgLearningRateValue, preset.backgroundLearningRate);
+    setSlider(el.noiseKernelRange, el.noiseKernelValue, preset.noiseReductionKernelSize);
+    setSlider(el.blurSizeRange, el.blurSizeValue, preset.blurSize);
+    setSlider(el.dilateSizeRange, el.dilateSizeValue, preset.dilateSize);
+    setSlider(el.varThresholdRange, el.varThresholdValue, preset.varThreshold);
+    setSlider(el.targetLockRange, el.targetLockValue, preset.targetLockStrength);
+    setSlider(el.confirmFramesRange, el.confirmFramesValue, preset.confirmFrames);
+
+    scheduleHotUpdate();
+    showToast('Applied "' + name + '" preset', 'success');
+  }
+
+  // ─── Tooltip Initialization ───────────────────────────────────────
+
+  function initTooltips() {
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    for (var i = 0; i < tooltipEls.length; i++) {
+      new bootstrap.Tooltip(tooltipEls[i]);
+    }
+  }
+
   // ─── Bootstrap ────────────────────────────────────────────────────
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function() { init(); initTooltips(); });
   } else {
     init();
+    initTooltips();
   }
 
 })();
