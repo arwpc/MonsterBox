@@ -158,9 +158,10 @@
             <small class="text-muted">AI-restate speech in character</small>
           </div>
           <div class="col-md-3 mb-2 mb-md-0">
-            <div class="form-check form-switch">
+            <div class="form-check form-switch d-flex align-items-center">
               <input class="form-check-input" type="checkbox" id="headTrackToggle">
-              <label class="form-check-label fw-bold" for="headTrackToggle">Head Tracking</label>
+              <label class="form-check-label fw-bold ms-1" for="headTrackToggle">Head Tracking</label>
+              <span id="headTrackStatusBadge" class="badge bg-secondary ms-2 d-none" style="font-size:0.7rem;">Off</span>
             </div>
             <small class="text-muted">Track visitor movement</small>
           </div>
@@ -1190,24 +1191,118 @@
       }
     }
 
+    let headTrackPollTimer = null;
+
+    function updateHeadTrackBadge(state) {
+      const badge = document.getElementById('headTrackStatusBadge');
+      if (!badge) return;
+      if (!state || !state.enabled) {
+        badge.classList.add('d-none');
+        badge.textContent = 'Off';
+        badge.className = 'badge bg-secondary ms-2 d-none';
+        return;
+      }
+      badge.classList.remove('d-none');
+      if (state.hasTarget) {
+        badge.textContent = 'Active';
+        badge.className = 'badge bg-success ms-2';
+      } else {
+        badge.textContent = 'Searching';
+        badge.className = 'badge bg-warning text-dark ms-2';
+      }
+    }
+
+    function showToast(message, type) {
+      const container = document.getElementById('toastContainer') || (() => {
+        const c = document.createElement('div');
+        c.id = 'toastContainer';
+        c.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        c.style.zIndex = '1090';
+        document.body.appendChild(c);
+        return c;
+      })();
+      const id = 'toast_' + Date.now();
+      const bgClass = type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning text-dark' : 'bg-success';
+      container.insertAdjacentHTML('beforeend',
+        `<div id="${id}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
+          <div class="d-flex"><div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`
+      );
+      const el = document.getElementById(id);
+      if (el && bootstrap && bootstrap.Toast) {
+        new bootstrap.Toast(el, { delay: 3000 }).show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+      }
+    }
+
+    async function pollHeadTrackStatus() {
+      try {
+        const r = await fetch('/conversation/api/head-tracking-status');
+        const j = await r.json();
+        if (j && j.success && j.headTracking) {
+          updateHeadTrackBadge({
+            enabled: !!j.headTracking.enabled,
+            hasTarget: !!(j.headTracking.tracking && j.headTracking.tracking.hasTarget)
+          });
+        }
+      } catch { }
+    }
+
+    function startHeadTrackPolling() {
+      stopHeadTrackPolling();
+      headTrackPollTimer = setInterval(pollHeadTrackStatus, 1000);
+    }
+
+    function stopHeadTrackPolling() {
+      if (headTrackPollTimer) {
+        clearInterval(headTrackPollTimer);
+        headTrackPollTimer = null;
+      }
+    }
+
     async function loadHeadTrackStatus() {
       try {
         const r = await fetch('/conversation/api/head-tracking-status');
         const j = await r.json();
         if (j && j.success && ui.headTrackToggle) {
-          ui.headTrackToggle.checked = !!(j.headTracking && j.headTracking.enabled);
+          const enabled = !!(j.headTracking && j.headTracking.enabled);
+          ui.headTrackToggle.checked = enabled;
+          updateHeadTrackBadge({
+            enabled,
+            hasTarget: !!(j.headTracking && j.headTracking.tracking && j.headTracking.tracking.hasTarget)
+          });
+          if (enabled) startHeadTrackPolling();
         }
       } catch { }
     }
 
     async function saveHeadTrackSettings() {
+      const enabled = !!(ui.headTrackToggle && ui.headTrackToggle.checked);
       try {
-        await fetch('/conversation/api/head-tracking', {
+        const r = await fetch('/conversation/api/head-tracking', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enabled: !!(ui.headTrackToggle && ui.headTrackToggle.checked) })
+          body: JSON.stringify({ enabled })
         });
-      } catch { }
+        const j = await r.json();
+        if (j && j.success) {
+          showToast(enabled ? 'Head tracking enabled' : 'Head tracking disabled', 'success');
+          if (enabled) {
+            startHeadTrackPolling();
+            updateHeadTrackBadge({ enabled: true, hasTarget: false });
+          } else {
+            stopHeadTrackPolling();
+            updateHeadTrackBadge({ enabled: false });
+          }
+        } else {
+          showToast('Head tracking failed: ' + (j.error || 'Unknown error'), 'error');
+          ui.headTrackToggle.checked = !enabled; // revert toggle
+          if (!enabled) startHeadTrackPolling(); else stopHeadTrackPolling();
+        }
+      } catch (err) {
+        showToast('Head tracking error: ' + err.message, 'error');
+        ui.headTrackToggle.checked = !enabled; // revert toggle
+      }
     }
 
     async function loadJawSettings() {

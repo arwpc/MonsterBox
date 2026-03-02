@@ -726,7 +726,25 @@ export const getHeadTrackingStatus = async (req, res) => {
   try {
     const { webcamId } = req.query || {};
     if (!webcamId) return res.status(400).json({ success: false, error: 'webcamId is required' });
-    return res.json({ success: true, webcamId, headTracking: headTrackingConfigs.get(webcamId) || { enabled: false } });
+    const config = headTrackingConfigs.get(webcamId) || { enabled: false };
+    const status = trackingStatus.get(webcamId) || {};
+    const state = headTrackingStates.get(webcamId) || {};
+    const isActive = activeTrackers.has(webcamId);
+    return res.json({
+      success: true,
+      webcamId,
+      headTracking: {
+        ...config,
+        tracking: {
+          active: isActive,
+          hasTarget: !!(status.targetX != null || status.target_x != null),
+          targetX: status.targetX || status.target_x || null,
+          targetY: status.targetY || status.target_y || null,
+          fps: status.fps || null,
+          lastPanDeg: state.lastPanDeg || 0
+        }
+      }
+    });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
   }
