@@ -7,33 +7,39 @@
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 1,
+        "sensitivity": 1.6,
         "smoothing": 0.6,
-        "volumeThreshold": 0.02,
+        "volumeThreshold": 0.03,
         "attackTime": 50,
         "releaseTime": 150,
         "useBandpassFilter": true,
         "useAGC": true,
-        "quantizationLevels": 10,
-        "preset": "speech",
-        "minAngle": 54,
+        "quantizationLevels": 13,
+        "preset": "custom",
+        "minAngle": 67,
         "maxAngle": 100
       }
     ]
   },
   "headTracking": {
+    "opencvEnabled": true,
     "enabled": true,
     "panServoId": "15",
     "webcamPartId": "9",
-    "centerDeg": 0,
-    "rangeDeg": 60,
+    "centerDeg": 80,
+    "rangeDeg": 160,
     "invertPan": false,
-    "smoothing": 0.3,
+    "smoothing": 0.65,
     "deadzone": 5,
-    "motionThreshold": 30,
-    "minContourArea": 300,
-    "maxContourArea": 30000,
-    "backgroundLearningRate": 0.02,
-    "noiseReductionKernelSize": 3
+    "motionThreshold": 11,
+    "minContourArea": 3000,
+    "maxContourArea": 100000,
+    "backgroundLearningRate": 0.026,
+    "noiseReductionKernelSize": 1,
+    "blurSize": 7,
+    "dilateSize": 7,
+    "varThreshold": 12,
+    "targetLockStrength": 5,
+    "confirmFrames": 3
   }
 }

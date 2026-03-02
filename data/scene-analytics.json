@@ -4447,6 +4447,24 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1772410825126nxq8slkhl",
+      "sceneId": 110,
+      "characterId": 3,
+      "timestamp": "2026-03-02T00:20:25.127Z",
+      "startTime": "2026-03-02T00:16:28.357Z",
+      "endTime": "2026-03-02T00:20:25.121Z",
+      "duration": 236763,
+      "stepsExecuted": 2,
+      "totalSteps": 3,
+      "success": false,
+      "errors": [
+        {
+          "message": "quota_exceeded: This request exceeds your quota of 100001. You have 1 credits remaining, while 48 credits are required for this request."
+        }
+      ],
+      "performance": {}
     }
   ],
   "usage": {
