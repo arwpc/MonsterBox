@@ -2,6 +2,60 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [6.8.0] - 2026-03-01 — Comprehensive Bug Fix & Feature Update
+
+### Microphone & VU Meter
+- **Faster capture:** Reduced STT capture chunks from 2.0s to 0.3s for responsive VU meter and precise echo suppression timing
+- **Capture method caching:** Cache working capture method (Python/ffmpeg/arecord/parec) for 5 minutes to avoid fallback chain overhead
+- **VU meter boost:** 3x gain multiplier on browser-side VU meter for visible response to speech
+- **Device validation:** Quick open/close test in `microphone_cli.py` before recording
+
+### AI Echo Suppression
+- **All playback paths:** Added mic suppression to `playBufferOnCharacterSpeaker()`, `playAIOnCharacterSpeaker()`, and `playWithJawSync()`
+- **Increased tail buffer:** ConvAI tail buffer increased from 1500ms to 2500ms for room reverb tolerance
+- **Duration estimation:** MP3 (~128kbps) and WAV (PCM16LE) buffer size used to estimate playback duration
+
+### Scene Concurrent Execution
+- **Fire-and-forget model:** Replaced pair-based concurrent grouping with true fire-and-forget — steps with `concurrent: true` fire off immediately without blocking
+- **Multiple concurrent steps:** Multiple consecutive concurrent steps now all fire in parallel (not limited to pairs)
+- **Backward compatible:** Old pair behavior is a subset of the new model
+
+### Head Tracking Dashboard Integration
+- **Status badge:** Active/Searching/Off badge next to Head Tracking toggle
+- **Status polling:** 1-second polling when tracking is enabled
+- **Toast notifications:** Success/error feedback on toggle with auto-revert on failure
+- **Enhanced status API:** Now includes live tracking data (target position, FPS, pan angle)
+
+### Face & Hand Detection
+- **Detection modes:** motion, face, face+hands, all — configurable per character
+- **Haar cascade face detection:** `cv2.CascadeClassifier` with `detectMultiScale(scaleFactor=1.1, minNeighbors=5)`
+- **HSV skin-color hand detection:** Fallback hand detection using HSV color segmentation
+- **Hot-update:** Detection mode can be changed via stdin without restarting Python process
+- **Setup page dropdown:** Detection mode selector added to head-animation setup page
+
+### Click-to-Track
+- **Manual target selection:** Click on webcam to set a tracking target for 30 seconds
+- **Countdown overlay:** Badge showing seconds remaining on webcam card
+- **API endpoints:** Dashboard and setup page both support manual target via POST
+- **Python integration:** `set_manual_target` stdin command prefers detection closest to click position
+
+### Head Tracking Presets CRUD
+- **Server-side presets:** Built-in (Person, Noisy, Sensitive) + custom presets stored in super-powers.json
+- **API endpoints:** GET/POST/DELETE for preset management
+- **Save current as preset:** Button to save current tuning parameters as named preset
+- **Delete protection:** Built-in presets cannot be deleted
+
+### Dashboard Tooltips
+- **Bootstrap tooltips:** Added to all Monster Features toggles (Jaw, Parrot, Translate, Head Tracking, Mute)
+- **Descriptive help text:** Each toggle explains its function on hover
+
+### Documentation
+- **Audio & Microphone Setup:** New guide covering capture methods, VU meter, troubleshooting
+- **Echo Suppression:** New guide explaining how echo suppression works and tuning tips
+- **Scene Concurrency:** New guide explaining fire-and-forget model with examples
+
+---
+
 ## [6.8.0] - 2026-02-28 — Head Tracking Setup Page
 
 ### Head Animation Setup (`/setup/head-animation`)

@@ -10,16 +10,27 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.8.0 (February 2026)
+## What's New — v6.8.0 (March 2026)
 
-### Head Tracking Setup Page
+### Bug Fixes & Performance
+- **Microphone/VU meter:** Reduced capture chunks from 2s to 0.3s, cached capture method, 3x VU gain boost
+- **Echo suppression:** Added mic suppression to all playback paths (not just ConvAI), increased tail buffer to 2500ms
+- **Scene concurrency:** Replaced pair-based grouping with fire-and-forget model — audio no longer blocks servo movement
+
+### New Features
+- **Face detection:** Haar cascade face detection mode (+ hand detection via HSV) as alternatives to motion tracking
+- **Click-to-track:** Click on webcam to set manual tracking target for 30 seconds
+- **Head tracking presets CRUD:** Save/load/delete custom presets via API, built-in presets protected
+- **Dashboard status:** Head tracking status badge (Active/Searching), toast notifications, status polling
+- **Dashboard tooltips:** Bootstrap tooltips on all Monster Features toggles
+
+### Previous: Head Tracking Setup Page
 - **New `/setup/head-animation` page** for configuring OpenCV-based motion tracking with servo head mapping
 - **OpenCV motion detection** — background subtraction, contour filtering, noise reduction with hot-parameter tuning
 - **Servo mapping** — maps detected motion to pan servo position with center/range/deadzone/smoothing controls
 - **Live webcam overlay** — real-time motion tracking visualization with tracking status panel
 - **Test sweep** — verify servo wiring and calibration range
 - **Config persistence** — per-character in `super-powers.json` headTracking section
-- **21 new system tests** for head animation API and configuration
 
 ### Previous: v6.7.8 (February 2026)
 

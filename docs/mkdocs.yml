@@ -71,6 +71,9 @@ nav:
       - Port Management UI: setup/PORT-MANAGEMENT-INTERFACE-GUIDE.md
       - HTTPS Deployment: setup/HTTPS_DEPLOYMENT_HANDOFF.md
       - Secure Remote Access: setup/secure-remote-access-system.md
+      - Audio & Microphone: setup/AUDIO-MICROPHONE-SETUP.md
+      - Echo Suppression: setup/ECHO-SUPPRESSION.md
+      - Scene Concurrency: setup/SCENE-CONCURRENCY.md
       - MCP Log Collection: setup/MCP-LOG-COLLECTION-SETUP.md
 
   - Hardware:
