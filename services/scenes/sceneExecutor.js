@@ -765,57 +765,58 @@ export async function executeStep(step, characterId, emit, options) {
   }
 }
 
-function groupStepsForConcurrency(steps) {
-  const groups = [];
+/**
+ * Fire-and-forget concurrent execution model:
+ * - Steps with concurrent:true fire off without waiting, proceeding immediately to next step
+ * - Steps without concurrent flag execute sequentially (await)
+ * - After all steps processed, await all background promises for cleanup
+ */
+async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
+  const results = [];
+  const backgroundPromises = [];
+  let stepsExecuted = 0;
+
   for (let i = 0; i < steps.length; i++) {
-    const s = steps[i] || {};
-    if (s.concurrent && i + 1 < steps.length) {
-      groups.push([s, steps[i + 1]]);
-      i += 1; // skip next (paired)
+    const step = steps[i] || {};
+
+    if (step.concurrent) {
+      // Fire and forget — don't await, push to background
+      emit && emit({ type: 'concurrent-started', index: i, stepType: step.type });
+      const promise = executeStep(step, characterId, emit, opts)
+        .then(r => { results.push(r); return r; })
+        .catch(err => { console.error(`Background step ${i} (${step.type}) failed:`, err.message); return { success: false, error: err.message }; });
+      backgroundPromises.push(promise);
+      stepsExecuted++;
     } else {
-      groups.push([s]);
+      // Sequential — await normally
+      const r = await executeStep(step, characterId, emit, opts);
+      results.push(r);
+      stepsExecuted++;
     }
   }
-  return groups;
+
+  // Wait for all background promises to settle for cleanup
+  if (backgroundPromises.length > 0) {
+    await Promise.allSettled(backgroundPromises);
+  }
+
+  return { results, stepsExecuted };
 }
 
 export async function executeScene(scene, characterId, emit, options) {
   const steps = Array.isArray(scene.steps) ? scene.steps : [];
-  const groups = groupStepsForConcurrency(steps);
   const results = [];
   const opts = options || {};
   const startTime = new Date().toISOString();
   const startTs = Date.now();
   let stepsExecuted = 0;
-  const errors = [];
 
   emit && emit({ type: 'scene', status: 'start', id: scene.id, name: scene.name, totalSteps: steps.length, dryRun: !!opts.dryRun });
 
   try {
-    for (let gi = 0; gi < groups.length; gi++) {
-      const group = groups[gi];
-      const groupStartTs = Date.now();
-      emit && emit({ type: 'group', status: 'start', index: gi, size: group.length });
-
-      if (group.length === 1) {
-        const r = await executeStep(group[0], characterId, emit, opts);
-        results.push(r);
-        stepsExecuted++;
-      } else {
-        // concurrent pair
-        const proms = group.map(s => executeStep(s, characterId, emit, opts));
-        const settled = await Promise.allSettled(proms);
-        results.push(settled);
-        stepsExecuted += group.length;
-        const anyRejected = settled.some(p => p.status === 'rejected');
-        if (anyRejected) {
-          emit && emit({ type: 'group', status: 'error', index: gi, durationMs: Date.now() - groupStartTs });
-          throw new Error('Concurrent step failed at group ' + gi);
-        }
-      }
-
-      emit && emit({ type: 'group', status: 'complete', index: gi, durationMs: Date.now() - groupStartTs });
-    }
+    const execResult = await executeStepsWithConcurrency(steps, characterId, emit, opts);
+    results.push(...execResult.results);
+    stepsExecuted = execResult.stepsExecuted;
 
     emit && emit({ type: 'scene', status: 'complete', id: scene.id, name: scene.name, resultsCount: results.length });
 
