@@ -64,6 +64,18 @@
         </div>
       </div>
 
+      <!-- Detection Mode -->
+      <div class="head-section opencv-section">
+        <h6 class="text-success mb-2" style="font-size:0.9rem;"><i class="bi bi-search"></i> Detection Mode</h6>
+        <select class="form-select form-select-sm" id="detectionMode">
+          <option value="motion">Motion (Background Subtraction)</option>
+          <option value="face">Face Detection (Haar Cascade)</option>
+          <option value="face+hands">Face + Hands</option>
+          <option value="all">All (Face + Motion + Hands)</option>
+        </select>
+        <small class="text-muted">Select what the tracker should detect</small>
+      </div>
+
       <!-- OpenCV Parameters -->
       <div class="head-section opencv-section">
         <h6 class="text-success mb-2" style="font-size:0.9rem;"><i class="bi bi-eye"></i> OpenCV Parameters</h6>

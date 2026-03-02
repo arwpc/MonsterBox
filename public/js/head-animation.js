@@ -81,7 +81,8 @@
       fpsDisplay:           document.getElementById('fpsDisplay'),
       targetStatus:         document.getElementById('targetStatus'),
       targetPosition:       document.getElementById('targetPosition'),
-      headTrackingStatus:   document.getElementById('headTrackingStatus')
+      headTrackingStatus:   document.getElementById('headTrackingStatus'),
+      detectionMode:        document.getElementById('detectionMode')
     };
   }
 
@@ -109,6 +110,7 @@
     if (el.minContourArea)  el.minContourArea.addEventListener('change', function() { scheduleHotUpdate(); });
     if (el.maxContourArea)  el.maxContourArea.addEventListener('change', function() { scheduleHotUpdate(); });
     if (el.invertPan)       el.invertPan.addEventListener('change', function() { scheduleHotUpdate(); });
+    if (el.detectionMode)   el.detectionMode.addEventListener('change', function() { scheduleHotUpdate(); });
 
     // Buttons
     if (el.saveConfigBtn)    el.saveConfigBtn.addEventListener('click', saveConfiguration);
@@ -261,6 +263,7 @@
     if (el.centerDeg) el.centerDeg.value = config.centerDeg != null ? config.centerDeg : 0;
     if (el.rangeDeg)  el.rangeDeg.value = config.rangeDeg || 60;
     if (el.invertPan) el.invertPan.checked = config.invertPan || false;
+    if (el.detectionMode) el.detectionMode.value = config.detectionMode || 'motion';
   }
 
   function setSlider(range, badge, val, fallback) {
@@ -288,7 +291,7 @@
       el.webcamSelect, el.motionThresholdRange, el.minContourArea,
       el.maxContourArea, el.bgLearningRateRange, el.noiseKernelRange,
       el.blurSizeRange, el.dilateSizeRange, el.varThresholdRange,
-      el.targetLockRange, el.confirmFramesRange
+      el.targetLockRange, el.confirmFramesRange, el.detectionMode
     ];
     ocvInputs.forEach(function(inp) { if (inp) inp.disabled = !ocvOn; });
 
@@ -772,7 +775,8 @@
       dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
       varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
       targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
-      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10)
+      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10),
+      detectionMode:            el.detectionMode ? el.detectionMode.value : 'motion'
     };
 
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/params', {
@@ -806,7 +810,8 @@
       dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
       varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
       targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
-      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10)
+      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10),
+      detectionMode:            el.detectionMode ? el.detectionMode.value : 'motion'
     };
   }
 

@@ -346,7 +346,8 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       '--dilate-size', (config.dilateSize || 9).toString(),
       '--var-threshold', (config.varThreshold || 25).toString(),
       '--target-lock-strength', (config.targetLockStrength || 5).toString(),
-      '--confirm-frames', (config.confirmFrames || 3).toString()
+      '--confirm-frames', (config.confirmFrames || 3).toString(),
+      '--detection-mode', (config.detectionMode || 'motion')
     ];
 
     const tracker = spawn('python3', args, {
@@ -750,6 +751,30 @@ export const getHeadTrackingStatus = async (req, res) => {
   }
 };
 
+
+/**
+ * Set a manual target position for tracking (click-to-track).
+ * Writes a JSON command to the Python process stdin.
+ */
+export function setManualTarget(webcamId, x, y, durationSec = 30) {
+  const tracker = activeTrackers.get(webcamId);
+  if (!tracker || !tracker.stdin || tracker.stdin.destroyed) {
+    throw new Error('No active tracker for webcam ' + webcamId);
+  }
+  const msg = JSON.stringify({ type: 'set_manual_target', x, y, durationSec }) + '\n';
+  tracker.stdin.write(msg);
+  console.log(`🎯 Manual target set for webcam ${webcamId}: (${x.toFixed(1)}%, ${y.toFixed(1)}%) for ${durationSec}s`);
+}
+
+/**
+ * Clear manual target for a webcam.
+ */
+export function clearManualTarget(webcamId) {
+  const tracker = activeTrackers.get(webcamId);
+  if (!tracker || !tracker.stdin || tracker.stdin.destroyed) return;
+  const msg = JSON.stringify({ type: 'clear_manual_target' }) + '\n';
+  tracker.stdin.write(msg);
+}
 
 /**
  * Cleanup function for graceful shutdown

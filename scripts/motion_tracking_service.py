@@ -36,6 +36,17 @@ class MotionTracker:
         self.last_fps_time = time.time()
         self.fps = 0
 
+        # Detection mode: 'motion', 'face', 'face+hands', 'all'
+        self.detection_mode = config.get('detection_mode', 'motion')
+
+        # Face detection (Haar cascade)
+        self.face_cascade = None
+        if self.detection_mode in ('face', 'face+hands', 'all'):
+            self._init_face_detector()
+
+        # Manual target tracking
+        self.manual_target = None  # {x, y, expires_at}
+
         # Tracking state
         self.target_detected = False
         self.target_position = (50.0, 50.0)  # Normalized percentage
@@ -71,6 +82,55 @@ class MotionTracker:
 
         # Stdin buffer for config updates
         self._stdin_buf = ''
+
+    def _init_face_detector(self):
+        """Initialize Haar cascade face detector."""
+        try:
+            cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            self.face_cascade = cv2.CascadeClassifier(cascade_path)
+            if self.face_cascade.empty():
+                logger.warning("Failed to load face cascade, falling back to motion mode")
+                self.face_cascade = None
+            else:
+                logger.info("Face detection initialized (Haar cascade)")
+        except Exception as e:
+            logger.warning(f"Face detection init failed: {e}, falling back to motion mode")
+            self.face_cascade = None
+
+    def _detect_faces(self, gray):
+        """Detect faces using Haar cascade. Returns list of (x,y,w,h) bounding rects."""
+        if self.face_cascade is None:
+            return []
+        try:
+            faces = self.face_cascade.detectMultiScale(
+                gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+            )
+            return list(faces) if len(faces) > 0 else []
+        except Exception:
+            return []
+
+    def _detect_hands_hsv(self, frame):
+        """Detect hands using HSV skin-color segmentation. Returns list of (x,y,w,h)."""
+        try:
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            lower_skin = np.array([0, 20, 70], dtype=np.uint8)
+            upper_skin = np.array([20, 255, 255], dtype=np.uint8)
+            mask = cv2.inRange(hsv, lower_skin, upper_skin)
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # Filter for hand-sized regions (larger than faces typically)
+            min_area = self.config.get('min_contour_area', 3000) * 0.5
+            max_area = self.config.get('max_contour_area', 100000) * 2
+            rects = []
+            for c in contours:
+                area = cv2.contourArea(c)
+                if min_area <= area <= max_area:
+                    rects.append(cv2.boundingRect(c))
+            return rects
+        except Exception:
+            return []
 
     def initialize(self) -> bool:
         """Initialize camera and OpenCV components"""
@@ -216,6 +276,18 @@ class MotionTracker:
                     if msg.get('type') == 'update_config':
                         new_cfg = msg.get('config', {})
                         self.update_config(new_cfg)
+                    elif msg.get('type') == 'set_manual_target':
+                        x = float(msg.get('x', 50))
+                        y = float(msg.get('y', 50))
+                        duration = float(msg.get('durationSec', 30))
+                        self.manual_target = {
+                            'x': x, 'y': y,
+                            'expires_at': time.time() + duration
+                        }
+                        logger.info(f"Manual target set: ({x:.1f}%, {y:.1f}%) for {duration}s")
+                    elif msg.get('type') == 'clear_manual_target':
+                        self.manual_target = None
+                        logger.info("Manual target cleared")
                 except json.JSONDecodeError:
                     pass
         except Exception:
@@ -262,31 +334,92 @@ class MotionTracker:
                 fg_mask = cv2.dilate(fg_mask, dilate_kernel, iterations=2)
                 fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, dilate_kernel)
 
-            # Find contours
-            contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            # Filter contours by area
+            # Find contours based on detection mode
             min_area = self.config['min_contour_area']
             max_area = self.config['max_contour_area']
-            valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+            frame_h, frame_w = frame.shape[:2]
+
+            new_detections = []
+            mode = self.detection_mode
+
+            # Motion detection (MOG2 background subtraction)
+            motion_detections = []
+            if mode in ('motion', 'all'):
+                contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+                for c in valid_contours:
+                    x, y, w, h = cv2.boundingRect(c)
+                    cx = x + w // 2
+                    cy = y + h // 2
+                    motion_detections.append({
+                        'center': (cx, cy), 'bbox': (x, y, w, h),
+                        'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
+                    })
+
+            # Face detection (Haar cascade)
+            face_detections = []
+            if mode in ('face', 'face+hands', 'all'):
+                face_rects = self._detect_faces(gray)
+                for (x, y, w, h) in face_rects:
+                    cx = x + w // 2
+                    cy = y + h // 2
+                    face_detections.append({
+                        'center': (cx, cy), 'bbox': (x, y, w, h),
+                        'area': w * h, 'matched': False, 'source': 'face'
+                    })
+
+            # Hand detection (HSV skin color)
+            hand_detections = []
+            if mode in ('face+hands', 'all'):
+                hand_rects = self._detect_hands_hsv(frame)
+                for (x, y, w, h) in hand_rects:
+                    cx = x + w // 2
+                    cy = y + h // 2
+                    hand_detections.append({
+                        'center': (cx, cy), 'bbox': (x, y, w, h),
+                        'area': w * h, 'matched': False, 'source': 'hand'
+                    })
+
+            # Merge detections — prefer face over motion when overlapping
+            if mode == 'motion':
+                new_detections = motion_detections
+            elif mode == 'face':
+                new_detections = face_detections
+            elif mode == 'face+hands':
+                new_detections = face_detections + hand_detections
+            elif mode == 'all':
+                # Face results take priority; only add motion that doesn't overlap faces
+                new_detections = list(face_detections)
+                for md in motion_detections:
+                    overlap = False
+                    for fd in face_detections:
+                        dx = abs(md['center'][0] - fd['center'][0])
+                        dy = abs(md['center'][1] - fd['center'][1])
+                        if dx < frame_w * 0.15 and dy < frame_h * 0.15:
+                            overlap = True
+                            break
+                    if not overlap:
+                        new_detections.append(md)
+                new_detections.extend(hand_detections)
+            else:
+                # Fallback to motion
+                contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+                for c in valid_contours:
+                    x, y, w, h = cv2.boundingRect(c)
+                    cx = x + w // 2
+                    cy = y + h // 2
+                    new_detections.append({
+                        'center': (cx, cy), 'bbox': (x, y, w, h),
+                        'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
+                    })
+
+            # Check manual target expiry
+            if self.manual_target and time.time() > self.manual_target['expires_at']:
+                self.manual_target = None
 
             # Multi-frame tracking: match contours to tracked objects
-            frame_h, frame_w = frame.shape[:2]
             match_radius = max(frame_w, frame_h) * 0.20  # 20% of frame size
-
-            # Build list of new detections with center, bbox, area
-            new_detections = []
-            for c in valid_contours:
-                x, y, w, h = cv2.boundingRect(c)
-                cx = x + w // 2
-                cy = y + h // 2
-                new_detections.append({
-                    'contour': c,
-                    'center': (cx, cy),
-                    'bbox': (x, y, w, h),
-                    'area': cv2.contourArea(c),
-                    'matched': False
-                })
 
             # Match new detections to existing tracked objects (nearest center)
             for tobj in self.tracked_objects:
@@ -334,9 +467,18 @@ class MotionTracker:
             # Cleanup: remove objects lost for too long (>30 frames ~1s at 25fps)
             self.tracked_objects = [t for t in self.tracked_objects if t['lost_count'] <= 30]
 
-            # Select target: prefer locked target, then largest confirmed object
+            # Select target: manual target > locked target > largest confirmed object
             confirm_frames = self.confirm_frames
             lock_lost_limit = self.target_lock_strength * 3
+
+            # Manual target: prefer detection closest to user-clicked position
+            if self.manual_target and self.tracked_objects:
+                mt_x = self.manual_target['x'] / 100.0 * frame_w
+                mt_y = self.manual_target['y'] / 100.0 * frame_h
+                active = [t for t in self.tracked_objects if t['lost_count'] == 0]
+                if active:
+                    closest = min(active, key=lambda t: ((t['center'][0] - mt_x)**2 + (t['center'][1] - mt_y)**2))
+                    self.locked_target_id = closest['id']
 
             # Find the locked target if still alive
             locked_obj = None
@@ -415,10 +557,13 @@ class MotionTracker:
             status = {
                 'initialized': True,
                 'active': True,
+                'detection_mode': self.detection_mode,
                 'target_detected': self.target_detected,
                 'target_position': list(self.target_position),
                 'target_size': self.target_size,
                 'last_detection_time': self.last_detection_time,
+                'manual_target_active': self.manual_target is not None,
+                'manual_target_remaining': round(self.manual_target['expires_at'] - time.time(), 1) if self.manual_target else 0,
                 'fps': round(self.fps, 1),
                 'frame_count': self.frame_count,
                 'avg_frame_time': sum(self.frame_times) / len(self.frame_times) if self.frame_times else 0,
@@ -451,6 +596,7 @@ class MotionTracker:
             'varThreshold': 'var_threshold',
             'targetLockStrength': 'target_lock_strength',
             'confirmFrames': 'confirm_frames',
+            'detectionMode': 'detection_mode',
         }
 
         mapped = {}
@@ -469,6 +615,15 @@ class MotionTracker:
             self.target_lock_strength = int(mapped['target_lock_strength'])
         if 'confirm_frames' in mapped:
             self.confirm_frames = int(mapped['confirm_frames'])
+
+        # Update detection mode if changed
+        if 'detection_mode' in mapped:
+            new_mode = mapped['detection_mode']
+            if new_mode != self.detection_mode:
+                self.detection_mode = new_mode
+                if new_mode in ('face', 'face+hands', 'all') and self.face_cascade is None:
+                    self._init_face_detector()
+                logger.info(f"Detection mode changed to: {new_mode}")
 
         logger.info(f"Config hot-updated: {list(mapped.keys())}")
 
@@ -552,6 +707,8 @@ def main():
     parser.add_argument('--history', type=int, default=500, help='MOG2 history frames')
     parser.add_argument('--target-lock-strength', type=int, default=5, help='Target lock strength (1-10)')
     parser.add_argument('--confirm-frames', type=int, default=3, help='Frames before confirming target (1-10)')
+    parser.add_argument('--detection-mode', default='motion', choices=['motion', 'face', 'face+hands', 'all'],
+                        help='Detection mode: motion, face, face+hands, all')
 
     args = parser.parse_args()
 
@@ -575,6 +732,7 @@ def main():
         'target_lock_strength': args.target_lock_strength,
         'confirm_frames': args.confirm_frames,
         'detect_shadows': True,
+        'detection_mode': args.detection_mode,
     }
 
     tracker = MotionTracker(config)

@@ -39,7 +39,8 @@ function getDefaultHeadTrackingConfig() {
     dilateSize: 9,
     varThreshold: 25,
     targetLockStrength: 5,
-    confirmFrames: 3
+    confirmFrames: 3,
+    detectionMode: 'motion'
   };
 }
 
