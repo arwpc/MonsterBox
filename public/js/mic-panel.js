@@ -101,11 +101,13 @@
 
     function closeWS() { try { if (ws) { ws.close(); } } catch (_) { } ws = null; wsConnected = false; }
 
+    var gainMultiplier = 3.0;
+
     function loop() {
       if (!analyser || !dataArray) return;
       analyser.getByteTimeDomainData(dataArray);
       var sum = 0; for (var i = 0; i < dataArray.length; i++) { var v = (dataArray[i] - 128) / 128; sum += v * v; }
-      var rms = Math.min(1, Math.sqrt(sum / dataArray.length));
+      var rms = Math.min(1, Math.sqrt(sum / dataArray.length) * gainMultiplier);
       if (levelBar) levelBar.style.width = Math.round(rms * 100) + '%';
       var now = performance.now();
       var jawEnabled = jawToggle ? !!jawToggle.checked : true;

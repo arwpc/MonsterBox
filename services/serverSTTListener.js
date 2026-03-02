@@ -17,9 +17,12 @@ const __dirname = path.dirname(__filename);
 class ServerSTTListener {
   constructor() {
     this.sessions = new Map(); // sessionId -> { deviceId, model, language, running, timer, transcript }
-    this.captureDurationSec = 2.0; // longer chunks capture full sentences
-    this.pollIntervalMs = 500; // faster polling for better responsiveness
+    this.captureDurationSec = 0.3; // short chunks for responsive VU/suppression timing
+    this.pollIntervalMs = 350; // balanced polling interval
     this._lastCapturePath = null; // 'python' | 'ffmpeg' | 'arecord' | 'parec'
+    this._cachedCapturePath = null; // cached working capture method
+    this._cachedCapturePathAt = 0; // timestamp of cache
+    this._capturePathCacheTtl = 300000; // 5 minute cache TTL
     this.sessionTimeoutMs = 3600000; // 1 hour max session duration
     this.cleanupIntervalMs = 60000; // cleanup every minute
 
@@ -267,6 +270,83 @@ class ServerSTTListener {
     return path.resolve(__dirname, '../python_wrappers/microphone_cli.py');
   }
 
+  /**
+   * Capture using a specific method (for cache hits). Returns Buffer or empty Buffer.
+   */
+  async _captureWithMethod(method, sourceArg, durationSec, sr, ch) {
+    try {
+      if (method === 'python') {
+        return await this._captureWithPython(sourceArg, durationSec);
+      }
+      if (method === 'ffmpeg') {
+        return await this._captureWithFfmpeg(sourceArg, durationSec, sr, ch);
+      }
+      if (method === 'arecord') {
+        return await this._captureWithArecord(sourceArg, durationSec, sr, ch);
+      }
+      if (method === 'parec') {
+        return await this._captureWithParec(sourceArg, durationSec, sr, ch);
+      }
+    } catch (_) { }
+    return Buffer.alloc(0);
+  }
+
+  _captureWithFfmpeg(sourceArg, durationSec, sr, ch) {
+    return new Promise((resolve) => {
+      try {
+        const ffArgs = ['-hide_banner', '-loglevel', 'error', '-f', 'pulse', '-i', sourceArg,
+          '-t', String(durationSec || 1), '-ac', String(ch), '-ar', String(sr), '-f', 'wav', 'pipe:1'];
+        const ff = spawn('ffmpeg', ffArgs, { stdio: ['ignore', 'pipe', 'ignore'] });
+        const chunks = [];
+        ff.stdout.on('data', (d) => chunks.push(d));
+        ff.on('error', () => resolve(Buffer.alloc(0)));
+        ff.on('close', (code) => {
+          resolve(code === 0 && chunks.length ? Buffer.concat(chunks) : Buffer.alloc(0));
+        });
+      } catch (_) { resolve(Buffer.alloc(0)); }
+    });
+  }
+
+  _captureWithArecord(sourceArg, durationSec, sr, ch) {
+    return new Promise((resolve) => {
+      try {
+        const arArgs = ['-D', 'pulse', '-q', '-t', 'wav', '-r', String(sr), '-f', 'S16_LE', '-c', String(ch), '-d', String(durationSec || 1), '-'];
+        const env = Object.assign({}, process.env, { PULSE_SOURCE: sourceArg });
+        const ar = spawn('arecord', arArgs, { stdio: ['ignore', 'pipe', 'ignore'], env });
+        const chunks = [];
+        ar.stdout.on('data', (d) => chunks.push(d));
+        ar.on('error', () => resolve(Buffer.alloc(0)));
+        ar.on('close', (code) => {
+          resolve(code === 0 && chunks.length ? Buffer.concat(chunks) : Buffer.alloc(0));
+        });
+      } catch (_) { resolve(Buffer.alloc(0)); }
+    });
+  }
+
+  _captureWithParec(sourceArg, durationSec, sr, ch) {
+    const self = this;
+    return new Promise((resolve) => {
+      try {
+        const chunks = [];
+        const args = ['--format=s16le', '--rate', String(sr), '--channels', String(ch)];
+        if (sourceArg && sourceArg !== 'default') args.push('-d', sourceArg);
+        const pr = spawn('parec', args, { stdio: ['ignore', 'pipe', 'ignore'] });
+        const timer = setTimeout(() => { try { pr.kill('SIGINT'); } catch (_) { } }, Math.max(50, Math.round((durationSec || 1) * 1000)));
+        pr.stdout.on('data', (d) => chunks.push(d));
+        pr.on('error', () => resolve(Buffer.alloc(0)));
+        pr.on('close', () => {
+          try { clearTimeout(timer); } catch (_) { }
+          if (chunks.length) {
+            const raw = Buffer.concat(chunks);
+            resolve(self._encodeWavPCM16LE(raw, sr, ch));
+          } else {
+            resolve(Buffer.alloc(0));
+          }
+        });
+      } catch (_) { resolve(Buffer.alloc(0)); }
+    });
+  }
+
   _captureWithPython(sourceArg, durationSec) {
     return new Promise((resolve) => {
       try {
@@ -295,28 +375,40 @@ class ServerSTTListener {
     const src = await this.resolvePulseSourceId(deviceId);
     const sourceArg = src || 'default';
 
-    // ALWAYS log which microphone we're using (not just in debug mode)
-    console.log(`🎙️ STT capturing from: "${sourceArg}" (requested: "${deviceId}") for ${durationSec || 1}s`);
-
     if (process.env.MB_DEBUG_AUDIO === '1') {
+      console.log(`🎙️ STT capturing from: "${sourceArg}" (requested: "${deviceId}") for ${durationSec || 1}s`);
       console.log(`   Sample rate: ${sr}Hz, Channels: ${ch}`);
+    }
+
+    // Try cached capture method first (avoids full fallback chain on every call)
+    const now = Date.now();
+    if (this._cachedCapturePath && (now - this._cachedCapturePathAt) < this._capturePathCacheTtl) {
+      const buf = await this._captureWithMethod(this._cachedCapturePath, sourceArg, durationSec, sr, ch);
+      if (buf && buf.length > 44) {
+        this._lastCapturePath = this._cachedCapturePath;
+        return buf;
+      }
+      // Cached method failed — clear cache and fall through to full chain
+      this._cachedCapturePath = null;
     }
 
     // 1) First try Python/PyAudio route (preferred capture method)
     const pyBuf = await this._captureWithPython(sourceArg, durationSec);
     if (pyBuf && pyBuf.length > 44) { // WAV header is 44 bytes
       this._lastCapturePath = 'python';
-      console.log(`✓ Captured ${pyBuf.length} bytes via Python/PyAudio from "${sourceArg}"`);
+      this._cachedCapturePath = 'python';
+      this._cachedCapturePathAt = now;
+      if (process.env.MB_DEBUG_AUDIO === '1') console.log(`✓ Captured ${pyBuf.length} bytes via Python/PyAudio (cached)`);
       return pyBuf;
-    } else {
-      console.warn(`⚠️ Python capture failed or returned empty buffer (${pyBuf ? pyBuf.length : 0} bytes), trying fallback...`);
+    } else if (process.env.MB_DEBUG_AUDIO === '1') {
+      console.warn(`⚠️ Python capture failed (${pyBuf ? pyBuf.length : 0} bytes), trying fallback...`);
     }
 
     // 2) Fallback chain: ffmpeg -> arecord -> parec
     return new Promise((resolve) => {
       const self = this;
       function byteLen(arr) { try { return arr.reduce(function (n, c) { return n + c.length; }, 0); } catch (_) { return 0; } }
-      function finish(buf, pathTag) { try { self._lastCapturePath = pathTag || self._lastCapturePath; resolve(buf || Buffer.alloc(0)); } catch (_) { resolve(Buffer.alloc(0)); } }
+      function finish(buf, pathTag) { try { self._lastCapturePath = pathTag || self._lastCapturePath; if (buf && buf.length > 44 && pathTag) { self._cachedCapturePath = pathTag; self._cachedCapturePathAt = now; } resolve(buf || Buffer.alloc(0)); } catch (_) { resolve(Buffer.alloc(0)); } }
 
       // Primary fallback: ffmpeg (PulseAudio) to WAV on stdout
       var ffArgs = ['-hide_banner', '-loglevel', 'error', '-f', 'pulse', '-i', sourceArg,

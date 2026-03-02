@@ -108,6 +108,14 @@ def _record_wav(device_id, sample_rate, channels, duration):
             return 1
         if channels > max_in:
             channels = max_in
+        # Quick open/close test to validate device is accessible
+        try:
+            fmt = pyaudio.paInt16
+            test_stream = pa.open(format=fmt, channels=channels, rate=sample_rate, input=True,
+                                  input_device_index=idx, frames_per_buffer=128)
+            test_stream.close()
+        except Exception:
+            return 1
         # Choose small buffer (approx 20ms @ 16kHz mono => 320 frames)
         frames_per_buffer = max(128, int(sample_rate * 0.02))
         fmt = pyaudio.paInt16
