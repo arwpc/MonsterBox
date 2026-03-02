@@ -412,6 +412,34 @@ router.get('/api/head-tracking/:charId/requirements', async (req, res) => {
   }
 });
 
+// ─── Presets CRUD ────────────────────────────────────────────────────
+router.get('/api/head-tracking/:charId/presets', async (req, res) => {
+  try {
+    const presets = await headAnimationService.listPresets(req.params.charId);
+    res.json({ success: true, presets });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/api/head-tracking/:charId/presets', async (req, res) => {
+  try {
+    const preset = await headAnimationService.savePreset(req.params.charId, req.body);
+    res.json({ success: true, preset });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/api/head-tracking/:charId/presets/:presetId', async (req, res) => {
+  try {
+    await headAnimationService.deletePreset(req.params.charId, req.params.presetId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // ─── Test sweep ──────────────────────────────────────────────────────
 router.post('/api/head-tracking/:charId/test-sweep', async (req, res) => {
   try {

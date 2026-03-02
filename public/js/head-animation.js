@@ -30,7 +30,11 @@
     readCharacterFromNav();
     if (currentCharacterId) {
       loadConfig(currentCharacterId);
+      loadPresetsFromAPI();
     }
+    // Bind save preset button
+    var savePresetBtn = document.getElementById('savePresetBtn');
+    if (savePresetBtn) savePresetBtn.addEventListener('click', saveCurrentAsPreset);
   }
 
   function cacheElements() {
@@ -907,37 +911,130 @@
     person: {
       motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000,
       backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7,
-      dilateSize: 11, varThreshold: 30, targetLockStrength: 7, confirmFrames: 4
+      dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 3
     },
     noisy: {
       motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000,
       backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9,
-      dilateSize: 13, varThreshold: 50, targetLockStrength: 9, confirmFrames: 6
+      dilateSize: 13, varThreshold: 35, targetLockStrength: 8, confirmFrames: 5
     },
     sensitive: {
       motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000,
-      backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 3,
-      dilateSize: 7, varThreshold: 16, targetLockStrength: 4, confirmFrames: 2
+      backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 5,
+      dilateSize: 7, varThreshold: 15, targetLockStrength: 4, confirmFrames: 2
     }
   };
+
+  function applyPresetParams(params) {
+    if (!params) return;
+    if (params.motionThreshold != null) setSlider(el.motionThresholdRange, el.motionThresholdValue, params.motionThreshold);
+    if (params.minContourArea != null && el.minContourArea) el.minContourArea.value = params.minContourArea;
+    if (params.maxContourArea != null && el.maxContourArea) el.maxContourArea.value = params.maxContourArea;
+    if (params.backgroundLearningRate != null) setSlider(el.bgLearningRateRange, el.bgLearningRateValue, params.backgroundLearningRate);
+    if (params.noiseReductionKernelSize != null) setSlider(el.noiseKernelRange, el.noiseKernelValue, params.noiseReductionKernelSize);
+    if (params.blurSize != null) setSlider(el.blurSizeRange, el.blurSizeValue, params.blurSize);
+    if (params.dilateSize != null) setSlider(el.dilateSizeRange, el.dilateSizeValue, params.dilateSize);
+    if (params.varThreshold != null) setSlider(el.varThresholdRange, el.varThresholdValue, params.varThreshold);
+    if (params.targetLockStrength != null) setSlider(el.targetLockRange, el.targetLockValue, params.targetLockStrength);
+    if (params.confirmFrames != null) setSlider(el.confirmFramesRange, el.confirmFramesValue, params.confirmFrames);
+    scheduleHotUpdate();
+  }
 
   function applyPreset(name) {
     var preset = PRESETS[name];
     if (!preset) return;
-
-    setSlider(el.motionThresholdRange, el.motionThresholdValue, preset.motionThreshold);
-    if (el.minContourArea) el.minContourArea.value = preset.minContourArea;
-    if (el.maxContourArea) el.maxContourArea.value = preset.maxContourArea;
-    setSlider(el.bgLearningRateRange, el.bgLearningRateValue, preset.backgroundLearningRate);
-    setSlider(el.noiseKernelRange, el.noiseKernelValue, preset.noiseReductionKernelSize);
-    setSlider(el.blurSizeRange, el.blurSizeValue, preset.blurSize);
-    setSlider(el.dilateSizeRange, el.dilateSizeValue, preset.dilateSize);
-    setSlider(el.varThresholdRange, el.varThresholdValue, preset.varThreshold);
-    setSlider(el.targetLockRange, el.targetLockValue, preset.targetLockStrength);
-    setSlider(el.confirmFramesRange, el.confirmFramesValue, preset.confirmFrames);
-
-    scheduleHotUpdate();
+    applyPresetParams(preset);
     showToast('Applied "' + name + '" preset', 'success');
+  }
+
+  function loadPresetsFromAPI() {
+    if (!currentCharacterId) return;
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/presets')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success || !data.presets) return;
+        renderCustomPresets(data.presets.filter(function(p) { return !p.builtin; }));
+      })
+      .catch(function() {});
+  }
+
+  function renderCustomPresets(customs) {
+    var container = document.getElementById('presetsContainer');
+    if (!container) return;
+    // Remove old custom preset buttons
+    var old = container.querySelectorAll('.custom-preset-btn');
+    for (var i = 0; i < old.length; i++) old[i].remove();
+    // Add custom presets
+    customs.forEach(function(p) {
+      var wrapper = document.createElement('span');
+      wrapper.className = 'custom-preset-btn btn-group btn-group-sm';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline-secondary btn-sm';
+      btn.textContent = p.name;
+      btn.addEventListener('click', function() {
+        applyPresetParams(p.params);
+        showToast('Applied "' + p.name + '"', 'success');
+      });
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-outline-danger btn-sm';
+      del.innerHTML = '<i class="bi bi-x"></i>';
+      del.addEventListener('click', function() {
+        deleteCustomPreset(p.id);
+      });
+      wrapper.appendChild(btn);
+      wrapper.appendChild(del);
+      container.appendChild(wrapper);
+    });
+  }
+
+  function saveCurrentAsPreset() {
+    if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
+    var name = prompt('Preset name:');
+    if (!name || !name.trim()) return;
+    var params = {
+      motionThreshold:          parseInt(el.motionThresholdRange ? el.motionThresholdRange.value : 25, 10),
+      minContourArea:           parseInt(el.minContourArea ? el.minContourArea.value : 3000, 10),
+      maxContourArea:           parseInt(el.maxContourArea ? el.maxContourArea.value : 100000, 10),
+      backgroundLearningRate:   parseFloat(el.bgLearningRateRange ? el.bgLearningRateRange.value : 0.005),
+      noiseReductionKernelSize: parseInt(el.noiseKernelRange ? el.noiseKernelRange.value : 5, 10),
+      blurSize:                 parseInt(el.blurSizeRange ? el.blurSizeRange.value : 5, 10),
+      dilateSize:               parseInt(el.dilateSizeRange ? el.dilateSizeRange.value : 9, 10),
+      varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
+      targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
+      confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10)
+    };
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/presets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim(), params: params })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          showToast('Preset "' + name.trim() + '" saved', 'success');
+          loadPresetsFromAPI();
+        } else {
+          showToast('Failed: ' + (data.error || 'Unknown'), 'error');
+        }
+      })
+      .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
+  }
+
+  function deleteCustomPreset(presetId) {
+    if (!currentCharacterId) return;
+    fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/presets/' + presetId, { method: 'DELETE' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          showToast('Preset deleted', 'success');
+          loadPresetsFromAPI();
+        } else {
+          showToast('Failed: ' + (data.error || 'Unknown'), 'error');
+        }
+      })
+      .catch(function(err) { showToast('Error: ' + err.message, 'error'); });
   }
 
   // ─── Tooltip Initialization ───────────────────────────────────────

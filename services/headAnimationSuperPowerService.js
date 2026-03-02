@@ -200,10 +200,97 @@ async function getAvailableWebcams(characterId) {
   }
 }
 
+// ─── Built-in presets (not deletable) ────────────────────────────────
+const BUILTIN_PRESETS = [
+  {
+    id: 'person', name: 'Person Tracking', builtin: true,
+    params: { motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000, backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7, dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 3 }
+  },
+  {
+    id: 'noisy', name: 'Noisy Environment', builtin: true,
+    params: { motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000, backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9, dilateSize: 13, varThreshold: 35, targetLockStrength: 8, confirmFrames: 5 }
+  },
+  {
+    id: 'sensitive', name: 'High Sensitivity', builtin: true,
+    params: { motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000, backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 5, dilateSize: 7, varThreshold: 15, targetLockStrength: 4, confirmFrames: 2 }
+  }
+];
+
+/**
+ * List all presets for a character (built-in + custom).
+ */
+async function listPresets(characterId) {
+  const config = await readHeadTrackingConfig(characterId);
+  const customPresets = (config.presets || []).map(p => ({ ...p, builtin: false }));
+  return [...BUILTIN_PRESETS, ...customPresets];
+}
+
+/**
+ * Save a custom preset for a character.
+ */
+async function savePreset(characterId, preset) {
+  const dataDir = getCharacterDataDir(characterId);
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) { }
+
+  if (!fileConfig.headTracking) fileConfig.headTracking = getDefaultHeadTrackingConfig();
+  if (!Array.isArray(fileConfig.headTracking.presets)) fileConfig.headTracking.presets = [];
+
+  const id = preset.id || ('custom_' + Date.now());
+  const existing = fileConfig.headTracking.presets.findIndex(p => p.id === id);
+  const entry = { id, name: preset.name || 'Custom Preset', params: preset.params || {} };
+
+  if (existing >= 0) {
+    fileConfig.headTracking.presets[existing] = entry;
+  } else {
+    fileConfig.headTracking.presets.push(entry);
+  }
+
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  return entry;
+}
+
+/**
+ * Delete a custom preset for a character. Cannot delete built-in presets.
+ */
+async function deletePreset(characterId, presetId) {
+  if (BUILTIN_PRESETS.some(p => p.id === presetId)) {
+    throw new Error('Cannot delete built-in preset');
+  }
+
+  const dataDir = getCharacterDataDir(characterId);
+  const configFile = path.join(dataDir, 'super-powers.json');
+
+  let fileConfig = {};
+  try {
+    const data = await fs.readFile(configFile, 'utf8');
+    fileConfig = JSON.parse(data);
+  } catch (_) { }
+
+  if (!fileConfig.headTracking || !Array.isArray(fileConfig.headTracking.presets)) {
+    throw new Error('Preset not found');
+  }
+
+  const idx = fileConfig.headTracking.presets.findIndex(p => p.id === presetId);
+  if (idx < 0) throw new Error('Preset not found');
+
+  fileConfig.headTracking.presets.splice(idx, 1);
+  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+}
+
 export {
   readHeadTrackingConfig,
   writeHeadTrackingConfig,
   getDefaultHeadTrackingConfig,
   getAvailableServos,
-  getAvailableWebcams
+  getAvailableWebcams,
+  listPresets,
+  savePreset,
+  deletePreset
 };
