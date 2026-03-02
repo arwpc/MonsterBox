@@ -2,7 +2,8 @@ import express from 'express';
 import { loadCharacters } from '../../services/characterService.js';
 import * as configService from '../../services/configService.js';
 import * as headAnimationService from '../../services/headAnimationSuperPowerService.js';
-import {
+import * as motionTrackingController from '../../controllers/motionTrackingController.js';
+const {
   startTrackingForWebcam,
   stopTrackingForWebcam,
   enableHeadTrackingForWebcam,
@@ -10,7 +11,7 @@ import {
   getTrackingStatusForWebcam,
   getHeadTrackingStateForWebcam,
   updateTrackingParamsForWebcam
-} from '../../controllers/motionTrackingController.js';
+} = motionTrackingController;
 import hardwareService from '../../services/hardwareService/index.js';
 
 const router = express.Router();
@@ -452,6 +453,28 @@ router.post('/api/head-tracking/:charId/test-sweep', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in test sweep:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ─── Manual target (click-to-track) ─────────────────────────────────
+router.post('/api/head-tracking/:charId/manual-target', async (req, res) => {
+  try {
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true });
+    }
+    const { x, y, durationSec } = req.body || {};
+    if (x == null || y == null) {
+      return res.status(400).json({ success: false, error: 'x and y required (0-100%)' });
+    }
+    const { charId } = req.params;
+    const config = await headAnimationService.readHeadTrackingConfig(charId);
+    if (!config.webcamPartId) {
+      return res.status(400).json({ success: false, error: 'No webcam configured' });
+    }
+    motionTrackingController.setManualTarget(config.webcamPartId, parseFloat(x), parseFloat(y), durationSec || 30);
+    res.json({ success: true, x, y, durationSec: durationSec || 30 });
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });

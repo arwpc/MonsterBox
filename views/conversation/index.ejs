@@ -14,9 +14,10 @@
         <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
         <small class="text-muted" id="webcamHint"></small>
       </div>
-      <div class="card-body text-center p-2" style="resize: both; overflow: hidden; min-height: 100px; min-width: 200px;">
+      <div class="card-body text-center p-2" style="resize: both; overflow: hidden; min-height: 100px; min-width: 200px; position: relative;">
         <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border"
-          style="width: 100%; height: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark);">
+          style="width: 100%; height: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark); cursor: crosshair;">
+        <span id="clickTrackCountdown" class="badge bg-info position-absolute d-none" style="top:8px;right:8px;font-size:0.75rem;z-index:10;"></span>
         <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
       </div>
     </div>
@@ -1303,6 +1304,53 @@
         showToast('Head tracking error: ' + err.message, 'error');
         ui.headTrackToggle.checked = !enabled; // revert toggle
       }
+    }
+
+    // Click-to-track: click webcam image to set manual target
+    let clickTrackTimer = null;
+    (function initClickToTrack() {
+      const img = document.getElementById('webcamImg');
+      if (!img) return;
+      img.addEventListener('click', async (e) => {
+        const rect = img.getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        try {
+          const r = await fetch('/conversation/api/head-tracking/target', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ x: xPct, y: yPct, durationSec: 30 })
+          });
+          const j = await r.json();
+          if (j && j.success) {
+            showToast('Tracking target set for 30s', 'success');
+            startClickTrackCountdown(30);
+          } else {
+            showToast('Target failed: ' + (j.error || 'Unknown'), 'error');
+          }
+        } catch (err) {
+          showToast('Target error: ' + err.message, 'error');
+        }
+      });
+    })();
+
+    function startClickTrackCountdown(seconds) {
+      const badge = document.getElementById('clickTrackCountdown');
+      if (!badge) return;
+      badge.classList.remove('d-none');
+      let remaining = seconds;
+      badge.textContent = remaining + 's';
+      if (clickTrackTimer) clearInterval(clickTrackTimer);
+      clickTrackTimer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(clickTrackTimer);
+          clickTrackTimer = null;
+          badge.classList.add('d-none');
+        } else {
+          badge.textContent = remaining + 's';
+        }
+      }, 1000);
     }
 
     async function loadJawSettings() {

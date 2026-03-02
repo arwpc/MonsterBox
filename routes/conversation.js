@@ -183,6 +183,30 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
   }
 });
 
+// POST /conversation/api/head-tracking/target — click-to-track manual target
+router.post('/api/head-tracking/target', express.json(), async (req, res) => {
+  try {
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true });
+    }
+    const { x, y, durationSec } = req.body || {};
+    if (x == null || y == null) {
+      return res.status(400).json({ success: false, error: 'x and y are required (0-100%)' });
+    }
+    const characterId = getCurrentCharacterId(req);
+    const parts = await loadParts();
+    const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+    const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+    if (!cam) {
+      return res.status(400).json({ success: false, error: 'No webcam found' });
+    }
+    motionTrackingController.setManualTarget(cam.id, parseFloat(x), parseFloat(y), durationSec || 30);
+    res.json({ success: true, x, y, durationSec: durationSec || 30 });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // POST /conversation/api/say { text, speakerPartId? }
 router.post('/api/say', express.json(), async (req, res) => {
   try {
