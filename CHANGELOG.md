@@ -2,6 +2,36 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.0.0] - 2026-03-05 — Major Release
+
+MonsterBox 7.0 consolidates all v6.x features into a polished, production-ready platform. This release includes head tracking with face/hand detection, click-to-track, audio improvements, scene concurrency, and comprehensive documentation and test coverage.
+
+### Head Tracking & Motion Detection
+- **Head Tracking Setup Page** (`/setup/head-animation`) — full OpenCV-based motion tracking with servo mapping, live webcam overlay, hot-parameter tuning, and test sweep
+- **Face & Hand Detection** — Haar cascade face detection and HSV skin-color hand detection modes, hot-switchable via stdin without restarting Python
+- **Click-to-Track** — Click on webcam to manually set tracking target for 30 seconds with countdown overlay and auto-disable
+- **Head Tracking Presets CRUD** — Save/load/delete custom tuning presets via API; built-in presets (Person, Noisy, Sensitive) protected from deletion
+- **Dashboard Integration** — Status badge (Active/Searching/Off), toast notifications on toggle, 1-second status polling, enhanced status API with live tracking data
+
+### Audio & Microphone
+- **Faster VU Meter** — Reduced STT capture chunks from 2s to 0.3s, cached capture method for 5 minutes, 3x browser VU gain boost
+- **Echo Suppression Everywhere** — Added mic suppression to `playBufferOnCharacterSpeaker()`, `playAIOnCharacterSpeaker()`, and `playWithJawSync()`; increased ConvAI tail buffer from 1500ms to 2500ms
+- **Scene Concurrency** — Replaced pair-based concurrent grouping with fire-and-forget model; multiple consecutive concurrent steps now all fire in parallel
+
+### Dashboard & UI
+- **Bootstrap Tooltips** — Descriptive hover help on all Monster Features toggles (Jaw, Parrot, Translate, Head Tracking, Mute)
+
+### Documentation
+- **Audio & Microphone Setup** — New guide covering capture methods, VU meter, troubleshooting
+- **Echo Suppression** — New guide explaining how suppression works and tuning tips
+- **Scene Concurrency** — New guide explaining fire-and-forget model with examples
+
+### Testing
+- Comprehensive Playwright and system tests for all new v7.0 features
+- Full test suite passing (system + unit + browser)
+
+---
+
 ## [6.8.0] - 2026-03-01 — Comprehensive Bug Fix & Feature Update
 
 ### Microphone & VU Meter

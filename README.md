@@ -10,29 +10,29 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v6.8.0 (March 2026)
+## What's New — v7.0.0 (March 2026)
 
-### Bug Fixes & Performance
-- **Microphone/VU meter:** Reduced capture chunks from 2s to 0.3s, cached capture method, 3x VU gain boost
-- **Echo suppression:** Added mic suppression to all playback paths (not just ConvAI), increased tail buffer to 2500ms
-- **Scene concurrency:** Replaced pair-based grouping with fire-and-forget model — audio no longer blocks servo movement
+MonsterBox 7.0 is a major release consolidating all v6.x features into a polished, production-ready platform. Key highlights:
 
-### New Features
-- **Face detection:** Haar cascade face detection mode (+ hand detection via HSV) as alternatives to motion tracking
-- **Click-to-track:** Click on webcam to set manual tracking target for 30 seconds
-- **Head tracking presets CRUD:** Save/load/delete custom presets via API, built-in presets protected
-- **Dashboard status:** Head tracking status badge (Active/Searching), toast notifications, status polling
-- **Dashboard tooltips:** Bootstrap tooltips on all Monster Features toggles
+### Head Tracking & Motion Detection
+- **Head Tracking Setup Page** (`/setup/head-animation`) — OpenCV-based motion tracking with servo head mapping, live webcam overlay, hot-parameter tuning, test sweep
+- **Face & Hand Detection** — Haar cascade face detection and HSV skin-color hand detection as alternatives to motion tracking, with hot-switchable detection modes
+- **Click-to-Track** — Click on webcam to set a manual tracking target for 30 seconds with countdown overlay
+- **Head Tracking Presets** — Save/load/delete custom tuning presets; built-in presets (Person, Noisy, Sensitive) protected from deletion
+- **Dashboard Integration** — Status badge (Active/Searching/Off), toast notifications, 1-second status polling
 
-### Previous: Head Tracking Setup Page
-- **New `/setup/head-animation` page** for configuring OpenCV-based motion tracking with servo head mapping
-- **OpenCV motion detection** — background subtraction, contour filtering, noise reduction with hot-parameter tuning
-- **Servo mapping** — maps detected motion to pan servo position with center/range/deadzone/smoothing controls
-- **Live webcam overlay** — real-time motion tracking visualization with tracking status panel
-- **Test sweep** — verify servo wiring and calibration range
-- **Config persistence** — per-character in `super-powers.json` headTracking section
+### Audio & Microphone
+- **Faster VU Meter** — Reduced STT capture chunks from 2s to 0.3s, cached capture method, 3x gain boost
+- **Echo Suppression Everywhere** — Mic suppression added to all playback paths (buffer, AI, jaw sync), increased tail buffer to 2500ms
+- **Scene Concurrency** — Fire-and-forget model replaces pair-based grouping — multiple consecutive concurrent steps all fire in parallel
 
-### Previous: v6.7.8 (February 2026)
+### Dashboard & UI
+- **Bootstrap Tooltips** — Descriptive hover tooltips on all Monster Features toggles (Jaw, Parrot, Translate, Head Tracking, Mute)
+
+### Documentation
+- New setup guides: Audio & Microphone Setup, Echo Suppression, Scene Concurrency
+
+### Previous Highlights
 
 ### Jaw Animation v2: Real-Time Audio-Synchronized Jaw Control
 - **Persistent Servo Daemon**: Long-running Python process for PCA9685 I2C control replaces per-frame Python spawns (~580ms → <1ms per servo command)
@@ -350,14 +350,13 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v6.1.5 - February 2026)
+### Test Results (v7.0.0 - March 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System + Unit | Mocha | 255 | — | 0 |
-| Browser E2E (9 spec files) | Playwright | 190 | 7 | 0 |
+| System + Unit + Browser | Mocha + Playwright | 272 | 19 | 0 |
 
-All tests passing. Pre-existing intermittent failures (calibration timeout, VU meter hardware) resolved.
+All tests passing.
 
 ```bash
 # Run all tests
