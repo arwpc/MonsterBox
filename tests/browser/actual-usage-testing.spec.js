@@ -94,9 +94,11 @@ async function safeSelect(page, selector, description = '') {
   return true;
 }
 
-// Helper: take screenshot with descriptive name
+// Helper: take screenshot with descriptive name (viewport only — fullPage can timeout on large pages)
 async function snap(page, name) {
-  await page.screenshot({ path: `tests/test-results/actual-usage-${name}.png`, fullPage: true });
+  await page.screenshot({ path: `tests/test-results/actual-usage-${name}.png`, fullPage: false, timeout: 15000 }).catch(() => {
+    console.warn(`  Screenshot timeout for ${name} — skipping`);
+  });
 }
 
 // Helper: count errors on page (non-fatal logging)
