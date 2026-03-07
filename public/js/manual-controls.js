@@ -469,20 +469,70 @@
         '</div>';
 
     } else if (pType === 'linear_actuator') {
+      // Same directional layout as standard servo: arrows + min/mid/max + stop + position
       controlsBodyEl.innerHTML =
-        '<div class="d-flex gap-1 justify-content-center">' +
-          '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="0.1">Extend</button>' +
-          '<button class="btn btn-sm btn-danger mc-stop-btn">Stop</button>' +
-          '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="-0.1">Retract</button>' +
+        '<div class="d-flex flex-column gap-1">' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="0.1"><i class="bi bi-arrow-up"></i></button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="0">Min</button>' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="0.5">Mid</button>' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="1">Max</button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="-0.1"><i class="bi bi-arrow-down"></i></button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center mt-1">' +
+            '<button class="btn btn-sm btn-danger mc-stop-btn">Stop</button>' +
+          '</div>' +
+          '<div class="text-center small mt-1">Position: <span id="mcPositionDisplay">--</span></div>' +
         '</div>';
 
+      // Get current position
+      fetch('/api/calibration/' + encodeURIComponent(part.id) + '/position')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.success && j.currentP != null) {
+            var disp = $('mcPositionDisplay');
+            if (disp) disp.textContent = Number(j.currentP).toFixed(2);
+            updatePositionBar(part.id, j.currentP);
+          }
+        })
+        .catch(function () {});
+
     } else if (pType === 'motor' || pType === 'stepper') {
+      // Same directional layout: arrows + min/mid/max + stop + position
       controlsBodyEl.innerHTML =
-        '<div class="d-flex gap-1 justify-content-center">' +
-          '<button class="btn btn-sm btn-primary mc-motor-btn" data-action="forward">Fwd</button>' +
-          '<button class="btn btn-sm btn-danger mc-motor-btn" data-action="stop">Stop</button>' +
-          '<button class="btn btn-sm btn-primary mc-motor-btn" data-action="reverse">Rev</button>' +
+        '<div class="d-flex flex-column gap-1">' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="0.1"><i class="bi bi-arrow-up"></i></button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="0">Min</button>' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="0.5">Mid</button>' +
+            '<button class="btn btn-sm btn-outline-secondary mc-goto-btn" data-p="1">Max</button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center">' +
+            '<button class="btn btn-sm btn-primary mc-nudge-btn" data-delta="-0.1"><i class="bi bi-arrow-down"></i></button>' +
+          '</div>' +
+          '<div class="d-flex gap-1 justify-content-center mt-1">' +
+            '<button class="btn btn-sm btn-danger mc-stop-btn">Stop</button>' +
+          '</div>' +
+          '<div class="text-center small mt-1">Position: <span id="mcPositionDisplay">--</span></div>' +
         '</div>';
+
+      // Get current position
+      fetch('/api/calibration/' + encodeURIComponent(part.id) + '/position')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.success && j.currentP != null) {
+            var disp = $('mcPositionDisplay');
+            if (disp) disp.textContent = Number(j.currentP).toFixed(2);
+            updatePositionBar(part.id, j.currentP);
+          }
+        })
+        .catch(function () {});
 
     } else if (pType === 'light' || pType === 'led') {
       controlsBodyEl.innerHTML =
@@ -546,21 +596,6 @@
       stopBtns[st].addEventListener('click', function () {
         stopPart(partId);
       });
-    }
-
-    // Motor buttons
-    var motorBtns = controlsBodyEl.querySelectorAll('.mc-motor-btn');
-    for (var m = 0; m < motorBtns.length; m++) {
-      (function (btn) {
-        btn.addEventListener('click', function () {
-          var action = btn.getAttribute('data-action');
-          if (action === 'stop') {
-            motorStop(partId);
-          } else {
-            motorRun(partId, action);
-          }
-        });
-      })(motorBtns[m]);
     }
 
     // Toggle button (light/led)

@@ -469,6 +469,26 @@
             </div>
           </div>
 
+          <!-- Goto Section (quick jump to min, max, or preset) -->
+          <hr>
+          <div id="gotoSection" class="mb-3" style="display: none;">
+            <label class="form-label small fw-bold">Goto</label>
+            <div class="d-flex gap-1 mb-2">
+              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('min')">
+                <i class="bi bi-arrow-down-circle"></i> Min
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('max')">
+                <i class="bi bi-arrow-up-circle"></i> Max
+              </button>
+            </div>
+            <div class="input-group input-group-sm">
+              <select class="form-select" id="gotoPresetSelect">
+                <option value="">— Select preset —</option>
+              </select>
+              <button type="button" class="btn btn-outline-warning" onclick="gotoPosition('preset')">Go</button>
+            </div>
+          </div>
+
           <!-- Learn Movement (for openloop-linear parts only) -->
           <div id="learnMovementSection" style="display: none;">
             <hr>
@@ -730,6 +750,27 @@
 
       // Update presets list
       renderPresetsUI(profile ? profile.presets : null);
+
+      // Update Goto section — show for all calibratable parts, populate preset dropdown
+      var gotoSection = document.getElementById('gotoSection');
+      var gotoSelect = document.getElementById('gotoPresetSelect');
+      if (gotoSection) {
+        var CALIBRATABLE_TYPES = ['servo', 'linear_actuator', 'motor', 'stepper'];
+        var showGoto = partData && CALIBRATABLE_TYPES.indexOf(partData.type) !== -1;
+        gotoSection.style.display = showGoto ? 'block' : 'none';
+      }
+      if (gotoSelect) {
+        var presets = profile ? profile.presets : [];
+        gotoSelect.innerHTML = '<option value="">— Select preset —</option>';
+        if (presets && presets.length > 0) {
+          presets.forEach(function(p) {
+            var opt = document.createElement('option');
+            opt.value = p.name;
+            opt.textContent = p.name;
+            gotoSelect.appendChild(opt);
+          });
+        }
+      }
 
       // Update position display (placeholder for now - API doesn't have status endpoint yet)
       var posDisplay = document.getElementById('calPositionDisplay');
@@ -1112,6 +1153,68 @@
         alert('Goto preset error: ' + err.message);
       }
     }
+
+    // Goto section: jump to min, max, or a preset
+    async function gotoPosition(target) {
+      const partId = window.selectedPartId;
+      if (!partId || !currentCalProfile) return;
+
+      var body = null;
+      var bounds = currentCalProfile.bounds || {};
+
+      if (target === 'min') {
+        if (currentPartIsAbsoluteServo) {
+          if (bounds.minAngle == null) { alert('Min bound not set. Set Min first.'); return; }
+          body = { angle: bounds.minAngle };
+        } else {
+          if (bounds.minP == null) { alert('Min bound not set. Set Min first.'); return; }
+          body = { p: bounds.minP };
+        }
+      } else if (target === 'max') {
+        if (currentPartIsAbsoluteServo) {
+          if (bounds.maxAngle == null) { alert('Max bound not set. Set Max first.'); return; }
+          body = { angle: bounds.maxAngle };
+        } else {
+          if (bounds.maxP == null) { alert('Max bound not set. Set Max first.'); return; }
+          body = { p: bounds.maxP };
+        }
+      } else if (target === 'preset') {
+        var select = document.getElementById('gotoPresetSelect');
+        var presetName = select ? select.value : '';
+        if (!presetName) { alert('Select a preset first.'); return; }
+        var preset = (currentCalProfile.presets || []).find(function(p) { return p.name === presetName; });
+        if (!preset) { alert('Preset not found: ' + presetName); return; }
+        body = (currentPartIsAbsoluteServo && preset.angle != null)
+          ? { angle: preset.angle }
+          : { p: preset.position };
+      }
+
+      if (!body) return;
+
+      try {
+        const res = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert('Goto failed: ' + (data.error || 'Unknown error'));
+        } else {
+          if (data.targetP != null) {
+            updateCurrentPositionDisplay(data.targetP, data.targetAngle);
+          }
+          if (typeof window._syncLASlider === 'function' && data.targetP != null) {
+            window._syncLASlider(data.targetP);
+          }
+        }
+      } catch (err) {
+        console.error('Goto error:', err);
+        alert('Goto error: ' + err.message);
+      }
+    }
+    window.gotoPosition = gotoPosition;
 
     // Learn movement (for openloop-linear parts)
     async function runLearnMovement(pwmPercent) {

@@ -3,7 +3,7 @@
   "activeLayout": "Default",
   "layouts": {
     "Default": {
-      "canvasHeight": 348,
+      "canvasHeight": 346,
       "items": [
         {
           "type": "part",
@@ -27,7 +27,7 @@
           "type": "part",
           "id": "2",
           "x": 683,
-          "y": 110
+          "y": 56
         },
         {
           "type": "part",
@@ -36,7 +36,7 @@
           "y": 82
         }
       ],
-      "updatedAt": "2026-02-28T00:20:04.219Z"
+      "updatedAt": "2026-03-07T15:54:09.748Z"
     }
   }
 }

@@ -452,13 +452,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const audio64 = (message && message.audio) ? String(message.audio) : '';
                         if (!audio64) break;
 
-                        // Forward to ElevenLabs ConvAI agent (skip during parrot mode — no AI responses)
-                        if (connection && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        // Echo suppression: skip forwarding while AI audio is playing through speakers
+                        const browserNow = Date.now();
+                        const browserSuppressed = connection && connection.suppressMicUntilMs && (browserNow < connection.suppressMicUntilMs);
+
+                        // Forward to ElevenLabs ConvAI agent (skip during parrot mode or echo suppression)
+                        if (connection && !browserSuppressed && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                             connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: audio64 }));
                         }
 
-                        // Also forward to Scribe v2 Realtime STT for live transcription
-                        if (connection && connection.realtimeSTTSession && connection.realtimeSTTSession.isConnected) {
+                        // Also forward to Scribe v2 Realtime STT for live transcription (skip during echo suppression)
+                        if (!browserSuppressed && connection && connection.realtimeSTTSession && connection.realtimeSTTSession.isConnected) {
                             const rawPcm = Buffer.from(audio64, 'base64');
                             connection.realtimeSTTSession.sendPCMBuffer(rawPcm);
                         }

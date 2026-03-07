@@ -781,7 +781,7 @@
       if (chatWs && chatConnected) return;
       _conversationReady = false;
 
-      if (!chatAgentId) {
+      if (!chatAgentId && !parrotEnabled) {
         appendChatMessage('System', 'No AI agent assigned to this character.');
         const toggle = $('chatAiOnToggle');
         if (toggle) toggle.checked = false;
@@ -822,6 +822,10 @@
           }
           if (chatAgentId) {
             chatWs.send(JSON.stringify({ type: 'start_conversation', agentId: chatAgentId }));
+          } else if (parrotEnabled) {
+            // No agent — start transcription-only mode for parrot
+            chatWs.send(JSON.stringify({ type: 'start_transcription_only' }));
+            appendChatMessage('System', 'Parrot mode active (transcription only)');
           }
         };
 
@@ -855,6 +859,13 @@
       }
       if (msg.type === 'audio_level') {
         updateVUMeter(msg.level || 0);
+        return;
+      }
+      if (msg.type === 'transcription_started') {
+        // Transcription-only mode started (parrot without agent)
+        return;
+      }
+      if (msg.type === 'transcription_stopped') {
         return;
       }
       if (msg.type === 'conversation_started') {
