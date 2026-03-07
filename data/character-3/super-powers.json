@@ -23,7 +23,7 @@
   },
   "headTracking": {
     "opencvEnabled": true,
-    "enabled": true,
+    "enabled": false,
     "panServoId": "15",
     "webcamPartId": "9",
     "centerDeg": 80,
@@ -40,6 +40,7 @@
     "dilateSize": 7,
     "varThreshold": 12,
     "targetLockStrength": 5,
-    "confirmFrames": 3
+    "confirmFrames": 3,
+    "detectionMode": "motion"
   }
 }

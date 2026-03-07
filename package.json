@@ -23,6 +23,8 @@
     "test:browser:conversation": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser/conversation.spec.js --reporter=list",
     "test:browser:orch": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser/orchestration.spec.js --reporter=list",
     "test:browser:headed": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser --headed --reporter=list",
+    "test:actual-usage": "BASE_URL=http://localhost:3100 npx playwright test tests/browser/actual-usage-testing.spec.js --headed --reporter=list --timeout=60000",
+    "test:actual-usage:headless": "BASE_URL=http://localhost:3100 npx playwright test tests/browser/actual-usage-testing.spec.js --reporter=list --timeout=60000",
     "test:hardware": "MONSTERBOX_HARDWARE_AVAILABLE=1 BASE_URL=http://localhost:3100 mocha --recursive tests/system --reporter spec --exit --timeout 30000",
     "verify": "npm run test:system && npm run test:unit && npm run test:browser",
     "verify:quick": "npm run test:quick",
