@@ -2,7 +2,7 @@
 
   <style>
     .calibration-container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 20px;
     }
@@ -353,6 +353,410 @@
       display: none !important;
     }
 
+    /* ==================== PCA9685 Board Visual ==================== */
+    .pca-board-section {
+      margin-bottom: 24px;
+    }
+
+    .pca-board-wrapper {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .pca-board {
+      position: relative;
+      width: 520px;
+      min-height: 340px;
+      background: #1a5276;
+      border-radius: 6px;
+      border: 2px solid #0e3d5c;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+      font-family: 'Courier New', monospace;
+      flex-shrink: 0;
+    }
+
+    .pca-board-title {
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      text-align: center;
+      margin-bottom: 4px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .pca-board-subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 9px;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    /* I2C header strip (left side) */
+    .pca-i2c-header {
+      position: absolute;
+      left: 8px;
+      top: 70px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .pca-i2c-pin {
+      width: 20px;
+      height: 10px;
+      background: #c0a030;
+      border-radius: 1px;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .pca-i2c-label {
+      position: absolute;
+      left: 24px;
+      top: -1px;
+      font-size: 7px;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+    }
+
+    /* Chip (center) */
+    .pca-chip {
+      position: absolute;
+      left: 50%;
+      top: 80px;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 40px;
+      background: #1a1a1a;
+      border-radius: 2px;
+      border: 1px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .pca-chip-text {
+      color: #aaa;
+      font-size: 6px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* Capacitor */
+    .pca-cap {
+      position: absolute;
+      right: 40px;
+      top: 78px;
+      width: 20px;
+      height: 28px;
+      background: linear-gradient(to bottom, #222, #333, #222);
+      border-radius: 3px 3px 0 0;
+      border: 1px solid #555;
+      box-shadow: 0 2px 3px rgba(0,0,0,0.3);
+    }
+
+    .pca-cap-stripe {
+      position: absolute;
+      top: 2px;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #666;
+      border-bottom: 1px solid #444;
+    }
+
+    /* Screw terminal */
+    .pca-screw-terminal {
+      position: absolute;
+      right: 8px;
+      top: 70px;
+      width: 22px;
+      height: 20px;
+      background: #2a8c2a;
+      border-radius: 2px;
+      border: 1px solid #1a6c1a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .pca-screw-terminal::after {
+      content: 'V+';
+      position: absolute;
+      bottom: -12px;
+      left: 0;
+      font-size: 7px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Address jumpers */
+    .pca-addr-jumpers {
+      position: absolute;
+      right: 8px;
+      top: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .pca-addr-pad {
+      width: 14px;
+      height: 6px;
+      background: #c0a030;
+      border-radius: 1px;
+    }
+
+    .pca-addr-label {
+      color: rgba(255,255,255,0.4);
+      font-size: 6px;
+      text-align: right;
+      margin-right: 18px;
+      margin-top: -1px;
+    }
+
+    /* LED indicator */
+    .pca-led {
+      position: absolute;
+      left: 40px;
+      top: 95px;
+      width: 6px;
+      height: 6px;
+      background: #00cc00;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #00cc00;
+    }
+
+    /* Servo channel ports - the main interactive area */
+    .pca-channels-area {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+    }
+
+    .pca-channels-row {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .pca-channel {
+      width: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s;
+    }
+
+    .pca-channel:hover {
+      transform: scale(1.15);
+      z-index: 10;
+    }
+
+    .pca-channel-label {
+      font-size: 8px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 2px;
+      font-weight: bold;
+    }
+
+    .pca-pin-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      align-items: center;
+    }
+
+    .pca-pin {
+      width: 6px;
+      height: 10px;
+      border-radius: 1px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .pca-pin-sig { background: #e8a830; } /* Signal - yellow/orange */
+    .pca-pin-vcc { background: #cc3333; } /* V+ - red */
+    .pca-pin-gnd { background: #333; }     /* GND - black */
+
+    /* Hover tooltip */
+    .pca-channel-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .pca-channel-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: rgba(0,0,0,0.9);
+    }
+
+    .pca-channel:hover .pca-channel-tooltip {
+      display: block;
+    }
+
+    /* Channel assignment status indicators */
+    .pca-channel.assigned .pca-pin-sig {
+      background: #00cc66;
+      box-shadow: 0 0 4px rgba(0,204,102,0.5);
+    }
+
+    .pca-channel.selected-channel {
+      transform: scale(1.2);
+    }
+
+    .pca-channel.selected-channel .pca-pin-sig {
+      background: #3399ff;
+      box-shadow: 0 0 8px rgba(51,153,255,0.7);
+    }
+
+    .pca-channel.conflict .pca-pin-sig {
+      background: #ff4444;
+      box-shadow: 0 0 6px rgba(255,68,68,0.6);
+    }
+
+    /* Channel assignment panel (right side of board) */
+    .pca-assignment-panel {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .pca-assignment-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .pca-assignment-table th {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--bs-border-color);
+      color: var(--bs-body-color);
+      font-weight: 600;
+    }
+
+    .pca-assignment-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--bs-border-color);
+      vertical-align: middle;
+    }
+
+    .pca-assignment-table tr:hover {
+      background: rgba(var(--bs-primary-rgb), 0.05);
+    }
+
+    .pca-assignment-table .ch-num {
+      font-family: monospace;
+      font-weight: bold;
+      width: 40px;
+      text-align: center;
+    }
+
+    .pca-assignment-table .ch-empty {
+      color: var(--bs-secondary-color);
+      font-style: italic;
+    }
+
+    .pca-ch-select {
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--bs-border-color);
+      background: var(--bs-body-bg);
+      color: var(--bs-body-color);
+      width: 100%;
+    }
+
+    .pca-test-btn {
+      padding: 3px 10px;
+      font-size: 11px;
+      border: 1px solid var(--bs-primary);
+      background: transparent;
+      color: var(--bs-primary);
+      border-radius: 3px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .pca-test-btn:hover {
+      background: var(--bs-primary);
+      color: #fff;
+    }
+
+    .pca-test-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pca-test-btn.testing {
+      background: var(--bs-warning);
+      border-color: var(--bs-warning);
+      color: #000;
+    }
+
+    .pca-test-btn.test-ok {
+      background: var(--bs-success);
+      border-color: var(--bs-success);
+      color: #fff;
+    }
+
+    .pca-test-btn.test-fail {
+      background: var(--bs-danger);
+      border-color: var(--bs-danger);
+      color: #fff;
+    }
+
+    .pca-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--bs-secondary-color);
+      flex-wrap: wrap;
+    }
+
+    .pca-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pca-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .pca-legend-dot.sig { background: #e8a830; }
+    .pca-legend-dot.assigned { background: #00cc66; }
+    .pca-legend-dot.selected { background: #3399ff; }
+    .pca-legend-dot.conflict { background: #ff4444; }
+
     .position-display {
       text-align: center;
       padding: 20px;
@@ -406,6 +810,120 @@
 
     <!-- Alert Area -->
     <div id="alertArea"></div>
+
+    <!-- PCA9685 Board Visual + Channel Assignment -->
+    <div class="pca-board-section">
+      <div class="cal-panel">
+        <h2>PCA9685 Servo Driver Board</h2>
+
+        <div class="pca-board-wrapper">
+          <!-- Visual board rendering -->
+          <div class="pca-board" id="pcaBoard">
+            <div class="pca-board-title">PCA9685</div>
+            <div class="pca-board-subtitle">16-CHANNEL 12-BIT PWM DRIVER</div>
+
+            <!-- I2C input header (left side) -->
+            <div class="pca-i2c-header">
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">GND</span></div>
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">OE</span></div>
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">SCL</span></div>
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">SDA</span></div>
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">VCC</span></div>
+              <div class="pca-i2c-pin"><span class="pca-i2c-label">V+</span></div>
+            </div>
+
+            <!-- PCA9685 chip (center) -->
+            <div class="pca-chip">
+              <div class="pca-chip-text">PCA9685<br>NXP</div>
+            </div>
+
+            <!-- LED power indicator -->
+            <div class="pca-led" title="Power LED"></div>
+
+            <!-- Electrolytic capacitor -->
+            <div class="pca-cap"><div class="pca-cap-stripe"></div></div>
+
+            <!-- Screw terminal for V+ -->
+            <div class="pca-screw-terminal"></div>
+
+            <!-- Address jumper pads -->
+            <div class="pca-addr-jumpers">
+              <div class="pca-addr-label">A0</div>
+              <div class="pca-addr-pad"></div>
+              <div class="pca-addr-label">A1</div>
+              <div class="pca-addr-pad"></div>
+              <div class="pca-addr-label">A2</div>
+              <div class="pca-addr-pad"></div>
+              <div class="pca-addr-label">A3</div>
+              <div class="pca-addr-pad"></div>
+              <div class="pca-addr-label">A4</div>
+              <div class="pca-addr-pad"></div>
+              <div class="pca-addr-label">A5</div>
+              <div class="pca-addr-pad"></div>
+            </div>
+
+            <!-- 16 Servo Channel Ports -->
+            <div class="pca-channels-area">
+              <!-- Row 1: Channels 0-7 -->
+              <div class="pca-channels-row" id="pcaRow1">
+                <% for (var ch = 0; ch < 8; ch++) { %>
+                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)">
+                  <div class="pca-channel-tooltip" id="pcaTooltip<%= ch %>">
+                    Ch <%= ch %>: <span class="pca-tooltip-part">Empty</span>
+                  </div>
+                  <div class="pca-channel-label"><%= ch %></div>
+                  <div class="pca-pin-group">
+                    <div class="pca-pin pca-pin-sig"></div>
+                    <div class="pca-pin pca-pin-vcc"></div>
+                    <div class="pca-pin pca-pin-gnd"></div>
+                  </div>
+                </div>
+                <% } %>
+              </div>
+              <!-- Row 2: Channels 8-15 -->
+              <div class="pca-channels-row" id="pcaRow2">
+                <% for (var ch = 8; ch < 16; ch++) { %>
+                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)">
+                  <div class="pca-channel-tooltip" id="pcaTooltip<%= ch %>">
+                    Ch <%= ch %>: <span class="pca-tooltip-part">Empty</span>
+                  </div>
+                  <div class="pca-channel-label"><%= ch %></div>
+                  <div class="pca-pin-group">
+                    <div class="pca-pin pca-pin-sig"></div>
+                    <div class="pca-pin pca-pin-vcc"></div>
+                    <div class="pca-pin pca-pin-gnd"></div>
+                  </div>
+                </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Channel assignment table -->
+          <div class="pca-assignment-panel">
+            <table class="pca-assignment-table">
+              <thead>
+                <tr>
+                  <th>Ch</th>
+                  <th>Assigned Part</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pcaAssignmentBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+
+            <div class="pca-legend">
+              <div class="pca-legend-item"><div class="pca-legend-dot sig"></div> Unassigned</div>
+              <div class="pca-legend-item"><div class="pca-legend-dot assigned"></div> Assigned</div>
+              <div class="pca-legend-item"><div class="pca-legend-dot selected"></div> Selected</div>
+              <div class="pca-legend-item"><div class="pca-legend-dot conflict"></div> Conflict</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Grid -->
     <div class="cal-grid">
@@ -538,10 +1056,16 @@
     let globalSpeedCap = 50;
     let isMoving = false;
 
+    // PCA9685 board state
+    let allParts = [];            // All parts for current character
+    let pcaChannelMap = {};       // channel -> part mapping
+    let selectedPcaChannel = -1;  // Currently selected channel on the board
+
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
       updateSpeedCap();
+      loadPcaBoardState();
     });
 
     function setupEventListeners() {
@@ -912,12 +1436,16 @@
     }
 
     async function updatePosition() {
-      // For now, estimate from last goto/nudge
-      // In production, could query adapter state
-      setTimeout(() => {
-        const pos = Math.random() * 0.8 + 0.1; // Placeholder
-        document.getElementById('positionValue').textContent = pos.toFixed(3);
-      }, 500);
+      if (!currentPartId) return;
+      try {
+        const response = await fetch(`/api/calibration/${currentPartId}/position`);
+        const data = await response.json();
+        if (data.success && data.position != null) {
+          document.getElementById('positionValue').textContent = Number(data.position).toFixed(3);
+        }
+      } catch (err) {
+        console.warn('Could not read position:', err.message);
+      }
     }
 
     async function updateSpeedCap() {
@@ -965,6 +1493,242 @@
         showAlert(`Probe ${index + 1} complete. Enter measured distance.`, 'info');
       }, msRun + 500);
     }
+
+    // ==================== PCA9685 Board Functions ====================
+
+    async function loadPcaBoardState() {
+      try {
+        var response = await fetch('/setup/calibration/api/parts');
+        var data = await response.json();
+        if (data.success && data.parts) {
+          allParts = data.parts;
+        } else {
+          allParts = [];
+        }
+      } catch (err) {
+        console.error('Failed to load parts for PCA board:', err);
+        allParts = [];
+      }
+      buildPcaChannelMap();
+      renderPcaBoard();
+      renderPcaAssignmentTable();
+    }
+
+    function buildPcaChannelMap() {
+      pcaChannelMap = {};
+      var channelCounts = {};
+
+      allParts.forEach(function(part) {
+        if (!part.config) return;
+        var ch = part.config.channel;
+        if (ch == null && part.config.pcaChannel != null) ch = part.config.pcaChannel;
+        if (ch == null) return;
+        // Only PCA9685 servos
+        var ctlType = part.config.controllerType || part.controllerType || '';
+        if (ctlType !== 'pca9685') return;
+
+        ch = parseInt(ch, 10);
+        if (isNaN(ch) || ch < 0 || ch > 15) return;
+
+        channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+
+        if (!pcaChannelMap[ch]) {
+          pcaChannelMap[ch] = [];
+        }
+        pcaChannelMap[ch].push(part);
+      });
+    }
+
+    function renderPcaBoard() {
+      for (var ch = 0; ch < 16; ch++) {
+        var el = document.getElementById('pcaCh' + ch);
+        if (!el) continue;
+
+        el.classList.remove('assigned', 'conflict', 'selected-channel');
+
+        var parts = pcaChannelMap[ch];
+        var tooltipPart = el.querySelector('.pca-tooltip-part');
+
+        if (parts && parts.length > 0) {
+          if (parts.length > 1) {
+            el.classList.add('conflict');
+            tooltipPart.textContent = parts.length + ' parts (CONFLICT!)';
+          } else {
+            el.classList.add('assigned');
+            tooltipPart.textContent = parts[0].name;
+          }
+        } else {
+          tooltipPart.textContent = 'Empty';
+        }
+
+        if (ch === selectedPcaChannel) {
+          el.classList.add('selected-channel');
+        }
+      }
+    }
+
+    function renderPcaAssignmentTable() {
+      var tbody = document.getElementById('pcaAssignmentBody');
+      if (!tbody) return;
+
+      // Build options list from servo parts
+      var servoParts = allParts.filter(function(p) {
+        return p.type === 'servo';
+      });
+
+      var rows = '';
+      for (var ch = 0; ch < 16; ch++) {
+        var parts = pcaChannelMap[ch] || [];
+        var isConflict = parts.length > 1;
+        var assigned = parts.length > 0 ? parts[0] : null;
+
+        var partOptions = '<option value="">-- empty --</option>';
+        servoParts.forEach(function(p) {
+          var sel = (assigned && String(p.id) === String(assigned.id)) ? ' selected' : '';
+          partOptions += '<option value="' + p.id + '"' + sel + '>' + escapeHtml(p.name) + ' (id:' + p.id + ')</option>';
+        });
+
+        var conflictBadge = isConflict ? ' <span style="color:var(--bs-danger);font-weight:bold;" title="Multiple parts assigned to this channel!">CONFLICT</span>' : '';
+
+        rows += '<tr' + (ch === selectedPcaChannel ? ' style="background:rgba(51,153,255,0.1);"' : '') + '>';
+        rows += '<td class="ch-num">' + ch + '</td>';
+        rows += '<td><select class="pca-ch-select" data-channel="' + ch + '" onchange="assignPartToChannel(' + ch + ', this.value)">' + partOptions + '</select>' + conflictBadge + '</td>';
+        rows += '<td><button class="pca-test-btn" id="pcaTestBtn' + ch + '" onclick="testPcaChannel(' + ch + ')"' + (!assigned ? ' disabled' : '') + '>Test</button></td>';
+        rows += '</tr>';
+      }
+
+      tbody.innerHTML = rows;
+    }
+
+    function selectPcaChannel(ch) {
+      selectedPcaChannel = (selectedPcaChannel === ch) ? -1 : ch;
+      renderPcaBoard();
+      renderPcaAssignmentTable();
+
+      // Also select the part in the main calibration dropdown if one is assigned
+      var parts = pcaChannelMap[ch];
+      if (parts && parts.length === 1) {
+        var select = document.getElementById('partSelect');
+        if (select) {
+          select.value = parts[0].id;
+          select.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+
+    async function assignPartToChannel(channel, partId) {
+      if (!partId) {
+        // Unassign: find the part currently on this channel and clear its channel
+        var existing = pcaChannelMap[channel];
+        if (existing && existing.length > 0) {
+          for (var i = 0; i < existing.length; i++) {
+            await updatePartChannel(existing[i].id, null);
+          }
+        }
+        await loadPcaBoardState();
+        showAlert('Channel ' + channel + ' cleared', 'info');
+        return;
+      }
+
+      // Assign: update the part's config.channel
+      await updatePartChannel(partId, channel);
+      await loadPcaBoardState();
+      showAlert('Assigned to channel ' + channel, 'info');
+    }
+
+    async function updatePartChannel(partId, channel) {
+      try {
+        // Load current part data first
+        var part = allParts.find(function(p) { return String(p.id) === String(partId); });
+        if (!part) return;
+
+        var config = Object.assign({}, part.config || {});
+        if (channel !== null) {
+          config.channel = parseInt(channel, 10);
+          config.controllerType = 'pca9685';
+          if (!config.address) config.address = 64; // 0x40
+        } else {
+          delete config.channel;
+        }
+
+        var response = await fetch('/setup/calibration/api/parts/' + partId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: config })
+        });
+
+        var data = await response.json();
+        if (!data.success) {
+          showAlert('Failed to update channel: ' + (data.error || 'Unknown error'), 'danger');
+        }
+      } catch (err) {
+        showAlert('Error updating channel: ' + err.message, 'danger');
+      }
+    }
+
+    async function testPcaChannel(channel) {
+      var btn = document.getElementById('pcaTestBtn' + channel);
+      var parts = pcaChannelMap[channel];
+      if (!parts || parts.length === 0) return;
+
+      var part = parts[0];
+      if (btn) {
+        btn.classList.remove('test-ok', 'test-fail');
+        btn.classList.add('testing');
+        btn.textContent = 'Testing...';
+        btn.disabled = true;
+      }
+
+      try {
+        var response = await fetch('/api/parts/' + part.id + '/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'test' })
+        });
+
+        var data = await response.json();
+
+        if (btn) {
+          btn.classList.remove('testing');
+          btn.disabled = false;
+          if (data.success) {
+            btn.classList.add('test-ok');
+            btn.textContent = 'OK';
+            showAlert('Channel ' + channel + ' (' + part.name + '): Test passed', 'info');
+          } else {
+            btn.classList.add('test-fail');
+            btn.textContent = 'FAIL';
+            showAlert('Channel ' + channel + ' (' + part.name + '): ' + (data.error || 'Test failed'), 'danger');
+          }
+        }
+
+        // Reset button text after 3 seconds
+        setTimeout(function() {
+          if (btn) {
+            btn.classList.remove('test-ok', 'test-fail');
+            btn.textContent = 'Test';
+          }
+        }, 3000);
+
+      } catch (err) {
+        if (btn) {
+          btn.classList.remove('testing');
+          btn.classList.add('test-fail');
+          btn.textContent = 'ERR';
+          btn.disabled = false;
+        }
+        showAlert('Test error on channel ' + channel + ': ' + err.message, 'danger');
+
+        setTimeout(function() {
+          if (btn) {
+            btn.classList.remove('test-fail');
+            btn.textContent = 'Test';
+          }
+        }, 3000);
+      }
+    }
+
+    // ==================== End PCA9685 Board Functions ====================
 
     document.getElementById('saveLearnBtn')?.addEventListener('click', async () => {
       const probes = [
