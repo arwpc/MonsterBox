@@ -227,7 +227,11 @@ router.post('/api/head-tracking/:charId/start', async (req, res) => {
       noiseReductionKernelSize: config.noiseReductionKernelSize,
       blurSize: config.blurSize,
       dilateSize: config.dilateSize,
-      varThreshold: config.varThreshold
+      varThreshold: config.varThreshold,
+      targetLockStrength: config.targetLockStrength,
+      confirmFrames: config.confirmFrames,
+      detectInterval: config.detectInterval || 5,
+      detectionMode: config.detectionMode || 'person'
     };
 
     const startResult = await startTrackingForWebcam(webcamId, motionParams);
