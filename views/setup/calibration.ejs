@@ -46,11 +46,21 @@
     background: #2a8c2a; border: 1px solid #1a6c1a; border-radius: 2px;
     padding: 2px 6px; color: #fff; font-size: 7px;
   }
-  /* Channel grid */
+  /* Channel grid — 4 banks of 4, matching physical PCA9685 layout */
   .pca-board .pca-grid {
-    display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+    display: flex; gap: 12px; justify-content: center;
     padding: 8px 4px; background: rgba(0,0,0,0.15); border-radius: 4px;
   }
+  .pca-board .pca-bank {
+    display: flex; gap: 2px;
+    padding: 4px 3px; background: rgba(0,0,0,0.12); border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .pca-board .pca-bank-lbl {
+    font-size: 7px; color: rgba(255,255,255,0.3); text-align: center;
+    margin-top: 2px; letter-spacing: 0.5px;
+  }
+  .pca-board .pca-bank-wrap { display: flex; flex-direction: column; align-items: center; }
   .pca-board .pca-ch {
     width: 28px; display: flex; flex-direction: column; align-items: center;
     cursor: pointer; position: relative; padding: 3px 0; border-radius: 3px;
@@ -3915,25 +3925,34 @@
       h += '<div class="pca-ic"><span>PCA9685<br>NXP</span></div>';
       h += '<div class="pca-vplus">V+</div>';
       h += '</div>';
-      // Channel grid — 16 channels in a flex grid
+      // Channel grid — 4 banks of 4, matching physical PCA9685 board layout
       h += '<div class="pca-grid">';
-      for (var i = 0; i < 16; i++) {
-        var parts = chMap[i] || [];
-        var cls = 'pca-ch';
-        if (i === selectedCh) cls += ' sel';
-        else if (parts.length > 1) cls += ' dup';
-        else if (parts.length === 1) cls += ' used';
+      for (var bank = 0; bank < 4; bank++) {
+        var bankStart = bank * 4;
+        var bankEnd = bankStart + 3;
+        h += '<div class="pca-bank-wrap">';
+        h += '<div class="pca-bank">';
+        for (var i = bankStart; i <= bankEnd; i++) {
+          var parts = chMap[i] || [];
+          var cls = 'pca-ch';
+          if (i === selectedCh) cls += ' sel';
+          else if (parts.length > 1) cls += ' dup';
+          else if (parts.length === 1) cls += ' used';
 
-        var tip = 'Ch ' + i + ': ';
-        if (parts.length > 1) tip += parts.length + ' parts (CONFLICT)';
-        else if (parts.length === 1) tip += parts[0].name;
-        else tip += 'Empty';
+          var tip = 'Ch ' + i + ': ';
+          if (parts.length > 1) tip += parts.length + ' parts (CONFLICT)';
+          else if (parts.length === 1) tip += parts[0].name;
+          else tip += 'Empty';
 
-        h += '<div class="' + cls + '" data-channel="' + i + '" ';
-        h += 'onclick="selectPcaCh_' + prefix + '(' + i + ')">';
-        h += '<div class="tip">' + tip + '</div>';
-        h += '<div class="num">' + i + '</div>';
-        h += '<div class="pins"><div class="pin ps"></div><div class="pin pv"></div><div class="pin pg"></div></div>';
+          h += '<div class="' + cls + '" data-channel="' + i + '" ';
+          h += 'onclick="selectPcaCh_' + prefix + '(' + i + ')">';
+          h += '<div class="tip">' + tip + '</div>';
+          h += '<div class="num">' + i + '</div>';
+          h += '<div class="pins"><div class="pin ps"></div><div class="pin pv"></div><div class="pin pg"></div></div>';
+          h += '</div>';
+        }
+        h += '</div>';
+        h += '<div class="pca-bank-lbl">' + bankStart + '-' + bankEnd + '</div>';
         h += '</div>';
       }
       h += '</div>';
