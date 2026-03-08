@@ -40,7 +40,8 @@ function getDefaultHeadTrackingConfig() {
     varThreshold: 25,
     targetLockStrength: 5,
     confirmFrames: 3,
-    detectionMode: 'motion'
+    detectInterval: 5,
+    detectionMode: 'person'
   };
 }
 
@@ -203,16 +204,24 @@ async function getAvailableWebcams(characterId) {
 // ─── Built-in presets (not deletable) ────────────────────────────────
 const BUILTIN_PRESETS = [
   {
-    id: 'person', name: 'Person Tracking', builtin: true,
-    params: { motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000, backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7, dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 3 }
+    id: 'person-hog', name: 'Person Tracking (HOG)', builtin: true,
+    params: { detectionMode: 'person', detectInterval: 5, motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000, backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7, dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 2 }
+  },
+  {
+    id: 'person-hybrid', name: 'Person + Motion (Hybrid)', builtin: true,
+    params: { detectionMode: 'person+motion', detectInterval: 5, motionThreshold: 20, minContourArea: 4000, maxContourArea: 150000, backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7, dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 3 }
+  },
+  {
+    id: 'upperbody', name: 'Upper Body Tracking', builtin: true,
+    params: { detectionMode: 'upperbody', detectInterval: 3, motionThreshold: 20, minContourArea: 3000, maxContourArea: 150000, backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 5, dilateSize: 9, varThreshold: 20, targetLockStrength: 6, confirmFrames: 2 }
   },
   {
     id: 'noisy', name: 'Noisy Environment', builtin: true,
-    params: { motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000, backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9, dilateSize: 13, varThreshold: 35, targetLockStrength: 8, confirmFrames: 5 }
+    params: { detectionMode: 'person', detectInterval: 8, motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000, backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9, dilateSize: 13, varThreshold: 35, targetLockStrength: 8, confirmFrames: 5 }
   },
   {
     id: 'sensitive', name: 'High Sensitivity', builtin: true,
-    params: { motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000, backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 5, dilateSize: 7, varThreshold: 15, targetLockStrength: 4, confirmFrames: 2 }
+    params: { detectionMode: 'person+motion', detectInterval: 3, motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000, backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 5, dilateSize: 7, varThreshold: 15, targetLockStrength: 4, confirmFrames: 2 }
   }
 ];
 

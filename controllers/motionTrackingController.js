@@ -22,7 +22,7 @@ const headTrackingGuardrails = new Map(); // servoId -> { minAngle, maxAngle } -
 
 const MJPG_STREAM_URL = 'http://localhost:8090/?action=stream';
 
-// Default motion tracking configuration — tuned for large-body tracking
+// Default motion tracking configuration — tuned for person tracking
 const DEFAULT_CONFIG = {
   motionThreshold: 25,
   minContourArea: 3000,
@@ -35,7 +35,9 @@ const DEFAULT_CONFIG = {
   dilateSize: 9,
   varThreshold: 25,
   targetLockStrength: 5,
-  confirmFrames: 3
+  confirmFrames: 3,
+  detectInterval: 5,
+  detectionMode: 'person'
 };
 
 // Resolve parts.json using selectedCharacter for correct character isolation
@@ -347,6 +349,7 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       '--var-threshold', (config.varThreshold || 25).toString(),
       '--target-lock-strength', (config.targetLockStrength || 5).toString(),
       '--confirm-frames', (config.confirmFrames || 3).toString(),
+      '--detect-interval', (config.detectInterval || 5).toString(),
       '--detection-mode', (config.detectionMode || 'motion')
     ];
 

@@ -267,7 +267,7 @@
     if (el.centerDeg) el.centerDeg.value = config.centerDeg != null ? config.centerDeg : 0;
     if (el.rangeDeg)  el.rangeDeg.value = config.rangeDeg || 60;
     if (el.invertPan) el.invertPan.checked = config.invertPan || false;
-    if (el.detectionMode) el.detectionMode.value = config.detectionMode || 'motion';
+    if (el.detectionMode) el.detectionMode.value = config.detectionMode || 'person';
   }
 
   function setSlider(range, badge, val, fallback) {
@@ -780,7 +780,7 @@
       varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
       targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
       confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10),
-      detectionMode:            el.detectionMode ? el.detectionMode.value : 'motion'
+      detectionMode:            el.detectionMode ? el.detectionMode.value : 'person'
     };
 
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/params', {
@@ -815,7 +815,7 @@
       varThreshold:             parseInt(el.varThresholdRange ? el.varThresholdRange.value : 25, 10),
       targetLockStrength:       parseInt(el.targetLockRange ? el.targetLockRange.value : 5, 10),
       confirmFrames:            parseInt(el.confirmFramesRange ? el.confirmFramesRange.value : 3, 10),
-      detectionMode:            el.detectionMode ? el.detectionMode.value : 'motion'
+      detectionMode:            el.detectionMode ? el.detectionMode.value : 'person'
     };
   }
 
@@ -909,17 +909,17 @@
 
   var PRESETS = {
     person: {
-      motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000,
+      detectionMode: 'person', motionThreshold: 20, minContourArea: 5000, maxContourArea: 150000,
       backgroundLearningRate: 0.003, noiseReductionKernelSize: 5, blurSize: 7,
-      dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 3
+      dilateSize: 11, varThreshold: 20, targetLockStrength: 7, confirmFrames: 2
     },
     noisy: {
-      motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000,
+      detectionMode: 'person', motionThreshold: 35, minContourArea: 8000, maxContourArea: 100000,
       backgroundLearningRate: 0.002, noiseReductionKernelSize: 7, blurSize: 9,
       dilateSize: 13, varThreshold: 35, targetLockStrength: 8, confirmFrames: 5
     },
     sensitive: {
-      motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000,
+      detectionMode: 'person+motion', motionThreshold: 12, minContourArea: 1500, maxContourArea: 200000,
       backgroundLearningRate: 0.008, noiseReductionKernelSize: 3, blurSize: 5,
       dilateSize: 7, varThreshold: 15, targetLockStrength: 4, confirmFrames: 2
     }
@@ -937,6 +937,7 @@
     if (params.varThreshold != null) setSlider(el.varThresholdRange, el.varThresholdValue, params.varThreshold);
     if (params.targetLockStrength != null) setSlider(el.targetLockRange, el.targetLockValue, params.targetLockStrength);
     if (params.confirmFrames != null) setSlider(el.confirmFramesRange, el.confirmFramesValue, params.confirmFrames);
+    if (params.detectionMode != null && el.detectionMode) el.detectionMode.value = params.detectionMode;
     scheduleHotUpdate();
   }
 

@@ -24,6 +24,22 @@ from typing import Dict, Any, Optional
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def _find_cascade_path(cascade_name):
+    """Find Haar cascade XML file, handling different OpenCV installations."""
+    # Try cv2.data first (newer OpenCV)
+    if hasattr(cv2, 'data') and hasattr(cv2.data, 'haarcascades'):
+        p = cv2.data.haarcascades + cascade_name
+        if os.path.exists(p):
+            return p
+    # Common system paths
+    for d in ['/usr/share/opencv4/haarcascades', '/usr/share/opencv/haarcascades',
+              '/usr/local/share/opencv4/haarcascades', '/usr/local/share/opencv/haarcascades']:
+        p = os.path.join(d, cascade_name)
+        if os.path.exists(p):
+            return p
+    return None
+
+
 class MotionTracker:
     """OpenCV-based motion tracking for MonsterBox"""
 
@@ -36,13 +52,30 @@ class MotionTracker:
         self.last_fps_time = time.time()
         self.fps = 0
 
-        # Detection mode: 'motion', 'face', 'face+hands', 'all'
+        # Detection mode: 'motion', 'face', 'face+hands', 'all', 'person', 'upperbody', 'person+motion'
         self.detection_mode = config.get('detection_mode', 'motion')
 
         # Face detection (Haar cascade)
         self.face_cascade = None
         if self.detection_mode in ('face', 'face+hands', 'all'):
             self._init_face_detector()
+
+        # HOG person detector (pedestrian detection)
+        self.hog_detector = None
+        if self.detection_mode in ('person', 'person+motion'):
+            self._init_hog_detector()
+
+        # Upper body Haar cascade
+        self.upperbody_cascade = None
+        if self.detection_mode == 'upperbody':
+            self._init_upperbody_detector()
+
+        # OpenCV object tracker for smooth inter-frame tracking
+        self.cv_tracker = None
+        self.cv_tracker_bbox = None  # (x,y,w,h) in pixels
+        self.cv_tracker_ok = False
+        self.detect_interval = config.get('detect_interval', 5)  # run full detection every N frames
+        self.frames_since_detect = 0
 
         # Manual target tracking
         self.manual_target = None  # {x, y, expires_at}
@@ -86,7 +119,10 @@ class MotionTracker:
     def _init_face_detector(self):
         """Initialize Haar cascade face detector."""
         try:
-            cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+            cascade_path = _find_cascade_path('haarcascade_frontalface_default.xml')
+            if not cascade_path:
+                logger.warning("Face cascade XML not found on system")
+                return
             self.face_cascade = cv2.CascadeClassifier(cascade_path)
             if self.face_cascade.empty():
                 logger.warning("Failed to load face cascade, falling back to motion mode")
@@ -96,6 +132,150 @@ class MotionTracker:
         except Exception as e:
             logger.warning(f"Face detection init failed: {e}, falling back to motion mode")
             self.face_cascade = None
+
+    def _init_hog_detector(self):
+        """Initialize HOG pedestrian detector — detects full-body people from any angle."""
+        try:
+            self.hog_detector = cv2.HOGDescriptor()
+            self.hog_detector.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+            logger.info("HOG person detector initialized")
+        except Exception as e:
+            logger.warning(f"HOG person detector init failed: {e}")
+            self.hog_detector = None
+
+    def _init_upperbody_detector(self):
+        """Initialize upper body Haar cascade — detects torso/head from various angles."""
+        try:
+            cascade_path = _find_cascade_path('haarcascade_upperbody.xml')
+            if not cascade_path:
+                logger.warning("Upper body cascade XML not found on system")
+                return
+            self.upperbody_cascade = cv2.CascadeClassifier(cascade_path)
+            if self.upperbody_cascade.empty():
+                logger.warning("Failed to load upper body cascade, falling back to motion")
+                self.upperbody_cascade = None
+            else:
+                logger.info("Upper body detection initialized (Haar cascade)")
+        except Exception as e:
+            logger.warning(f"Upper body detection init failed: {e}, falling back to motion")
+            self.upperbody_cascade = None
+
+    def _detect_persons_hog(self, frame):
+        """Detect people using HOG + SVM pedestrian detector. Returns list of (x,y,w,h)."""
+        if self.hog_detector is None:
+            return []
+        try:
+            # Resize for faster processing on RPi (HOG is expensive)
+            scale = 1.0
+            proc_frame = frame
+            h, w = frame.shape[:2]
+            if w > 400:
+                scale = 400.0 / w
+                proc_frame = cv2.resize(frame, (400, int(h * scale)))
+
+            # winStride=(8,8) for speed, padding for border detection, scale for multi-scale
+            rects, weights = self.hog_detector.detectMultiScale(
+                proc_frame,
+                winStride=(8, 8),
+                padding=(4, 4),
+                scale=1.05
+            )
+
+            # Scale rects back to original frame size and filter by confidence
+            results = []
+            for i, (x, y, w_r, h_r) in enumerate(rects):
+                if len(weights) > i and weights[i] < 0.3:
+                    continue  # skip low-confidence detections
+                if scale != 1.0:
+                    x = int(x / scale)
+                    y = int(y / scale)
+                    w_r = int(w_r / scale)
+                    h_r = int(h_r / scale)
+                results.append((x, y, w_r, h_r))
+
+            # Apply non-maximum suppression to merge overlapping detections
+            if len(results) > 1:
+                results = self._nms(results, overlap_thresh=0.4)
+
+            return results
+        except Exception as e:
+            logger.warning(f"HOG detection error: {e}")
+            return []
+
+    def _detect_upperbody(self, gray):
+        """Detect upper bodies using Haar cascade. Returns list of (x,y,w,h)."""
+        if self.upperbody_cascade is None:
+            return []
+        try:
+            bodies = self.upperbody_cascade.detectMultiScale(
+                gray, scaleFactor=1.1, minNeighbors=3, minSize=(40, 40)
+            )
+            return list(bodies) if len(bodies) > 0 else []
+        except Exception:
+            return []
+
+    def _nms(self, rects, overlap_thresh=0.4):
+        """Non-maximum suppression to merge overlapping bounding boxes."""
+        if len(rects) == 0:
+            return []
+        boxes = np.array(rects, dtype=float)
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 0] + boxes[:, 2]
+        y2 = boxes[:, 1] + boxes[:, 3]
+        areas = boxes[:, 2] * boxes[:, 3]
+        idxs = np.argsort(areas)[::-1]  # largest first
+
+        pick = []
+        while len(idxs) > 0:
+            i = idxs[0]
+            pick.append(i)
+            xx1 = np.maximum(x1[i], x1[idxs[1:]])
+            yy1 = np.maximum(y1[i], y1[idxs[1:]])
+            xx2 = np.minimum(x2[i], x2[idxs[1:]])
+            yy2 = np.minimum(y2[i], y2[idxs[1:]])
+            w_i = np.maximum(0, xx2 - xx1)
+            h_i = np.maximum(0, yy2 - yy1)
+            overlap = (w_i * h_i) / areas[idxs[1:]]
+            remaining = np.where(overlap < overlap_thresh)[0]
+            idxs = idxs[remaining + 1]
+
+        return [tuple(int(v) for v in boxes[i]) for i in pick]
+
+    def _init_cv_tracker(self, frame, bbox):
+        """Initialize an OpenCV object tracker (KCF) for smooth inter-frame tracking."""
+        try:
+            # KCF is fast and good for RPi; CSRT is more accurate but slower
+            self.cv_tracker = cv2.TrackerKCF.create()
+            ok = self.cv_tracker.init(frame, bbox)
+            if ok:
+                self.cv_tracker_bbox = bbox
+                self.cv_tracker_ok = True
+                logger.info(f"KCF tracker initialized on bbox {bbox}")
+            else:
+                self.cv_tracker = None
+                self.cv_tracker_ok = False
+        except Exception as e:
+            logger.warning(f"Tracker init failed: {e}")
+            self.cv_tracker = None
+            self.cv_tracker_ok = False
+
+    def _update_cv_tracker(self, frame):
+        """Update the KCF tracker with a new frame. Returns (ok, bbox) or (False, None)."""
+        if self.cv_tracker is None:
+            return False, None
+        try:
+            ok, bbox = self.cv_tracker.update(frame)
+            if ok:
+                self.cv_tracker_bbox = tuple(int(v) for v in bbox)
+                self.cv_tracker_ok = True
+                return True, self.cv_tracker_bbox
+            else:
+                self.cv_tracker_ok = False
+                return False, None
+        except Exception:
+            self.cv_tracker_ok = False
+            return False, None
 
     def _detect_faces(self, gray):
         """Detect faces using Haar cascade. Returns list of (x,y,w,h) bounding rects."""
@@ -341,78 +521,148 @@ class MotionTracker:
 
             new_detections = []
             mode = self.detection_mode
+            self.frames_since_detect += 1
+            run_full_detect = (self.frames_since_detect >= self.detect_interval) or not self.cv_tracker_ok
 
-            # Motion detection (MOG2 background subtraction)
-            motion_detections = []
-            if mode in ('motion', 'all'):
-                contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
-                for c in valid_contours:
-                    x, y, w, h = cv2.boundingRect(c)
-                    cx = x + w // 2
-                    cy = y + h // 2
-                    motion_detections.append({
-                        'center': (cx, cy), 'bbox': (x, y, w, h),
-                        'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
-                    })
+            # For person/upperbody/person+motion modes, use tracker between detections
+            use_tracker = mode in ('person', 'upperbody', 'person+motion')
 
-            # Face detection (Haar cascade)
-            face_detections = []
-            if mode in ('face', 'face+hands', 'all'):
-                face_rects = self._detect_faces(gray)
-                for (x, y, w, h) in face_rects:
-                    cx = x + w // 2
-                    cy = y + h // 2
-                    face_detections.append({
-                        'center': (cx, cy), 'bbox': (x, y, w, h),
-                        'area': w * h, 'matched': False, 'source': 'face'
-                    })
-
-            # Hand detection (HSV skin color)
-            hand_detections = []
-            if mode in ('face+hands', 'all'):
-                hand_rects = self._detect_hands_hsv(frame)
-                for (x, y, w, h) in hand_rects:
-                    cx = x + w // 2
-                    cy = y + h // 2
-                    hand_detections.append({
-                        'center': (cx, cy), 'bbox': (x, y, w, h),
-                        'area': w * h, 'matched': False, 'source': 'hand'
-                    })
-
-            # Merge detections — prefer face over motion when overlapping
-            if mode == 'motion':
-                new_detections = motion_detections
-            elif mode == 'face':
-                new_detections = face_detections
-            elif mode == 'face+hands':
-                new_detections = face_detections + hand_detections
-            elif mode == 'all':
-                # Face results take priority; only add motion that doesn't overlap faces
-                new_detections = list(face_detections)
-                for md in motion_detections:
-                    overlap = False
-                    for fd in face_detections:
-                        dx = abs(md['center'][0] - fd['center'][0])
-                        dy = abs(md['center'][1] - fd['center'][1])
-                        if dx < frame_w * 0.15 and dy < frame_h * 0.15:
-                            overlap = True
-                            break
-                    if not overlap:
-                        new_detections.append(md)
-                new_detections.extend(hand_detections)
-            else:
-                # Fallback to motion
-                contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
-                for c in valid_contours:
-                    x, y, w, h = cv2.boundingRect(c)
+            # If using tracker and not time for full detection, just update tracker
+            if use_tracker and not run_full_detect and self.cv_tracker_ok:
+                ok, bbox = self._update_cv_tracker(frame)
+                if ok:
+                    x, y, w, h = bbox
                     cx = x + w // 2
                     cy = y + h // 2
                     new_detections.append({
                         'center': (cx, cy), 'bbox': (x, y, w, h),
-                        'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
+                        'area': w * h, 'matched': False, 'source': 'tracker'
                     })
+                else:
+                    # Tracker lost — force full detection next frame
+                    run_full_detect = True
+
+            if not use_tracker or run_full_detect:
+                self.frames_since_detect = 0
+
+                # Motion detection (MOG2 background subtraction)
+                motion_detections = []
+                if mode in ('motion', 'all', 'person+motion'):
+                    contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+                    for c in valid_contours:
+                        x, y, w, h = cv2.boundingRect(c)
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        motion_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
+                        })
+
+                # Face detection (Haar cascade)
+                face_detections = []
+                if mode in ('face', 'face+hands', 'all'):
+                    face_rects = self._detect_faces(gray)
+                    for (x, y, w, h) in face_rects:
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        face_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': w * h, 'matched': False, 'source': 'face'
+                        })
+
+                # Hand detection (HSV skin color)
+                hand_detections = []
+                if mode in ('face+hands', 'all'):
+                    hand_rects = self._detect_hands_hsv(frame)
+                    for (x, y, w, h) in hand_rects:
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        hand_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': w * h, 'matched': False, 'source': 'hand'
+                        })
+
+                # HOG person detection
+                person_detections = []
+                if mode in ('person', 'person+motion'):
+                    person_rects = self._detect_persons_hog(frame)
+                    for (x, y, w, h) in person_rects:
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        person_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': w * h, 'matched': False, 'source': 'person'
+                        })
+
+                # Upper body detection
+                upperbody_detections = []
+                if mode == 'upperbody':
+                    ub_rects = self._detect_upperbody(gray)
+                    for (x, y, w, h) in ub_rects:
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        upperbody_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': w * h, 'matched': False, 'source': 'upperbody'
+                        })
+
+                # Merge detections based on mode
+                if mode == 'motion':
+                    new_detections = motion_detections
+                elif mode == 'face':
+                    new_detections = face_detections
+                elif mode == 'face+hands':
+                    new_detections = face_detections + hand_detections
+                elif mode == 'person':
+                    new_detections = person_detections
+                elif mode == 'upperbody':
+                    new_detections = upperbody_detections
+                elif mode == 'person+motion':
+                    # Person detections take priority; add motion that doesn't overlap
+                    new_detections = list(person_detections)
+                    for md in motion_detections:
+                        overlap = False
+                        for pd in person_detections:
+                            dx = abs(md['center'][0] - pd['center'][0])
+                            dy = abs(md['center'][1] - pd['center'][1])
+                            if dx < frame_w * 0.15 and dy < frame_h * 0.15:
+                                overlap = True
+                                break
+                        if not overlap:
+                            new_detections.append(md)
+                elif mode == 'all':
+                    # Face results take priority; only add motion that doesn't overlap faces
+                    new_detections = list(face_detections)
+                    for md in motion_detections:
+                        overlap = False
+                        for fd in face_detections:
+                            dx = abs(md['center'][0] - fd['center'][0])
+                            dy = abs(md['center'][1] - fd['center'][1])
+                            if dx < frame_w * 0.15 and dy < frame_h * 0.15:
+                                overlap = True
+                                break
+                        if not overlap:
+                            new_detections.append(md)
+                    new_detections.extend(hand_detections)
+                else:
+                    # Fallback to motion
+                    contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
+                    for c in valid_contours:
+                        x, y, w, h = cv2.boundingRect(c)
+                        cx = x + w // 2
+                        cy = y + h // 2
+                        new_detections.append({
+                            'center': (cx, cy), 'bbox': (x, y, w, h),
+                            'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
+                        })
+
+                # Re-initialize KCF tracker on best detection for smooth inter-frame tracking
+                if use_tracker and new_detections:
+                    best = max(new_detections, key=lambda d: d['area'])
+                    bx, by, bw, bh = best['bbox']
+                    self._init_cv_tracker(frame, (bx, by, bw, bh))
 
             # Check manual target expiry
             if self.manual_target and time.time() > self.manual_target['expires_at']:
@@ -596,6 +846,7 @@ class MotionTracker:
             'varThreshold': 'var_threshold',
             'targetLockStrength': 'target_lock_strength',
             'confirmFrames': 'confirm_frames',
+            'detectInterval': 'detect_interval',
             'detectionMode': 'detection_mode',
         }
 
@@ -616,13 +867,26 @@ class MotionTracker:
         if 'confirm_frames' in mapped:
             self.confirm_frames = int(mapped['confirm_frames'])
 
+        # Update detect_interval if changed
+        if 'detect_interval' in mapped:
+            self.detect_interval = int(mapped['detect_interval'])
+
         # Update detection mode if changed
         if 'detection_mode' in mapped:
             new_mode = mapped['detection_mode']
             if new_mode != self.detection_mode:
                 self.detection_mode = new_mode
+                # Initialize detectors as needed for the new mode
                 if new_mode in ('face', 'face+hands', 'all') and self.face_cascade is None:
                     self._init_face_detector()
+                if new_mode in ('person', 'person+motion') and self.hog_detector is None:
+                    self._init_hog_detector()
+                if new_mode == 'upperbody' and self.upperbody_cascade is None:
+                    self._init_upperbody_detector()
+                # Reset tracker when changing modes
+                self.cv_tracker = None
+                self.cv_tracker_ok = False
+                self.frames_since_detect = self.detect_interval  # force immediate detection
                 logger.info(f"Detection mode changed to: {new_mode}")
 
         logger.info(f"Config hot-updated: {list(mapped.keys())}")
@@ -707,8 +971,10 @@ def main():
     parser.add_argument('--history', type=int, default=500, help='MOG2 history frames')
     parser.add_argument('--target-lock-strength', type=int, default=5, help='Target lock strength (1-10)')
     parser.add_argument('--confirm-frames', type=int, default=3, help='Frames before confirming target (1-10)')
-    parser.add_argument('--detection-mode', default='motion', choices=['motion', 'face', 'face+hands', 'all'],
-                        help='Detection mode: motion, face, face+hands, all')
+    parser.add_argument('--detect-interval', type=int, default=5, help='Frames between full detection (for tracker modes)')
+    parser.add_argument('--detection-mode', default='motion',
+                        choices=['motion', 'face', 'face+hands', 'all', 'person', 'upperbody', 'person+motion'],
+                        help='Detection mode: motion, face, face+hands, all, person, upperbody, person+motion')
 
     args = parser.parse_args()
 
@@ -732,6 +998,7 @@ def main():
         'target_lock_strength': args.target_lock_strength,
         'confirm_frames': args.confirm_frames,
         'detect_shadows': True,
+        'detect_interval': args.detect_interval,
         'detection_mode': args.detection_mode,
     }
 
