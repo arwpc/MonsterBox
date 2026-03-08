@@ -3890,7 +3890,7 @@
      * @param {string} prefix - 'add' or 'edit', used to scope element IDs
      * @param {number} selectedCh - Currently selected channel (-1 = none)
      */
-    function buildPcaBoardHTML(prefix, selectedCh) {
+    window.buildPcaBoardHTML = function (prefix, selectedCh) {
       // Build channel-to-part lookup from allParts
       var chMap = {};
       (window.allParts || []).forEach(function (p) {
@@ -3946,14 +3946,14 @@
       h += '<div class="li"><div class="ld ld-dup"></div> Conflict</div>';
       h += '</div>';
       return h;
-    }
+    };
 
     function renderAddPCA9685Channels() {
       const container = document.getElementById('addPca9685Channels');
       if (!container) return;
       var currentCh = parseInt(document.getElementById('addPca9685Channel').value, 10);
       if (isNaN(currentCh)) currentCh = -1;
-      container.innerHTML = buildPcaBoardHTML('add', currentCh);
+      container.innerHTML = window.buildPcaBoardHTML('add', currentCh);
     }
 
     window.selectPcaCh_add = function (channel) {
@@ -4256,24 +4256,24 @@
       if (pca9685Config) {
         if (controllerType === 'pca9685') {
           pca9685Config.style.display = 'block';
-          generateEditPCA9685Channels();
+          window.generateEditPCA9685Channels();
         } else {
           pca9685Config.style.display = 'none';
         }
       }
     };
 
-    function generateEditPCA9685Channels() {
+    window.generateEditPCA9685Channels = function () {
       const channelsContainer = document.getElementById('editPca9685Channels');
       if (!channelsContainer) return;
       var currentCh = parseInt(document.getElementById('editPca9685Channel').value, 10);
       if (isNaN(currentCh)) currentCh = -1;
-      channelsContainer.innerHTML = buildPcaBoardHTML('edit', currentCh);
-    }
+      channelsContainer.innerHTML = window.buildPcaBoardHTML('edit', currentCh);
+    };
 
     window.selectPcaCh_edit = function (channel) {
       document.getElementById('editPca9685Channel').value = channel;
-      generateEditPCA9685Channels();
+      window.generateEditPCA9685Channels();
     };
 
     function selectEditPCA9685Channel(channel) {
@@ -5336,7 +5336,7 @@
 
     // Render the PCA9685 board visual with current channel highlighted
     if (channelEl) channelEl.value = channel;
-    generateEditPCA9685Channels();
+    window.generateEditPCA9685Channels();
   } // End loadEditServoValues - Fixed: Removed extra blank line that caused syntax error on some browsers
 
   function loadEditMotorValues(part, config) {
