@@ -20,6 +20,7 @@ import realtimeSTTService from './elevenLabsRealtimeSTTService.js';
 import randomPoseService from './randomPoseService.js';
 import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
+import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 
 // Minimal WAV encoder for PCM16LE mono (16kHz)
 function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
@@ -760,6 +761,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                     }).catch(err => {
                                         console.error(`❌ AI audio playback ERROR:`, err);
                                     });
+
+                                    // Drive jaw from PCM audio amplitude (if jaw enabled)
+                                    try {
+                                        const samples = new Int16Array(audioBuffer.buffer, audioBuffer.byteOffset, Math.floor(audioBuffer.length / 2));
+                                        let sumSq = 0;
+                                        for (let i = 0; i < samples.length; i++) sumSq += samples[i] * samples[i];
+                                        const rms = Math.sqrt(sumSq / (samples.length || 1)) / 32768;
+                                        if (rms > 0.01) {
+                                            jawAnimationService.driveJawFromAmplitude(c.characterId, Math.min(1, rms * 3)).catch(() => {});
+                                        }
+                                    } catch (_) { /* non-fatal */ }
                                 } else {
                                     serverPlaybackService.writeMp3Stream(audioBuffer, {
                                         characterId: c.characterId,
@@ -1427,6 +1439,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
         } finally {
             c.audioPlaying = false;
             console.log(`🔇 Audio playback stopped for session ${sessionId}`);
+            // Close jaw when audio stops
+            try { jawAnimationService.driveJawFromAmplitude(c.characterId, 0).catch(() => {}); } catch (_) {}
         }
     }
 

@@ -1055,6 +1055,11 @@
           if (aiToggle.checked) {
             _audioPlaybackEnabled = true;
             connectChatWebSocket();
+            // Auto-enable jaw animation when AI is turned on
+            if (ui.jawToggle && !ui.jawToggle.checked) {
+              ui.jawToggle.checked = true;
+              saveJawSettings();
+            }
           } else {
             disconnectChat();
           }

@@ -15,6 +15,7 @@ import audioLibraryService from '../services/audioLibraryService.js';
 import { readConfig } from '../services/configService.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
+import * as headAnimationService from '../services/headAnimationSuperPowerService.js';
 import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
 import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
@@ -168,15 +169,60 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
     const fRes = { json: (b) => res.json(b), status: (c) => ({ json: (b) => res.status(c).json(b) }) };
 
     if (enabled) {
-      const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-      const byChar = characterId ? servos.filter(s => Number(s.characterId) === Number(characterId)) : servos;
-      const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
-      if (!pan) {
-        return res.status(400).json({ success: false, error: 'No servo found for pan axis' });
+      // Load saved head tracking config from super-powers.json
+      const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
+
+      // Use saved panServoId if available, otherwise auto-detect
+      let panServoId = savedConfig.panServoId;
+      if (!panServoId) {
+        const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+        const byChar = characterId ? servos.filter(s => Number(s.characterId) === Number(characterId)) : servos;
+        const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
+        if (!pan) {
+          return res.status(400).json({ success: false, error: 'No servo found for pan axis' });
+        }
+        panServoId = pan.id;
       }
-      await motionTrackingController.enableHeadTracking({ body: { webcamId: cam.id, panServoId: pan.id, params: { rangeDeg: 60, smoothing: 0.3, deadzone: 6 } } }, fRes);
+
+      // Apply all saved settings (center, range, invert, smoothing, deadzone, detection mode)
+      const params = {
+        centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
+        rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
+        invertPan: !!savedConfig.invertPan,
+        smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
+        deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
+      };
+
+      // Start OpenCV motion tracking with saved detection params
+      const trackingParams = {
+        motionThreshold: savedConfig.motionThreshold || 25,
+        minContourArea: savedConfig.minContourArea || 3000,
+        maxContourArea: savedConfig.maxContourArea || 100000,
+        backgroundLearningRate: savedConfig.backgroundLearningRate || 0.005,
+        noiseReductionKernelSize: savedConfig.noiseReductionKernelSize || 5,
+        blurSize: savedConfig.blurSize || 5,
+        dilateSize: savedConfig.dilateSize || 9,
+        varThreshold: savedConfig.varThreshold || 25,
+        targetLockStrength: savedConfig.targetLockStrength || 5,
+        confirmFrames: savedConfig.confirmFrames || 3,
+        detectInterval: savedConfig.detectInterval || 5,
+        detectionMode: savedConfig.detectionMode || 'person'
+      };
+
+      // Start tracking process with saved params, then enable servo
+      try {
+        await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams);
+      } catch (startErr) {
+        console.warn('Could not start motion tracking:', startErr.message);
+      }
+
+      await motionTrackingController.enableHeadTracking({ body: { webcamId: cam.id, panServoId, params } }, fRes);
     } else {
+      // Disable servo tracking and stop the OpenCV process
       await motionTrackingController.disableHeadTracking({ body: { webcamId: cam.id } }, fRes);
+      try {
+        await motionTrackingController.stopTrackingForWebcam(cam.id);
+      } catch (_) { /* ignore if not running */ }
     }
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
