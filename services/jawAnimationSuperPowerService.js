@@ -189,7 +189,7 @@ async function writeJawConfig(characterId, jawConfig) {
       const tuningKeys = [
         'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
         'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
-        'minAngle', 'maxAngle'
+        'minAngle', 'maxAngle', 'audioLeadTimeMs', 'testText'
       ];
       for (const key of tuningKeys) {
         if (jawConfig[key] !== undefined) {
@@ -377,7 +377,9 @@ function getDefaultJawConfig() {
     useBandpassFilter: true,   // 500-2500Hz speech formant filter
     useAGC: true,              // automatic gain control
     quantizationLevels: 10,    // discrete jaw positions (5-20)
-    preset: 'speech'           // 'speech' | 'music' | 'custom'
+    preset: 'speech',          // 'speech' | 'music' | 'custom'
+    audioLeadTimeMs: 0,        // ms offset: positive = delay jaw (audio leads), negative = advance jaw
+    testText: 'The quick brown fox jumped over the lazy dog'
   };
 }
 
@@ -1088,7 +1090,7 @@ async function preAnalyzeAudio(audioBuffer, contentType, config, guardrails) {
  * @param {string|number} characterId
  * @param {Buffer} audioBuffer
  * @param {string} contentType
- * @param {object} [options] - { skipAudio: false } to skip audio playback (jaw only)
+ * @param {object} [options] - { skipAudio, preAnalysis } skipAudio skips audio playback; preAnalysis reuses pre-computed frames
  * @returns {Promise<{success, duration, frameCount, timeline?}>}
  */
 async function playWithJawSync(characterId, audioBuffer, contentType, options = {}) {
@@ -1110,13 +1112,17 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
   const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
   const closedAngle = guardrails.minAngle ?? config.minAngle ?? 0;
 
-  // Pre-analyze audio -> complete jaw timeline
+  // Use pre-computed analysis if provided, otherwise analyze now
   let analysis;
-  try {
-    analysis = await preAnalyzeAudio(audioBuffer, contentType, config, guardrails);
-  } catch (err) {
-    console.error('Pre-analysis failed:', err.message);
-    return { success: false, message: `Pre-analysis failed: ${err.message}` };
+  if (options.preAnalysis && options.preAnalysis.frames && options.preAnalysis.frames.length > 0) {
+    analysis = options.preAnalysis;
+  } else {
+    try {
+      analysis = await preAnalyzeAudio(audioBuffer, contentType, config, guardrails);
+    } catch (err) {
+      console.error('Pre-analysis failed:', err.message);
+      return { success: false, message: `Pre-analysis failed: ${err.message}` };
+    }
   }
 
   if (analysis.frames.length === 0) {
@@ -1145,64 +1151,89 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
     }
   } catch (_) { /* best-effort */ }
 
-  // Start audio playback (fire-and-forget — we sync jaw from pre-analyzed timeline)
+  // Audio sync offset: positive = audio leads (delay jaw), negative = jaw leads (delay audio)
+  const audioLeadTimeMs = Math.max(-1000, Math.min(1000, config.audioLeadTimeMs || 0));
+
+  // Pre-import playback service before the synchronized start
+  let serverPlaybackService = null;
   if (!options.skipAudio) {
     try {
-      const serverPlaybackService = (await import('./serverPlaybackService.js')).default;
-      serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-        contentType, characterId
-      }).catch((err) => {
-        console.error('Jaw sync audio playback error:', err.message);
-      });
+      serverPlaybackService = (await import('./serverPlaybackService.js')).default;
     } catch (err) {
-      console.error('Could not start audio playback:', err.message);
+      console.error('Could not import playback service:', err.message);
     }
   }
 
-  // Play jaw timeline synchronized to audio start
+  // Synchronized start: launch audio and jaw timeline with offset compensation
   return new Promise((resolve) => {
-    const startTime = Date.now();
-    let frameIndex = 0;
+    function startJawTimeline() {
+      const startTime = Date.now();
+      let frameIndex = 0;
 
-    function scheduleNext() {
-      if (driveState.cancelled || frameIndex >= analysis.frames.length) {
-        // Done — close jaw
-        sendJawAngleCmd(jawServo, closedAngle);
-        driveState.amplitude = 0;
-        driveState.angle = closedAngle;
+      function scheduleNext() {
+        if (driveState.cancelled || frameIndex >= analysis.frames.length) {
+          // Done — close jaw
+          sendJawAngleCmd(jawServo, closedAngle);
+          driveState.amplitude = 0;
+          driveState.angle = closedAngle;
+          const ms = audioMonitoringState.get(cid);
+          if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
+          activeJawDrives.delete(cid);
+          resolve({ success: true, duration: analysis.duration, frameCount: analysis.frames.length });
+          return;
+        }
+
+        const frame = analysis.frames[frameIndex];
+
+        // Update state for polling endpoint
+        driveState.amplitude = frame.amplitude;
+        driveState.angle = frame.angle;
         const ms = audioMonitoringState.get(cid);
-        if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
-        activeJawDrives.delete(cid);
-        resolve({ success: true, duration: analysis.duration, frameCount: analysis.frames.length });
-        return;
+        if (ms) { ms.lastAmplitude = frame.amplitude; ms.smoothedAmplitude = frame.amplitude; }
+
+        // Send angle to servo
+        sendJawAngleCmd(jawServo, frame.angle);
+
+        frameIndex++;
+
+        // Schedule next frame relative to startTime to self-correct for drift
+        if (frameIndex < analysis.frames.length) {
+          const nextTime = analysis.frames[frameIndex].time;
+          const elapsed = Date.now() - startTime;
+          const delay = Math.max(0, nextTime - elapsed);
+          driveState.timer = setTimeout(scheduleNext, delay);
+        } else {
+          // Schedule final cleanup after last frame's duration
+          driveState.timer = setTimeout(scheduleNext, 20);
+        }
       }
 
-      const frame = analysis.frames[frameIndex];
+      scheduleNext();
+    }
 
-      // Update state for polling endpoint
-      driveState.amplitude = frame.amplitude;
-      driveState.angle = frame.angle;
-      const ms = audioMonitoringState.get(cid);
-      if (ms) { ms.lastAmplitude = frame.amplitude; ms.smoothedAmplitude = frame.amplitude; }
-
-      // Send angle to servo
-      sendJawAngleCmd(jawServo, frame.angle);
-
-      frameIndex++;
-
-      // Schedule next frame relative to startTime to self-correct for drift
-      if (frameIndex < analysis.frames.length) {
-        const nextTime = analysis.frames[frameIndex].time;
-        const elapsed = Date.now() - startTime;
-        const delay = Math.max(0, nextTime - elapsed);
-        driveState.timer = setTimeout(scheduleNext, delay);
-      } else {
-        // Schedule final cleanup after last frame's duration
-        driveState.timer = setTimeout(scheduleNext, 20);
+    function startAudioPlayback() {
+      if (serverPlaybackService) {
+        serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+          contentType, characterId
+        }).catch((err) => {
+          console.error('Jaw sync audio playback error:', err.message);
+        });
       }
     }
 
-    scheduleNext();
+    if (audioLeadTimeMs > 0) {
+      // Audio leads: start audio now, delay jaw start
+      startAudioPlayback();
+      driveState.timer = setTimeout(startJawTimeline, audioLeadTimeMs);
+    } else if (audioLeadTimeMs < 0) {
+      // Jaw leads: start jaw now, delay audio start
+      startJawTimeline();
+      setTimeout(startAudioPlayback, Math.abs(audioLeadTimeMs));
+    } else {
+      // No offset: start both simultaneously
+      startAudioPlayback();
+      startJawTimeline();
+    }
   });
 }
 

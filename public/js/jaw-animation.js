@@ -15,6 +15,7 @@
   var availableServos = [];
   var configsList = [];       // Array of { id, name, preset }
   var activeConfigId = null;  // Currently active config ID
+  var autoSaveTimer = null;   // Debounce timer for auto-save
   var el = {};
 
   // ─── Initialization ───────────────────────────────────────────────
@@ -75,6 +76,11 @@
       presetCustom:        document.getElementById('presetCustom'),
       jawTimelineCanvas:   document.getElementById('jawTimelineCanvas'),
       timelinePanel:       document.getElementById('timelinePanel'),
+      // Audio sync offset
+      audioLeadTimeRange:  document.getElementById('audioLeadTimeRange'),
+      audioLeadTimeValue:  document.getElementById('audioLeadTimeValue'),
+      // Test text save
+      saveTestTextBtn:     document.getElementById('saveTestTextBtn'),
       // Config selector
       configSelector:      document.getElementById('configSelector'),
       saveAsNewBtn:        document.getElementById('saveAsNewBtn'),
@@ -84,20 +90,23 @@
   }
 
   function bindEvents() {
-    // Sliders — live value display
+    // Sliders — live value display + auto-save
     if (el.sensitivityRange) {
       el.sensitivityRange.addEventListener('input', function() {
         if (el.sensitivityValue) el.sensitivityValue.textContent = this.value;
+        scheduleAutoSave();
       });
     }
     if (el.smoothingRange) {
       el.smoothingRange.addEventListener('input', function() {
         if (el.smoothingValue) el.smoothingValue.textContent = this.value;
+        scheduleAutoSave();
       });
     }
     if (el.volumeThresholdRange) {
       el.volumeThresholdRange.addEventListener('input', function() {
         if (el.volumeThresholdValue) el.volumeThresholdValue.textContent = this.value;
+        scheduleAutoSave();
       });
     }
 
@@ -108,11 +117,21 @@
     if (el.stopBtn)          el.stopBtn.addEventListener('click', stopPlayback);
     if (el.emergencyStopBtn) el.emergencyStopBtn.addEventListener('click', emergencyStop);
 
-    // Servo dropdown
-    if (el.jawServoSelect) el.jawServoSelect.addEventListener('change', onServoChange);
+    // Servo dropdown — auto-save on change
+    if (el.jawServoSelect) {
+      el.jawServoSelect.addEventListener('change', function() {
+        onServoChange();
+        scheduleAutoSave();
+      });
+    }
 
-    // Enable toggle
-    if (el.jawEnabled) el.jawEnabled.addEventListener('change', updateFormState);
+    // Enable toggle — auto-save on change
+    if (el.jawEnabled) {
+      el.jawEnabled.addEventListener('change', function() {
+        updateFormState();
+        scheduleAutoSave();
+      });
+    }
 
     // Calibration quick-adjust
     if (el.minAngleDown) el.minAngleDown.addEventListener('click', function() { adjustCalibration('Min', -1); });
@@ -120,28 +139,131 @@
     if (el.maxAngleDown) el.maxAngleDown.addEventListener('click', function() { adjustCalibration('Max', -1); });
     if (el.maxAngleUp)   el.maxAngleUp.addEventListener('click',   function() { adjustCalibration('Max',  1); });
 
-    // Quantization slider live value
+    // Quantization slider live value + auto-save
     if (el.quantizationRange) {
       el.quantizationRange.addEventListener('input', function() {
         if (el.quantizationValue) el.quantizationValue.textContent = this.value;
         selectPreset('custom');
+        scheduleAutoSave();
       });
     }
 
-    // Preset radio buttons
-    if (el.presetSpeech) el.presetSpeech.addEventListener('change', function() { applyPreset('speech'); });
-    if (el.presetMusic)  el.presetMusic.addEventListener('change',  function() { applyPreset('music'); });
-    if (el.presetCustom) el.presetCustom.addEventListener('change', function() { /* custom — no auto-set */ });
+    // Audio sync offset slider
+    if (el.audioLeadTimeRange) {
+      el.audioLeadTimeRange.addEventListener('input', function() {
+        if (el.audioLeadTimeValue) el.audioLeadTimeValue.textContent = this.value + 'ms';
+        scheduleAutoSave();
+      });
+    }
 
-    // Filter/AGC toggles switch to custom preset
-    if (el.bandpassFilter) el.bandpassFilter.addEventListener('change', function() { selectPreset('custom'); });
-    if (el.agcEnabled)     el.agcEnabled.addEventListener('change',     function() { selectPreset('custom'); });
+    // Attack/Release — auto-save on change
+    if (el.attackTime) el.attackTime.addEventListener('change', function() { scheduleAutoSave(); });
+    if (el.releaseTime) el.releaseTime.addEventListener('change', function() { scheduleAutoSave(); });
+
+    // Preset radio buttons — auto-save
+    if (el.presetSpeech) el.presetSpeech.addEventListener('change', function() { applyPreset('speech'); scheduleAutoSave(); });
+    if (el.presetMusic)  el.presetMusic.addEventListener('change',  function() { applyPreset('music'); scheduleAutoSave(); });
+    if (el.presetCustom) el.presetCustom.addEventListener('change', function() { scheduleAutoSave(); });
+
+    // Filter/AGC toggles switch to custom preset + auto-save
+    if (el.bandpassFilter) el.bandpassFilter.addEventListener('change', function() { selectPreset('custom'); scheduleAutoSave(); });
+    if (el.agcEnabled)     el.agcEnabled.addEventListener('change',     function() { selectPreset('custom'); scheduleAutoSave(); });
 
     // Config selector
     if (el.configSelector)  el.configSelector.addEventListener('change', onConfigSwitch);
     if (el.saveAsNewBtn)    el.saveAsNewBtn.addEventListener('click', saveAsNewConfig);
     if (el.renameConfigBtn) el.renameConfigBtn.addEventListener('click', renameConfig);
     if (el.deleteConfigBtn) el.deleteConfigBtn.addEventListener('click', deleteConfig);
+
+    // Save test text button
+    if (el.saveTestTextBtn) el.saveTestTextBtn.addEventListener('click', saveTestText);
+  }
+
+  // ─── Auto-Save (debounced) ────────────────────────────────────────
+  function scheduleAutoSave() {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function() {
+      autoSaveTimer = null;
+      autoSaveConfiguration();
+    }, 600);
+  }
+
+  function autoSaveConfiguration() {
+    if (!currentCharacterId) return;
+    var config = buildConfigFromForm();
+    if (!config) return;
+
+    // Brief visual indicator on save button
+    if (el.saveConfigBtn) {
+      el.saveConfigBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Auto-saving...';
+    }
+
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (el.saveConfigBtn) {
+        el.saveConfigBtn.innerHTML = '<i class="bi bi-save"></i> Save Config';
+      }
+      if (data.success) {
+        currentConfig = config;
+        showToast('Settings applied', 'success');
+      } else {
+        showToast('Auto-save failed: ' + (data.error || 'Unknown'), 'error');
+      }
+    })
+    .catch(function() {
+      if (el.saveConfigBtn) {
+        el.saveConfigBtn.innerHTML = '<i class="bi bi-save"></i> Save Config';
+      }
+    });
+  }
+
+  function saveTestText() {
+    if (!currentCharacterId) return;
+    var text = el.ttsTestText ? el.ttsTestText.value.trim() : '';
+    if (!text) { showToast('Enter some text first', 'error'); return; }
+
+    var config = buildConfigFromForm();
+    if (!config) config = {};
+    config.testText = text;
+
+    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('Test text saved', 'success');
+      } else {
+        showToast('Save failed: ' + (data.error || 'Unknown'), 'error');
+      }
+    })
+    .catch(function() { showToast('Failed to save test text', 'error'); });
+  }
+
+  function buildConfigFromForm() {
+    var config = {
+      enabled:             el.jawEnabled ? el.jawEnabled.checked : false,
+      servoPartId:         el.jawServoSelect ? (el.jawServoSelect.value || null) : null,
+      sensitivity:         parseFloat(el.sensitivityRange ? el.sensitivityRange.value : 1.0),
+      smoothing:           parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.6),
+      volumeThreshold:     parseFloat(el.volumeThresholdRange ? el.volumeThresholdRange.value : 0.02),
+      attackTime:          parseInt(el.attackTime ? el.attackTime.value : 50, 10),
+      releaseTime:         parseInt(el.releaseTime ? el.releaseTime.value : 150, 10),
+      useBandpassFilter:   el.bandpassFilter ? el.bandpassFilter.checked : true,
+      useAGC:              el.agcEnabled ? el.agcEnabled.checked : true,
+      quantizationLevels:  parseInt(el.quantizationRange ? el.quantizationRange.value : 10, 10),
+      preset:              getSelectedPreset(),
+      audioLeadTimeMs:     parseInt(el.audioLeadTimeRange ? el.audioLeadTimeRange.value : 0, 10)
+    };
+    if (config.enabled && !config.servoPartId) return null;
+    return config;
   }
 
   function readCharacterFromNav() {
@@ -223,6 +345,15 @@
       el.quantizationRange.value = config.quantizationLevels || 10;
       if (el.quantizationValue) el.quantizationValue.textContent = config.quantizationLevels || 10;
     }
+    // Audio sync offset
+    if (el.audioLeadTimeRange) {
+      el.audioLeadTimeRange.value = config.audioLeadTimeMs || 0;
+      if (el.audioLeadTimeValue) el.audioLeadTimeValue.textContent = (config.audioLeadTimeMs || 0) + 'ms';
+    }
+    // Saved test text
+    if (el.ttsTestText && config.testText) {
+      el.ttsTestText.value = config.testText;
+    }
     selectPreset(config.preset || 'speech');
   }
 
@@ -284,20 +415,8 @@
 
   function saveConfiguration() {
     if (!currentCharacterId) { showToast('No character selected', 'error'); return; }
-    var config = {
-      enabled:             el.jawEnabled ? el.jawEnabled.checked : false,
-      servoPartId:         el.jawServoSelect ? (el.jawServoSelect.value || null) : null,
-      sensitivity:         parseFloat(el.sensitivityRange ? el.sensitivityRange.value : 1.0),
-      smoothing:           parseFloat(el.smoothingRange ? el.smoothingRange.value : 0.6),
-      volumeThreshold:     parseFloat(el.volumeThresholdRange ? el.volumeThresholdRange.value : 0.02),
-      attackTime:          parseInt(el.attackTime ? el.attackTime.value : 50, 10),
-      releaseTime:         parseInt(el.releaseTime ? el.releaseTime.value : 150, 10),
-      useBandpassFilter:   el.bandpassFilter ? el.bandpassFilter.checked : true,
-      useAGC:              el.agcEnabled ? el.agcEnabled.checked : true,
-      quantizationLevels:  parseInt(el.quantizationRange ? el.quantizationRange.value : 10, 10),
-      preset:              getSelectedPreset()
-    };
-    if (config.enabled && !config.servoPartId) {
+    var config = buildConfigFromForm();
+    if (!config) {
       showToast('Please select a servo when jaw animation is enabled', 'error');
       return;
     }

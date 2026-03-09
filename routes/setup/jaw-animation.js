@@ -454,8 +454,10 @@ router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
     }
 
     // Use playWithJawSync for synchronized playback (fire-and-forget)
-    jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType)
-      .catch((err) => {
+    // Pass pre-computed analysis to avoid redundant ffmpeg spawn (~300-500ms saved)
+    jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType, {
+      preAnalysis: analysisResult
+    }).catch((err) => {
         console.error('Jaw sync playback error:', err.message);
       });
 

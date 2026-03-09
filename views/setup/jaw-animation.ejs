@@ -151,6 +151,20 @@
           </label>
           <input type="range" class="form-range" id="quantizationRange" min="5" max="20" step="1" value="10">
         </div>
+
+        <hr class="my-2 border-secondary">
+
+        <!-- Audio Sync Offset -->
+        <div class="mb-2">
+          <label for="audioLeadTimeRange" class="compact-label">
+            Audio Sync Offset <span class="badge bg-secondary ms-1" id="audioLeadTimeValue" title="Positive = audio leads jaw, Negative = jaw leads audio">0ms</span>
+          </label>
+          <input type="range" class="form-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0">
+          <div class="d-flex justify-content-between">
+            <small class="text-muted">Jaw leads</small>
+            <small class="text-muted">Audio leads</small>
+          </div>
+        </div>
       </div>
 
       <!-- Calibration Quick-Adjust -->
@@ -184,7 +198,12 @@
         <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-megaphone"></i> TTS Test Panel</h6>
 
         <div class="mb-2">
-          <label for="ttsTestText" class="compact-label">Test Text</label>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="ttsTestText" class="compact-label mb-0">Test Text</label>
+            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1" id="saveTestTextBtn" title="Save as default test text" style="font-size:0.75rem;">
+              <i class="bi bi-save"></i> Save
+            </button>
+          </div>
           <textarea class="form-control form-control-sm" id="ttsTestText" rows="2">The quick brown fox jumped over the lazy dog</textarea>
         </div>
 
