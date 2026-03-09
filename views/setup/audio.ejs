@@ -550,8 +550,10 @@
     // Bind handlers and start VU monitoring per part
     parts.forEach(function (part) {
       const devId = (part.config && part.config.deviceId) || 'default';
-      // VU meter start
-      startVUMeterMonitoring(devId, 'input', 'mic-vu-' + part.id);
+      // VU meter start — disabled in test mode to avoid continuous polling
+      if (!(window && window.MB_TEST_MODE)) {
+        startVUMeterMonitoring(devId, 'input', 'mic-vu-' + part.id);
+      }
       // Sensitivity change
       const sensEl = document.getElementById('mic-sens-' + part.id);
       const sensValEl = document.getElementById('mic-sens-' + part.id + '-val');

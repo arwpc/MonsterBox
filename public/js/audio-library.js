@@ -135,7 +135,7 @@ class AudioLibrary {
     async loadSpeakers() {
         try {
             // Fetch all speaker parts and filter by current character
-            const res = await fetch('/api/parts/parts?type=speaker');
+            const res = await fetch('/api/parts?type=speaker');
             const data = await res.json();
             if (data && data.success && Array.isArray(data.parts)) {
                 const cid = this.currentCharacter && this.currentCharacter.id;

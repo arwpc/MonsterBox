@@ -16,12 +16,12 @@ test.describe('Head Tracking Presets API', () => {
         const data = await response.json();
         expect(data.success).toBe(true);
         expect(Array.isArray(data.presets)).toBe(true);
-        // Should have at least 3 built-in presets
+        // Should have at least 5 built-in presets
         const builtins = data.presets.filter(p => p.builtin);
-        expect(builtins.length).toBeGreaterThanOrEqual(3);
-        // Should include person, noisy, sensitive
+        expect(builtins.length).toBeGreaterThanOrEqual(5);
+        // Should include person-hog, person-hybrid, upperbody, noisy, sensitive
         const ids = builtins.map(p => p.id);
-        expect(ids).toContain('person');
+        expect(ids).toContain('person-hog');
         expect(ids).toContain('noisy');
         expect(ids).toContain('sensitive');
     });
@@ -58,7 +58,7 @@ test.describe('Head Tracking Presets API', () => {
     });
 
     test('should not delete built-in presets', async ({ request }) => {
-        const response = await request.delete(`${BASE_URL}/setup/head-animation/api/head-tracking/1/presets/person`);
+        const response = await request.delete(`${BASE_URL}/setup/head-animation/api/head-tracking/1/presets/person-hog`);
         const data = await response.json();
         expect(data.success).toBe(false);
         expect(data.error).toContain('built-in');
@@ -110,9 +110,9 @@ test.describe('Head Tracking Setup Page', () => {
     test('should display detection mode dropdown', async () => {
         const select = page.locator('#detectionMode');
         await expect(select).toBeVisible();
-        // Should have 4 options
+        // Should have 7 detection mode options
         const options = await select.locator('option').count();
-        expect(options).toBe(4);
+        expect(options).toBe(7);
     });
 
     test('should display OpenCV and head tracking toggles', async () => {

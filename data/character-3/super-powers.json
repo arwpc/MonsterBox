@@ -39,7 +39,7 @@
   },
   "headTracking": {
     "opencvEnabled": true,
-    "enabled": true,
+    "enabled": false,
     "panServoId": "15",
     "webcamPartId": "9",
     "centerDeg": 99,
