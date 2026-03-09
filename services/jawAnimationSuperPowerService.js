@@ -1153,20 +1153,28 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
 
   // Audio sync offset: positive = audio leads (delay jaw), negative = jaw leads (delay audio)
   const audioLeadTimeMs = Math.max(-1000, Math.min(1000, config.audioLeadTimeMs || 0));
+  console.log(`[jaw-sync] characterId=${cid} audioLeadTimeMs=${audioLeadTimeMs} sensitivity=${config.sensitivity} smoothing=${config.smoothing} frames=${analysis.frames.length} duration=${analysis.duration}ms`);
 
-  // Pre-import playback service before the synchronized start
+  // Pre-import and pre-warm playback service before the synchronized start.
+  // This ensures mpg123 is already spawned and ready so writing the buffer
+  // produces sound with minimal latency (~10-50ms instead of ~300-500ms).
   let serverPlaybackService = null;
   if (!options.skipAudio) {
     try {
       serverPlaybackService = (await import('./serverPlaybackService.js')).default;
+      // Pre-warm: ensure mpg123 process is spawned and ready before sync start
+      await serverPlaybackService.warmUpStream({ characterId });
     } catch (err) {
-      console.error('Could not import playback service:', err.message);
+      console.error('Could not import/warm playback service:', err.message);
     }
   }
+
+  const syncStartTime = Date.now();
 
   // Synchronized start: launch audio and jaw timeline with offset compensation
   return new Promise((resolve) => {
     function startJawTimeline() {
+      console.log(`[jaw-sync] jaw timeline started at T+${Date.now() - syncStartTime}ms`);
       const startTime = Date.now();
       let frameIndex = 0;
 
@@ -1212,11 +1220,18 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
     }
 
     function startAudioPlayback() {
+      console.log(`[jaw-sync] audio playback started at T+${Date.now() - syncStartTime}ms`);
       if (serverPlaybackService) {
-        serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-          contentType, characterId
+        // Use writeMp3Stream directly for minimal latency (stream is pre-warmed)
+        serverPlaybackService.writeMp3Stream(audioBuffer, {
+          characterId
         }).catch((err) => {
-          console.error('Jaw sync audio playback error:', err.message);
+          // Fall back to full playback path
+          serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+            contentType, characterId
+          }).catch((err2) => {
+            console.error('Jaw sync audio playback error:', err2.message);
+          });
         });
       }
     }

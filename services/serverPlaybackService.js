@@ -194,6 +194,20 @@ class ServerPlaybackService {
     return rec;
   }
 
+  /**
+   * Pre-warm the mpg123 stream for a character so it's ready for immediate playback.
+   * Returns the resolved device ID.
+   */
+  async warmUpStream(opts = {}) {
+    if (!this._mpg123Available) return null;
+    try {
+      const rec = await this._ensureMp3Stream(opts);
+      return rec ? rec.deviceId : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   async writeMp3Stream(buffer, opts = {}) {
     if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
     if (this._speakerMuted) return { success: true, muted: true };
