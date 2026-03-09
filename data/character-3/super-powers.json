@@ -2,45 +2,62 @@
   "jawAnimation": {
     "enabled": true,
     "servoPartId": "10",
-    "activeConfigId": "config-1",
+    "activeConfigId": "config-mmi64pqx4ujm",
     "configs": [
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 1.6,
+        "sensitivity": 1,
         "smoothing": 0.6,
-        "volumeThreshold": 0.03,
+        "volumeThreshold": 0.02,
         "attackTime": 50,
         "releaseTime": 150,
         "useBandpassFilter": true,
         "useAGC": true,
-        "quantizationLevels": 13,
-        "preset": "custom",
+        "quantizationLevels": 10,
+        "preset": "speech",
         "minAngle": 67,
-        "maxAngle": 100
+        "maxAngle": 117
+      },
+      {
+        "id": "config-mmi64pqx4ujm",
+        "name": "new",
+        "sensitivity": 1,
+        "smoothing": 0.6,
+        "volumeThreshold": 0.02,
+        "attackTime": 50,
+        "releaseTime": 150,
+        "useBandpassFilter": true,
+        "useAGC": true,
+        "quantizationLevels": 10,
+        "preset": "speech",
+        "minAngle": 63,
+        "maxAngle": 131,
+        "audioLeadTimeMs": 0
       }
     ]
   },
   "headTracking": {
     "opencvEnabled": true,
-    "enabled": false,
+    "enabled": true,
     "panServoId": "15",
     "webcamPartId": "9",
-    "centerDeg": 80,
+    "centerDeg": 99,
     "rangeDeg": 160,
     "invertPan": false,
     "smoothing": 0.65,
     "deadzone": 5,
-    "motionThreshold": 11,
+    "motionThreshold": 44,
     "minContourArea": 3000,
     "maxContourArea": 100000,
-    "backgroundLearningRate": 0.026,
-    "noiseReductionKernelSize": 1,
+    "backgroundLearningRate": 0.013,
+    "noiseReductionKernelSize": 5,
     "blurSize": 7,
-    "dilateSize": 7,
-    "varThreshold": 12,
-    "targetLockStrength": 5,
-    "confirmFrames": 3,
-    "detectionMode": "motion"
+    "dilateSize": 11,
+    "varThreshold": 20,
+    "targetLockStrength": 9,
+    "confirmFrames": 4,
+    "detectInterval": 5,
+    "detectionMode": "person+motion"
   }
 }

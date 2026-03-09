@@ -18,5 +18,17 @@
       "Task",
       "mcp__*"
     ]
+  },
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp",
+        "--headless",
+        "--browser", "chromium",
+        "--viewport-size", "1280x720"
+      ],
+      "cwd": "/home/remote/MonsterBox"
+    }
   }
 }

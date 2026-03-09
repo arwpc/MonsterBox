@@ -16,8 +16,10 @@
         "useAGC": true,
         "quantizationLevels": 10,
         "preset": "speech",
-        "minAngle": 67,
-        "maxAngle": 100
+        "minAngle": 63,
+        "maxAngle": 131,
+        "audioLeadTimeMs": 0,
+        "testText": "Hello I am Count Orlok."
       }
     ]
   },
@@ -34,6 +36,7 @@
     "minContourArea": 300,
     "maxContourArea": 30000,
     "backgroundLearningRate": 0.02,
-    "noiseReductionKernelSize": 3
+    "noiseReductionKernelSize": 3,
+    "presets": []
   }
 }

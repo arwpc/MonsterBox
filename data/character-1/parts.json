@@ -55,17 +55,20 @@
   },
   {
     "id": "4",
-    "name": "Speaker Right",
-    "type": "speaker",
+    "name": "Elbow",
+    "type": "servo",
     "pin": null,
-    "description": "Right speaker",
+    "description": "precise angle control: standard, continuous, feedback",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 85
+      "servoType": "standard",
+      "controllerType": "pca9685",
+      "address": 64,
+      "pca9685Frequency": 50,
+      "channel": 15
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
-    "modelId": "default_speaker",
+    "modelId": "servo_hooyij_ds3240mg",
     "markers": [
       {
         "name": "Min",
@@ -73,7 +76,8 @@
         "locked": false,
         "value": 10
       }
-    ]
+    ],
+    "updated": "2026-03-08T18:41:37.143Z"
   },
   {
     "id": "5",

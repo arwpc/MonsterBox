@@ -4465,6 +4465,34 @@
         }
       ],
       "performance": {}
+    },
+    {
+      "id": "17729494561322k9z131nq",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-08T05:57:36.133Z",
+      "startTime": "2026-03-08T05:55:48.802Z",
+      "endTime": "2026-03-08T05:57:36.126Z",
+      "duration": 107324,
+      "stepsExecuted": 8,
+      "totalSteps": 8,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1772950264815ghgd7thdi",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-08T06:11:04.815Z",
+      "startTime": "2026-03-08T06:09:28.825Z",
+      "endTime": "2026-03-08T06:11:04.812Z",
+      "duration": 95987,
+      "stepsExecuted": 8,
+      "totalSteps": 8,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4695,8 +4723,8 @@
     "3_109": {
       "sceneId": 109,
       "characterId": 3,
-      "executionCount": 2,
-      "lastExecuted": "2026-02-21T00:02:39.320Z",
+      "executionCount": 4,
+      "lastExecuted": "2026-03-08T06:11:04.819Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

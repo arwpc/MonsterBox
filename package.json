@@ -57,6 +57,7 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.55.1",
     "chai": "^4.3.10",
     "mocha": "^10.2.0",

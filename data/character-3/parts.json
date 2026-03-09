@@ -77,12 +77,12 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 4
+      "channel": 1
     },
     "created": "2025-10-05T18:12:14.762Z",
     "enabled": true,
-    "modelId": "servo_miuzei_25kg",
-    "updated": "2025-10-09T21:00:59.115Z"
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2026-03-08T21:09:11.488Z"
   },
   {
     "id": "5",
@@ -95,12 +95,12 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 5
+      "channel": 2
     },
     "created": "2025-10-05T18:12:32.839Z",
     "enabled": true,
-    "modelId": "servo_miuzei_25kg",
-    "updated": "2026-01-10T23:25:51.545Z"
+    "modelId": "servo_hooyij_ds3240mg",
+    "updated": "2026-03-08T21:10:10.117Z"
   },
   {
     "id": "6",
@@ -170,7 +170,7 @@
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2026-03-01T22:22:17.801Z",
+    "updated": "2026-03-08T06:12:34.143Z",
     "modelId": "arducam-b0205"
   },
   {
@@ -200,14 +200,14 @@
         "name": "Max",
         "kind": "absolute",
         "locked": false,
-        "value": 100,
+        "value": 131,
         "unit": "deg"
       },
       {
         "name": "Min",
         "kind": "absolute",
         "locked": false,
-        "value": 67,
+        "value": 63,
         "unit": "deg"
       }
     ],
@@ -218,7 +218,7 @@
     "id": "14",
     "name": "Sensor for Orlok",
     "type": "motion_sensor",
-    "pin": 27,
+    "pin": 17,
     "description": "PIR motion detection",
     "config": {
       "sensitivity": 5,
@@ -227,7 +227,7 @@
     "created": "2025-10-07T00:53:34.885Z",
     "enabled": true,
     "modelId": "pir_generic",
-    "updated": "2026-02-22T22:39:43.265Z"
+    "updated": "2026-03-08T19:26:47.353Z"
   },
   {
     "name": "Head on a Swivel",
