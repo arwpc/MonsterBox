@@ -194,5 +194,9 @@
 
   // --- Task detection ---
   "task.autoDetect": "on",
-  "npm.autoDetect": "on"
+  "npm.autoDetect": "on",
+
+  // --- Playwright MCP Relay (for VS Code Copilot browser tools) ---
+  "playwright-mcp-relay.autoConnect": false,
+  "playwright-mcp-relay.additionalMCPServerArguments": "--headless --browser chromium --viewport-size 1280x720"
 }

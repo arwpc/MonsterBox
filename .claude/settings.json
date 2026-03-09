@@ -26,7 +26,8 @@
         "@playwright/mcp",
         "--headless",
         "--browser", "chromium",
-        "--viewport-size", "1280x720"
+        "--viewport-size", "1280x720",
+        "--ignore-https-errors"
       ],
       "cwd": "/home/remote/MonsterBox"
     }
