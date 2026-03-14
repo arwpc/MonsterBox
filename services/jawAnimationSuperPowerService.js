@@ -605,18 +605,15 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     // Calculate target angle with guardrails and attack/release envelope
     const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
 
-    // Move servo — pass the part ID (not the object)
-    const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
-      angleDeg: targetAngle
-    });
+    // Move servo — use daemon fast path to avoid PCA9685 re-init that glitches other channels
+    sendJawAngleCmd(jawServo, targetAngle);
 
     return {
       success: true,
       amplitude: amplitude,
       smoothedAmplitude: smoothedAmplitude,
       targetAngle: targetAngle,
-      guardrails: guardrails,
-      servoResult: result
+      guardrails: guardrails
     };
 
   } catch (error) {
