@@ -9,7 +9,7 @@ import express from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { execFile } from 'child_process';
 import hardwareService from '../../services/hardwareService/index.js';
 
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
@@ -42,8 +42,8 @@ async function loadParts() {
 }
 
 /**
- * GET /:id/gpio-read — Fast GPIO read using gpioget (3ms, no GPIO handle leak).
- * Used by calibration page for real-time PIR sensor polling.
+ * GET /:id/gpio-read — Direct GPIO register read via /dev/gpiomem.
+ * Reads BCM2711 GPLEV0 register — no GPIO claim, no contention.
  */
 router.get('/:id/gpio-read', async (req, res) => {
     try {
@@ -52,18 +52,12 @@ router.get('/:id/gpio-read', async (req, res) => {
         if (!part || part.type !== 'motion_sensor' || part.pin == null) {
             return res.status(404).json({ error: 'Motion sensor part not found' });
         }
-        const proc = spawn('gpioget', ['gpiochip0', String(part.pin)]);
-        let out = '';
-        proc.stdout.on('data', (d) => { out += d; });
-        proc.on('close', (code) => {
-            if (code === 0) {
-                const val = parseInt(out.trim(), 10);
-                res.json({ v: val });
-            } else {
-                res.status(500).json({ error: 'read failed' });
-            }
+        const appRoot = path.resolve(__dirname, '../..');
+        const script = path.resolve(appRoot, 'python_wrappers/gpio_read.py');
+        execFile('/usr/bin/python3', [script, String(part.pin)], { timeout: 2000 }, (err, stdout) => {
+            if (err) return res.status(500).json({ error: 'read failed' });
+            res.json({ v: parseInt(stdout.trim(), 10) });
         });
-        proc.on('error', () => res.status(500).json({ error: 'gpioget not found' }));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
