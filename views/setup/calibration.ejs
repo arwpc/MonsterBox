@@ -2899,11 +2899,7 @@
 
         function stopSensorMonitoring() {
           sensorMonitoringActive = false;
-          if (sensorPollTimer) {
-            if (sensorPollTimer.close) sensorPollTimer.close(); // EventSource
-            else clearInterval(sensorPollTimer); // fallback
-            sensorPollTimer = null;
-          }
+          if (sensorPollTimer) { clearInterval(sensorPollTimer); sensorPollTimer = null; }
           var indicator = document.getElementById('motionIndicator');
           var status = document.getElementById('motionStatus');
           var details = document.getElementById('motionDetails');
@@ -2919,55 +2915,61 @@
           sensorMonitoringActive = true;
           sensorDetectionCount = 0;
           sensorHighReadCount = 0;
+          var lastState = -1;
+          var motionStartTime = null;
           var indicator = document.getElementById('motionIndicator');
           var status = document.getElementById('motionStatus');
           var details = document.getElementById('motionDetails');
           var st = document.getElementById('ctrlStatus');
-          var motionStartTime = null;
 
           toggleBtn.className = 'btn btn-danger btn-lg';
           toggleBtn.innerHTML = '<i class="bi bi-stop-circle me-2"></i>Disable Monitoring';
 
           if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
           if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
-          if (details) details.textContent = 'Connecting to GPIO ' + part.pin + '...';
+          if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
           addLogEntry('Monitoring started on GPIO ' + part.pin, 'info');
 
-          // Use SSE stream for real-time updates (~100ms latency vs 750ms polling)
-          var evtSource = new EventSource('/api/parts/' + encodeURIComponent(part.id) + '/monitor');
-          sensorPollTimer = evtSource; // store for cleanup
-
-          evtSource.onmessage = function (e) {
-            if (!sensorMonitoringActive) return;
+          // Fast poll using gpioget (~3ms per read, no GPIO handle leak)
+          var pollBusy = false;
+          sensorPollTimer = setInterval(async function () {
+            if (!sensorMonitoringActive || pollBusy) return;
+            pollBusy = true;
             try {
-              var data = JSON.parse(e.data);
-              if (data.status === 'started') {
-                if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
-              } else if (data.status === 'motion_detected') {
-                sensorDetectionCount = data.detection_count || (sensorDetectionCount + 1);
-                motionStartTime = Date.now();
-                if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; indicator.style.animation = 'sensorPulse 1s infinite'; }
-                if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
-                if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '');
-                addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
-              } else if (data.status === 'motion_cleared') {
-                var dur = motionStartTime ? ((Date.now() - motionStartTime) / 1000).toFixed(1) : '?';
-                motionStartTime = null;
-                if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
-                if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
-                if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '');
-                addLogEntry('Motion cleared after ' + dur + 's', 'clear');
-              } else if (data.status === 'stopped') {
-                if (st) st.textContent = 'Monitor stopped';
+              var response = await fetch('/api/parts/' + encodeURIComponent(part.id) + '/gpio-read');
+              var result = await response.json();
+              if (response.ok && result.v !== undefined) {
+                var motion = result.v === 1;
+                if (motion) {
+                  sensorHighReadCount++;
+                  if (lastState !== 1) {
+                    sensorDetectionCount++;
+                    motionStartTime = Date.now();
+                    addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
+                  }
+                  if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; indicator.style.animation = 'sensorPulse 1s infinite'; }
+                  if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
+                  var dur = motionStartTime ? Math.round((Date.now() - motionStartTime) / 1000) : 0;
+                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') + (dur > 0 ? ' \u2022 active ' + dur + 's' : '');
+                } else {
+                  if (lastState === 1) {
+                    var dur = motionStartTime ? ((Date.now() - motionStartTime) / 1000).toFixed(1) : '?';
+                    addLogEntry('Motion cleared after ' + dur + 's', 'clear');
+                    motionStartTime = null;
+                  }
+                  sensorHighReadCount = 0;
+                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
+                  if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
+                  if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') : 'Listening...';
+                }
+                lastState = result.v;
               }
-            } catch (err) {
-              console.error('SSE parse error:', err);
+            } catch (error) {
+              console.error('Sensor poll error:', error);
+            } finally {
+              pollBusy = false;
             }
-          };
-
-          evtSource.onerror = function () {
-            if (st) st.textContent = 'Connection lost - reconnecting...';
-          };
+          }, 150);
         }
 
         toggleBtn.addEventListener('click', function () {

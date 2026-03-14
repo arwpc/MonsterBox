@@ -42,59 +42,29 @@ async function loadParts() {
 }
 
 /**
- * GET /:id/monitor — SSE stream for real-time motion sensor monitoring.
- * Spawns motion_detect_cli.py once, holds GPIO open, streams state changes.
+ * GET /:id/gpio-read — Fast GPIO read using gpioget (3ms, no GPIO handle leak).
+ * Used by calibration page for real-time PIR sensor polling.
  */
-router.get('/:id/monitor', async (req, res) => {
+router.get('/:id/gpio-read', async (req, res) => {
     try {
         const parts = await loadParts();
         const part = parts.find(p => String(p.id) === String(req.params.id));
-        if (!part || part.type !== 'motion_sensor') {
+        if (!part || part.type !== 'motion_sensor' || part.pin == null) {
             return res.status(404).json({ error: 'Motion sensor part not found' });
         }
-
-        const pin = part.pin;
-        const appRoot = path.resolve(__dirname, '../..');
-        const script = path.resolve(appRoot, 'python_wrappers/motion_detect_cli.py');
-
-        // SSE headers
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'X-Accel-Buffering': 'no'
-        });
-        res.flushHeaders();
-
-        const proc = spawn('/usr/bin/python3', [script, 'detect', String(pin), '0'], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let buf = '';
-        proc.stdout.on('data', (chunk) => {
-            buf += chunk.toString();
-            let nl;
-            while ((nl = buf.indexOf('\n')) !== -1) {
-                const line = buf.slice(0, nl).trim();
-                buf = buf.slice(nl + 1);
-                if (line) {
-                    res.write(`data: ${line}\n\n`);
-                }
+        const proc = spawn('gpioget', ['gpiochip0', String(part.pin)]);
+        let out = '';
+        proc.stdout.on('data', (d) => { out += d; });
+        proc.on('close', (code) => {
+            if (code === 0) {
+                const val = parseInt(out.trim(), 10);
+                res.json({ v: val });
+            } else {
+                res.status(500).json({ error: 'read failed' });
             }
         });
-
-        proc.stderr.on('data', () => { /* suppress */ });
-
-        proc.on('close', () => {
-            res.write('data: {"status":"stopped"}\n\n');
-            res.end();
-        });
-
-        req.on('close', () => {
-            proc.kill('SIGTERM');
-        });
+        proc.on('error', () => res.status(500).json({ error: 'gpioget not found' }));
     } catch (error) {
-        console.error('Error starting motion monitor:', error);
         res.status(500).json({ error: error.message });
     }
 });
