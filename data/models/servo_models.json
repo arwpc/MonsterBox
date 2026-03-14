@@ -103,5 +103,31 @@
       "rotation": "900°",
       "gearRatio": "2:1"
     }
+  },
+  {
+    "id": "servo_rds51150sg_150kg",
+    "name": "RDS51150SG 150kg Robot Servo (270°)",
+    "manufacturer": "RDS",
+    "defaults": {
+      "minPulse": 500,
+      "maxPulse": 2500,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 270,
+      "servoType": "standard"
+    },
+    "meta": {
+      "notes": "High-torque 150kg robot servo. PWM 500-2500us, 270deg travel. Steel gears, double bearing, 18T spline, 357:1 gear ratio. 3-pole motor.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "150kg·cm (10V) / 165kg·cm (12V) / 173kg·cm (12.6V)",
+      "voltage": "9-12.6V",
+      "speed": "0.24s/60° (10V) / 0.21s/60° (12V) / 0.19s/60° (12.6V)",
+      "stallCurrent": "7.4A (10V) / 8.0A (12V) / 8.3A (12.6V)",
+      "deadBand": "3μs",
+      "frequency": "50-330Hz",
+      "weight": "163g",
+      "size": "65x30x48mm"
+    }
   }
 ]

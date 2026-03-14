@@ -2,7 +2,7 @@
   "jawAnimation": {
     "enabled": true,
     "servoPartId": "10",
-    "activeConfigId": "config-mmi64pqx4ujm",
+    "activeConfigId": "config-1",
     "configs": [
       {
         "id": "config-1",
@@ -16,8 +16,9 @@
         "useAGC": true,
         "quantizationLevels": 10,
         "preset": "speech",
-        "minAngle": 67,
-        "maxAngle": 117
+        "minAngle": 63,
+        "maxAngle": 131,
+        "audioLeadTimeMs": 0
       },
       {
         "id": "config-mmi64pqx4ujm",

@@ -805,5 +805,74 @@ router.post('/api/manual-controls-layout/rename', express.json(), async (req, re
   }
 });
 
+// POST /conversation/api/translate - AI restates heard speech in character voice
+router.post('/api/translate', express.json(), async (req, res) => {
+  try {
+    const text = (req.body && req.body.text ? String(req.body.text) : '').trim();
+    if (!text) return res.status(400).json({ success: false, error: 'text is required' });
+    const characterId = getCurrentCharacterId(req);
+
+    // In test mode, return simulated translation
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, translatedText: `[Character says]: ${text}` });
+    }
+
+    // Get character's AI agent
+    const { default: characterService } = await import('../services/characterService.js');
+    const character = await characterService.getCharacterById(characterId);
+
+    if (!character || !character.elevenLabsAgentId) {
+      return res.status(400).json({
+        success: false,
+        error: `Character ${characterId} does not have an AI agent assigned. Configure one in character settings.`
+      });
+    }
+
+    // Ask the AI to restate the text in character
+    const prompt = `Someone nearby just said: "${text}". Restate what they said in your own words, staying in character. Keep it brief and natural.`;
+    const aiResponse = await elevenLabsWebSocketService.askAgentQuestion(
+      character.elevenLabsAgentId,
+      prompt,
+      characterId
+    );
+
+    if (aiResponse && aiResponse.success) {
+      return res.json({
+        success: true,
+        translatedText: aiResponse.response || text,
+        audioPlayed: true
+      });
+    }
+
+    // Fallback: just say the original text in character voice via TTS
+    const ttsCfg = await getTTSConfigForCharacter(characterId);
+    const gen = await elevenLabsTTSService.generateSpeech(text, ttsCfg.voice_id, ttsCfg);
+    if (gen.success) {
+      let jawSynced = false;
+      try {
+        const jawConfig = await jawAnimationService.readJawConfig(characterId);
+        if (jawConfig.enabled && jawConfig.servoPartId) {
+          jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+          jawSynced = true;
+        }
+      } catch (_) {}
+      if (!jawSynced) {
+        await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
+          contentType: gen.contentType, characterId, speakerPartId: req.body.speakerPartId || undefined
+        });
+      }
+      try {
+        const wordCount = text.split(/\s+/).length;
+        elevenLabsWebSocketService.suppressMicForCharacter(characterId, (wordCount * 150) + 2000);
+      } catch (_) {}
+      return res.json({ success: true, translatedText: text });
+    }
+
+    return res.status(500).json({ success: false, error: 'Failed to generate speech' });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 export default router;
 

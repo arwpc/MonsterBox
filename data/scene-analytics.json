@@ -4493,6 +4493,20 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "17731863960516pnocnu2z",
+      "sceneId": 102,
+      "characterId": 3,
+      "timestamp": "2026-03-10T23:46:36.051Z",
+      "startTime": "2026-03-10T23:46:29.325Z",
+      "endTime": "2026-03-10T23:46:36.041Z",
+      "duration": 6715,
+      "stepsExecuted": 2,
+      "totalSteps": 2,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4683,8 +4697,8 @@
     "3_102": {
       "sceneId": 102,
       "characterId": 3,
-      "executionCount": 10,
-      "lastExecuted": "2025-10-28T00:12:03.662Z",
+      "executionCount": 11,
+      "lastExecuted": "2026-03-10T23:46:36.059Z",
       "totalDuration": 0,
       "averageDuration": 0
     },

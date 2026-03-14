@@ -22,7 +22,10 @@ async function importTests(dir) {
         const stats = statSync(fullPath);
 
         if (stats.isDirectory()) {
-            if (fullPath === __dirname) {
+            // Skip the unit directory itself (this file's dir) and
+            // system/browser dirs which have their own test runners
+            const dirName = path.basename(fullPath);
+            if (fullPath === __dirname || dirName === 'system' || dirName === 'browser') {
                 continue;
             }
             await importTests(fullPath);
