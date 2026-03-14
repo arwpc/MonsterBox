@@ -2857,10 +2857,13 @@
         });
       } else if (part.type === 'motion_sensor') {
         el.innerHTML =
+          '<style>' +
+            '@keyframes sensorPulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }' +
+          '</style>' +
           '<div class="text-center">' +
-            '<div id="motionIndicator" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;background-color:#6c757d;border:4px solid #dee2e6;transition:all 0.2s;"></div>' +
+            '<div id="motionIndicator" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;background-color:#6c757d;border:4px solid #dee2e6;transition:background-color 0.2s;"></div>' +
             '<div id="motionStatus" class="fs-5 fw-bold text-muted mb-1">Monitoring Off</div>' +
-            '<div id="motionDetails" class="small text-muted mb-3"></div>' +
+            '<div id="motionDetails" class="small text-muted mb-3">GPIO ' + part.pin + '</div>' +
           '</div>' +
           '<div class="d-grid gap-2 mb-3">' +
             '<button id="toggleMonitoring" class="btn btn-success btn-lg"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
@@ -2877,6 +2880,7 @@
         var sensorMonitoringActive = false;
         var sensorPollTimer = null;
         var sensorDetectionCount = 0;
+        var sensorHighReadCount = 0;
         var toggleBtn = el.querySelector('#toggleMonitoring');
 
         function addLogEntry(msg, type) {
@@ -2890,7 +2894,6 @@
           div.className = 'small ' + cls;
           div.textContent = ts + ' — ' + msg;
           entries.insertBefore(div, entries.firstChild);
-          // Keep max 50 entries
           while (entries.children.length > 50) entries.removeChild(entries.lastChild);
         }
 
@@ -2900,9 +2903,9 @@
           var indicator = document.getElementById('motionIndicator');
           var status = document.getElementById('motionStatus');
           var details = document.getElementById('motionDetails');
-          if (indicator) { indicator.style.backgroundColor = '#6c757d'; indicator.style.borderColor = '#dee2e6'; indicator.style.boxShadow = 'none'; }
+          if (indicator) { indicator.style.backgroundColor = '#6c757d'; indicator.style.borderColor = '#dee2e6'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
           if (status) { status.textContent = 'Monitoring Off'; status.className = 'fs-5 fw-bold text-muted mb-1'; }
-          if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' total detection' + (sensorDetectionCount !== 1 ? 's' : '') : '';
+          if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' total detection' + (sensorDetectionCount !== 1 ? 's' : '') : 'GPIO ' + part.pin;
           toggleBtn.className = 'btn btn-success btn-lg';
           toggleBtn.innerHTML = '<i class="bi bi-play-circle me-2"></i>Enable Monitoring';
           addLogEntry('Monitoring stopped', 'info');
@@ -2911,7 +2914,7 @@
         function startSensorMonitoring() {
           sensorMonitoringActive = true;
           sensorDetectionCount = 0;
-          var lastMotionState = false;
+          sensorHighReadCount = 0;
           var indicator = document.getElementById('motionIndicator');
           var status = document.getElementById('motionStatus');
           var details = document.getElementById('motionDetails');
@@ -2920,7 +2923,7 @@
           toggleBtn.className = 'btn btn-danger btn-lg';
           toggleBtn.innerHTML = '<i class="bi bi-stop-circle me-2"></i>Disable Monitoring';
 
-          if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
+          if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
           if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
           if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
           addLogEntry('Monitoring started on GPIO ' + part.pin, 'info');
@@ -2938,23 +2941,25 @@
               var result = await response.json();
               if (response.ok && result.testResult) {
                 var motionDetected = result.testResult.motionDetected || false;
-                // Always update the visual indicator to match current sensor state
                 if (motionDetected) {
-                  if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; }
+                  sensorHighReadCount++;
+                  // Count as new detection on first HIGH, and every 6 consecutive HIGHs (~3 sec)
+                  if (sensorHighReadCount === 1 || sensorHighReadCount % 6 === 0) {
+                    sensorDetectionCount++;
+                    addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
+                  }
+                  if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; indicator.style.animation = 'sensorPulse 1s infinite'; }
                   if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
+                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') + ' \u2022 active ' + Math.round(sensorHighReadCount * 0.5) + 's';
                 } else {
-                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
+                  if (sensorHighReadCount > 0) {
+                    addLogEntry('Motion cleared after ' + Math.round(sensorHighReadCount * 0.5) + 's', 'clear');
+                  }
+                  sensorHighReadCount = 0;
+                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
                   if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
+                  if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') : 'Listening...';
                 }
-                // Log transitions
-                if (motionDetected && !lastMotionState) {
-                  sensorDetectionCount++;
-                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '');
-                  addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
-                } else if (!motionDetected && lastMotionState) {
-                  addLogEntry('Motion cleared', 'clear');
-                }
-                lastMotionState = motionDetected;
               } else {
                 if (st) st.textContent = 'Sensor read failed';
               }
