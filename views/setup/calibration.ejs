@@ -2856,273 +2856,119 @@
           }).catch(function () { });
         });
       } else if (part.type === 'motion_sensor') {
-        // Check if sensor is enabled (default to false)
-        const isEnabled = part.config && part.config.enabled !== undefined ? part.config.enabled : false;
-
-        el.innerHTML = '<div class="mb-3">' +
-          '<div class="form-check form-switch">' +
-          '<input class="form-check-input" type="checkbox" id="motionSensorToggle" ' + (isEnabled ? 'checked' : '') + '>' +
-          '<label class="form-check-label fw-semibold" for="motionSensorToggle">' +
-          '<span id="toggleLabel">' + (isEnabled ? 'Sensor Enabled' : 'Sensor Disabled') + '</span>' +
-          '</label>' +
+        el.innerHTML =
+          '<div class="text-center">' +
+            '<div id="motionIndicator" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;background-color:#6c757d;border:4px solid #dee2e6;transition:all 0.2s;"></div>' +
+            '<div id="motionStatus" class="fs-5 fw-bold text-muted mb-1">Monitoring Off</div>' +
+            '<div id="motionDetails" class="small text-muted mb-3"></div>' +
           '</div>' +
-          '<small class="text-muted">Enable to allow this sensor to trigger scenes automatically</small>' +
+          '<div class="d-grid gap-2 mb-3">' +
+            '<button id="toggleMonitoring" class="btn btn-success btn-lg"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
           '</div>' +
-          '<div class="d-flex align-items-center flex-wrap gap-3">' +
-          '<button id="readMotion" class="btn btn-outline-info btn-lg"><i class="bi bi-eye"></i> Read</button>' +
-          '<button id="detectMotion" class="btn btn-primary btn-lg"><i class="bi bi-radar"></i> Detect Motion</button>' +
-          '<button id="startLiveTest" class="btn btn-success btn-lg"><i class="bi bi-play-circle"></i> Start Live Test</button>' +
-          '<button id="stopLiveTest" class="btn btn-danger btn-lg" style="display:none;"><i class="bi bi-stop-circle"></i> Stop Live Test</button>' +
-          '</div>' +
-          '<div class="mt-3">' +
-          '<div class="d-flex align-items-center gap-3">' +
-          '<div class="d-flex align-items-center gap-2">' +
-          '<div id="motionIndicator" class="rounded-circle" style="width:24px;height:24px;background-color:#6c757d;border:2px solid #dee2e6;"></div>' +
-          '<span id="motionStatus" class="fw-semibold text-muted">Ready to test</span>' +
-          '</div>' +
-          '<div id="motionDetails" class="small text-muted"></div>' +
-          '</div>' +
+          '<div id="motionLog" class="border rounded p-2" style="max-height:200px;overflow-y:auto;display:none;">' +
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+              '<small class="fw-semibold text-muted">Event Log</small>' +
+              '<button id="clearLog" class="btn btn-link btn-sm p-0 text-muted">Clear</button>' +
+            '</div>' +
+            '<div id="logEntries"></div>' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
 
-        // Add toggle event listener
-        el.querySelector('#motionSensorToggle').addEventListener('change', async function (e) {
-          const enabled = e.target.checked;
-          const toggleLabel = document.getElementById('toggleLabel');
-          const st = document.getElementById('ctrlStatus');
+        var sensorMonitoringActive = false;
+        var sensorPollTimer = null;
+        var sensorDetectionCount = 0;
+        var toggleBtn = el.querySelector('#toggleMonitoring');
 
-          toggleLabel.textContent = enabled ? 'Sensor Enabled' : 'Sensor Disabled';
-          if (st) st.textContent = enabled ? 'Enabling sensor...' : 'Disabling sensor...';
+        function addLogEntry(msg, type) {
+          var log = document.getElementById('motionLog');
+          var entries = document.getElementById('logEntries');
+          if (!log || !entries) return;
+          log.style.display = 'block';
+          var ts = new Date().toLocaleTimeString();
+          var cls = type === 'motion' ? 'text-danger fw-semibold' : type === 'clear' ? 'text-success' : 'text-muted';
+          var div = document.createElement('div');
+          div.className = 'small ' + cls;
+          div.textContent = ts + ' — ' + msg;
+          entries.insertBefore(div, entries.firstChild);
+          // Keep max 50 entries
+          while (entries.children.length > 50) entries.removeChild(entries.lastChild);
+        }
 
-          try {
-            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                config: {
-                  ...part.config,
-                  enabled: enabled
-                }
-              })
-            });
+        function stopSensorMonitoring() {
+          sensorMonitoringActive = false;
+          if (sensorPollTimer) { clearInterval(sensorPollTimer); sensorPollTimer = null; }
+          var indicator = document.getElementById('motionIndicator');
+          var status = document.getElementById('motionStatus');
+          var details = document.getElementById('motionDetails');
+          if (indicator) { indicator.style.backgroundColor = '#6c757d'; indicator.style.borderColor = '#dee2e6'; indicator.style.boxShadow = 'none'; }
+          if (status) { status.textContent = 'Monitoring Off'; status.className = 'fs-5 fw-bold text-muted mb-1'; }
+          if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' total detection' + (sensorDetectionCount !== 1 ? 's' : '') : '';
+          toggleBtn.className = 'btn btn-success btn-lg';
+          toggleBtn.innerHTML = '<i class="bi bi-play-circle me-2"></i>Enable Monitoring';
+          addLogEntry('Monitoring stopped', 'info');
+        }
 
-            const result = await response.json();
-            if (response.ok && result.success) {
-              if (st) st.textContent = enabled ? 'Sensor enabled successfully' : 'Sensor disabled successfully';
-              setTimeout(() => { if (st) st.textContent = ''; }, 2000);
-            } else {
-              if (st) st.textContent = 'Failed to update sensor state';
-              e.target.checked = !enabled; // Revert toggle
-              toggleLabel.textContent = !enabled ? 'Sensor Enabled' : 'Sensor Disabled';
-            }
-          } catch (error) {
-            console.error('Error updating motion sensor state:', error);
-            if (st) st.textContent = 'Error updating sensor state';
-            e.target.checked = !enabled; // Revert toggle
-            toggleLabel.textContent = !enabled ? 'Sensor Enabled' : 'Sensor Disabled';
-          }
-        });
+        function startSensorMonitoring() {
+          sensorMonitoringActive = true;
+          sensorDetectionCount = 0;
+          var lastMotionState = false;
+          var indicator = document.getElementById('motionIndicator');
+          var status = document.getElementById('motionStatus');
+          var details = document.getElementById('motionDetails');
+          var st = document.getElementById('ctrlStatus');
 
-        // Use global variables for live test tracking
+          toggleBtn.className = 'btn btn-danger btn-lg';
+          toggleBtn.innerHTML = '<i class="bi bi-stop-circle me-2"></i>Disable Monitoring';
 
-        // Read button - single reading
-        el.querySelector('#readMotion').addEventListener('click', async function () {
-          const st = document.getElementById('ctrlStatus');
-          const indicator = document.getElementById('motionIndicator');
-          const status = document.getElementById('motionStatus');
-          const details = document.getElementById('motionDetails');
+          if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
+          if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
+          if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
+          addLogEntry('Monitoring started on GPIO ' + part.pin, 'info');
 
-          if (st) st.textContent = `Reading ${part.name} motion sensor...`;
-          try {
-            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({})
-            });
-            const result = await response.json();
-
-            if (response.ok && result.testResult) {
-              const motionDetected = result.testResult.motionDetected || false;
-              const timestamp = new Date().toLocaleTimeString();
-
-              // Update indicator
-              if (motionDetected) {
-                indicator.style.backgroundColor = '#dc3545'; // Red
-                indicator.style.borderColor = '#dc3545';
-                status.textContent = 'MOTION DETECTED';
-                status.className = 'fw-semibold text-danger';
-              } else {
-                indicator.style.backgroundColor = '#198754'; // Green
-                indicator.style.borderColor = '#198754';
-                status.textContent = 'No Motion';
-                status.className = 'fw-semibold text-success';
-              }
-
-              details.textContent = `Last read: ${timestamp}`;
-              if (st) st.textContent = `${part.name} read complete`;
-              setTimeout(() => { if (st) st.textContent = ''; }, 2000);
-            } else {
-              if (st) st.textContent = 'Read failed';
-              status.textContent = 'Read error';
-              status.className = 'fw-semibold text-warning';
-            }
-          } catch (error) {
-            console.error(`Error reading motion sensor ${part.name}:`, error);
-            if (st) st.textContent = 'Read error';
-            status.textContent = 'Communication error';
-            status.className = 'fw-semibold text-warning';
-          }
-        });
-
-        // Detect Motion button - runs detection for 10 seconds
-        el.querySelector('#detectMotion').addEventListener('click', async function () {
-          const st = document.getElementById('ctrlStatus');
-          const indicator = document.getElementById('motionIndicator');
-          const status = document.getElementById('motionStatus');
-          const details = document.getElementById('motionDetails');
-          const detectBtn = document.getElementById('detectMotion');
-
-          detectBtn.disabled = true;
-          if (st) st.textContent = `Detecting motion on ${part.name} for 10 seconds...`;
-          status.textContent = 'Detecting...';
-          status.className = 'fw-semibold text-primary';
-          indicator.style.backgroundColor = '#0d6efd'; // Blue
-          indicator.style.borderColor = '#0d6efd';
-
-          try {
-            const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'detectMotion',
-                params: { duration: 10 }
-              })
-            });
-            const result = await response.json();
-
-            if (response.ok && result.testResult) {
-              const detections = result.testResult.detections || 0;
-              const timestamp = new Date().toLocaleTimeString();
-
-              // Update indicator based on detections
-              if (detections > 0) {
-                indicator.style.backgroundColor = '#dc3545'; // Red
-                indicator.style.borderColor = '#dc3545';
-                status.textContent = `${detections} motion event${detections > 1 ? 's' : ''} detected!`;
-                status.className = 'fw-semibold text-danger';
-              } else {
-                indicator.style.backgroundColor = '#198754'; // Green
-                indicator.style.borderColor = '#198754';
-                status.textContent = 'No motion detected';
-                status.className = 'fw-semibold text-success';
-              }
-
-              details.textContent = `Detection completed at ${timestamp}`;
-              if (st) st.textContent = `Detection complete: ${detections} event${detections > 1 ? 's' : ''}`;
-              setTimeout(() => { if (st) st.textContent = ''; }, 3000);
-            } else {
-              if (st) st.textContent = 'Detection failed';
-              status.textContent = 'Detection error';
-              status.className = 'fw-semibold text-warning';
-              indicator.style.backgroundColor = '#ffc107'; // Yellow
-              indicator.style.borderColor = '#ffc107';
-            }
-          } catch (error) {
-            console.error(`Error detecting motion on ${part.name}:`, error);
-            if (st) st.textContent = 'Detection error';
-            status.textContent = 'Communication error';
-            status.className = 'fw-semibold text-warning';
-            indicator.style.backgroundColor = '#ffc107'; // Yellow
-            indicator.style.borderColor = '#ffc107';
-          } finally {
-            detectBtn.disabled = false;
-          }
-        });
-
-        // Start Live Test button
-        el.querySelector('#startLiveTest').addEventListener('click', function () {
-          const startBtn = document.getElementById('startLiveTest');
-          const stopBtn = document.getElementById('stopLiveTest');
-          const st = document.getElementById('ctrlStatus');
-          const indicator = document.getElementById('motionIndicator');
-          const status = document.getElementById('motionStatus');
-          const details = document.getElementById('motionDetails');
-
-          startBtn.style.display = 'none';
-          stopBtn.style.display = 'inline-block';
-          globalIsLiveTestRunning = true;
-
-          if (st) st.textContent = `Live testing ${part.name} - monitoring for movement...`;
-          status.textContent = 'Live monitoring...';
-          status.className = 'fw-semibold text-primary';
-
-          // Start continuous polling
-          globalLiveTestInterval = setInterval(async () => {
-            if (!globalIsLiveTestRunning) return;
-
+          sensorPollTimer = setInterval(async function () {
+            if (!sensorMonitoringActive) return;
             try {
-              const response = await fetch(`/api/parts/${encodeURIComponent(part.id)}/test`, {
+              var response = await fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
               });
-              const result = await response.json();
-
+              var result = await response.json();
               if (response.ok && result.testResult) {
-                const motionDetected = result.testResult.motionDetected || false;
-                const timestamp = new Date().toLocaleTimeString();
-
-                // Update indicator with animation
-                if (motionDetected) {
-                  indicator.style.backgroundColor = '#dc3545'; // Bright Red
-                  indicator.style.borderColor = '#dc3545';
-                  indicator.style.boxShadow = '0 0 10px rgba(220, 53, 69, 0.5)';
-                  status.textContent = 'MOVEMENT DETECTED!';
-                  status.className = 'fw-semibold text-danger';
-                } else {
-                  indicator.style.backgroundColor = '#198754'; // Green
-                  indicator.style.borderColor = '#198754';
-                  indicator.style.boxShadow = 'none';
-                  status.textContent = 'No Movement';
-                  status.className = 'fw-semibold text-success';
+                var motionDetected = result.testResult.motionDetected || false;
+                if (motionDetected && !lastMotionState) {
+                  sensorDetectionCount++;
+                  if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; }
+                  if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
+                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '');
+                  addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
+                } else if (!motionDetected && lastMotionState) {
+                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
+                  if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
+                  addLogEntry('Motion cleared', 'clear');
                 }
-
-                details.textContent = `Live monitoring - Last update: ${timestamp}`;
+                lastMotionState = motionDetected;
+              } else {
+                if (st) st.textContent = 'Sensor read failed';
               }
             } catch (error) {
-              console.error(`Error in live test for ${part.name}:`, error);
+              console.error('Sensor poll error:', error);
+              if (st) st.textContent = 'Communication error';
             }
-          }, 500); // Poll every 500ms for responsive detection
+          }, 500);
+        }
+
+        toggleBtn.addEventListener('click', function () {
+          if (sensorMonitoringActive) {
+            stopSensorMonitoring();
+          } else {
+            startSensorMonitoring();
+          }
         });
 
-        // Stop Live Test button
-        el.querySelector('#stopLiveTest').addEventListener('click', function () {
-          const startBtn = document.getElementById('startLiveTest');
-          const stopBtn = document.getElementById('stopLiveTest');
-          const st = document.getElementById('ctrlStatus');
-          const indicator = document.getElementById('motionIndicator');
-          const status = document.getElementById('motionStatus');
-          const details = document.getElementById('motionDetails');
-
-          globalIsLiveTestRunning = false;
-          if (globalLiveTestInterval) {
-            clearInterval(globalLiveTestInterval);
-            globalLiveTestInterval = null;
-          }
-
-          startBtn.style.display = 'inline-block';
-          stopBtn.style.display = 'none';
-
-          // Reset indicator
-          indicator.style.backgroundColor = '#6c757d';
-          indicator.style.borderColor = '#dee2e6';
-          indicator.style.boxShadow = 'none';
-          status.textContent = 'Live test stopped';
-          status.className = 'fw-semibold text-muted';
-          details.textContent = '';
-
-          if (st) st.textContent = `Live test stopped for ${part.name}`;
-          setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+        el.querySelector('#clearLog').addEventListener('click', function () {
+          var entries = document.getElementById('logEntries');
+          if (entries) entries.innerHTML = '';
         });
       } else {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
