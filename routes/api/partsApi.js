@@ -9,6 +9,7 @@ import express from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 import hardwareService from '../../services/hardwareService/index.js';
 
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
@@ -39,6 +40,64 @@ async function loadParts() {
     const globalPath = path.resolve(appRoot, 'data/parts.json');
     return JSON.parse(await fs.readFile(globalPath, 'utf8'));
 }
+
+/**
+ * GET /:id/monitor — SSE stream for real-time motion sensor monitoring.
+ * Spawns motion_detect_cli.py once, holds GPIO open, streams state changes.
+ */
+router.get('/:id/monitor', async (req, res) => {
+    try {
+        const parts = await loadParts();
+        const part = parts.find(p => String(p.id) === String(req.params.id));
+        if (!part || part.type !== 'motion_sensor') {
+            return res.status(404).json({ error: 'Motion sensor part not found' });
+        }
+
+        const pin = part.pin;
+        const appRoot = path.resolve(__dirname, '../..');
+        const script = path.resolve(appRoot, 'python_wrappers/motion_detect_cli.py');
+
+        // SSE headers
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        });
+        res.flushHeaders();
+
+        const proc = spawn('/usr/bin/python3', [script, 'detect', String(pin), '0'], {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let buf = '';
+        proc.stdout.on('data', (chunk) => {
+            buf += chunk.toString();
+            let nl;
+            while ((nl = buf.indexOf('\n')) !== -1) {
+                const line = buf.slice(0, nl).trim();
+                buf = buf.slice(nl + 1);
+                if (line) {
+                    res.write(`data: ${line}\n\n`);
+                }
+            }
+        });
+
+        proc.stderr.on('data', () => { /* suppress */ });
+
+        proc.on('close', () => {
+            res.write('data: {"status":"stopped"}\n\n');
+            res.end();
+        });
+
+        req.on('close', () => {
+            proc.kill('SIGTERM');
+        });
+    } catch (error) {
+        console.error('Error starting motion monitor:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 /**
  * GET / — Get all parts (character-aware)
