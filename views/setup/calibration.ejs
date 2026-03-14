@@ -2948,9 +2948,9 @@
                     addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
                   }
                   if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; indicator.style.animation = 'sensorPulse 1s infinite'; }
-                  if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
                   var dur = motionStartTime ? Math.round((Date.now() - motionStartTime) / 1000) : 0;
-                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') + (dur > 0 ? ' \u2022 active ' + dur + 's' : '');
+                  if (status) { status.textContent = 'MOTION \u2022 ' + dur + 's'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
+                  if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') + ' \u2022 sensor hold time ~30-40s \u2022 stay still to reset';
                 } else {
                   if (lastState === 1) {
                     var dur = motionStartTime ? ((Date.now() - motionStartTime) / 1000).toFixed(1) : '?';
