@@ -2925,8 +2925,10 @@
           if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
           addLogEntry('Monitoring started on GPIO ' + part.pin, 'info');
 
+          var pollBusy = false;
           sensorPollTimer = setInterval(async function () {
-            if (!sensorMonitoringActive) return;
+            if (!sensorMonitoringActive || pollBusy) return;
+            pollBusy = true;
             try {
               var response = await fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
                 method: 'POST',
@@ -2936,15 +2938,20 @@
               var result = await response.json();
               if (response.ok && result.testResult) {
                 var motionDetected = result.testResult.motionDetected || false;
-                if (motionDetected && !lastMotionState) {
-                  sensorDetectionCount++;
+                // Always update the visual indicator to match current sensor state
+                if (motionDetected) {
                   if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; }
                   if (status) { status.textContent = 'MOTION DETECTED'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
+                } else {
+                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
+                  if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
+                }
+                // Log transitions
+                if (motionDetected && !lastMotionState) {
+                  sensorDetectionCount++;
                   if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '');
                   addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
                 } else if (!motionDetected && lastMotionState) {
-                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; }
-                  if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
                   addLogEntry('Motion cleared', 'clear');
                 }
                 lastMotionState = motionDetected;
@@ -2954,6 +2961,8 @@
             } catch (error) {
               console.error('Sensor poll error:', error);
               if (st) st.textContent = 'Communication error';
+            } finally {
+              pollBusy = false;
             }
           }, 500);
         }
