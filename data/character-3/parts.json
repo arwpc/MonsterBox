@@ -77,12 +77,12 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 1
+      "channel": 4
     },
     "created": "2025-10-05T18:12:14.762Z",
     "enabled": true,
     "modelId": "servo_rds51150sg_150kg",
-    "updated": "2026-03-14T00:00:00.000Z"
+    "updated": "2026-03-14T17:29:29.810Z"
   },
   {
     "id": "5",
@@ -95,12 +95,12 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 2
+      "channel": 5
     },
     "created": "2025-10-05T18:12:32.839Z",
     "enabled": true,
     "modelId": "servo_hooyij_ds3240mg",
-    "updated": "2026-03-08T21:10:10.117Z"
+    "updated": "2026-03-14T17:30:28.265Z"
   },
   {
     "id": "6",
@@ -170,7 +170,7 @@
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2026-03-14T17:22:38.282Z",
+    "updated": "2026-03-14T23:53:12.218Z",
     "modelId": "arducam-b0205"
   },
   {
