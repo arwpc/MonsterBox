@@ -84,7 +84,7 @@ async function writeTempAudio(buffer, contentType) {
 }
 
 // Canonical default volume for all playback paths (0-100)
-const DEFAULT_VOLUME = 85;
+const DEFAULT_VOLUME = 100;
 
 class ServerPlaybackService {
   constructor() {
@@ -353,8 +353,8 @@ class ServerPlaybackService {
       const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
       const deviceId = await this._resolveDeviceId({ characterId, deviceId: opts.deviceId, speakerPartId: opts.speakerPartId });
 
-      // Stop any managed stream for this character so AI gets exclusive path
-      try { await this.stopStream({ characterId }); } catch (_) { /* best-effort */ }
+      // NOTE: Do NOT stop the persistent mpg123 stream here — use a separate
+      // one-shot player so the managed stream stays warm for other audio.
 
       // Echo suppression: estimate duration and suppress mic for non-ConvAI paths
       try {
@@ -389,15 +389,14 @@ class ServerPlaybackService {
         return { success: true, simulated: true, deviceId };
       }
 
-      // Prefer using pw-play when available (more reliable sink targeting on PipeWire)
       const { spawn } = await import('child_process');
-      // Best-effort: stop any external players on the target device so AI preempts other audio
-      try {
-        await runWrapper('speaker_cli.py', ['stop', '--device', deviceId], { enableLogging: false, timeoutMs: 3000 });
-      } catch (e) {
-        // ignore - best-effort
-      }
-      if (this._pwplayAvailable) {
+
+      // Determine if content is WAV/PCM (pw-play can handle) vs MP3 (needs mpg123)
+      const isWavContent = contentType.includes('wav') || contentType.includes('wave') || contentType.includes('pcm');
+      const isMp3Content = contentType.includes('mpeg') || contentType.includes('mp3');
+
+      // For MP3 content, skip pw-play (it can't decode MP3 from stdin) and go straight to mpg123
+      if (this._pwplayAvailable && isWavContent) {
         try {
           const env = { ...process.env };
           if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
@@ -450,8 +449,8 @@ class ServerPlaybackService {
         }
       }
 
-      // Next fallback: mpg123 for MP3 data
-      if (this._mpg123Available && (contentType.includes('mpeg') || contentType.includes('mp3'))) {
+      // Primary path for MP3 data: one-shot mpg123 (does not touch the persistent stream)
+      if (this._mpg123Available && isMp3Content) {
         try {
           const env = { ...process.env };
           if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;

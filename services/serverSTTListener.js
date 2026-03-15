@@ -23,6 +23,8 @@ class ServerSTTListener {
     this._cachedCapturePath = null; // cached working capture method
     this._cachedCapturePathAt = 0; // timestamp of cache
     this._capturePathCacheTtl = 300000; // 5 minute cache TTL
+    this._resolvedSourceCache = new Map(); // deviceId -> { resolvedId, timestamp }
+    this._sourceCacheTtl = 60000; // 60 seconds
     this.sessionTimeoutMs = 3600000; // 1 hour max session duration
     this.cleanupIntervalMs = 60000; // cleanup every minute
 
@@ -372,8 +374,18 @@ class ServerSTTListener {
 
   async captureChunkWav(deviceId, durationSec) {
     const sr = 16000, ch = 1;
-    const src = await this.resolvePulseSourceId(deviceId);
-    const sourceArg = src || 'default';
+
+    // Use cached source resolution to avoid shelling out on every chunk
+    const cached = this._resolvedSourceCache.get(deviceId);
+    const now_src = Date.now();
+    let sourceArg;
+    if (cached && (now_src - cached.timestamp) < this._sourceCacheTtl) {
+      sourceArg = cached.resolvedId;
+    } else {
+      const src = await this.resolvePulseSourceId(deviceId);
+      sourceArg = src || 'default';
+      this._resolvedSourceCache.set(deviceId, { resolvedId: sourceArg, timestamp: now_src });
+    }
 
     if (process.env.MB_DEBUG_AUDIO === '1') {
       console.log(`🎙️ STT capturing from: "${sourceArg}" (requested: "${deviceId}") for ${durationSec || 1}s`);

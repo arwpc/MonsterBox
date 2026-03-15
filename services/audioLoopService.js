@@ -102,7 +102,7 @@ class AudioLoopService {
      * @param {number} volume - Volume (0-100)
      * @returns {Promise<boolean>} - Success status
      */
-    async startLoop(characterId, audioFile, deviceId = 'default', volume = 80) {
+    async startLoop(characterId, audioFile, deviceId = 'default', volume = 100) {
         try {
             // Stop any existing loop for this character
             await this.stopLoop(characterId);
@@ -155,7 +155,8 @@ class AudioLoopService {
                 '-'
             ], { env });
 
-            // Pipe ffmpeg output to pw-play
+            // Handle EPIPE before piping to prevent crashes on device disconnect
+            pwplay.stdin.on('error', () => {});
             ffmpeg.stdout.pipe(pwplay.stdin);
 
             // Error handling

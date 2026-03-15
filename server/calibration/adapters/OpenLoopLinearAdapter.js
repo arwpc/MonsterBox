@@ -8,7 +8,8 @@ const NUDGE_SCALES = { fine: 0.01, med: 0.05, coarse: 0.15 };
 const ENDPOINT_THRESHOLD = 0.02;
 // Extra drive time at endpoints as a fraction of full-range travel time.
 // Ensures physical contact with endstop to reset drift.
-const ENDPOINT_OVERDRIVE_FACTOR = 0.30;
+// Set high (50%) to overcome friction, weight, and load on arms/actuators.
+const ENDPOINT_OVERDRIVE_FACTOR = 0.50;
 
 export class OpenLoopLinearAdapter {
   constructor(partId, motion, invert = false, initialP = 0.5) {

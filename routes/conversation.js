@@ -455,7 +455,7 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
         const serverPlaybackService = (await import('../services/serverPlaybackService.js')).default;
         // Provide a tiny buffer and mark as MP3 so playback service records mpg123 path in telemetry (simulated in test mode)
         const dummy = Buffer.from([0xff, 0xfb, 0x90, 0x64]); // looks like an MP3 frame header-ish
-        await serverPlaybackService.playBufferOnCharacterSpeaker(dummy, { characterId, contentType: 'audio/mpeg', volume: 75 });
+        await serverPlaybackService.playBufferOnCharacterSpeaker(dummy, { characterId, contentType: 'audio/mpeg', volume: 100 });
       } catch (e) {
         // non-fatal in tests
       }
@@ -527,7 +527,7 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
             const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
               characterId,
               contentType: gen.contentType || 'audio/wav',
-              volume: 85,
+              volume: 100,
               kind: 'ai'
             });
             audioPlayed = playResult.success;

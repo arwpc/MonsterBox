@@ -106,7 +106,7 @@ class GoblinManagerService {
                 settings: {
                     audioEnabled: true,
                     videoEnabled: true,
-                    volume: 80,
+                    volume: 100,
                     autoLock: false,
                     ...this.goblins.get(goblinId)?.settings
                 }

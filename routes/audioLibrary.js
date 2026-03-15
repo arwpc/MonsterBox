@@ -274,7 +274,7 @@ router.post('/api/audio/:id/play', async (req, res) => {
                 characterId,
                 audioFilePath,
                 undefined, // deviceId - let it auto-detect from character config
-                volume || 80
+                volume || 100
             );
 
             if (loopSuccess) {
@@ -308,7 +308,7 @@ router.post('/api/audio/:id/play', async (req, res) => {
             characterId: characterId,
             speakerPartId: speakerPartId,
             contentType: `audio/${audio.format}`,
-            volume: volume || 80
+            volume: volume || 100
         });
 
         if (playResult.success) {

@@ -199,7 +199,7 @@ async function executeAudioStep(step, characterId, emit) {
     }
   }
 
-  const r = await hardwareService.HARDWARE_CONTROLLERS.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 80 });
+  const r = await hardwareService.HARDWARE_CONTROLLERS.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 100 });
   emit && emit({ type: 'step', status: r.success ? 'complete' : 'error', stepType: 'audio', audioId: step.audioId, result: r });
   if (!r.success) throw new Error(r.error || 'Audio play failed');
   return r;
@@ -352,7 +352,7 @@ async function executeGoblinVideoStep(step, characterId, emit) {
     // Play video on Goblin
     const playResult = await goblinManagerService.playVideoOnGoblin(goblinId, videoId, {
       loop: options.loop !== false, // Default to loop
-      volume: options.volume || 80,
+      volume: options.volume || 100,
       ...options
     });
 
@@ -386,14 +386,14 @@ async function executeGoblinVideoStep(step, characterId, emit) {
 async function executeServoStep(step, characterId, emit) {
   const { partId, angle, duration = 1000, usePreset, presetName } = step;
   if (!partId) throw new Error('servo.step requires partId');
-  
+
   let targetAngle = angle;
-  
+
   // If using preset, resolve the preset to an angle
   if (usePreset && presetName) {
     targetAngle = await resolvePresetToAngle(partId, presetName);
   }
-  
+
   if (targetAngle == null) throw new Error('servo.step requires angle or valid preset');
 
   emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle: targetAngle, duration, usePreset, presetName });

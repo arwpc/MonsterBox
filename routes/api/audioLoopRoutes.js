@@ -71,7 +71,7 @@ router.post('/start', express.json(), async (req, res) => {
             characterId,
             audioFile,
             deviceId || 'default',
-            volume || 80
+            volume || 100
         );
 
         if (success) {
@@ -81,7 +81,7 @@ router.post('/start', express.json(), async (req, res) => {
                 characterId,
                 audioFile,
                 deviceId: deviceId || 'default',
-                volume: volume || 80
+                volume: volume || 100
             });
         } else {
             res.status(500).json({

@@ -47,6 +47,7 @@ I've built a complete calibration system for linear actuators in MonsterBox 5.5.
 6. **Verify**: Status indicators will show green checkmarks when positions are saved
 
 ### Safety Features
+- **12V Bus Fuse Protection**: Linear actuators are wired into a 12V power bus protected by 5V fuses — intentionally undersized to blow before harming people or hardware. If a fuse blows, replace it and investigate the cause
 - **Emergency Stop**: Red STOP button immediately halts actuator movement
 - **Button Disabling**: Control buttons are disabled during movement to prevent conflicts
 - **Duration Limits**: Movement duration is limited to prevent over-extension

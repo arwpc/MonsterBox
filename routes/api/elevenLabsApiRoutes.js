@@ -526,7 +526,7 @@ router.post('/play-audio', async (req, res) => {
         const result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
             characterId: characterId,
             contentType: `audio/${format}`,
-            volume: 85
+            volume: 100
         });
 
         // Clean up temp file
@@ -630,7 +630,7 @@ router.post('/generate-and-play', async (req, res) => {
         const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 85,
+            volume: 100,
             kind: 'ai'
         });
 
@@ -741,7 +741,7 @@ router.post('/agent-speak', async (req, res) => {
         const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 85,
+            volume: 100,
             kind: 'ai'
         });
 
@@ -804,7 +804,7 @@ async function generateAndPlaySimpleTTS(text, characterId, res) {
         const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(ttsResult.audioBuffer, {
             characterId: characterId,
             contentType: ttsResult.contentType || 'audio/wav',
-            volume: 85
+            volume: 100
         });
 
         if (playResult.success) {

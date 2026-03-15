@@ -43,6 +43,7 @@ export class AbsoluteServoAdapter {
   async gotoAngle(angleDeg, opts) {
     const clamped = Math.max(0, Math.min(180, angleDeg));
     try {
+      // Invert is applied system-wide in controlPart() via calibration profile
       await hardwareService.controlPart(String(this.partId), 'moveToAngle', {
         angleDeg: clamped,
         duration: (opts && opts.timeoutMs) || 1000

@@ -2,6 +2,39 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.3.0] - 2026-03-15 — Audio Reliability Overhaul
+
+### Audio Output Fixes
+- **MP3/pw-play mismatch fixed** — `playAIOnCharacterSpeaker()` was piping MP3 data to `pw-play` which only accepts WAV/PCM. Now MP3 content routes exclusively through `mpg123`, and `pw-play` is only used for WAV/PCM audio. This was the root cause of TTS dying unpredictably.
+- **Persistent stream no longer killed** — AI playback previously called `stopStream()` which killed the persistent `mpg123` stream, creating gaps in subsequent playback. Removed this — AI speech uses its own one-shot player instead.
+- **Removed pre-playback audio stop** — `speaker_cli.py stop` was called before every AI playback, unnecessarily cutting off any in-progress audio.
+
+### Audio Library Fix
+- **Startup race condition fixed** — `loadLibrary()` and `getAudioFiles()` now await the init promise. Previously, requests arriving before the initial file rescan completed would see an empty library.
+
+### Microphone Stability
+- **Source resolution caching** — `captureChunkWav()` now caches the resolved PipeWire source ID for 60 seconds instead of shelling out to `wpctl status` on every 0.3s capture chunk. Reduces system overhead and eliminates intermittent resolution failures.
+
+### Audio Loop Fix
+- **EPIPE crash prevention** — Moved `pwplay.stdin` error handler registration before the `ffmpeg.stdout.pipe()` call, preventing crashes when audio devices disconnect during looped playback.
+
+### Hardware Safety Documentation
+- **12V bus fuse protection** — Documented that linear actuators and large 12V servos are wired into a 12V power bus protected by intentionally undersized 5V fuses (safety-first design). Updated in hardware docs, wiring guide, and calibration guide.
+
+### Files Changed
+- `services/serverPlaybackService.js` — Content-type-aware player selection, removed stream-killing before AI playback
+- `services/audioLibraryService.js` — Init-await guard on `loadLibrary()` and `getAudioFiles()`
+- `services/serverSTTListener.js` — Source resolution cache with 60s TTL
+- `services/audioLoopService.js` — Error handler ordering fix for EPIPE prevention
+- `docs/hardware/ORLOK_BTS7960_WIRING.md` — 12V bus fuse safety note
+- `docs/hardware/index.md` — Power management section updated
+- `docs/setup/LINEAR_ACTUATOR_CALIBRATION.md` — Fuse protection safety feature
+
+### Testing
+- **631 tests passing** (278 system + 85 unit + 268 browser), 0 failing
+
+---
+
 ## [7.0.0] - 2026-03-05 — Major Release
 
 MonsterBox 7.0 consolidates all v6.x features into a polished, production-ready platform. This release includes head tracking with face/hand detection, click-to-track, audio improvements, scene concurrency, and comprehensive documentation and test coverage.

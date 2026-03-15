@@ -147,6 +147,7 @@ When creating a motor or linear actuator part with BTS7960:
 3. **Inductive Kickback**: The BTS7960 has built-in protection, but add flyback diodes if using inductive loads
 4. **Power Supply**: Use separate power supplies for logic (5V) and motor power (6-27V)
 5. **Common Ground**: Ensure Raspberry Pi GND and motor power GND are connected
+6. **12V Bus Fuse Protection**: Linear actuators and large 12V servos are wired into a 12V power bus protected by 5V fuses. These fuses are intentionally undersized to blow before harming people or hardware. If a fuse blows, the protection worked as designed — replace the fuse and investigate the cause
 
 ## Testing Procedure
 1. Wire the BTS7960 according to Option 1 (Simplified)

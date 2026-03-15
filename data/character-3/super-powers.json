@@ -59,6 +59,6 @@
     "targetLockStrength": 9,
     "confirmFrames": 4,
     "detectInterval": 5,
-    "detectionMode": "person+motion"
+    "detectionMode": "upperbody"
   }
 }

@@ -274,6 +274,7 @@ class AudioLibraryService {
      * Load the audio library database (normalizes audioFiles -> audio)
      */
     async loadLibrary() {
+        if (!this._initialized) await this._initPromise;
         try {
             const data = await fs.readFile(this.libraryPath, 'utf8');
             try {
@@ -467,6 +468,7 @@ class AudioLibraryService {
      * Get all audio files with optional filtering
      */
     async getAudioFiles(filters = {}) {
+        if (!this._initialized) await this._initPromise;
         const library = await this.loadLibrary();
         // Support both 'audio' and 'audioFiles' property names for compatibility
         const audioArray = library.audio || library.audioFiles || [];

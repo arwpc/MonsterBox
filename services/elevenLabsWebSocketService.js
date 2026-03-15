@@ -1409,7 +1409,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
                     result = await serverPlaybackService.writePcmStream(audioBuffer, {
                         characterId: c.characterId,
-                        volume: 80,
+                        volume: 100,
                         sampleRate,
                         kind: 'ai'
                     });
@@ -1417,7 +1417,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
                         characterId: c.characterId,
                         contentType: 'audio/mpeg',
-                        volume: 80
+                        volume: 100
                     });
                 }
                 if (!result.success) {

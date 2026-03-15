@@ -65,9 +65,10 @@ Computer vision-based head tracking for animatronic characters:
 - **Calibration**: Per-device calibration storage
 
 ### Power Management
+- **12V Power Bus**: Linear actuators and large 12V servos are wired into a shared 12V bus
+- **5V Fuse Protection**: The 12V bus is protected by intentionally undersized 5V fuses that blow before harming people or hardware — a safety-first design
 - **Power Distribution**: Safe power distribution for multiple devices
 - **Current Monitoring**: Overcurrent protection
-- **Battery Backup**: UPS integration for critical systems
 - **Shutdown Procedures**: Safe hardware shutdown
 
 ## Hardware Monitoring

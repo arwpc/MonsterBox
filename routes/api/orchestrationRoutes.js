@@ -951,7 +951,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                 url,
                 {
                     characterId: animatronic.characterId,
-                    volume: Number.isFinite(volume) ? volume : 80,
+                    volume: Number.isFinite(volume) ? volume : 100,
                     loop: loop === true  // Pass loop parameter to the device
                 },
                 { timeout: 30000 }
@@ -980,7 +980,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                     audio: { id: audioId, title: audioTitle || undefined, filename: filename || undefined },
                     text: audioTitle || undefined,
                     characterId: animatronic.characterId,
-                    volume: Number.isFinite(volume) ? volume : 80,
+                    volume: Number.isFinite(volume) ? volume : 100,
                     loop: loop === true  // Include loop in fallback
                 };
                 const fb = await axios.post(fallbackUrl, body, { timeout: 30000 });
@@ -1002,7 +1002,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                     const altBody = {
                         filename,
                         characterId: animatronic.characterId,
-                        volume: Number.isFinite(volume) ? volume : 80,
+                        volume: Number.isFinite(volume) ? volume : 100,
                         loop: loop === true  // Include loop in filename fallback
                     };
                     const alt = await axios.post(altUrl, altBody, { timeout: 30000 }).catch(() => null);

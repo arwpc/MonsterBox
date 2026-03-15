@@ -543,6 +543,10 @@
             <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()">
               <i class="bi bi-arrows"></i> Sweep Test
             </button>
+            <div class="form-check form-switch mt-2" id="invertToggleContainer" style="display: none;">
+              <input class="form-check-input" type="checkbox" id="invertToggle" onchange="toggleInvert(this.checked)">
+              <label class="form-check-label small" for="invertToggle">Invert Servo Direction</label>
+            </div>
           </div>
 
           <!-- Position Presets -->
@@ -837,6 +841,19 @@
         if (maxDisplay) maxDisplay.textContent = '\u2014';
       }
 
+      // Update invert toggle — show for servos only
+      var invertContainer = document.getElementById('invertToggleContainer');
+      var invertCheckbox = document.getElementById('invertToggle');
+      if (invertContainer) {
+        var isServo = partData && partData.type === 'servo';
+        invertContainer.style.display = isServo ? 'block' : 'none';
+        if (invertCheckbox && profile && profile.capability) {
+          invertCheckbox.checked = !!profile.capability.invert;
+        } else if (invertCheckbox) {
+          invertCheckbox.checked = false;
+        }
+      }
+
       // Update presets list
       renderPresetsUI(profile ? profile.presets : null);
 
@@ -984,6 +1001,30 @@
     }
 
     window.setCalibrationBound = setCalibrationBound;
+
+    // Invert servo direction toggle
+    async function toggleInvert(checked) {
+      var partId = window.selectedPartId;
+      if (!partId) return;
+      try {
+        var res = await fetch('/api/calibration/' + partId + '/set-invert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invert: checked })
+        });
+        var data = await res.json();
+        if (!data.success) {
+          alert('Set invert failed: ' + (data.error || 'Unknown error'));
+          document.getElementById('invertToggle').checked = !checked;
+        } else {
+          await loadUnifiedCalibration(partId, window.selectedPart);
+        }
+      } catch (err) {
+        console.error('Set invert error:', err);
+        document.getElementById('invertToggle').checked = !checked;
+      }
+    }
+    window.toggleInvert = toggleInvert;
 
     // Sweep test: move from min to max 3 times at 100% speed.
     // For open-loop parts (linear actuators, continuous servos), homes to

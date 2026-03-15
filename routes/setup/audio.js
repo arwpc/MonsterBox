@@ -796,7 +796,7 @@ router.post('/api/browser-mic-chunk', express.json({ limit: '1mb' }), async (req
         const result = await serverPlaybackService.writePcmStream(buffer, {
             deviceId: deviceId || 'default',
             sampleRate: 16000,
-            volume: 85,
+            volume: 100,
             kind: 'browser-mic'
         });
 

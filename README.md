@@ -10,7 +10,18 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.0.0 (March 2026)
+## What's New — v7.3.0 (March 2026)
+
+### Audio Reliability Overhaul
+MonsterBox 7.3 makes audio input and output rock-solid with targeted fixes to the entire audio pipeline:
+
+- **TTS playback fixed**: `pw-play` was receiving MP3 data it couldn't decode — now MP3 always routes through `mpg123`, with `pw-play` reserved for WAV/PCM only
+- **No more audio gaps**: AI speech no longer kills the persistent playback stream — uses separate one-shot players instead
+- **Audio library always loads**: Fixed startup race condition where the library appeared empty if requests arrived before the initial file scan completed
+- **Microphone stability**: Cached PipeWire source resolution (60s TTL) eliminates repeated `wpctl status` shell-outs on every capture chunk
+- **Audio loop robustness**: Fixed EPIPE crash when audio device disconnects during looped playback
+
+### Previous: v7.0.0 (March 2026)
 
 MonsterBox 7.0 is a major release consolidating all v6.x features into a polished, production-ready platform. Key highlights:
 
@@ -350,11 +361,14 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v7.0.0 - March 2026)
+### Test Results (v7.3.0 - March 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
-| System + Unit + Browser | Mocha + Playwright | 272 | 19 | 0 |
+| System | Mocha | 278 | 2 | 0 |
+| Unit | Mocha | 85 | 30 | 0 |
+| Browser | Playwright | 268 | 17 | 0 |
+| **Total** | | **631** | **49** | **0** |
 
 All tests passing.
 
