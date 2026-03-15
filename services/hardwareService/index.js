@@ -13,6 +13,7 @@ import actuatorService from './actuator.js';
 import { runWrapper } from './exec.js';
 import servoService from './servo.js';
 import stepperService from './stepper.js';
+import { getCalibrationStore } from '../../server/calibration/store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -354,12 +355,15 @@ const HARDWARE_CONTROLLERS = {
     },
 
     // 💡 Light - basic on/off lighting
+    // Track light state per pin for true toggle behavior
+    _lightState: {},
     light: {
         async turnOn({ pin, brightness = 100, duration = 0 }) {
             try {
                 const out = await runWrapper('light_cli.py', [String(pin), 'on', String(duration || 0)]);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'on';
                 return {
                     success,
                     partType: 'light',
@@ -379,6 +383,7 @@ const HARDWARE_CONTROLLERS = {
                 const out = await runWrapper('light_cli.py', [String(pin), 'off']);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'off';
                 return {
                     success,
                     partType: 'light',
@@ -394,17 +399,20 @@ const HARDWARE_CONTROLLERS = {
 
         async toggle({ pin }) {
             try {
-                // Simple toggle: pulse on for 250ms
-                const out = await runWrapper('light_cli.py', [String(pin), 'on', '250']);
+                const currentState = HARDWARE_CONTROLLERS._lightState[pin] || 'off';
+                const newState = currentState === 'on' ? 'off' : 'on';
+                const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                if (success) HARDWARE_CONTROLLERS._lightState[pin] = newState;
                 return {
                     success,
                     partType: 'light',
                     pin: pin,
+                    state: newState,
                     action: 'toggle',
                     rawOutput: out,
-                    message: parsed && parsed.message ? parsed.message : (success ? `Light on pin ${pin} toggled` : 'Light toggle failed')
+                    message: parsed && parsed.message ? parsed.message : (success ? `Light on pin ${pin} turned ${newState}` : 'Light toggle failed')
                 };
             } catch (error) {
                 return { success: false, partType: 'light', pin: pin, error: error.message };
@@ -489,6 +497,28 @@ const HARDWARE_CONTROLLERS = {
                 cycles: cycles,
                 message: `LED on pin ${pin} blinking ${cycles} times`
             };
+        },
+
+        async toggle({ pin }) {
+            const currentState = HARDWARE_CONTROLLERS._lightState[pin] || 'off';
+            const newState = currentState === 'on' ? 'off' : 'on';
+            try {
+                const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
+                const parsed = parsePythonJSON(out);
+                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                if (success) HARDWARE_CONTROLLERS._lightState[pin] = newState;
+                return {
+                    success,
+                    partType: 'led',
+                    pin: pin,
+                    state: newState,
+                    action: 'toggle',
+                    rawOutput: out,
+                    message: parsed && parsed.message ? parsed.message : (success ? `LED on pin ${pin} turned ${newState}` : 'LED toggle failed')
+                };
+            } catch (error) {
+                return { success: false, partType: 'led', pin: pin, error: error.message };
+            }
         }
     },
 
@@ -1469,6 +1499,21 @@ export async function controlPart(partId, action, params = {}) {
 
         // TODO: Re-implement safety limits using unified calibration profiles
         // Legacy simple calibration safety limits removed - needs migration to unified calibration
+
+        // System-wide servo invert: mirror angle within calibrated bounds
+        // Uses (minAngle + maxAngle - angle) so the servo stays within its calibrated range.
+        // Without bounds, falls back to (0 + 180 - angle) = legacy 180-angle behavior.
+        if (type === 'servo' && action === 'moveToAngle' && actionParams.angleDeg != null) {
+            try {
+                const calStore = getCalibrationStore();
+                const calProfile = await calStore.get(partId);
+                if (calProfile && calProfile.capability && calProfile.capability.invert) {
+                    const minA = calProfile.bounds?.minAngle ?? 0;
+                    const maxA = calProfile.bounds?.maxAngle ?? 180;
+                    actionParams.angleDeg = minA + maxA - actionParams.angleDeg;
+                }
+            } catch (_) { /* proceed with original angle if calibration unavailable */ }
+        }
 
         console.log(`🔧 Calling ${action} on ${type} controller with params:`, { speed: actionParams.speed, duration: actionParams.duration, direction: actionParams.direction });
         const result = await actionFunction.call(controller, actionParams);
