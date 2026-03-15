@@ -10,9 +10,29 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.3.0 (March 2026)
+## What's New — v7.5.0 (March 2026)
 
-### Audio Reliability Overhaul
+### ElevenLabs v3 TTS — Most Expressive Voice Model
+- **Default TTS model upgraded** from `eleven_flash_v2_5` to `eleven_v3` — the most expressive ElevenLabs model, with native audio tag support
+- **Audio tags** for dramatic animatronic speech: `[breathes heavily]`, `[whispers]`, `[hisses]`, `[slow]`, `[dramatically]`, `[exhales]`
+- **Pause mechanics** via punctuation: dashes for dramatic pauses, ellipses for weight/hesitation, commas for breath
+- **v3-aware service layer** conditionally omits `style`/`use_speaker_boost` params (not supported by v3)
+- **TTS Settings UI** updated: v3 shown as default, info note when v3 selected about unsupported params
+
+### Character Renames
+- **Coffin Breaker → Mina** (Character 2) — updated across entire codebase
+- **Skulltalker → Sir Dragomir** (Character 4) — updated across entire codebase
+- All deployment scripts, hostnames, part names, documentation, and test fixtures updated
+- ElevenLabs agent IDs mapped correctly to all 5 characters
+
+### Agent Template Overhaul
+- Agent prompts now **encourage** audio tags and pause mechanics (previously forbidden)
+- Quick fallback responses use dramatic punctuation and tags for all characters
+- LLM model list updated (Claude Sonnet 4.6, Gemini 2.0 Flash)
+
+### Previous: v7.3.0 (March 2026)
+
+#### Audio Reliability Overhaul
 MonsterBox 7.3 makes audio input and output rock-solid with targeted fixes to the entire audio pipeline:
 
 - **TTS playback fixed**: `pw-play` was receiving MP3 data it couldn't decode — now MP3 always routes through `mpg123`, with `pw-play` reserved for WAV/PCM only
@@ -238,7 +258,8 @@ All AI voice services run through **ElevenLabs** (single provider, single API ke
 ### Models
 | Service | Model | Use Case |
 |---------|-------|----------|
-| TTS | `eleven_flash_v2_5` | Character voice (default, ~75ms latency) |
+| TTS | `eleven_v3` | Character voice (default, most expressive, supports audio tags) |
+| TTS | `eleven_flash_v2_5` | Low-latency alternative (~75ms) |
 | TTS | `eleven_multilingual_v2` | Narration / high-quality |
 | STT | `scribe_v2` | File-based transcription |
 | STT | `scribe_v2_realtime` | Real-time streaming via WebSocket |
@@ -373,14 +394,14 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v7.3.0 - March 2026)
+### Test Results (v7.5.0 - March 2026)
 
 | Suite | Framework | Passing | Skipped | Failing |
 |-------|-----------|---------|---------|---------|
 | System | Mocha | 278 | 2 | 0 |
 | Unit | Mocha | 85 | 30 | 0 |
-| Browser | Playwright | 268 | 17 | 0 |
-| **Total** | | **631** | **49** | **0** |
+| Browser | Playwright | 453 | 20 | 0 |
+| **Total** | | **816** | **52** | **0** |
 
 All tests passing.
 

@@ -28,7 +28,8 @@ Voice Input → ElevenLabs Scribe v2 (STT) → ElevenLabs Agent (AI) → ElevenL
 ### Models
 | Service | Model | Latency | Use Case |
 |---------|-------|---------|----------|
-| TTS | `eleven_flash_v2_5` | ~75ms | Default conversation voice |
+| TTS | `eleven_v3` | — | Default — most expressive, supports audio tags |
+| TTS | `eleven_flash_v2_5` | ~75ms | Low-latency alternative |
 | TTS | `eleven_multilingual_v2` | ~200ms | High-quality narration |
 | STT | `scribe_v2` | batch | File transcription |
 | STT | `scribe_v2_realtime` | ~150ms | WebSocket streaming |
@@ -128,4 +129,4 @@ curl http://localhost:3000/ai-management/api/status
 1. **API Key Errors** — Check `ELEVENLABS_API_KEY` or `/etc/monsterbox/elevenlabs.key`
 2. **Rate Limiting** — Monitor ElevenLabs dashboard for quota
 3. **Audio Issues** — Check PipeWire: `wpctl status`, `pactl list short sinks`
-4. **Performance** — Use `eleven_flash_v2_5` for lowest latency
+4. **Performance** — Use `eleven_flash_v2_5` for lowest latency; use `eleven_v3` (default) for most expressive output

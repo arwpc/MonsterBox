@@ -58,7 +58,7 @@ Diagnosed and fixed issues from a live chat session where responses showed "Audi
 | `views/ai-settings/tts.ejs` | TTS voice assignment page | — |
 | `config/app-config.json` | `selectedCharacter: 3`, `dataPath: "data/character-3"` | — |
 | `data/characters.json` | Character definitions (Orlok id:3, `elevenLabsAgentId: "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n"`) | — |
-| `data/character-3/ai-config/tts-config.json` | `model: "eleven_flash_v2_5"` | — |
+| `data/character-3/ai-config/tts-config.json` | `model: "eleven_v3"` (default) | — |
 | `data/character-3/ai-config/stt-config.json` | Scribe v2, English, VAD settings | — |
 | `tests/browser/ai-settings.spec.js` | 23 Playwright E2E tests | ~280 |
 | `tests/system/ai-audio.test.js` | 17 Mocha system tests (10 original + 7 new route tests) | — |

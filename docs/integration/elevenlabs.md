@@ -6,7 +6,8 @@ MonsterBox uses ElevenLabs as its sole AI voice provider for Text-to-Speech (TTS
 
 | Service | Model | Description |
 |---------|-------|-------------|
-| TTS | `eleven_flash_v2_5` | Default — fastest (~75ms latency) |
+| TTS | `eleven_v3` | Default — most expressive, supports audio tags |
+| TTS | `eleven_flash_v2_5` | Low-latency alternative (~75ms) |
 | TTS | `eleven_multilingual_v2` | High-quality narration |
 | STT | `scribe_v2` | Batch file transcription, 90+ languages |
 | STT | `scribe_v2_realtime` | WebSocket streaming, ~150ms latency |
@@ -31,7 +32,7 @@ Each character can have its own voice settings stored in `data/character-{N}/ai-
 
 ```json
 {
-  "model": "eleven_flash_v2_5",
+  "model": "eleven_v3",
   "voice_id": "21m00Tcm4TlvDq8ikWAM",
   "stability": 0.5,
   "similarity_boost": 0.75,

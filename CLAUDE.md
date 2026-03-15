@@ -2,7 +2,7 @@
 
 ## Project Identity
 - **Application:** MonsterBox — RPi4b-based animatronic character control system
-- **Version:** Read from `package.json` (currently 7.0.0) — NEVER hardcode version strings
+- **Version:** Read from `package.json` — NEVER hardcode version strings
 - **Owner:** Aaron Warner, Coralville, Iowa
 - **Stack:** Node.js, Express, EJS templates, Python hardware scripts, Raspberry Pi 4B
 - **Repository:** Local git, commit frequently with descriptive messages; remote at github.com/arwpc/MonsterBox

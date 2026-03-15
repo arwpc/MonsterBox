@@ -29,8 +29,9 @@ User Input → ElevenLabs Conversational AI → Audio Output
 
 | Service | Model ID | Description |
 |---------|----------|-------------|
-| TTS | `eleven_flash_v2_5` | Default — lowest latency (~75ms) |
-| TTS | `eleven_multilingual_v2` | High-quality, narration use cases |
+| TTS | `eleven_v3` | Default — most expressive, supports audio tags |
+| TTS | `eleven_flash_v2_5` | Low-latency alternative (~75ms) |
+| TTS | `eleven_multilingual_v2` | High-quality narration |
 | STT | `scribe_v2` | Batch transcription, 90+ languages, keyterm prompting |
 | STT | `scribe_v2_realtime` | WebSocket streaming, ~150ms latency, VAD |
 

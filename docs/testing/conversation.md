@@ -12,7 +12,7 @@ Conversation testing ensures AI character interactions are natural, contextually
 - **Conversation Flow**: Smooth dialogue progression
 
 ### 2. Voice Synthesis Testing
-- **ElevenLabs TTS**: Voice generation quality and reliability (`eleven_flash_v2_5`)
+- **ElevenLabs TTS**: Voice generation quality and reliability (`eleven_v3` default, `eleven_flash_v2_5` low-latency)
 - **Character Voice Matching**: Per-character voice selection via `getTTSConfigForCharacter()`
 - **Audio Quality**: Clear and natural-sounding speech
 

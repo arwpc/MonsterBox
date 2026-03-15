@@ -12,7 +12,8 @@ The AI Management Feature provides a centralized interface for configuring and m
 
 | Service | Model ID | Use Case |
 |---------|----------|----------|
-| TTS | `eleven_flash_v2_5` | Default — fastest (~75ms latency) |
+| TTS | `eleven_v3` | Default — most expressive, supports audio tags |
+| TTS | `eleven_flash_v2_5` | Low-latency alternative (~75ms) |
 | TTS | `eleven_multilingual_v2` | High-quality narration |
 | STT | `scribe_v2` | File-based/batch transcription |
 | STT | `scribe_v2_realtime` | Real-time streaming via WebSocket (~150ms latency) |
@@ -36,7 +37,7 @@ The AI Management Feature provides a centralized interface for configuring and m
 ### 🔊 Text-to-Speech Configuration
 - **Per-Character Voice**: Each character has its own TTS model, voice, stability, and similarity settings
 - **Voice Catalog**: Browse and preview ElevenLabs voices with filtering
-- **Model Selection**: `eleven_flash_v2_5` (fast) or `eleven_multilingual_v2` (quality)
+- **Model Selection**: `eleven_v3` (default, expressive), `eleven_flash_v2_5` (low-latency), or `eleven_multilingual_v2` (quality)
 - **Advanced Settings**: Stability, similarity boost, style, output format
 - **Audio Testing**: Generate and test speech with immediate playback on character's speaker
 
@@ -125,7 +126,7 @@ GOOGLE_API_KEY=your-google-key
 2. Navigate to AI Management → Agents
 3. Create or assign an ElevenLabs conversational agent
 4. Navigate to AI Management → TTS
-5. Select voice from ElevenLabs catalog and configure model (`eleven_flash_v2_5`)
+5. Select voice from ElevenLabs catalog and configure model (`eleven_v3`)
 6. Test with conversation interface
 
 ### Testing Voice Configuration

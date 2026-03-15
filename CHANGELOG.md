@@ -2,6 +2,33 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.5.0] - 2026-03-15 — ElevenLabs v3 TTS & Character Renames
+
+### ElevenLabs v3 TTS Upgrade
+- **Default TTS model upgraded** from `eleven_flash_v2_5` to `eleven_v3` (most expressive, supports audio tags)
+- **Audio tags supported**: `[breathes heavily]`, `[whispers]`, `[hisses]`, `[slow]`, `[dramatically]`, `[exhales]` — used sparingly for dramatic animatronic speech
+- **Pause mechanics via punctuation**: dashes (—) for reliable pauses, ellipses (...) for weight/hesitation, commas for breath
+- **v3-aware voice_settings**: service layer conditionally omits `style` and `use_speaker_boost` params (not supported by v3)
+- **TTS Settings UI**: `eleven_v3` shown as first option, info note when v3 selected about unsupported params
+- **All per-character TTS configs** updated to `eleven_v3`, removed unsupported params
+- **Agent template overhauled**: prompts now encourage audio tags and pause mechanics (previously forbidden)
+- **Quick fallback responses** updated with dramatic punctuation and audio tags for all characters
+- **LLM model list updated**: Claude Sonnet 4.6, Gemini 2.0 Flash
+
+### Character Renames
+- **Coffin Breaker → Mina** (Character 2) — renamed across entire codebase (47 files)
+- **Skulltalker → Sir Dragomir** (Character 4) — renamed across entire codebase
+- Updated: characters.json, animatronics.json, character service, test fixtures, client JS, all deployment/utility scripts, and all documentation
+- **PumpkinHead agent ID fixed** — was incorrectly set to Groundbreaker's agent
+- Part names updated: Speaker Sir Dragomir, Sir Dragomir Cam/Mic
+- Hostnames: coffinbreaker → mina, skulltalker → sirdragomir
+- Doc files renamed: character_coffin_breaker.md → character_mina.md, character_skulltalker.md → character_sir_dragomir.md
+
+### Documentation
+- All docs updated to reflect `eleven_v3` as default TTS model
+- CLAUDE.md version reference made dynamic (removed stale hardcoded version)
+- README, CHANGELOG, memory files updated for character renames and TTS upgrade
+
 ## [7.3.0] - 2026-03-15 — Audio Reliability Overhaul
 
 ### Audio Output Fixes
