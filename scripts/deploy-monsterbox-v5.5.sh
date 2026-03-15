@@ -6,9 +6,9 @@ set +e  # Don't exit on errors, handle them individually
 
 # name:ip list (Orlok intentionally omitted per request)
 ANIMATRONICS=(
-  "coffin:192.168.8.140"
+  "mina:192.168.8.140"
   "pumpkinhead:192.168.8.150"
-  "skulltalker:192.168.8.130"
+  "sirdragomir:192.168.8.130"
   # Groundbreaker may not have SSH; we still try if reachable
   "groundbreaker:192.168.8.200"
 )

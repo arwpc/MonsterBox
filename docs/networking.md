@@ -15,9 +15,9 @@ MonsterBox runs on **MonsterNet**, a dedicated private WiFi network for animatro
 | Character | IP Address | Status |
 |-----------|------------|--------|
 | PumpkinHead (ID 1) | 192.168.8.150 | Active |
-| Coffin Breaker (ID 2) | 192.168.8.140 | Active |
+| Mina (ID 2) | 192.168.8.140 | Active |
 | Orlok (ID 3) | 192.168.8.120 | Primary dev |
-| Skulltalker (ID 4) | 192.168.8.130 | Offline |
+| Sir Dragomir (ID 4) | 192.168.8.130 | Offline |
 | Groundbreaker (ID 7) | 192.168.8.200 | Active |
 
 ## Goblin Video Displays

@@ -52,7 +52,7 @@
   },
   {
     "id": "4",
-    "name": "Skulltalker Cam",
+    "name": "Sir Dragomir Cam",
     "type": "webcam",
     "pin": null,
     "description": "Main webcam",
@@ -79,7 +79,7 @@
   },
   {
     "id": "6",
-    "name": "Speaker Skulltalker",
+    "name": "Speaker Sir Dragomir",
     "type": "speaker",
     "pin": null,
     "description": "Main speaker",

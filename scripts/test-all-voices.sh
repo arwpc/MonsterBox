@@ -50,14 +50,14 @@ test_voice() {
 echo "Testing Character 1: PumpkinHead"
 test_voice "PumpkinHead" "192.168.8.150" "1" "I am PumpkinHead, guardian of the harvest" "5PWbsfogbLtky5sxqtBz"
 
-echo "Testing Character 2: Coffin Breaker"
-test_voice "Coffin Breaker" "192.168.8.140" "2" "I am the Coffin Breaker, risen from the grave" "wXvR48IpOq9HACltTmt7"
+echo "Testing Character 2: Mina"
+test_voice "Mina" "192.168.8.140" "2" "I am Mina, risen from the grave" "wXvR48IpOq9HACltTmt7"
 
 echo "Testing Character 3: Orlok"
 test_voice "Orlok" "192.168.8.120" "3" "I am Orlok, the ancient vampire of the night" "Tj9l48J9AJbry5yCP5eW"
 
-echo "Testing Character 4: Skulltalker"
-test_voice "Skulltalker" "192.168.8.130" "4" "I am Skulltalker, keeper of dark secrets" "Z7RrOqZFTyLpIlzCgfsp"
+echo "Testing Character 4: Sir Dragomir"
+test_voice "Sir Dragomir" "192.168.8.130" "4" "I am Sir Dragomir, keeper of dark secrets" "Z7RrOqZFTyLpIlzCgfsp"
 
 echo "===================================="
 echo -e "${GREEN}🎃 Voice Testing Complete! 🎃${NC}"

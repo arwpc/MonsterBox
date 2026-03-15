@@ -23,9 +23,9 @@ MonsterBox supports deployment to multiple animatronic characters across a netwo
 
 ### Supported Characters
 1. **PumpkinHead** (Character 1) - 192.168.8.150 ✅
-2. **Coffin Breaker** (Character 2) - 192.168.8.140 ✅ (Controller)
+2. **Mina** (Character 2) - 192.168.8.140 ✅ (Controller)
 3. **Orlok** (Character 3) - 192.168.8.120 ✅
-4. **Skulltalker** (Character 4) - 192.168.8.130 ⚠️ Currently offline
+4. **Sir Dragomir** (Character 4) - 192.168.8.130 ⚠️ Currently offline
 5. **Groundbreaker** (Character 5) - 192.168.8.200 ✅
 
 ---
@@ -93,9 +93,9 @@ Example:
 ### Character IP Addresses
 ```
 192.168.8.150 - PumpkinHead (Character 1)
-192.168.8.140 - Coffin Breaker (Character 2, Controller)
+192.168.8.140 - Mina (Character 2, Controller)
 192.168.8.120 - Orlok (Character 3)
-192.168.8.130 - Skulltalker (Character 4) - Currently offline
+192.168.8.130 - Sir Dragomir (Character 4) - Currently offline
 192.168.8.200 - Groundbreaker (Character 5)
 ```
 

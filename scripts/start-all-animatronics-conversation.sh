@@ -13,8 +13,8 @@ NC='\033[0m'
 declare -A ANIMATRONICS=(
     ["orlok"]="192.168.8.120:3"
     ["pumpkinhead"]="192.168.8.150:1"
-    ["coffin"]="192.168.8.140:2"
-    ["skulltalker"]="192.168.8.130:4"
+    ["mina"]="192.168.8.140:2"
+    ["sirdragomir"]="192.168.8.130:4"
     ["groundbreaker"]="192.168.8.200:5"
 )
 

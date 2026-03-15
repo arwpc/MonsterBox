@@ -2,11 +2,11 @@
   {
     "id": 1,
     "name": "PumpkinHead",
-    "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645"
+    "elevenLabsAgentId": "agent_0801k3f1dybkecj88sta18gwwrv5"
   },
   {
     "id": 2,
-    "name": "Coffin Breaker",
+    "name": "Mina",
     "elevenLabsAgentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n",
     "activeImage": "helen.jpg"
   },
@@ -41,7 +41,7 @@
   },
   {
     "id": 4,
-    "name": "Skulltalker",
+    "name": "Sir Dragomir",
     "elevenLabsAgentId": "agent_7901k3f1dza1ee68w1257zh3s9x6",
     "activeImage": "John_Hunyadi__Chronica_Hungarorum_.jpg"
   },

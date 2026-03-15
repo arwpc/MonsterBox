@@ -38,7 +38,7 @@ EOF
 fi
 
 # Remote install helper
-HOSTS=("skulltalker" "coffin" "pumpkinhead" "orlok")
+HOSTS=("sirdragomir" "mina" "pumpkinhead" "orlok")
 PASS="klrklr89!"
 SSH_OPTS="-o StrictHostKeyChecking=no"
 

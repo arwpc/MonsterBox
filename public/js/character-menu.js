@@ -40,7 +40,7 @@
     // In test mode, prefer canonical four to avoid strict-mode duplicates in E2E
     try {
       if (window && window.MB_TEST_MODE) {
-        var wanted = ['PumpkinHead', 'Coffin Breaker', 'Orlok', 'Skulltalker'];
+        var wanted = ['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir'];
         var byName = {};
         for (var i0 = 0; i0 < chars.length; i0++) { byName[String(chars[i0].name || '')] = chars[i0]; }
         var filtered = [];

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test All 5 Animatronics - MonsterBox Deployment Verification
-# Tests: PumpkinHead, Coffin Breaker, Orlok, Skulltalker, Groundbreaker
+# Tests: PumpkinHead, Mina, Orlok, Sir Dragomir, Groundbreaker
 
 set -e
 
@@ -19,17 +19,17 @@ echo ""
 # Character definitions
 declare -A CHARACTERS
 CHARACTERS[1]="PumpkinHead:192.168.8.150"
-CHARACTERS[2]="Coffin Breaker:192.168.8.140"
+CHARACTERS[2]="Mina:192.168.8.140"
 CHARACTERS[3]="Orlok:192.168.8.120"
-CHARACTERS[4]="Skulltalker:192.168.8.130"
+CHARACTERS[4]="Sir Dragomir:192.168.8.130"
 CHARACTERS[5]="Groundbreaker:192.168.8.200"
 
 # Test messages
 declare -A MESSAGES
 MESSAGES[1]="I am PumpkinHead, guardian of the harvest."
-MESSAGES[2]="I am the Coffin Breaker, risen from the grave."
+MESSAGES[2]="I am Mina, risen from the grave."
 MESSAGES[3]="I am Orlok, the ancient vampire lord."
-MESSAGES[4]="I am Skulltalker, keeper of dark secrets."
+MESSAGES[4]="I am Sir Dragomir, keeper of dark secrets."
 MESSAGES[5]="I am Groundbreaker, rising from the earth."
 
 # Track results
@@ -121,9 +121,9 @@ if [ $FAILED -eq 0 ]; then
     echo ""
     echo "MonsterBox is successfully deployed to all 5 animatronics:"
     echo "  1. PumpkinHead (192.168.8.150)"
-    echo "  2. Coffin Breaker (192.168.8.140)"
+    echo "  2. Mina (192.168.8.140)"
     echo "  3. Orlok (192.168.8.120)"
-    echo "  4. Skulltalker (192.168.8.130)"
+    echo "  4. Sir Dragomir (192.168.8.130)"
     echo "  5. Groundbreaker (192.168.8.200)"
     echo ""
     echo "Next steps:"

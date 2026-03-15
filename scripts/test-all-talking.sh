@@ -10,11 +10,11 @@ curl -s -X POST http://192.168.8.150:3000/api/elevenlabs/generate-and-play \
   -d '{"text":"I am PumpkinHead, guardian of the harvest. MonsterBox is operational.","characterId":1}' 2>&1 | head -1
 sleep 3
 
-# Test Coffin Breaker
-echo "2. Coffin Breaker speaking..."
+# Test Mina
+echo "2. Mina speaking..."
 curl -s -X POST http://192.168.8.140:3000/api/elevenlabs/generate-and-play \
   -H "Content-Type: application/json" \
-  -d '{"text":"I am Coffin Breaker, risen from the grave. MonsterBox is ready.","characterId":2}' 2>&1 | head -1
+  -d '{"text":"I am Mina, risen from the grave. MonsterBox is ready.","characterId":2}' 2>&1 | head -1
 sleep 3
 
 # Test Orlok
@@ -24,11 +24,11 @@ curl -s -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
   -d '{"text":"I am Orlok, master of shadows. MonsterBox is complete.","characterId":3}' 2>&1 | head -1
 sleep 3
 
-# Test Skulltalker
-echo "4. Skulltalker speaking..."
+# Test Sir Dragomir
+echo "4. Sir Dragomir speaking..."
 curl -s -X POST http://192.168.8.130:3000/api/elevenlabs/generate-and-play \
   -H "Content-Type: application/json" \
-  -d '{"text":"I am Skulltalker, keeper of dark secrets. MonsterBox is online.","characterId":4}' 2>&1 | head -1
+  -d '{"text":"I am Sir Dragomir, keeper of dark secrets. MonsterBox is online.","characterId":4}' 2>&1 | head -1
 sleep 3
 
 # Test Groundbreaker

@@ -22,17 +22,17 @@ echo ""
 # Character definitions
 declare -A CHARACTERS
 CHARACTERS[1]="PumpkinHead:192.168.8.150"
-CHARACTERS[2]="Coffin Breaker:192.168.8.140"
+CHARACTERS[2]="Mina:192.168.8.140"
 CHARACTERS[3]="Orlok:192.168.8.120"
-CHARACTERS[4]="Skulltalker:192.168.8.130"
+CHARACTERS[4]="Sir Dragomir:192.168.8.130"
 CHARACTERS[5]="Groundbreaker:192.168.8.200"
 
 # Conversation script
 declare -A DIALOGUE
 DIALOGUE[1]="Greetings, fellow creatures of the night. I am PumpkinHead, guardian of the harvest."
-DIALOGUE[2]="And I am the Coffin Breaker, risen from my eternal slumber to join this gathering."
+DIALOGUE[2]="And I am Mina, risen from my eternal slumber to join this gathering."
 DIALOGUE[3]="Welcome, my dark companions. I am Orlok, ancient lord of the vampires. Together we shall terrify the living!"
-DIALOGUE[4]="Indeed, Count Orlok. I am Skulltalker, keeper of the darkest secrets. Our combined power is formidable."
+DIALOGUE[4]="Indeed, Count Orlok. I am Sir Dragomir, keeper of the darkest secrets. Our combined power is formidable."
 DIALOGUE[5]="From beneath the earth I rise! I am Groundbreaker, and with my brethren, we shall make this Halloween unforgettable!"
 
 echo -e "${BLUE}Starting conversation sequence...${NC}"

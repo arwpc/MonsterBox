@@ -9,8 +9,8 @@ REMOTE_DIR="/home/remote/MonsterBox"
 ANIMATRONICS=(
     "192.168.8.120:Orlok"
     "192.168.8.150:PumpkinHead"
-    "192.168.8.140:Coffin"
-    "192.168.8.130:Skulltalker"
+    "192.168.8.140:Mina"
+    "192.168.8.130:Sir Dragomir"
     "192.168.8.200:Groundbreaker"
 )
 
@@ -69,8 +69,8 @@ echo ""
 echo "Access calibration pages:"
 echo "  • Orlok: http://192.168.8.120:3000/setup/calibration"
 echo "  • PumpkinHead: http://192.168.8.150:3000/setup/calibration"
-echo "  • Coffin: http://192.168.8.140:3000/setup/calibration"
-echo "  • Skulltalker: http://192.168.8.130:3000/setup/calibration"
+echo "  • Mina: http://192.168.8.140:3000/setup/calibration"
+echo "  • Sir Dragomir: http://192.168.8.130:3000/setup/calibration"
 echo "  • Groundbreaker: http://192.168.8.200:3000/setup/calibration"
 echo ""
 

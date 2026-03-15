@@ -1,9 +1,9 @@
 {
   "animatronics": [
     { "id": 1, "name": "PumpkinHead", "hostname": "pumpkinhead", "ip": "192.168.8.150", "port": 3000, "characterId": 1, "agentId": "agent_0801k3f1dybkecj88sta18gwwrv5", "defaultSceneId": 100 },
-    { "id": 2, "name": "Coffin Breaker", "hostname": "coffinbreaker", "ip": "192.168.8.140", "port": 3000, "characterId": 2, "agentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n", "defaultSceneId": 1 },
+    { "id": 2, "name": "Mina", "hostname": "mina", "ip": "192.168.8.140", "port": 3000, "characterId": 2, "agentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n", "defaultSceneId": 1 },
     { "id": 3, "name": "Orlok", "hostname": "orlok", "ip": "192.168.8.120", "port": 3000, "characterId": 3, "agentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n", "defaultSceneId": 100 },
-    { "id": 4, "name": "Skulltalker", "hostname": "skulltalker", "ip": "192.168.8.130", "port": 3000, "characterId": 4, "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6", "defaultSceneId": 9 },
+    { "id": 4, "name": "Sir Dragomir", "hostname": "sirdragomir", "ip": "192.168.8.130", "port": 3000, "characterId": 4, "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6", "defaultSceneId": 9 },
     { "id": 5, "name": "Groundbreaker", "hostname": "groundbreaker", "ip": "192.168.8.200", "port": 3000, "characterId": 7, "agentId": "agent_4201k6s9y384f9v9hqmg67ygc645", "defaultSceneId": 1 }
   ],
   "goblins": [

@@ -5,9 +5,9 @@ PASSWORD='klrklr89!'
 
 echo "Starting all animatronic loops..."
 
-# Skulltalker - Story Loop (Scene 9)
-echo "=== Skulltalker ==="
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no remote@skulltalker 'curl -s -X POST http://localhost:3000/scenes/api/queue/clear && curl -s -X POST http://localhost:3000/scenes/api/queue/enqueue -H "Content-Type: application/json" -d "{\"sceneId\":9}" && curl -s -X POST http://localhost:3000/scenes/api/queue/start' | jq '.success'
+# Sir Dragomir - Story Loop (Scene 9)
+echo "=== Sir Dragomir ==="
+sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no remote@sirdragomir 'curl -s -X POST http://localhost:3000/scenes/api/queue/clear && curl -s -X POST http://localhost:3000/scenes/api/queue/enqueue -H "Content-Type: application/json" -d "{\"sceneId\":9}" && curl -s -X POST http://localhost:3000/scenes/api/queue/start' | jq '.success'
 
 # Groundbreaker - Insults Loop (Scene 9007)
 echo "=== Groundbreaker ==="
@@ -30,8 +30,8 @@ sleep 3
 # Verify status
 echo ""
 echo "=== Status Check ==="
-echo "Skulltalker:"
-sshpass -p "$PASSWORD" ssh remote@skulltalker 'curl -s http://localhost:3000/scenes/api/queue' | jq '{running: .status.running, scene: .status.nowPlaying.name}'
+echo "Sir Dragomir:"
+sshpass -p "$PASSWORD" ssh remote@sirdragomir 'curl -s http://localhost:3000/scenes/api/queue' | jq '{running: .status.running, scene: .status.nowPlaying.name}'
 
 echo "Groundbreaker:"
 sshpass -p "$PASSWORD" ssh remote@groundbreaker 'curl -s http://localhost:3000/scenes/api/queue' | jq '{running: .status.running, scene: .status.nowPlaying.name}'

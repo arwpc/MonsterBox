@@ -1,4 +1,4 @@
-# Skulltalker — Character Sheet
+# Sir Dragomir — Character Sheet
 
 ## Overview
 
@@ -9,7 +9,7 @@
 | **Status** | Offline |
 | **Data Directory** | `data/character-4/` |
 
-Skulltalker is a skull-based animatronic with head movement, jaw servo, and a "magic box" servo mechanism. Currently offline.
+Sir Dragomir is a skull-based animatronic with head movement, jaw servo, and a "magic box" servo mechanism. Currently offline.
 
 ## Hardware Parts
 
@@ -18,9 +18,9 @@ Skulltalker is a skull-based animatronic with head movement, jaw servo, and a "m
 | 1 | Head Servo | servo | PCA9685 channel 0, model: Miuzei 25kg |
 | 2 | Jaw Servo | servo | PCA9685 channel 8, model: Miuzei 25kg |
 | 3 | Magic Box Servo | servo | PCA9685 channel 12, model: Miuzei 25kg |
-| 4 | Skulltalker Cam | webcam | /dev/video0 |
+| 4 | Sir Dragomir Cam | webcam | /dev/video0 |
 | 5 | Webcam Microphone | microphone | Default audio input device |
-| 6 | Speaker Skulltalker | speaker | Default audio device, volume 85 |
+| 6 | Speaker Sir Dragomir | speaker | Default audio device, volume 85 |
 
 **Total: 6 parts** — 3 servos, 1 webcam, 1 microphone, 1 speaker
 

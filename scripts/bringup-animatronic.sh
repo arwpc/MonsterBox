@@ -1,13 +1,13 @@
 #!/bin/bash
-# Bring up a single animatronic (Skulltalker, Coffin, PumpkinHead) end-to-end
+# Bring up a single animatronic (Sir Dragomir, Mina, PumpkinHead) end-to-end
 # Ensures: code deployed, ElevenLabs key set (if provided), WirePlumber configured,
 # PipeWire user services enabled, mjpg-streamer installed+enabled, MonsterBox running.
 #
 # Usage:
 #   ./scripts/bringup-animatronic.sh <host_or_ip> <character_id> [--dry-run]
 # Examples:
-#   ./scripts/bringup-animatronic.sh skulltalker 4
-#   XI_API_KEY="sk_..." ./scripts/bringup-animatronic.sh coffin 2
+#   ./scripts/bringup-animatronic.sh sirdragomir 4
+#   XI_API_KEY="sk_..." ./scripts/bringup-animatronic.sh mina 2
 #
 # Notes:
 # - Requires sshpass locally; remote credentials are remote/klrklr89!

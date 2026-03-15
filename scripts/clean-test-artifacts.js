@@ -9,7 +9,7 @@
 
   Safety:
   - Only deletes by conservative name patterns used in tests: /^TestChar/, /_Updated$/, 'Groundbreaker', names containing 'Playwright', names starting with 'Test', or 'PW '.
-  - Keeps canonical characters: PumpkinHead, Coffin Breaker, Orlok, Skulltalker (ids typically 1..4)
+  - Keeps canonical characters: PumpkinHead, Mina, Orlok, Sir Dragomir (ids typically 1..4)
 */
 
 import fs from 'fs/promises';
@@ -23,7 +23,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const dataDir = path.resolve(repoRoot, 'data');
 const charactersFile = path.resolve(dataDir, 'characters.json');
 
-const canonicalNames = new Set(['PumpkinHead', 'Coffin Breaker', 'Orlok', 'Skulltalker']);
+const canonicalNames = new Set(['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir']);
 const characterDeleteNamePatterns = [
   /^TestChar/i,
   /_Updated$/i,

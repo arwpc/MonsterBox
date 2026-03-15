@@ -78,9 +78,9 @@ Parts are controlled through a hardware service layer:
 | ID | Name | IP | Notes |
 |----|------|----|----|
 | 1 | PumpkinHead | — | |
-| 2 | Coffin Breaker | — | |
+| 2 | Mina | — | |
 | 3 | **Orlok** | 192.168.8.120 | **Current host** — primary dev target |
-| 4 | Skulltalker | 192.168.8.130 | |
+| 4 | Sir Dragomir | 192.168.8.130 | |
 | 5 | Groundbreaker | 192.168.8.200 | |
 | 7 | Groundbreaker | — | |
 

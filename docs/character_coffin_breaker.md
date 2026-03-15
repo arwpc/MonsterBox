@@ -1,4 +1,4 @@
-# Coffin Breaker — Character Sheet
+# Mina — Character Sheet
 
 ## Overview
 
@@ -9,7 +9,7 @@
 | **Status** | Active |
 | **Data Directory** | `data/character-2/` |
 
-Coffin Breaker is a coffin-themed animatronic with a motorized door, jaw servo, neck movement, and eye tracking servos.
+Mina is a coffin-themed animatronic with a motorized door, jaw servo, neck movement, and eye tracking servos.
 
 ## Hardware Parts
 

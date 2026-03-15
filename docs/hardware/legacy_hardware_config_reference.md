@@ -42,7 +42,7 @@ This file contains historical hardware configuration settings that were previous
   - Servo ID: 11
   - Webcam: /dev/video0
 
-### Character 2: Coffin Breaker
+### Character 2: Mina
 - **ID 8: Coffin Sensor** (Motion)
   - GPIO Pin: 16 (Note: Conflict with ID 4/10/13 if on same Pi)
 - **ID 12: Coffin door** (Linear Actuator)
@@ -62,7 +62,7 @@ This file contains historical hardware configuration settings that were previous
   - Direction Pin: 6
   - PWM Pin: 13
 
-### Character 4: Skulltalker
+### Character 4: Sir Dragomir
 - **ID 18: Motion Skulltalker**
   - GPIO Pin: 17
 - **ID 19: Jaw Servo**

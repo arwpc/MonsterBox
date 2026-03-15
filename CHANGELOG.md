@@ -209,7 +209,7 @@ MonsterBox 7.0 consolidates all v6.x features into a polished, production-ready 
 - **Halloween dark theme** with slate scheme and custom CSS
 - **Core docs rewritten** — index, install, usage, config, structure, FAQ, networking
 - **Replaced fabricated content** — removed inaccurate API/auth/RBAC docs, replaced with accurate content
-- **Character pages updated** — all parts listed from actual JSON data (Orlok, PumpkinHead, Coffin Breaker, Skulltalker, Groundbreaker, Spinster)
+- **Character pages updated** — all parts listed from actual JSON data (Orlok, PumpkinHead, Mina, Sir Dragomir, Groundbreaker, Spinster)
 - **Nav structure finalized** — 40+ docs in navigation, Help link added to MonsterBox navbar
 
 ### Calibration
@@ -554,7 +554,7 @@ MonsterBox 7.0 consolidates all v6.x features into a polished, production-ready 
 ## [6.0.0] - 2026-02-14 — Character Independence & Dynamic Versioning
 
 ### Character Independence
-- Removed all hardcoded character names (Orlok, PumpkinHead, Skulltalker, Coffin Breaker) from services, controllers, routes
+- Removed all hardcoded character names (Orlok, PumpkinHead, Sir Dragomir, Mina) from services, controllers, routes
 - Removed all numeric ID defaults (`|| 1`, `|| 3`, `|| 4`) — missing characterId now returns 400 errors
 - Generalized ElevenLabs agent template (removed Orlok-specific template)
 - Removed character-name comments from quick response agent ID keys

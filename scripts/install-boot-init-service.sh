@@ -5,7 +5,7 @@ SSH_OPTS='-o StrictHostKeyChecking=no'
 
 SERVICE_PATH='/etc/systemd/system/monsterbox-init.service'
 
-for HOST in skulltalker coffin pumpkinhead orlok groundbreaker; do
+for HOST in sirdragomir mina pumpkinhead orlok groundbreaker; do
   echo "=== ${HOST} ==="
   sshpass -p "$PASS" ssh $SSH_OPTS remote@${HOST} 'bash -lc "echo OK"' >/dev/null || { echo "Cannot reach ${HOST}"; continue; }
   # Ensure script is present

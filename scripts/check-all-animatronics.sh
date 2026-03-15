@@ -48,9 +48,9 @@ check_animatronic() {
 
 # Check all 5 animatronics
 check_animatronic "PumpkinHead" "pumpkinhead" "1"
-check_animatronic "Coffin Breaker" "coffin" "2"
+check_animatronic "Mina" "mina" "2"
 check_animatronic "Orlok" "orlok" "3"
-check_animatronic "Skulltalker" "skulltalker" "4"
+check_animatronic "Sir Dragomir" "sirdragomir" "4"
 check_animatronic "Groundbreaker" "192.168.8.200" "6"
 
 echo "============================================"
@@ -62,14 +62,14 @@ RUNNING=0
 # PumpkinHead
 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@pumpkinhead "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
 
-# Coffin (local)
+# Mina (local)
 systemctl is-active monsterbox.service > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
 
 # Orlok
 systemctl is-active monsterbox.service > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
 
-# Skulltalker
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@skulltalker "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
+# Sir Dragomir
+ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@sirdragomir "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))
 
 # Groundbreaker
 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 remote@192.168.8.200 "systemctl is-active monsterbox.service" > /dev/null 2>&1 && RUNNING=$((RUNNING + 1))

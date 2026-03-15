@@ -99,8 +99,8 @@ python3 scripts/character_ai_system.py
 
 ### Character Personalities
 - **Orlok**: Gothic, mysterious, dramatic
-- **Coffin Breaker**: Energetic, mischievous, playful
-- **Skulltalker**: Wise, ancient, philosophical
+- **Mina**: Energetic, mischievous, playful
+- **Sir Dragomir**: Wise, ancient, philosophical
 - **Mina**: Intelligent, curious, analytical
 
 ### Voice Characteristics

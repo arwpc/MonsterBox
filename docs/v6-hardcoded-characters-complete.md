@@ -24,9 +24,9 @@ Extended analysis reveals **character hardcoding is widespread** across the code
 ```javascript
 return [
     { id: 1, name: 'PumpkinHead' },      // HARDCODED
-    { id: 2, name: 'Coffin Breaker' },   // HARDCODED
+    { id: 2, name: 'Mina' },   // HARDCODED
     { id: 3, name: 'Orlok' },            // HARDCODED
-    { id: 4, name: 'Skulltalker' }       // HARDCODED
+    { id: 4, name: 'Sir Dragomir' }       // HARDCODED
 ];
 ```
 **Issue:** Should return empty array or error, not hardcoded fallback
@@ -36,9 +36,9 @@ return [
 ```javascript
 this.animatronics = [
     { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 8, agentId: 'agent_0801k3f1dybkecj88sta18gwwrv5' },
-    { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n' },
+    { id: 2, name: 'Mina', hostname: 'mina', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n' },
     { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 3, agentId: 'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n' },
-    { id: 4, name: 'Skulltalker', hostname: 'skulltalker', ip: '192.168.8.130', port: 3000, characterId: 4, agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6' },
+    { id: 4, name: 'Sir Dragomir', hostname: 'sirdragomir', ip: '192.168.8.130', port: 3000, characterId: 4, agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6' },
     { id: 5, name: 'Groundbreaker', hostname: 'groundbreaker', ip: '192.168.8.200', port: 3000, characterId: 9, agentId: 'agent_4201k6s9y384f9v9hqmg67ygc645' }
 ];
 ```
@@ -48,9 +48,9 @@ this.animatronics = [
 ```javascript
 this.characterOrder = {
     'PumpkinHead': 100,      // HARDCODED
-    'Coffin Breaker': 1,     // HARDCODED
+    'Mina': 1,     // HARDCODED
     'Orlok': 100,            // HARDCODED
-    'Skulltalker': 9,        // HARDCODED
+    'Sir Dragomir': 9,        // HARDCODED
     'Groundbreaker': 1       // HARDCODED
 };
 ```
@@ -72,10 +72,10 @@ const responses = {
         questions: [...],
         default: [...]
     },
-    'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Skulltalker
+    'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Sir Dragomir
         // ...
     },
-    'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Coffin Breaker
+    'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Mina
         // ...
     }
     // NOTE: PumpkinHead agent referenced but no prompt defined
@@ -88,12 +88,12 @@ const responses = {
 ### 2. Hardcoded Character IDs
 
 #### controllers/posesController.js
-**Line 358** - Default to character 4 (Skulltalker)
+**Line 358** - Default to character 4 (Sir Dragomir)
 ```javascript
 function getCurrentCharacterId(req) {
     return parseInt(req.query.characterId) ||
            parseInt(req.app.locals?.config?.selectedCharacter) ||
-           4; // Default to character 4 (Skulltalker) - HARDCODED
+           4; // Default to character 4 (Sir Dragomir) - HARDCODED
 }
 ```
 **Issue:** Should error or use first-available character from database
@@ -131,8 +131,8 @@ const agentResponses = responses[agentId] || responses['agent_0801k3f1dw7xe2g8r4
 **Lines 356-407** - Hardcoded agent ID to character mapping
 ```javascript
 'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n': { // Orlok
-'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Skulltalker
-'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Coffin Breaker
+'agent_7901k3f1dza1ee68w1257zh3s9x6': { // Sir Dragomir
+'agent_8401k3f1dx98e05t94yp6kz4vf8n': { // Mina
 'agent_0801k3f1dybkecj88sta18gwwrv5': { // PumpkinHead (line 373 comment)
 ```
 **Issue:** Should load from character config files
@@ -141,9 +141,9 @@ const agentResponses = responses[agentId] || responses['agent_0801k3f1dw7xe2g8r4
 **Lines 17-21** - Agent IDs in animatronic definitions
 ```javascript
 agentId: 'agent_0801k3f1dybkecj88sta18gwwrv5'  // PumpkinHead
-agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n'  // Coffin Breaker
+agentId: 'agent_8401k3f1dx98e05t94yp6kz4vf8n'  // Mina
 agentId: 'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n'  // Orlok
-agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6'  // Skulltalker
+agentId: 'agent_7901k3f1dza1ee68w1257zh3s9x6'  // Sir Dragomir
 agentId: 'agent_4201k6s9y384f9v9hqmg67ygc645'  // Groundbreaker
 ```
 **Issue:** Should load from config file
@@ -156,9 +156,9 @@ agentId: 'agent_4201k6s9y384f9v9hqmg67ygc645'  // Groundbreaker
 **Lines 17-21** - Animatronic IP addresses
 ```javascript
 ip: '192.168.8.150'  // PumpkinHead
-ip: '192.168.8.140'  // Coffin Breaker
+ip: '192.168.8.140'  // Mina
 ip: '192.168.8.120'  // Orlok
-ip: '192.168.8.130'  // Skulltalker
+ip: '192.168.8.130'  // Sir Dragomir
 ip: '192.168.8.200'  // Groundbreaker
 ```
 **Issue:** Should load from `config/animatronics.json` (which already has this data!)
@@ -177,7 +177,7 @@ ip: '192.168.8.200'  // Groundbreaker
   "orlok": { "characterId": 3, "host": "orlok.lan", "ip": "192.168.8.120" },
   "pumpkinhead": { "characterId": 1, "host": "pumpkinhead.lan", "ip": "192.168.8.150" },
   "coffin": { "characterId": 2, "host": "coffin.lan", "ip": "192.168.8.140" },
-  "skulltalker": { "characterId": 4, "host": "skulltalker.lan", "ip": "192.168.8.130" },
+  "sirdragomir": { "characterId": 4, "host": "sirdragomir.lan", "ip": "192.168.8.130" },
   "groundbreaker": { "characterId": 5, "host": "groundbreaker.lan", "ip": "192.168.8.200" }
 }
 ```
@@ -215,9 +215,9 @@ description: 'Optimized for loud background music, crowds, or ambient noise - tu
 | Character | Name Refs | ID Defaults | Agent IDs | IP Addrs | Comments | Total |
 |-----------|-----------|-------------|-----------|----------|----------|-------|
 | PumpkinHead | 5 | 7 | 2 | 1 | 0 | **15** |
-| Coffin Breaker | 5 | 0 | 2 | 1 | 0 | **8** |
+| Mina | 5 | 0 | 2 | 1 | 0 | **8** |
 | Orlok | 5 | 1 | 2 | 1 | 3 | **12** |
-| Skulltalker | 5 | 1 | 2 | 1 | 0 | **9** |
+| Sir Dragomir | 5 | 1 | 2 | 1 | 0 | **9** |
 | Groundbreaker | 2 | 0 | 1 | 1 | 0 | **4** |
 | **TOTAL** | **22** | **9** | **9** | **5** | **3** | **48+** |
 
@@ -229,7 +229,7 @@ description: 'Optimized for loud background music, crowds, or ambient noise - tu
 
 - **Character 1 (PumpkinHead):** 7 files (routes/conversation, jaw-animation, scenes, sceneEditorApi, randomPoseRoutes, aiSettingsRoutes)
 - **Character 3 (Orlok):** 1 file (services/poses/poseEngine.js)
-- **Character 4 (Skulltalker):** 1 file (controllers/posesController.js)
+- **Character 4 (Sir Dragomir):** 1 file (controllers/posesController.js)
 
 **Issue:** Inconsistent fallback behavior makes debugging difficult and creates unpredictable user experience
 
@@ -278,7 +278,7 @@ description: 'Optimized for loud background music, crowds, or ambient noise - tu
 
 ### Update Existing:
 2. **config/animatronics.json** - Add agent IDs, ensure all current animatronics listed
-   - Currently has: orlok, pumpkinhead, coffin, skulltalker, groundbreaker
+   - Currently has: orlok, pumpkinhead, mina, sirdragomir, groundbreaker
    - Missing: Character IDs 5, 6, 7 mapping
 
 ---

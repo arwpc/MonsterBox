@@ -13,9 +13,9 @@ if [ $# -lt 2 ]; then
     echo ""
     echo "Character IDs:"
     echo "  1 - PumpkinHead (192.168.8.150)"
-    echo "  2 - Coffin Breaker (192.168.8.140)"
+    echo "  2 - Mina (192.168.8.140)"
     echo "  3 - Orlok (192.168.8.120)"
-    echo "  4 - Skulltalker (192.168.8.130)"
+    echo "  4 - Sir Dragomir (192.168.8.130)"
     echo "  5 - Groundbreaker (192.168.8.200)"
     exit 1
 fi

@@ -17,8 +17,8 @@ echo ""
 # List of animatronics (hostname or IP) - Orlok intentionally omitted
 ANIMATRONICS=(
     "pumpkinhead:PumpkinHead:192.168.8.150"
-    "coffin:Coffin Breaker:192.168.8.140"
-    "skulltalker:Skulltalker:192.168.8.130"
+    "mina:Mina:192.168.8.140"
+    "sirdragomir:Sir Dragomir:192.168.8.130"
 )
 
 GROUNDBREAKER_IP="192.168.8.200"

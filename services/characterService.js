@@ -49,9 +49,9 @@ export async function loadCharacters() {
     if (String(process.env.MB_TEST_MODE || '') === '1' || String(process.env.MB_TEST_MODE || '').toLowerCase() === 'true') {
       const canonical = [
         { id: 1, name: 'PumpkinHead' },
-        { id: 2, name: 'Coffin Breaker' },
+        { id: 2, name: 'Mina' },
         { id: 3, name: 'Orlok' },
-        { id: 4, name: 'Skulltalker' }
+        { id: 4, name: 'Sir Dragomir' }
       ];
       const existingByName = new Map((characters || []).map(c => [String(c.name || ''), c]));
       // Start with canonical ensuring these exact ids, preserving any extra fields from existing entries

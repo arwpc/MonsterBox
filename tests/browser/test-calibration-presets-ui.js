@@ -3,7 +3,7 @@
  * Test Calibration Preset UI across all animatronics
  * 
  * This script:
- * 1. Iterates through all 5 target animatronics (PumpkinHead, Coffin Breaker, Orlok, Skulltalker, Groundbreaker)
+ * 1. Iterates through all 5 target animatronics (PumpkinHead, Mina, Orlok, Sir Dragomir, Groundbreaker)
  * 2. For each character, tests servo, motor, and linear actuator steps
  * 3. Verifies Control Mode dropdown and Position Preset UI appear
  * 4. Captures screenshots of each working preset UI
@@ -20,9 +20,9 @@ const OUTPUT_DIR = './test-output/calibration-presets';
 // Target characters: ID -> Name mapping
 const CHARACTERS = [
   { id: 1, name: 'PumpkinHead' },
-  { id: 2, name: 'Coffin Breaker' },
+  { id: 2, name: 'Mina' },
   { id: 3, name: 'Orlok' },
-  { id: 4, name: 'Skulltalker' },
+  { id: 4, name: 'Sir Dragomir' },
   { id: 5, name: 'Groundbreaker' }
 ];
 

@@ -108,9 +108,9 @@ npm run test:jaw-animation
 ## Hardware Configuration Testing
 
 ### Character-Specific Configurations
-- **Skulltalker**: Jaw servo and webcam testing
+- **Sir Dragomir**: Jaw servo and webcam testing
 - **Orlok**: Linear actuator and lighting testing
-- **Coffin Breaker**: Multi-component coordination
+- **Mina**: Multi-component coordination
 
 ### Configuration Validation
 1. **Hardware Mapping**: Verify component assignments

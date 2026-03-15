@@ -518,9 +518,9 @@ async getCharacters() {
         console.error('Error reading characters:', error);
         return [
             { id: 1, name: 'PumpkinHead' },
-            { id: 2, name: 'Coffin Breaker' },
+            { id: 2, name: 'Mina' },
             { id: 3, name: 'Orlok' },      // ISSUE: Hardcoded fallback
-            { id: 4, name: 'Skulltalker' }
+            { id: 4, name: 'Sir Dragomir' }
         ];
     }
 }
@@ -541,7 +541,7 @@ async getCharacters() {
 constructor() {
     this.animatronics = [
         { id: 1, name: 'PumpkinHead', hostname: 'pumpkinhead', ip: '192.168.8.150', port: 3000, characterId: 8, agentId: '...' },
-        { id: 2, name: 'Coffin Breaker', hostname: 'coffinbreaker', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: '...' },
+        { id: 2, name: 'Mina', hostname: 'mina', ip: '192.168.8.140', port: 3000, characterId: 2, agentId: '...' },
         { id: 3, name: 'Orlok', hostname: 'orlok', ip: '192.168.8.120', port: 3000, characterId: 3, agentId: '...' },
         // ... more
     ];
@@ -617,9 +617,9 @@ const prompts = {
 
 **Registered Characters (data/characters.json):**
 1. **ID 1:** PumpkinHead (ElevenLabs agent: agent_4201k6s9y384f9v9hqmg67ygc645)
-2. **ID 2:** Coffin Breaker (agent: agent_8401k3f1dx98e05t94yp6kz4vf8n) [activeImage: helen.jpg]
+2. **ID 2:** Mina (agent: agent_8401k3f1dx98e05t94yp6kz4vf8n) [activeImage: helen.jpg]
 3. **ID 3:** Orlok (agent: agent_0801k3f1dw7xe2g8r4jkbxk0gt2n) [activeImage: 1orlok.png]
-4. **ID 4:** Skulltalker (agent: agent_7901k3f1dza1ee68w1257zh3s9x6) [activeImage: John_Hunyadi__Chronica_Hungarorum_.jpg]
+4. **ID 4:** Sir Dragomir (agent: agent_7901k3f1dza1ee68w1257zh3s9x6) [activeImage: John_Hunyadi__Chronica_Hungarorum_.jpg]
 5. **ID 5:** PumpkinHead_Updated (agent: agent_4201k6s9y384f9v9hqmg67ygc645) [DUPLICATE NAME]
 6. **ID 6:** PumpkinHead_Updated (agent: agent_0801k3f1dybkecj88sta18gwwrv5) [activeImage: pumpkinhead.jpg] [DUPLICATE NAME]
 7. **ID 7:** Groundbreaker (agent: agent_4201k6s9y384f9v9hqmg67ygc645) [activeImage: groundbreaker.jpg]
@@ -628,7 +628,7 @@ const prompts = {
 - `data/character-8/` exists but not in characters.json
 
 **Currently Selected Character:**
-- **ID 2** (Coffin Breaker) - per `config/app-config.json`
+- **ID 2** (Mina) - per `config/app-config.json`
 
 **Character Data Completeness:**
 - **Character 1-3:** Full data (parts, poses, scenes, ai-config, images)

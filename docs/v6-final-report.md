@@ -16,7 +16,7 @@
 | Added 400 error for missing characterId | `routes/api/randomPoseRoutes.js` |
 | Generalized character-specific comments | `services/serverSTTListener.js`, `services/jawAnimationSuperPowerService.js`, `services/sttFilterPresets.js` |
 
-**Verification:** `grep -r "Orlok\|PumpkinHead\|Skulltalker\|Coffin.Breaker" services/ routes/ controllers/` returns zero matches (only test fixtures).
+**Verification:** `grep -r "Orlok\|PumpkinHead\|Sir Dragomir\|Mina" services/ routes/ controllers/` returns zero matches (only test fixtures).
 
 ## Phase 2: AI Service Consolidation Audit
 

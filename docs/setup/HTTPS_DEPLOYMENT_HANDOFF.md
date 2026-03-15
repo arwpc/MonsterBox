@@ -14,9 +14,9 @@ The MonsterBox HTTPS deployment has been successfully completed across all 4 Ras
 5. **HTTPS Deployed to All Devices**: Manual console deployment completed successfully
 
 ### 🖥️ Device Status:
-- **Skulltalker (192.168.8.130)**: ✅ HTTPS Working
+- **Sir Dragomir (192.168.8.130)**: ✅ HTTPS Working
 - **Orlok (192.168.8.120)**: ✅ HTTPS Deployed
-- **Coffin (192.168.8.140)**: ✅ HTTPS Deployed  
+- **Mina (192.168.8.140)**: ✅ HTTPS Deployed  
 - **Pumpkinhead (192.168.8.200)**: ✅ HTTPS Deployed
 
 ### 🔧 Current Port Scheme:

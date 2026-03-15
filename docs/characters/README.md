@@ -23,7 +23,7 @@ This directory contains character-specific documentation, configuration guides, 
 
 ---
 
-### Character 2: Coffin Breaker
+### Character 2: Mina
 - **[Coffin Readiness Report](COFFIN_READINESS_REPORT.md)** - Deployment status
 - **[Character Profile](../character_coffin_breaker.md)** - Character description and design
 
@@ -87,7 +87,7 @@ This directory contains character-specific documentation, configuration guides, 
 
 Each character has its own isolated data directory:
 - `data/character-1/` - PumpkinHead
-- `data/character-2/` - Coffin Breaker
+- `data/character-2/` - Mina
 - `data/character-3/` - Orlok
 - `data/character-4/` - Groundbreaker
 - `data/character-5/` - Goblin

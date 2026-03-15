@@ -3,9 +3,9 @@ import WebSocket from 'ws';
 
 const targets = [
   { name: 'PumpkinHead', ip: '192.168.8.150', characterId: 1 },
-  { name: 'Coffin Breaker', ip: '192.168.8.140', characterId: 2 },
+  { name: 'Mina', ip: '192.168.8.140', characterId: 2 },
   { name: 'Orlok', ip: '192.168.8.120', characterId: 3 },
-  { name: 'Skulltalker', ip: '192.168.8.130', characterId: 4 },
+  { name: 'Sir Dragomir', ip: '192.168.8.130', characterId: 4 },
   { name: 'Groundbreaker', ip: '192.168.8.200', characterId: 5 },
 ];
 

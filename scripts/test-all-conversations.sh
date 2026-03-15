@@ -14,16 +14,16 @@ NC='\033[0m'
 declare -A ANIMATRONICS=(
     ["orlok"]="192.168.8.120:3"
     ["pumpkinhead"]="192.168.8.150:1"
-    ["coffin"]="192.168.8.140:2"
-    ["skulltalker"]="192.168.8.130:4"
+    ["mina"]="192.168.8.140:2"
+    ["sirdragomir"]="192.168.8.130:4"
     ["groundbreaker"]="192.168.8.200:5"
 )
 
 declare -A MESSAGES=(
     ["orlok"]="Greetings, I am Count Orlok. Are you ready for Halloween?"
     ["pumpkinhead"]="I am the guardian of the harvest. Halloween approaches!"
-    ["coffin"]="I rise from my coffin to greet you this Halloween night."
-    ["skulltalker"]="My bones rattle with excitement for Halloween!"
+    ["mina"]="I rise from my coffin to greet you this Halloween night."
+    ["sirdragomir"]="My bones rattle with excitement for Halloween!"
     ["groundbreaker"]="I emerge from the ground to celebrate Halloween!"
 )
 
