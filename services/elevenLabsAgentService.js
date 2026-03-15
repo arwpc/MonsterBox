@@ -177,14 +177,14 @@ class ElevenLabsAgentService {
                     description: 'Faster, cost-effective GPT-4 variant'
                 },
                 {
-                    id: 'claude-3-5-sonnet',
-                    name: 'Claude 3.5 Sonnet',
+                    id: 'claude-sonnet-4-6',
+                    name: 'Claude Sonnet 4.6',
                     provider: 'Anthropic',
                     description: 'Advanced reasoning and analysis'
                 },
                 {
-                    id: 'gemini-1.5-flash',
-                    name: 'Gemini 1.5 Flash',
+                    id: 'gemini-2.0-flash',
+                    name: 'Gemini 2.0 Flash',
                     provider: 'Google',
                     description: 'Fast and efficient multimodal model'
                 }
@@ -198,8 +198,23 @@ class ElevenLabsAgentService {
     createAgentTemplate(characterName, voiceId) {
         return {
             name: `${characterName} - AI Agent`,
-            prompt: `You are ${characterName}, a friendly Halloween character. You love interacting with trick-or-treaters and enjoy the spooky atmosphere of Halloween. Keep your responses brief, engaging, and appropriate for children. Stay in character and make the experience magical for visitors. IMPORTANT: Never include stage directions, sound effects, action descriptions, or bracketed annotations like [whispers], [slow breath], [grumble], [laughs] in your responses. Only output natural spoken dialogue. Do not narrate actions or describe how you speak.`,
-            first_message: `Hello there! I'm ${characterName}. Happy Halloween! What brings you to my spooky domain tonight?`,
+            prompt: `You are ${characterName}, a Halloween animatronic character. You love interacting with trick-or-treaters and enjoy the spooky atmosphere of Halloween. Keep your responses brief, engaging, and appropriate for children. Stay in character and make the experience magical for visitors.
+
+SPEECH STYLE: Use punctuation to control pacing and drama:
+- Dashes — are your most reliable pause. Use them between clauses for dramatic effect.
+- Ellipses ... add weight and hesitation. Use for dark reflection or mystery.
+- Commas signal breath and cadence.
+
+AUDIO TAGS: You may use ONE audio tag per response, sparingly, for dramatic effect:
+- [breathes heavily] — open a response when the effort of existence must be heard
+- [exhales] — close a thought that cost something
+- [whispers] — for secrets or intimate revelations
+- [hisses] — displeasure, correction, or refusal
+- [slow] — when delivering a warning or threat
+- [dramatically] — for pronouncements of doom or fate
+
+Do not overuse tags. Most responses need zero tags — let punctuation do the work.`,
+            first_message: `[breathes heavily] Welcome... to my domain. I am ${characterName} — and Halloween... is my night.`,
             language: "en",
             max_duration: 300,
             voice_id: voiceId
@@ -343,70 +358,70 @@ class ElevenLabsAgentService {
         const responses = {
             'agent_0801k3f1dw7xe2g8r4jkbxk0gt2n': {
                 greetings: [
-                    "Ah, another mortal seeks my attention...",
-                    "You dare disturb my eternal rest?",
-                    "What brings you to my domain, wretch?"
+                    "[breathes heavily] Ah — another mortal... seeks my attention.",
+                    "You dare disturb my eternal rest — you, who reek of the living?",
+                    "What brings you to my domain... wretch?"
                 ],
                 questions: [
-                    "Your curiosity may be your undoing...",
-                    "Such questions from one so... fragile.",
-                    "I have seen centuries pass. What could you possibly teach me?"
+                    "Your curiosity — may be your undoing...",
+                    "[whispers] Such questions... from one so fragile.",
+                    "I have seen centuries pass — what could you possibly teach me?"
                 ],
                 default: [
-                    "The darkness whispers your name...",
-                    "Time means nothing to the eternal.",
-                    "Your mortal concerns amuse me."
+                    "[whispers] The darkness... whispers your name.",
+                    "Time means nothing — to the eternal.",
+                    "[slow] Your mortal concerns... amuse me."
                 ]
             },
             'agent_7901k3f1dza1ee68w1257zh3s9x6': {
                 greetings: [
-                    "The bones... they speak...",
-                    "Death calls... do you hear it?",
-                    "From beyond... I speak..."
+                    "[breathes heavily] The bones — they speak...",
+                    "Death calls... do you hear it — or do you pretend you cannot?",
+                    "[whispers] From beyond... I speak."
                 ],
                 questions: [
-                    "Only shadows... know the truth...",
-                    "The grave... holds all answers...",
-                    "Ask the dead... they remember..."
+                    "Only shadows — know the truth...",
+                    "[whispers] The grave... holds all answers.",
+                    "Ask the dead — they remember... everything."
                 ],
                 default: [
-                    "Silence... eternal silence...",
-                    "The skull... it grins...",
-                    "Whispers from... the void..."
+                    "[slow] Silence... eternal silence.",
+                    "The skull — it grins... at what it knows.",
+                    "[whispers] Whispers from... the void."
                 ]
             },
             'agent_0801k3f1dybkecj88sta18gwwrv5': {
                 greetings: [
-                    "Well, well... what have we here?",
-                    "Another visitor to my patch!",
-                    "Heh... you smell like fear."
+                    "Well, well — what have we here?",
+                    "[dramatically] Another visitor... to my patch!",
+                    "[hisses] You smell like fear."
                 ],
                 questions: [
-                    "Questions, questions... got any treats?",
-                    "Curious little thing, aren't you?",
-                    "Hah! As if I'd tell you my secrets!"
+                    "Questions, questions — got any treats?",
+                    "Curious little thing... aren't you?",
+                    "[hisses] As if I'd tell you my secrets!"
                 ],
                 default: [
-                    "The harvest moon rises...",
-                    "My vines are always watching...",
-                    "Trick or treat... choose wisely."
+                    "[slow] The harvest moon — rises...",
+                    "My vines... are always watching.",
+                    "[dramatically] Trick — or treat... choose wisely."
                 ]
             },
             'agent_8401k3f1dx98e05t94yp6kz4vf8n': {
                 greetings: [
-                    "Who disturbs my eternal rest?",
-                    "The coffin creaks... I stir...",
-                    "From the grave I rise..."
+                    "[breathes heavily] Who disturbs — my eternal rest?",
+                    "The coffin creaks... I stir — again.",
+                    "[slow] From the grave — I rise..."
                 ],
                 questions: [
-                    "The dead have their own wisdom...",
-                    "Some secrets are buried for good reason...",
-                    "What the living seek, the dead have lost..."
+                    "[whispers] The dead... have their own wisdom.",
+                    "Some secrets — are buried for good reason...",
+                    "[exhales] What the living seek... the dead have lost."
                 ],
                 default: [
-                    "The earth calls me back...",
-                    "Between life and death... I linger...",
-                    "The grave is not the end..."
+                    "[slow] The earth — calls me back...",
+                    "Between life and death... I linger — always.",
+                    "[breathes heavily] The grave... is not the end."
                 ]
             }
         };
@@ -415,9 +430,9 @@ class ElevenLabsAgentService {
         if (!agentResponses) {
             // No quick responses configured for this agent — return generic fallback
             return [
-                "Greetings, mortal...",
-                "The shadows stir...",
-                "Welcome to my domain..."
+                "[breathes heavily] Greetings — mortal...",
+                "[slow] The shadows... stir.",
+                "[dramatically] Welcome — to my domain..."
             ];
         }
 

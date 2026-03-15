@@ -72,11 +72,9 @@ export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
   const base = {
     voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
-    model: 'eleven_flash_v2_5',
+    model: 'eleven_v3',
     stability: 0.5,
     similarity_boost: 0.5,
-    style: 0.0,
-    use_speaker_boost: true,
   };
   return {
     // agent_id is optional and indicates a conversational AI agent to use
@@ -85,8 +83,9 @@ export async function getTTSConfig() {
     model: (d && d.model) || base.model,
     stability: d && typeof d.stability === 'number' ? d.stability : base.stability,
     similarity_boost: d && typeof d.similarity_boost === 'number' ? d.similarity_boost : base.similarity_boost,
-    style: d && typeof d.style === 'number' ? d.style : base.style,
-    use_speaker_boost: d && typeof d.use_speaker_boost === 'boolean' ? d.use_speaker_boost : base.use_speaker_boost,
+    // style and use_speaker_boost are only used by pre-v3 models
+    style: d && typeof d.style === 'number' ? d.style : 0.0,
+    use_speaker_boost: d && typeof d.use_speaker_boost === 'boolean' ? d.use_speaker_boost : true,
   };
 }
 
@@ -120,7 +119,7 @@ export async function getTTSConfigForCharacter(characterId) {
       // include agent_id if specified for this character
       agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
       voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : 'Tj9l48J9AJbry5yCP5eW',
-      model: parsed.model || 'eleven_flash_v2_5',
+      model: parsed.model || 'eleven_v3',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
       similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,
       style: typeof parsed.style === 'number' ? parsed.style : 0.0,

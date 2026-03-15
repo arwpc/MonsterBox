@@ -113,15 +113,23 @@ class ElevenLabsTTSService {
                 };
             }
 
+            const modelId = options.model || 'eleven_v3';
+            const isV3 = modelId === 'eleven_v3';
+
+            // Build voice_settings — v3 does not support style or use_speaker_boost
+            const voiceSettings = {
+                stability: (options.stability !== undefined ? options.stability : 0.5),
+                similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
+            };
+            if (!isV3) {
+                voiceSettings.style = (options.style !== undefined ? options.style : 0.0);
+                voiceSettings.use_speaker_boost = (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true);
+            }
+
             const requestData = {
                 text: text,
-                model_id: options.model || 'eleven_flash_v2_5',
-                voice_settings: {
-                    stability: (options.stability !== undefined ? options.stability : 0.5),
-                    similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
-                    style: (options.style !== undefined ? options.style : 0.0),
-                    use_speaker_boost: (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true)
-                }
+                model_id: modelId,
+                voice_settings: voiceSettings
             };
 
             console.log('🎙️ TTS Request:', JSON.stringify({ voiceId, model: requestData.model_id, settings: requestData.voice_settings }, null, 2));
@@ -158,15 +166,22 @@ class ElevenLabsTTSService {
      */
     async generateSpeechStream(text, voiceId, options = {}) {
         try {
+            const streamModelId = options.model || 'eleven_v3';
+            const isStreamV3 = streamModelId === 'eleven_v3';
+
+            const streamVoiceSettings = {
+                stability: (options.stability !== undefined ? options.stability : 0.5),
+                similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
+            };
+            if (!isStreamV3) {
+                streamVoiceSettings.style = (options.style !== undefined ? options.style : 0.0);
+                streamVoiceSettings.use_speaker_boost = (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true);
+            }
+
             const requestData = {
                 text: text,
-                model_id: options.model || 'eleven_flash_v2_5',
-                voice_settings: {
-                    stability: (options.stability !== undefined ? options.stability : 0.5),
-                    similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
-                    style: (options.style !== undefined ? options.style : 0.0),
-                    use_speaker_boost: (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true)
-                }
+                model_id: streamModelId,
+                voice_settings: streamVoiceSettings
             };
 
             const response = await axios.post(
@@ -291,25 +306,19 @@ class ElevenLabsTTSService {
     getTTSConfig(useCase = 'conversation') {
         const configs = {
             conversation: {
-                model: 'eleven_flash_v2_5',
+                model: 'eleven_v3',
                 stability: 0.5,
-                similarity_boost: 0.5,
-                style: 0.0,
-                use_speaker_boost: true
+                similarity_boost: 0.5
             },
             narration: {
-                model: 'eleven_multilingual_v2',
+                model: 'eleven_v3',
                 stability: 0.7,
-                similarity_boost: 0.8,
-                style: 0.2,
-                use_speaker_boost: false
+                similarity_boost: 0.8
             },
             character: {
-                model: 'eleven_flash_v2_5',
+                model: 'eleven_v3',
                 stability: 0.3,
-                similarity_boost: 0.7,
-                style: 0.5,
-                use_speaker_boost: true
+                similarity_boost: 0.7
             }
         };
 

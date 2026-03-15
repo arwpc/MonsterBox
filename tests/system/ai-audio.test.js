@@ -192,11 +192,9 @@ describe('AI Audio System Tests', function() {
         it('POST /api/elevenlabs/tts/config should save config', async () => {
             try {
                 const testConfig = {
-                    model: 'eleven_flash_v2_5',
+                    model: 'eleven_v3',
                     stability: 0.5,
-                    similarity_boost: 0.5,
-                    style: 0.0,
-                    use_speaker_boost: true
+                    similarity_boost: 0.5
                 };
                 const res = await fetch(`${BASE_URL}/api/elevenlabs/tts/config`, {
                     method: 'POST',

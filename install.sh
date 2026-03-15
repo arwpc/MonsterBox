@@ -296,7 +296,7 @@ else
     echo "    sudo mkdir -p /etc/monsterbox && echo -n 'sk_...' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key"
 fi
 
-# Provision default AI config (TTS: eleven_flash_v2_5, STT: scribe_v2)
+# Provision default AI config (TTS: eleven_v3, STT: scribe_v2)
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_CONFIG_DIR="$REPO_DIR/data/ai-config"
 mkdir -p "$AI_CONFIG_DIR"
@@ -304,15 +304,14 @@ mkdir -p "$AI_CONFIG_DIR"
 if [ ! -f "$AI_CONFIG_DIR/tts-config.json" ]; then
     cat > "$AI_CONFIG_DIR/tts-config.json" << 'TTSCFG'
 {
-  "model": "eleven_flash_v2_5",
+  "model": "eleven_v3",
   "voice_id": "",
   "stability": 0.5,
   "similarity_boost": 0.75,
-  "style": 0,
   "output_format": "mp3_44100_128"
 }
 TTSCFG
-    print_success "Created default TTS config (eleven_flash_v2_5)"
+    print_success "Created default TTS config (eleven_v3)"
 fi
 
 if [ ! -f "$AI_CONFIG_DIR/stt-config.json" ]; then

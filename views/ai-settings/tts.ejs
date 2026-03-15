@@ -38,6 +38,7 @@
                                 <div class="mb-3">
                                     <label for="ttsModel" class="form-label">TTS Model</label>
                                     <select class="form-select" id="ttsModel" name="model">
+                                        <option value="eleven_v3">Eleven v3 (Most Expressive)</option>
                                         <option value="eleven_flash_v2_5">Eleven Flash v2.5 (Fastest)</option>
                                         <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
                                     </select>
@@ -80,7 +81,12 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row" id="legacyVoiceSettings">
+                            <div class="col-12 mb-2">
+                                <small class="text-muted" id="v3SettingsNote" style="display:none;">
+                                    <i class="bi bi-info-circle"></i> Style and Speaker Boost are not used by Eleven v3 — it uses audio tags and punctuation for expressiveness instead.
+                                </small>
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="style" class="form-label">Style</label>

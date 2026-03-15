@@ -19,6 +19,7 @@ TTSManager.prototype.init = function () {
     this.updateRangeDisplays();
     this.loadCharacterBanner();
     this.loadCharacterVoiceConfig();
+    this.updateV3Visibility();
 
     console.log('TTS Manager initialized');
 };
@@ -265,6 +266,14 @@ TTSManager.prototype.bindEvents = function () {
         });
     }
 
+    // Model select — toggle v3-specific UI
+    var modelSelect = document.getElementById('ttsModel');
+    if (modelSelect) {
+        modelSelect.addEventListener('change', function () {
+            self.updateV3Visibility();
+        });
+    }
+
     // Range inputs for real-time display updates
     var rangeInputs = ['stability', 'similarityBoost', 'style'];
     rangeInputs.forEach(function (inputId) {
@@ -331,6 +340,17 @@ TTSManager.prototype.updateRangeDisplay = function (rangeId) {
     }
 };
 
+TTSManager.prototype.updateV3Visibility = function () {
+    var modelSelect = document.getElementById('ttsModel');
+    var note = document.getElementById('v3SettingsNote');
+    var styleInput = document.getElementById('style');
+    var boostInput = document.getElementById('speakerBoost');
+    var isV3 = modelSelect && modelSelect.value === 'eleven_v3';
+    if (note) note.style.display = isV3 ? '' : 'none';
+    if (styleInput) styleInput.disabled = isV3;
+    if (boostInput) boostInput.disabled = isV3;
+};
+
 TTSManager.prototype.saveConfiguration = function () {
     var self = this;
     var form = document.getElementById('ttsConfigForm');
@@ -360,7 +380,7 @@ TTSManager.prototype.saveConfiguration = function () {
     config.style = parseFloat(config.style || '0');
     config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
     // voice_id comes from the form's name="voice_id" select — do NOT overwrite
-    config.model = config.model || 'eleven_flash_v2_5';
+    config.model = config.model || 'eleven_v3';
 
     fetch('/api/elevenlabs/tts/config', {
         method: 'POST',
@@ -398,7 +418,7 @@ TTSManager.prototype.testTTSConfiguration = function () {
         body: JSON.stringify({
             text: 'TTS test successful.',
             voice_id: voiceId,
-            model: document.getElementById('ttsModel').value || 'eleven_flash_v2_5',
+            model: document.getElementById('ttsModel').value || 'eleven_v3',
             voice_settings: {
                 stability: parseFloat(document.getElementById('stability').value),
                 similarity_boost: parseFloat(document.getElementById('similarityBoost').value),
@@ -612,7 +632,7 @@ TTSManager.prototype.previewVoice = function (voiceId) {
     var requestData = {
         text: previewText,
         voice_id: voiceId,
-        model: document.getElementById('ttsModel').value || 'eleven_flash_v2_5',
+        model: document.getElementById('ttsModel').value || 'eleven_v3',
         voice_settings: {
             stability: 0.5,
             similarity_boost: 0.5,

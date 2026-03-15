@@ -1,8 +1,6 @@
 {
-  "model": "eleven_flash_v2_5",
+  "model": "eleven_v3",
   "voice_id": "",
   "stability": 0.5,
-  "similarity_boost": 0.5,
-  "style": 0,
-  "use_speaker_boost": true
+  "similarity_boost": 0.5
 }
