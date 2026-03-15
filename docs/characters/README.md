@@ -25,7 +25,7 @@ This directory contains character-specific documentation, configuration guides, 
 
 ### Character 2: Mina
 - **[Coffin Readiness Report](COFFIN_READINESS_REPORT.md)** - Deployment status
-- **[Character Profile](../character_coffin_breaker.md)** - Character description and design
+- **[Character Profile](../character_mina.md)** - Character description and design
 
 **Status:** Configured
 

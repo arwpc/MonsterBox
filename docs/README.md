@@ -26,7 +26,7 @@ MonsterBox is a next-generation platform for building, programming, and running 
 - **[Character Sheet Template](character_sheet.md)** - Template for creating new character documentation
 - **[Orlok Character](character_orlok.md)** - Vampire animatronic documentation
 - **[Pumpkinhead Character](character_pumpkinhead.md)** - Pumpkin-headed demon documentation
-- **[Mina Character](character_coffin_breaker.md)** - Coffin emerging figure documentation
+- **[Mina Character](character_mina.md)** - Mina character documentation
 
 ---
 

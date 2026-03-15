@@ -336,7 +336,7 @@ class PiGoblin {
             .filter(Boolean);
         } catch (e) {
           // Fallback: try local hostname
-          addresses = ['orlok', 'coffin', 'pumpkinhead', 'skulltalker', 'groundbreaker', 'localhost'];
+          addresses = ['orlok', 'mina', 'pumpkinhead', 'sirdragomir', 'groundbreaker', 'localhost'];
         }
 
         for (const addr of addresses) {
