@@ -210,10 +210,37 @@
   <!-- ══════════════════ Tab 4: Settings ══════════════════ -->
   <div class="tab-pane fade" id="settings" role="tabpanel">
     <div class="accordion" id="settingsAccordion">
+      <!-- System Volume -->
+      <div class="accordion-item">
+        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#volumeSettings"><i class="bi bi-volume-up me-2"></i>System Volume</button></h2>
+        <div id="volumeSettings" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
+          <div class="accordion-body">
+            <div class="row align-items-center g-3">
+              <div class="col-md-1 text-center">
+                <i class="bi bi-volume-off fs-5"></i>
+              </div>
+              <div class="col-md-7">
+                <input type="range" class="form-range" id="systemVolumeSlider" min="0" max="100" step="1" value="90">
+              </div>
+              <div class="col-md-1 text-center">
+                <i class="bi bi-volume-up fs-5"></i>
+              </div>
+              <div class="col-md-1">
+                <span class="badge bg-primary fs-6" id="systemVolumeDisplay">90%</span>
+              </div>
+              <div class="col-md-2">
+                <button class="btn btn-primary w-100" id="btnSaveVolume"><i class="bi bi-check-circle"></i> Apply</button>
+              </div>
+            </div>
+            <div id="volumeMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- CPU Settings -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#cpuSettings">CPU Settings</button></h2>
-        <div id="cpuSettings" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cpuSettings">CPU Settings</button></h2>
+        <div id="cpuSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <div class="row align-items-end g-3">
               <div class="col-md-6">
@@ -713,8 +740,44 @@
     }
   });
 
+  /* ─── System Volume ──────────────────────────────────────────────────────── */
+  function loadVolume() {
+    apiGet('/api/system/volume', function (err, data) {
+      if (err || !data || !data.success) return;
+      var vol = Math.round((data.volume || 0) * 100);
+      var slider = $('#systemVolumeSlider');
+      var display = $('#systemVolumeDisplay');
+      if (slider) slider.value = vol;
+      if (display) display.textContent = vol + '%';
+    });
+  }
+
+  (function() {
+    var slider = $('#systemVolumeSlider');
+    if (slider) {
+      slider.addEventListener('input', function () {
+        var display = $('#systemVolumeDisplay');
+        if (display) display.textContent = this.value + '%';
+      });
+    }
+    var btnSave = $('#btnSaveVolume');
+    if (btnSave) {
+      btnSave.addEventListener('click', function () {
+        var vol = parseInt($('#systemVolumeSlider').value, 10);
+        apiPut('/api/system/volume', { volume: vol }, function (err, data) {
+          if (err || !data || !data.success) {
+            showAlert('volumeMessage', 'danger', 'Failed: ' + ((data && data.error) || 'Unknown error'));
+          } else {
+            showAlert('volumeMessage', 'success', 'System volume set to ' + vol + '%');
+          }
+        });
+      });
+    }
+  })();
+
   /* ─── Tab 4: Settings ──────────────────────────────────────────────────────── */
   function loadSettings() {
+    loadVolume();
     apiGet('/api/system/settings', function (err, data) {
       if (err || !data || !data.success) return;
       var s = data.settings;

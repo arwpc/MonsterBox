@@ -1,6 +1,6 @@
 /**
  * Audio Library Tests
- * Validates all functionality on /audio-library page
+ * Validates all functionality on /audio-library page (table-based interface)
  */
 
 import { test, expect } from '@playwright/test';
@@ -25,103 +25,161 @@ test.describe('Audio Library Page', () => {
         expect(await page.title()).toContain('Audio');
     });
 
-    test('should display audio files or empty state', async () => {
+    test('should display audio table or empty state', async () => {
         tracker.clear();
-        
+
         // Wait for page to load
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
-        
-        // Check if audio items exist OR empty state is shown
-        const audioItems = await page.locator('[data-audio], .audio-item, .audio-file').count();
-        const emptyState = await page.locator('.empty-state, .no-files').count();
-        
-        // Either we have files or an empty state - both are valid
-        expect(audioItems + emptyState).toBeGreaterThanOrEqual(0);
-        
+
+        // Check if audio table has rows OR empty state is shown
+        const tableRows = await page.locator('#audioTableBody tr').count();
+        const emptyState = await page.locator('#emptyState').count();
+
+        // Either we have files in the table or an empty state - both are valid
+        expect(tableRows + emptyState).toBeGreaterThanOrEqual(0);
+
         await tracker.logErrors();
     });
 
-    test('should show controls when audio files exist', async () => {
+    test('should show play buttons when audio files exist', async () => {
         tracker.clear();
-        
+
         await page.waitForLoadState('networkidle');
-        
-        // Find play button - it's OK if none exist when there are no files
-        const hasFiles = await page.locator('[data-audio], .audio-item, .audio-file').count() > 0;
-        
-        if (hasFiles) {
-            const playButton = page.locator('button:has-text("Play"), button[title="Play"], .play-btn').first();
+        await page.waitForTimeout(1000);
+
+        // Find play buttons in the table
+        const tableRows = await page.locator('#audioTableBody tr').count();
+
+        if (tableRows > 0) {
+            const playButton = page.locator('.play-btn').first();
             await expect(playButton).toBeVisible({ timeout: 5000 });
         }
-        
+
         await tracker.logErrors();
     });
 
     test('should have stop all audio button', async () => {
         tracker.clear();
-        
+
         // The Stop All button should always be visible
-        const stopAllBtn = page.locator('button:has-text("Stop All")').first();
+        const stopAllBtn = page.locator('#stopAllBtn');
         await expect(stopAllBtn).toBeVisible({ timeout: 5000 });
-        
+
         await tracker.logErrors();
     });
 
     test('should have upload button', async () => {
         tracker.clear();
-        
+
         // The Upload button should always be visible
         const uploadBtn = page.locator('button:has-text("Upload")').first();
         await expect(uploadBtn).toBeVisible({ timeout: 5000 });
-        
+
         await tracker.logErrors();
     });
 
     test('should have category filter', async () => {
         tracker.clear();
-        
+
         // Find category filter dropdown
-        const categoryFilter = page.locator('select#categoryFilter, select[name*="category"], [data-filter="category"]').first();
-        
-        if (await categoryFilter.count() > 0) {
-            await expect(categoryFilter).toBeVisible();
-        }
-        
+        const categoryFilter = page.locator('select#categoryFilter');
+        await expect(categoryFilter).toBeVisible({ timeout: 5000 });
+
+        await tracker.logErrors();
+    });
+
+    test('should have search input', async () => {
+        tracker.clear();
+
+        const searchInput = page.locator('#searchInput');
+        await expect(searchInput).toBeVisible({ timeout: 5000 });
+
+        await tracker.logErrors();
+    });
+
+    test('should have sort dropdown', async () => {
+        tracker.clear();
+
+        const sortBy = page.locator('#sortBy');
+        await expect(sortBy).toBeVisible({ timeout: 5000 });
+
+        // Default should be Title A-Z
+        await expect(sortBy).toHaveValue('title');
+
+        await tracker.logErrors();
+    });
+
+    test('should have stats badges', async () => {
+        tracker.clear();
+
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        const totalFiles = page.locator('#totalFiles');
+        const totalSize = page.locator('#totalSize');
+
+        await expect(totalFiles).toBeVisible({ timeout: 5000 });
+        await expect(totalSize).toBeVisible({ timeout: 5000 });
+
+        await tracker.logErrors();
+    });
+
+    test('should have audio table with correct headers', async () => {
+        tracker.clear();
+
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        const table = page.locator('#audioTable');
+        // Table may be hidden if no files, but the element should exist
+        await expect(table).toHaveCount(1);
+
+        // Check headers exist
+        const headers = page.locator('#audioTable thead th');
+        const headerCount = await headers.count();
+        expect(headerCount).toBe(8); // play, fav, title, category, time, fmt, size, actions
+
         await tracker.logErrors();
     });
 
     test('should delete audio file if files exist', async () => {
         tracker.clear();
-        
-        const hasFiles = await page.locator('[data-audio], .audio-item, .audio-file').count() > 0;
-        
-        if (hasFiles) {
-            // Find delete button
-            const deleteButton = page.locator('button:has-text("Delete"), .delete-btn, [data-action="delete"]').first();
-            
+
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        const tableRows = await page.locator('#audioTableBody tr').count();
+
+        if (tableRows > 0) {
+            // Find delete button in table
+            const deleteButton = page.locator('.delete-btn').first();
+
             if (await deleteButton.count() > 0) {
-                // Handle confirmation dialog if present
+                // Handle confirmation dialog
                 page.once('dialog', dialog => {
                     dialog.dismiss();
                 });
-                
+
                 await deleteButton.click();
                 await page.waitForTimeout(1000);
             }
         }
-        
+
         await tracker.logErrors();
     });
 
     test('should handle rapid audio operations without errors', async () => {
         tracker.clear();
-        
-        const hasFiles = await page.locator('[data-audio], .audio-item, .audio-file').count() > 0;
-        
-        if (hasFiles) {
-            const playButton = page.locator('button:has-text("Play")').first();
-            
+
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+
+        const tableRows = await page.locator('#audioTableBody tr').count();
+
+        if (tableRows > 0) {
+            const playButton = page.locator('.play-btn').first();
+
             if (await playButton.count() > 0) {
                 // Rapid play/stop cycles
                 for (let i = 0; i < 3; i++) {
@@ -130,7 +188,7 @@ test.describe('Audio Library Page', () => {
                 }
             }
         }
-        
+
         await page.waitForTimeout(1000);
         await tracker.logErrors();
     });
@@ -145,76 +203,20 @@ test.describe('Audio Library Page', () => {
         await tracker.logErrors();
     });
 
-    test('should have view toggle buttons', async () => {
+    test('should have favorites toggle', async () => {
         tracker.clear();
 
-        const gridBtn = page.locator('#viewGrid');
-        const listBtn = page.locator('#viewList');
-
-        await expect(gridBtn).toBeVisible({ timeout: 5000 });
-        await expect(listBtn).toBeVisible({ timeout: 5000 });
+        const favToggle = page.locator('#favoritesOnly');
+        await expect(favToggle).toBeVisible({ timeout: 5000 });
 
         await tracker.logErrors();
     });
 
-    test('should switch to list view and back to grid', async () => {
+    test('should have speaker selector', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
 
-        const gridContainer = page.locator('#audioGrid');
-        const listContainer = page.locator('#audioListContainer');
-        const gridBtn = page.locator('#viewGrid');
-        const listBtn = page.locator('#viewList');
-
-        // Default should be grid visible, list hidden
-        await expect(gridContainer).toBeVisible();
-        await expect(listContainer).toBeHidden();
-
-        // Switch to list view
-        await listBtn.click();
-        await page.waitForTimeout(500);
-
-        await expect(listContainer).toBeVisible();
-        await expect(gridContainer).toBeHidden();
-
-        // List button should be active, grid should not
-        await expect(listBtn).toHaveClass(/btn-primary/);
-        await expect(gridBtn).toHaveClass(/btn-outline/);
-
-        // Switch back to grid
-        await gridBtn.click();
-        await page.waitForTimeout(500);
-
-        await expect(gridContainer).toBeVisible();
-        await expect(listContainer).toBeHidden();
-
-        await tracker.logErrors();
-    });
-
-    test('should persist view preference across reload', async () => {
-        tracker.clear();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // Switch to list view
-        await page.locator('#viewList').click();
-        await page.waitForTimeout(500);
-
-        // Reload the page
-        await page.reload();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // List view should still be active after reload
-        const listContainer = page.locator('#audioListContainer');
-        const gridContainer = page.locator('#audioGrid');
-        await expect(listContainer).toBeVisible();
-        await expect(gridContainer).toBeHidden();
-
-        // Clean up: reset to grid view
-        await page.locator('#viewGrid').click();
-        await page.waitForTimeout(300);
+        const speakerSelect = page.locator('#speakerSelect');
+        await expect(speakerSelect).toBeVisible({ timeout: 5000 });
 
         await tracker.logErrors();
     });

@@ -1116,14 +1116,17 @@ test.describe('12. Audio Library', () => {
     await snap(page, '12.1-audio-library');
   });
 
-  test('12.2 View toggle (Grid/List)', async ({ page }) => {
-    await safeClick(page, '#viewGrid', 'Grid view');
-    await page.waitForTimeout(SLOW);
-    await snap(page, '12.2a-grid-view');
-
-    await safeClick(page, '#viewList', 'List view');
-    await page.waitForTimeout(SLOW);
-    await snap(page, '12.2b-list-view');
+  test('12.2 Table view with stats badges', async ({ page }) => {
+    // Table-based interface — check stats badges and table exist
+    const totalFiles = page.locator('#totalFiles');
+    if (await totalFiles.isVisible().catch(() => false)) {
+      console.log('  Stats badge visible: ' + await totalFiles.textContent());
+    }
+    const table = page.locator('#audioTable');
+    if (await table.isVisible().catch(() => false)) {
+      console.log('  Audio table visible');
+    }
+    await snap(page, '12.2-table-view');
   });
 
   test('12.3 Speaker selector', async ({ page }) => {
@@ -1131,47 +1134,45 @@ test.describe('12. Audio Library', () => {
     await snap(page, '12.3-speaker-select');
   });
 
-  test('12.4 Bulk select toggle', async ({ page }) => {
-    const bulkBtn = page.locator('#bulkSelectBtn');
-    if (await bulkBtn.isVisible().catch(() => false)) {
-      await bulkBtn.click();
-      await page.waitForTimeout(SLOW);
-      console.log('  Bulk select mode toggled');
-
-      // Check for bulk action buttons
-      const favBtn = page.locator('button:has-text("Favorite")').first();
-      if (await favBtn.isVisible().catch(() => false)) {
-        console.log('  Bulk favorite button visible');
-      }
-
-      // Toggle off
-      await bulkBtn.click();
-      await page.waitForTimeout(SLOW);
+  test('12.4 Search and filter controls', async ({ page }) => {
+    const searchInput = page.locator('#searchInput');
+    if (await searchInput.isVisible().catch(() => false)) {
+      await searchInput.fill('test');
+      await page.waitForTimeout(500);
+      console.log('  Search input filled');
+      await searchInput.clear();
     }
-    await snap(page, '12.4-bulk-select');
+    const sortBy = page.locator('#sortBy');
+    if (await sortBy.isVisible().catch(() => false)) {
+      console.log('  Sort dropdown visible');
+    }
+    const favToggle = page.locator('#favoritesOnly');
+    if (await favToggle.isVisible().catch(() => false)) {
+      console.log('  Favorites toggle visible');
+    }
+    await snap(page, '12.4-search-filter');
   });
 
-  test('12.5 Audio card interactions', async ({ page }) => {
-    // Find audio cards
-    const cards = page.locator('.audio-card, .audio-item, [data-audio-id]');
-    const count = await cards.count();
-    console.log(`  Found ${count} audio items`);
+  test('12.5 Audio table row interactions', async ({ page }) => {
+    // Find audio table rows
+    const rows = page.locator('#audioTableBody tr');
+    const count = await rows.count();
+    console.log(`  Found ${count} audio rows`);
 
     if (count > 0) {
-      // Hover first card to reveal controls
-      await cards.first().hover();
-      await page.waitForTimeout(SLOW);
-
-      // Play button
-      const playBtn = cards.first().locator('button:has-text("Play"), .play-btn, [data-action="play"]').first();
+      // Play button on first row
+      const playBtn = rows.first().locator('.play-btn').first();
       if (await playBtn.isVisible().catch(() => false)) {
         await playBtn.click();
         await page.waitForTimeout(1000);
-        console.log('  Played first audio');
+        console.log('  Clicked play on first audio');
+        // Click again to stop
+        await playBtn.click();
+        await page.waitForTimeout(SLOW);
       }
 
-      // Favorite heart
-      const favBtn = cards.first().locator('.favorite-btn, .heart-btn, [data-action="favorite"]').first();
+      // Favorite toggle on first row
+      const favBtn = rows.first().locator('.fav-btn').first();
       if (await favBtn.isVisible().catch(() => false)) {
         await favBtn.click();
         await page.waitForTimeout(SLOW);
@@ -1181,7 +1182,7 @@ test.describe('12. Audio Library', () => {
       }
     }
 
-    await snap(page, '12.5-audio-cards');
+    await snap(page, '12.5-audio-table-rows');
   });
 
   test('12.6 Upload modal', async ({ page }) => {

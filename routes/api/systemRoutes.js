@@ -113,6 +113,46 @@ router.get('/console', async (req, res) => {
 });
 
 /**
+ * GET /api/system/volume - Get system audio output volume (0.0-1.0)
+ */
+router.get('/volume', async (req, res) => {
+    try {
+        if (process.env.MB_TEST_MODE === '1') {
+            return res.json({ success: true, volume: 0.9 });
+        }
+        const { stdout } = await execAsync('wpctl get-volume @DEFAULT_AUDIO_SINK@', { timeout: 5000 });
+        const match = stdout.match(/Volume:\s+([\d.]+)/);
+        const volume = match ? parseFloat(match[1]) : 0.9;
+        res.json({ success: true, volume });
+    } catch (error) {
+        console.error('Error getting volume:', error.message);
+        res.json({ success: true, volume: 0.9 });
+    }
+});
+
+/**
+ * PUT /api/system/volume - Set system audio output volume
+ * Body: { volume: 0-100 }
+ */
+router.put('/volume', express.json(), async (req, res) => {
+    try {
+        const vol = parseInt(req.body && req.body.volume, 10);
+        if (isNaN(vol) || vol < 0 || vol > 100) {
+            return res.status(400).json({ success: false, error: 'volume must be 0-100' });
+        }
+        if (process.env.MB_TEST_MODE === '1') {
+            return res.json({ success: true, volume: vol / 100 });
+        }
+        const linear = (vol / 100).toFixed(2);
+        await execAsync(`wpctl set-volume @DEFAULT_AUDIO_SINK@ ${linear}`, { timeout: 5000 });
+        res.json({ success: true, volume: parseFloat(linear) });
+    } catch (error) {
+        console.error('Error setting volume:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * GET /api/system/presets - Performance presets for RPi models
  */
 router.get('/presets', (req, res) => {
