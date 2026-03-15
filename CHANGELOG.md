@@ -21,6 +21,18 @@ All notable changes to MonsterBox are documented in this file.
 ### Hardware Safety Documentation
 - **12V bus fuse protection** — Documented that linear actuators and large 12V servos are wired into a 12V power bus protected by intentionally undersized 5V fuses (safety-first design). Updated in hardware docs, wiring guide, and calibration guide.
 
+### Audio Library Redesign
+- **Table-based file manager** — replaced grid of tiny unreadable cards with a clean sortable table showing all files immediately
+- **Inline controls** — play/stop toggle, loop, favorite, edit, download, delete on every row
+- **Now Playing indicator** — highlights active row, shows title in banner
+- **Compact toolbar** — stats badges, search, category filter, sort dropdown in single row
+- **ES5 IIFE rewrite** — client JS converted from ES6 class to proper ES5 IIFE pattern
+
+### System Volume Control
+- **Volume slider** in System > Settings tab — first accordion item, range 0-100%
+- **API endpoints** — `GET/PUT /api/system/volume` using `wpctl set-volume @DEFAULT_AUDIO_SINK@`
+- **Default 90%** — set on deployment
+
 ### Files Changed
 - `services/serverPlaybackService.js` — Content-type-aware player selection, removed stream-killing before AI playback
 - `services/audioLibraryService.js` — Init-await guard on `loadLibrary()` and `getAudioFiles()`
@@ -29,6 +41,12 @@ All notable changes to MonsterBox are documented in this file.
 - `docs/hardware/ORLOK_BTS7960_WIRING.md` — 12V bus fuse safety note
 - `docs/hardware/index.md` — Power management section updated
 - `docs/setup/LINEAR_ACTUATOR_CALIBRATION.md` — Fuse protection safety feature
+- `views/audio-library/index.ejs` — Complete rewrite: table-based file manager
+- `public/js/audio-library.js` — Complete rewrite: ES5 IIFE with table rendering
+- `routes/api/systemRoutes.js` — Volume get/set endpoints
+- `views/setup/system.ejs` — Volume slider in Settings tab
+- `tests/browser/audio-library.spec.js` — 15 tests updated for table-based UI
+- `tests/browser/actual-usage-testing.spec.js` — Updated audio library tests
 
 ### Testing
 - **631 tests passing** (278 system + 85 unit + 268 browser), 0 failing

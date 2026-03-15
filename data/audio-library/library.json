@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "created": "2025-11-01T12:00:00.000Z",
-  "lastModified": "2026-02-16T02:45:50.879Z",
+  "lastModified": "2026-03-15T05:31:41.453Z",
   "totalFiles": 132,
   "totalSize": 290540797,
   "categories": [
@@ -769,8 +769,8 @@
       "lastModified": "2026-02-16T02:45:45.296Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 3,
+      "lastPlayed": "2026-03-15T05:31:41.453Z"
     },
     {
       "id": "206c8836-bc34-4ac9-a426-f773eaf943c8",

@@ -21,6 +21,18 @@ MonsterBox 7.3 makes audio input and output rock-solid with targeted fixes to th
 - **Microphone stability**: Cached PipeWire source resolution (60s TTL) eliminates repeated `wpctl status` shell-outs on every capture chunk
 - **Audio loop robustness**: Fixed EPIPE crash when audio device disconnects during looped playback
 
+### Audio Library Redesign
+- **Table-based file manager** replaces unusable grid of tiny cards — all files visible immediately
+- Inline play/stop, loop, favorite, edit, download, delete on every row
+- Now Playing indicator highlights active row
+- Compact search, category filter, and sort controls
+- Designed for managing 50-150 audio files per animatronic
+
+### System Volume Control
+- **Volume slider** added to System > Settings tab (first accordion item)
+- Uses `wpctl set-volume` for immediate PipeWire volume changes
+- Default set to 90%
+
 ### Previous: v7.0.0 (March 2026)
 
 MonsterBox 7.0 is a major release consolidating all v6.x features into a polished, production-ready platform. Key highlights:
