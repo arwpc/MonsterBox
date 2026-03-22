@@ -56,10 +56,12 @@ MonsterBox/
 │   ├── character-{id}/    # Per-character data (parts, poses, scenes, super-powers)
 │   └── audio-library/     # Shared audio files
 ├── config/                # App configuration
-├── tests/                 # Test suites
-│   ├── unit/              # Mocha unit tests
-│   ├── system/            # Mocha system/integration tests
-│   └── browser/           # Playwright E2E tests
+├── tests/                 # Test suites (800+ tests)
+│   ├── unit/              # Mocha unit tests (4 files)
+│   ├── system/            # Mocha system/integration tests (14 files)
+│   ├── browser/           # Playwright E2E tests (23 spec files)
+│   ├── hardware/          # Mocha hardware tests (4 files, need real GPIO)
+│   └── ai/                # AI service tests (2 files)
 ├── scripts/               # Utility and migration scripts
 ├── ai/                    # AI prompt templates and config
 ├── goblin/                # Goblin subsystem (video/playlist)
@@ -119,6 +121,96 @@ Each character at `data/character-{id}/` contains:
 - `sudo journalctl -u monsterbox.service -f` — Follow service logs
 - `git log --oneline -20` — Recent commit history
 
+## Testing — Granular Test Commands
+The full suite has 800+ tests and takes significant time on RPi4B. Use granular commands to test only what you changed.
+
+### Speed Tiers
+| Command | What it runs | Speed |
+|---------|-------------|-------|
+| `npm run test:smoke` | Unit + syntax only | ~10s |
+| `npm run test:quick` | System + 2 browser specs | ~2min |
+| `npm run verify:quick` | Same as test:quick | ~2min |
+| `npm run test:unit` | All unit tests | ~15s |
+| `npm run test:system` | All system tests | ~1min |
+| `npm run test:browser` | All browser E2E tests | ~15min |
+| `npm test` | Everything (browser + system + unit) | ~20min |
+
+### By Functional Area (pick what you changed)
+Each area has `test:unit:<area>`, `test:system:<area>`, and `test:browser:<area>` variants (where tests exist):
+
+| Area | Unit | System | Browser |
+|------|------|--------|---------|
+| **parts** | — | `test:system:parts` | `test:browser:setup` |
+| **audio** | — | `test:system:audio` | `test:browser:audio` |
+| **scenes** | — | `test:system:scenes` | `test:browser:scenes` |
+| **jaw** | `test:unit:jaw` | `test:system:jaw` | `test:browser:jaw` |
+| **head** | — | `test:system:head` | `test:browser:head` |
+| **ai** | — | `test:system:ai` or `test:ai` | `test:browser:ai` |
+| **calibration** | `test:unit:calibration` | — | `test:browser:calibration` |
+| **dashboard** | — | `test:system:dashboard` | `test:browser:dashboard` |
+| **models** | — | `test:system:models` | `test:browser:models` |
+| **video** | — | `test:system:video` | `test:browser:video` |
+| **webcam** | — | — | `test:browser:webcam` |
+| **orchestration** | — | — | `test:browser:orch` |
+| **conversation** | — | — | `test:browser:conversation` |
+
+### Unified Test Runner (recommended for Claude Code)
+The test runner at `scripts/test-runner.mjs` supports cross-suite area testing:
+```bash
+# Run all tests for one area across all suites
+node scripts/test-runner.mjs --area jaw              # unit + system + browser jaw tests
+node scripts/test-runner.mjs --area audio --suite system  # just system audio tests
+node scripts/test-runner.mjs --suite unit             # all unit tests
+node scripts/test-runner.mjs --suite system --grep "parts"  # system tests matching "parts"
+node scripts/test-runner.mjs --suite browser --spec scenes   # single browser spec
+node scripts/test-runner.mjs --help                   # full usage
+```
+
+### Browser Test Modes
+| Mode | Command | When to use |
+|------|---------|------------|
+| **Headless CLI** | `npm run test:browser` | RPi SSH, CI/CD, default |
+| **Headed** | `npm run test:browser:headed` | Windows IDE with display, debugging |
+| **MCP** | `npm run test:mcp` | Claude Code with @playwright/mcp tools |
+| **MCP Quick** | `npm run test:mcp:quick` | Fast smoke test via MCP |
+| **Live Server** | `npm run test:mcp:live` | Test against running production server |
+| **Actual Usage** | `npm run test:actual-usage` | Headed against live server, 60s timeout |
+
+### Hardware Tests (require real GPIO)
+```bash
+npm run test:hardware              # All hardware tests
+npm run test:hardware:servo        # Continuous servo calibration
+npm run test:hardware:actuator     # Linear actuator calibration
+npm run test:hardware:stepper      # Stepper motor tests
+npm run test:hardware:mic          # Microphone CRUD tests
+```
+
+### Mocha Pattern Matching
+For ad-hoc filtering, pass `--grep` to Mocha:
+```bash
+npm run test:system -- --grep "parts"     # System tests matching "parts"
+npm run test:unit -- --grep "calibration" # Unit tests matching "calibration"
+```
+
+### MCP Integration
+- `.mcp.json` configures @playwright/mcp server for Claude Code browser tools
+- `playwright.mcp.config.js` — Enhanced tracing, always-on screenshots
+- Claude Code can control the browser interactively via MCP `browser_*` tools
+- Use `/test-browser` skill in Claude Code to run browser tests with appropriate mode detection
+
+### Test Ports
+| Port | Purpose |
+|------|---------|
+| 3000 | Production server (HTTPS) |
+| 3100 | Test HTTP listener (always on, Mocha system tests) |
+| 3200 | Playwright test server (HTTP, spawned by Playwright config) |
+
+### Testing Protocol (when to run what)
+1. **Minor change** (single file, cosmetic): `npm run test:smoke` + area-specific test
+2. **Feature change** (new route, service logic): Area-specific system + browser tests
+3. **Cross-cutting change** (middleware, layout, config): `npm run test:quick`
+4. **Release / PR**: `npm test` (full suite)
+
 ## Code Style
 - ES module syntax (`import`/`export`) — project uses `"type": "module"`
 - Use `async`/`await` over raw Promises or callbacks
@@ -134,7 +226,8 @@ Each character at `data/character-{id}/` contains:
 - Use `import` of package.json or equivalent pattern
 
 ## Testing Protocol
-- Run existing tests before AND after every change
+- Run **relevant area tests** before AND after changes (not the full suite for minor changes)
+- Use `npm run test:smoke` as a fast sanity check after any change
 - If a test references hardcoded character data, fix the test to be character-independent
 - Test each form and button with at least 2 different characters
 - If tests don't exist for changed functionality, write them
@@ -154,10 +247,24 @@ Each character at `data/character-{id}/` contains:
 - Keep API responses lean; avoid loading entire files when partial reads suffice
 - Use streaming for large audio file operations where possible
 
-## Claude Code Custom Skills
+## Claude Code Integration
+
+### Custom Skills (Slash Commands)
 Custom slash commands are available in `.claude/commands/`:
 - `/learn-monsterbox` — Full codebase onboarding: reads all key docs, code, and memory files, then reports readiness. Use at the start of any session for deep context.
 - `/check-health` — Quick health check: git status, test baseline, config, version, service status.
+- `/test-browser` — Run browser tests using the appropriate mode for the current environment.
+
+### MCP Servers
+- **@playwright/mcp** — Configured in `.mcp.json`, provides `browser_*` tools for interactive browser testing and debugging from within Claude Code sessions.
+- **Notion MCP** — Available for project tracking integration.
+- **HubSpot MCP** — Available for CRM integration.
+
+### Agent & Subagent Usage
+- Use `Explore` subagent for broad codebase searches.
+- Use `Plan` subagent for designing implementation strategies.
+- Use `general-purpose` agent for multi-step tasks.
+- Parallel agent launches are preferred when tasks are independent.
 
 ## Shared Memory System
 Persistent knowledge base at `~/.claude/projects/-home-remote-MonsterBox/memory/`:
