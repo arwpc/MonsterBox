@@ -254,7 +254,11 @@ async function executeSayThisStep(step, characterId, emit) {
     }
   }
 
-  const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
+  // Use playAIOnCharacterSpeaker (one-shot process) so the step blocks until
+  // audio finishes playing.  playBufferOnCharacterSpeaker writes to a persistent
+  // mpg123 stream and returns as soon as the write completes, which would let the
+  // next scene step start before the audio is done.
+  const play = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
   emit && emit({ type: 'step', status: play.success ? 'complete' : 'error', stepType: 'sayThis', result: play });
   if (!play.success) throw new Error(play.error || 'TTS playback failed');
   return play;
@@ -315,7 +319,9 @@ async function executeAskAIStep(step, characterId, emit) {
     }
   }
 
-  const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
+  // Use playAIOnCharacterSpeaker (one-shot process) so the step blocks until
+  // audio finishes playing — same rationale as executeSayThisStep.
+  const play = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
   emit && emit({ type: 'step', status: play.success ? 'complete' : 'error', stepType: 'askAI', result: play, response: responseText });
   if (!play.success) throw new Error(play.error || 'TTS playback failed');
   return { ...play, response: responseText };

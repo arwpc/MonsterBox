@@ -2,6 +2,20 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.5.0] - 2026-03-22 — Scene Audio Blocking Fix
+
+### Scene Audio Playback Fix
+- **TTS/AskAI steps now block until audio finishes** — `executeSayThisStep` and `executeAskAIStep` were using `playBufferOnCharacterSpeaker()` which writes to a persistent mpg123 stream and returns immediately after the write, letting the next scene step start before audio finished. Switched to `playAIOnCharacterSpeaker()` which spawns a one-shot player process and awaits its exit.
+- **Concurrent flag works correctly** — when "play with next step" is checked, audio fires in the background via the scene executor's fire-and-forget model; when unchecked, the scene now properly waits for audio to complete before advancing.
+- Affects step types: `sayThis` (TTS), `askAI` (AI response + TTS)
+- `audio` steps (file playback) were already correct — they use `speaker_cli.py` which blocks until done
+- `playWithJawSync` path was already correct — jaw timeline blocks for the audio duration
+
+### Files Changed
+- `services/scenes/sceneExecutor.js` — switched non-jaw-sync TTS playback from streaming to one-shot player
+
+---
+
 ## [7.5.0] - 2026-03-15 — ElevenLabs v3 TTS & Character Renames
 
 ### ElevenLabs v3 TTS Upgrade

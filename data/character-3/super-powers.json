@@ -18,7 +18,8 @@
         "preset": "speech",
         "minAngle": 63,
         "maxAngle": 131,
-        "audioLeadTimeMs": 0
+        "audioLeadTimeMs": 300,
+        "testText": "cats and dogs for emmy"
       },
       {
         "id": "config-mmi64pqx4ujm",
