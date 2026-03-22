@@ -3,309 +3,356 @@
 </script>
 
 <link rel="stylesheet" href="/css/manual-controls.css">
+<link rel="stylesheet" href="/css/lurk-mode.css">
 
-<div class="container-fluid">
-  <!-- All panels in single sortable column — drag any panel to reorder -->
-  <div class="sortable-column" data-column-id="dashboard">
+<div class="container-fluid px-2 px-md-3">
 
-    <!-- Webcam -->
-    <div class="card mb-3" data-panel-id="webcam">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-camera-video"></i> Webcam</h6>
-        <small class="text-muted" id="webcamHint"></small>
-      </div>
-      <div class="card-body text-center p-2" style="resize: both; overflow: hidden; min-height: 100px; min-width: 200px; position: relative;">
-        <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded border"
-          style="width: 100%; height: 100%; max-height: 450px; object-fit: contain; background: var(--bs-dark); cursor: crosshair;">
-        <span id="clickTrackCountdown" class="badge bg-info position-absolute d-none" style="top:8px;right:8px;font-size:0.75rem;z-index:10;"></span>
-        <div id="webcamStatus" class="text-muted mt-2 small">Finding webcam...</div>
-      </div>
-    </div>
-
-    <!-- Live Console -->
-    <div class="card mb-3" data-panel-id="console">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-terminal"></i> Live Console</h6>
-        <div class="d-flex gap-1 align-items-center">
-          <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;">
-            <option value="50">50</option>
-            <option value="100" selected>100</option>
-            <option value="200">200</option>
-            <option value="500">500</option>
-          </select>
-          <div class="form-check form-switch mb-0 ms-1">
-            <input class="form-check-input" type="checkbox" id="consoleLive" checked>
-            <label class="form-check-label small" for="consoleLive">Live</label>
+  <!-- ════════════════════════════════════════════════════════════════════
+       LURK MODE BAR — The one-button "bring it to life" control
+       ════════════════════════════════════════════════════════════════════ -->
+  <div id="lurkBar" class="lurk-bar card mb-2">
+    <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <div class="lurk-toggle-wrapper">
+          <div class="form-check form-switch lurk-switch mb-0">
+            <input class="form-check-input lurk-toggle-input" type="checkbox" id="lurkToggle">
+            <label class="form-check-label fw-bold lurk-label" for="lurkToggle">
+              <i class="bi bi-lightning-charge-fill"></i> Lurk Mode
+            </label>
           </div>
-          <button class="btn btn-sm btn-outline-secondary" id="btnConsoleRefresh" title="Refresh">
-            <i class="bi bi-arrow-clockwise"></i>
-          </button>
+        </div>
+        <div id="lurkStatusIndicators" class="d-flex gap-2 align-items-center">
+          <span class="badge lurk-badge" id="lurkBadgeAI" title="AI Conversation"><i class="bi bi-chat-dots"></i> AI</span>
+          <span class="badge lurk-badge" id="lurkBadgeJaw" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
+          <span class="badge lurk-badge" id="lurkBadgeHead" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
+          <span class="badge lurk-badge" id="lurkBadgeIdle" title="Idle Movement"><i class="bi bi-person-walking"></i> Idle</span>
         </div>
       </div>
-      <div class="card-body p-0" style="resize: vertical; overflow: hidden; min-height: 100px; max-height: 500px; height: 250px;">
-        <pre id="consoleOutput" class="mb-0 p-2" style="height: 100%; overflow-y: auto; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; background: var(--mb-terminal-bg, #0a0a0a); color: var(--mb-terminal-text, #0f0); margin: 0;">Loading console...</pre>
+      <div class="d-flex align-items-center gap-2">
+        <span id="lurkStatus" class="small text-muted">Off</span>
+        <span id="charName" class="fw-bold small"></span>
       </div>
     </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       HERO SECTION — Webcam + AI Chat side-by-side
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="row g-2 mb-2">
+    <!-- Webcam — Primary View -->
+    <div class="col-12 col-lg-7">
+      <div class="card h-100" data-panel-id="webcam">
+        <div class="card-header py-1 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 small"><i class="bi bi-camera-video"></i> Live View</h6>
+          <div class="d-flex align-items-center gap-2">
+            <span id="headTrackStatusBadge" class="badge bg-secondary d-none" style="font-size:0.65rem;">Off</span>
+            <small class="text-muted" id="webcamHint" style="font-size:0.65rem;"></small>
+          </div>
+        </div>
+        <div class="card-body text-center p-1" style="position: relative; min-height: 200px;">
+          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded"
+            style="width: 100%; height: 100%; max-height: 55vh; object-fit: contain; background: #000; cursor: crosshair;">
+          <span id="clickTrackCountdown" class="badge bg-info position-absolute d-none" style="top:8px;right:8px;font-size:0.75rem;z-index:10;"></span>
+          <div id="webcamStatus" class="text-muted mt-1 small" style="font-size:0.7rem;">Finding webcam...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Panel — AI Conversation Portal -->
+    <div class="col-12 col-lg-5">
+      <div class="card h-100" data-panel-id="chat">
+        <div class="card-header py-1 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 small">
+            <i class="bi bi-chat-dots"></i>
+            <span id="chatCharacterName">Loading...</span>
+          </h6>
+          <div class="d-flex align-items-center gap-2">
+            <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 120px; font-size: 0.7rem;">
+              <option value="">Auto</option>
+            </select>
+            <div class="form-check form-switch mb-0" title="Connect to ElevenLabs conversational AI agent">
+              <input class="form-check-input" type="checkbox" id="chatAiOnToggle">
+              <label class="form-check-label small" for="chatAiOnToggle" style="font-size:0.75rem;">AI</label>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0 d-flex flex-column" style="min-height: 300px;">
+          <!-- Chat Log -->
+          <div id="chatLog" class="p-2 font-monospace flex-grow-1"
+               style="overflow-y: auto; font-size: 0.8rem; background: var(--bs-tertiary-bg); max-height: 45vh;">
+            <div class="text-muted text-center small">Chat will appear here...</div>
+          </div>
+          <!-- VU Meter -->
+          <div class="px-2 py-1 border-top" style="background: var(--bs-tertiary-bg);">
+            <div class="d-flex align-items-center">
+              <small class="text-muted me-1" style="font-size:0.65rem;"><i class="bi bi-activity"></i></small>
+              <div class="progress flex-grow-1" style="height: 8px;">
+                <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
+                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+              <span id="chatVULabel" class="ms-1 badge bg-secondary" style="font-size: 0.6rem;">0%</span>
+            </div>
+          </div>
+          <!-- Audio Controls (compact) -->
+          <div class="px-2 py-1 border-top d-flex flex-wrap align-items-center gap-2" style="background: var(--bs-tertiary-bg); font-size: 0.75rem;">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="chatMuteSpeaker">
+              <label class="form-check-label" for="chatMuteSpeaker" style="font-size:0.7rem;"><i class="bi bi-volume-mute"></i></label>
+            </div>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
+              <label class="form-check-label" for="chatBrowserSpeaker" style="font-size:0.7rem;"><i class="bi bi-broadcast"></i> Spk</label>
+            </div>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="chatBrowserMic">
+              <label class="form-check-label" for="chatBrowserMic" style="font-size:0.7rem;"><i class="bi bi-mic"></i> Mic</label>
+            </div>
+            <small id="chatAudioStatus" class="text-info" style="font-size:0.65rem;"></small>
+          </div>
+          <!-- Chat Input -->
+          <div class="p-2 border-top">
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="chatInput" placeholder="Speak to the character..." autocomplete="off">
+              <button class="btn btn-success" type="button" id="chatSendBtn">
+                <i class="bi bi-send"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       SUPERPOWERS STRIP — Compact horizontal toggles
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="card mb-2" data-panel-id="monster-features">
+    <div class="card-body py-2 px-3">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="jawToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
+          <label class="form-check-label small fw-bold" for="jawToggle"><i class="bi bi-soundwave"></i> Jaw</label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="headTrackToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
+          <label class="form-check-label small fw-bold" for="headTrackToggle"><i class="bi bi-eye"></i> Head Track</label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="parrotToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
+          <label class="form-check-label small fw-bold" for="parrotToggle"><i class="bi bi-megaphone"></i> Parrot</label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="translateToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="AI restates heard speech in character voice and persona">
+          <label class="form-check-label small fw-bold" for="translateToggle"><i class="bi bi-translate"></i> Translate</label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
+          <label class="form-check-label small fw-bold" for="speakerMuteToggle"><i class="bi bi-volume-mute"></i> Mute</label>
+        </div>
+        <div class="ms-auto">
+          <div class="input-group input-group-sm" style="width: auto;">
+            <select id="convSpeakerSelect" class="form-select form-select-sm" style="width: 140px; font-size: 0.75rem;">
+              <option value="">Loading...</option>
+            </select>
+            <input id="sayInput" type="text" class="form-control" placeholder="Make character say..." style="min-width: 160px;">
+            <button id="sayBtn" class="btn btn-primary btn-sm"><i class="bi bi-send"></i></button>
+          </div>
+          <div id="sayStatus" class="small" style="font-size:0.65rem;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       EXPANDABLE PANELS — Accordion for Scenes, Poses, Controls, etc.
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="accordion mb-2" id="dashboardAccordion">
 
     <!-- Scenes -->
-    <div class="card mb-3" data-panel-id="scenes">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-film"></i> Scenes</h6>
-        <div class="d-flex gap-1 align-items-center">
-          <span id="scenesQueueStatus" class="badge bg-secondary small me-1" style="display:none;"></span>
-          <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i></button>
-          <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i></button>
-          <a href="/scenes" class="btn btn-sm btn-outline-secondary" title="Animation Studio"><i class="bi bi-gear"></i></a>
-        </div>
-      </div>
-      <div class="card-body" style="max-height: 450px; overflow-y: auto;">
-        <div id="scenesContainer">
-          <div class="text-center text-muted py-3">
-            <div class="spinner-border spinner-border-sm"></div>
-            <p class="mt-2 mb-0 small">Loading scenes...</p>
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes">
+          <i class="bi bi-film me-2"></i> Scenes
+          <span id="scenesQueueStatus" class="badge bg-secondary small ms-2" style="display:none;"></span>
+        </button>
+      </h2>
+      <div id="collapseScenes" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="d-flex gap-1 mb-2">
+            <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i> Loop All</button>
+            <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i> Stop</button>
+            <a href="/scenes" class="btn btn-sm btn-outline-secondary ms-auto" title="Animation Studio"><i class="bi bi-gear"></i> Studio</a>
+          </div>
+          <div id="scenesContainer" style="max-height: 350px; overflow-y: auto;">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm"></div>
+              <p class="mt-2 mb-0 small">Loading scenes...</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Poses -->
-    <div class="card mb-3" data-panel-id="poses">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-person-arms-up"></i> Poses</h6>
-        <a href="/poses/editor" class="btn btn-sm btn-outline-secondary" title="Pose Editor"><i class="bi bi-pencil"></i></a>
-      </div>
-      <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-        <div id="posesContainer">
-          <div class="text-center text-muted py-3">
-            <div class="spinner-border spinner-border-sm"></div>
-            <p class="mt-2 mb-0 small">Loading poses...</p>
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses">
+          <i class="bi bi-person-arms-up me-2"></i> Poses
+        </button>
+      </h2>
+      <div id="collapsePoses" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="d-flex mb-2">
+            <a href="/poses/editor" class="btn btn-sm btn-outline-secondary ms-auto"><i class="bi bi-pencil"></i> Pose Editor</a>
+          </div>
+          <div id="posesContainer" style="max-height: 300px; overflow-y: auto;">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm"></div>
+              <p class="mt-2 mb-0 small">Loading poses...</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Manual Controls -->
-    <div class="card mb-3" data-panel-id="manual-controls" id="manual-controls-card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
-          <i class="bi bi-joystick"></i> Manual Controls
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual">
+          <i class="bi bi-joystick me-2"></i> Manual Controls
           <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
-        </h6>
-        <div class="d-flex gap-2 align-items-center">
-          <!-- Layout selector dropdown -->
-          <div class="input-group input-group-sm" style="width: auto;">
-            <select id="mcLayoutSelect" class="form-select form-select-sm" style="width:140px; font-size:0.75rem;">
-              <option value="Default">Default</option>
+        </button>
+      </h2>
+      <div id="collapseManual" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2" id="manual-controls-card">
+          <div class="d-flex gap-2 align-items-center mb-2">
+            <div class="input-group input-group-sm" style="width: auto;">
+              <select id="mcLayoutSelect" class="form-select form-select-sm" style="width:140px; font-size:0.75rem;">
+                <option value="Default">Default</option>
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutNewBtn" title="New layout"><i class="bi bi-plus"></i></button>
+              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutRenameBtn" title="Rename layout"><i class="bi bi-pencil-square"></i></button>
+              <button class="btn btn-outline-danger btn-sm" id="mcLayoutDeleteBtn" title="Delete layout"><i class="bi bi-trash"></i></button>
+            </div>
+            <button class="btn btn-sm btn-outline-warning" id="mcEditToggle" title="Toggle edit mode"><i class="bi bi-pencil"></i> Edit</button>
+          </div>
+          <div style="position:relative;">
+            <div id="mcDirectionalControls" class="d-none position-absolute bg-dark border rounded p-2 shadow"
+                 style="top:16px; right:16px; z-index:20; min-width:200px;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong class="small text-truncate" id="mcSelectedPartName">--</strong>
+                <button class="btn-close btn-close-white btn-sm" id="mcDeselectBtn" title="Deselect"></button>
+              </div>
+              <div id="mcControlsBody"></div>
+              <div class="small text-muted mt-1" id="mcControlStatus"></div>
+            </div>
+            <div id="mcCanvas"></div>
+            <div id="mcDrawer" class="mc-drawer d-none">
+              <small class="text-muted d-block mb-1">Click to add items to the canvas:</small>
+              <div id="mcDrawerItems"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Console -->
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole">
+          <i class="bi bi-terminal me-2"></i> Live Console
+        </button>
+      </h2>
+      <div id="collapseConsole" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="d-flex gap-1 align-items-center mb-2">
+            <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
             </select>
-            <button class="btn btn-outline-secondary btn-sm" id="mcLayoutNewBtn" title="New layout">
-              <i class="bi bi-plus"></i>
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" id="mcLayoutRenameBtn" title="Rename layout">
-              <i class="bi bi-pencil-square"></i>
-            </button>
-            <button class="btn btn-outline-danger btn-sm" id="mcLayoutDeleteBtn" title="Delete layout">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-          <button class="btn btn-sm btn-outline-warning" id="mcEditToggle" title="Toggle edit mode">
-            <i class="bi bi-pencil"></i> Edit Layout
-          </button>
-        </div>
-      </div>
-      <div class="card-body p-2" style="position:relative;">
-        <div id="mcDirectionalControls" class="d-none position-absolute bg-dark border rounded p-2 shadow"
-             style="top:16px; right:16px; z-index:20; min-width:200px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong class="small text-truncate" id="mcSelectedPartName">--</strong>
-            <button class="btn-close btn-close-white btn-sm" id="mcDeselectBtn" title="Deselect"></button>
-          </div>
-          <div id="mcControlsBody"></div>
-          <div class="small text-muted mt-1" id="mcControlStatus"></div>
-        </div>
-        <div id="mcCanvas"></div>
-        <div id="mcDrawer" class="mc-drawer d-none">
-          <small class="text-muted d-block mb-1">Click to add items to the canvas:</small>
-          <div id="mcDrawerItems"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Monster Features -->
-    <div class="card mb-3" data-panel-id="monster-features">
-      <div class="card-header">
-        <h6 class="mb-0"><i class="bi bi-lightning-charge"></i> Monster Features</h6>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-3 mb-2 mb-md-0">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="jawToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
-              <label class="form-check-label fw-bold" for="jawToggle">Jaw Animation</label>
+            <div class="form-check form-switch mb-0 ms-1">
+              <input class="form-check-input" type="checkbox" id="consoleLive" checked>
+              <label class="form-check-label small" for="consoleLive">Live</label>
             </div>
-            <small class="text-muted">Sync jaw with speech audio</small>
+            <button class="btn btn-sm btn-outline-secondary" id="btnConsoleRefresh" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
           </div>
-          <div class="col-md-3 mb-2 mb-md-0">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="parrotToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
-              <label class="form-check-label fw-bold" for="parrotToggle">Parrot Mode</label>
-            </div>
-            <small class="text-muted">Repeat detected speech</small>
-          </div>
-          <div class="col-md-3 mb-2 mb-md-0">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="translateToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="AI restates heard speech in character voice and persona">
-              <label class="form-check-label fw-bold" for="translateToggle">Translate</label>
-            </div>
-            <small class="text-muted">AI-restate speech in character</small>
-          </div>
-          <div class="col-md-3 mb-2 mb-md-0">
-            <div class="form-check form-switch d-flex align-items-center">
-              <input class="form-check-input" type="checkbox" id="headTrackToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
-              <label class="form-check-label fw-bold ms-1" for="headTrackToggle">Head Tracking</label>
-              <span id="headTrackStatusBadge" class="badge bg-secondary ms-2 d-none" style="font-size:0.7rem;">Off</span>
-            </div>
-            <small class="text-muted">Track visitor movement</small>
-          </div>
-          <div class="col-md-3">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
-              <label class="form-check-label fw-bold" for="speakerMuteToggle">Mute Speaker</label>
-            </div>
-            <small class="text-muted">Silence character speaker</small>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chat Panel -->
-    <div class="card mb-3" data-panel-id="chat">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
-          <i class="bi bi-chat-dots"></i> Chat —
-          <span id="chatCharacterName">Loading...</span>
-        </h6>
-        <div class="d-flex align-items-center gap-2">
-          <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;">
-            <option value="">Audio: Auto</option>
-          </select>
-          <div class="form-check form-switch mb-0" title="Connect to ElevenLabs conversational AI agent for real-time voice chat">
-            <input class="form-check-input" type="checkbox" id="chatAiOnToggle">
-            <label class="form-check-label small" for="chatAiOnToggle">AI On</label>
-          </div>
-        </div>
-      </div>
-      <div class="card-body p-0">
-        <!-- Chat Log -->
-        <div id="chatLog" class="p-3 font-monospace"
-             style="height: 300px; overflow-y: auto; font-size: 0.9rem; background: var(--bs-tertiary-bg);">
-          <div class="text-muted text-center">Chat will appear here...</div>
-        </div>
-        <!-- VU Meter -->
-        <div class="px-3 py-2 border-top" style="background: var(--bs-tertiary-bg);">
-          <div class="d-flex align-items-center">
-            <small class="text-muted me-2"><i class="bi bi-activity"></i> Mic:</small>
-            <div class="progress flex-grow-1" style="height: 12px;">
-              <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
-                   style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-            </div>
-            <span id="chatVULabel" class="ms-2 badge bg-secondary" style="font-size: 0.7rem;">0%</span>
-          </div>
-        </div>
-        <!-- Audio Controls -->
-        <div class="px-3 py-2 border-top d-flex flex-wrap align-items-center gap-3" style="background: var(--bs-tertiary-bg);">
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" id="chatMuteSpeaker">
-            <label class="form-check-label small" for="chatMuteSpeaker"><i class="bi bi-volume-mute"></i> Mute Speaker</label>
-          </div>
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
-            <label class="form-check-label small" for="chatBrowserSpeaker"><i class="bi bi-broadcast"></i> Browser Speaker</label>
-          </div>
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input" type="checkbox" id="chatBrowserMic">
-            <label class="form-check-label small" for="chatBrowserMic"><i class="bi bi-mic"></i> Browser Mic</label>
-          </div>
-          <small id="chatAudioStatus" class="text-info"></small>
-        </div>
-        <!-- Chat Input -->
-        <div class="p-3 border-top">
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control" id="chatInput" placeholder="Type a message..." autocomplete="off">
-            <button class="btn btn-success" type="button" id="chatSendBtn">
-              <i class="bi bi-send"></i> Send
-            </button>
-          </div>
+          <pre id="consoleOutput" class="mb-0 p-2" style="height: 250px; overflow-y: auto; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; background: var(--mb-terminal-bg, #0a0a0a); color: var(--mb-terminal-text, #0f0); margin: 0; resize: vertical;">Loading console...</pre>
         </div>
       </div>
     </div>
 
     <!-- Browser Audio Bridge -->
-    <div class="card mb-3" data-panel-id="audio-bridge">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0"><i class="bi bi-headset"></i> Browser Audio Bridge</h6>
-        <small class="text-muted">Independent of AI chat</small>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <!-- Listen In: Browser Speaker -->
-          <div class="col-md-6 mb-2 mb-md-0">
-            <div class="card bg-dark border-info">
-              <div class="card-header bg-dark text-info border-info py-2">
-                <small class="fw-bold"><i class="bi bi-headphones"></i> Listen In (Browser Speaker)</small>
-              </div>
-              <div class="card-body py-2">
-                <div class="mb-1">
-                  <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.8rem;">
-                    <option value="default">System Default Input</option>
-                  </select>
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge">
+          <i class="bi bi-headset me-2"></i> Browser Audio Bridge
+        </button>
+      </h2>
+      <div id="collapseAudioBridge" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="row">
+            <!-- Listen In: Browser Speaker -->
+            <div class="col-md-6 mb-2 mb-md-0">
+              <div class="card bg-dark border-info">
+                <div class="card-header bg-dark text-info border-info py-1">
+                  <small class="fw-bold"><i class="bi bi-headphones"></i> Listen In</small>
                 </div>
-                <div class="mb-1">
-                  <div class="d-flex align-items-center gap-1">
-                    <small class="text-muted" style="min-width: 28px;">Vol</small>
-                    <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;">
+                <div class="card-body py-2">
+                  <div class="mb-1">
+                    <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                      <option value="default">System Default Input</option>
+                    </select>
                   </div>
-                </div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <div class="progress flex-grow-1" style="height: 10px;">
-                    <div id="bridge-listenin-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                  <div class="mb-1">
+                    <div class="d-flex align-items-center gap-1">
+                      <small class="text-muted" style="min-width: 28px;">Vol</small>
+                      <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;">
+                    </div>
                   </div>
-                  <span id="bridge-listenin-vu-label" class="badge bg-secondary" style="font-size: 0.65rem; min-width: 32px;">0%</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.75rem;">
-                    <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
-                  </button>
-                  <span id="bridge-listenin-status" class="badge bg-secondary" style="font-size: 0.65rem;">Off</span>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                      <div id="bridge-listenin-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                    </div>
+                    <span id="bridge-listenin-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.7rem;">
+                      <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
+                    </button>
+                    <span id="bridge-listenin-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- Talk Through: Browser Mic -->
-          <div class="col-md-6">
-            <div class="card bg-dark border-warning">
-              <div class="card-header bg-dark text-warning border-warning py-2">
-                <small class="fw-bold"><i class="bi bi-mic-fill"></i> Talk Through (Browser Mic)</small>
-              </div>
-              <div class="card-body py-2">
-                <div class="mb-1">
-                  <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.8rem;">
-                    <option value="default">System Default Output</option>
-                  </select>
+            <!-- Talk Through: Browser Mic -->
+            <div class="col-md-6">
+              <div class="card bg-dark border-warning">
+                <div class="card-header bg-dark text-warning border-warning py-1">
+                  <small class="fw-bold"><i class="bi bi-mic-fill"></i> Talk Through</small>
                 </div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <div class="progress flex-grow-1" style="height: 10px;">
-                    <div id="bridge-talkthrough-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                <div class="card-body py-2">
+                  <div class="mb-1">
+                    <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                      <option value="default">System Default Output</option>
+                    </select>
                   </div>
-                  <span id="bridge-talkthrough-vu-label" class="badge bg-secondary" style="font-size: 0.65rem; min-width: 32px;">0%</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.75rem;">
-                    <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
-                  </button>
-                  <span id="bridge-talkthrough-status" class="badge bg-secondary" style="font-size: 0.65rem;">Off</span>
-                </div>
-                <div id="bridge-talkthrough-https-warn" class="alert alert-warning small mt-1 mb-0 py-1 d-none" style="font-size: 0.75rem;">
-                  <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="progress flex-grow-1" style="height: 8px;">
+                      <div id="bridge-talkthrough-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                    </div>
+                    <span id="bridge-talkthrough-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.7rem;">
+                      <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
+                    </button>
+                    <span id="bridge-talkthrough-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>
+                  </div>
+                  <div id="bridge-talkthrough-https-warn" class="alert alert-warning small mt-1 mb-0 py-1 d-none" style="font-size: 0.7rem;">
+                    <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.
+                  </div>
                 </div>
               </div>
             </div>
@@ -314,28 +361,9 @@
       </div>
     </div>
 
-    <!-- Make Character Say -->
-    <div class="card mb-3" data-panel-id="say">
-      <div class="card-header">
-        <h6 class="mb-0"><i class="bi bi-send"></i> Make <span id="charName">Character</span> Say</h6>
-      </div>
-      <div class="card-body">
-        <div class="mb-2">
-          <label for="convSpeakerSelect" class="form-label small text-muted">Speaker</label>
-          <select id="convSpeakerSelect" class="form-select form-select-sm">
-            <option value="">Loading...</option>
-          </select>
-        </div>
-        <div class="input-group input-group-sm">
-          <input id="sayInput" type="text" class="form-control" placeholder="Type something spooky...">
-          <button id="sayBtn" class="btn btn-primary"><i class="bi bi-send"></i> Speak</button>
-        </div>
-        <div id="sayStatus" class="mt-2 small"></div>
-      </div>
-    </div>
+  </div><!-- /accordion -->
 
-  </div>
-</div>
+</div><!-- /container-fluid -->
 
 <script src="/js/manual-controls.js"></script>
 
@@ -577,6 +605,115 @@
       return div.innerHTML;
     }
 
+    // ─── Lurk Mode State ────────────────────────────────────
+    let lurkModeActive = false;
+    let lurkActivating = false;
+
+    async function toggleLurkMode() {
+      const toggle = $('lurkToggle');
+      if (!toggle || lurkActivating) return;
+      const enabled = toggle.checked;
+      const bar = $('lurkBar');
+      const statusEl = $('lurkStatus');
+
+      lurkActivating = true;
+      if (bar) bar.classList.add('lurk-activating');
+      if (statusEl) statusEl.textContent = enabled ? 'Activating...' : 'Deactivating...';
+
+      try {
+        // Call the server-side lurk mode endpoint (handles jaw, head tracking, random poses)
+        const r = await fetch('/conversation/api/lurk-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+        const j = await r.json();
+
+        if (j && j.success) {
+          lurkModeActive = enabled;
+
+          // Sync UI toggles with lurk state
+          if (ui.jawToggle) ui.jawToggle.checked = enabled;
+          if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled;
+
+          // Start/stop AI chat
+          const aiToggle = $('chatAiOnToggle');
+          if (enabled) {
+            if (aiToggle && !aiToggle.checked) {
+              aiToggle.checked = true;
+              _audioPlaybackEnabled = true;
+              connectChatWebSocket();
+            }
+            startHeadTrackPolling();
+          } else {
+            if (aiToggle && aiToggle.checked) {
+              aiToggle.checked = false;
+              disconnectChat();
+            }
+            stopHeadTrackPolling();
+          }
+
+          // Update lurk UI
+          updateLurkUI(enabled, j.results);
+          if (statusEl) statusEl.textContent = enabled ? 'Active — Character is alive' : 'Off';
+        } else {
+          toggle.checked = !enabled;
+          if (statusEl) statusEl.textContent = 'Failed: ' + (j.error || 'Unknown');
+        }
+      } catch (e) {
+        toggle.checked = !enabled;
+        if (statusEl) statusEl.textContent = 'Error: ' + (e.message || '');
+      } finally {
+        lurkActivating = false;
+        if (bar) bar.classList.remove('lurk-activating');
+      }
+    }
+
+    function updateLurkUI(active, results) {
+      const bar = $('lurkBar');
+      if (bar) {
+        if (active) bar.classList.add('lurk-active');
+        else bar.classList.remove('lurk-active');
+      }
+
+      const badges = {
+        AI: $('lurkBadgeAI'),
+        Jaw: $('lurkBadgeJaw'),
+        Head: $('lurkBadgeHead'),
+        Idle: $('lurkBadgeIdle')
+      };
+
+      if (active && results) {
+        setBadge(badges.AI, true); // AI is started client-side
+        setBadge(badges.Jaw, results.jaw && results.jaw.enabled);
+        setBadge(badges.Head, results.headTracking && results.headTracking.enabled);
+        setBadge(badges.Idle, results.randomPose && results.randomPose.enabled);
+      } else {
+        Object.values(badges).forEach(b => setBadge(b, false));
+      }
+    }
+
+    function setBadge(el, on) {
+      if (!el) return;
+      el.classList.remove('lurk-badge-on', 'lurk-badge-error');
+      if (on) el.classList.add('lurk-badge-on');
+    }
+
+    async function loadLurkState() {
+      try {
+        const r = await fetch('/conversation/api/lurk-mode');
+        const j = await r.json();
+        if (j && j.success && j.enabled) {
+          const toggle = $('lurkToggle');
+          if (toggle) toggle.checked = true;
+          lurkModeActive = true;
+          updateLurkUI(true, null);
+          const statusEl = $('lurkStatus');
+          if (statusEl) statusEl.textContent = 'Active — Character is alive';
+        }
+      } catch { /* ignore */ }
+    }
+
     async function init() {
       ui.sayBtn = $('sayBtn');
       ui.sayInput = $('sayInput');
@@ -596,6 +733,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadLurkState();
       await loadScenes();
       await loadPoses();
 
@@ -603,8 +741,12 @@
         await ManualControls.init({ characterId: currentCharacterId, canvasId: 'mcCanvas' });
       }
 
-      // Initialize Bootstrap tooltips on Monster Features toggles
+      // Initialize Bootstrap tooltips
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+
+      // Bind Lurk Mode toggle
+      const lurkToggle = $('lurkToggle');
+      if (lurkToggle) lurkToggle.addEventListener('change', toggleLurkMode);
     }
 
     function setCharName() {
@@ -1999,5 +2141,4 @@
   });
 })();
 </script>
-<script src="/js/panel-sortable.js"></script>
-<script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('dashboard'); });</script>
+<!-- Panel sortable not needed with accordion layout -->
