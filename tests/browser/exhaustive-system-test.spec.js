@@ -144,7 +144,7 @@ test.describe('Phase 1: Dashboard', () => {
     const title = await page.title();
     expect(title).toContain('MonsterBox');
 
-    // Check all panels by data-panel-id
+    // Check all panels by data-panel-id (includes accordion items in new layout)
     const expectedPanels = ['webcam', 'console', 'scenes', 'poses', 'manual-controls',
                             'monster-features', 'chat', 'audio-bridge', 'say'];
     const foundPanels = [];
@@ -176,6 +176,13 @@ test.describe('Phase 1: Dashboard', () => {
     const errors = trackPage(page, 'dashboard-console');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
+
+    // Expand console accordion panel (new dashboard layout)
+    const consoleAccBtn = page.locator('[data-bs-target="#collapseConsole"]');
+    if (await consoleAccBtn.count() > 0) {
+      await consoleAccBtn.click();
+      await page.waitForTimeout(500);
+    }
 
     // Lines dropdown
     await safeSelect(page, '#consoleLines', '200', 'Console lines 200');
@@ -247,6 +254,13 @@ test.describe('Phase 1: Dashboard', () => {
     const errors = trackPage(page, 'dashboard-scenes');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
+
+    // Expand scenes accordion panel (new dashboard layout)
+    const scenesAccBtn = page.locator('[data-bs-target="#collapseScenes"]');
+    if (await scenesAccBtn.count() > 0) {
+      await scenesAccBtn.click();
+      await page.waitForTimeout(500);
+    }
 
     const sceneItems = await countElements(page, '#scenesContainer .scene-item, #scenesContainer [data-scene-id]');
     console.log(`  Scenes panel: ${sceneItems} scene items`);

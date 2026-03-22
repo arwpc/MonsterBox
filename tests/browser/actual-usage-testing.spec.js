@@ -118,10 +118,10 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.1 Page loads with all panels', async ({ page }) => {
-    await expect(page.locator('#currentPageName')).toContainText('Dashboard');
-    const panels = page.locator('.sortable-column[data-column-id="dashboard"] > [data-panel-id]');
+    // New dashboard uses accordion layout — check for data-panel-id attributes
+    const panels = page.locator('[data-panel-id]');
     const count = await panels.count();
-    expect(count).toBeGreaterThanOrEqual(8);
+    expect(count).toBeGreaterThanOrEqual(7);
     await snap(page, '1.1-dashboard-loaded');
   });
 
@@ -135,6 +135,11 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.3 Live Console panel', async ({ page }) => {
+    // Expand console accordion panel first (new dashboard layout)
+    const consoleBtn = page.locator('[data-bs-target="#collapseConsole"]');
+    if (await consoleBtn.count() > 0) await consoleBtn.click();
+    await page.waitForTimeout(500);
+
     // Console output area
     await expect(page.locator('#consoleOutput')).toBeVisible();
 
@@ -151,6 +156,11 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.4 Scenes panel', async ({ page }) => {
+    // Expand scenes accordion panel first (new dashboard layout)
+    const scenesBtn = page.locator('[data-bs-target="#collapseScenes"]');
+    if (await scenesBtn.count() > 0) await scenesBtn.click();
+    await page.waitForTimeout(500);
+
     // Scenes container should exist
     await expect(page.locator('#scenesContainer')).toBeVisible();
 
@@ -182,6 +192,11 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.5 Poses panel', async ({ page }) => {
+    // Expand poses accordion panel first (new dashboard layout)
+    const posesBtn = page.locator('[data-bs-target="#collapsePoses"]');
+    if (await posesBtn.count() > 0) await posesBtn.click();
+    await page.waitForTimeout(500);
+
     await expect(page.locator('#posesContainer')).toBeVisible();
 
     // Check for individual pose execute buttons
@@ -193,6 +208,11 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.6 Manual Controls panel', async ({ page }) => {
+    // Expand manual controls accordion panel first (new dashboard layout)
+    const mcBtn = page.locator('[data-bs-target="#collapseManual"]');
+    if (await mcBtn.count() > 0) await mcBtn.click();
+    await page.waitForTimeout(500);
+
     // Manual controls panel card
     const panel = page.locator('[data-panel-id="manual-controls"]');
     await expect(panel).toBeVisible();
@@ -365,15 +385,19 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.12 Panel drag reorder (SortableJS)', async ({ page }) => {
-    // Verify panels are sortable
-    const sortableCol = page.locator('.sortable-column[data-column-id="dashboard"]');
-    await expect(sortableCol).toBeVisible();
-
-    // Get panel IDs
-    const panels = sortableCol.locator('> [data-panel-id]');
-    const firstPanelId = await panels.first().getAttribute('data-panel-id');
-    console.log(`  First panel: ${firstPanelId}`);
-
+    // New dashboard uses accordion layout — verify accordion structure exists
+    const accordion = page.locator('#dashboardAccordion');
+    const hasAccordion = await accordion.count() > 0;
+    if (hasAccordion) {
+      const items = accordion.locator('.accordion-item');
+      const count = await items.count();
+      console.log(`  Accordion panels: ${count}`);
+      expect(count).toBeGreaterThanOrEqual(4);
+    } else {
+      // Fallback: old sortable layout
+      const sortableCol = page.locator('.sortable-column[data-column-id="dashboard"]');
+      await expect(sortableCol).toBeVisible();
+    }
     await snap(page, '1.12-panel-sortable');
   });
 

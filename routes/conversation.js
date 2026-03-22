@@ -917,7 +917,7 @@ router.post('/api/lurk-mode', express.json(), async (req, res) => {
         results.jaw = { enabled: false, error: e.message };
       }
 
-      // 2. Enable head tracking (uses saved config)
+      // 2. Enable head tracking (uses saved config, programmatic API)
       if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
         try {
           const parts = await loadParts();
@@ -933,24 +933,29 @@ router.post('/api/lurk-mode', express.json(), async (req, res) => {
               if (pan) panServoId = pan.id;
             }
             if (panServoId) {
-              const params = {
-                centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
-                rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
-                invertPan: !!savedConfig.invertPan,
-                smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
-                deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
-              };
               const trackingParams = {
                 motionThreshold: savedConfig.motionThreshold || 25,
                 minContourArea: savedConfig.minContourArea || 3000,
                 maxContourArea: savedConfig.maxContourArea || 100000,
                 detectionMode: savedConfig.detectionMode || 'person'
               };
+              // Start motion tracking process
               try { await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams); } catch (_) {}
-              const fakeRes = { json: () => {}, status: () => ({ json: () => {} }) };
-              await motionTrackingController.enableHeadTracking({ body: { webcamId: cam.id, panServoId, params } }, fakeRes);
+              // Enable head tracking via programmatic API (no fake req/res)
+              motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
+                panServoId,
+                centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
+                rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
+                invertPan: !!savedConfig.invertPan,
+                smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
+                deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
+              });
               results.headTracking = { enabled: true };
+            } else {
+              results.headTracking = { enabled: false, error: 'No pan servo found' };
             }
+          } else {
+            results.headTracking = { enabled: false, error: 'No webcam found' };
           }
         } catch (e) {
           results.headTracking = { enabled: false, error: e.message };
@@ -982,8 +987,8 @@ router.post('/api/lurk-mode', express.json(), async (req, res) => {
           const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
           const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
           if (cam) {
-            const fakeRes = { json: () => {}, status: () => ({ json: () => {} }) };
-            await motionTrackingController.disableHeadTracking({ body: { webcamId: cam.id } }, fakeRes);
+            // Disable head tracking via programmatic API (no fake req/res)
+            motionTrackingController.disableHeadTrackingForWebcam(cam.id);
             try { await motionTrackingController.stopTrackingForWebcam(cam.id); } catch (_) {}
           }
           results.headTracking = { enabled: false };

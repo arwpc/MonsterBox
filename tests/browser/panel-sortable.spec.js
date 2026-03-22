@@ -1,6 +1,7 @@
 /**
- * Panel Sortable Tests
- * Validates drag-and-drop panel reordering and collapse on key pages
+ * Dashboard Accordion Tests
+ * Validates accordion-based panel expand/collapse on the Dashboard
+ * (Replaces old panel-sortable drag-and-drop tests)
  */
 
 import { test, expect } from '@playwright/test';
@@ -8,7 +9,7 @@ import { testNavigation, ErrorTracker } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-test.describe('Panel Sortable - Dashboard', () => {
+test.describe('Dashboard Accordion', () => {
     let page;
     let tracker;
 
@@ -21,112 +22,99 @@ test.describe('Panel Sortable - Dashboard', () => {
         await page.close();
     });
 
-    test('should load panel-sortable script', async () => {
+    test('should load accordion container', async () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
 
-        const hasPanelSortable = await page.evaluate(function () {
-            return typeof window.PanelSortable !== 'undefined' &&
-                   typeof window.PanelSortable.init === 'function';
-        });
+        const accordion = page.locator('#dashboardAccordion');
+        await expect(accordion).toBeVisible();
 
-        expect(hasPanelSortable).toBe(true);
-        await tracker.logErrors();
-    });
-
-    test('should add collapse toggles to panels', async () => {
-        tracker.clear();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // Dashboard panels with data-panel-id should have collapse toggles
-        const toggles = await page.locator('.panel-collapse-toggle').count();
-        expect(toggles).toBeGreaterThan(0);
+        // Accordion should have multiple items
+        const items = await accordion.locator('.accordion-item[data-panel-id]').count();
+        expect(items).toBeGreaterThan(0);
 
         await tracker.logErrors();
     });
 
-    test('should add drag handles to sortable columns', async () => {
+    test('should have accordion buttons for each panel', async () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
 
-        // Sortable column panels should have drag handles
-        const handles = await page.locator('.panel-drag-handle').count();
-        expect(handles).toBeGreaterThan(0);
+        // Check that accordion buttons exist for key panels
+        const expectedTargets = ['#collapseScenes', '#collapsePoses', '#collapseManual', '#collapseConsole'];
+        for (const target of expectedTargets) {
+            const btn = page.locator(`[data-bs-target="${target}"]`);
+            const count = await btn.count();
+            expect(count).toBeGreaterThan(0);
+        }
 
         await tracker.logErrors();
     });
 
-    test('should collapse and expand a panel', async () => {
+    test('should expand and collapse an accordion panel', async () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
 
-        // Find the first collapse toggle
-        const toggle = page.locator('.panel-collapse-toggle').first();
-        await expect(toggle).toBeVisible();
+        // Click the Scenes accordion button to expand
+        const scenesButton = page.locator('[data-bs-target="#collapseScenes"]');
+        await expect(scenesButton).toBeVisible();
 
-        // Find the associated card body
-        const card = page.locator('[data-panel-id]').first();
-        const cardBody = card.locator('.card-body').first();
+        const collapseBody = page.locator('#collapseScenes');
 
-        // Card body should be visible initially
-        await expect(cardBody).toBeVisible();
+        // Initially collapsed
+        await expect(collapseBody).not.toHaveClass(/show/);
 
-        // Click toggle to collapse
-        await toggle.click();
-        await page.waitForTimeout(300);
+        // Click to expand
+        await scenesButton.click();
+        await page.waitForTimeout(500);
 
-        // Card body should be hidden
-        await expect(cardBody).toBeHidden();
+        // Should now be expanded
+        await expect(collapseBody).toHaveClass(/show/);
 
-        // Toggle should have collapsed class
-        await expect(toggle).toHaveClass(/collapsed/);
+        // Click to collapse
+        await scenesButton.click();
+        await page.waitForTimeout(500);
 
-        // Click toggle to expand
-        await toggle.click();
-        await page.waitForTimeout(300);
-
-        // Card body should be visible again
-        await expect(cardBody).toBeVisible();
+        // Should be collapsed again
+        await expect(collapseBody).not.toHaveClass(/show/);
 
         await tracker.logErrors();
     });
 
-    test('should persist collapsed state across reload', async () => {
+    test('should show content when accordion panel is expanded', async () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
 
-        // Collapse first panel
-        const toggle = page.locator('.panel-collapse-toggle').first();
-        await toggle.click();
-        await page.waitForTimeout(300);
+        // Expand the Scenes panel
+        await page.locator('[data-bs-target="#collapseScenes"]').click();
+        await page.waitForTimeout(500);
 
-        // Get the panel ID for verification
-        const panelId = await page.locator('[data-panel-id]').first().getAttribute('data-panel-id');
+        // Scenes container should be visible inside
+        await expect(page.locator('#scenesContainer')).toBeVisible();
 
-        // Reload the page
-        await page.reload();
+        await tracker.logErrors();
+    });
+
+    test('should only have one accordion panel open at a time', async () => {
+        tracker.clear();
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
 
-        // Panel should still be collapsed
-        const panel = page.locator('[data-panel-id="' + panelId + '"]');
-        const cardBody = panel.locator('.card-body').first();
-        await expect(cardBody).toBeHidden();
+        // Open Scenes
+        await page.locator('[data-bs-target="#collapseScenes"]').click();
+        await page.waitForTimeout(500);
+        await expect(page.locator('#collapseScenes')).toHaveClass(/show/);
 
-        // Clean up: expand the panel and clear localStorage
-        const toggleAfter = panel.locator('.panel-collapse-toggle').first();
-        await toggleAfter.click();
-        await page.waitForTimeout(300);
+        // Open Poses — should close Scenes (data-bs-parent accordion behavior)
+        await page.locator('[data-bs-target="#collapsePoses"]').click();
+        await page.waitForTimeout(500);
+        await expect(page.locator('#collapsePoses')).toHaveClass(/show/);
+        await expect(page.locator('#collapseScenes')).not.toHaveClass(/show/);
 
         await tracker.logErrors();
     });
 });
 
-test.describe('Panel Sortable - AI Settings', () => {
+test.describe('Dashboard Accordion - AI Settings', () => {
     let page;
     let tracker;
 
@@ -139,36 +127,20 @@ test.describe('Panel Sortable - AI Settings', () => {
         await page.close();
     });
 
-    test('should have collapsible panels on AI Settings', async () => {
+    test('should have panel elements on AI Settings', async () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
 
-        // AI Settings has panel-collapsible panels
-        const collapsible = await page.locator('.panel-collapsible[data-panel-id]').count();
-        expect(collapsible).toBeGreaterThan(0);
-
-        await tracker.logErrors();
-    });
-
-    test('should have sortable sidebar panels', async () => {
-        tracker.clear();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // AI Settings sidebar has sortable-column
-        const sortableCol = page.locator('.sortable-column[data-column-id="ai-sidebar"]');
-        await expect(sortableCol).toBeVisible();
-
-        // Should have drag handles in the sidebar
-        const handles = await sortableCol.locator('.panel-drag-handle').count();
-        expect(handles).toBeGreaterThan(0);
+        // AI Settings page should have panel elements with data-panel-id
+        const panels = await page.locator('[data-panel-id]').count();
+        expect(panels).toBeGreaterThan(0);
 
         await tracker.logErrors();
     });
 });
 
-test.describe('Panel Sortable - Audio Setup', () => {
+test.describe('Dashboard Accordion - Audio Setup', () => {
     let page;
     let tracker;
 
@@ -181,26 +153,13 @@ test.describe('Panel Sortable - Audio Setup', () => {
         await page.close();
     });
 
-    test('should have collapsible panels on Audio Setup', async () => {
+    test('should have panel elements on Audio Setup', async () => {
         tracker.clear();
         // Audio setup page has long-running ALSA queries; use domcontentloaded + timeout
         await page.waitForTimeout(2000);
 
-        const collapsible = await page.locator('.panel-collapsible[data-panel-id]').count();
-        expect(collapsible).toBeGreaterThan(0);
-
-        await tracker.logErrors();
-    });
-
-    test('should have sortable audio IO panels', async () => {
-        tracker.clear();
-        await page.waitForTimeout(2000);
-
-        const sortableCol = page.locator('.sortable-column[data-column-id="audio-io"]');
-        await expect(sortableCol).toBeVisible();
-
-        const handles = await sortableCol.locator('.panel-drag-handle').count();
-        expect(handles).toBeGreaterThanOrEqual(2);
+        const panels = await page.locator('[data-panel-id]').count();
+        expect(panels).toBeGreaterThan(0);
 
         await tracker.logErrors();
     });

@@ -149,7 +149,11 @@
           <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
           <label class="form-check-label small fw-bold" for="speakerMuteToggle"><i class="bi bi-volume-mute"></i> Mute</label>
         </div>
-        <div class="ms-auto">
+        <button id="stopAllAudioBtn" class="btn btn-outline-danger btn-sm ms-2" title="Stop all audio playback and loops"
+                data-bs-toggle="tooltip" data-bs-placement="top">
+          <i class="bi bi-stop-circle"></i> Stop Audio
+        </button>
+        <div class="ms-auto" data-panel-id="say">
           <div class="input-group input-group-sm" style="width: auto;">
             <select id="convSpeakerSelect" class="form-select form-select-sm" style="width: 140px; font-size: 0.75rem;">
               <option value="">Loading...</option>
@@ -169,7 +173,7 @@
   <div class="accordion mb-2" id="dashboardAccordion">
 
     <!-- Scenes -->
-    <div class="accordion-item">
+    <div class="accordion-item" data-panel-id="scenes">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes">
           <i class="bi bi-film me-2"></i> Scenes
@@ -194,7 +198,7 @@
     </div>
 
     <!-- Poses -->
-    <div class="accordion-item">
+    <div class="accordion-item" data-panel-id="poses">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses">
           <i class="bi bi-person-arms-up me-2"></i> Poses
@@ -216,7 +220,7 @@
     </div>
 
     <!-- Manual Controls -->
-    <div class="accordion-item">
+    <div class="accordion-item" data-panel-id="manual-controls">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual">
           <i class="bi bi-joystick me-2"></i> Manual Controls
@@ -257,7 +261,7 @@
     </div>
 
     <!-- Live Console -->
-    <div class="accordion-item">
+    <div class="accordion-item" data-panel-id="console">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole">
           <i class="bi bi-terminal me-2"></i> Live Console
@@ -284,7 +288,7 @@
     </div>
 
     <!-- Browser Audio Bridge -->
-    <div class="accordion-item">
+    <div class="accordion-item" data-panel-id="audio-bridge">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge">
           <i class="bi bi-headset me-2"></i> Browser Audio Bridge
@@ -830,6 +834,20 @@
       const stopLoopBtn = $('btnStopLoop');
       if (loopBtn) loopBtn.addEventListener('click', loopAllScenes);
       if (stopLoopBtn) stopLoopBtn.addEventListener('click', stopLoop);
+
+      // Stop All Audio button
+      const stopAllAudioBtn = $('stopAllAudioBtn');
+      if (stopAllAudioBtn) {
+        stopAllAudioBtn.addEventListener('click', async () => {
+          stopAllAudioBtn.disabled = true;
+          stopAllAudioBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Stopping...';
+          try {
+            await fetch('/api/audio/stop-all', { method: 'POST' });
+          } catch (e) { console.error('Stop all audio error:', e); }
+          stopAllAudioBtn.disabled = false;
+          stopAllAudioBtn.innerHTML = '<i class="bi bi-stop-circle"></i> Stop Audio';
+        });
+      }
 
       // Chat panel events
       bindChatEvents();

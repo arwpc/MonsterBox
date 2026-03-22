@@ -352,6 +352,13 @@ test.describe('Phase 1: Dashboard', () => {
     trackErrors(page, 'dashboard-console');
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
 
+    // Expand the Console accordion panel before checking controls
+    const consoleAccBtn = page.locator('[data-bs-target="#collapseConsole"]');
+    if (await consoleAccBtn.count() > 0) {
+      await consoleAccBtn.click();
+      await page.waitForTimeout(500);
+    }
+
     // Test console lines dropdown
     const consoleLines = page.locator('#consoleLines');
     if (await consoleLines.count() > 0) {
@@ -469,6 +476,13 @@ test.describe('Phase 1: Dashboard', () => {
   test('manual controls panel works', async ({ page }) => {
     trackErrors(page, 'dashboard-manual-controls');
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+
+    // Expand the Manual Controls accordion panel before checking controls
+    const manualAccBtn = page.locator('[data-bs-target="#collapseManual"]');
+    if (await manualAccBtn.count() > 0) {
+      await manualAccBtn.click();
+      await page.waitForTimeout(500);
+    }
 
     // Check edit toggle
     const editToggle = page.locator('#mcEditToggle');

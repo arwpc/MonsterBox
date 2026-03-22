@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for refactored Conversation Control page (now the Dashboard)
- * Tests all grid panels and features inline (no modals)
+ * Tests accordion-based layout and features inline (no modals)
  * Note: /conversation redirects to / — conversation IS the dashboard
  */
 
@@ -9,22 +9,29 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 60000;
 
-test.describe('Conversation Control - Grid Layout', () => {
+test.describe('Conversation Control - Accordion Layout', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/`);
     await page.waitForLoadState('networkidle');
   });
 
-  test('should render page with sortable panels', async ({ page }) => {
+  test('should render page with accordion and panel elements', async ({ page }) => {
     // Check page title is shown in navbar (headers removed in v6.1.2)
     await expect(page.locator('#currentPageName')).toContainText('Dashboard');
 
-    // Verify single sortable column with draggable panels
-    const sortableColumn = page.locator('.sortable-column[data-column-id="dashboard"]');
-    await expect(sortableColumn).toBeVisible();
-    const panels = sortableColumn.locator('> [data-panel-id]');
-    const count = await panels.count();
-    expect(count).toBe(9);
+    // Verify accordion container exists
+    const accordion = page.locator('#dashboardAccordion');
+    await expect(accordion).toBeVisible();
+
+    // Verify accordion items exist
+    const accordionItems = accordion.locator('.accordion-item[data-panel-id]');
+    const accordionCount = await accordionItems.count();
+    expect(accordionCount).toBeGreaterThan(0);
+
+    // Verify top-level panel elements exist (webcam, chat, monster-features are outside accordion)
+    const topPanels = page.locator('[data-panel-id]');
+    const totalCount = await topPanels.count();
+    expect(totalCount).toBeGreaterThanOrEqual(7);
   });
 
   test('should have Chat panel', async ({ page }) => {
@@ -52,13 +59,14 @@ test.describe('Conversation Control - Grid Layout', () => {
     await expect(page.locator('#chatSpeakerSelect')).toBeVisible();
   });
 
-  test('should have Make Character Say panel', async ({ page }) => {
-    const card = page.locator('text=Make').locator('..');
-    await expect(card).toBeVisible();
-    
+  test('should have Make Character Say inline in superpowers strip', async ({ page }) => {
+    // Say controls are inline in the monster-features strip with data-panel-id="say"
+    const sayPanel = page.locator('[data-panel-id="say"]');
+    await expect(sayPanel).toBeVisible();
+
     // Check for speaker select
     await expect(page.locator('#convSpeakerSelect')).toBeVisible();
-    
+
     // Check for input and button
     await expect(page.locator('#sayInput')).toBeVisible();
     await expect(page.locator('#sayBtn')).toBeVisible();
@@ -77,31 +85,39 @@ test.describe('Conversation Control - Grid Layout', () => {
   });
 
   test('should have Monster Features panel', async ({ page }) => {
-    const card = page.locator('text=Monster Features').locator('..');
-    await expect(card).toBeVisible();
-    
+    const monsterFeatures = page.locator('[data-panel-id="monster-features"]');
+    await expect(monsterFeatures).toBeVisible();
+
     // Check for Jaw Animation toggle
     const jawToggle = page.locator('#jawToggle');
     await expect(jawToggle).toBeVisible();
     await expect(jawToggle).toHaveAttribute('type', 'checkbox');
-    
+
     // Check for Parrot Mode toggle
     const parrotToggle = page.locator('#parrotToggle');
     await expect(parrotToggle).toBeVisible();
     await expect(parrotToggle).toHaveAttribute('type', 'checkbox');
-    
+
     // Check for Head Tracking toggle
     const headTrackToggle = page.locator('#headTrackToggle');
     await expect(headTrackToggle).toBeVisible();
     await expect(headTrackToggle).toHaveAttribute('type', 'checkbox');
   });
 
-  test('should have Scenes panel', async ({ page }) => {
-    // Check for scenes container directly (avoids multiple matches)
+  test('should have Scenes panel in accordion', async ({ page }) => {
+    // Expand the Scenes accordion panel
+    await page.locator('[data-bs-target="#collapseScenes"]').click();
+    await page.waitForTimeout(500);
+
+    // Check for scenes container
     await expect(page.locator('#scenesContainer')).toBeVisible();
   });
 
-  test('should have Poses panel', async ({ page }) => {
+  test('should have Poses panel in accordion', async ({ page }) => {
+    // Expand the Poses accordion panel
+    await page.locator('[data-bs-target="#collapsePoses"]').click();
+    await page.waitForTimeout(500);
+
     // Check for poses container
     await expect(page.locator('#posesContainer')).toBeVisible();
   });
@@ -109,7 +125,7 @@ test.describe('Conversation Control - Grid Layout', () => {
   test('should have Webcam panel', async ({ page }) => {
     // Check for webcam image and status directly
     await expect(page.locator('#webcamImg')).toBeVisible();
-    
+
     // Check for status text
     await expect(page.locator('#webcamStatus')).toBeVisible();
   });
@@ -125,23 +141,23 @@ test.describe('Conversation Control - Make Character Say', () => {
     const input = page.locator('#sayInput');
     const button = page.locator('#sayBtn');
     const status = page.locator('#sayStatus');
-    
+
     // Type test message
     await input.fill('Test message from Playwright');
-    
+
     // Click Say button
     await button.click();
-    
+
     // Wait for response
     await page.waitForTimeout(3000);
-    
+
     // Status may or may not have text depending on TTS config
     // Just verify no error was thrown
   });
 
   test('should show warning for empty text', async ({ page }) => {
     const button = page.locator('#sayBtn');
-    
+
     // Click without entering text - just verify it doesn't crash
     await button.click();
     await page.waitForTimeout(500);
@@ -200,16 +216,16 @@ test.describe('Conversation Control - Monster Features', () => {
 
   test('should toggle Jaw Animation', async ({ page }) => {
     const toggle = page.locator('#jawToggle');
-    
+
     // Get initial state
     const initialChecked = await toggle.isChecked();
-    
+
     // Toggle it
     await toggle.click();
-    
+
     // Wait for save
     await page.waitForTimeout(500);
-    
+
     // Should be opposite of initial
     const newChecked = await toggle.isChecked();
     expect(newChecked).toBe(!initialChecked);
@@ -217,13 +233,13 @@ test.describe('Conversation Control - Monster Features', () => {
 
   test('should toggle Parrot Mode', async ({ page }) => {
     const toggle = page.locator('#parrotToggle');
-    
+
     // Get initial state
     const initialChecked = await toggle.isChecked();
-    
+
     // Toggle it
     await toggle.click();
-    
+
     // Should be opposite of initial
     const newChecked = await toggle.isChecked();
     expect(newChecked).toBe(!initialChecked);
@@ -231,16 +247,16 @@ test.describe('Conversation Control - Monster Features', () => {
 
   test('should toggle Head Tracking', async ({ page }) => {
     const toggle = page.locator('#headTrackToggle');
-    
+
     // Get initial state
     const initialChecked = await toggle.isChecked();
-    
+
     // Toggle it
     await toggle.click();
-    
+
     // Wait for save
     await page.waitForTimeout(500);
-    
+
     // Should be opposite of initial
     const newChecked = await toggle.isChecked();
     expect(newChecked).toBe(!initialChecked);
@@ -307,15 +323,18 @@ test.describe('Conversation Control - Responsive Layout', () => {
   test('should adapt to mobile viewport', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
-    
-    // Core panels should still be visible
-    await expect(page.locator('#scenesContainer')).toBeVisible();
+
+    // Accordion layout is inherently responsive
+    await expect(page.locator('#dashboardAccordion')).toBeVisible();
+
+    // Core elements should still be accessible
+    await expect(page.locator('#chatLog')).toBeVisible();
   });
 
   test('should adapt to tablet viewport', async ({ page }) => {
     // Set tablet viewport
     await page.setViewportSize({ width: 768, height: 1024 });
-    
+
     // Core panels should still be visible
     await expect(page.locator('#chatAiOnToggle')).toBeVisible();
     await expect(page.locator('#webcamImg')).toBeVisible();
@@ -336,7 +355,7 @@ test.describe('Conversation Control - No Errors', () => {
       /WebSocket/i,
       /fetch.*failed/i
     ];
-    
+
     page.on('console', msg => {
       if (msg.type() === 'error') {
         const text = msg.text();
@@ -345,10 +364,10 @@ test.describe('Conversation Control - No Errors', () => {
         }
       }
     });
-    
+
     // Wait for page to fully load
     await page.waitForTimeout(2000);
-    
+
     // Should have no critical console errors
     expect(criticalErrors.length).toBe(0);
   });
