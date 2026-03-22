@@ -1,0 +1,20 @@
+{
+  "characterPersonality": "slow_menacing",
+  "idle": {
+    "enabled": false,
+    "minHoldMs": 5000,
+    "maxHoldMs": 12000,
+    "transitionDurationMs": 3000,
+    "defaultEasing": "ease_in_out"
+  },
+  "microMovement": {
+    "enabled": false,
+    "breathingAmplitudeDeg": 1.5,
+    "breathingPeriodMs": 5000,
+    "driftAmplitudeDeg": 0.5,
+    "driftPeriodMs": 10000,
+    "jitterAmplitudeDeg": 0,
+    "jitterIntervalMs": 0
+  },
+  "servoTransitions": {}
+}

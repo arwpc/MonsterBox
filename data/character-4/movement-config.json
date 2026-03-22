@@ -1,0 +1,20 @@
+{
+  "characterPersonality": "formal_stiff",
+  "idle": {
+    "enabled": false,
+    "minHoldMs": 6000,
+    "maxHoldMs": 15000,
+    "transitionDurationMs": 2500,
+    "defaultEasing": "linear"
+  },
+  "microMovement": {
+    "enabled": false,
+    "breathingAmplitudeDeg": 1,
+    "breathingPeriodMs": 6000,
+    "driftAmplitudeDeg": 0.3,
+    "driftPeriodMs": 12000,
+    "jitterAmplitudeDeg": 0,
+    "jitterIntervalMs": 0
+  },
+  "servoTransitions": {}
+}

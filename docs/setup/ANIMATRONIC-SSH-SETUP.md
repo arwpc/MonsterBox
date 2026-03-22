@@ -42,8 +42,8 @@ ORLOK_SSH_PASSWORD="klrklr89!"
 PUMPKINHEAD_SSH_USER="remote"
 PUMPKINHEAD_SSH_PASSWORD="klrklr89!"
 
-COFFIN_SSH_USER="remote"
-COFFIN_SSH_PASSWORD="klrklr89!"
+MINA_SSH_USER="remote"
+MINA_SSH_PASSWORD="klrklr89!"
 
 # Legacy fallback credentials (for backward compatibility)
 RPI_SSH_USER="remote"
@@ -61,7 +61,7 @@ npm run test:animatronic-ssh
 This will test all three animatronics:
 - **Orlok** (192.168.8.120)
 - **Pumpkinhead** (192.168.1.101) - Currently not running
-- **Coffin** (192.168.8.149)
+- **Mina** (192.168.8.149)
 
 ### Step 3: Setup Each Animatronic RPI
 
@@ -103,14 +103,14 @@ For each RPI that fails the connectivity test, follow these steps:
    # Copy SSH key to each animatronic
    ssh-copy-id remote@192.168.8.120  # Orlok
    ssh-copy-id remote@192.168.1.101  # Pumpkinhead (not currently running)
-   ssh-copy-id remote@192.168.8.149  # Coffin
+   ssh-copy-id remote@192.168.8.149  # Mina
    ```
 
 6. **Test SSH connections:**
    ```bash
    ssh remote@192.168.8.120 "echo 'Orlok SSH test successful'"
    ssh remote@192.168.1.101 "echo 'Pumpkinhead SSH test successful'"
-   ssh remote@192.168.8.149 "echo 'Coffin SSH test successful'"
+   ssh remote@192.168.8.149 "echo 'Mina SSH test successful'"
    ```
 
 ## 🧪 Testing and Validation
@@ -156,7 +156,7 @@ Collect logs from a specific animatronic:
 ```bash
 # Via web API
 curl "http://localhost:3000/logs/rpi/192.168.8.120?lines=50"  # Orlok
-curl "http://localhost:3000/logs/rpi/192.168.8.149?lines=50"  # Coffin
+curl "http://localhost:3000/logs/rpi/192.168.8.149?lines=50"  # Mina
 
 # Via web interface
 # Navigate to Characters > [Character Name] > Edit > Collect Logs button
@@ -201,19 +201,19 @@ The MCP log collector server automatically uses the environment variables:
 ```bash
 # Test network connectivity
 ping -c 1 192.168.8.120  # Orlok
-ping -c 1 192.168.8.149  # Coffin
+ping -c 1 192.168.8.149  # Mina
 
 # Test SSH without keys (will prompt for password)
 ssh -o PreferredAuthentications=password remote@192.168.8.120  # Orlok
-ssh -o PreferredAuthentications=password remote@192.168.8.149  # Coffin
+ssh -o PreferredAuthentications=password remote@192.168.8.149  # Mina
 
 # Test SSH with keys
 ssh -o BatchMode=yes remote@192.168.8.120 "echo 'SSH key test'"  # Orlok
-ssh -o BatchMode=yes remote@192.168.8.149 "echo 'SSH key test'"  # Coffin
+ssh -o BatchMode=yes remote@192.168.8.149 "echo 'SSH key test'"  # Mina
 
 # Test log access
 ssh remote@192.168.8.120 "sudo journalctl -n 5 --no-pager"  # Orlok
-ssh remote@192.168.8.149 "sudo journalctl -n 5 --no-pager"  # Coffin
+ssh remote@192.168.8.149 "sudo journalctl -n 5 --no-pager"  # Mina
 ```
 
 ## 🔒 Security Best Practices

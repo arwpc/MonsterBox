@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide will help you set up log collection for all your animatronic RPIs. Each animatronic (Orlok, Pumpkinhead, Coffin, etc.) will have its own RPI that needs to be configured for remote log collection.
+This guide will help you set up log collection for all your animatronic RPIs. Each animatronic (Orlok, Pumpkinhead, Mina, etc.) will have its own RPI that needs to be configured for remote log collection.
 
 ## 🚀 Quick Setup (Automated)
 
@@ -35,7 +35,7 @@ hostname -I
 ```
 
 **Or check your router's admin panel for:**
-- Device names like "raspberrypi", "orlok", "pumpkinhead", "coffin"
+- Device names like "raspberrypi", "orlok", "pumpkinhead", "mina"
 - MAC addresses starting with common RPI prefixes
 
 ### Step 2: Set Up SSH Keys
@@ -53,7 +53,7 @@ ssh-copy-id pi@192.168.1.100
 # For Pumpkinhead  
 ssh-copy-id pi@192.168.1.101
 
-# For Coffin
+# For Mina
 ssh-copy-id pi@192.168.1.102
 ```
 
@@ -92,9 +92,9 @@ Add animatronics through the web interface:
 - **Character**: Pumpkin-headed demon with articulated limbs
 - **Services**: monsterbox, ssh, gpio-control, led-control
 
-### Coffin
+### Mina
 - **IP**: 192.168.1.102
-- **Character**: Coffin with opening lid and emerging figure
+- **Character**: Mina with opening lid and emerging figure
 - **Services**: monsterbox, ssh, linear-actuator, sound
 
 ## 🧪 Testing Your Setup

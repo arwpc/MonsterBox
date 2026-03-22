@@ -9,7 +9,7 @@ Your MonsterBox now has a comprehensive Model Context Protocol (MCP) log collect
 - **MonsterBox Application** - Winston logs, API logs, error logs ✅ **OPERATIONAL**
 - **RPI4b Console** - System logs, service logs, kernel messages 🔧 **NEEDS SSH SETUP**
   - **Orlok (192.168.8.120)** - Network reachable, SSH authentication needed
-  - **Coffin (192.168.8.149)** - Network unreachable
+  - **Mina (192.168.8.149)** - Network unreachable
   - **Pumpkinhead (192.168.1.101)** - Disabled (offline)
 - **Ubuntu System Logs** - Syslog, auth logs, daemon logs ❌ **DISABLED**
 
@@ -41,7 +41,7 @@ The MCP system now intelligently handles animatronic status:
 
 ### **Enabled Animatronics** (Tested)
 - **Orlok** (192.168.8.120) - `status: "running"`, `enabled: true`
-- **Coffin** (192.168.8.149) - `status: "running"`, `enabled: true`
+- **Mina** (192.168.8.149) - `status: "running"`, `enabled: true`
 
 ### **Disabled Animatronics** (Skipped)
 - **Pumpkinhead** (192.168.1.101) - `status: "offline"`, `enabled: false`

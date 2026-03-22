@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-03-22T23:00:57.625Z",
+  "pid": 5315,
+  "environment": "test",
+  "checks": {
+    "memory": {
+      "freeMB": 6255,
+      "totalMB": 7394,
+      "percentFree": 85,
+      "status": "ok"
+    },
+    "cpu": {
+      "load1m": 1.29,
+      "load5m": 0.91,
+      "load15m": 0.62,
+      "cores": 4,
+      "status": "ok"
+    },
+    "disk": {
+      "availableMB": 89054,
+      "status": "ok"
+    },
+    "python": {
+      "status": "ok",
+      "version": "Python 3.11.2"
+    }
+  },
+  "overallStatus": "OK"
+}

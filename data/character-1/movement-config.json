@@ -1,0 +1,20 @@
+{
+  "characterPersonality": "erratic_overshoot",
+  "idle": {
+    "enabled": false,
+    "minHoldMs": 1000,
+    "maxHoldMs": 3000,
+    "transitionDurationMs": 800,
+    "defaultEasing": "overshoot"
+  },
+  "microMovement": {
+    "enabled": false,
+    "breathingAmplitudeDeg": 2,
+    "breathingPeriodMs": 2000,
+    "driftAmplitudeDeg": 3,
+    "driftPeriodMs": 3000,
+    "jitterAmplitudeDeg": 1.5,
+    "jitterIntervalMs": 300
+  },
+  "servoTransitions": {}
+}

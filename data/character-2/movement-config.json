@@ -1,0 +1,20 @@
+{
+  "characterPersonality": "fluid_expressive",
+  "idle": {
+    "enabled": false,
+    "minHoldMs": 2000,
+    "maxHoldMs": 5000,
+    "transitionDurationMs": 1500,
+    "defaultEasing": "ease_in_out"
+  },
+  "microMovement": {
+    "enabled": false,
+    "breathingAmplitudeDeg": 3,
+    "breathingPeriodMs": 3500,
+    "driftAmplitudeDeg": 2,
+    "driftPeriodMs": 5000,
+    "jitterAmplitudeDeg": 0.5,
+    "jitterIntervalMs": 500
+  },
+  "servoTransitions": {}
+}

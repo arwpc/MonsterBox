@@ -39,6 +39,16 @@
       <i class="bi bi-clipboard-data"></i> Templates
     </button>
   </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="resource-tab" data-bs-toggle="tab" data-bs-target="#resource" type="button" role="tab">
+      <i class="bi bi-cpu"></i> Resources
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="movement-tab" data-bs-toggle="tab" data-bs-target="#movement" type="button" role="tab">
+      <i class="bi bi-activity"></i> Movement
+    </button>
+  </li>
 </ul>
 
 <!-- Tab Content -->
@@ -402,6 +412,144 @@
             </div>
             <button class="btn btn-sm btn-primary w-100" id="btnSaveTemplateForm"><i class="bi bi-save"></i> Save</button>
             <div id="tplMessage" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Tab: Resources ══════════════════ -->
+  <div class="tab-pane fade" id="resource" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-cpu"></i> Process Info</h5></div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5">PID</dt>
+              <dd class="col-sm-7" id="resPid">—</dd>
+              <dt class="col-sm-5">Uptime</dt>
+              <dd class="col-sm-7" id="resUptime">—</dd>
+              <dt class="col-sm-5">Process Priority</dt>
+              <dd class="col-sm-7" id="resPriority">—</dd>
+              <dt class="col-sm-5">Environment</dt>
+              <dd class="col-sm-7"><span class="badge bg-info" id="resEnv">—</span></dd>
+              <dt class="col-sm-5">Node.js</dt>
+              <dd class="col-sm-7" id="resNodeVer">—</dd>
+              <dt class="col-sm-5">Platform</dt>
+              <dd class="col-sm-7" id="resPlatform">—</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-memory"></i> Memory</h5></div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label small mb-1">Process RSS</label>
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar" id="resMemBar" role="progressbar" style="width: 0%">0 MB</div>
+              </div>
+            </div>
+            <dl class="row mb-0 mt-3">
+              <dt class="col-sm-5">Heap Used</dt>
+              <dd class="col-sm-7" id="resHeapUsed">—</dd>
+              <dt class="col-sm-5">System Free</dt>
+              <dd class="col-sm-7" id="resSysFree">—</dd>
+              <dt class="col-sm-5">System Total</dt>
+              <dd class="col-sm-7" id="resSysTotal">—</dd>
+              <dt class="col-sm-5">Status</dt>
+              <dd class="col-sm-7"><span class="badge" id="resMemLevel">—</span></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-bar-chart"></i> CPU Load</h5></div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5">1-min avg</dt>
+              <dd class="col-sm-7" id="resCpu1">—</dd>
+              <dt class="col-sm-5">5-min avg</dt>
+              <dd class="col-sm-7" id="resCpu5">—</dd>
+              <dt class="col-sm-5">15-min avg</dt>
+              <dd class="col-sm-7" id="resCpu15">—</dd>
+              <dt class="col-sm-5">CPU Cores</dt>
+              <dd class="col-sm-7" id="resCpuCores">—</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-heart-pulse"></i> Startup Health</h5></div>
+          <div class="card-body" id="resHealthBody">
+            <p class="text-muted mb-0">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════ Tab: Movement ══════════════════ -->
+  <div class="tab-pane fade" id="movement" role="tabpanel">
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-activity"></i> Movement Telemetry</h5>
+            <select class="form-select form-select-sm" id="mvtPeriod" style="width:auto;">
+              <option value="3600000">1 Hour</option>
+              <option value="21600000">6 Hours</option>
+              <option value="86400000">24 Hours</option>
+              <option value="604800000">7 Days</option>
+              <option value="2592000000">30 Days</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-6">Servo Latency (avg)</dt>
+              <dd class="col-sm-6" id="mvtLatencyAvg">—</dd>
+              <dt class="col-sm-6">Servo Latency (p95)</dt>
+              <dd class="col-sm-6" id="mvtLatencyP95">—</dd>
+              <dt class="col-sm-6">Cycle Time (avg)</dt>
+              <dd class="col-sm-6" id="mvtCycleAvg">—</dd>
+              <dt class="col-sm-6">Commands/sec (avg)</dt>
+              <dd class="col-sm-6" id="mvtCmdRate">—</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-gear"></i> Servo Health</h5></div>
+          <div class="card-body" id="mvtServoHealth">
+            <p class="text-muted mb-0">No telemetry data yet</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-lock"></i> Active Servo Claims</h5></div>
+          <div class="card-body" id="mvtClaims">
+            <p class="text-muted mb-0">No active claims</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-person-walking"></i> Idle Loop Status</h5></div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5">Status</dt>
+              <dd class="col-sm-7"><span class="badge" id="mvtIdleStatus">—</span></dd>
+              <dt class="col-sm-5">Current Pose</dt>
+              <dd class="col-sm-7" id="mvtIdlePose">—</dd>
+              <dt class="col-sm-5">Character</dt>
+              <dd class="col-sm-7" id="mvtIdleChar">—</dd>
+            </dl>
           </div>
         </div>
       </div>
@@ -1211,6 +1359,139 @@
     apiPost('/api/system/shutdown', {}, function () {});
   });
 
+  /* ─── Resource Health Tab ──────────────────────────────────────────────────── */
+  var resRefreshTimer = null;
+
+  function loadResourceStatus() {
+    apiGet('/api/resource/status', function (data) {
+      if (!data || !data.success) return;
+      var s = data.status;
+      var el = function (id) { return document.getElementById(id); };
+      if (el('resPid')) el('resPid').textContent = s.pid;
+      if (el('resUptime')) el('resUptime').textContent = s.uptimeFormatted;
+      if (el('resPriority')) el('resPriority').textContent = s.priority;
+      if (el('resEnv')) el('resEnv').textContent = s.environment;
+      if (el('resNodeVer')) el('resNodeVer').textContent = s.nodeVersion;
+      if (el('resPlatform')) el('resPlatform').textContent = s.platform;
+      if (el('resCpu1')) el('resCpu1').textContent = s.cpu.load1m;
+      if (el('resCpu5')) el('resCpu5').textContent = s.cpu.load5m;
+      if (el('resCpu15')) el('resCpu15').textContent = s.cpu.load15m;
+      if (el('resCpuCores')) el('resCpuCores').textContent = s.cpu.cores;
+    });
+
+    apiGet('/api/resource/memory', function (data) {
+      if (!data || !data.success) return;
+      var m = data.memory;
+      var el = function (id) { return document.getElementById(id); };
+      if (el('resHeapUsed')) el('resHeapUsed').textContent = m.heapUsedMB + ' MB';
+      if (el('resSysFree')) el('resSysFree').textContent = m.systemFreeMB + ' MB';
+      if (el('resSysTotal')) el('resSysTotal').textContent = m.systemTotalMB + ' MB';
+      var pct = Math.round(m.rssMB / (m.systemTotalMB || 1) * 100);
+      var bar = el('resMemBar');
+      if (bar) {
+        bar.style.width = pct + '%';
+        bar.textContent = m.rssMB + ' MB';
+        bar.className = 'progress-bar ' + (m.level === 'critical' ? 'bg-danger' : m.level === 'warning' ? 'bg-warning' : 'bg-success');
+      }
+      var badge = el('resMemLevel');
+      if (badge) {
+        badge.textContent = m.level;
+        badge.className = 'badge ' + (m.level === 'critical' ? 'bg-danger' : m.level === 'warning' ? 'bg-warning' : 'bg-success');
+      }
+    });
+
+    apiGet('/api/resource/health', function (data) {
+      var body = document.getElementById('resHealthBody');
+      if (!body) return;
+      if (!data || !data.success || !data.health) {
+        body.innerHTML = '<p class="text-muted mb-0">No health check data</p>';
+        return;
+      }
+      var h = data.health;
+      var html = '<p class="mb-2"><strong>Overall: </strong><span class="badge ' +
+        (h.overallStatus === 'CRITICAL' ? 'bg-danger' : h.overallStatus === 'WARNING' ? 'bg-warning' : 'bg-success') +
+        '">' + h.overallStatus + '</span></p><dl class="row mb-0">';
+      var checks = h.checks || {};
+      for (var key in checks) {
+        if (checks.hasOwnProperty(key)) {
+          var c = checks[key];
+          var icon = c.status === 'ok' ? '✓' : c.status === 'warning' ? '⚠' : '✗';
+          html += '<dt class="col-sm-5">' + icon + ' ' + key + '</dt>';
+          html += '<dd class="col-sm-7"><span class="badge ' +
+            (c.status === 'ok' ? 'bg-success' : c.status === 'warning' ? 'bg-warning' : 'bg-danger') +
+            '">' + c.status + '</span>';
+          if (c.error) html += ' <small class="text-muted">' + c.error + '</small>';
+          html += '</dd>';
+        }
+      }
+      html += '</dl>';
+      if (h.timestamp) html += '<small class="text-muted">Last check: ' + new Date(h.timestamp).toLocaleString() + '</small>';
+      body.innerHTML = html;
+    });
+  }
+
+  function startResRefresh() {
+    loadResourceStatus();
+    if (resRefreshTimer) clearInterval(resRefreshTimer);
+    resRefreshTimer = setInterval(loadResourceStatus, 30000);
+  }
+
+  function stopResRefresh() {
+    if (resRefreshTimer) { clearInterval(resRefreshTimer); resRefreshTimer = null; }
+  }
+
+  /* ─── Movement Telemetry Tab ─────────────────────────────────────────────── */
+  function loadMovementTelemetry() {
+    var periodSel = document.getElementById('mvtPeriod');
+    var period = periodSel ? periodSel.value : '3600000';
+
+    apiGet('/api/movement/telemetry?period=' + period, function (data) {
+      if (!data || !data.success) return;
+      var t = data.telemetry || {};
+      var el = function (id) { return document.getElementById(id); };
+      if (el('mvtLatencyAvg')) el('mvtLatencyAvg').textContent = t.latency && t.latency.avg != null ? t.latency.avg.toFixed(1) + ' ms' : '—';
+      if (el('mvtLatencyP95')) el('mvtLatencyP95').textContent = t.latency && t.latency.p95 != null ? t.latency.p95.toFixed(1) + ' ms' : '—';
+      if (el('mvtCycleAvg')) el('mvtCycleAvg').textContent = t.cycleTime && t.cycleTime.avg != null ? t.cycleTime.avg.toFixed(0) + ' ms' : '—';
+      if (el('mvtCmdRate')) el('mvtCmdRate').textContent = t.commandRate && t.commandRate.avg != null ? t.commandRate.avg.toFixed(1) : '—';
+    });
+
+    apiGet('/api/movement/claims', function (data) {
+      var el = document.getElementById('mvtClaims');
+      if (!el) return;
+      if (!data || !data.success || !data.claims || Object.keys(data.claims).length === 0) {
+        el.innerHTML = '<p class="text-muted mb-0">No active claims</p>';
+        return;
+      }
+      var html = '<table class="table table-sm mb-0"><thead><tr><th>Servo</th><th>Owner</th><th>Priority</th></tr></thead><tbody>';
+      for (var partId in data.claims) {
+        if (data.claims.hasOwnProperty(partId)) {
+          var c = data.claims[partId];
+          html += '<tr><td>' + partId + '</td><td>' + (c.owner || '—') + '</td><td>' + (c.priority || '—') + '</td></tr>';
+        }
+      }
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    });
+
+    apiGet('/api/movement/idle/status', function (data) {
+      if (!data || !data.success) return;
+      var s = data.status || {};
+      var el = function (id) { return document.getElementById(id); };
+      var statusBadge = el('mvtIdleStatus');
+      if (statusBadge) {
+        statusBadge.textContent = s.running ? 'Running' : 'Stopped';
+        statusBadge.className = 'badge ' + (s.running ? 'bg-success' : 'bg-secondary');
+      }
+      if (el('mvtIdlePose')) el('mvtIdlePose').textContent = s.currentPoseId || '—';
+      if (el('mvtIdleChar')) el('mvtIdleChar').textContent = s.characterId || '—';
+    });
+  }
+
+  var mvtPeriodSel = document.getElementById('mvtPeriod');
+  if (mvtPeriodSel) {
+    mvtPeriodSel.addEventListener('change', loadMovementTelemetry);
+  }
+
   /* ─── Tab change handler ───────────────────────────────────────────────────── */
   var tabEl = document.getElementById('systemTabs');
   if (tabEl) {
@@ -1223,6 +1504,9 @@
       if (target === '#settings') { loadSettings(); loadPresets(); }
       if (target === '#ssh') { loadSSHKeys(); }
       if (target === '#templates') { loadTemplates(); }
+      if (target === '#resource') { startResRefresh(); }
+      else { stopResRefresh(); }
+      if (target === '#movement') { loadMovementTelemetry(); }
     });
   }
 

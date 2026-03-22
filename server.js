@@ -57,6 +57,8 @@ import jawServoDaemon from './services/jawServoDaemon.js';
 import pipewireService from './services/pipewireService.js';
 import serverPlaybackService from './services/serverPlaybackService.js';
 import systemService from './services/systemService.js';
+import movementApiRoutes from './routes/api/movement.js';
+import resourceApiRoutes, { setMemoryMonitor } from './routes/api/resource.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +74,51 @@ process.on('unhandledRejection', function (reason, p) {
 const app = express();
 
 let shuttingDown = false;
+
+// --- Resource Management: Single Instance + Priority + Health ---
+let singleInstance = null;
+let memoryMonitorInstance = null;
+try {
+    singleInstance = await import('./services/resource/singleInstance.js');
+    await singleInstance.acquireLock();
+    console.log(`🔒 PID lock acquired (PID ${process.pid})`);
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') {
+        console.error('Single instance lock failed:', e.message);
+        process.exit(1);
+    }
+}
+
+try {
+    const { setProcessPriority } = await import('./services/resource/processPriority.js');
+    const result = setProcessPriority();
+    if (result.success) console.log(`⚡ Process priority elevated (nice ${result.nice})`);
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Process priority:', e.message);
+}
+
+try {
+    const envModule = await import('./services/resource/environment.js');
+    console.log(`🌍 Environment: ${envModule.getEnvironment()}`);
+} catch (e) { /* optional */ }
+
+try {
+    const { runStartupHealthCheck } = await import('./services/resource/startupHealthCheck.js');
+    await runStartupHealthCheck();
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Startup health check:', e.message);
+}
+
+try {
+    const { MemoryMonitor } = await import('./services/resource/memoryMonitor.js');
+    memoryMonitorInstance = new MemoryMonitor();
+    memoryMonitorInstance.start();
+    setMemoryMonitor(memoryMonitorInstance);
+    console.log(`📊 Memory monitor started (30s interval)`);
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Memory monitor:', e.message);
+}
+
 // Configuration
 const config = await loadConfig();
 
@@ -373,6 +420,8 @@ app.use('/api/random-poses', randomPoseRoutes);
 app.use('/api/orchestration', orchestrationRoutes);
 app.use('/api/system', systemApiRoutes);
 app.use('/api/config', configApiRoutes);
+app.use('/api/movement', movementApiRoutes);
+app.use('/api/resource', resourceApiRoutes);
 app.use('/api', sceneEditorApiRoutes);
 
 // --- Goblin device compatibility API (for native Goblin auto-registration) ---
@@ -778,7 +827,16 @@ async function gracefulShutdown(signal) {
     const hardExitTimer = setTimeout(function () {
         console.warn('Force exiting after timeout...');
         process.exit(1);
-    }, 4000);
+    }, 10000);
+
+    // Stop idle loop if running
+    try {
+        const idleLoop = await import('./services/movement/idleLoopService.js');
+        await idleLoop.stop();
+        console.log('  ✓ Idle loop stopped');
+    } catch (e) {
+        if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Idle loop cleanup:', (e && e.message) || e);
+    }
 
     try {
         // Import and call motion tracking cleanup
@@ -823,6 +881,24 @@ async function gracefulShutdown(signal) {
         console.warn('Jaw servo daemon cleanup error:', (error && error.message) || error);
     }
 
+    // Stop memory monitor
+    try {
+        if (memoryMonitorInstance) {
+            memoryMonitorInstance.stop();
+            console.log('  ✓ Memory monitor stopped');
+        }
+    } catch (e) { /* ignore */ }
+
+    // Remove PID lock file
+    try {
+        if (singleInstance) {
+            await singleInstance.removeLock();
+            console.log('  ✓ PID lock released');
+        }
+    } catch (e) {
+        console.warn('PID cleanup error:', (e && e.message) || e);
+    }
+
     clearTimeout(hardExitTimer);
     console.log('✅ Shutdown complete');
     process.exit(0);
@@ -831,4 +907,5 @@ async function gracefulShutdown(signal) {
 // Handle termination signals (guard prevents re-entry)
 process.on('SIGTERM', function () { gracefulShutdown('SIGTERM'); });
 process.on('SIGINT', function () { gracefulShutdown('SIGINT'); });
+process.on('SIGHUP', function () { gracefulShutdown('SIGHUP'); });
 

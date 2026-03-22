@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MonsterBox Secure Remote Access System provides JWT-based authentication and role-based access control for secure remote command execution across animatronic systems. This system enables authorized users to safely interact with the Orlok, Coffin, and Pumpkinhead animatronic systems through a secure API gateway.
+The MonsterBox Secure Remote Access System provides JWT-based authentication and role-based access control for secure remote command execution across animatronic systems. This system enables authorized users to safely interact with the Orlok, Mina, and Pumpkinhead animatronic systems through a secure API gateway.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ The MonsterBox Secure Remote Access System provides JWT-based authentication and
 ### Specialized Roles
 
 - **orlok_operator** - Limited to Orlok animatronic operations
-- **coffin_operator** - Limited to Coffin animatronic operations  
+- **mina_operator** - Limited to Mina animatronic operations
 - **pumpkinhead_operator** - Limited to Pumpkinhead animatronic operations
 
 ### Permission Types
@@ -79,7 +79,7 @@ Authenticate user and receive JWT tokens.
     "id": "admin-001",
     "username": "admin",
     "role": "admin",
-    "animatronicAccess": ["orlok", "coffin", "pumpkinhead"],
+    "animatronicAccess": ["orlok", "mina", "pumpkinhead"],
     "permissions": ["view", "control", "configure", "ssh", "admin"]
   },
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -167,8 +167,8 @@ BCRYPT_ROUNDS=12
 # SSH Credentials
 ORLOK_SSH_USER=remote
 ORLOK_SSH_PASSWORD=klrklr89!
-COFFIN_SSH_USER=remote
-COFFIN_SSH_PASSWORD=klrklr89!
+MINA_SSH_USER=remote
+MINA_SSH_PASSWORD=klrklr89!
 PUMPKINHEAD_SSH_USER=remote
 PUMPKINHEAD_SSH_PASSWORD=klrklr89!
 ```

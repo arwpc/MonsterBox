@@ -62,14 +62,14 @@ async function testHardwareMovement(characterName, partName, duration = 8000, po
 
 async function main() {
     console.log('🧪 MonsterBox Hardware Timing Verification Test');
-    console.log('🎯 Testing 8000ms movements at 100% position on Coffin and Orlok');
+    console.log('🎯 Testing 8000ms movements at 100% position on Mina and Orlok');
     console.log('⏰ Validating that physical movements take the expected time\n');
 
     const results = [];
 
-    // Test Coffin system - common servo parts
-    results.push(await testHardwareMovement('Coffin', 'coffin_lid_servo', 8000, 100));
-    results.push(await testHardwareMovement('Coffin', 'fog_machine_servo', 8000, 100));
+    // Test Mina system - common servo parts
+    results.push(await testHardwareMovement('Mina', 'coffin_lid_servo', 8000, 100));
+    results.push(await testHardwareMovement('Mina', 'fog_machine_servo', 8000, 100));
     
     // Test Orlok system - common servo parts  
     results.push(await testHardwareMovement('Orlok', 'head_tilt_servo', 8000, 100));
