@@ -72,18 +72,6 @@ test.describe('Conversation Control - Accordion Layout', () => {
     await expect(page.locator('#sayBtn')).toBeVisible();
   });
 
-  test.skip('should have Ask AI panel (inline, no modal) - DEPRECATED', async ({ page }) => {
-    // This test is deprecated - Ask AI is now integrated into Chat panel
-    const card = page.locator('text=Ask AI').locator('..');
-    await expect(card).toBeVisible();
-  });
-
-  test.skip('should have Audio Files panel with loop toggle - DEPRECATED', async ({ page }) => {
-    // This test is deprecated - Audio functionality moved to Audio Library page
-    const card = page.locator('text=Audio Files').locator('..');
-    await expect(card).toBeVisible();
-  });
-
   test('should have Monster Features panel', async ({ page }) => {
     const monsterFeatures = page.locator('[data-panel-id="monster-features"]');
     await expect(monsterFeatures).toBeVisible();
@@ -164,49 +152,6 @@ test.describe('Conversation Control - Make Character Say', () => {
   });
 });
 
-test.describe('Conversation Control - Ask AI', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
-  });
-
-  test.skip('should ask AI question inline (no modal) - DEPRECATED', async ({ page }) => {
-    // Test is deprecated - Ask AI panel was replaced with AI On toggle
-  });
-
-  test.skip('should show warning for empty question - DEPRECATED', async ({ page }) => {
-    // Test is deprecated - Ask AI panel was replaced with AI On toggle
-  });
-});
-
-test.describe('Conversation Control - Audio Files', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
-  });
-
-  test.skip('should load audio files for character - DEPRECATED', async ({ page }) => {
-    // Test is deprecated - Audio files functionality moved to Audio Library page
-  });
-
-  test.skip('should toggle loop checkbox - DEPRECATED', async ({ page }) => {
-    // Test is deprecated - Audio functionality moved to Audio Library page
-  });
-
-  test.skip('should play audio file - DEPRECATED', async ({ page }) => {
-    // Test is deprecated - Audio functionality moved to Audio Library page
-  });
-});
-
-test.describe('Conversation Control - Hardware Control - DEPRECATED', () => {
-  test.skip('should load hardware parts for character - DEPRECATED', async ({ page }) => {
-    // Hardware Control panel removed in v6.7.0 — replaced by Chat panel
-  });
-
-  test.skip('should render type-specific controls for parts - DEPRECATED', async ({ page }) => {
-    // Hardware Control panel removed in v6.7.0 — replaced by Chat panel
-  });
-});
 
 test.describe('Conversation Control - Monster Features', () => {
   test.beforeEach(async ({ page }) => {

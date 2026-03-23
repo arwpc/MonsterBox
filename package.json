@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "7.6.0",
+  "version": "7.7.0",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
@@ -30,6 +30,7 @@
     "test:system:dashboard": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/dashboard-api.test.js --reporter spec --exit --timeout 10000",
     "test:system:models": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/models.test.js --reporter spec --exit --timeout 10000",
     "test:system:video": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/video-library.test.js --reporter spec --exit --timeout 10000",
+    "test:system:movement": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/movement.test.js --reporter spec --exit --timeout 10000",
 
     "test:ai": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/ai --reporter spec --exit --timeout 10000",
 

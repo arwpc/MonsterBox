@@ -9,7 +9,7 @@
   },
   "microMovement": {
     "enabled": false,
-    "breathingAmplitudeDeg": 3,
+    "breathingAmplitudeDeg": 2.5,
     "breathingPeriodMs": 3500,
     "driftAmplitudeDeg": 2,
     "driftPeriodMs": 5000,

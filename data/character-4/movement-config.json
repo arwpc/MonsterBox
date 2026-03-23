@@ -12,7 +12,7 @@
     "breathingAmplitudeDeg": 1,
     "breathingPeriodMs": 6000,
     "driftAmplitudeDeg": 0.3,
-    "driftPeriodMs": 12000,
+    "driftPeriodMs": 10000,
     "jitterAmplitudeDeg": 0,
     "jitterIntervalMs": 0
   },

@@ -1,20 +1,20 @@
 {
-  "characterPersonality": "default",
+  "characterPersonality": "balanced_default",
   "idle": {
     "enabled": false,
     "minHoldMs": 3000,
     "maxHoldMs": 8000,
-    "transitionDurationMs": 2000,
+    "transitionDurationMs": 1500,
     "defaultEasing": "ease_in_out"
   },
   "microMovement": {
     "enabled": false,
     "breathingAmplitudeDeg": 2,
-    "breathingPeriodMs": 4000,
-    "driftAmplitudeDeg": 1,
+    "breathingPeriodMs": 4500,
+    "driftAmplitudeDeg": 1.5,
     "driftPeriodMs": 7000,
     "jitterAmplitudeDeg": 0.5,
-    "jitterIntervalMs": 500
+    "jitterIntervalMs": 800
   },
   "servoTransitions": {}
 }
