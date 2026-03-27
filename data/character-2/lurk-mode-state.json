@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "timestamp": 1774366284741,
+  "results": {
+    "jaw": {
+      "enabled": true
+    },
+    "headTracking": {
+      "enabled": false,
+      "error": "No pan servo found"
+    },
+    "randomPose": {
+      "enabled": true
+    }
+  }
+}

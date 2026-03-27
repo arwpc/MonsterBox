@@ -1,13 +1,12 @@
 {
   "enabled": false,
-  "timestamp": 1774211792459,
+  "timestamp": 1774215282013,
   "results": {
     "jaw": {
       "enabled": false
     },
     "headTracking": {
-      "enabled": false,
-      "testMode": true
+      "enabled": false
     },
     "randomPose": {
       "enabled": false

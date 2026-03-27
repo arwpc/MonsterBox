@@ -4507,6 +4507,20 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1774214186875xpmr9zw54",
+      "sceneId": 111,
+      "characterId": 3,
+      "timestamp": "2026-03-22T21:16:26.875Z",
+      "startTime": "2026-03-22T21:15:29.601Z",
+      "endTime": "2026-03-22T21:16:26.862Z",
+      "duration": 57261,
+      "stepsExecuted": 12,
+      "totalSteps": 12,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4739,6 +4753,14 @@
       "characterId": 3,
       "executionCount": 4,
       "lastExecuted": "2026-03-08T06:11:04.819Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_111": {
+      "sceneId": 111,
+      "characterId": 3,
+      "executionCount": 1,
+      "lastExecuted": "2026-03-22T21:16:26.888Z",
       "totalDuration": 0,
       "averageDuration": 0
     }
