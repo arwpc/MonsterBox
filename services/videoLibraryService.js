@@ -22,6 +22,26 @@ async function acquireLock() {
     const startTime = Date.now();
 
     while (isLocked || await fs.access(lockfilePath).then(() => true).catch(() => false)) {
+        // Check if the lock is stale (held by a dead process)
+        if (!isLocked) {
+            try {
+                const pid = parseInt(await fs.readFile(lockfilePath, 'utf8'), 10);
+                if (pid && pid !== process.pid) {
+                    try {
+                        process.kill(pid, 0); // Check if process exists
+                    } catch {
+                        // Process is dead — remove stale lock
+                        console.warn(`⚠️ Removing stale video library lock (PID ${pid} no longer running)`);
+                        await fs.unlink(lockfilePath).catch(() => {});
+                        continue;
+                    }
+                }
+            } catch {
+                // Can't read lock file — remove it
+                await fs.unlink(lockfilePath).catch(() => {});
+                continue;
+            }
+        }
         if (Date.now() - startTime > timeout) {
             throw new Error('Failed to acquire lock on video library within 5 seconds.');
         }

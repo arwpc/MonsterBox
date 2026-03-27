@@ -139,7 +139,10 @@ async function shutdown() {
   isShuttingDown = true;
 
   try {
-    daemonProcess.stdin.write(JSON.stringify({ cmd: 'shutdown' }) + '\n');
+    if (daemonProcess.stdin && !daemonProcess.stdin.destroyed) {
+      daemonProcess.stdin.once('error', () => {}); // absorb EPIPE during shutdown
+      daemonProcess.stdin.write(JSON.stringify({ cmd: 'shutdown' }) + '\n');
+    }
   } catch (_) {
     // stdin may already be closed
   }

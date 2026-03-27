@@ -13,12 +13,24 @@ import os from 'os';
  */
 function setProcessPriority() {
     try {
+        const current = os.getPriority(process.pid);
+        // Already elevated (e.g. by systemd Nice=) — no need to escalate further
+        if (current <= -5) {
+            console.log(`Process priority already elevated (nice ${current})`);
+            return { success: true, nice: current };
+        }
         os.setPriority(process.pid, -15);
         console.log('Process priority set to -15 (elevated)');
         return { success: true, nice: -15 };
     } catch (err) {
+        const current = os.getPriority(process.pid);
+        if (current < 0) {
+            // Systemd set a negative nice value — good enough
+            console.log(`Process priority set by systemd (nice ${current})`);
+            return { success: true, nice: current };
+        }
         console.warn(`Could not set process priority: ${err.message}. Running at default priority.`);
-        return { success: false, nice: os.getPriority(process.pid), error: err.message };
+        return { success: false, nice: current, error: err.message };
     }
 }
 
