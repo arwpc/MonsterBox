@@ -32,19 +32,35 @@ fi
 # Get the actual user (not root)
 ACTUAL_USER=${SUDO_USER:-$(logname 2>/dev/null || echo "pi")}
 ACTUAL_HOME=$(eval echo ~$ACTUAL_USER)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Detect boot config path (Bookworm uses /boot/firmware/, older uses /boot/)
+if [ -f /boot/firmware/config.txt ]; then
+    BOOT_CONFIG="/boot/firmware/config.txt"
+elif [ -f /boot/config.txt ]; then
+    BOOT_CONFIG="/boot/config.txt"
+else
+    BOOT_CONFIG="/boot/firmware/config.txt"
+fi
 
 print_status "Installing MonsterBox for user: $ACTUAL_USER"
 print_status "User home directory: $ACTUAL_HOME"
+print_status "Repository directory: $REPO_DIR"
+print_status "Boot config: $BOOT_CONFIG"
 
+# ============================================================
 # 1. System Update and Upgrade
-print_status "Updating system packages..."
+# ============================================================
+print_status "Step 1: Updating system packages..."
 apt-get update
 apt-get upgrade -y
 apt-get dist-upgrade -y
 apt-get autoremove -y
 
+# ============================================================
 # 2. Install Core System Dependencies
-print_status "Installing core system dependencies..."
+# ============================================================
+print_status "Step 2: Installing core system dependencies..."
 apt-get install -y \
     curl \
     wget \
@@ -53,14 +69,17 @@ apt-get install -y \
     cmake \
     pkg-config \
     unzip \
+    openssl \
     software-properties-common \
     apt-transport-https \
     ca-certificates \
     gnupg \
     lsb-release
 
+# ============================================================
 # 3. Install Node.js 20 LTS (official NodeSource repository)
-print_status "Installing Node.js 20 LTS..."
+# ============================================================
+print_status "Step 3: Installing Node.js 20 LTS..."
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 
@@ -70,8 +89,10 @@ NPM_VERSION=$(npm --version)
 print_success "Node.js installed: $NODE_VERSION"
 print_success "npm installed: $NPM_VERSION"
 
+# ============================================================
 # 4. Install Python and Core Python Packages
-print_status "Installing Python dependencies..."
+# ============================================================
+print_status "Step 4: Installing Python dependencies..."
 apt-get install -y \
     python3 \
     python3-pip \
@@ -82,20 +103,26 @@ apt-get install -y \
     python3-numpy \
     python3-scipy
 
+# ============================================================
 # 5. Install Hardware Control Libraries
-print_status "Installing hardware control libraries..."
+# ============================================================
+print_status "Step 5: Installing hardware control libraries..."
 apt-get install -y \
     python3-rpi.gpio \
     python3-gpiozero \
+    python3-lgpio \
     python3-smbus \
+    python3-smbus2 \
     python3-spidev \
     python3-pigpio \
     pigpio \
     i2c-tools \
     spi-tools
 
+# ============================================================
 # 6. Install Audio System Dependencies
-print_status "Installing audio system dependencies..."
+# ============================================================
+print_status "Step 6: Installing audio system dependencies..."
 # Remove PulseAudio to avoid conflicts with PipeWire
 apt-get purge -y 'pulseaudio*' || true
 apt-get install -y \
@@ -114,8 +141,10 @@ apt-get install -y \
     python3-pyaudio \
     python3-websockets
 
+# ============================================================
 # 7. Install Video/Camera Dependencies
-print_status "Installing video and camera dependencies..."
+# ============================================================
+print_status "Step 7: Installing video and camera dependencies..."
 apt-get install -y \
     v4l-utils \
     fswebcam \
@@ -125,8 +154,10 @@ apt-get install -y \
     libswscale-dev \
     libavdevice-dev
 
+# ============================================================
 # 8. Install OpenCV and Computer Vision Dependencies
-print_status "Installing OpenCV dependencies..."
+# ============================================================
+print_status "Step 8: Installing OpenCV dependencies..."
 apt-get install -y \
     python3-opencv \
     libopencv-dev \
@@ -138,17 +169,18 @@ apt-get install -y \
     libxvidcore-dev \
     libx264-dev
 
+# ============================================================
 # 9. Install MJPG-Streamer Dependencies
-print_status "Installing MJPG-Streamer dependencies..."
+# ============================================================
+print_status "Step 9: Installing MJPG-Streamer dependencies..."
 apt-get install -y \
     libjpeg-dev \
-    imagemagick \
-    libv4l-dev \
-    cmake \
-    git
+    imagemagick
 
+# ============================================================
 # 10. Configure Hardware Interfaces
-print_status "Configuring hardware interfaces..."
+# ============================================================
+print_status "Step 10: Configuring hardware interfaces..."
 
 # Enable I2C
 raspi-config nonint do_i2c 0
@@ -158,26 +190,30 @@ print_success "I2C enabled"
 raspi-config nonint do_spi 0
 print_success "SPI enabled"
 
-# Enable Camera
-raspi-config nonint do_camera 0
+# Enable Camera (Bookworm uses libcamera by default; legacy camera enable is a no-op)
+raspi-config nonint do_camera 0 2>/dev/null || true
 print_success "Camera enabled"
 
+# ============================================================
 # 11. Configure GPU Memory and Boot Settings
-print_status "Configuring GPU memory and boot settings..."
+# ============================================================
+print_status "Step 11: Configuring GPU memory and boot settings..."
 
-# Remove existing GPU memory settings
-sed -i '/gpu_mem=/d' /boot/config.txt
-sed -i '/start_x=/d' /boot/config.txt
-sed -i '/gpu_split=/d' /boot/config.txt
+# Remove existing GPU memory settings (idempotent)
+sed -i '/^gpu_mem=/d' "$BOOT_CONFIG"
+sed -i '/^start_x=/d' "$BOOT_CONFIG"
+sed -i '/^gpu_split=/d' "$BOOT_CONFIG"
 
 # Set optimal GPU memory for camera and graphics
-echo "gpu_mem=256" >> /boot/config.txt
-echo "start_x=1" >> /boot/config.txt
+echo "gpu_mem=256" >> "$BOOT_CONFIG"
+echo "start_x=1" >> "$BOOT_CONFIG"
 
 print_success "GPU memory configured for camera support"
 
+# ============================================================
 # 12. Set Up User Groups and Permissions
-print_status "Setting up user groups and permissions..."
+# ============================================================
+print_status "Step 12: Setting up user groups and permissions..."
 
 # Add user to required groups
 usermod -a -G gpio,video,audio,i2c,spi,dialout,plugdev $ACTUAL_USER
@@ -190,20 +226,26 @@ echo 'SUBSYSTEM=="video4linux", GROUP="video", MODE="0666"' > /etc/udev/rules.d/
 
 print_success "User groups and permissions configured"
 
+# ============================================================
 # 13. Enable and Start Services
-print_status "Enabling and starting system services..."
+# ============================================================
+print_status "Step 13: Enabling and starting system services..."
 
 # Enable and start pigpiod for GPIO control
 systemctl enable pigpiod
 systemctl start pigpiod
 print_success "pigpiod service enabled and started"
 
-# Enable I2C and SPI modules
-echo "i2c-dev" >> /etc/modules
-echo "spi-dev" >> /etc/modules
+# Enable I2C and SPI modules (idempotent — only add if not already present)
+grep -qxF 'i2c-dev' /etc/modules || echo "i2c-dev" >> /etc/modules
+grep -qxF 'spi-dev' /etc/modules || echo "spi-dev" >> /etc/modules
 
+# ============================================================
 # 14. Install MJPG-Streamer
-print_status "Installing MJPG-Streamer..."
+# ============================================================
+print_status "Step 14: Installing MJPG-Streamer..."
+
+# Build in /tmp (will cd back to REPO_DIR afterward)
 cd /tmp
 
 # Clone and build MJPG-Streamer
@@ -217,6 +259,9 @@ cd mjpg-streamer/mjpg-streamer-experimental
 make clean
 make all
 make install
+
+# Return to repo directory
+cd "$REPO_DIR"
 
 # Create systemd service for MJPG-Streamer
 cat > /etc/systemd/system/mjpg-streamer.service << 'EOF'
@@ -238,14 +283,15 @@ EOF
 
 systemctl daemon-reload
 systemctl enable mjpg-streamer
-
-print_success "MJPG-Streamer installed and configured"
-systemctl restart mjpg-streamer
+systemctl restart mjpg-streamer || print_warning "mjpg-streamer failed to start (no camera connected?)"
 sleep 1
 
+print_success "MJPG-Streamer installed and configured"
 
+# ============================================================
 # 15. Configure Audio System
-print_status "Configuring audio system..."
+# ============================================================
+print_status "Step 15: Configuring audio system..."
 
 # Set default audio levels
 for control in PCM Master Headphone Speaker; do
@@ -257,30 +303,27 @@ alsactl store || true
 
 print_success "Audio system configured"
 
-# 15b. Configure WirePlumber to auto-start at boot for the user
-print_status "Configuring WirePlumber for user $ACTUAL_USER..."
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bash "$REPO_DIR/scripts/configure-wireplumber.sh" "$ACTUAL_USER" || print_warning "configure-wireplumber.sh reported a non-fatal issue"
+# ============================================================
+# 16. Configure WirePlumber and Performance Tuning
+# ============================================================
+print_status "Step 16: Configuring WirePlumber and performance tuning..."
 
-# 16b. Apply MonsterBox OS performance optimizations (idempotent)
-print_status "Applying OS performance optimizations (CPU governor, sysctl, service priority)..."
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$REPO_DIR/scripts/configure-wireplumber.sh" ]; then
+    bash "$REPO_DIR/scripts/configure-wireplumber.sh" "$ACTUAL_USER" || print_warning "configure-wireplumber.sh reported a non-fatal issue"
+fi
+
 if [ -f "$REPO_DIR/scripts/optimize-pi-performance.sh" ]; then
     bash "$REPO_DIR/scripts/optimize-pi-performance.sh" || print_warning "optimize-pi-performance.sh reported a non-fatal issue"
-else
-    print_warning "scripts/optimize-pi-performance.sh not found; skipping OS tuning"
 fi
 
-# 16c. Set low-latency mjpg-streamer defaults via systemd drop-in (idempotent)
-print_status "Tuning mjpg-streamer defaults for low latency (640x480@24fps q80)..."
 if [ -f "$REPO_DIR/scripts/tune-mjpg.sh" ]; then
     bash "$REPO_DIR/scripts/tune-mjpg.sh" /dev/video0 640x480 24 80 || print_warning "tune-mjpg.sh reported a non-fatal issue"
-else
-    print_warning "scripts/tune-mjpg.sh not found; skipping mjpg-streamer tuning"
 fi
 
-# 16. Configure ElevenLabs AI (required for STT, TTS, Conversational AI)
-print_status "Configuring ElevenLabs AI..."
+# ============================================================
+# 17. Configure ElevenLabs AI
+# ============================================================
+print_status "Step 17: Configuring ElevenLabs AI..."
 
 # Accept either ELEVENLABS_API_KEY or XI_API_KEY from the environment
 ELEVEN_KEY="${ELEVENLABS_API_KEY:-$XI_API_KEY}"
@@ -297,7 +340,6 @@ else
 fi
 
 # Provision default AI config (TTS: eleven_v3, STT: scribe_v2)
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_CONFIG_DIR="$REPO_DIR/data/ai-config"
 mkdir -p "$AI_CONFIG_DIR"
 
@@ -329,15 +371,54 @@ STTCFG
     print_success "Created default STT config (scribe_v2)"
 fi
 
+# ============================================================
+# 18. Generate SSL Certificates (required for HTTPS / microphone)
+# ============================================================
+print_status "Step 18: Generating SSL certificates..."
 
-# 17. Create and select a new Character
-print_status "Creating and selecting a new Character..."
-read -rp "Enter new Character name: " NEW_CHAR_NAME
+CERT_DIR="$REPO_DIR/certs"
+mkdir -p "$CERT_DIR"
+
+if [ ! -f "$CERT_DIR/server.key" ] || [ ! -f "$CERT_DIR/server.cert" ]; then
+    HOSTNAME_SHORT=$(hostname -s 2>/dev/null || echo "monsterbox")
+    openssl req -x509 -newkey rsa:2048 -nodes \
+        -keyout "$CERT_DIR/server.key" \
+        -out "$CERT_DIR/server.cert" \
+        -days 3650 \
+        -subj "/CN=$HOSTNAME_SHORT"
+    chmod 600 "$CERT_DIR/server.key"
+    chmod 644 "$CERT_DIR/server.cert"
+    chown "$ACTUAL_USER":"$ACTUAL_USER" "$CERT_DIR/server.key" "$CERT_DIR/server.cert"
+    print_success "SSL certificates generated (self-signed, 10-year expiry)"
+else
+    print_success "SSL certificates already exist, skipping"
+fi
+
+# ============================================================
+# 19. Install Node.js Dependencies
+# ============================================================
+print_status "Step 19: Installing Node.js dependencies..."
+
+cd "$REPO_DIR"
+sudo -u "$ACTUAL_USER" npm ci --production
+print_success "Node.js production dependencies installed"
+
+# Install Playwright browsers for testing (optional, non-fatal)
+sudo -u "$ACTUAL_USER" npm ci 2>/dev/null && \
+    sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \
+    print_success "Playwright browsers installed for testing" || \
+    print_warning "Playwright browser install skipped (run 'npm ci && npx playwright install --with-deps chromium' later for testing)"
+
+# ============================================================
+# 20. Create and Select a New Character
+# ============================================================
+print_status "Step 20: Creating and selecting a new Character..."
+
+read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME
 if [ -z "$NEW_CHAR_NAME" ]; then
     print_warning "No character name entered; skipping character creation."
 else
-    # Use Node.js to safely update JSON files
-    REPO_DIR="$REPO_DIR" NEW_CHAR_NAME="$NEW_CHAR_NAME" node - <<'NODE'
+    REPO_DIR="$REPO_DIR" NEW_CHAR_NAME="$NEW_CHAR_NAME" node --input-type=commonjs - <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
@@ -357,23 +438,84 @@ const nextId = arr.length ? Math.max(...arr.map(c => Number(c.id)||0)) + 1 : 1;
 arr.push({ id: nextId, name });
 fs.writeFileSync(charFile, JSON.stringify(arr, null, 2));
 
+// Create character data directory with scaffold files
 const charDir = path.join(dataDir, `character-${nextId}`);
 fs.mkdirSync(charDir, { recursive: true });
 
-const cfg = readJson(cfgFile, {});
+const scaffold = {
+  'parts.json': [],
+  'poses.json': { characterId: nextId, poses: [] },
+  'scenes.json': [],
+  'super-powers.json': { jawAnimation: { enabled: false }, headTracking: { enabled: false } }
+};
+
+for (const [file, content] of Object.entries(scaffold)) {
+  const filePath = path.join(charDir, file);
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+  }
+}
+
+// Create per-character AI config directory
+const aiDir = path.join(charDir, 'ai-config');
+fs.mkdirSync(aiDir, { recursive: true });
+
+// Update app config to select the new character
+const cfg = readJson(cfgFile, { port: 3000, theme: 'default-dark' });
 cfg.selectedCharacter = nextId;
 cfg.dataPath = `data/character-${nextId}`;
 fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2));
 
-console.log(`Created character '${name}' with id=${nextId}`);
+console.log(`Created character '${name}' with id=${nextId}, data at ${charDir}`);
 NODE
     print_success "Character '$NEW_CHAR_NAME' created and selected."
 fi
 
+# ============================================================
+# 21. Create MonsterBox Systemd Service
+# ============================================================
+print_status "Step 21: Creating MonsterBox systemd service..."
 
+cat > /etc/systemd/system/monsterbox.service << EOF
+[Unit]
+Description=MonsterBox Animatronic Control System
+Documentation=https://github.com/arwpc/MonsterBox
+After=network-online.target multi-user.target
+Wants=network-online.target
 
+[Service]
+Type=simple
+User=$ACTUAL_USER
+WorkingDirectory=$REPO_DIR
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=GAIN=130
+Environment=XDG_RUNTIME_DIR=/run/user/$(id -u $ACTUAL_USER)
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+StandardOutput=append:/var/log/monsterbox.log
+StandardError=append:/var/log/monsterbox.err
+SyslogIdentifier=monsterbox
+NoNewPrivileges=true
+PrivateTmp=true
+LimitNOFILE=4096
+MemoryMax=1G
 
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable monsterbox.service
+
+print_success "MonsterBox systemd service created and enabled"
+
+# ============================================================
+# Done
+# ============================================================
 print_success "MonsterBox system installation complete!"
 print_warning "Please reboot your Raspberry Pi to ensure all changes take effect"
-print_status "After reboot, navigate to your MonsterBox directory and run: npm ci"
-print_status "Then start MonsterBox with: npm start"
+print_status "After reboot, MonsterBox will start automatically via systemd"
+print_status "Access the dashboard at https://$(hostname -I | awk '{print $1}'):3000"

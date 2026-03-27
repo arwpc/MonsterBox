@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [7.8.0] - 2026-03-27 — Lurk Mode Motion Sensor & Actuator Position Persistence
 
+### Install Script & Dependency Cleanup
+- **Removed unused dependencies** — `puppeteer` (~400MB with Chromium) and `claude` removed from package.json; neither was imported anywhere in the codebase
+- **Moved puppeteer to devDependencies** then removed entirely — E2E tests use Playwright, not Puppeteer
+- **install.sh modernized for fresh RPi4B deployment:**
+  - Bookworm boot config path detection (`/boot/firmware/config.txt` vs `/boot/config.txt`)
+  - Added missing Python packages: `python3-lgpio`, `python3-smbus2` (required by hardware wrappers)
+  - Idempotent `/etc/modules` entries (no duplicates on re-run)
+  - Auto-generates self-signed SSL certificates (HTTPS required for browser microphone access)
+  - Runs `npm ci` automatically during install
+  - Creates `monsterbox.service` systemd unit with security hardening
+  - Scaffolds new character data files (parts.json, poses.json, scenes.json, super-powers.json)
+  - Consistent step numbering and working directory management
+  - Explicit `--input-type=commonjs` for inline Node.js script (ESM-safe)
+
 ### Linear Actuator Position Persistence & Bounds Enforcement
 - **Persistent position tracking** — Actuator positions now survive server restarts via `data/actuator-positions.json` (atomic writes for SD card safety)
 - **Crash recovery** — If the server crashes mid-move, the position is marked "unknown" on next startup; homing is recommended before further use

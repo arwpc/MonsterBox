@@ -125,19 +125,21 @@ MonsterBox 7.0 is a major release consolidating all v6.x features into a polishe
 
 ## Quick Start (RPi4B)
 ```bash
-# 1) Install system dependencies (PipeWire, WirePlumber, mjpg-streamer, pigpio, ffmpeg)
-#    Use the deployment guide for exact package set
-# 2) Clone and install Node deps
+# 1) Clone the repo
 git clone git@github.com:arwpc/MonsterBox.git
 cd MonsterBox
-npm ci
 
-# 3) Start (dev)
-MB_TEST_MODE=1 npm start
-# Dashboard: http://localhost:3000
+# 2) Run the full installer (system deps, Node, Python, audio, SSL certs, systemd service)
+sudo bash install.sh
+
+# 3) Reboot to apply hardware/audio changes
+sudo reboot
+
+# MonsterBox starts automatically via systemd
+# Dashboard: https://<your-pi-ip>:3000
 ```
 
-Systemd service and production boot guidance: docs/deployment/README.md
+For manual/partial setup or multi-node deployment: docs/deployment/README.md
 
 ## Key Services and Ports
 - MonsterBox app: :3000 (HTTP)
