@@ -298,6 +298,33 @@ async function prepareActuatorCommand(partId, target, partMetadata, options) {
 async function prepareMotorCommand(partId, target, partMetadata, options) {
     const { speed = 50, direction = 'forward', duration = 1000 } = target;
 
+    let effectiveDuration = duration;
+
+    // Enforce calibration bounds for motors (same open-loop issues as linear actuators)
+    try {
+        const store = getCalibrationStore();
+        const profile = await store.get(parseInt(partId, 10));
+        if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
+            const posState = actuatorPositionStore.load(parseInt(partId, 10));
+            const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
+            const motion = profile.motion;
+            if (motion && motion.bins && motion.bins.length > 0) {
+                const bin = motion.bins.reduce((best, b) =>
+                    Math.abs(b.pwmPct - speed) < Math.abs(best.pwmPct - speed) ? b : best
+                );
+                const rate = bin.unitsPerSec || 0.2;
+                const isForward = direction === 'forward' || direction === 'extend';
+                const maxSafe = isForward
+                    ? Math.max(0, profile.bounds.maxP - currentP)
+                    : Math.max(0, currentP - profile.bounds.minP);
+                const maxSafeDuration = Math.round((maxSafe / rate) * 1000);
+                effectiveDuration = Math.min(effectiveDuration, maxSafeDuration);
+            }
+        }
+    } catch (e) {
+        // Non-fatal: proceed with original duration
+    }
+
     return {
         type: 'motor',
         action: 'run',
@@ -306,7 +333,7 @@ async function prepareMotorCommand(partId, target, partMetadata, options) {
             pin: partMetadata.pin || partMetadata.gpioPin,
             speed: Math.max(0, Math.min(100, speed)),
             direction: direction,
-            duration: duration
+            duration: effectiveDuration
         }
     };
 }
