@@ -11,6 +11,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
 import hardwareService from '../../services/hardwareService/index.js';
+import { getCalibrationStore } from '../../server/calibration/store.js';
+import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
 import * as configService from '../../services/configService.js';
@@ -169,12 +171,103 @@ router.post('/:id/test', express.json(), async (req, res) => {
             });
         } else if (partType === 'linear_actuator') {
             const direction = (params && params.direction) || 'extend';
-            const duration = (params && params.duration) || 1000;
+            let duration = Math.min((params && params.duration) || 1000, 2000);
             const speed = (params && params.speed) || 100;
+            let projectedP = null;
+
+            // Enforce calibration bounds (non-fatal)
+            try {
+                const store = getCalibrationStore();
+                const profile = await store.get(parseInt(part.id, 10));
+                if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
+                    const posState = actuatorPositionStore.load(parseInt(part.id, 10));
+                    const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
+                    const motion = profile.motion;
+                    if (motion && motion.bins && motion.bins.length > 0) {
+                        const bin = motion.bins.reduce((best, b) =>
+                            Math.abs(b.pwmPct - speed) < Math.abs(best.pwmPct - speed) ? b : best
+                        );
+                        const rate = bin.unitsPerSec || 0.2;
+                        const moveDist = rate * (duration / 1000);
+                        const projected = direction === 'retract' ? currentP - moveDist : currentP + moveDist;
+                        if (projected > profile.bounds.maxP) {
+                            const safeDistance = Math.max(0, profile.bounds.maxP - currentP);
+                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+                        } else if (projected < profile.bounds.minP) {
+                            const safeDistance = Math.max(0, currentP - profile.bounds.minP);
+                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+                        }
+                        const actualDist = rate * (duration / 1000);
+                        projectedP = direction === 'retract'
+                            ? Math.max(0, currentP - actualDist)
+                            : Math.min(1, currentP + actualDist);
+                    }
+                }
+            } catch (e) {
+                console.warn(`[PartsAPI] Could not enforce bounds for actuator part ${part.id}:`, e.message);
+            }
+
             const result = await controlPart(part.id, direction, { duration, speed });
+
+            // Persist updated position estimate
+            if (projectedP != null) {
+                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
+            }
+
             return res.json({
                 success: result.success !== false,
                 message: result.message || `Actuator ${part.name} ${direction}`,
+                part
+            });
+        } else if (partType === 'motor') {
+            const direction = (params && params.direction) || 'forward';
+            let duration = Math.min((params && params.duration) || 1000, 2000);
+            const speed = (params && params.speed) || 100;
+            let projectedP = null;
+
+            // Enforce calibration bounds (non-fatal)
+            try {
+                const store = getCalibrationStore();
+                const profile = await store.get(parseInt(part.id, 10));
+                if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
+                    const posState = actuatorPositionStore.load(parseInt(part.id, 10));
+                    const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
+                    const motion = profile.motion;
+                    if (motion && motion.bins && motion.bins.length > 0) {
+                        const bin = motion.bins.reduce((best, b) =>
+                            Math.abs(b.pwmPct - speed) < Math.abs(best.pwmPct - speed) ? b : best
+                        );
+                        const rate = bin.unitsPerSec || 0.2;
+                        const moveDist = rate * (duration / 1000);
+                        const isForward = direction === 'forward' || direction === 'extend';
+                        const projected = isForward ? currentP + moveDist : currentP - moveDist;
+                        if (projected > profile.bounds.maxP) {
+                            const safeDistance = Math.max(0, profile.bounds.maxP - currentP);
+                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+                        } else if (projected < profile.bounds.minP) {
+                            const safeDistance = Math.max(0, currentP - profile.bounds.minP);
+                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+                        }
+                        const actualDist = rate * (duration / 1000);
+                        projectedP = isForward
+                            ? Math.min(1, currentP + actualDist)
+                            : Math.max(0, currentP - actualDist);
+                    }
+                }
+            } catch (e) {
+                console.warn(`[PartsAPI] Could not enforce bounds for motor part ${part.id}:`, e.message);
+            }
+
+            const result = await controlPart(part.id, 'control', { direction, speed, duration });
+
+            // Persist updated position estimate
+            if (projectedP != null) {
+                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
+            }
+
+            return res.json({
+                success: result.success !== false,
+                message: result.message || `Motor ${part.name} ${direction}`,
                 part
             });
         } else {

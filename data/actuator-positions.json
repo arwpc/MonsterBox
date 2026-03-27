@@ -1,0 +1,12 @@
+{
+  "2": {
+    "currentP": 0.7,
+    "isMoving": false,
+    "positionKnown": true,
+    "confidence": "tracked",
+    "movesSinceHome": 35,
+    "lastUpdatedAt": "2026-03-27T22:25:49.374Z",
+    "lastDir": "extend",
+    "cleanShutdown": false
+  }
+}

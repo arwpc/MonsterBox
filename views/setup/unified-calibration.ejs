@@ -936,6 +936,16 @@
           <div class="position-display">
             <div class="position-value" id="positionValue">-</div>
             <div class="position-label">Current Position (normalized)</div>
+            <div class="mt-1">
+              <span id="calConfidenceBadge" class="badge bg-secondary" style="display: none;">Unknown</span>
+            </div>
+          </div>
+
+          <!-- Home Button (open-loop parts only) -->
+          <div id="calHomeSection" class="text-center mb-2" style="display: none;">
+            <button class="btn btn-warning btn-sm" id="homeBtn" disabled>
+              <i class="bi bi-house-door"></i> Home (Retract to Endstop)
+            </button>
           </div>
 
           <div class="jog-pad">
@@ -1102,6 +1112,9 @@
 
       // Presets
       document.getElementById('addPresetBtn').addEventListener('click', addPreset);
+
+      // Home button
+      document.getElementById('homeBtn').addEventListener('click', homePart);
     }
 
     async function handlePartSelect(e) {
@@ -1138,6 +1151,16 @@
       // Update status bar
       document.getElementById('statusPart').textContent = e.target.selectedOptions[0].text;
       document.getElementById('statusType').textContent = partType;
+
+      // Show/hide home button for open-loop parts
+      const isOpenLoop = partType === 'linear_actuator' || partType === 'continuous_servo';
+      const homeSection = document.getElementById('calHomeSection');
+      const homeBtn = document.getElementById('homeBtn');
+      if (homeSection) homeSection.style.display = isOpenLoop ? 'block' : 'none';
+      if (homeBtn) homeBtn.disabled = !partId;
+
+      // Fetch current position and confidence on part select
+      await updatePosition();
     }
 
     async function createDefaultProfile(partType) {
@@ -1435,13 +1458,71 @@
       }
     }
 
+    // Update confidence badge for open-loop parts
+    function updateConfidenceBadge(positionKnown, confidence) {
+      const badge = document.getElementById('calConfidenceBadge');
+      if (!badge) return;
+      // Only show when home section is visible (open-loop parts)
+      const homeSection = document.getElementById('calHomeSection');
+      if (!homeSection || homeSection.style.display === 'none') {
+        badge.style.display = 'none';
+        return;
+      }
+      badge.style.display = 'inline-block';
+      if (confidence === 'homed') {
+        badge.className = 'badge bg-success';
+        badge.textContent = 'Homed';
+      } else if (confidence === 'tracked' && positionKnown !== false) {
+        badge.className = 'badge bg-warning text-dark';
+        badge.textContent = 'Tracked';
+      } else {
+        badge.className = 'badge bg-danger';
+        badge.textContent = 'Unknown - Home Required';
+      }
+    }
+
+    // Home part to retract endstop
+    async function homePart() {
+      if (!currentPartId) return;
+      const btn = document.getElementById('homeBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
+      }
+      try {
+        const response = await fetch(`/api/calibration/${currentPartId}/home`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction: 'retract' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          if (data.currentP != null) {
+            document.getElementById('positionValue').textContent = Number(data.currentP).toFixed(3);
+          }
+          updateConfidenceBadge(data.positionKnown, data.confidence);
+          showAlert('Homed successfully', 'info');
+        } else {
+          showAlert('Home failed: ' + (data.error || 'Unknown'), 'danger');
+        }
+      } catch (err) {
+        showAlert('Home error: ' + err.message, 'danger');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-house-door"></i> Home (Retract to Endstop)';
+        }
+      }
+    }
+
     async function updatePosition() {
       if (!currentPartId) return;
       try {
         const response = await fetch(`/api/calibration/${currentPartId}/position`);
         const data = await response.json();
-        if (data.success && data.position != null) {
-          document.getElementById('positionValue').textContent = Number(data.position).toFixed(3);
+        if (data.success && data.currentP != null) {
+          document.getElementById('positionValue').textContent = Number(data.currentP).toFixed(3);
+          updateConfidenceBadge(data.positionKnown, data.confidence);
         }
       } catch (err) {
         console.warn('Could not read position:', err.message);

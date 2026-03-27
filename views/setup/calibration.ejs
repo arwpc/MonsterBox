@@ -517,7 +517,17 @@
             <label class="form-label small fw-bold">Current Position</label>
             <div class="text-center">
               <span id="calPositionDisplay" class="badge bg-primary fs-5">—</span>
+              <div class="mt-1">
+                <span id="calConfidenceBadge" class="badge bg-secondary" style="display: none;">Unknown</span>
+              </div>
             </div>
+          </div>
+
+          <!-- Home Button (open-loop parts only) -->
+          <div id="calHomeSection" class="mb-3" style="display: none;">
+            <button type="button" class="btn btn-sm btn-outline-warning w-100" id="calHomeBtn" onclick="homePart()">
+              <i class="bi bi-house-door"></i> Home (Retract to Endstop)
+            </button>
           </div>
 
           <!-- Calibration Bounds -->
@@ -789,12 +799,13 @@
         currentCalProfile = data.profile;
         updateCalibrationUI(currentCalProfile, partData);
 
-        // Also fetch current position
+        // Also fetch current position and confidence
         try {
           var posRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/position');
           var posData = await posRes.json();
           if (posData.success) {
             updateCurrentPositionDisplay(posData.currentP, posData.currentAngle);
+            updateConfidenceBadge(posData.positionKnown, posData.confidence);
           }
         } catch (posErr) {
           console.warn('Could not fetch current position:', posErr);
@@ -816,11 +827,16 @@
       // Determine if this is an absolute servo
       currentPartIsAbsoluteServo = profile && profile.capability && profile.capability.kind === 'absolute-servo';
 
-      // Show/hide learn-movement section based on part capability
+      // Show/hide learn-movement section and home button based on part capability
       var learnSection = document.getElementById('learnMovementSection');
-      var isOpenloop = partData && partData.config && partData.config.capability === 'openloop-linear';
+      var capKind = profile && profile.capability && profile.capability.kind;
+      var isOpenloop = capKind === 'openloop-linear' || capKind === 'continuous-servo';
       if (learnSection) {
-        learnSection.style.display = isOpenloop ? 'block' : 'none';
+        learnSection.style.display = (partData && partData.config && partData.config.capability === 'openloop-linear') ? 'block' : 'none';
+      }
+      var homeSection = document.getElementById('calHomeSection');
+      if (homeSection) {
+        homeSection.style.display = isOpenloop ? 'block' : 'none';
       }
 
       // Update bounds displays — use angle for absolute servos, normalized for others
@@ -956,6 +972,28 @@
       }
     }
 
+    // Helper function to update the confidence badge
+    function updateConfidenceBadge(positionKnown, confidence) {
+      var badge = document.getElementById('calConfidenceBadge');
+      if (!badge) return;
+      // Only show for open-loop parts
+      if (currentPartIsAbsoluteServo) {
+        badge.style.display = 'none';
+        return;
+      }
+      badge.style.display = 'inline-block';
+      if (confidence === 'homed') {
+        badge.className = 'badge bg-success';
+        badge.textContent = 'Homed';
+      } else if (confidence === 'tracked' && positionKnown !== false) {
+        badge.className = 'badge bg-warning text-dark';
+        badge.textContent = 'Tracked';
+      } else {
+        badge.className = 'badge bg-danger';
+        badge.textContent = 'Unknown - Home Required';
+      }
+    }
+
     // Helper function to fetch and update current position from server
     async function refreshCurrentPosition(partId) {
       if (!partId) partId = window.selectedPartId;
@@ -966,6 +1004,7 @@
         var data = await res.json();
         if (data.success) {
           updateCurrentPositionDisplay(data.currentP, data.currentAngle);
+          updateConfidenceBadge(data.positionKnown, data.confidence);
         }
       } catch (err) {
         console.warn('Could not fetch current position:', err);
@@ -974,6 +1013,42 @@
 
     // Expose position refresh for use by control handlers
     window.refreshCurrentPosition = refreshCurrentPosition;
+
+    // Home part (retract to endstop) — for open-loop parts only
+    async function homePart() {
+      var partId = window.selectedPartId;
+      if (!partId) return;
+      var btn = document.getElementById('calHomeBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
+      }
+      try {
+        var res = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/home', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction: 'retract' })
+        });
+        var data = await res.json();
+        if (data.success) {
+          updateCurrentPositionDisplay(data.currentP, data.currentAngle);
+          updateConfidenceBadge(data.positionKnown, data.confidence);
+          // Sync LA slider if present
+          if (window._syncLASlider) window._syncLASlider(data.currentP);
+        } else {
+          alert('Home failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Home error:', err);
+        alert('Home error: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-house-door"></i> Home (Retract to Endstop)';
+        }
+      }
+    }
+    window.homePart = homePart;
 
     // Bounds setting
     async function setCalibrationBound(boundType) {
