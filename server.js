@@ -889,6 +889,15 @@ async function gracefulShutdown(signal) {
         }
     } catch (e) { /* ignore */ }
 
+    // Persist actuator positions for clean restart
+    try {
+        const actuatorPositionStore = (await import('./services/actuatorPositionStore.js')).default;
+        actuatorPositionStore.markCleanShutdown();
+        console.log('  ✓ Actuator positions persisted');
+    } catch (e) {
+        console.warn('Actuator position save error:', (e && e.message) || e);
+    }
+
     // Remove PID lock file
     try {
         if (singleInstance) {

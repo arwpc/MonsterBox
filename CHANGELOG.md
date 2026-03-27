@@ -2,7 +2,19 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [7.8.0] - 2026-03-27 — Lurk Mode Motion Sensor & Inactivity Timeout
+## [7.8.0] - 2026-03-27 — Lurk Mode Motion Sensor & Actuator Position Persistence
+
+### Linear Actuator Position Persistence & Bounds Enforcement
+- **Persistent position tracking** — Actuator positions now survive server restarts via `data/actuator-positions.json` (atomic writes for SD card safety)
+- **Crash recovery** — If the server crashes mid-move, the position is marked "unknown" on next startup; homing is recommended before further use
+- **Bounds enforced everywhere** — Calibration min/max (minP/maxP) now enforced in: calibration nudge, scene executor (raw direction steps), and pose engine (distance-based moves)
+- **Scene executor bounds clamping** — Raw `extend`/`retract` scene steps are now duration-clamped so the actuator cannot exceed calibrated limits
+- **Pose engine bounds awareness** — `prepareActuatorCommand()` now loads calibration profiles and clamps movement to safe range
+- **Position survives adapter cache flush** — Changing invert, deleting profile, or learning motion model no longer resets position to 0.5
+- **Emergency stop marks position unknown** — `POST /calibration/:partId/stop` properly flags open-loop position as uncertain
+- **Homing sets high-confidence position** — `POST /calibration/:partId/home` persists `confidence: 'homed'` state
+- **Graceful shutdown persists all positions** — Shutdown handler saves `cleanShutdown: true` before PID release
+- **Position API enhanced** — `GET /calibration/:partId/position` now returns `positionKnown` and `confidence` for open-loop parts
 
 ### Lurk Mode Motion Sensor Integration
 - **Motion sensor (PIR) monitoring** — While Lurk mode is active, the character's motion sensor is polled every second. Movement resets the inactivity timer, keeping the animatronic alive.

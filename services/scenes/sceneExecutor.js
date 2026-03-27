@@ -10,6 +10,7 @@ import poseEngine from '../poses/poseEngine.js';
 import serverPlaybackService from '../serverPlaybackService.js';
 import sceneAnalytics from './sceneAnalyticsService.js';
 import { getCalibrationStore } from '../../server/calibration/store.js';
+import actuatorPositionStore from '../actuatorPositionStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -436,7 +437,7 @@ async function executeLinearActuatorStep(step, characterId, emit) {
 
   let effectiveSpeed = speed;
   let effectiveDuration = duration;
-  
+
   // If using preset, resolve the preset to movement parameters
   if (usePreset && presetName) {
     const presetParams = await resolvePresetToActuatorParams(partId, presetName);
@@ -444,11 +445,56 @@ async function executeLinearActuatorStep(step, characterId, emit) {
     effectiveDuration = presetParams.duration || duration;
   }
 
+  // Enforce calibration bounds: clamp duration so actuator cannot exceed min/max range
+  try {
+    const store = getCalibrationStore();
+    const profile = await store.get(parseInt(partId, 10));
+    if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
+      const posState = actuatorPositionStore.load(parseInt(partId, 10));
+      const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
+      const motion = profile.motion;
+      // Estimate how far the motor would move in effectiveDuration
+      if (motion && motion.bins && motion.bins.length > 0) {
+        // Find the closest speed bin
+        const bin = motion.bins.reduce((best, b) =>
+          Math.abs(b.pwmPct - effectiveSpeed) < Math.abs(best.pwmPct - effectiveSpeed) ? b : best
+        );
+        const rate = bin.unitsPerSec || 0.2;
+        const moveDist = rate * (effectiveDuration / 1000);
+        const projectedP = direction === 'retract' ? currentP - moveDist : currentP + moveDist;
+        // Clamp: if projected position would exceed bounds, shorten duration
+        if (projectedP > profile.bounds.maxP) {
+          const safeDistance = Math.max(0, profile.bounds.maxP - currentP);
+          effectiveDuration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+        } else if (projectedP < profile.bounds.minP) {
+          const safeDistance = Math.max(0, currentP - profile.bounds.minP);
+          effectiveDuration = Math.max(0, Math.round((safeDistance / rate) * 1000));
+        }
+        // Update persisted position after move
+        const actualDist = rate * (effectiveDuration / 1000);
+        const newP = direction === 'retract'
+          ? Math.max(0, currentP - actualDist)
+          : Math.min(1, currentP + actualDist);
+        // Defer position update to after the move
+        step._projectedP = newP;
+      }
+    }
+  } catch (e) {
+    // Non-fatal: if calibration lookup fails, proceed with original duration
+    console.warn(`[SceneExecutor] Could not enforce bounds for part ${partId}:`, e.message);
+  }
+
   // Linear actuators use 'extend' or 'retract' actions, not 'control'
   const action = direction === 'retract' ? 'retract' : 'extend';
 
   emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
   const r = await hardwareService.controlPart(String(partId), action, { speed: effectiveSpeed, duration: effectiveDuration });
+
+  // Persist updated position estimate
+  if (step._projectedP != null) {
+    try { actuatorPositionStore.markStopped(parseInt(partId, 10), step._projectedP); } catch (_) {}
+  }
+
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'linear-actuator', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Linear actuator control failed');
   return r;

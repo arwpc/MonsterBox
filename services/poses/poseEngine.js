@@ -5,6 +5,8 @@
 
 import { getPose } from './poseRepository.js';
 import servoService from '../hardwareService/servo.js';
+import { getCalibrationStore } from '../../server/calibration/store.js';
+import actuatorPositionStore from '../actuatorPositionStore.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -241,6 +243,36 @@ async function prepareActuatorCommand(partId, target, partMetadata, options) {
         throw new Error(`Linear actuator target must specify distance for part ${partId}`);
     }
 
+    let clampedDistance = Math.max(0, Math.min(distance, partMetadata.maxExtension || 15000));
+    let effectiveDuration = target.durationMs || 2000;
+
+    // Enforce calibration bounds: calculate max safe duration from current position
+    try {
+        const store = getCalibrationStore();
+        const profile = await store.get(parseInt(partId, 10));
+        if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
+            const posState = actuatorPositionStore.load(parseInt(partId, 10));
+            const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
+            const motion = profile.motion;
+            if (motion && motion.bins && motion.bins.length > 0) {
+                const bin = motion.bins.reduce((best, b) =>
+                    Math.abs(b.pwmPct - speed) < Math.abs(best.pwmPct - speed) ? b : best
+                );
+                const rate = bin.unitsPerSec || 0.2;
+                // Determine direction from distance (naive: > halfway means extend)
+                const isExtend = clampedDistance > (partMetadata.maxExtension || 15000) / 2;
+                const maxSafe = isExtend
+                    ? Math.max(0, profile.bounds.maxP - currentP)
+                    : Math.max(0, currentP - profile.bounds.minP);
+                const maxSafeDuration = Math.round((maxSafe / rate) * 1000);
+                effectiveDuration = Math.min(effectiveDuration, maxSafeDuration);
+                clampedDistance = Math.min(clampedDistance, maxSafeDuration);
+            }
+        }
+    } catch (e) {
+        // Non-fatal: proceed with original values
+    }
+
     return {
         type: 'linear_actuator',
         action: 'moveTo',
@@ -248,9 +280,9 @@ async function prepareActuatorCommand(partId, target, partMetadata, options) {
         params: {
             directionPin: partMetadata.directionPin || 18,
             pwmPin: partMetadata.pwmPin || 13,
-            distance: Math.max(0, Math.min(distance, partMetadata.maxExtension || 15000)),
+            distance: clampedDistance,
             speed: Math.max(1, Math.min(100, speed)),
-            duration: target.durationMs || 2000
+            duration: effectiveDuration
         }
     };
 }
