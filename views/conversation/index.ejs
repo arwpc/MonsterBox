@@ -26,11 +26,12 @@
           <span class="badge lurk-badge" id="lurkBadgeJaw" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
           <span class="badge lurk-badge" id="lurkBadgeHead" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
           <span class="badge lurk-badge" id="lurkBadgeIdle" title="Idle Movement"><i class="bi bi-person-walking"></i> Idle</span>
+          <span class="badge lurk-badge" id="lurkBadgeMotion" title="Motion Sensor"><i class="bi bi-radar"></i> Motion</span>
         </div>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <span id="lurkStatus" class="small text-muted">Off</span>
-        <span id="charName" class="fw-bold small"></span>
+        <span id="lurkStatus" class="text-muted" style="font-size:0.95rem;">Off</span>
+        <span id="charName" class="fw-bold" style="font-size:0.95rem;"></span>
       </div>
     </div>
   </div>
@@ -617,6 +618,9 @@
     // ─── Lurk Mode State ────────────────────────────────────
     let lurkModeActive = false;
     let lurkActivating = false;
+    let lurkSleeping = false;
+    let lurkMotionPollTimer = null;
+    let lurkCapabilities = { jaw: true, headTracking: true, idle: true, motionSensor: true, ai: true };
 
     async function toggleLurkMode() {
       const toggle = $('lurkToggle');
@@ -671,8 +675,13 @@
           }
 
           // Update lurk UI
+          lurkSleeping = false;
           updateLurkUI(enabled, j.results);
           if (statusEl) statusEl.textContent = enabled ? 'Active — Character is alive' : 'Off';
+
+          // Start/stop motion status polling
+          if (enabled) startLurkMotionPolling();
+          else stopLurkMotionPolling();
         } else {
           toggle.checked = !enabled;
           if (statusEl) statusEl.textContent = 'Failed: ' + (j.error || 'Unknown');
@@ -689,24 +698,33 @@
     function updateLurkUI(active, results) {
       const bar = $('lurkBar');
       if (bar) {
-        if (active) bar.classList.add('lurk-active');
-        else bar.classList.remove('lurk-active');
+        bar.classList.toggle('lurk-active', active && !lurkSleeping);
+        bar.classList.toggle('lurk-sleeping', active && lurkSleeping);
       }
 
       const badges = {
         AI: $('lurkBadgeAI'),
         Jaw: $('lurkBadgeJaw'),
         Head: $('lurkBadgeHead'),
-        Idle: $('lurkBadgeIdle')
+        Idle: $('lurkBadgeIdle'),
+        Motion: $('lurkBadgeMotion')
       };
 
       if (active && results) {
-        setBadge(badges.AI, true); // AI is started client-side
-        setBadge(badges.Jaw, results.jaw && results.jaw.enabled);
-        setBadge(badges.Head, results.headTracking && results.headTracking.enabled);
-        setBadge(badges.Idle, results.randomPose && results.randomPose.enabled);
+        const awake = !lurkSleeping;
+        setBadge(badges.AI, awake); // AI is started client-side
+        setBadge(badges.Jaw, awake && results.jaw && results.jaw.enabled);
+        setBadge(badges.Head, awake && results.headTracking && results.headTracking.enabled);
+        setBadge(badges.Idle, awake && results.randomPose && results.randomPose.enabled);
+        setBadge(badges.Motion, results.motionSensor && results.motionSensor.enabled);
       } else {
         Object.values(badges).forEach(b => setBadge(b, false));
+      }
+
+      // Update status text for sleep state
+      const statusEl = $('lurkStatus');
+      if (active && lurkSleeping && statusEl) {
+        statusEl.textContent = 'Sleeping — Waiting for motion...';
       }
     }
 
@@ -716,7 +734,36 @@
       if (on) el.classList.add('lurk-badge-on');
     }
 
+    async function loadLurkCapabilities() {
+      try {
+        const r = await fetch('/conversation/api/lurk-mode/capabilities');
+        const j = await r.json();
+        if (j && j.success && j.capabilities) {
+          lurkCapabilities = j.capabilities;
+          // Mark unavailable badges
+          const map = {
+            lurkBadgeJaw: 'jaw',
+            lurkBadgeHead: 'headTracking',
+            lurkBadgeIdle: 'idle',
+            lurkBadgeMotion: 'motionSensor',
+            lurkBadgeAI: 'ai'
+          };
+          Object.entries(map).forEach(([elId, cap]) => {
+            const el = $(elId);
+            if (!el) return;
+            if (!lurkCapabilities[cap]) {
+              el.classList.add('lurk-badge-unavailable');
+              el.title = el.title + ' (not available for this character)';
+            } else {
+              el.classList.remove('lurk-badge-unavailable');
+            }
+          });
+        }
+      } catch { /* ignore */ }
+    }
+
     async function loadLurkState() {
+      await loadLurkCapabilities();
       try {
         const r = await fetch('/conversation/api/lurk-mode');
         const j = await r.json();
@@ -724,11 +771,87 @@
           const toggle = $('lurkToggle');
           if (toggle) toggle.checked = true;
           lurkModeActive = true;
-          updateLurkUI(true, null);
+          lurkSleeping = !!j.sleeping;
+          updateLurkUI(true, j.motionWatcher ? { motionSensor: { enabled: j.motionWatcher.active } } : null);
           const statusEl = $('lurkStatus');
-          if (statusEl) statusEl.textContent = 'Active — Character is alive';
+          if (statusEl) {
+            statusEl.textContent = lurkSleeping
+              ? 'Sleeping — Waiting for motion...'
+              : 'Active — Character is alive';
+          }
+          startLurkMotionPolling();
         }
       } catch { /* ignore */ }
+    }
+
+    // ─── Lurk Motion Polling ──────────────────────────────────
+    // Polls the motion watcher status to detect sleep/wake transitions
+    // and update the dashboard in real-time.
+    function startLurkMotionPolling() {
+      stopLurkMotionPolling();
+      lurkMotionPollTimer = setInterval(pollLurkMotionStatus, 3000);
+    }
+
+    function stopLurkMotionPolling() {
+      if (lurkMotionPollTimer) {
+        clearInterval(lurkMotionPollTimer);
+        lurkMotionPollTimer = null;
+      }
+    }
+
+    async function pollLurkMotionStatus() {
+      if (!lurkModeActive) { stopLurkMotionPolling(); return; }
+      try {
+        const r = await fetch('/conversation/api/lurk-mode/motion-status');
+        const j = await r.json();
+        if (!j.success) return;
+
+        const wasSleeping = lurkSleeping;
+        lurkSleeping = !!j.sleeping;
+
+        if (wasSleeping && !lurkSleeping) {
+          // Woke up from motion! Re-enable client-side features
+          const aiToggle = $('chatAiOnToggle');
+          if (aiToggle && !aiToggle.checked) {
+            aiToggle.checked = true;
+            _audioPlaybackEnabled = true;
+            connectChatWebSocket();
+          }
+          if (ui.jawToggle) ui.jawToggle.checked = true;
+          if (ui.headTrackToggle) ui.headTrackToggle.checked = true;
+          if (ui.idleToggle) {
+            ui.idleToggle.checked = true;
+            fetch('/api/movement/idle/start', { method: 'POST' }).catch(function () {});
+          }
+          startHeadTrackPolling();
+          updateLurkUI(true, { jaw: { enabled: true }, headTracking: { enabled: true }, randomPose: { enabled: true }, motionSensor: { enabled: true } });
+          const statusEl = $('lurkStatus');
+          if (statusEl) statusEl.textContent = 'Active — Character is alive';
+        } else if (!wasSleeping && lurkSleeping) {
+          // Just fell asleep — disable client-side features
+          const aiToggle = $('chatAiOnToggle');
+          if (aiToggle && aiToggle.checked) {
+            aiToggle.checked = false;
+            disconnectChat();
+          }
+          if (ui.jawToggle) ui.jawToggle.checked = false;
+          if (ui.headTrackToggle) ui.headTrackToggle.checked = false;
+          if (ui.idleToggle) {
+            ui.idleToggle.checked = false;
+            fetch('/api/movement/idle/stop', { method: 'POST' }).catch(function () {});
+          }
+          stopHeadTrackPolling();
+          updateLurkUI(true, { motionSensor: { enabled: true } });
+          const statusEl = $('lurkStatus');
+          if (statusEl) statusEl.textContent = 'Sleeping — Waiting for motion...';
+        }
+      } catch { /* ignore poll errors */ }
+    }
+
+    // Notify server of speech/chat activity to reset inactivity timer
+    function notifyLurkActivity() {
+      if (!lurkModeActive) return;
+      fetch('/conversation/api/lurk-mode/activity', { method: 'POST' }).catch(function () {});
     }
 
     async function init() {
@@ -789,6 +912,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadLurkCapabilities();
       await loadScenes();
       await loadPoses();
 
@@ -1219,6 +1343,7 @@
 
       appendChatMessage('You', text);
       input.value = '';
+      notifyLurkActivity(); // Chat counts as activity
 
       if (chatWs && chatConnected) {
         chatWs.send(JSON.stringify({ type: 'send_message', text: text }));
@@ -1607,6 +1732,7 @@
           body: JSON.stringify({ text, speakerPartId: selectedSpeakerPartId || undefined })
         });
         const j = await r.json();
+        notifyLurkActivity(); // Speech counts as activity
 
         if (j && j.success) {
           ui.sayStatus.innerHTML = '<span class="text-success">Done</span>';

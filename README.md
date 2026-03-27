@@ -10,9 +10,16 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.5.0 (March 2026)
+## What's New — v7.8.0 (March 2026)
 
-### ElevenLabs v3 TTS — Most Expressive Voice Model
+### Lurk Mode Motion Sensor & Sleep/Wake
+- **Motion sensor monitoring** — PIR sensor polled every second while Lurk mode is active; movement keeps the animatronic alive
+- **Inactivity timeout** — After 5 minutes of no motion or activity, Lurk mode "sleeps" (disables superpowers, keeps watching sensor)
+- **Wake on motion** — PIR detection while sleeping fully re-activates all superpowers; the animatronic springs back to life
+- **Graceful degradation** — Characters without motion sensor, jaw servo, or head servo get badges grayed out (no errors)
+- **Larger, readable Lurk bar** — Font sizes increased for dashboard readability
+
+### Previous: ElevenLabs v3 TTS (v7.5.0)
 - **Default TTS model upgraded** from `eleven_flash_v2_5` to `eleven_v3` — the most expressive ElevenLabs model, with native audio tag support
 - **Audio tags** for dramatic animatronic speech: `[breathes heavily]`, `[whispers]`, `[hisses]`, `[slow]`, `[dramatically]`, `[exhales]`
 - **Pause mechanics** via punctuation: dashes for dramatic pauses, ellipses for weight/hesitation, commas for breath

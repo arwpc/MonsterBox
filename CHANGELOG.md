@@ -2,6 +2,57 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.8.0] - 2026-03-27 — Lurk Mode Motion Sensor & Inactivity Timeout
+
+### Lurk Mode Motion Sensor Integration
+- **Motion sensor (PIR) monitoring** — While Lurk mode is active, the character's motion sensor is polled every second. Movement resets the inactivity timer, keeping the animatronic alive.
+- **Inactivity timeout** — After 5 minutes of no motion or activity (speech, chat), Lurk mode enters a "sleep" state: superpowers (jaw, head tracking, idle, AI) are disabled, but the motion sensor keeps watching.
+- **Wake on motion** — When the PIR detects movement while sleeping, Lurk mode fully re-activates all superpowers, as if first toggled on. The animatronic springs back to life.
+- **Activity tracking** — Speech (Make Character Say) and chat messages reset the inactivity timer without requiring physical motion.
+- **Graceful degradation** — Characters without a motion sensor skip the watcher (no errors). Characters missing a jaw servo, head servo, or webcam get those badges grayed out in the UI.
+
+### Dashboard UI Improvements
+- **Motion badge** — New "Motion" badge in the Lurk bar shows motion sensor status
+- **Capability detection** — Badges for unavailable features (jaw, head, motion) are grayed out with strikethrough for characters that lack the required hardware
+- **Sleep state UI** — Lurk bar dims with a slow breathing animation when sleeping, status shows "Sleeping — Waiting for motion..."
+- **Larger fonts** — Lurk bar label, badges, and status text increased for readability
+
+### New API Endpoints
+- `GET /conversation/api/lurk-mode/capabilities` — Returns which lurk features the current character supports
+- `GET /conversation/api/lurk-mode/motion-status` — Motion watcher state (for dashboard polling)
+- `POST /conversation/api/lurk-mode/activity` — Notify the watcher that speech/chat occurred (resets timer)
+
+### Files Changed
+- `services/lurkMotionWatcherService.js` — New service: PIR polling, inactivity timeout, sleep/wake callbacks
+- `routes/conversation.js` — Refactored lurk mode into helpers, integrated motion watcher, added 3 new endpoints
+- `views/conversation/index.ejs` — Motion badge, capability detection, sleep/wake polling, activity notifications
+- `public/css/lurk-mode.css` — Sleep animation, unavailable badge style, larger fonts
+
+### Dependency Updates
+- `music-metadata` 11.9.0 → 11.12.3
+- `file-type` 21.0.0 → 21.3.2
+- `multer` 2.1.0 → 2.1.1
+- `picomatch` 2.3.1 → 2.3.2
+- `brace-expansion` security fix
+- `path-to-regexp`, `serialize-javascript` — npm audit fixes (0 vulnerabilities)
+
+---
+
+## [7.7.0] - 2026-03-23 — Movement System & Resource Management
+
+### Lifelike Movement System
+- 50Hz smooth servo transitions with velocity-based easing
+- Priority-based servo claims (Scene > Head > Jaw > Idle > Micro)
+- Idle loop service with weighted random pose selection
+- Movement telemetry with 30-day rolling history
+
+### Resource Management
+- PID lock prevents dual-instance GPIO conflicts
+- Process priority elevation, memory monitor, startup health checks
+- Graceful ordered shutdown sequence
+
+---
+
 ## [7.5.0] - 2026-03-22 — Scene Audio Blocking Fix
 
 ### Scene Audio Playback Fix

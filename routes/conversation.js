@@ -18,6 +18,7 @@ import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
 import * as headAnimationService from '../services/headAnimationSuperPowerService.js';
 import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
 import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
+import lurkMotionWatcher from '../services/lurkMotionWatcherService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -877,8 +878,183 @@ router.post('/api/translate', express.json(), async (req, res) => {
 // ─── Lurk Mode ────────────────────────────────────────────────────────
 // Lurk Mode enables all superpowers at once: AI conversation, jaw animation,
 // head tracking, and random idle poses. One toggle to bring the character to life.
+//
+// Motion Sensor Integration: While lurk mode is active, the PIR motion sensor
+// is polled. If no motion or activity is detected within the inactivity timeout,
+// lurk mode "sleeps" (disables superpowers but keeps watching). When the sensor
+// detects motion again, lurk mode wakes up fully — as if first turned on.
 
-// GET /conversation/api/lurk-mode — current lurk state
+const DEFAULT_LURK_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+// Helper: find the motion sensor part for a character
+async function findMotionSensor(characterId) {
+  const parts = await loadParts();
+  return parts.find(p =>
+    String(p.type).toLowerCase() === 'motion_sensor' &&
+    p.pin != null &&
+    p.enabled !== false
+  ) || null;
+}
+
+// Helper: check which lurk features are available for a character
+async function checkLurkCapabilities(characterId) {
+  const parts = await loadParts();
+  const capabilities = { jaw: false, headTracking: false, idle: true, motionSensor: false, ai: true };
+
+  // Jaw: needs a servo part configured for jaw
+  try {
+    const jawConfig = await jawAnimationService.readJawConfig(characterId);
+    if (jawConfig && jawConfig.servoPartId) {
+      const jawServo = parts.find(p => String(p.id) === String(jawConfig.servoPartId));
+      capabilities.jaw = !!jawServo;
+    }
+  } catch { /* no jaw config */ }
+
+  // Head tracking: needs a webcam + a pan servo
+  const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+  const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+  if (cam) {
+    try {
+      const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
+      let panServoId = savedConfig.panServoId;
+      if (!panServoId) {
+        const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+        const byChar = servos.filter(s => Number(s.characterId) === Number(characterId));
+        const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
+        if (pan) panServoId = pan.id;
+      }
+      capabilities.headTracking = !!panServoId;
+    } catch { /* no head config */ }
+  }
+
+  // Motion sensor: needs an enabled motion_sensor part with a GPIO pin
+  const sensor = parts.find(p =>
+    String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
+  );
+  capabilities.motionSensor = !!sensor;
+
+  return capabilities;
+}
+
+// GET /conversation/api/lurk-mode/capabilities — what features this character supports
+router.get('/api/lurk-mode/capabilities', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.json({ success: true, capabilities: {} });
+    const capabilities = await checkLurkCapabilities(characterId);
+    res.json({ success: true, capabilities });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// Helper: enable all lurk superpowers (jaw, head tracking, random poses)
+async function enableLurkSuperpowers(characterId) {
+  const results = { jaw: null, headTracking: null, randomPose: null, motionSensor: null };
+
+  // 1. Enable jaw animation
+  try {
+    const jawConfig = await jawAnimationService.readJawConfig(characterId);
+    jawConfig.enabled = true;
+    await jawAnimationService.writeJawConfig(characterId, jawConfig);
+    results.jaw = { enabled: true };
+  } catch (e) {
+    results.jaw = { enabled: false, error: e.message };
+  }
+
+  // 2. Enable head tracking (uses saved config, programmatic API)
+  if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
+    try {
+      const parts = await loadParts();
+      const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+      const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+      if (cam) {
+        const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
+        let panServoId = savedConfig.panServoId;
+        if (!panServoId) {
+          const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+          const byChar = servos.filter(s => Number(s.characterId) === Number(characterId));
+          const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
+          if (pan) panServoId = pan.id;
+        }
+        if (panServoId) {
+          const trackingParams = {
+            motionThreshold: savedConfig.motionThreshold || 25,
+            minContourArea: savedConfig.minContourArea || 3000,
+            maxContourArea: savedConfig.maxContourArea || 100000,
+            detectionMode: savedConfig.detectionMode || 'person'
+          };
+          try { await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams); } catch (_) {}
+          motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
+            panServoId,
+            centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
+            rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
+            invertPan: !!savedConfig.invertPan,
+            smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
+            deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
+          });
+          results.headTracking = { enabled: true };
+        } else {
+          results.headTracking = { enabled: false, error: 'No pan servo found' };
+        }
+      } else {
+        results.headTracking = { enabled: false, error: 'No webcam found' };
+      }
+    } catch (e) {
+      results.headTracking = { enabled: false, error: e.message };
+    }
+  } else {
+    results.headTracking = { enabled: true, testMode: true };
+  }
+
+  // 3. Enable random idle poses
+  try {
+    const { default: randomPoseService } = await import('../services/randomPoseService.js');
+    await randomPoseService.enable(characterId, { cooldownMs: 8000, minAmplitude: 0.2, maxAmplitude: 0.5 });
+    results.randomPose = { enabled: true };
+  } catch (e) {
+    results.randomPose = { enabled: false, error: e.message };
+  }
+
+  return results;
+}
+
+// Helper: disable all lurk superpowers
+async function disableLurkSuperpowers(characterId) {
+  const results = { jaw: null, headTracking: null, randomPose: null, motionSensor: null };
+
+  try {
+    const jawConfig = await jawAnimationService.readJawConfig(characterId);
+    jawConfig.enabled = false;
+    await jawAnimationService.writeJawConfig(characterId, jawConfig);
+    results.jaw = { enabled: false };
+  } catch (e) { results.jaw = { error: e.message }; }
+
+  if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
+    try {
+      const parts = await loadParts();
+      const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+      const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+      if (cam) {
+        motionTrackingController.disableHeadTrackingForWebcam(cam.id);
+        try { await motionTrackingController.stopTrackingForWebcam(cam.id); } catch (_) {}
+      }
+      results.headTracking = { enabled: false };
+    } catch (e) { results.headTracking = { error: e.message }; }
+  } else {
+    results.headTracking = { enabled: false, testMode: true };
+  }
+
+  try {
+    const { default: randomPoseService } = await import('../services/randomPoseService.js');
+    randomPoseService.disable();
+    results.randomPose = { enabled: false };
+  } catch (e) { results.randomPose = { error: e.message }; }
+
+  return results;
+}
+
+// GET /conversation/api/lurk-mode — current lurk state + motion watcher status
 router.get('/api/lurk-mode', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
@@ -890,130 +1066,114 @@ router.get('/api/lurk-mode', async (req, res) => {
       const content = await fs.readFile(stateFile, 'utf8');
       state = JSON.parse(content);
     } catch { /* not yet created */ }
-    res.json({ success: true, enabled: !!state.enabled, timestamp: state.timestamp || null });
+    const motionStatus = lurkMotionWatcher.getStatus();
+    res.json({
+      success: true,
+      enabled: !!state.enabled,
+      timestamp: state.timestamp || null,
+      sleeping: motionStatus.sleeping,
+      motionWatcher: motionStatus
+    });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
 });
 
-// POST /conversation/api/lurk-mode { enabled }
-// Orchestrates: jaw animation, head tracking, random idle poses
+// POST /conversation/api/lurk-mode { enabled, inactivityTimeoutMs? }
+// Orchestrates: jaw animation, head tracking, random idle poses, motion sensor watcher
 // AI WebSocket is started client-side; this handles the hardware superpowers
 router.post('/api/lurk-mode', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
     if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
     const enabled = !!req.body.enabled;
-    const results = { jaw: null, headTracking: null, randomPose: null };
+    const inactivityTimeoutMs = typeof req.body.inactivityTimeoutMs === 'number'
+      ? req.body.inactivityTimeoutMs
+      : DEFAULT_LURK_INACTIVITY_TIMEOUT_MS;
+
+    let results;
 
     if (enabled) {
-      // 1. Enable jaw animation
-      try {
-        const jawConfig = await jawAnimationService.readJawConfig(characterId);
-        jawConfig.enabled = true;
-        await jawAnimationService.writeJawConfig(characterId, jawConfig);
-        results.jaw = { enabled: true };
-      } catch (e) {
-        results.jaw = { enabled: false, error: e.message };
-      }
+      results = await enableLurkSuperpowers(characterId);
 
-      // 2. Enable head tracking (uses saved config, programmatic API)
-      if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
-        try {
-          const parts = await loadParts();
-          const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
-          const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-          if (cam) {
-            const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
-            let panServoId = savedConfig.panServoId;
-            if (!panServoId) {
-              const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-              const byChar = servos.filter(s => Number(s.characterId) === Number(characterId));
-              const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
-              if (pan) panServoId = pan.id;
+      // 4. Start motion sensor watcher (non-fatal if no sensor found)
+      try {
+        const sensorPart = await findMotionSensor(characterId);
+        if (sensorPart) {
+          lurkMotionWatcher.start(characterId, {
+            sensorPart,
+            inactivityTimeoutMs,
+            pollIntervalMs: 1000,
+            onSleep: async (charId) => {
+              // Inactivity timeout — put superpowers to sleep
+              console.log(`[LurkMode] Inactivity timeout for character ${charId} — sleeping`);
+              try { await disableLurkSuperpowers(charId); } catch (e) {
+                console.error('[LurkMode] Error disabling superpowers on sleep:', e.message);
+              }
+              // Persist sleeping state
+              const dir = getDataDir(charId);
+              const sf = path.resolve(dir, 'lurk-mode-state.json');
+              try {
+                await fs.writeFile(sf, JSON.stringify({
+                  enabled: true, sleeping: true, timestamp: Date.now(), results: {}
+                }, null, 2), 'utf8');
+              } catch (_) {}
+            },
+            onWake: async (charId) => {
+              // Motion detected while sleeping — wake up fully!
+              console.log(`[LurkMode] Motion detected for character ${charId} — waking up!`);
+              try {
+                const wakeResults = await enableLurkSuperpowers(charId);
+                // Persist awake state
+                const dir = getDataDir(charId);
+                const sf = path.resolve(dir, 'lurk-mode-state.json');
+                await fs.writeFile(sf, JSON.stringify({
+                  enabled: true, sleeping: false, timestamp: Date.now(), results: wakeResults
+                }, null, 2), 'utf8');
+              } catch (e) {
+                console.error('[LurkMode] Error enabling superpowers on wake:', e.message);
+              }
             }
-            if (panServoId) {
-              const trackingParams = {
-                motionThreshold: savedConfig.motionThreshold || 25,
-                minContourArea: savedConfig.minContourArea || 3000,
-                maxContourArea: savedConfig.maxContourArea || 100000,
-                detectionMode: savedConfig.detectionMode || 'person'
-              };
-              // Start motion tracking process
-              try { await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams); } catch (_) {}
-              // Enable head tracking via programmatic API (no fake req/res)
-              motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
-                panServoId,
-                centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
-                rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
-                invertPan: !!savedConfig.invertPan,
-                smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
-                deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
-              });
-              results.headTracking = { enabled: true };
-            } else {
-              results.headTracking = { enabled: false, error: 'No pan servo found' };
-            }
-          } else {
-            results.headTracking = { enabled: false, error: 'No webcam found' };
-          }
-        } catch (e) {
-          results.headTracking = { enabled: false, error: e.message };
+          });
+          results.motionSensor = { enabled: true, partId: sensorPart.id, inactivityTimeoutMs };
+        } else {
+          results.motionSensor = { enabled: false, error: 'No motion sensor found for character' };
         }
-      } else {
-        results.headTracking = { enabled: true, testMode: true };
-      }
-
-      // 3. Enable random idle poses
-      try {
-        const { default: randomPoseService } = await import('../services/randomPoseService.js');
-        await randomPoseService.enable(characterId, { cooldownMs: 8000, minAmplitude: 0.2, maxAmplitude: 0.5 });
-        results.randomPose = { enabled: true };
       } catch (e) {
-        results.randomPose = { enabled: false, error: e.message };
+        results.motionSensor = { enabled: false, error: e.message };
       }
     } else {
-      // Disable all
-      try {
-        const jawConfig = await jawAnimationService.readJawConfig(characterId);
-        jawConfig.enabled = false;
-        await jawAnimationService.writeJawConfig(characterId, jawConfig);
-        results.jaw = { enabled: false };
-      } catch (e) { results.jaw = { error: e.message }; }
+      // Stop motion watcher first
+      lurkMotionWatcher.stop();
 
-      if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
-        try {
-          const parts = await loadParts();
-          const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
-          const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-          if (cam) {
-            // Disable head tracking via programmatic API (no fake req/res)
-            motionTrackingController.disableHeadTrackingForWebcam(cam.id);
-            try { await motionTrackingController.stopTrackingForWebcam(cam.id); } catch (_) {}
-          }
-          results.headTracking = { enabled: false };
-        } catch (e) { results.headTracking = { error: e.message }; }
-      } else {
-        results.headTracking = { enabled: false, testMode: true };
-      }
-
-      try {
-        const { default: randomPoseService } = await import('../services/randomPoseService.js');
-        randomPoseService.disable();
-        results.randomPose = { enabled: false };
-      } catch (e) { results.randomPose = { error: e.message }; }
+      results = await disableLurkSuperpowers(characterId);
+      results.motionSensor = { enabled: false };
     }
 
     // Persist lurk state
     const dataDir = getDataDir(characterId);
     const stateFile = path.resolve(dataDir, 'lurk-mode-state.json');
     await fs.mkdir(dataDir, { recursive: true });
-    await fs.writeFile(stateFile, JSON.stringify({ enabled, timestamp: Date.now(), results }, null, 2), 'utf8');
+    await fs.writeFile(stateFile, JSON.stringify({
+      enabled, sleeping: false, timestamp: Date.now(), results
+    }, null, 2), 'utf8');
 
     res.json({ success: true, enabled, results });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
+});
+
+// GET /conversation/api/lurk-mode/motion-status — motion watcher status (for polling)
+router.get('/api/lurk-mode/motion-status', (req, res) => {
+  res.json({ success: true, ...lurkMotionWatcher.getStatus() });
+});
+
+// POST /conversation/api/lurk-mode/activity — notify that activity occurred (speech, chat)
+// Resets the inactivity timer without requiring physical motion
+router.post('/api/lurk-mode/activity', express.json(), (req, res) => {
+  lurkMotionWatcher.resetActivity();
+  res.json({ success: true });
 });
 
 export default router;
