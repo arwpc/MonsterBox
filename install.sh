@@ -49,6 +49,56 @@ print_status "Repository directory: $REPO_DIR"
 print_status "Boot config: $BOOT_CONFIG"
 
 # ============================================================
+# 0. Handle Existing Installation (if upgrading)
+# ============================================================
+if [ -f "$REPO_DIR/package.json" ] && [ -d "$REPO_DIR/node_modules" ]; then
+    print_status "Step 0: Existing MonsterBox installation detected — cleaning up..."
+
+    # Stop the service if running
+    systemctl stop monsterbox.service 2>/dev/null || true
+
+    # Ensure repo is a proper git clone (not a broken init)
+    if ! sudo -u "$ACTUAL_USER" git -C "$REPO_DIR" log --oneline -1 >/dev/null 2>&1; then
+        print_warning "Git repo is not properly cloned. Backing up data and re-cloning..."
+        # Preserve character data, certs, and calibration
+        mkdir -p /tmp/monsterbox-backup
+        cp -a "$REPO_DIR/data" /tmp/monsterbox-backup/data 2>/dev/null || true
+        cp -a "$REPO_DIR/certs" /tmp/monsterbox-backup/certs 2>/dev/null || true
+        cp "$REPO_DIR/config/app-config.json" /tmp/monsterbox-backup/app-config.json 2>/dev/null || true
+
+        rm -rf "$REPO_DIR"
+        sudo -u "$ACTUAL_USER" git clone git@github.com:arwpc/MonsterBox.git "$REPO_DIR"
+
+        # Restore preserved data
+        cp -a /tmp/monsterbox-backup/data/* "$REPO_DIR/data/" 2>/dev/null || true
+        cp -a /tmp/monsterbox-backup/certs "$REPO_DIR/certs" 2>/dev/null || true
+        cp /tmp/monsterbox-backup/app-config.json "$REPO_DIR/config/app-config.json" 2>/dev/null || true
+        rm -rf /tmp/monsterbox-backup
+        chown -R "$ACTUAL_USER":"$ACTUAL_USER" "$REPO_DIR"
+        print_success "Repository re-cloned and data restored"
+    else
+        # Proper git repo — pull latest
+        print_status "Pulling latest code from GitHub..."
+        sudo -u "$ACTUAL_USER" git -C "$REPO_DIR" fetch origin
+        sudo -u "$ACTUAL_USER" git -C "$REPO_DIR" reset --hard origin/main
+        print_success "Code updated to latest main"
+    fi
+
+    # Remove stale node_modules and reinstall clean
+    print_status "Removing old node_modules for clean install..."
+    rm -rf "$REPO_DIR/node_modules" "$REPO_DIR/package-lock.json"
+
+    # Remove any outdated global npm packages from previous installs
+    npm ls -g --depth=0 2>/dev/null | grep -E 'puppeteer|claude@' | awk -F@ '{print $1}' | while read pkg; do
+        if [ -n "$pkg" ]; then
+            npm uninstall -g "$pkg" 2>/dev/null && print_status "Removed outdated global package: $pkg"
+        fi
+    done
+
+    print_success "Existing installation cleaned up"
+fi
+
+# ============================================================
 # 1. System Update and Upgrade
 # ============================================================
 print_status "Step 1: Updating system packages..."
@@ -400,14 +450,20 @@ fi
 print_status "Step 19: Installing Node.js dependencies..."
 
 cd "$REPO_DIR"
-sudo -u "$ACTUAL_USER" npm ci --production
-print_success "Node.js production dependencies installed"
+
+# Clean install — removes node_modules and installs from lockfile
+sudo -u "$ACTUAL_USER" npm ci
+print_success "Node.js dependencies installed (production + dev)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
-sudo -u "$ACTUAL_USER" npm ci 2>/dev/null && \
-    sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \
+sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \
     print_success "Playwright browsers installed for testing" || \
-    print_warning "Playwright browser install skipped (run 'npm ci && npx playwright install --with-deps chromium' later for testing)"
+    print_warning "Playwright browser install skipped (run 'npx playwright install --with-deps chromium' later for testing)"
+
+# Verify no outdated/removed packages linger
+if npm ls 2>&1 | grep -q "WARN deprecated"; then
+    print_warning "Some npm packages have deprecation warnings — run 'npm audit' for details"
+fi
 
 # ============================================================
 # 20. Create and Select a New Character
