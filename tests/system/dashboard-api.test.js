@@ -332,7 +332,7 @@ describe('Dashboard API — Deep Functional Tests', () => {
       expect(res.text).to.include('Scenes');
       expect(res.text).to.include('Poses');
       expect(res.text).to.include('Manual Controls');
-      expect(res.text).to.include('Monster Features');
+      expect(res.text).to.include('monster-features');
       expect(res.text).to.include('Chat');
       expect(res.text).to.include('Browser Audio Bridge');
     });

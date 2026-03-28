@@ -2,6 +2,29 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.9.5] - 2026-03-27 — Pose Execution Performance & Browser Audio
+
+### Pose Execution Performance Fix
+- **Batch PCA9685 servo commands** — New `batch_pca` command in servo_cli.py sends all servo angles in a single Python subprocess call (~500ms for 3 servos instead of ~1350ms for 3 separate spawns)
+- **Fire-and-forget pose execution** — Dashboard pose buttons return instantly with `async: true` flag; hardware executes in background. No more multi-second spinner waits
+- **Transition engine uses batch** — `transitionServos()` now sends one batch command instead of spawning a Python process per 20ms tick (was 300 processes per 2-second transition)
+- **Pose engine batches servos** — `executePose()` separates servo parts for batch I2C and runs non-servo parts concurrently
+
+### Browser Speaker for TTS
+- **"Say This" plays in browser** — When Browser Spk is enabled, TTS audio is returned as base64 and played through the browser's Audio API alongside the character speaker
+
+### Files Changed
+- `python_wrappers/servo_cli.py` — New `batch_pca` command for multi-servo poses
+- `services/hardwareService/index.js` — New `batchMoveServos()` function
+- `services/poses/poseEngine.js` — Batch servo execution path
+- `services/movement/transitionEngine.js` — Batch-first with per-tick fallback
+- `controllers/posesController.js` — Fire-and-forget async execution mode
+- `views/conversation/index.ejs` — Async pose play, browser TTS audio, base64 player
+- `public/js/manual-controls.js` — Async pose execution
+- `routes/conversation.js` — Browser playback flag for /api/say
+
+---
+
 ## [7.9.0] - 2026-03-27 — Dashboard UX Overhaul, Head Tracking Fixes & Movement Telemetry
 
 ### Dashboard UX Overhaul

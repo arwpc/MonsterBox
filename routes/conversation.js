@@ -296,6 +296,13 @@ router.post('/api/say', express.json(), async (req, res) => {
       elevenLabsWebSocketService.suppressMicForCharacter(characterId, estimatedMs);
     } catch (_) {}
 
+    // If client requests browser playback, return audio as base64
+    const wantBrowser = req.body.browserPlayback;
+    if (wantBrowser && gen.audioBuffer) {
+      const b64 = Buffer.from(gen.audioBuffer).toString('base64');
+      return res.json({ success: true, audio: b64, contentType: gen.contentType || 'audio/mpeg' });
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

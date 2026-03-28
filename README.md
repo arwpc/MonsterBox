@@ -10,7 +10,12 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.9.0 (March 2026)
+## What's New — v7.9.5 (March 2026)
+
+### Pose Execution Performance
+- **Instant pose response** — Dashboard pose buttons fire-and-forget; hardware moves in background with no UI delay
+- **Batch PCA9685 commands** — All servos in a pose sent in a single Python call (~500ms total vs ~1350ms+ sequential)
+- **Browser speaker for TTS** — "Say This" mode plays audio through browser when Browser Spk is enabled
 
 ### Dashboard UX Overhaul
 - **Unified chat input** — "Ask AI" and "Say This" modes in a single input with toggle button; no more hunting between two text fields

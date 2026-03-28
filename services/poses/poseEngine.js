@@ -5,7 +5,7 @@
  */
 
 import { getPose } from './poseRepository.js';
-import { controlPart } from '../hardwareService/index.js';
+import { controlPart, batchMoveServos } from '../hardwareService/index.js';
 
 /**
  * Execute a pose
@@ -32,14 +32,37 @@ export async function executePose({ characterId, poseId, options = {} }) {
             throw new Error('Pose has no parts to execute');
         }
 
-        // Execute all parts concurrently through controlPart()
-        const promises = pose.parts.map(part => executePosePart(part, options));
-        const settled = await Promise.allSettled(promises);
+        // Separate servo parts (for batching) from non-servo parts
+        const servoParts = [];
+        const otherParts = [];
+        for (const part of pose.parts) {
+            const t = (part.type || '').replace(/_/g, '-');
+            if (t === 'servo' && part.target && part.target.angleDeg != null) {
+                servoParts.push(part);
+            } else {
+                otherParts.push(part);
+            }
+        }
 
-        const results = settled.map((s, i) => {
-            if (s.status === 'fulfilled') return s.value;
-            return { success: false, partId: pose.parts[i].partId, error: s.reason?.message || 'Unknown error' };
-        });
+        // Execute servo batch + other parts concurrently
+        const batchPromise = servoParts.length > 0
+            ? batchMoveServos(servoParts.map(p => ({ partId: p.partId, angleDeg: p.target.angleDeg })))
+            : Promise.resolve({ success: true, results: [] });
+
+        const otherPromises = otherParts.map(part => executePosePart(part, options));
+
+        const [batchResult, ...otherSettled] = await Promise.all([
+            batchPromise,
+            ...otherPromises.map(p => p.then(r => ({ status: 'fulfilled', value: r })).catch(e => ({ status: 'rejected', reason: e })))
+        ]);
+
+        const results = [
+            ...(batchResult.results || []),
+            ...otherSettled.map((s, i) => {
+                if (s.status === 'fulfilled') return s.value;
+                return { success: false, partId: otherParts[i].partId, error: s.reason?.message || 'Unknown error' };
+            })
+        ];
 
         const elapsed = Date.now() - startTime;
         console.log(`🎭 Pose "${pose.name}" completed in ${elapsed}ms`);

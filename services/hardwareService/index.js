@@ -1578,8 +1578,97 @@ export async function setPower(state) {
     }
 }
 
+/**
+ * Batch move multiple PCA9685 servos in a single Python call.
+ * Avoids repeated subprocess spawn overhead for multi-servo poses.
+ * @param {Array<{partId: string|number, angleDeg: number}>} commands
+ * @returns {Promise<{success: boolean, results: Array}>}
+ */
+export async function batchMoveServos(commands) {
+    if (!commands || commands.length === 0) return { success: true, results: [] };
+
+    const cfg = await readConfig();
+    const appRoot = path.resolve(__dirname, '../..');
+    const characterId = cfg && cfg.selectedCharacter;
+
+    // Load parts once
+    let parts = [];
+    try {
+        const charPartsPath = path.resolve(appRoot, `data/character-${characterId}`, 'parts.json');
+        parts = JSON.parse(await fs.readFile(charPartsPath, 'utf8'));
+    } catch (_) {
+        try {
+            const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
+            parts = JSON.parse(await fs.readFile(path.resolve(appRoot, dataDir, 'parts.json'), 'utf8'));
+        } catch (_2) {}
+    }
+
+    // Load calibration once
+    const calStore = getCalibrationStore();
+
+    // Build batch pairs for PCA9685 servos, fall back to individual for others
+    const pcaPairs = [];
+    const fallbackCmds = [];
+
+    for (const cmd of commands) {
+        const part = parts.find(p => String(p.id) === String(cmd.partId));
+        if (!part) continue;
+
+        const partCfg = part.config || {};
+        const isPCA = partCfg.controllerType === 'pca9685' || part.usePCA9685 === true ||
+                       part.controllerType === 'pca9685' || partCfg.address != null || partCfg.channel != null;
+
+        if (isPCA && partCfg.channel != null) {
+            let angle = cmd.angleDeg;
+            // Apply invert if needed
+            try {
+                const profile = await calStore.get(cmd.partId);
+                if (profile && profile.capability && profile.capability.invert) {
+                    const minA = profile.bounds?.minAngle ?? 0;
+                    const maxA = profile.bounds?.maxAngle ?? 180;
+                    angle = minA + maxA - angle;
+                }
+            } catch (_) {}
+            pcaPairs.push({ channel: partCfg.channel, angle, partId: cmd.partId });
+        } else {
+            fallbackCmds.push(cmd);
+        }
+    }
+
+    const results = [];
+
+    // Batch PCA9685 command
+    if (pcaPairs.length > 0) {
+        try {
+            const args = pcaPairs.map(p => `${p.channel}:${p.angle}`);
+            const out = await runWrapper('servo_cli.py', ['batch_pca', ...args]);
+            const success = typeof out === 'string' && out.includes('success');
+            for (const p of pcaPairs) {
+                results.push({ success, partId: p.partId, angleDeg: p.angle, batch: true });
+            }
+        } catch (e) {
+            for (const p of pcaPairs) {
+                results.push({ success: false, partId: p.partId, error: e.message });
+            }
+        }
+    }
+
+    // Fallback individual commands for non-PCA9685 servos
+    for (const cmd of fallbackCmds) {
+        try {
+            const r = await controlPart(String(cmd.partId), 'moveToAngle', { angleDeg: cmd.angleDeg });
+            results.push({ ...r, partId: cmd.partId });
+        } catch (e) {
+            results.push({ success: false, partId: cmd.partId, error: e.message });
+        }
+    }
+
+    return { success: results.some(r => r.success), results };
+}
+
 export default {
     controlPart,
+    batchMoveServos,
     setPower,
     getAvailableActions,
     getSupportedPartTypes,

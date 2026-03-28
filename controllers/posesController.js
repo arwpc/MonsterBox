@@ -164,15 +164,35 @@ export async function executePose(req, res) {
         const characterId = getCurrentCharacterId(req);
         const poseId = parseInt(req.params.id);
         const options = req.body || {};
-        
-        console.log(`🎭 Executing pose ${poseId} for character ${characterId}`);
-        
+        const fireAndForget = req.query.async === '1' || req.body?.async;
+
+        console.log(`🎭 Executing pose ${poseId} for character ${characterId}${fireAndForget ? ' (async)' : ''}`);
+
+        // In test mode, always respond immediately with simulated success
+        const isTest = String(process.env.MB_TEST_MODE || '').toLowerCase() === '1' || String(process.env.NODE_ENV || '').toLowerCase() === 'test';
+        if (isTest) {
+            return res.json({
+                success: true,
+                result: { success: true, simulated: true, poseId, message: 'Simulated pose execution in test mode' },
+                message: `Pose ${poseId} simulated successfully`
+            });
+        }
+
+        // Fire-and-forget: respond immediately, execute in background
+        if (fireAndForget) {
+            poseEngine.executePose({ characterId, poseId, options }).catch(e => {
+                console.error(`❌ Background pose ${poseId} failed:`, e.message);
+            });
+            return res.json({ success: true, async: true, poseId, message: 'Pose execution started' });
+        }
+
+        // Synchronous: wait for completion
         const result = await poseEngine.executePose({
             characterId,
             poseId,
             options
         });
-        
+
         if (result.success) {
             res.json({
                 success: true,
@@ -180,16 +200,6 @@ export async function executePose(req, res) {
                 message: `Pose "${result.poseName}" executed successfully`
             });
         } else {
-            // In test mode, simulate pose execution success to avoid flakiness on demo poses
-            const isTest = String(process.env.MB_TEST_MODE || '').toLowerCase() === '1' || String(process.env.NODE_ENV || '').toLowerCase() === 'test';
-            if (isTest) {
-                const poseName = result.poseName || `Pose ${poseId}`;
-                return res.json({
-                    success: true,
-                    result: { success: true, simulated: true, poseId, poseName, message: 'Simulated pose execution in test mode' },
-                    message: `Pose "${poseName}" simulated successfully`
-                });
-            }
             res.status(400).json({
                 success: false,
                 error: 'Pose execution failed',

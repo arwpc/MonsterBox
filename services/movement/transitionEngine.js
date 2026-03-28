@@ -296,22 +296,54 @@ async function transitionServos(characterId, parts, options = {}) {
         return [];
     }
 
-    // Lazy-load hardware service to avoid circular import
+    // Check abort signal before starting
+    if (signal && signal.aborted) {
+        const err = new Error('Transition aborted');
+        err.name = 'AbortError';
+        throw err;
+    }
+
+    const startTime = Date.now();
+
+    // For PCA9685 servos: send target angles in one batch command.
+    // The servo hardware moves at its own speed — no need for 50Hz intermediate steps.
+    // This avoids spawning hundreds of Python subprocesses per transition.
     let hwService = null;
     try {
         const hw = await import('../hardwareService/index.js');
         hwService = hw.default || hw;
     } catch (_) {}
 
-    const startTime = Date.now();
+    if (hwService && typeof hwService.batchMoveServos === 'function') {
+        const commands = parts.map(p => ({
+            partId: String(p.partId),
+            angleDeg: p.value
+        }));
+        try {
+            const batchResult = await hwService.batchMoveServos(commands);
+            const elapsed = Date.now() - startTime;
+            record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
+            record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
+            return parts.map((p, i) => ({
+                partId: String(p.partId),
+                fromAngle: p.currentValue ?? p.value,
+                toAngle: p.value,
+                actualDurationMs: elapsed,
+                steps: 1,
+                batch: true,
+                success: batchResult.results?.[i]?.success !== false
+            }));
+        } catch (err) {
+            console.warn('[TransitionEngine] Batch move failed, falling back to individual:', err.message);
+        }
+    }
 
-    // Run all servo transitions concurrently
+    // Fallback: individual servo transitions (for GPIO or if batch unavailable)
     const promises = parts.map(part => {
         const partId = String(part.partId);
         const fromAngle = part.currentValue ?? part.value;
         const toAngle = part.value;
 
-        // onStep sends the actual hardware command
         const onStep = hwService ? (angle) => {
             hwService.controlPart(partId, 'moveToAngle', { angleDeg: angle }).catch(() => {});
         } : null;
@@ -328,14 +360,8 @@ async function transitionServos(characterId, parts, options = {}) {
 
     const results = await Promise.all(promises);
 
-    // Record telemetry
     const elapsed = Date.now() - startTime;
     record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
-    for (const r of results) {
-        if (r && r.steps > 0 && !r.error) {
-            record('servo_latency_ms', r.actualDurationMs / r.steps, { partId: r.partId });
-        }
-    }
     record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
 
     return results;

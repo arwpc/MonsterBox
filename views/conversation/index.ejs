@@ -1807,11 +1807,19 @@
       var sendBtn = ui.chatSendBtn || $('chatSendBtn');
       if (sendBtn) { sendBtn.disabled = true; sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
 
+      // Check if browser speaker is enabled — request audio back for browser playback
+      var browserSpk = $('chatBrowserSpeaker');
+      var wantBrowser = !!(browserSpk && browserSpk.checked);
+
       try {
         var r = await fetch('/conversation/api/say', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, speakerPartId: chatSpeakerPartId || selectedSpeakerPartId || undefined })
+          body: JSON.stringify({
+            text: text,
+            speakerPartId: chatSpeakerPartId || selectedSpeakerPartId || undefined,
+            browserPlayback: wantBrowser
+          })
         });
         var j = await r.json();
         notifyLurkActivity();
@@ -1820,6 +1828,10 @@
         if (j && j.success) {
           if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-success">Spoken</span>';
           appendChatMessage('Character', text);
+          // Play through browser if audio was returned
+          if (j.audio) {
+            playBase64Audio(j.audio, j.contentType || 'audio/mpeg');
+          }
         } else {
           if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>';
         }
@@ -1827,6 +1839,22 @@
         if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
       } finally {
         if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = '<i class="bi bi-send"></i>'; }
+      }
+    }
+
+    function playBase64Audio(b64, contentType) {
+      try {
+        var binary = atob(b64);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        var blob = new Blob([bytes], { type: contentType });
+        var url = URL.createObjectURL(blob);
+        var audio = new Audio(url);
+        audio.onended = function () { URL.revokeObjectURL(url); };
+        audio.onerror = function () { URL.revokeObjectURL(url); };
+        audio.play().catch(function (e) { console.warn('[BrowserAudio] Playback failed:', e.message); });
+      } catch (e) {
+        console.error('[BrowserAudio] Error:', e);
       }
     }
 
@@ -2062,15 +2090,26 @@
     async function playPose(poseId) {
       try {
         var btn = document.querySelector('.pose-play-btn[data-id="' + poseId + '"]');
-        if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        var r = await fetch('/poses/api/poses/' + poseId + '/execute', { method: 'POST' });
+        if (btn) { btn.classList.add('btn-success'); btn.classList.remove('btn-outline-success'); }
+        // Fire-and-forget: respond immediately, execute in background
+        var r = await fetch('/poses/api/poses/' + poseId + '/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ async: true })
+        });
         var j = await r.json();
-        if (btn) btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+        // Brief green flash then restore
+        setTimeout(function () {
+          if (btn) { btn.classList.remove('btn-success'); btn.classList.add('btn-outline-success'); }
+        }, 400);
         if (!(j && j.success)) {
-          alert('Failed to execute pose');
+          if (btn) { btn.classList.remove('btn-success'); btn.classList.add('btn-outline-danger'); }
+          setTimeout(function () {
+            if (btn) { btn.classList.remove('btn-outline-danger'); btn.classList.add('btn-outline-success'); }
+          }, 1500);
         }
       } catch (e) {
-        alert('Error executing pose: ' + (e && e.message ? e.message : e));
+        console.error('Pose execute error:', e);
       }
     }
 
