@@ -176,7 +176,7 @@ ip: '192.168.8.200'  // Groundbreaker
 {
   "orlok": { "characterId": 3, "host": "orlok.lan", "ip": "192.168.8.120" },
   "pumpkinhead": { "characterId": 1, "host": "pumpkinhead.lan", "ip": "192.168.8.150" },
-  "coffin": { "characterId": 2, "host": "coffin.lan", "ip": "192.168.8.140" },
+  "mina": { "characterId": 2, "host": "mina.lan", "ip": "192.168.8.140" },
   "sirdragomir": { "characterId": 4, "host": "sirdragomir.lan", "ip": "192.168.8.130" },
   "groundbreaker": { "characterId": 5, "host": "groundbreaker.lan", "ip": "192.168.8.200" }
 }

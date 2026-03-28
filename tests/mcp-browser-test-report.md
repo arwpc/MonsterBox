@@ -251,7 +251,7 @@
   - **Templates**: Saved templates table (1 existing: "ARW 2.20.26"), Save New Template form
 
 ### Characters (/setup/characters)
-- 5 characters listed: PumpkinHead (ID 1), Coffin Breaker (ID 2), Orlok (ID 3, Current), Sir Dragomir (ID 4), Groundbreaker (ID 5)
+- 5 characters listed: PumpkinHead (ID 1), Mina (ID 2), Orlok (ID 3, Current), Sir Dragomir (ID 4), Groundbreaker (ID 5)
 - All with Agent Assigned status
 - Each row: avatar, ID, name, AI agent status, current badge, action buttons (edit, duplicate, images, delete)
 - Create Character button
@@ -400,7 +400,7 @@
 
 ### BUG-3: Character Images Missing for Some Characters (Low)
 - **Page:** `/first-run`, `/setup/characters`
-- **Symptom:** PumpkinHead and Coffin Breaker show fallback emoji (💀) instead of images; Sir Dragomir image sometimes fails
+- **Symptom:** PumpkinHead and Mina show fallback emoji (💀) instead of images; Sir Dragomir image sometimes fails
 - **Impact:** Cosmetic only
 - **Fix:** Ensure all characters have valid image files, or improve fallback display
 

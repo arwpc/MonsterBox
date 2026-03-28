@@ -92,12 +92,12 @@ async function main() {
     console.log(`Running on: ${hostname}\n`);
     
     try {
-        if (hostname.includes('coffin')) {
+        if (hostname.includes('mina')) {
             await testCoffinServos();
         } else if (hostname.includes('orlok')) {
             await testOrlokParts();
         } else {
-            console.log('Unknown host. Please run this on coffin or orlok.');
+            console.log('Unknown host. Please run this on mina or orlok.');
             process.exit(1);
         }
         

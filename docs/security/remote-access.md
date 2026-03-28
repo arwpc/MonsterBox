@@ -35,7 +35,7 @@ Host orlok
     StrictHostKeyChecking yes
     UserKnownHostsFile ~/.ssh/known_hosts
 
-Host coffin
+Host mina
     HostName 192.168.8.140
     User pi
     Port 22

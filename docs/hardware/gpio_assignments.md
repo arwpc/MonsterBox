@@ -8,7 +8,7 @@
 - LED: 17
 - Servo: 6
 
-### Coffin
+### Mina
 - MDD10A Control Board
 - Motor1: DIR=5, PWM=13
 - PIR Sensor: 26
