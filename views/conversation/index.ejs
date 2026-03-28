@@ -2231,6 +2231,7 @@
 (function () {
   const RATE = 16000;
   let listenInES = null, listenInCtx = null, listenInNextStart = 0;
+  let listenInLeftover = null; // buffer for odd-byte chunks (PCM16 = 2 bytes/sample)
   let ttStream = null, ttCtx = null, ttProc = null, ttActive = false;
 
   function loadBridgeDevices() {
@@ -2309,38 +2310,58 @@
 
   function playListenInChunk(base64Pcm) {
     if (!listenInCtx || !base64Pcm) return;
-    const raw = atob(base64Pcm);
-    const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    const samples = bytes.length / 2;
-    if (samples === 0) return;
 
-    const float32 = new Float32Array(samples);
-    const view = new DataView(bytes.buffer);
-    for (let j = 0; j < samples; j++) float32[j] = view.getInt16(j * 2, true) / 32768;
+    // Decode base64 to bytes
+    var raw = atob(base64Pcm);
+    var incoming = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) incoming[i] = raw.charCodeAt(i);
+
+    // Prepend any leftover byte from previous chunk (PCM16 = 2 bytes/sample)
+    var pcmBytes;
+    if (listenInLeftover && listenInLeftover.length > 0) {
+      pcmBytes = new Uint8Array(listenInLeftover.length + incoming.length);
+      pcmBytes.set(listenInLeftover, 0);
+      pcmBytes.set(incoming, listenInLeftover.length);
+      listenInLeftover = null;
+    } else {
+      pcmBytes = incoming;
+    }
+
+    // Save odd trailing byte for next chunk
+    var usable = pcmBytes.length;
+    if (usable % 2 !== 0) {
+      listenInLeftover = pcmBytes.slice(usable - 1);
+      usable -= 1;
+    }
+    if (usable < 2) return;
+
+    var samples = usable / 2;
+    var float32 = new Float32Array(samples);
+    var view = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, usable);
+    for (var j = 0; j < samples; j++) float32[j] = view.getInt16(j * 2, true) / 32768;
 
     // VU meter
-    let sumSq = 0;
-    for (let k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
-    const pct = Math.min(100, Math.round(Math.sqrt(sumSq / float32.length) * 500));
-    const vuBar = document.getElementById('bridge-listenin-vu');
-    const vuLabel = document.getElementById('bridge-listenin-vu-label');
+    var sumSq = 0;
+    for (var k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
+    var pct = Math.min(100, Math.round(Math.sqrt(sumSq / float32.length) * 500));
+    var vuBar = document.getElementById('bridge-listenin-vu');
+    var vuLabel = document.getElementById('bridge-listenin-vu-label');
     if (vuBar) vuBar.style.width = pct + '%';
     if (vuLabel) vuLabel.textContent = pct + '%';
 
     // Volume
-    const volSlider = document.getElementById('bridge-listenin-volume');
-    const volume = volSlider ? (parseInt(volSlider.value, 10) / 100) : 0.75;
-    for (let m = 0; m < float32.length; m++) float32[m] *= volume;
+    var volSlider = document.getElementById('bridge-listenin-volume');
+    var volume = volSlider ? (parseInt(volSlider.value, 10) / 100) : 0.75;
+    for (var m = 0; m < float32.length; m++) float32[m] *= volume;
 
     if (listenInCtx.state === 'suspended') listenInCtx.resume();
-    const buffer = listenInCtx.createBuffer(1, samples, RATE);
+    var buffer = listenInCtx.createBuffer(1, samples, RATE);
     buffer.getChannelData(0).set(float32);
-    const source = listenInCtx.createBufferSource();
+    var source = listenInCtx.createBufferSource();
     source.buffer = buffer;
     source.connect(listenInCtx.destination);
-    const now = listenInCtx.currentTime;
-    if (listenInNextStart < now) listenInNextStart = now;
+    var now = listenInCtx.currentTime;
+    if (listenInNextStart < now) listenInNextStart = now + 0.05; // small buffer to prevent underrun clicks
     source.start(listenInNextStart);
     listenInNextStart += buffer.duration;
   }
@@ -2349,6 +2370,7 @@
     if (listenInES) { listenInES.close(); listenInES = null; }
     if (listenInCtx) { try { listenInCtx.close(); } catch (_) {} listenInCtx = null; }
     listenInNextStart = 0;
+    listenInLeftover = null;
 
     const statusBadge = document.getElementById('bridge-listenin-status');
     const toggleText = document.getElementById('bridge-listenin-text');
