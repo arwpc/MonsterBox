@@ -315,19 +315,20 @@ async function transitionServos(characterId, parts, options = {}) {
     } catch (_) {}
 
     if (hwService && typeof hwService.batchMoveServos === 'function') {
+        // Support both formats: { value } (movement system) and { target: { angleDeg } } (poses)
         const commands = parts.map(p => ({
             partId: String(p.partId),
-            angleDeg: p.value
-        }));
+            angleDeg: p.value ?? (p.target && p.target.angleDeg) ?? p.angleDeg
+        })).filter(c => c.angleDeg != null);
         try {
             const batchResult = await hwService.batchMoveServos(commands);
             const elapsed = Date.now() - startTime;
             record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
             record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
-            return parts.map((p, i) => ({
-                partId: String(p.partId),
-                fromAngle: p.currentValue ?? p.value,
-                toAngle: p.value,
+            return commands.map((c, i) => ({
+                partId: c.partId,
+                fromAngle: null,
+                toAngle: c.angleDeg,
                 actualDurationMs: elapsed,
                 steps: 1,
                 batch: true,
@@ -341,8 +342,9 @@ async function transitionServos(characterId, parts, options = {}) {
     // Fallback: individual servo transitions (for GPIO or if batch unavailable)
     const promises = parts.map(part => {
         const partId = String(part.partId);
-        const fromAngle = part.currentValue ?? part.value;
-        const toAngle = part.value;
+        const targetAngle = part.value ?? (part.target && part.target.angleDeg) ?? part.angleDeg;
+        const fromAngle = part.currentValue ?? targetAngle;
+        const toAngle = targetAngle;
 
         const onStep = hwService ? (angle) => {
             hwService.controlPart(partId, 'moveToAngle', { angleDeg: angle }).catch(() => {});
