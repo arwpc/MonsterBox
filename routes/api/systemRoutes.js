@@ -365,6 +365,74 @@ router.delete('/templates/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/system/restart-service - Restart the MonsterBox service
+ */
+router.post('/restart-service', express.json(), async (req, res) => {
+    try {
+        console.log('⚠️ MonsterBox service restart requested');
+
+        res.json({
+            success: true,
+            message: 'MonsterBox service restart initiated. Page will reload in ~10 seconds.'
+        });
+
+        // Delay restart to allow response to be sent
+        setTimeout(function () {
+            console.log('🔄 Restarting monsterbox.service...');
+            exec('sudo systemctl restart monsterbox.service', function (error) {
+                if (error) {
+                    console.error('Service restart failed:', error);
+                }
+            });
+        }, 500);
+
+    } catch (error) {
+        console.error('Error restarting service:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to restart service',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/system/optimize - Run the animatronic optimization script
+ */
+router.post('/optimize', express.json(), async (req, res) => {
+    try {
+        console.log('⚠️ Animatronic optimization requested');
+
+        const path = await import('path');
+        const { fileURLToPath } = await import('url');
+        const scriptPath = path.default.resolve(
+            path.default.dirname(fileURLToPath(import.meta.url)),
+            '../../scripts/optimize-animatronic.sh'
+        );
+
+        // Run script and capture output
+        const { stdout, stderr } = await execAsync(`sudo bash "${scriptPath}" 2>&1`, { timeout: 120000 });
+
+        console.log('Optimization output:', stdout);
+
+        res.json({
+            success: true,
+            message: 'Optimization complete. A reboot is recommended.',
+            output: stdout
+        });
+
+    } catch (error) {
+        console.error('Optimization error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Optimization failed',
+            message: error.message,
+            output: error.stdout || ''
+        });
+    }
+});
+
+/**
  * POST /api/system/reboot - Reboot the animatronic
  */
 router.post('/reboot', express.json(), async (req, res) => {

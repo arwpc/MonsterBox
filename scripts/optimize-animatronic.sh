@@ -136,7 +136,6 @@ SyslogIdentifier=monsterbox
 Nice=-15
 IOSchedulingClass=realtime
 IOSchedulingPriority=0
-NoNewPrivileges=true
 LimitNOFILE=4096
 MemoryMax=512M
 

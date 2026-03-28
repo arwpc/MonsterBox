@@ -1,4 +1,10 @@
 <div class="d-flex justify-content-end mb-2 gap-2">
+  <button class="btn btn-outline-warning btn-sm" id="btnOptimize" title="Run animatronic optimization — disables bloat services, tunes performance">
+    <i class="bi bi-lightning-charge"></i> Optimize
+  </button>
+  <button class="btn btn-outline-info btn-sm" id="btnRestartService" title="Restart MonsterBox service without rebooting">
+    <i class="bi bi-arrow-repeat"></i> Restart Service
+  </button>
   <button class="btn btn-outline-danger btn-sm" id="btnReboot" title="Reboot System">
     <i class="bi bi-arrow-clockwise"></i> Reboot
   </button>
@@ -1346,7 +1352,49 @@
     }
   }
 
-  /* ─── Reboot / Shutdown ────────────────────────────────────────────────────── */
+  /* ─── Service Restart / Optimize / Reboot / Shutdown ──────────────────────── */
+  $('#btnRestartService').addEventListener('click', function () {
+    if (!confirm('Restart MonsterBox service? The page will reload in ~10 seconds.')) return;
+    var btn = $('#btnRestartService');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Restarting...';
+    showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-repeat"></i> Restarting MonsterBox service...');
+    apiPost('/api/system/restart-service', {}, function () {
+      // Wait for service to come back up, then reload page
+      setTimeout(function () {
+        showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Service restarted. Reloading...');
+        setTimeout(function () { window.location.reload(); }, 3000);
+      }, 7000);
+    });
+  });
+
+  $('#btnOptimize').addEventListener('click', function () {
+    if (!confirm('Run animatronic optimization?\n\nThis will:\n- Disable unnecessary services (Samba, CUPS, Bluetooth, etc.)\n- Apply performance tuning\n- Configure log limits\n\nA reboot is recommended afterward.')) return;
+    var btn = $('#btnOptimize');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Optimizing...';
+    showAlert('systemAlerts', 'info', '<i class="bi bi-lightning-charge"></i> Running optimization... this may take 1-2 minutes.');
+    fetch('/api/system/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
+        if (data.success) {
+          showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Optimization complete! Reboot recommended.');
+          if (confirm('Optimization complete. Reboot now for full effect?')) {
+            apiPost('/api/system/reboot', {}, function () {});
+          }
+        } else {
+          showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization failed: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
+        showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization error: ' + err.message);
+      });
+  });
+
   $('#btnReboot').addEventListener('click', function () {
     if (!confirm('Are you sure you want to reboot? All operations will be interrupted.')) return;
     showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-clockwise"></i> Rebooting... please wait 30-60 seconds.');
