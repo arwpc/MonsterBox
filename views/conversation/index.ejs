@@ -2229,7 +2229,7 @@
 <script>
 // Browser Audio Bridge — standalone Listen In / Talk Through (independent of AI chat)
 (function () {
-  const RATE = 16000;
+  const RATE = 48000;
   let listenInES = null, listenInCtx = null, listenInNextStart = 0;
   let listenInLeftover = null; // buffer for odd-byte chunks (PCM16 = 2 bytes/sample)
   let ttStream = null, ttCtx = null, ttProc = null, ttActive = false;

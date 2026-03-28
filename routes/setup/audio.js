@@ -669,7 +669,7 @@ router.get('/api/mic-stream', (req, res) => {
             'Connection': 'keep-alive'
         });
         res.write('data: {"type":"started","deviceId":"default"}\n\n');
-        const silent = Buffer.alloc(3200).toString('base64'); // 100ms of silence at 16kHz
+        const silent = Buffer.alloc(9600).toString('base64'); // 100ms of silence at 48kHz
         res.write('data: {"type":"audio","audio":"' + silent + '"}\n\n');
         setTimeout(() => { try { res.end(); } catch (_) {} }, 200);
         return;
@@ -689,7 +689,8 @@ router.get('/api/mic-stream', (req, res) => {
     });
 
     // Spawn pw-record to capture from the specified PipeWire source
-    const pwArgs = ['--format', 's16', '--rate', '16000', '--channels', '1'];
+    // Use 48kHz to match browser AudioContext native rate (avoids resampling artifacts)
+    const pwArgs = ['--format', 's16', '--rate', '48000', '--channels', '1'];
     if (deviceId && deviceId !== 'default') {
         pwArgs.push('--target', deviceId);
     }
@@ -714,7 +715,7 @@ router.get('/api/mic-stream', (req, res) => {
     // pw-record emits arbitrary-sized data events (4KB-64KB). Sending them raw causes
     // choppy/static audio in the browser because AudioContext scheduling gaps.
     // Fixed 200ms chunks (6400 bytes at 16kHz/16-bit/mono) give consistent timing.
-    const CHUNK_BYTES = 6400; // 200ms at 16kHz mono 16-bit
+    const CHUNK_BYTES = 19200; // 200ms at 48kHz mono 16-bit
     let pcmBuffer = Buffer.alloc(0);
 
     proc.stdout.on('data', (chunk) => {
