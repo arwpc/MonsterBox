@@ -30,8 +30,7 @@ MonsterBox is a single-node animatronic control platform that drives Halloween c
 | 2 | Mina | 192.168.8.140 | Active |
 | 3 | Orlok | 192.168.8.120 | Primary dev |
 | 4 | Sir Dragomir | 192.168.8.130 | Offline |
-| 7 | Groundbreaker | 192.168.8.200 | Active |
-| 8 | Spinster | — | New build |
+| 5 | Groundbreaker | 192.168.8.200 | Active |
 
 ## Key URLs
 

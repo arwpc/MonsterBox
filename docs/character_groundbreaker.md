@@ -4,17 +4,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Character ID** | 7 (registered), 5 (legacy data) |
+| **Character ID** | 5 |
 | **IP Address** | 192.168.8.200 |
 | **Status** | Active |
-| **Data Directory** | `data/character-5/` (parts), `data/character-7/` (registered, empty) |
+| **Data Directory** | `data/character-5/` |
 
-Groundbreaker is a ground-emerging animatronic character. It is registered as Character ID 7 in `characters.json`, but its hardware parts are stored under the legacy `data/character-5/` directory. The `data/character-7/` directory exists but has an empty parts list.
+Groundbreaker is a ground-emerging animatronic character. It is registered as Character ID 5 in `characters.json` with hardware parts stored in `data/character-5/`.
 
-!!! warning "ID Mismatch"
-    Character 7 is registered in `characters.json` with no parts. The actual hardware definitions (4 parts) live in `data/character-5/parts.json` with `characterId: 5`. This split happened during character re-registration.
-
-## Hardware Parts (from `data/character-5/parts.json`)
+## Hardware Parts
 
 | ID | Name | Type | Details |
 |----|------|------|---------|

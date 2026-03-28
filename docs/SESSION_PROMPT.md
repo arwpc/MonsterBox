@@ -6,7 +6,7 @@
 
 ## System Context
 
-You are working on **MonsterBox 5.5.1 Gold** — a Node.js/Express animatronic control system for Halloween props. The codebase lives at `/home/remote/MonsterBox` on an **RPi 4B (aarch64)** named **orlok** (192.168.8.120). You're connected via SSH.
+You are working on **MonsterBox** (version in package.json) — a Node.js/Express animatronic control system for Halloween props. The codebase lives at `/home/remote/MonsterBox` on an **RPi 4B (aarch64)** named **orlok** (192.168.8.120). You're connected via SSH.
 
 The app runs as a systemd service (`monsterbox`) on port 3000. Use `sudo systemctl restart monsterbox` to restart it. The service runs `node server.js`.
 
@@ -77,12 +77,11 @@ Parts are controlled through a hardware service layer:
 
 | ID | Name | IP | Notes |
 |----|------|----|----|
-| 1 | PumpkinHead | — | |
-| 2 | Mina | — | |
+| 1 | PumpkinHead | 192.168.8.150 | Active |
+| 2 | Mina | 192.168.8.140 | Active |
 | 3 | **Orlok** | 192.168.8.120 | **Current host** — primary dev target |
-| 4 | Sir Dragomir | 192.168.8.130 | |
-| 5 | Groundbreaker | 192.168.8.200 | |
-| 7 | Groundbreaker | — | |
+| 4 | Sir Dragomir | 192.168.8.130 | Offline |
+| 5 | Groundbreaker | 192.168.8.200 | Active |
 
 ### Orlok's Parts (Character ID 3) — 12 parts
 

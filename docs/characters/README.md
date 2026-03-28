@@ -71,15 +71,12 @@ This directory contains character-specific documentation, configuration guides, 
 
 ---
 
-### Character 5: Goblin
-- **[Validation Report](GOBLIN_VALIDATION_REPORT.md)** - System validation results
-- **[Project Design](../GOBLIN-PROJECT-DESIGN.md)** - Goblin project architecture
-
-**Status:** Validated
+### Character 5: Groundbreaker
+**Status:** Active (192.168.8.200)
 
 **Hardware:**
-- Video Display System
-- Audio System
+- Ground-emerging animatronic
+- Motor + actuator driven
 
 ---
 
@@ -89,8 +86,8 @@ Each character has its own isolated data directory:
 - `data/character-1/` - PumpkinHead
 - `data/character-2/` - Mina
 - `data/character-3/` - Orlok
-- `data/character-4/` - Groundbreaker
-- `data/character-5/` - Goblin
+- `data/character-4/` - Sir Dragomir
+- `data/character-5/` - Groundbreaker
 
 ### Character Data Structure
 ```

@@ -18,15 +18,15 @@ Orlok is the primary animatronic character in the MonsterBox system, inspired by
 | 1 | Right Arm of Orlok | linear_actuator | MDD10A driver, GPIO 23 (dir) / 12 (pwm), 15s max extend/retract |
 | 2 | Left Arm of Manipulation | linear_actuator | MDD10A driver, GPIO 18 (dir) / 13 (pwm), 15s max extend/retract |
 | 3 | Bow At The Waist | linear_actuator | BTS7960 driver, GPIO 19 (RPWM) / 21 (LPWM) / 5 (R_EN) / 22 (L_EN) |
-| 4 | Elbow | servo | PCA9685 channel 4, model: Miuzei 25kg |
-| 5 | Forearm Rotation | servo | PCA9685 channel 5, model: Miuzei 25kg |
+| 4 | Elbow | servo | PCA9685 channel 4, model: RDS51150SG 150kg 270° |
+| 5 | Forearm Rotation | servo | PCA9685 channel 5, model: Hooyij DS3240MG |
 | 6 | Speaker Orlok | speaker | USB C-Media audio device, volume 100 |
 | 7 | Microphone Orlok | microphone | Default audio input device |
 | 8 | Hand of Azura | light | GPIO 16, ACEIRMC 3V relay (active-HIGH, jumper on H) |
 | 9 | Eye of Orlok | webcam | /dev/video1, Arducam B0205 wide-angle 1080p with IR night vision |
-| 10 | Jaw of Orlok | servo | PCA9685 channel 3, model: Miuzei 25kg, calibrated: min=54°, mid=83°, max=100° |
+| 10 | Jaw of Orlok | servo | PCA9685 channel 3, calibrated: min=63°, mid=83°, max=131° |
 | 14 | Sensor for Orlok | motion_sensor | GPIO 27, PIR generic |
-| 15 | Head on a Swivel | servo | PCA9685 channel 0, model: Miuzei 25kg |
+| 15 | Head on a Swivel | servo | PCA9685 channel 0, calibrated: center=99°, range=160° |
 
 **Total: 12 parts** — 3 linear actuators, 4 servos, 1 speaker, 1 microphone, 1 light, 1 webcam, 1 motion sensor
 
@@ -41,10 +41,10 @@ All servos use **PCA9685** I2C PWM driver at address `0x40`, 50 Hz frequency:
 
 | Servo | Channel | Calibration |
 |-------|---------|-------------|
-| Elbow | 4 | — |
-| Forearm Rotation | 5 | — |
-| Jaw of Orlok | 3 | min=54°, mid=83°, max=100° |
-| Head on a Swivel | 0 | — |
+| Elbow | 4 | RDS51150SG 150kg 270° |
+| Forearm Rotation | 5 | Hooyij DS3240MG |
+| Jaw of Orlok | 3 | min=63°, mid=83°, max=131° |
+| Head on a Swivel | 0 | center=99°, range=160° |
 
 ## Special Features
 

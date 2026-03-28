@@ -183,6 +183,6 @@ arecord -D hw:3,0 -f S16_LE -r 16000 -c 1 -d 3 /tmp/test.wav
 
 ---
 
-**Last Updated:** February 2026
-**Current Version:** MonsterBox 6.0.0
+**Last Updated:** March 2026
+**Current Version:** See package.json (avoid hardcoding)
 
