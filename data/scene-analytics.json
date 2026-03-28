@@ -4521,6 +4521,160 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "1774719145472iwvz68hqn",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:25.472Z",
+      "startTime": "2026-03-28T17:32:25.342Z",
+      "endTime": "2026-03-28T17:32:25.466Z",
+      "duration": 124,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774719149666786aeevbo",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:29.666Z",
+      "startTime": "2026-03-28T17:32:29.547Z",
+      "endTime": "2026-03-28T17:32:29.664Z",
+      "duration": 117,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774719152996rv3z5xy8q",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:32.996Z",
+      "startTime": "2026-03-28T17:32:32.866Z",
+      "endTime": "2026-03-28T17:32:32.994Z",
+      "duration": 128,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774719156986y9ho8fdxk",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:36.986Z",
+      "startTime": "2026-03-28T17:32:36.870Z",
+      "endTime": "2026-03-28T17:32:36.984Z",
+      "duration": 114,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "17747191594699x18dkisa",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:39.469Z",
+      "startTime": "2026-03-28T17:32:39.337Z",
+      "endTime": "2026-03-28T17:32:39.467Z",
+      "duration": 130,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774719166453fnwo90chy",
+      "sceneId": 110,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:46.453Z",
+      "startTime": "2026-03-28T17:32:46.325Z",
+      "endTime": "2026-03-28T17:32:46.451Z",
+      "duration": 126,
+      "stepsExecuted": 0,
+      "totalSteps": 3,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774719169802xgtwhkvni",
+      "sceneId": 102,
+      "characterId": 3,
+      "timestamp": "2026-03-28T17:32:49.802Z",
+      "startTime": "2026-03-28T17:32:49.648Z",
+      "endTime": "2026-03-28T17:32:49.799Z",
+      "duration": 150,
+      "stepsExecuted": 0,
+      "totalSteps": 2,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774731727093erh8nrhnz",
+      "sceneId": 111,
+      "characterId": 3,
+      "timestamp": "2026-03-28T21:02:07.094Z",
+      "startTime": "2026-03-28T20:58:00.490Z",
+      "endTime": "2026-03-28T21:02:07.076Z",
+      "duration": 246586,
+      "stepsExecuted": 12,
+      "totalSteps": 12,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1774731821363f7kkdu8n6",
+      "sceneId": 110,
+      "characterId": 3,
+      "timestamp": "2026-03-28T21:03:41.364Z",
+      "startTime": "2026-03-28T20:59:35.817Z",
+      "endTime": "2026-03-28T21:03:41.360Z",
+      "duration": 245543,
+      "stepsExecuted": 3,
+      "totalSteps": 3,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4759,8 +4913,16 @@
     "3_111": {
       "sceneId": 111,
       "characterId": 3,
+      "executionCount": 2,
+      "lastExecuted": "2026-03-28T21:02:07.127Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_110": {
+      "sceneId": 110,
+      "characterId": 3,
       "executionCount": 1,
-      "lastExecuted": "2026-03-22T21:16:26.888Z",
+      "lastExecuted": "2026-03-28T21:03:41.381Z",
       "totalDuration": 0,
       "averageDuration": 0
     }

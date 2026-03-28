@@ -4484,5 +4484,7927 @@
     "metric": {
       "characterId": 3
     }
+  },
+  {
+    "timestamp": 1774717836466,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "386",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717836466,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.181347150259067",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717842167,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "402",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774717842167,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.462686567164178",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717854034,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "352",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717854034,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.6818181818181825",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717863979,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "404",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774717863979,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.425742574257425",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717870847,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "368",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717870848,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.434782608695652",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717880596,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "339",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774717880596,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.949852507374631",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717889948,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "306",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774717889948,
+    "characterId": "commands_per_second",
+    "servoPartId": "9.803921568627452",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717899970,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "362",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717899970,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.524861878453039",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717908590,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "300",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717908590,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.666666666666667",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717919533,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "419",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774717919533,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.159904534606206",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774717928799,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "268",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774717928799,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.462686567164178",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719275689,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "338",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719275689,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.875739644970414",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719287764,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "499",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719287764,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.008016032064128",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719297853,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "592",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719297853,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.0675675675675675",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719307089,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "389",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719307089,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.570694087403599",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719318033,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "373",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719318033,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.04289544235925",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719326290,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "401",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719326290,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.4937655860349124",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719332486,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "353",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719332486,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.8328611898017",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719344281,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "498",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719344281,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.024096385542169",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719356272,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "302",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719356272,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.3112582781456954",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719364515,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "628",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719364515,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.777070063694268",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719373787,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "438",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719373787,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.566210045662101",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719381476,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "524",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719381476,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8167938931297707",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719390312,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "769",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719390312,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.3003901170351104",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719399893,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "401",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719399893,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.4937655860349124",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719407969,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "413",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719407969,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.842615012106537",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719413940,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "748",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719413940,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.3368983957219251",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719423325,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "402",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719423325,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.975124378109452",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719429326,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "619",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719429326,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.2310177705977385",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719441498,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "729",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719441498,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.3717421124828533",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719451847,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "429",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719451847,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.331002331002331",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719463178,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "396",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719463178,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.575757575757575",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719473240,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "441",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719473240,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.802721088435374",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719483154,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "383",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719483154,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6109660574412534",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719489402,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "799",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719489402,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.7546933667083855",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719495487,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "425",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719495487,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.0588235294117645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719506529,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "463",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774719506529,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.319654427645788",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719514434,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "680",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774719514434,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.4705882352941175",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774719525365,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "454",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774719525365,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.607929515418502",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731331556,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "520",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731331556,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.846153846153846",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731339045,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "436",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731339045,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.8807339449541285",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731348606,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "355",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731348606,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.633802816901409",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731361334,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "636",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731361334,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.716981132075472",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731369884,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "482",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731369884,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.224066390041494",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731379403,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "613",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731379403,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.2626427406199023",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731387073,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "505",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731387073,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9603960396039604",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731394101,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "356",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731394101,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.808988764044944",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731399329,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "429",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731399329,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.993006993006993",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731411694,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "662",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731411694,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.021148036253776",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731418606,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "451",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731418606,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.434589800443459",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731425534,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "437",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731425534,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.288329519450801",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731435787,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "360",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731435787,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.555555555555555",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731448956,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "431",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731448956,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.320185614849188",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731454780,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "563",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731454780,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.5523978685612794",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731463140,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "459",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731463140,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.5359477124183005",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731475733,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "339",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731475733,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.949852507374631",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731482388,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "441",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731482388,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.535147392290249",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731494475,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "489",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731494475,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.044989775051125",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731503830,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "1091",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731503830,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.749770852428964",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731514933,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "507",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731514933,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.9723865877712032",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731523741,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "549",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731523741,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.6429872495446265",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731530478,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "330",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731530478,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.0303030303030303",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731539025,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "440",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731539025,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.818181818181818",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731547482,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "541",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731547482,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.545286506469501",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731557710,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "715",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731557710,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.195804195804196",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731564266,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "618",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731564266,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.236245954692557",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731576089,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "586",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731576089,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.4129692832764507",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731584055,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "558",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731584055,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.376344086021505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731595234,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "640",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731595234,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.125",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731606874,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "593",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731606874,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.6863406408094437",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731612704,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "527",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731612704,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.692599620493358",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731623435,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "548",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731623435,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.64963503649635",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731630390,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "544",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731630390,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.838235294117647",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731641181,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "644",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731641181,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.658385093167702",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731647487,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "845",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731647487,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.366863905325444",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731658084,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "660",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731658084,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.545454545454545",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731670168,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "861",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731670168,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.4843205574912894",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731679197,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "531",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731679197,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.8832391713747645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731690925,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "506",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731690925,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.928853754940711",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731702236,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "463",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731702236,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.319654427645788",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731709531,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "396",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731709531,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.525252525252525",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731718676,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "551",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731718676,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.629764065335753",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731730271,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "630",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731730271,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.761904761904762",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731741823,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "425",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731741823,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.0588235294117645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731752162,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "624",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731752162,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.8076923076923075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731761329,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "452",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731761329,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.2123893805309733",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731771521,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "429",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731771521,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.331002331002331",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731778980,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "406",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731778980,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.463054187192118",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731788982,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "621",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731788982,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.2206119162640903",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731799581,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "694",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731799581,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.322766570605188",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731807382,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "530",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731807382,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.660377358490566",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731817816,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "458",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731817816,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.1834061135371177",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731824826,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "589",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731824826,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.395585738539898",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731830174,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "411",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731830174,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.299270072992702",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731836825,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "691",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731836825,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.341534008683069",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731848972,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "369",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731848972,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.710027100271003",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731859539,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "511",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731859539,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9138943248532287",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731871783,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "591",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731871783,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.0761421319796955",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731880787,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "544",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731880787,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.514705882352941",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731887423,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "474",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731887423,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.109704641350211",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731896077,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "510",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731896077,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9215686274509802",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731904774,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "509",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731904774,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.893909626719057",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731912549,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "384",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731912549,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6041666666666665",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731924307,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "575",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731924307,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.217391304347826",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731929614,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "537",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731929614,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.58659217877095",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731938921,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "308",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731938921,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.2467532467532467",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731945786,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "530",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731945786,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.660377358490566",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731951747,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "573",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731951747,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.235602094240838",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731964297,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "334",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731964297,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.994011976047904",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731971557,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "470",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774731971557,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.127659574468085",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731978760,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "380",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774731978760,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.2631578947368425",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731986265,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "527",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731986265,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.692599620493358",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774731997558,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "536",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774731997558,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.597014925373134",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732006832,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "551",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732006832,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.44464609800363",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732017598,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "389",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732017598,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.712082262210797",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732028397,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "431",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732028397,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.640371229698376",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732034321,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "359",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732034321,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.571030640668524",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732039881,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "366",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732039881,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.73224043715847",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732049032,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "450",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732049032,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.444444444444445",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732059027,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "451",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732059027,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.651884700665188",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732069609,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "312",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732069609,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.2051282051282053",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732076310,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "419",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732076310,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.773269689737471",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732088253,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "352",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732088253,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.522727272727273",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732100391,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "387",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732100391,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.5839793281653747",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732108939,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "322",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732108939,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.1055900621118013",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732121553,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "350",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732121553,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.714285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732129323,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "481",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732129323,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.158004158004158",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732135753,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "532",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732135753,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.7593984962406015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732147109,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "579",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732147109,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.181347150259068",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732159810,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "325",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732159810,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.0769230769230766",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732169897,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "421",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732169897,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.375296912114014",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732179065,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732179065,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732185275,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "292",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732185275,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.4246575342465757",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732190824,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "365",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732190824,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.219178082191782",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732198645,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "280",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732198645,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.571428571428571",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732208813,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "444",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732208813,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.504504504504505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732216927,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "242",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732216927,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.132231404958678",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732223136,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "400",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732223136,
+    "characterId": "commands_per_second",
+    "servoPartId": "5",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732231782,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "428",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732231782,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.672897196261682",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732239491,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "319",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732239491,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.134796238244514",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732249322,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "267",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732249322,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.745318352059925",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732256555,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "556",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732256555,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.395683453237409",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732265455,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "319",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732265455,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.134796238244514",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732276357,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "534",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732276357,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.617977528089887",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732285912,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "535",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732285912,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.607476635514018",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732294524,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "324",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732294524,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.0864197530864197",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732304745,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "457",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732304745,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.3763676148796495",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732313274,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "390",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732313274,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.564102564102564",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732322666,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "412",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732322666,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.8543689320388355",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732329468,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "431",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732329469,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.640371229698376",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732335167,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "350",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732335167,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.857142857142857",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732346791,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "417",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732346791,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.796163069544365",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732357181,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "361",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732357181,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.770083102493075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732362391,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "358",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732362391,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.793296089385475",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732371393,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "424",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732371393,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.716981132075472",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732376843,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "590",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732376843,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.084745762711865",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732386050,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "413",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732386050,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.842615012106537",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732394943,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "458",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732394943,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.1834061135371177",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732404991,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "447",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732404991,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.47427293064877",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732412207,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "458",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732412207,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.550218340611353",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732423202,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732423202,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732430820,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "468",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732430820,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.273504273504273",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732440695,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "402",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732440695,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.462686567164178",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732452594,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "361",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732452594,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.770083102493075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732463279,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "430",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732463279,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.651162790697675",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732470047,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "404",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732470047,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.9504950495049505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732480281,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "432",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732480281,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.944444444444445",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732493089,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "589",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732493089,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.093378607809847",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732504221,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "478",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732504221,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.184100418410042",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732510459,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "474",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732510459,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.329113924050633",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732523453,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "449",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732523453,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.4543429844097995",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732533449,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "372",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732533449,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6881720430107525",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732541265,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "434",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732541265,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.6082949308755765",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732550862,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "461",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732550862,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.507592190889371",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732556567,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "494",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732556567,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.048582995951417",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732562687,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "511",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732562687,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.870841487279844",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732569574,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "501",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732569574,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.992015968063872",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732577331,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "418",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732577331,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.177033492822967",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732582838,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "368",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732582838,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.717391304347826",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732589617,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "472",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732589617,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.237288135593221",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732598082,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "344",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732598082,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.72093023255814",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732609352,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "357",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732609352,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.801120448179272",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732617428,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "643",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732617428,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.665629860031104",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732625274,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "402",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732625274,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.975124378109452",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732638267,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "467",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732638267,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.423982869379015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732644701,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "452",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732644701,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.424778761061947",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732652988,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "419",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732652988,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.159904534606206",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732666367,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "422",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732666367,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.109004739336493",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732672090,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "493",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732672090,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.028397565922921",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732683222,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "315",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732683222,
+    "characterId": "commands_per_second",
+    "servoPartId": "9.523809523809524",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732692285,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "561",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732692285,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.3475935828877",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732702383,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "481",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732702383,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.237006237006237",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732712335,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "442",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732712335,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.524886877828054",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732725746,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "486",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732725746,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.172839506172839",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732737089,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "504",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732737089,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9523809523809526",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732743470,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "353",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732743470,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.8328611898017",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732754014,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "484",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732754014,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.198347107438017",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732762906,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "364",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732762906,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.7472527472527473",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732769141,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "462",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732769141,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.329004329004329",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732781016,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "387",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732781016,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.5839793281653747",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732791385,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "347",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732791386,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.8818443804034586",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732799492,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "467",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732799492,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.282655246252676",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732806508,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "423",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732806508,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.3640661938534278",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732817848,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "522",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732817848,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8314176245210727",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732827349,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "324",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732827349,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.0864197530864197",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732833703,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "362",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732833703,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.524861878453039",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732845419,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "387",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732845419,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.751937984496124",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732853153,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "361",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732853153,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.54016620498615",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732861861,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "467",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732861861,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.423982869379015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732869329,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "380",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732869329,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.2631578947368425",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732877612,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "445",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732877612,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.49438202247191",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732886256,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "393",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732886256,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.089058524173028",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732894625,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "486",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732894625,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.11522633744856",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732905115,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "485",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732905115,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.123711340206186",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732914870,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "553",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732914870,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.6166365280289328",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732924892,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "416",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732924892,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.8076923076923075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732932565,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "309",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732932565,
+    "characterId": "commands_per_second",
+    "servoPartId": "9.70873786407767",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732941822,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "489",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732941822,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.044989775051125",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732947176,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "417",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732947176,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.796163069544365",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732957534,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "480",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732957534,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.25",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732964047,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "386",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732964047,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.772020725388601",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732971649,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "488",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774732971649,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.147540983606557",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732976738,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "301",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774732976738,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.3222591362126246",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732987408,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "375",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732987408,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.333333333333333",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774732994744,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "385",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774732994744,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.194805194805195",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733004888,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "465",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733004888,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.150537634408602",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733012600,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "350",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733012600,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.857142857142857",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733022304,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "333",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733022304,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.006006006006006",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733032288,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "515",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733032288,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.825242718446602",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733039992,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "485",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733039992,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.123711340206186",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733045854,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "360",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733045854,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.333333333333334",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733054750,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "316",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733054750,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.329113924050633",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733063668,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "398",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733063668,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.025125628140703",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733070338,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "422",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733070338,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.739336492890995",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733076216,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "529",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733076216,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.671077504725898",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733085882,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "425",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733085882,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.3529411764705883",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733094095,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "301",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733094095,
+    "characterId": "commands_per_second",
+    "servoPartId": "9.966777408637874",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733101745,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "356",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733101745,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.808988764044944",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733111658,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "517",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733111658,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.802707930367505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733116614,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "387",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733116614,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.167958656330749",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733128651,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "494",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733128651,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.0242914979757085",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733136321,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "364",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733136321,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.4945054945054945",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733143977,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "440",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733143977,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.545454545454546",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733154992,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "360",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733154992,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.333333333333334",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733161071,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "345",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733161071,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.797101449275363",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733170567,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "434",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733170567,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.3041474654377883",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733181249,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733181249,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733188085,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "337",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733188085,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9347181008902075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733200293,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "504",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733200293,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9523809523809526",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733211979,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "457",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733211979,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.564551422319474",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733218838,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "421",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733218838,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.125890736342043",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733226254,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "497",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733226254,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.036217303822938",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733232833,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "341",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733232833,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.865102639296187",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733241561,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "425",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733241561,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.0588235294117645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733251808,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "389",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733251808,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.570694087403599",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733263198,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "391",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733263198,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.672634271099744",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733275379,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "398",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733275379,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.5125628140703515",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733286831,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "432",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733286831,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.314814814814815",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733294551,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "440",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733294551,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.818181818181818",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733305781,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "404",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733305781,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.9504950495049505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733314155,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "510",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733314155,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.88235294117647",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733326890,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "441",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733326890,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.535147392290249",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733335679,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "328",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733335679,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.048780487804878",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733343515,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "532",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733343515,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.7593984962406015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733354410,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "512",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733354410,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.859375",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733365746,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "348",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733365746,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.873563218390805",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733373141,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "417",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733373141,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.796163069544365",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733380215,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "500",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733380215,
+    "characterId": "commands_per_second",
+    "servoPartId": "4",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733390953,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "465",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733390953,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.451612903225806",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733397189,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "442",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733397189,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.524886877828054",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733408336,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "372",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733408336,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6881720430107525",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733415835,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733415835,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733425305,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "424",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733425306,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.716981132075472",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733435061,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "336",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733435061,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.976190476190476",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733442244,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "507",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733442244,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9171597633136095",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733452693,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "489",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733452693,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.08997955010225",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733459282,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "542",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733459282,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.535055350553505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733469274,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "353",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733469274,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.8328611898017",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733481021,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "380",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733481021,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.894736842105263",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733488138,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "444",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733488138,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.2522522522522523",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733497705,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "541",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733497705,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.8484288354898335",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733503132,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "391",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733503132,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.115089514066496",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733510427,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "494",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733510427,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.048582995951417",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733518977,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "311",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733518977,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.430868167202572",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733531233,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "445",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733531233,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.49438202247191",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733539226,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "497",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733539226,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.036217303822938",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733549376,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "467",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733549376,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.423982869379015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733560842,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "444",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733560842,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.756756756756757",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733569132,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "447",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733569132,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.7114093959731544",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733577308,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "483",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733577308,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.140786749482402",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733587222,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "622",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733587222,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.823151125401929",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733593904,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "405",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733593904,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.4074074074074066",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733607294,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "442",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733607294,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.787330316742081",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733614793,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "440",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733614793,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.545454545454546",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733622074,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "445",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733622074,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.741573033707865",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733629842,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "409",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733629843,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.334963325183375",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733637630,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "553",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733637630,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.424954792043399",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733643921,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "486",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733643921,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.11522633744856",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733650191,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "380",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733650191,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6315789473684212",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733655853,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "560",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733655853,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.357142857142857",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733664922,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "395",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733664922,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.594936708860759",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733676588,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "490",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733676588,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.122448979591836",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733688070,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "353",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733688070,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.6657223796034",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733700229,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "531",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733700229,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.766478342749529",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733709342,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "500",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733709342,
+    "characterId": "commands_per_second",
+    "servoPartId": "6",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733718393,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "436",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733718393,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.293577981651376",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733727211,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "509",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733727211,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.893909626719057",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733732484,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "399",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733732484,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.518796992481203",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733740809,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "355",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733740809,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.8169014084507045",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733751402,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "501",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733751402,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9880239520958085",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733760812,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "455",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733760812,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.593406593406593",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733768250,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "441",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733768250,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.535147392290249",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733776349,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "575",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733776349,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.217391304347826",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733785921,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "439",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733785921,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.83371298405467",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733793548,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "338",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733793548,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.9585798816568047",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733802672,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "460",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733802672,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.3478260869565215",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733808765,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "438",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733808765,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.8493150684931505",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733817166,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "557",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733817166,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.385996409335727",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733829049,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "444",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733829049,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.2522522522522523",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733839868,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "471",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733839868,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.369426751592357",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733852397,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "540",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733852397,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.555555555555555",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733863251,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "280",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733863251,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.571428571428571",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733871965,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "356",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733871965,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.617977528089888",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733878307,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "454",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733878307,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.607929515418502",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733884037,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "425",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733884037,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.0588235294117645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733894029,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "417",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733894029,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.796163069544365",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733905894,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "375",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733905894,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.333333333333333",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733918679,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "297",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733918679,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.734006734006734",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733930860,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "459",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774733930860,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.5359477124183005",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733939255,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "383",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733939255,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6109660574412534",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733952193,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "526",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733952193,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8022813688212924",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733957774,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "365",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733957774,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.73972602739726",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733967550,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "367",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733967550,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.4495912806539515",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733977842,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "322",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733977842,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.1055900621118013",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733990625,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "548",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774733990625,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.64963503649635",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774733999147,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "274",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774733999147,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.64963503649635",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734010037,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "447",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734010037,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.237136465324385",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734019881,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "523",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734019881,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.736137667304015",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734031398,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "457",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734031398,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.1881838074398248",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734039664,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "556",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734039664,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.395683453237409",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734048927,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "374",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734048927,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.02139037433155",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734056738,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "460",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734056738,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.521739130434782",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734066475,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "269",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734066475,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.717472118959108",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734076570,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "476",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734076570,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.302521008403362",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734084046,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "401",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734084046,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.987531172069825",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734090196,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "416",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734090196,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.8076923076923075",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734096439,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "482",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734096439,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.224066390041494",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734101908,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "297",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734101908,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.367003367003367",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734108255,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "566",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734108255,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.30035335689046",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734115253,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "461",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734115253,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.3383947939262475",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734123560,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "397",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734123560,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.037783375314861",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734131202,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "397",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734131202,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.037783375314861",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734139999,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "377",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734139999,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6525198938992043",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734151176,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "447",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734151176,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.47427293064877",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734157095,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "278",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734157095,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.597122302158273",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734169200,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "457",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734169200,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.564551422319474",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734179526,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "414",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734179526,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.4154589371980677",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734188087,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "422",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734188087,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.109004739336493",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734201093,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "504",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734201093,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.9523809523809526",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734214217,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "398",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734214217,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.537688442211055",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734226505,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "460",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734226505,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.521739130434782",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734234463,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "395",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734234463,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.063291139240506",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734246044,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "527",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734246044,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.795066413662239",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734254161,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "423",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734254161,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.092198581560284",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734263040,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "376",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734263040,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6595744680851063",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734270713,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "399",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734270713,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.012531328320802",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734276906,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "309",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734276906,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.236245954692557",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734284141,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "579",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734284141,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.181347150259068",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734292198,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734292198,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734299255,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "549",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734299255,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.46448087431694",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734310611,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "367",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734310611,
+    "characterId": "commands_per_second",
+    "servoPartId": "8.174386920980927",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734322399,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "356",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734322399,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.617977528089888",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734335164,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "407",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734335164,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.914004914004915",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734345378,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "385",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734345378,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.194805194805195",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734351742,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "403",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734351742,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.962779156327543",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734358157,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "359",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734358157,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.785515320334262",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734364330,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "553",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734364330,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.424954792043399",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734375179,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "402",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734375179,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.487562189054726",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734386165,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "397",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734386165,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.037783375314861",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734395760,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "379",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734395760,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.277044854881266",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734402127,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "390",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734402127,
+    "characterId": "commands_per_second",
+    "servoPartId": "7.692307692307692",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734412370,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "456",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734412370,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.385964912280701",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734420921,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "418",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734420921,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.3923444976076556",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734428162,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "379",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734428162,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.277044854881266",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734434204,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "519",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734434204,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8535645472061657",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734440626,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "510",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734440626,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.88235294117647",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734446377,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "503",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734446377,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9761431411530817",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734454144,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "347",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734454144,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.763688760806917",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734462957,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "728",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734462957,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.120879120879121",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734471708,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "517",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734471708,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8684719535783363",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734478399,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "496",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734478399,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.0161290322580645",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734489424,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "473",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734489424,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.342494714587738",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734494730,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "544",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734494730,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.838235294117647",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734504647,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "593",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734504647,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.059021922428331",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734515770,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "694",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734515770,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.322766570605188",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734521517,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "432",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734521517,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.944444444444445",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734528041,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "516",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734528041,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.875968992248062",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734536561,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "448",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734536561,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.464285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734548239,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "607",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734548239,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.6474464579901154",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734560928,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "617",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734560928,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.862236628849271",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734566264,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "590",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734566264,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.6949152542372883",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734573821,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "592",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734573821,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.0675675675675675",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734581777,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "668",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734581777,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.491017964071856",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734591501,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "628",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734591501,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.777070063694268",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734600901,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "582",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734600901,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.718213058419244",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734609349,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "570",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734609349,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.5087719298245617",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734620487,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "605",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734620487,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.3057851239669422",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734631397,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "550",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734631397,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.454545454545454",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734639004,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "563",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734639004,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.7761989342806397",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734647139,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "676",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734647140,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.9585798816568047",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734657182,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "506",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734657182,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.928853754940711",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734664162,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "559",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734664162,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.7889087656529514",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734670397,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "759",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734670397,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.952569169960474",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734679593,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "708",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734679593,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.237288135593221",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734685385,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "537",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734685385,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.8621973929236497",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734694567,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "433",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734694567,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.618937644341801",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734706170,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "394",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734706170,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.5380710659898478",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734713812,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "564",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734713813,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.546099290780142",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734724094,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "701",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734724094,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.279600570613409",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734737524,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "542",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734737524,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.8450184501845017",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734746105,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "512",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734746105,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.90625",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734755774,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "513",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734755774,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.847953216374269",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734761757,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "452",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734761757,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.2123893805309733",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734773442,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "509",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734773442,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9292730844793713",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734778980,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "407",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734778980,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.4570024570024573",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734790030,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "551",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734790030,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.44464609800363",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734797082,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "461",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734797083,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.507592190889371",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734807008,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "463",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734807008,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.159827213822894",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734818472,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "718",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734818472,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.785515320334262",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734830805,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "771",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734830805,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.8910505836575875",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734839877,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "604",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734839877,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.966887417218543",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734852417,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "520",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734852417,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.846153846153846",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734860159,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "452",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734860159,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.2123893805309733",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734872034,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "756",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734872034,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.6455026455026456",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734882641,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "534",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734882641,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.745318352059925",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734890097,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "479",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734890097,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.263048016701462",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734900332,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "467",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734900332,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.141327623126338",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734912468,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "332",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774734912468,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.012048192771084",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734920053,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "656",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734920053,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.573170731707317",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734928336,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "534",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734928336,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.617977528089887",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734936689,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "504",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734936690,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.9682539682539684",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734943933,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "475",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734943933,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.315789473684211",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734955998,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "767",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734955998,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.607561929595828",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734965157,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "808",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734965157,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.4752475247524752",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734973640,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "518",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734973640,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.7915057915057915",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734982887,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "457",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774734982887,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.3763676148796495",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774734989400,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "610",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774734989400,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.918032786885246",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735000210,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "614",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735000210,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.6286644951140066",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735008545,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "520",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774735008545,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.846153846153846",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735017877,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "511",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735017877,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.870841487279844",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735027031,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "708",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735027031,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.237288135593221",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735038525,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "512",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735038525,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.859375",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735045827,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "991",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774735045827,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.0181634712411705",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735054782,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "469",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735054782,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.1321961620469083",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735067281,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "643",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774735067281,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.1104199066874028",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735074571,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "708",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735074571,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.4124293785310735",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735084308,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "369",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735084308,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.710027100271003",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735091558,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "493",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735091558,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.085192697768763",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735099501,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "624",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735099501,
+    "characterId": "commands_per_second",
+    "servoPartId": "1.6025641025641026",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735108834,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "525",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735108834,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.714285714285714",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735116669,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "362",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735116669,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.7624309392265194",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735126109,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "532",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735126109,
+    "characterId": "commands_per_second",
+    "servoPartId": "5.639097744360902",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735133423,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "363",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774735133423,
+    "characterId": "commands_per_second",
+    "servoPartId": "2.7548209366391188",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735144766,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "400",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774735144766,
+    "characterId": "commands_per_second",
+    "servoPartId": "5",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735153822,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "804",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774735153822,
+    "characterId": "commands_per_second",
+    "servoPartId": "3.731343283582089",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774735163088,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "431",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774735163088,
+    "characterId": "commands_per_second",
+    "servoPartId": "4.640371229698376",
+    "metric": {
+      "characterId": 3
+    }
   }
 ]

@@ -1,30 +1,34 @@
 {
   "1": {
+    "currentP": 1,
+    "isMoving": false,
+    "positionKnown": true,
+    "confidence": "homed",
+    "movesSinceHome": 16,
+    "lastUpdatedAt": "2026-03-28T20:59:38.618Z",
+    "cleanShutdown": false,
+    "lastDir": "retract",
+    "lastHomedAt": "2026-03-28T17:16:51.433Z"
+  },
+  "2": {
     "currentP": 0.7,
     "isMoving": false,
     "positionKnown": true,
-    "confidence": "tracked",
-    "movesSinceHome": 4,
-    "lastUpdatedAt": "2026-03-28T01:55:42.343Z",
-    "cleanShutdown": true
-  },
-  "2": {
-    "currentP": 0.6499999999999999,
-    "isMoving": false,
-    "positionKnown": true,
-    "confidence": "tracked",
-    "movesSinceHome": 48,
-    "lastUpdatedAt": "2026-03-28T01:55:47.155Z",
+    "confidence": "homed",
+    "movesSinceHome": 8,
+    "lastUpdatedAt": "2026-03-28T22:00:52.247Z",
     "lastDir": "extend",
-    "cleanShutdown": true
+    "cleanShutdown": false,
+    "lastHomedAt": "2026-03-28T17:19:42.675Z"
   },
   "3": {
-    "currentP": 0.6,
+    "currentP": 0.24,
     "isMoving": false,
     "positionKnown": true,
     "confidence": "tracked",
-    "movesSinceHome": 3,
-    "lastUpdatedAt": "2026-03-28T01:55:52.744Z",
-    "cleanShutdown": true
+    "movesSinceHome": 14,
+    "lastUpdatedAt": "2026-03-28T17:20:51.841Z",
+    "cleanShutdown": false,
+    "lastDir": "retract"
   }
 }

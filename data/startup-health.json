@@ -1,23 +1,23 @@
 {
-  "timestamp": "2026-03-28T02:44:04.123Z",
-  "pid": 58694,
+  "timestamp": "2026-03-28T21:59:35.472Z",
+  "pid": 202131,
   "environment": "production",
   "checks": {
     "memory": {
-      "freeMB": 6267,
+      "freeMB": 6285,
       "totalMB": 7394,
       "percentFree": 85,
       "status": "ok"
     },
     "cpu": {
-      "load1m": 4.03,
-      "load5m": 4.09,
-      "load15m": 2.95,
+      "load1m": 8.29,
+      "load5m": 8.34,
+      "load15m": 7.77,
       "cores": 4,
-      "status": "warning"
+      "status": "critical"
     },
     "disk": {
-      "availableMB": 93547,
+      "availableMB": 93592,
       "status": "ok"
     },
     "i2c": {
@@ -28,5 +28,5 @@
       "version": "Python 3.11.2"
     }
   },
-  "overallStatus": "WARNING"
+  "overallStatus": "CRITICAL"
 }

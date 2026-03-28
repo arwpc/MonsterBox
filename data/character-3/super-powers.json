@@ -2,16 +2,16 @@
   "jawAnimation": {
     "enabled": true,
     "servoPartId": "10",
-    "activeConfigId": "config-1",
+    "activeConfigId": "config-mnalu7mwt6e6",
     "configs": [
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 1.5,
-        "smoothing": 0.4,
+        "sensitivity": 2.7,
+        "smoothing": 0.1,
         "volumeThreshold": 0.02,
-        "attackTime": 30,
-        "releaseTime": 100,
+        "attackTime": 20,
+        "releaseTime": 60,
         "useBandpassFilter": true,
         "useAGC": true,
         "quantizationLevels": 18,
@@ -36,6 +36,23 @@
         "minAngle": 63,
         "maxAngle": 131,
         "audioLeadTimeMs": 0
+      },
+      {
+        "id": "config-mnalu7mwt6e6",
+        "name": "Working March28",
+        "sensitivity": 2.7,
+        "smoothing": 0.1,
+        "volumeThreshold": 0.02,
+        "attackTime": 20,
+        "releaseTime": 60,
+        "useBandpassFilter": true,
+        "useAGC": true,
+        "quantizationLevels": 18,
+        "preset": "speech",
+        "minAngle": 63,
+        "maxAngle": 131,
+        "audioLeadTimeMs": 300,
+        "testText": "cats and dogs for emmy"
       }
     ]
   },
@@ -60,6 +77,6 @@
     "targetLockStrength": 9,
     "confirmFrames": 4,
     "detectInterval": 5,
-    "detectionMode": "upperbody"
+    "detectionMode": "person"
   }
 }
