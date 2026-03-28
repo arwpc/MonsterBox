@@ -30,6 +30,38 @@ MonsterBox supports deployment to multiple animatronic characters across a netwo
 
 ---
 
+## Fresh RPi Installation
+
+The `install.sh` script handles everything for a new Raspberry Pi 4B:
+
+```bash
+git clone git@github.com:arwpc/MonsterBox.git
+cd MonsterBox
+sudo bash install.sh
+```
+
+During install, you'll be prompted to:
+1. **Enter a character name** — creates the character in `characters.json`, scaffolds data files
+2. **Enter the RPi's static IP** — registers in `config/animatronics.json` for network discovery
+
+The installer also:
+- **Sets the RPi hostname** to match the character name (lowercase, e.g., "Mina" → `mina`)
+- **Registers in `animatronics.json`** — so `getHostnameCharacterId()` auto-selects the correct character on every boot
+- **Creates and starts the systemd service** — `Restart=always` ensures it comes back after crashes
+- **Verifies the service is responding** — checks HTTPS on port 3000 before finishing
+- **Generates SSL certificates** — required for browser microphone access
+
+After install, a reboot is recommended for I2C/SPI/GPU changes. The service starts automatically on boot.
+
+### Key: Hostname → Character Auto-Select
+
+Each RPi's hostname must match an entry in `config/animatronics.json`. On startup, `getHostnameCharacterId()` reads the hostname and selects the matching character. This means:
+- **You cannot switch characters by editing `app-config.json`** — it gets overwritten on startup
+- **The hostname IS the character identity** — changing it changes which character the server loads
+- **All RPis share the same codebase** — character data is isolated in `data/character-{id}/`
+
+---
+
 ## Deployment Scripts
 
 ### Deploy to Single Animatronic
@@ -105,20 +137,33 @@ Example:
 
 ### Server Won't Start
 ```bash
+# Check service status and logs
+systemctl status monsterbox.service
+sudo tail -50 /var/log/monsterbox.log
+sudo tail -50 /var/log/monsterbox.err
+
 # Check for port conflicts
 sudo lsof -i :3000
 sudo fuser -k 3000/tcp
 
-# Check logs
-journalctl -u monsterbox -f
+# Restart the service
+sudo systemctl restart monsterbox.service
 ```
 
-### Character Not Loading
+### Character Not Loading (Wrong Character Selected)
+The server auto-selects a character based on the RPi hostname via `config/animatronics.json`.
 ```bash
-# Verify character selection
-cat config/app-config.json
+# Check current hostname
+hostname
 
-# Check character data exists
+# Verify it matches an entry in animatronics.json
+cat config/animatronics.json | python3 -m json.tool
+
+# If hostname doesn't match, set it (requires reboot or service restart):
+sudo hostnamectl set-hostname mina
+sudo systemctl restart monsterbox.service
+
+# Verify character data exists
 ls -la data/character-{id}/
 ```
 

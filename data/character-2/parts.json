@@ -1,56 +1,72 @@
 [
   {
     "id": "1",
-    "name": "Jaw of Coffin",
+    "name": "Jaw",
     "type": "servo",
     "pin": null,
-    "description": "Test updated via comprehensive tests",
+    "description": "Jaw servo for mouth movement",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 1
+      "channel": 4
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-02-07T22:54:53.277Z"
+    "updated": "2026-03-28T23:00:00.000Z"
   },
   {
     "id": "2",
-    "name": "Neck Movement",
+    "name": "Neck",
     "type": "servo",
     "pin": null,
-    "description": "Head/neck servo",
+    "description": "Head/neck servo for turning",
     "config": {
-      "servoType": "continuous",
+      "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 0
+      "channel": 8
     },
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-02-07T22:55:34.092Z"
+    "updated": "2026-03-28T23:00:00.000Z"
   },
   {
     "id": "3",
-    "name": "Eye Servos",
+    "name": "Eye",
     "type": "servo",
     "pin": null,
     "description": "Eye movement servo",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 2,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 12
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
-    "modelId": "servo_miuzei_mg90s"
+    "modelId": "servo_miuzei_mg90s",
+    "updated": "2026-03-28T23:00:00.000Z"
+  },
+  {
+    "id": "10",
+    "name": "Servo Channel Laser",
+    "type": "light",
+    "pin": null,
+    "description": "Eye laser powered via PCA9685 channel 0 — toggle on/off",
+    "config": {
+      "controllerType": "pca9685",
+      "address": 64,
+      "channel": 0
+    },
+    "created": "2026-03-28T23:00:00.000Z",
+    "enabled": true,
+    "updated": "2026-03-28T23:00:00.000Z"
   },
   {
     "id": "4",
@@ -81,7 +97,7 @@
   },
   {
     "id": "6",
-    "name": "Speaker Coffin",
+    "name": "Speaker",
     "type": "speaker",
     "pin": null,
     "description": "Main speaker",
@@ -95,7 +111,7 @@
   },
   {
     "id": "7",
-    "name": "Coffin Cam",
+    "name": "Mina Cam",
     "type": "webcam",
     "pin": null,
     "description": "Main webcam",

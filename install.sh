@@ -418,7 +418,15 @@ read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME
 if [ -z "$NEW_CHAR_NAME" ]; then
     print_warning "No character name entered; skipping character creation."
 else
-    REPO_DIR="$REPO_DIR" NEW_CHAR_NAME="$NEW_CHAR_NAME" node --input-type=commonjs - <<'NODE'
+    # Derive hostname from character name (lowercase, no spaces)
+    CHAR_HOSTNAME=$(echo "$NEW_CHAR_NAME" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
+
+    # Prompt for IP address (needed for animatronics.json registration)
+    CURRENT_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+    read -rp "Enter this RPi's static IP address [$CURRENT_IP]: " CHAR_IP
+    CHAR_IP="${CHAR_IP:-$CURRENT_IP}"
+
+    REPO_DIR="$REPO_DIR" NEW_CHAR_NAME="$NEW_CHAR_NAME" CHAR_HOSTNAME="$CHAR_HOSTNAME" CHAR_IP="$CHAR_IP" node --input-type=commonjs - <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
@@ -426,7 +434,10 @@ const repoDir = process.env.REPO_DIR;
 const dataDir = path.join(repoDir, 'data');
 const charFile = path.join(dataDir, 'characters.json');
 const cfgFile = path.join(repoDir, 'config', 'app-config.json');
+const animFile = path.join(repoDir, 'config', 'animatronics.json');
 const name = process.env.NEW_CHAR_NAME;
+const hostname = process.env.CHAR_HOSTNAME;
+const ip = process.env.CHAR_IP;
 
 function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
@@ -466,9 +477,40 @@ cfg.selectedCharacter = nextId;
 cfg.dataPath = `data/character-${nextId}`;
 fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2));
 
+// Register in animatronics.json for hostname-based auto-select
+const anim = readJson(animFile, { animatronics: [], goblins: [] });
+const existing = anim.animatronics.find(a => a.hostname === hostname);
+if (!existing) {
+  const animId = anim.animatronics.length ? Math.max(...anim.animatronics.map(a => Number(a.id)||0)) + 1 : 1;
+  anim.animatronics.push({
+    id: animId,
+    name: name,
+    hostname: hostname,
+    ip: ip,
+    port: 3000,
+    characterId: nextId,
+    agentId: "",
+    defaultSceneId: 1
+  });
+  fs.writeFileSync(animFile, JSON.stringify(anim, null, 2));
+  console.log(`Registered '${name}' in animatronics.json (hostname=${hostname}, ip=${ip}, characterId=${nextId})`);
+} else {
+  console.log(`Hostname '${hostname}' already registered in animatronics.json, skipping`);
+}
+
 console.log(`Created character '${name}' with id=${nextId}, data at ${charDir}`);
 NODE
     print_success "Character '$NEW_CHAR_NAME' created and selected."
+
+    # Set RPi hostname to match character name for auto-select on boot
+    print_status "Setting hostname to '$CHAR_HOSTNAME'..."
+    hostnamectl set-hostname "$CHAR_HOSTNAME" 2>/dev/null || echo "$CHAR_HOSTNAME" > /etc/hostname
+    # Update /etc/hosts so hostname resolves locally
+    sed -i "s/127\.0\.1\.1.*/127.0.1.1\t$CHAR_HOSTNAME/" /etc/hosts
+    if ! grep -q "127.0.1.1" /etc/hosts; then
+        echo "127.0.1.1	$CHAR_HOSTNAME" >> /etc/hosts
+    fi
+    print_success "Hostname set to '$CHAR_HOSTNAME' (server will auto-select this character on boot)"
 fi
 
 # ============================================================
@@ -510,12 +552,41 @@ EOF
 systemctl daemon-reload
 systemctl enable monsterbox.service
 
+# Create log files with correct ownership
+touch /var/log/monsterbox.log /var/log/monsterbox.err
+chown "$ACTUAL_USER":"$ACTUAL_USER" /var/log/monsterbox.log /var/log/monsterbox.err
+
 print_success "MonsterBox systemd service created and enabled"
+
+# ============================================================
+# 22. Start and Verify MonsterBox Service
+# ============================================================
+print_status "Step 22: Starting MonsterBox service..."
+
+systemctl start monsterbox.service
+sleep 5
+
+if systemctl is-active --quiet monsterbox.service; then
+    print_success "MonsterBox service is running"
+else
+    print_error "MonsterBox service failed to start — check logs:"
+    echo "    sudo tail -50 /var/log/monsterbox.log"
+    echo "    sudo tail -50 /var/log/monsterbox.err"
+fi
+
+# Verify HTTPS is responding
+MB_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if curl -sk --max-time 10 "https://localhost:3000/" -o /dev/null -w "%{http_code}" 2>/dev/null | grep -q "200"; then
+    print_success "MonsterBox dashboard responding at https://${MB_IP}:3000"
+else
+    print_warning "Dashboard not responding yet — may need a reboot for hardware changes to take effect"
+fi
 
 # ============================================================
 # Done
 # ============================================================
 print_success "MonsterBox system installation complete!"
-print_warning "Please reboot your Raspberry Pi to ensure all changes take effect"
+print_warning "A reboot is recommended to apply hardware interface changes (I2C, SPI, GPU memory)"
 print_status "After reboot, MonsterBox will start automatically via systemd"
-print_status "Access the dashboard at https://$(hostname -I | awk '{print $1}'):3000"
+print_status "Dashboard: https://${MB_IP}:3000"
+print_status "Logs: sudo tail -f /var/log/monsterbox.log"

@@ -1,7 +1,7 @@
 {
   "jawAnimation": {
     "enabled": true,
-    "servoPartId": "10",
+    "servoPartId": "1",
     "activeConfigId": "config-1",
     "configs": [
       {
@@ -16,8 +16,8 @@
         "useAGC": true,
         "quantizationLevels": 10,
         "preset": "speech",
-        "minAngle": 70,
-        "maxAngle": 93
+        "minAngle": 17,
+        "maxAngle": 153
       }
     ]
   }

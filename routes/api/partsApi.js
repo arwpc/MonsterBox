@@ -162,7 +162,10 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 part
             });
         } else if (partType === 'light' || partType === 'led') {
-            const lightAction = action || 'on';
+            const rawAction = action || 'on';
+            // Map short actions to controller method names
+            const lightActionMap = { on: 'turnOn', off: 'turnOff', toggle: 'toggle', turnOn: 'turnOn', turnOff: 'turnOff' };
+            const lightAction = lightActionMap[rawAction] || rawAction;
             const result = await controlPart(part.id, lightAction, params);
             return res.json({
                 success: result.success !== false,

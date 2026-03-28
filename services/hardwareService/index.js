@@ -355,11 +355,21 @@ const HARDWARE_CONTROLLERS = {
     },
 
     // 💡 Light - basic on/off lighting
-    // Track light state per pin for true toggle behavior
+    // Track light state per pin/channel for true toggle behavior
     _lightState: {},
     light: {
-        async turnOn({ pin, brightness = 100, duration = 0 }) {
+        async turnOn({ pin, channel, controllerType, address, brightness = 100, duration = 0 }) {
             try {
+                // PCA9685 channel light: use servo_cli.py to set angle 180 (full duty = on)
+                if (controllerType === 'pca9685' && channel != null) {
+                    const args = ['move_to_pca', String(channel), '180'];
+                    if (address != null) args.push(String(address));
+                    const out = await runWrapper('servo_cli.py', args);
+                    const success = typeof out === 'string' && out.includes('success');
+                    const key = `pca_ch${channel}`;
+                    if (success) HARDWARE_CONTROLLERS._lightState[key] = 'on';
+                    return { success, partType: 'light', channel, state: 'on', rawOutput: out, message: success ? `PCA9685 ch${channel} light on` : 'Light on failed' };
+                }
                 const out = await runWrapper('light_cli.py', [String(pin), 'on', String(duration || 0)]);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
@@ -378,8 +388,18 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async turnOff({ pin }) {
+        async turnOff({ pin, channel, controllerType, address }) {
             try {
+                // PCA9685 channel light: use servo_cli.py to set angle 0 (zero duty = off)
+                if (controllerType === 'pca9685' && channel != null) {
+                    const args = ['move_to_pca', String(channel), '0'];
+                    if (address != null) args.push(String(address));
+                    const out = await runWrapper('servo_cli.py', args);
+                    const success = typeof out === 'string' && out.includes('success');
+                    const key = `pca_ch${channel}`;
+                    if (success) HARDWARE_CONTROLLERS._lightState[key] = 'off';
+                    return { success, partType: 'light', channel, state: 'off', rawOutput: out, message: success ? `PCA9685 ch${channel} light off` : 'Light off failed' };
+                }
                 const out = await runWrapper('light_cli.py', [String(pin), 'off']);
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
@@ -397,8 +417,21 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async toggle({ pin }) {
+        async toggle({ pin, channel, controllerType, address }) {
             try {
+                // PCA9685 channel light: toggle via servo angle 0/180
+                if (controllerType === 'pca9685' && channel != null) {
+                    const key = `pca_ch${channel}`;
+                    const currentState = HARDWARE_CONTROLLERS._lightState[key] || 'off';
+                    const newState = currentState === 'on' ? 'off' : 'on';
+                    const angle = newState === 'on' ? '180' : '0';
+                    const args = ['move_to_pca', String(channel), angle];
+                    if (address != null) args.push(String(address));
+                    const out = await runWrapper('servo_cli.py', args);
+                    const success = typeof out === 'string' && out.includes('success');
+                    if (success) HARDWARE_CONTROLLERS._lightState[key] = newState;
+                    return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out, message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
+                }
                 const currentState = HARDWARE_CONTROLLERS._lightState[pin] || 'off';
                 const newState = currentState === 'on' ? 'off' : 'on';
                 const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
@@ -1476,8 +1509,21 @@ export async function controlPart(partId, action, params = {}) {
             }
             if (part.enablePin != null) normalized.enablePin = Number(part.enablePin);
         }
-        if ((type === 'light' || type === 'led' || type === 'sensor' || type === 'motion_sensor') && pinFromPart == null) {
-            // Ensure a pin is present if possible
+        if (type === 'light' || type === 'led') {
+            // PCA9685 channel light support (e.g., laser powered by PCA9685)
+            const cfgCtl = part.config && part.config.controllerType;
+            if (cfgCtl === 'pca9685') {
+                normalized.controllerType = 'pca9685';
+                if (part.config && part.config.channel != null) normalized.channel = part.config.channel;
+                const addrRaw = part.config && part.config.address;
+                if (addrRaw != null) {
+                    normalized.address = (typeof addrRaw === 'string' && String(addrRaw).startsWith('0x')) ? parseInt(String(addrRaw), 16) : addrRaw;
+                }
+            } else if (pinFromPart == null && part.gpioPin != null) {
+                normalized.pin = (typeof part.gpioPin === 'string' ? parseInt(part.gpioPin, 10) : part.gpioPin);
+            }
+        }
+        if ((type === 'sensor' || type === 'motion_sensor') && pinFromPart == null) {
             if (part.gpioPin != null) normalized.pin = (typeof part.gpioPin === 'string' ? parseInt(part.gpioPin, 10) : part.gpioPin);
         }
 
