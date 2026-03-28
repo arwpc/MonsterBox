@@ -2361,7 +2361,8 @@
     source.buffer = buffer;
     source.connect(listenInCtx.destination);
     var now = listenInCtx.currentTime;
-    if (listenInNextStart < now) listenInNextStart = now + 0.05; // small buffer to prevent underrun clicks
+    // Jitter buffer: schedule 300ms ahead to absorb network/chunk timing variance
+    if (listenInNextStart < now) listenInNextStart = now + 0.3;
     source.start(listenInNextStart);
     listenInNextStart += buffer.duration;
   }

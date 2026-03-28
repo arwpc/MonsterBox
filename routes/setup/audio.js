@@ -710,11 +710,23 @@ router.get('/api/mic-stream', (req, res) => {
     // Notify client that streaming has started
     res.write('data: {"type":"started","deviceId":"' + deviceId + '","streamId":"' + streamId + '"}\n\n');
 
-    // Stream audio chunks as they arrive from pw-record stdout
+    // Buffer pw-record output into fixed-size chunks for smooth browser playback.
+    // pw-record emits arbitrary-sized data events (4KB-64KB). Sending them raw causes
+    // choppy/static audio in the browser because AudioContext scheduling gaps.
+    // Fixed 200ms chunks (6400 bytes at 16kHz/16-bit/mono) give consistent timing.
+    const CHUNK_BYTES = 6400; // 200ms at 16kHz mono 16-bit
+    let pcmBuffer = Buffer.alloc(0);
+
     proc.stdout.on('data', (chunk) => {
         try {
-            const b64 = chunk.toString('base64');
-            res.write('data: {"type":"audio","audio":"' + b64 + '"}\n\n');
+            pcmBuffer = Buffer.concat([pcmBuffer, chunk]);
+            // Emit fixed-size chunks
+            while (pcmBuffer.length >= CHUNK_BYTES) {
+                const slice = pcmBuffer.subarray(0, CHUNK_BYTES);
+                pcmBuffer = pcmBuffer.subarray(CHUNK_BYTES);
+                const b64 = slice.toString('base64');
+                res.write('data: {"type":"audio","audio":"' + b64 + '"}\n\n');
+            }
         } catch (_) {
             // Client likely disconnected
         }
