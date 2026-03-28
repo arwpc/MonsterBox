@@ -1245,7 +1245,8 @@
   let listenInEventSource = null;
   let listenInAudioCtx = null;
   let listenInNextStart = 0;
-  const LISTEN_IN_RATE = 16000;
+  let listenInLeftover = null; // buffer for odd-byte chunks (PCM16 = 2 bytes/sample)
+  const LISTEN_IN_RATE = 48000;
 
   // State for Talk Through
   let talkThroughStream = null;
@@ -1353,16 +1354,35 @@
   function playListenInChunk(base64Pcm) {
     if (!listenInAudioCtx || !base64Pcm) return;
 
-    // Decode base64 to PCM16LE
+    // Decode base64 to bytes
     const raw = atob(base64Pcm);
-    const bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    const samples = bytes.length / 2;
-    if (samples === 0) return;
+    const incoming = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) incoming[i] = raw.charCodeAt(i);
+
+    // Prepend any leftover byte from previous chunk (PCM16 = 2 bytes/sample)
+    let pcmBytes;
+    if (listenInLeftover && listenInLeftover.length > 0) {
+      pcmBytes = new Uint8Array(listenInLeftover.length + incoming.length);
+      pcmBytes.set(listenInLeftover, 0);
+      pcmBytes.set(incoming, listenInLeftover.length);
+      listenInLeftover = null;
+    } else {
+      pcmBytes = incoming;
+    }
+
+    // Save odd trailing byte for next chunk
+    let usable = pcmBytes.length;
+    if (usable % 2 !== 0) {
+      listenInLeftover = pcmBytes.slice(usable - 1);
+      usable -= 1;
+    }
+    if (usable < 2) return;
+
+    const samples = usable / 2;
 
     // Convert to Float32
     const float32 = new Float32Array(samples);
-    const view = new DataView(bytes.buffer);
+    const view = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, usable);
     for (let j = 0; j < samples; j++) {
       float32[j] = view.getInt16(j * 2, true) / 32768;
     }
@@ -1370,8 +1390,7 @@
     // Compute RMS for VU meter
     let sumSq = 0;
     for (let k = 0; k < float32.length; k++) sumSq += float32[k] * float32[k];
-    const rms = Math.sqrt(sumSq / float32.length);
-    const pct = Math.min(100, Math.round(rms * 500)); // Scale for visibility
+    const pct = Math.min(100, Math.round(Math.sqrt(sumSq / float32.length) * 500));
     const vuBar = document.getElementById('listenin-vu-bar');
     const vuLabel = document.getElementById('listenin-vu-label');
     if (vuBar) vuBar.style.width = pct + '%';
@@ -1391,7 +1410,8 @@
     source.connect(listenInAudioCtx.destination);
 
     const now = listenInAudioCtx.currentTime;
-    if (listenInNextStart < now) listenInNextStart = now;
+    // Jitter buffer: schedule 300ms ahead to absorb network/chunk timing variance
+    if (listenInNextStart < now) listenInNextStart = now + 0.3;
     source.start(listenInNextStart);
     listenInNextStart += buffer.duration;
   }
@@ -1406,6 +1426,7 @@
       listenInAudioCtx = null;
     }
     listenInNextStart = 0;
+    listenInLeftover = null;
 
     const statusBadge = document.getElementById('listenin-status');
     const toggleText = document.getElementById('listenin-toggle-text');

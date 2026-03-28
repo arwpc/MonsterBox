@@ -280,15 +280,16 @@
     var ocvOn = el.ocvEnabled ? el.ocvEnabled.checked : false;
     var htOn = el.htEnabled ? el.htEnabled.checked : false;
 
-    // Head tracking requires OpenCV
+    // Head tracking requires OpenCV toggle to be on
     if (!ocvOn && htOn) {
       if (el.htEnabled) el.htEnabled.checked = false;
       htOn = false;
       if (isHeadTrackingOn) disableHeadTrackingOnServer();
     }
 
-    if (el.htEnabled) el.htEnabled.disabled = !isOpenCVActive;
-    if (el.htDisabledHint) el.htDisabledHint.style.display = isOpenCVActive ? 'none' : 'inline';
+    // Enable HT toggle when OpenCV toggle is checked (not just when process is running)
+    if (el.htEnabled) el.htEnabled.disabled = !ocvOn;
+    if (el.htDisabledHint) el.htDisabledHint.style.display = ocvOn ? 'none' : 'inline';
 
     // OpenCV inputs
     var ocvInputs = [
@@ -471,18 +472,21 @@
     var htOn = el.htEnabled ? el.htEnabled.checked : false;
 
     if (htOn) {
-      if (!isOpenCVActive) {
-        showToast('Start OpenCV first', 'error');
-        if (el.htEnabled) el.htEnabled.checked = false;
-        return;
-      }
       var hasServo = el.panServoSelect && el.panServoSelect.value;
       if (!hasServo) {
         showToast('Select a pan servo first', 'error');
         if (el.htEnabled) el.htEnabled.checked = false;
         return;
       }
-      enableHeadTrackingOnServer();
+      // If OpenCV is already running, enable servo tracking immediately
+      if (isOpenCVActive) {
+        enableHeadTrackingOnServer();
+      } else {
+        // Save config so head tracking will auto-enable when OpenCV starts
+        isHeadTrackingOn = true;
+        saveConfiguration();
+        showToast('Head tracking will activate when OpenCV starts', 'info');
+      }
     } else {
       disableHeadTrackingOnServer();
     }

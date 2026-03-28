@@ -10,6 +10,12 @@
   .marker-chip { cursor: pointer; }
   .ghost-tick { position: absolute; height: 6px; width: 2px; background: var(--mb-primary); top: -2px; }
 
+  /* ==================== VU Meter (shared with Audio Config page) ==================== */
+  .vu-meter-container { display: flex; align-items: center; gap: 8px; }
+  .vu-meter { width: 100%; height: 12px; background: var(--bs-dark, #222); border: 1px solid var(--bs-border-color, #444); border-radius: 3px; overflow: hidden; }
+  .vu-meter .vu-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 50%, var(--mb-danger) 100%); transition: width 0.1s linear; }
+  .vu-label { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+
   /* ==================== PCA9685 Board Visual ==================== */
   .pca-board {
     background: linear-gradient(135deg, #1a5276 0%, #154360 100%);
@@ -2655,23 +2661,112 @@
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
       } else if (part.type === 'microphone') {
-        el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<div class="progress" style="width:260px;height:24px"><div id="micVu" class="progress-bar" style="width:0%"></div></div>' +
-          '<span id="micLevel" class="ms-2">0</span>' +
-          '<button id="micPoll" class="btn btn-outline-secondary btn-lg"><i class="bi bi-activity"></i> Poll</button>' +
-          '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
-        function pollOnce() {
-          var deviceId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
-          fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(deviceId) + '&deviceType=input')
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-              var v = Math.max(0, Math.min(100, Math.round((data && typeof data.level === 'number') ? data.level : 0)));
-              var bar = document.getElementById('micVu'); var txt = document.getElementById('micLevel');
-              if (bar) bar.style.width = v + '%'; if (txt) txt.textContent = v;
-            })
-            .catch(function () { /* ignore */ });
-        }
-        var pollBtn = el.querySelector('#micPoll'); if (pollBtn) pollBtn.addEventListener('click', pollOnce);
+        // Full microphone controls matching Audio Configuration page
+        var micDevId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
+        var micSens = (part.config && part.config.sensitivity != null) ? part.config.sensitivity : 1;
+        var micGainPct = (part.config && part.config.inputGainPercent != null) ? part.config.inputGainPercent : 100;
+        el.innerHTML = '<div class="mb-2">' +
+          '<div class="d-flex justify-content-between align-items-center mb-2">' +
+          '<div><strong>' + (part.name || 'Microphone') + '</strong><br><small class="text-muted">Device: ' + micDevId + ' | Part ID: ' + part.id + '</small></div>' +
+          '<div class="text-end" style="min-width:200px">' +
+          '<div class="vu-meter-container" style="padding:4px 8px">' +
+          '<div class="vu-meter" id="calMicVu-' + part.id + '"><div class="vu-bar" style="width:0%"></div></div>' +
+          '<div class="vu-label"><span id="calMicVu-' + part.id + '-level-text">0%</span></div>' +
+          '</div></div></div>' +
+          '<div class="row g-3">' +
+          '<div class="col-md-6">' +
+          '<label class="form-label small">Sensitivity <span class="badge bg-secondary" id="calMicSens-' + part.id + '-val">' + micSens + '</span></label>' +
+          '<input type="range" min="0.1" max="3.0" step="0.1" class="form-range" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
+          '</div>' +
+          '<div class="col-md-6">' +
+          '<label class="form-label small">Input Gain <span class="badge bg-secondary" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
+          '<input type="range" min="0" max="200" step="1" class="form-range" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
+          '</div></div></div>' +
+          '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
+
+        // VU meter monitoring
+        (function (pid, devId) {
+          var vuBusy = false, vuInterval = null, vuPeak = 0;
+          function updateCalMicVU() {
+            if (vuBusy) return;
+            vuBusy = true;
+            fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(devId) + '&deviceType=input')
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                var level = (data && typeof data.level === 'number') ? data.level : 0;
+                var gated = Math.max(0, level - 0.03);
+                var scaled = Math.min(1, gated * 3);
+                var displayed = scaled > vuPeak ? scaled : vuPeak * 0.7;
+                vuPeak = displayed;
+                var pct = Math.min(Math.max(displayed * 100, 0), 100);
+                var bar = document.querySelector('#calMicVu-' + pid + ' .vu-bar');
+                var lbl = document.getElementById('calMicVu-' + pid + '-level-text');
+                if (bar) bar.style.width = pct + '%';
+                if (lbl) lbl.textContent = Math.round(pct) + '%';
+              })
+              .catch(function () {})
+              .then(function () { vuBusy = false; });
+          }
+          vuInterval = setInterval(updateCalMicVU, 150);
+          // Store for cleanup
+          if (!window._calMicVuIntervals) window._calMicVuIntervals = [];
+          window._calMicVuIntervals.push(vuInterval);
+        })(part.id, micDevId);
+
+        // Sensitivity slider
+        (function (pid) {
+          var sensEl = document.getElementById('calMicSens-' + pid);
+          var sensValEl = document.getElementById('calMicSens-' + pid + '-val');
+          if (sensEl) {
+            sensEl.addEventListener('input', function () { if (sensValEl) sensValEl.textContent = sensEl.value; });
+            sensEl.addEventListener('change', function () {
+              var sensitivity = parseFloat(sensEl.value);
+              fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data.success) return;
+                var p = data.part;
+                var cfg = Object.assign({}, p.config || {}, { sensitivity: sensitivity });
+                return fetch('/setup/calibration/api/parts/' + pid, {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ config: cfg })
+                });
+              }).then(function (r) { return r ? r.json() : null; }).then(function (j) {
+                var st = document.getElementById('ctrlStatus');
+                if (st) { st.textContent = (j && j.success) ? 'Sensitivity saved' : 'Save failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
+              }).catch(function () {});
+            });
+          }
+        })(part.id);
+
+        // Gain slider
+        (function (pid, devId) {
+          var gainEl = document.getElementById('calMicGain-' + pid);
+          var gainValEl = document.getElementById('calMicGain-' + pid + '-val');
+          if (gainEl) {
+            gainEl.addEventListener('input', function () { if (gainValEl) gainValEl.textContent = gainEl.value + '%'; });
+            gainEl.addEventListener('change', function () {
+              var gainPercent = parseInt(gainEl.value, 10);
+              fetch('/setup/audio/api/set-input-gain', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId: devId, gainPercent: gainPercent })
+              }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                  // Persist to part config
+                  fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (pd) {
+                    if (pd.success) {
+                      var cfg = Object.assign({}, pd.part.config || {}, { inputGainPercent: gainPercent });
+                      fetch('/setup/calibration/api/parts/' + pid, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ config: cfg })
+                      });
+                    }
+                  });
+                }
+                var st = document.getElementById('ctrlStatus');
+                if (st) { st.textContent = data.success ? 'Gain applied (' + gainPercent + '%)' : 'Failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
+              }).catch(function () {});
+            });
+          }
+        })(part.id, micDevId);
       } else if (part.type === 'webcam') {
         // Webcam live preview + dynamic controls from device + Night Mode toggle
         el.innerHTML = '' +

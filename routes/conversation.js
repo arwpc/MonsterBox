@@ -307,7 +307,8 @@ router.post('/api/say', express.json(), async (req, res) => {
     try {
       const jawConfig = await jawAnimationService.readJawConfig(characterId);
       if (jawConfig.enabled && jawConfig.servoPartId) {
-        jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+        // Await jaw-synced playback to prevent queuing and desync
+        await jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType);
         jawSynced = true;
       }
     } catch (_) {}
@@ -556,7 +557,7 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
           try {
             const jawConfig = await jawAnimationService.readJawConfig(characterId);
             if (jawConfig.enabled && jawConfig.servoPartId) {
-              jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+              await jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType);
               jawSynced = true;
               audioPlayed = true;
             }

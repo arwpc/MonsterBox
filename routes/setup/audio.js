@@ -714,8 +714,9 @@ router.get('/api/mic-stream', (req, res) => {
     // Buffer pw-record output into fixed-size chunks for smooth browser playback.
     // pw-record emits arbitrary-sized data events (4KB-64KB). Sending them raw causes
     // choppy/static audio in the browser because AudioContext scheduling gaps.
-    // Fixed 200ms chunks (6400 bytes at 16kHz/16-bit/mono) give consistent timing.
-    const CHUNK_BYTES = 19200; // 200ms at 48kHz mono 16-bit
+    // 50ms chunks (4800 bytes at 48kHz/16-bit/mono) balance low latency with smooth playback.
+    // Client-side jitter buffer (300ms) absorbs any timing variance.
+    const CHUNK_BYTES = 4800; // 50ms at 48kHz mono 16-bit
     let pcmBuffer = Buffer.alloc(0);
 
     proc.stdout.on('data', (chunk) => {
