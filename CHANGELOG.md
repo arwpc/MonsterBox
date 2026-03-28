@@ -2,6 +2,18 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.9.6] - 2026-03-27 — Full Test Sweep & Documentation Update
+
+### Test Verification
+- **All 460+ tests passing** — 167 unit, 293 system, 58 browser E2E (0 failures)
+- **Dashboard test fix** — Updated "Monster Features" text match to data attribute `monster-features`
+
+### Documentation
+- **MkDocs index updated** — Added Dashboard, Lurk Mode, Movement System, tooltips, batch PCA9685, head tracking scanning to feature list
+- **Added missing page links** — Head Animation, Audio Library, Video Library added to Key URLs
+
+---
+
 ## [7.9.5] - 2026-03-27 — Pose Execution Performance & Browser Audio
 
 ### Pose Execution Performance Fix
