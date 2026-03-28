@@ -1,15 +1,21 @@
 {
-  "enabled": false,
-  "timestamp": 1774215282013,
+  "enabled": true,
+  "sleeping": false,
+  "timestamp": 1774653627324,
   "results": {
     "jaw": {
-      "enabled": false
+      "enabled": true
     },
     "headTracking": {
-      "enabled": false
+      "enabled": true
     },
     "randomPose": {
-      "enabled": false
+      "enabled": true
+    },
+    "motionSensor": {
+      "enabled": true,
+      "partId": "14",
+      "inactivityTimeoutMs": 300000
     }
   }
 }
