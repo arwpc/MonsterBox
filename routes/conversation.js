@@ -248,7 +248,37 @@ router.post('/api/head-tracking/target', express.json(), async (req, res) => {
     if (!cam) {
       return res.status(400).json({ success: false, error: 'No webcam found' });
     }
-    motionTrackingController.setManualTarget(cam.id, parseFloat(x), parseFloat(y), durationSec || 30);
+    // Try to set manual target on tracker (if running)
+    try {
+      motionTrackingController.setManualTarget(cam.id, parseFloat(x), parseFloat(y), durationSec || 30);
+    } catch (_) {
+      // Tracker not running — that's OK, we'll still move the servo directly
+    }
+
+    // Directly move head servo to the clicked position
+    // Map x% (0-100) to servo angle using saved head tracking config
+    try {
+      const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
+      const panServoId = savedConfig.panServoId;
+      if (panServoId) {
+        const center = typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 90;
+        const range = typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60;
+        const invert = !!savedConfig.invertPan;
+        // x=0 is left edge, x=100 is right edge, x=50 is center
+        const err = parseFloat(x) - 50; // -50 to +50
+        const targetAngle = center + ((err / 50) * (range / 2) * (invert ? -1 : 1));
+        const clampedAngle = Math.max(center - range / 2, Math.min(center + range / 2, targetAngle));
+
+        const { controlPart } = await import('../services/hardwareService/index.js');
+        controlPart(String(panServoId), 'moveToAngle', { angleDeg: clampedAngle }).catch(e => {
+          console.warn('[ClickToTrack] Servo move failed:', e.message);
+        });
+        console.log(`🎯 Click-to-track: x=${parseFloat(x).toFixed(1)}% → servo ${panServoId} → ${clampedAngle.toFixed(1)}°`);
+      }
+    } catch (e) {
+      console.warn('[ClickToTrack] Direct servo move failed:', e.message);
+    }
+
     res.json({ success: true, x, y, durationSec: durationSec || 30 });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
