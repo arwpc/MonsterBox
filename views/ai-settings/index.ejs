@@ -1,6 +1,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-end mb-2">
-        <button class="btn btn-primary" id="testConnection">
+        <button class="btn btn-primary" id="testConnection" data-bs-toggle="tooltip" data-bs-placement="top" title="Test ElevenLabs API connection">
             <i class="bi bi-plug"></i> Test Connection
         </button>
     </div>
@@ -52,7 +52,7 @@
                     <i class="bi bi-mic display-4 text-primary mb-3"></i>
                     <h5 class="card-title">Speech-to-Text</h5>
                     <p class="card-text">Configure STT models and audio processing for voice input.</p>
-                    <a href="/ai-settings/stt" class="btn btn-primary">
+                    <a href="/ai-settings/stt" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure speech-to-text models and audio input">
                         <i class="bi bi-arrow-right"></i> Configure STT
                     </a>
                 </div>
@@ -65,7 +65,7 @@
                     <i class="bi bi-volume-up display-4 text-warning mb-3"></i>
                     <h5 class="card-title">Text-to-Speech</h5>
                     <p class="card-text">Configure voices and TTS settings for audio output.</p>
-                    <a href="/ai-settings/tts" class="btn btn-warning">
+                    <a href="/ai-settings/tts" class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure voices and text-to-speech output settings">
                         <i class="bi bi-arrow-right"></i> Configure TTS
                     </a>
                 </div>
@@ -95,11 +95,11 @@
                         <span id="chatCharacterName">Loading...</span>
                     </h5>
                     <div class="d-flex align-items-center gap-2">
-                        <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;">
+                        <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Select output speaker device">
                             <option value="">Audio: Auto</option>
                         </select>
-                        <div class="form-check form-switch mb-0" title="Connect to the ElevenLabs conversational AI agent for real-time voice chat. When on, the character listens via microphone and speaks responses through the selected speaker.">
-                            <input class="form-check-input" type="checkbox" id="aiAutonomousToggle">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="aiAutonomousToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle real-time AI voice chat via ElevenLabs">
                             <label class="form-check-label small" for="aiAutonomousToggle">AI On</label>
                         </div>
                     </div>
@@ -124,15 +124,15 @@
                     <!-- Audio Controls -->
                     <div class="px-3 py-2 border-top d-flex flex-wrap align-items-center gap-3" style="background: var(--bs-tertiary-bg);">
                         <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatMuteSpeaker">
+                            <input class="form-check-input" type="checkbox" id="chatMuteSpeaker" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute the character speaker output">
                             <label class="form-check-label small" for="chatMuteSpeaker"><i class="bi bi-volume-mute"></i> Mute Speaker</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
+                            <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI responses through browser speaker">
                             <label class="form-check-label small" for="chatBrowserSpeaker"><i class="bi bi-broadcast"></i> Browser Speaker</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatBrowserMic">
+                            <input class="form-check-input" type="checkbox" id="chatBrowserMic" data-bs-toggle="tooltip" data-bs-placement="top" title="Use browser microphone for voice input">
                             <label class="form-check-label small" for="chatBrowserMic"><i class="bi bi-mic"></i> Browser Mic</label>
                         </div>
                         <small id="chatAudioStatus" class="text-info"></small>
@@ -141,8 +141,8 @@
                     <div class="p-3 border-top">
                         <div class="input-group">
                             <input type="text" class="form-control" id="chatInput" placeholder="Type a message..."
-                                autocomplete="off">
-                            <button class="btn btn-success" type="button" id="chatSendBtn">
+                                autocomplete="off" data-bs-toggle="tooltip" data-bs-placement="top" title="Type a message to send to the AI character">
+                            <button class="btn btn-success" type="button" id="chatSendBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Send message to the AI character">
                                 <i class="bi bi-send"></i> Send
                             </button>
                         </div>
@@ -200,10 +200,10 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-success" id="testConversation">
+                        <button class="btn btn-outline-success" id="testConversation" data-bs-toggle="tooltip" data-bs-placement="top" title="Start a test conversation with the AI agent">
                             <i class="bi bi-chat-dots"></i> Test Conversation
                         </button>
-                        <button class="btn btn-outline-info" id="viewLogs">
+                        <button class="btn btn-outline-info" id="viewLogs" data-bs-toggle="tooltip" data-bs-placement="top" title="View AI conversation and error logs">
                             <i class="bi bi-journal-text"></i> View AI Logs
                         </button>
                     </div>
@@ -213,4 +213,8 @@
     </div>
 </div>
 <script src="/js/panel-sortable.js"></script>
-<script>document.addEventListener('DOMContentLoaded', function () { PanelSortable.init('ai-settings'); });</script>
+<script>document.addEventListener('DOMContentLoaded', function () {
+    PanelSortable.init('ai-settings');
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    for (var i = 0; i < tooltipEls.length; i++) { new bootstrap.Tooltip(tooltipEls[i]); }
+});</script>

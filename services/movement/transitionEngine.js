@@ -4,9 +4,9 @@
  * Calculates intermediate positions at ~50Hz (20ms intervals) using
  * high-resolution self-correcting timer loops. Easing is applied to
  * the velocity profile (not raw position) for organic deceleration.
- *
- * No external dependencies.
  */
+
+import { record } from './movementTelemetry.js';
 
 /**
  * Collection of easing functions.
@@ -296,13 +296,27 @@ async function transitionServos(characterId, parts, options = {}) {
         return [];
     }
 
+    // Lazy-load hardware service to avoid circular import
+    let hwService = null;
+    try {
+        const hw = await import('../hardwareService/index.js');
+        hwService = hw.default || hw;
+    } catch (_) {}
+
+    const startTime = Date.now();
+
     // Run all servo transitions concurrently
     const promises = parts.map(part => {
         const partId = String(part.partId);
-        const fromAngle = part.currentValue ?? part.value; // Use currentValue if known
+        const fromAngle = part.currentValue ?? part.value;
         const toAngle = part.value;
 
-        return transitionServo(partId, fromAngle, toAngle, durationMs, easing, null, {
+        // onStep sends the actual hardware command
+        const onStep = hwService ? (angle) => {
+            hwService.controlPart(partId, 'moveToAngle', { angleDeg: angle }).catch(() => {});
+        } : null;
+
+        return transitionServo(partId, fromAngle, toAngle, durationMs, easing, onStep, {
             maxSpeedDegPerSec,
             signal
         }).catch(err => {
@@ -312,7 +326,19 @@ async function transitionServos(characterId, parts, options = {}) {
         });
     });
 
-    return Promise.all(promises);
+    const results = await Promise.all(promises);
+
+    // Record telemetry
+    const elapsed = Date.now() - startTime;
+    record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
+    for (const r of results) {
+        if (r && r.steps > 0 && !r.error) {
+            record('servo_latency_ms', r.actualDurationMs / r.steps, { partId: r.partId });
+        }
+    }
+    record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
+
+    return results;
 }
 
 /**

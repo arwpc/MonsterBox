@@ -1,6 +1,240 @@
 {
   "characterId": 3,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "Neutral Standing",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 15,
+      "holdVariance": 1000,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        },
+        {
+          "partId": 5,
+          "type": "servo",
+          "target": {
+            "angleDeg": 110
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Glance Left",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 10,
+      "holdVariance": 800,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 65
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Glance Right",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 10,
+      "holdVariance": 800,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 135
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "Arm Raise Slight",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 8,
+      "holdVariance": 600,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 70
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "name": "Forearm Twist",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 8,
+      "holdVariance": 500,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "servo",
+          "target": {
+            "angleDeg": 85
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "name": "Menacing Lean",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 6,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 60
+          }
+        },
+        {
+          "partId": 5,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "name": "Slow Scan",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 7,
+      "holdVariance": 1500,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 100
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "name": "Hand Glow",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 5,
+      "holdVariance": 2000,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "brightness": 100,
+            "duration": 4000
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 110
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 75
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z"
+    }
+  ],
   "templates": {
     "elbow": {
       "description": "Elbow bend presets",

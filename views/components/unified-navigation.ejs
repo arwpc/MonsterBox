@@ -38,7 +38,7 @@ var __currentPageName = __pageNames[page] || '';
 %>
 <nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/" title="MonsterBox v<%= typeof appVersion !== 'undefined' ? appVersion : '6.0.0' %> (commit: <%= gitCommit %>)">
+        <a class="navbar-brand" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="MonsterBox v<%= typeof appVersion !== 'undefined' ? appVersion : '6.0.0' %> (commit: <%= gitCommit %>)">
             <i class="bi bi-robot"></i> MonsterBox
         </a>
 
@@ -49,55 +49,58 @@ var __currentPageName = __pageNames[page] || '';
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link <%= page === 'dashboard' ? 'active' : '' %>" href="/">
+                    <a class="nav-link <%= page === 'dashboard' ? 'active' : '' %>" href="/"
+                        data-bs-toggle="tooltip" data-bs-placement="bottom" title="Main operator dashboard">
                         <i class="bi bi-house"></i> Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' || page === 'video-library' || page === 'goblin-management' ? 'active' : '' %>"
-                        href="#" role="button" data-bs-toggle="dropdown">
+                        href="#" role="button" data-bs-toggle="dropdown"
+                        data-bs-tooltip="tooltip" data-bs-placement="bottom" title="Character, hardware, and system setup">
                         <i class="bi bi-gear"></i> Setup
                     </a>
                     <ul class="dropdown-menu">
                         <li><h6 class="dropdown-header">Hardware</h6></li>
-                        <li><a class="dropdown-item" href="/setup/calibration"><i class="bi bi-sliders"></i> Calibration Mgmt</a></li>
-                        <li><a class="dropdown-item" href="/setup/models"><i class="bi bi-gear-wide-connected"></i> Models</a></li>
+                        <li><a class="dropdown-item" href="/setup/calibration" data-bs-toggle="tooltip" data-bs-placement="right" title="Calibrate servos, motors, and actuators"><i class="bi bi-sliders"></i> Calibration Mgmt</a></li>
+                        <li><a class="dropdown-item" href="/setup/models" data-bs-toggle="tooltip" data-bs-placement="right" title="Manage hardware part models"><i class="bi bi-gear-wide-connected"></i> Models</a></li>
 
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Media</h6></li>
-                        <li><a class="dropdown-item" href="/setup/audio"><i class="bi bi-volume-up"></i> Audio Configuration</a></li>
-                        <li><a class="dropdown-item" href="/audio-library"><i class="bi bi-music-note-list"></i> Audio Library</a></li>
-                        <li><a class="dropdown-item" href="/video-library"><i class="bi bi-camera-video"></i> Video Library</a></li>
-                        <li><a class="dropdown-item" href="/goblin-management"><i class="bi bi-cpu"></i> Goblin Management</a></li>
+                        <li><a class="dropdown-item" href="/setup/audio" data-bs-toggle="tooltip" data-bs-placement="right" title="Configure speakers and microphones"><i class="bi bi-volume-up"></i> Audio Configuration</a></li>
+                        <li><a class="dropdown-item" href="/audio-library" data-bs-toggle="tooltip" data-bs-placement="right" title="Browse and manage audio files"><i class="bi bi-music-note-list"></i> Audio Library</a></li>
+                        <li><a class="dropdown-item" href="/video-library" data-bs-toggle="tooltip" data-bs-placement="right" title="Browse and manage video files"><i class="bi bi-camera-video"></i> Video Library</a></li>
+                        <li><a class="dropdown-item" href="/goblin-management" data-bs-toggle="tooltip" data-bs-placement="right" title="Manage Goblin video players"><i class="bi bi-cpu"></i> Goblin Management</a></li>
 
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">AI Settings</h6></li>
-                        <li><a class="dropdown-item" href="/ai-settings"><i class="bi bi-robot"></i> Overview</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/stt"><i class="bi bi-mic"></i> Speech-to-Text</a></li>
-                        <li><a class="dropdown-item" href="/ai-settings/tts"><i class="bi bi-volume-up"></i> Text-to-Speech</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings" data-bs-toggle="tooltip" data-bs-placement="right" title="AI service overview and status"><i class="bi bi-robot"></i> Overview</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/stt" data-bs-toggle="tooltip" data-bs-placement="right" title="Configure speech recognition"><i class="bi bi-mic"></i> Speech-to-Text</a></li>
+                        <li><a class="dropdown-item" href="/ai-settings/tts" data-bs-toggle="tooltip" data-bs-placement="right" title="Configure voice synthesis"><i class="bi bi-volume-up"></i> Text-to-Speech</a></li>
 
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Character Management</h6></li>
-                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Characters</a></li>
-                        <li><a class="dropdown-item" href="/setup/jaw-animation"><i class="bi bi-lightning"></i> Jaw Animation</a></li>
-                        <li><a class="dropdown-item" href="/setup/head-animation"><i class="bi bi-broadcast"></i> Head Animation</a></li>
+                        <li><a class="dropdown-item" href="/setup/characters" data-bs-toggle="tooltip" data-bs-placement="right" title="Add, edit, or remove characters"><i class="bi bi-people"></i> Characters</a></li>
+                        <li><a class="dropdown-item" href="/setup/jaw-animation" data-bs-toggle="tooltip" data-bs-placement="right" title="Configure jaw sync with audio"><i class="bi bi-lightning"></i> Jaw Animation</a></li>
+                        <li><a class="dropdown-item" href="/setup/head-animation" data-bs-toggle="tooltip" data-bs-placement="right" title="Configure head tracking with webcam"><i class="bi bi-broadcast"></i> Head Animation</a></li>
 
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">System</h6></li>
-                        <li><a class="dropdown-item" href="/setup/system"><i class="bi bi-pc-display"></i> System</a></li>
+                        <li><a class="dropdown-item" href="/setup/system" data-bs-toggle="tooltip" data-bs-placement="right" title="System settings, volume, and themes"><i class="bi bi-pc-display"></i> System</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <%= page === 'poses' || page === 'poses-editor' || page === 'scenes' || page === 'orchestration' ? 'active' : '' %>"
-                        href="#" role="button" data-bs-toggle="dropdown">
+                        href="#" role="button" data-bs-toggle="dropdown"
+                        data-bs-tooltip="tooltip" data-bs-placement="bottom" title="Scenes, audio, and video activities">
                         <i class="bi bi-play-circle"></i> Activities
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/orchestration"><i class="bi bi-diagram-3"></i> Orchestration</a></li>
-                        <li><a class="dropdown-item" href="/scenes"><i class="bi bi-camera-reels"></i> Animation Studio</a></li>
-                        <li><a class="dropdown-item" href="/poses/editor"><i class="bi bi-person-arms-up"></i> Pose Editor</a></li>
+                        <li><a class="dropdown-item" href="/orchestration" data-bs-toggle="tooltip" data-bs-placement="right" title="Multi-character coordination"><i class="bi bi-diagram-3"></i> Orchestration</a></li>
+                        <li><a class="dropdown-item" href="/scenes" data-bs-toggle="tooltip" data-bs-placement="right" title="Build and play animation scenes"><i class="bi bi-camera-reels"></i> Animation Studio</a></li>
+                        <li><a class="dropdown-item" href="/poses/editor" data-bs-toggle="tooltip" data-bs-placement="right" title="Position parts and save as named poses"><i class="bi bi-person-arms-up"></i> Pose Editor</a></li>
                     </ul>
                 </li>
 
@@ -108,7 +111,8 @@ var __currentPageName = __pageNames[page] || '';
                 <% } %>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="https://arwpc.github.io/MonsterBox/" target="_blank" rel="noopener">
+                    <a class="nav-link" href="https://arwpc.github.io/MonsterBox/" target="_blank" rel="noopener"
+                        data-bs-toggle="tooltip" data-bs-placement="bottom" title="Documentation and troubleshooting">
                         <i class="bi bi-question-circle"></i> Help
                     </a>
                 </li>
@@ -117,7 +121,8 @@ var __currentPageName = __pageNames[page] || '';
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
-                        data-bs-toggle="dropdown">
+                        data-bs-toggle="dropdown"
+                        data-bs-tooltip="tooltip" data-bs-placement="bottom" title="Switch active character">
                         <% var __cur=(typeof currentCharacter !=='undefined' && currentCharacter) ? currentCharacter
                             : ((typeof config !=='undefined' && config && config.selectedCharacter) ?
                             config.selectedCharacter : null); var __curName=(typeof currentCharacterName
@@ -143,7 +148,7 @@ var __currentPageName = __pageNames[page] || '';
                         <li><h6 class="dropdown-header">Character Selection</h6></li>
                         <li class="px-3 py-2 text-muted" id="charLoading">Loading...</li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/setup/characters"><i class="bi bi-people"></i> Manage Characters</a></li>
+                        <li><a class="dropdown-item" href="/setup/characters" data-bs-toggle="tooltip" data-bs-placement="left" title="Manage all characters"><i class="bi bi-people"></i> Manage Characters</a></li>
                     </ul>
                 </li>
             </ul>

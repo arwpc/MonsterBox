@@ -2,7 +2,7 @@
 
 <div class="d-flex justify-content-end mb-2">
   <button id="createCharBtn" class="btn btn-primary" data-bs-toggle="modal"
-    data-bs-target="#characterModal"><i class="bi bi-plus-circle"></i> Create Character</button>
+    data-bs-target="#characterModal" title="Add a new animatronic character"><i class="bi bi-plus-circle"></i> Create Character</button>
 </div>
 
       <div class="card">
@@ -51,11 +51,11 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" id="testAgentBtn" class="btn btn-outline-info me-auto" disabled>
+            <button type="button" id="testAgentBtn" class="btn btn-outline-info me-auto" disabled title="Test AI agent connection">
               <i class="bi bi-chat-dots"></i> Test Agent
             </button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" id="saveCharacterBtn" class="btn btn-primary">Save Character</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Discard changes and close">Cancel</button>
+            <button type="button" id="saveCharacterBtn" class="btn btn-primary" title="Save character settings">Save Character</button>
           </div>
         </div>
       </div>
@@ -79,8 +79,8 @@
             <div id="testResult" class="alert alert-secondary d-none"></div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" id="sendTestMessageBtn" class="btn btn-primary">Send Test Message</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close test dialog">Close</button>
+            <button type="button" id="sendTestMessageBtn" class="btn btn-primary" title="Send message to verify agent responds">Send Test Message</button>
           </div>
         </div>
       </div>

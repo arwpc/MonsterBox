@@ -105,15 +105,15 @@
     <div class="d-flex gap-2">
       <div class="btn-group" role="group">
         <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
-        <label class="btn btn-outline-warning" for="modeCal">CALIBRATE</label>
+        <label class="btn btn-outline-warning" for="modeCal" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure part bounds, presets, and calibration profiles">CALIBRATE</label>
         <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
-        <label class="btn btn-outline-info" for="modeOperate">OPERATE</label>
+        <label class="btn btn-outline-info" for="modeOperate" data-bs-toggle="tooltip" data-bs-placement="top" title="Test and operate parts with live controls">OPERATE</label>
       </div>
-      <button class="btn btn-outline-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()">
+      <button class="btn btn-outline-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove all calibration profiles (bounds, presets) for every part on the current character">
         <i class="bi bi-eraser"></i> Clear All Calibrations
       </button>
     </div>
-    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal">
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal" title="Create a new hardware part (servo, motor, LED, sensor, etc.) for the current character">
       <i class="bi bi-plus-circle"></i> Add Part
     </button>
   </div>
@@ -128,16 +128,16 @@
           <span>Devices</span>
           <div class="input-group input-group-sm" style="width: 200px;">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input id="searchDevices" type="text" class="form-control" placeholder="Search">
+            <input id="searchDevices" type="text" class="form-control" placeholder="Search" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter parts by name or type">
           </div>
         </div>
         <div class="card-body p-0">
           <div class="p-2 d-flex align-items-center justify-content-between gap-2 border-bottom">
             <div class="form-check m-0">
-              <input class="form-check-input" type="checkbox" id="selectAllParts">
+              <input class="form-check-input" type="checkbox" id="selectAllParts" data-bs-toggle="tooltip" data-bs-placement="top" title="Select or deselect all visible parts for bulk operations">
               <label class="form-check-label small" for="selectAllParts">Select All</label>
             </div>
-            <button class="btn btn-outline-danger btn-sm" id="deleteSelectedBtn" disabled>
+            <button class="btn btn-outline-danger btn-sm" id="deleteSelectedBtn" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete all checked parts and their calibration data">
               <i class="bi bi-trash"></i> Delete Selected
             </button>
           </div>
@@ -213,7 +213,7 @@
           <div class="text-end">
             <span class="badge text-bg-dark" id="modelBadge">Model: —</span>
             <div class="form-check form-switch ms-2 d-inline-block">
-              <input class="form-check-input" type="checkbox" id="invertDir">
+              <input class="form-check-input" type="checkbox" id="invertDir" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the direction of movement for this part">
               <label class="form-check-label" for="invertDir">Invert</label>
             </div>
           </div>
@@ -222,15 +222,15 @@
 
           <ul class="nav nav-tabs" id="devTabs" role="tablist">
             <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab"
-                data-bs-target="#tabControls" type="button">Controls</button></li>
+                data-bs-target="#tabControls" type="button" title="Live controls to move, test, and operate the selected part">Controls</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
-                data-bs-target="#tabEdit" type="button">Edit</button></li>
+                data-bs-target="#tabEdit" type="button" title="Edit part name, type, pin assignments, and configuration">Edit</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
-                data-bs-target="#tabModel" type="button">Model/Overrides</button></li>
+                data-bs-target="#tabModel" type="button" title="Assign a hardware model and set part-specific overrides">Model/Overrides</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
-                data-bs-target="#tabSafety" type="button">Safety</button></li>
+                data-bs-target="#tabSafety" type="button" title="Set current limits and timeout thresholds for safe operation">Safety</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
-                data-bs-target="#tabAdvanced" type="button">Advanced</button></li>
+                data-bs-target="#tabAdvanced" type="button" title="Motion tracking, head tracking, and webcam controls">Advanced</button></li>
           </ul>
           <div class="tab-content pt-3">
             <!-- Controls -->
@@ -250,7 +250,7 @@
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="editEnabled">
+                    <input class="form-check-input" type="checkbox" id="editEnabled" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable or disable this part. Disabled parts are skipped during scene execution.">
                     <label class="form-check-label" for="editEnabled">Enabled</label>
                   </div>
                 </div>
@@ -270,7 +270,7 @@
                   <div class="card">
                     <div class="card-header">
                       <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#advancedConfigCollapse">
+                        data-bs-target="#advancedConfigCollapse" title="Edit the raw JSON configuration directly — use with caution">
                         <i class="bi bi-chevron-down"></i> Advanced Configuration (JSON)
                       </button>
                     </div>
@@ -290,17 +290,17 @@
                     <div class="card-body">
                       <div class="row g-3 align-items-center">
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('min')">Set
+                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the minimum travel limit">Set
                             Minimum</button>
                           <div class="small text-muted mt-1">Min: <span id="scMinVal">Not Set</span></div>
                         </div>
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('max')">Set
+                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the maximum travel limit">Set
                             Maximum</button>
                           <div class="small text-muted mt-1">Max: <span id="scMaxVal">Not Set</span></div>
                         </div>
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-success w-100" onclick="window.sc_add()"><i
+                          <button type="button" class="btn btn-success w-100" onclick="window.sc_add()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position with a custom name for quick recall"><i
                               class="bi bi-plus-circle"></i> Add Named Position</button>
                         </div>
                       </div>
@@ -312,13 +312,13 @@
                 </div>
 
                 <div class="col-12 d-flex justify-content-between">
-                  <button id="deletePartBtn" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Part</button>
+                  <button id="deletePartBtn" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete this part and all its calibration data"><i class="bi bi-trash"></i> Delete Part</button>
                   <div>
                     <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;"
-                      onclick="applyWebcamToMjpg()">
+                      onclick="applyWebcamToMjpg()" data-bs-toggle="tooltip" data-bs-placement="top" title="Push webcam settings to the running mjpg-streamer process">
                       <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
                     </button>
-                    <button id="saveEditBtn" class="btn btn-success"><i class="bi bi-save"></i> Save
+                    <button id="saveEditBtn" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Save all changes to part name, pins, configuration, and calibration"><i class="bi bi-save"></i> Save
                       Changes</button>
                   </div>
                 </div>
@@ -332,7 +332,7 @@
                   <div class="card border-secondary">
                     <div class="card-header d-flex justify-content-between align-items-center">
                       <span><i class="bi bi-cpu"></i> Model Assignment</span>
-                      <a href="/setup/models" class="btn btn-outline-secondary btn-sm" target="_blank">
+                      <a href="/setup/models" class="btn btn-outline-secondary btn-sm" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="Open the Models page to create or edit shared hardware model definitions">
                         <i class="bi bi-gear"></i> Manage Models
                       </a>
                     </div>
@@ -341,7 +341,7 @@
                         <select id="modelSelect" class="form-select">
                           <option value="">Select model...</option>
                         </select>
-                        <button id="assignModelBtn" class="btn btn-primary"><i class="bi bi-link"></i> Assign</button>
+                        <button id="assignModelBtn" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Link the selected model to this part, applying its default settings"><i class="bi bi-link"></i> Assign</button>
                       </div>
                       <div class="form-text">Models are shared across all characters. Select a model to see its defaults below.</div>
                     </div>
@@ -367,9 +367,9 @@
                         </div>
                       </div>
                       <div class="d-flex justify-content-end gap-2">
-                        <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm"><i
+                        <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear all part-specific overrides and revert to the model defaults"><i
                             class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
-                        <button id="saveOverridesBtn" class="btn btn-success btn-sm"><i class="bi bi-save"></i> Save
+                        <button id="saveOverridesBtn" class="btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Save part-specific overrides (these take priority over model defaults)"><i class="bi bi-save"></i> Save
                           Overrides</button>
                       </div>
                     </div>
@@ -392,11 +392,11 @@
               <div class="row g-2">
                 <div class="col-6">
                   <label class="form-label">Current limit (A)</label>
-                  <input id="safetyCurrent" type="number" class="form-control" placeholder="e.g., 8">
+                  <input id="safetyCurrent" type="number" class="form-control" placeholder="e.g., 8" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum current draw in amps before the part is shut off. Typical: 2A for servos, 8A for linear actuators.">
                 </div>
                 <div class="col-6">
                   <label class="form-label">Timeout (ms)</label>
-                  <input id="safetyTimeout" type="number" class="form-control" placeholder="e.g., 1500">
+                  <input id="safetyTimeout" type="number" class="form-control" placeholder="e.g., 1500" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum run time in milliseconds before automatic stop. Prevents stalled parts from overheating.">
                 </div>
               </div>
             </div>
@@ -433,7 +433,7 @@
                       <div class="card-header py-1"><i class="bi bi-eye"></i> Motion Tracking</div>
                       <div class="card-body py-2">
                         <div class="form-check mb-2">
-                          <input class="form-check-input" type="checkbox" id="calEnableMotionTracking">
+                          <input class="form-check-input" type="checkbox" id="calEnableMotionTracking" data-bs-toggle="tooltip" data-bs-placement="top" title="Start the camera motion detection process to identify moving targets">
                           <label class="form-check-label" for="calEnableMotionTracking">
                             <strong>Enable Motion Tracking</strong>
                           </label>
@@ -441,19 +441,19 @@
                         <div id="calMotionTrackingParams" style="display:none;">
                           <div class="mb-1">
                             <label class="form-label small mb-0">Threshold <span class="text-muted" id="calMotionThresholdValue">25</span></label>
-                            <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25">
+                            <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25" data-bs-toggle="tooltip" data-bs-placement="top" title="Pixel change threshold to count as motion. Higher = less sensitive. Recommended: 20-40.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Min Object <span class="text-muted" id="calMinContourAreaValue">500</span>px</label>
-                            <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100">
+                            <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimum motion blob size in pixels. Increase to ignore small movements like pets or shadows. Recommended: 300-800.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Smoothing <span class="text-muted" id="calTrackingSmoothingValue">0.3</span></label>
-                            <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1">
+                            <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually tracking follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.2-0.5.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Deadzone <span class="text-muted" id="calTrackingDeadzoneValue">5</span>%</label>
-                            <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5">
+                            <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5" data-bs-toggle="tooltip" data-bs-placement="top" title="Center region where no servo movement occurs, as percent of frame. Prevents jitter when target is near center. Recommended: 3-8%.">
                           </div>
                         </div>
                       </div>
@@ -463,29 +463,29 @@
                       <div class="card-body py-2">
                         <div class="mb-2">
                           <label class="form-label small mb-0">Pan Servo</label>
-                          <select id="calPanServoSelect" class="form-select form-select-sm">
+                          <select id="calPanServoSelect" class="form-select form-select-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose which servo controls horizontal panning to follow detected motion">
                             <option value="">Select servo...</option>
                           </select>
                         </div>
                         <div class="row mb-2 gx-2">
                           <div class="col-6">
                             <label class="form-label small mb-0">Range +/-<span id="calHeadTrackingRangeValue">60</span>&deg;</label>
-                            <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60">
+                            <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60" data-bs-toggle="tooltip" data-bs-placement="top" title="Total degrees the servo can sweep for tracking. Larger = wider tracking range. Recommended: 45-90.">
                           </div>
                           <div class="col-6">
                             <label class="form-label small mb-0">Smooth <span id="calHeadTrackingSmoothingValue">0.35</span></label>
-                            <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05">
+                            <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually the servo follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.25-0.5.">
                           </div>
                         </div>
-                        <button id="calEnableHeadTracking" class="btn btn-outline-warning btn-sm w-100" disabled>
+                        <button id="calEnableHeadTracking" class="btn btn-outline-warning btn-sm w-100" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Start servo-based head tracking to follow detected motion. Requires a pan servo to be selected.">
                           <i class="bi bi-magic"></i> Enable Head Tracking
                         </button>
                       </div>
                     </div>
-                    <button id="calSaveAdvancedBtn" class="btn btn-success w-100 mb-2">
+                    <button id="calSaveAdvancedBtn" class="btn btn-success w-100 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Persist motion tracking and head tracking settings to the webcam part configuration">
                       <i class="bi bi-save"></i> Save Tracking Settings
                     </button>
-                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100">
+                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Immediately stop all continuous servos and linear actuators">
                       <i class="bi bi-stop-circle-fill"></i> EMERGENCY STOP ALL SERVOS
                     </button>
                   </div>
@@ -497,7 +497,7 @@
         <div class="card-footer d-flex justify-content-between">
           <div class="text-muted small" id="devNotes">Notes: —</div>
           <div class="d-flex gap-2">
-            <button class="btn btn-outline-danger btn-sm" id="btnRemove" disabled><i class="bi bi-trash"></i>
+            <button class="btn btn-outline-danger btn-sm" id="btnRemove" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Delete the selected part and all its associated data"><i class="bi bi-trash"></i>
               Remove</button>
           </div>
         </div>
@@ -525,7 +525,7 @@
 
           <!-- Home Button (open-loop parts only) -->
           <div id="calHomeSection" class="mb-3" style="display: none;">
-            <button type="button" class="btn btn-sm btn-outline-warning w-100" id="calHomeBtn" onclick="homePart()">
+            <button type="button" class="btn btn-sm btn-outline-warning w-100" id="calHomeBtn" onclick="homePart()" data-bs-toggle="tooltip" data-bs-placement="top" title="Retract the part to its physical endstop to establish a known home position">
               <i class="bi bi-house-door"></i> Home (Retract to Endstop)
             </button>
           </div>
@@ -542,19 +542,19 @@
               </div>
             </div>
             <div class="btn-group w-100 mb-2">
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')">Set
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the minimum bound at the current position">Set
                 Min</button>
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')">Set
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the maximum bound at the current position">Set
                 Max</button>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearCalibration()">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove min/max bounds and all presets for this part">
               <i class="bi bi-eraser"></i> Clear
             </button>
-            <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()">
+            <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()" data-bs-toggle="tooltip" data-bs-placement="top" title="Move 3 times between min and max bounds at full speed to verify range of motion">
               <i class="bi bi-arrows"></i> Sweep Test
             </button>
             <div class="form-check form-switch mt-2" id="invertToggleContainer" style="display: none;">
-              <input class="form-check-input" type="checkbox" id="invertToggle" onchange="toggleInvert(this.checked)">
+              <input class="form-check-input" type="checkbox" id="invertToggle" onchange="toggleInvert(this.checked)" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the servo direction if it moves opposite to expected">
               <label class="form-check-label small" for="invertToggle">Invert Servo Direction</label>
             </div>
           </div>
@@ -564,8 +564,8 @@
           <div class="mb-3">
             <label class="form-label small fw-bold">Position Presets</label>
             <div class="input-group input-group-sm mb-2">
-              <input type="text" class="form-control" id="presetNameInput" placeholder="Preset name...">
-              <button type="button" class="btn btn-success" onclick="addPreset()">Set Here</button>
+              <input type="text" class="form-control" id="presetNameInput" placeholder="Preset name..." data-bs-toggle="tooltip" data-bs-placement="top" title="Enter a name for this preset (e.g., 'open', 'closed', 'half')">
+              <button type="button" class="btn btn-success" onclick="addPreset()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position as a named preset for quick recall">Set Here</button>
             </div>
             <div id="presetsContainer" class="d-flex flex-column gap-1">
               <small class="text-muted">No presets yet</small>
@@ -577,10 +577,10 @@
           <div id="gotoSection" class="mb-3" style="display: none;">
             <label class="form-label small fw-bold">Goto</label>
             <div class="d-flex gap-1 mb-2">
-              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('min')">
+              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated minimum position">
                 <i class="bi bi-arrow-down-circle"></i> Min
               </button>
-              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('max')">
+              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated maximum position">
                 <i class="bi bi-arrow-up-circle"></i> Max
               </button>
             </div>
@@ -588,7 +588,7 @@
               <select class="form-select" id="gotoPresetSelect">
                 <option value="">— Select preset —</option>
               </select>
-              <button type="button" class="btn btn-outline-warning" onclick="gotoPosition('preset')">Go</button>
+              <button type="button" class="btn btn-outline-warning" onclick="gotoPosition('preset')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the selected preset position">Go</button>
             </div>
           </div>
 
@@ -599,11 +599,11 @@
               <label class="form-label small fw-bold">Learn Movement</label>
               <small class="text-muted d-block mb-2">Probe linear actuator speed</small>
               <div class="d-grid gap-1">
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)">Run 30%
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 30% power — slowest, most precise">Run 30%
                   PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)">Run 50%
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 50% power — balanced speed and precision">Run 50%
                   PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)">Run 70%
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 70% power — faster, good for full-range movement">Run 70%
                   PWM</button>
               </div>
             </div>
@@ -1222,14 +1222,16 @@
 
       container.innerHTML = presets.map(p => `
         <div class="d-flex align-items-center gap-2 mb-2">
-          <button class="btn btn-sm btn-outline-primary flex-fill" onclick="gotoPreset('${p.name}')">
+          <button class="btn btn-sm btn-outline-primary flex-fill" onclick="gotoPreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the '${p.name}' position">
             ${p.name}
           </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deletePreset('${p.name}')" title="Delete">
+          <button class="btn btn-sm btn-outline-danger" onclick="deletePreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete this preset position">
             <i class="bi bi-trash"></i>
           </button>
         </div>
       `).join('');
+      // Initialize Bootstrap tooltips on dynamically rendered elements
+      container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
     }
 
     async function addPreset() {
@@ -5595,13 +5597,13 @@
             <div class="col-md-6">
               <div class="mb-3">
                 <label for="addPartName" class="form-label">Part Name</label>
-                <input type="text" class="form-control" id="addPartName" name="name" required>
+                <input type="text" class="form-control" id="addPartName" name="name" required data-bs-toggle="tooltip" data-bs-placement="top" title="A descriptive name for this part (e.g., 'Head Pan Servo', 'Left Eye LED')">
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-3">
                 <label for="addPartType" class="form-label">Part Type</label>
-                <select class="form-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required>
+                <select class="form-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required data-bs-toggle="tooltip" data-bs-placement="top" title="Hardware type: servo, motor, linear actuator, LED, sensor, webcam, etc.">
                   <option value="">Select Part Type</option>
                 </select>
               </div>
@@ -5613,7 +5615,7 @@
             <div class="col-md-8">
               <div class="mb-3">
                 <label for="addModelSelect" class="form-label">Model</label>
-                <select class="form-select" id="addModelSelect">
+                <select class="form-select" id="addModelSelect" data-bs-toggle="tooltip" data-bs-placement="top" title="Optionally assign a hardware model to pre-fill default settings (pulse widths, speed limits, etc.)">
                   <option value="">Select Model (optional)</option>
                 </select>
               </div>
@@ -5634,15 +5636,15 @@
             <div class="col-12">
               <div class="mb-3">
                 <label for="addPartDescription" class="form-label">Description</label>
-                <input type="text" class="form-control" id="addPartDescription" name="description">
+                <input type="text" class="form-control" id="addPartDescription" name="description" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional description of this part's purpose or location on the character">
               </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="createPartFromCalibration()">Add Part</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close without creating a part">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="createPartFromCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Create the new hardware part and add it to the current character">Add Part</button>
       </div>
     </div>
   </div>

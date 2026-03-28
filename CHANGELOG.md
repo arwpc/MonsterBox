@@ -2,6 +2,59 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [7.9.0] - 2026-03-27 — Dashboard UX Overhaul, Head Tracking Fixes & Movement Telemetry
+
+### Dashboard UX Overhaul
+- **Removed Translate feature** — Translate toggle, endpoint, and all client code removed from codebase
+- **Unified chat input** — "Speak to character" and "Make Character Say" merged into a single input with mode toggle button (Ask AI / Say This), with dynamic placeholder text
+- **Consolidated audio controls** — Removed duplicate mute toggle between chat panel and superpowers strip; single mute control in superpowers strip, Browser Spk/Mic kept in chat for AI-specific audio routing
+- **Draggable dashboard panels** — Accordion panels (Scenes, Poses, Manual Controls, Console, Audio Bridge) now have drag handles and can be reordered; order persists via localStorage
+
+### Lurk Mode Real-Time Activity Badges
+- **Green hardware indicators** — Lurk badges glow green when feature is actively using hardware (jaw moving, head tracking target, idle transitioning, motion detected, AI speaking)
+- **New endpoint** `GET /conversation/api/lurk-mode/activity-status` returns real-time activity state for all features
+- **1-second polling** when lurk is active; badges return to purple (enabled-but-idle) when hardware stops
+
+### Head Tracking Fixes
+- **Fixed detection mode default** — Python motion tracking script was defaulting to `motion` instead of `person` detection mode
+- **Scanning sweep** — When no target detected for 3+ seconds, head servo slowly pans left-to-right across its range, searching for targets
+- **Click-to-track visual feedback** — Clicking webcam shows green crosshair bounding box at click point; box disappears when 30-second countdown ends
+- **Webcam cursor** changed to crosshair for click-to-track affordance
+
+### Movement System Telemetry Connected
+- **Telemetry auto-flush initialized** — `movementTelemetry.startAutoFlush()` now called at server startup (was never initialized, causing empty Movement tab on System page)
+- **Transition engine wired to hardware** — `transitionServos()` was computing angles but passing `null` for `onStep`, so no servo commands were dispatched; now lazy-loads hardware service and sends actual `moveToAngle` commands
+- **Telemetry recorded** — Cycle time, servo latency, and commands/sec now recorded during transitions
+
+### Tooltips Across All Pages
+- **Audio Library** — Speaker select, stop, search, filters, upload, and all dynamic table row buttons (play, favorite, loop, edit, download, delete)
+- **AI Settings** — Test connection, speaker select, audio controls, chat input, TTS/STT config links
+- **Video Library** — Upload, bulk select, deploy, fullscreen, search, filters, sort, manage goblins, bulk actions
+- **Navigation bar** — All nav links, setup/activities dropdowns, character switcher, help
+- **Calibration** — Tab navigation, action buttons
+- **Pose Editor** — Save button
+- **Characters** — Create, test agent, save, send test message buttons
+- **Dashboard** — Speaker select, AI toggle, mode toggle, browser audio controls
+
+### Bug Fixes
+- **poseRepository.js path fix** — `getPosesFilePath()` now accepts `characterId` parameter and reads from correct `data/character-{id}/poses.json` instead of always using selected character's dataPath
+- **Pose controller fix** — `getTemplates()` and `createFromTemplate()` now pass `characterId` to repository
+
+### Files Changed
+- `routes/conversation.js` — Removed translate endpoint, added activity-status endpoint, added idle loop import
+- `views/conversation/index.ejs` — Unified input, panel drag-sort, activity polling, target box, tooltip additions
+- `controllers/motionTrackingController.js` — Detection mode fix, scanning sweep, target tracking state
+- `services/movement/transitionEngine.js` — Hardware dispatch + telemetry recording
+- `services/elevenLabsWebSocketService.js` — Added `getActiveSessions()` for AI activity detection
+- `server.js` — Movement telemetry auto-flush initialization
+- `public/css/lurk-mode.css` — Green active badge animation
+- `public/js/audio-library.js` — Dynamic row tooltips
+- 8 view files — Tooltip additions across all pages
+- `controllers/posesController.js`, `services/poses/poseRepository.js` — Pose path bug fix
+- 3 test files — Translate references removed
+
+---
+
 ## [7.8.0] - 2026-03-27 — Lurk Mode Motion Sensor & Actuator Position Persistence
 
 ### Install Script & Dependency Cleanup

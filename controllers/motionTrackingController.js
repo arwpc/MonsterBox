@@ -350,7 +350,7 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       '--target-lock-strength', (config.targetLockStrength || 5).toString(),
       '--confirm-frames', (config.confirmFrames || 3).toString(),
       '--detect-interval', (config.detectInterval || 5).toString(),
-      '--detection-mode', (config.detectionMode || 'motion')
+      '--detection-mode', (config.detectionMode || 'person')
     ];
 
     const tracker = spawn('python3', args, {
@@ -592,12 +592,45 @@ async function detectServoType(servoId) {
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
-  if (!status || !status.target_detected) return;
 
   const now = Date.now();
-  const state = headTrackingStates.get(webcamId) || { lastPanDeg: 0, lastCmdAt: 0, servoType: null };
-  const minIntervalMs = 50; // faster servo commands for responsive tracking
+  const state = headTrackingStates.get(webcamId) || { lastPanDeg: 0, lastCmdAt: 0, servoType: null, scanDir: 1, lastTargetAt: 0 };
+  const minIntervalMs = 50;
   if (now - state.lastCmdAt < minIntervalMs) return;
+
+  // If no target detected, enter scanning sweep mode
+  if (!status || !status.target_detected) {
+    // Record when we last had a target
+    if (!state.lastTargetAt) state.lastTargetAt = now;
+
+    // Wait 3 seconds of no target before scanning
+    if (now - state.lastTargetAt < 3000) return;
+
+    // Scanning sweep: slowly pan left-to-right
+    var range = (typeof cfg.rangeDeg === 'number' ? cfg.rangeDeg : 60);
+    var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 90);
+    var scanSpeed = 0.5; // degrees per step
+    var scanDir = state.scanDir || 1;
+    var next = state.lastPanDeg + (scanSpeed * scanDir);
+
+    // Reverse at limits
+    var minLimit = center - (range / 2);
+    var maxLimit = center + (range / 2);
+    if (next >= maxLimit) { next = maxLimit; state.scanDir = -1; }
+    if (next <= minLimit) { next = minLimit; state.scanDir = 1; }
+
+    if (cfg.panServoId != null) {
+      hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next }).catch(() => {});
+    }
+    state.lastPanDeg = next;
+    state.lastCmdAt = now;
+    headTrackingStates.set(webcamId, state);
+    return;
+  }
+
+  // Target detected — reset scan state
+  state.lastTargetAt = now;
+  state.scanDir = state.scanDir || 1;
 
   // Detect servo type dynamically from calibration profile or parts.json
   if (!state.servoType) {

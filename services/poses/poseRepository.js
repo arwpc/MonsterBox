@@ -6,16 +6,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readConfig } from '../configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function getPosesFilePath() {
-  const cfg = await readConfig();
+function getPosesFilePath(characterId) {
   const appRoot = path.resolve(__dirname, '../..');
-  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
-  return path.resolve(appRoot, dataDir, 'poses.json');
+  return path.resolve(appRoot, 'data', `character-${characterId}`, 'poses.json');
 }
 
 function getDefaultTemplates() {
@@ -46,22 +43,15 @@ function getDefaultTemplates() {
  */
 export async function loadPoses(characterId) {
     try {
-        const posesFile = await getPosesFilePath();
+        const posesFile = getPosesFilePath(characterId);
         const data = await fs.readFile(posesFile, 'utf8');
         const posesData = JSON.parse(data);
 
-        // Filter poses for the specified character
-        if (posesData.characterId === characterId) {
-            // Ensure templates are present with sensible defaults
-            return Object.assign({}, posesData, { templates: posesData.templates || getDefaultTemplates() });
-        }
-
-        // Return empty structure if no poses for this character
-        return {
+        // Ensure templates are present with sensible defaults
+        return Object.assign({}, posesData, {
             characterId,
-            poses: [],
             templates: posesData.templates || getDefaultTemplates()
-        };
+        });
     } catch (error) {
         console.warn('⚠️ Could not load poses:', error.message);
         return {
@@ -79,7 +69,7 @@ export async function loadPoses(characterId) {
  */
 export async function savePoses(posesData) {
     try {
-        const posesFile = await getPosesFilePath();
+        const posesFile = getPosesFilePath(posesData.characterId);
         const jsonData = JSON.stringify(posesData, null, 2);
         // Ensure directory exists
         await fs.mkdir(path.dirname(posesFile), { recursive: true });
@@ -179,9 +169,9 @@ export async function deletePose(characterId, poseId) {
  * Get pose templates
  * @returns {Promise<Object>} - Pose templates
  */
-export async function getTemplates() {
+export async function getTemplates(characterId) {
     try {
-        const posesFile = await getPosesFilePath();
+        const posesFile = getPosesFilePath(characterId);
         const data = await fs.readFile(posesFile, 'utf8');
         const posesData = JSON.parse(data);
         const fileTemplates = posesData.templates || {};

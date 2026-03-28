@@ -48,7 +48,7 @@ test.describe('Head Tracking Dashboard', () => {
     });
 
     test('should have tooltips on all monster feature toggles', async () => {
-        const toggles = ['jawToggle', 'parrotToggle', 'translateToggle', 'headTrackToggle', 'speakerMuteToggle'];
+        const toggles = ['jawToggle', 'parrotToggle', 'headTrackToggle', 'speakerMuteToggle'];
         for (const id of toggles) {
             const toggle = page.locator(`#${id}`);
             const attr = await toggle.getAttribute('data-bs-toggle');

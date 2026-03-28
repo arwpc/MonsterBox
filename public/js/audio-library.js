@@ -30,6 +30,7 @@
                 populateCategoryFilters();
                 setupEventListeners();
                 setupDragAndDrop();
+                initTooltips();
             })
             .catch(function(err) {
                 console.error('Audio library init error:', err);
@@ -240,6 +241,13 @@
 
         if (!tbody) return;
 
+        // Dispose existing tooltips before clearing rows to prevent orphaned popovers
+        var oldTooltips = tbody.querySelectorAll('[data-bs-toggle="tooltip"]');
+        for (var t = 0; t < oldTooltips.length; t++) {
+            var inst = bootstrap.Tooltip.getInstance(oldTooltips[t]);
+            if (inst) inst.dispose();
+        }
+
         if (!audioFiles || audioFiles.length === 0) {
             if (table) table.style.display = 'none';
             if (emptyState) emptyState.style.display = 'block';
@@ -259,8 +267,8 @@
             var favIcon = audio.favorite ? 'bi-heart-fill text-danger' : 'bi-heart';
 
             html += '<tr class="' + rowClass + '" data-audio-id="' + escapeAttr(audio.id) + '">'
-                + '<td><button class="btn ' + playColor + ' btn-sm px-2 py-0 play-btn" data-audio-id="' + escapeAttr(audio.id) + '" title="' + (isPlaying ? 'Stop' : 'Play on character') + '"><i class="bi ' + playIcon + '"></i></button></td>'
-                + '<td><i class="bi ' + favIcon + ' fav-btn" role="button" data-audio-id="' + escapeAttr(audio.id) + '" style="cursor:pointer;" title="Toggle favorite"></i></td>'
+                + '<td><button class="btn ' + playColor + ' btn-sm px-2 py-0 play-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="' + (isPlaying ? 'Stop playback' : 'Play on character speaker') + '"><i class="bi ' + playIcon + '"></i></button></td>'
+                + '<td><i class="bi ' + favIcon + ' fav-btn" role="button" data-audio-id="' + escapeAttr(audio.id) + '" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle favorite"></i></td>'
                 + '<td>' + escapeHtml(audio.title || 'Untitled') + '</td>'
                 + '<td><span class="badge bg-secondary">' + escapeHtml(capitalizeFirst(audio.category || 'other')) + '</span></td>'
                 + '<td class="text-muted small">' + formatDuration(audio.duration) + '</td>'
@@ -268,10 +276,10 @@
                 + '<td class="text-muted small">' + formatFileSize(audio.fileSize || 0) + '</td>'
                 + '<td>'
                 + '<div class="btn-group btn-group-sm">'
-                + '<button class="btn btn-outline-info btn-sm px-1 py-0 loop-btn" data-audio-id="' + escapeAttr(audio.id) + '" title="Loop"><i class="bi bi-arrow-repeat"></i></button>'
-                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 edit-btn" data-audio-id="' + escapeAttr(audio.id) + '" title="Edit"><i class="bi bi-pencil"></i></button>'
-                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 download-btn" data-audio-id="' + escapeAttr(audio.id) + '" title="Download"><i class="bi bi-download"></i></button>'
-                + '<button class="btn btn-outline-danger btn-sm px-1 py-0 delete-btn" data-audio-id="' + escapeAttr(audio.id) + '" title="Delete"><i class="bi bi-trash"></i></button>'
+                + '<button class="btn btn-outline-info btn-sm px-1 py-0 loop-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Loop this track"><i class="bi bi-arrow-repeat"></i></button>'
+                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 edit-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit file details"><i class="bi bi-pencil"></i></button>'
+                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 download-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Download audio file"><i class="bi bi-download"></i></button>'
+                + '<button class="btn btn-outline-danger btn-sm px-1 py-0 delete-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete audio file"><i class="bi bi-trash"></i></button>'
                 + '</div>'
                 + '</td>'
                 + '</tr>';
@@ -281,9 +289,29 @@
         attachRowListeners();
     }
 
+    function initTooltips(container) {
+        var root = container || document;
+        var tooltipEls = root.querySelectorAll('[data-bs-toggle="tooltip"]');
+        for (var i = 0; i < tooltipEls.length; i++) {
+            var existing = bootstrap.Tooltip.getInstance(tooltipEls[i]);
+            if (existing) existing.dispose();
+            new bootstrap.Tooltip(tooltipEls[i]);
+        }
+        // Also init elements using data-bs-tooltip (for buttons that use data-bs-toggle="modal")
+        var altEls = root.querySelectorAll('[data-bs-tooltip="tooltip"]');
+        for (var j = 0; j < altEls.length; j++) {
+            var existingAlt = bootstrap.Tooltip.getInstance(altEls[j]);
+            if (existingAlt) existingAlt.dispose();
+            new bootstrap.Tooltip(altEls[j]);
+        }
+    }
+
     function attachRowListeners() {
         var tbody = document.getElementById('audioTableBody');
         if (!tbody) return;
+
+        // Initialize tooltips on dynamically rendered rows
+        initTooltips(tbody);
 
         // Play buttons
         var playBtns = tbody.querySelectorAll('.play-btn');

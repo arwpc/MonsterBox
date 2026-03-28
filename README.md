@@ -10,7 +10,30 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.8.0 (March 2026)
+## What's New — v7.9.0 (March 2026)
+
+### Dashboard UX Overhaul
+- **Unified chat input** — "Ask AI" and "Say This" modes in a single input with toggle button; no more hunting between two text fields
+- **Consolidated audio controls** — One mute toggle, one stop button; browser audio routing kept in chat panel
+- **Draggable panels** — Reorder Scenes, Poses, Manual Controls, Console, and Audio Bridge panels by dragging; order persists
+- **Removed Translate** — Unused feature removed from toggle strip, routes, and tests
+
+### Real-Time Activity Badges
+- **Green hardware indicators** — Lurk mode badges glow green when hardware is actively firing (jaw moving, head tracking, idle transitioning, motion detected, AI speaking)
+
+### Head Tracking Fixes
+- **Person detection** — Fixed default detection mode from `motion` to `person`
+- **Scanning sweep** — Head servo pans left-to-right when no target detected, searching for visitors
+- **Click-to-track** — Visual crosshair overlay on webcam shows tracking target; 30-second countdown
+
+### Movement Telemetry
+- **Connected to hardware** — Transition engine now actually dispatches servo commands (was computing angles but not moving)
+- **Telemetry flowing** — Movement tab on System page now shows live cycle time, latency, and command rate data
+
+### Tooltips Everywhere
+- Comprehensive tooltip coverage added to Audio Library, AI Settings, Video Library, Navigation, Calibration, Pose Editor, Characters, and Dashboard controls
+
+### Previous: v7.8.0 (March 2026)
 
 ### Lurk Mode Motion Sensor & Sleep/Wake
 - **Motion sensor monitoring** — PIR sensor polled every second while Lurk mode is active; movement keeps the animatronic alive

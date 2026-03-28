@@ -1,40 +1,5 @@
 {
   "characterId": 1,
   "poses": [],
-  "templates": {
-    "elbow": {
-      "description": "Elbow bend presets",
-      "options": [
-        {
-          "name": "Straight",
-          "angleDeg": 0
-        },
-        {
-          "name": "Half Bend",
-          "angleDeg": 45
-        },
-        {
-          "name": "Full Bend",
-          "angleDeg": 90
-        }
-      ]
-    },
-    "head": {
-      "description": "Head motions",
-      "options": [
-        {
-          "name": "Stop",
-          "action": "stop"
-        },
-        {
-          "name": "Wiggle",
-          "action": "random"
-        },
-        {
-          "name": "Rotate 360",
-          "action": "rotate_360"
-        }
-      ]
-    }
-  }
+  "templates": {}
 }

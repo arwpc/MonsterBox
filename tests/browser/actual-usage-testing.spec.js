@@ -282,7 +282,6 @@ test.describe('1. Dashboard — All Panels', () => {
       { id: '#parrotToggle', name: 'Parrot mode' },
       { id: '#headTrackToggle', name: 'Head tracking' },
       { id: '#speakerMuteToggle', name: 'Speaker mute' },
-      { id: '#translateToggle', name: 'Translate' },
     ];
 
     for (const t of toggles) {

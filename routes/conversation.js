@@ -19,6 +19,7 @@ import * as headAnimationService from '../services/headAnimationSuperPowerServic
 import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
 import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
 import lurkMotionWatcher from '../services/lurkMotionWatcherService.js';
+import { getStatus as getIdleStatus } from '../services/movement/idleLoopService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -806,74 +807,6 @@ router.post('/api/manual-controls-layout/rename', express.json(), async (req, re
   }
 });
 
-// POST /conversation/api/translate - AI restates heard speech in character voice
-router.post('/api/translate', express.json(), async (req, res) => {
-  try {
-    const text = (req.body && req.body.text ? String(req.body.text) : '').trim();
-    if (!text) return res.status(400).json({ success: false, error: 'text is required' });
-    const characterId = getCurrentCharacterId(req);
-
-    // In test mode, return simulated translation
-    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-      return res.json({ success: true, testMode: true, translatedText: `[Character says]: ${text}` });
-    }
-
-    // Get character's AI agent
-    const { default: characterService } = await import('../services/characterService.js');
-    const character = await characterService.getCharacterById(characterId);
-
-    if (!character || !character.elevenLabsAgentId) {
-      return res.status(400).json({
-        success: false,
-        error: `Character ${characterId} does not have an AI agent assigned. Configure one in character settings.`
-      });
-    }
-
-    // Ask the AI to restate the text in character
-    const prompt = `Someone nearby just said: "${text}". Restate what they said in your own words, staying in character. Keep it brief and natural.`;
-    const aiResponse = await elevenLabsWebSocketService.askAgentQuestion(
-      character.elevenLabsAgentId,
-      prompt,
-      characterId
-    );
-
-    if (aiResponse && aiResponse.success) {
-      return res.json({
-        success: true,
-        translatedText: aiResponse.response || text,
-        audioPlayed: true
-      });
-    }
-
-    // Fallback: just say the original text in character voice via TTS
-    const ttsCfg = await getTTSConfigForCharacter(characterId);
-    const gen = await elevenLabsTTSService.generateSpeech(text, ttsCfg.voice_id, ttsCfg);
-    if (gen.success) {
-      let jawSynced = false;
-      try {
-        const jawConfig = await jawAnimationService.readJawConfig(characterId);
-        if (jawConfig.enabled && jawConfig.servoPartId) {
-          jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
-          jawSynced = true;
-        }
-      } catch (_) {}
-      if (!jawSynced) {
-        await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
-          contentType: gen.contentType, characterId, speakerPartId: req.body.speakerPartId || undefined
-        });
-      }
-      try {
-        const wordCount = text.split(/\s+/).length;
-        elevenLabsWebSocketService.suppressMicForCharacter(characterId, (wordCount * 150) + 2000);
-      } catch (_) {}
-      return res.json({ success: true, translatedText: text });
-    }
-
-    return res.status(500).json({ success: false, error: 'Failed to generate speech' });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
-  }
-});
 
 // ─── Lurk Mode ────────────────────────────────────────────────────────
 // Lurk Mode enables all superpowers at once: AI conversation, jaw animation,
@@ -1174,6 +1107,63 @@ router.get('/api/lurk-mode/motion-status', (req, res) => {
 router.post('/api/lurk-mode/activity', express.json(), (req, res) => {
   lurkMotionWatcher.resetActivity();
   res.json({ success: true });
+});
+
+// GET /conversation/api/lurk-mode/activity-status — real-time hardware activity for badge indicators
+router.get('/api/lurk-mode/activity-status', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+
+    // Jaw: check if jaw drive is active
+    let jawActive = false;
+    try {
+      const jawState = jawAnimationService.getJawDriveState(characterId);
+      jawActive = !!(jawState && !jawState.cancelled);
+    } catch (_) {}
+
+    // Head tracking: check if actively tracking a target
+    let headActive = false;
+    try {
+      const parts = await loadPartsFromController(req);
+      const cam = parts.find(p => p.type === 'webcam');
+      if (cam) {
+        const fakeRes = { json: (d) => d };
+        const statusData = await motionTrackingController.getHeadTrackingStatus(
+          { query: { webcamId: String(cam.id) } }, fakeRes
+        );
+        headActive = !!(statusData && statusData.headTracking && statusData.headTracking.tracking && statusData.headTracking.tracking.hasTarget);
+      }
+    } catch (_) {}
+
+    // Idle: check if currently transitioning (running and has claims)
+    let idleActive = false;
+    try {
+      const idleStatus = getIdleStatus();
+      idleActive = !!(idleStatus.running && Object.keys(idleStatus.servoClaims || {}).length > 0);
+    } catch (_) {}
+
+    // Motion sensor: check if motion detected recently
+    let motionActive = false;
+    try {
+      const motionStatus = lurkMotionWatcher.getStatus();
+      motionActive = !!(motionStatus && motionStatus.lastMotionAt &&
+        (Date.now() - new Date(motionStatus.lastMotionAt).getTime() < 3000));
+    } catch (_) {}
+
+    // AI: check if AI conversation is active (agent is speaking)
+    let aiActive = false;
+    try {
+      const sessions = elevenLabsWebSocketService.getActiveSessions ? elevenLabsWebSocketService.getActiveSessions() : [];
+      aiActive = sessions.some(s => s.isActive);
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      activity: { jaw: jawActive, head: headActive, idle: idleActive, motion: motionActive, ai: aiActive }
+    });
+  } catch (e) {
+    res.json({ success: true, activity: { jaw: false, head: false, idle: false, motion: false, ai: false } });
+  }
 });
 
 export default router;

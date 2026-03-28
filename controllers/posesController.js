@@ -236,8 +236,9 @@ export async function getPosesByCategory(req, res) {
  */
 export async function getTemplates(req, res) {
     try {
-        const templates = await poseRepository.getTemplates();
-        
+        const characterId = getCurrentCharacterId(req);
+        const templates = await poseRepository.getTemplates(characterId);
+
         res.json({
             success: true,
             templates
@@ -268,7 +269,7 @@ export async function createFromTemplate(req, res) {
         }
         
         // Load templates
-        const templates = await poseRepository.getTemplates();
+        const templates = await poseRepository.getTemplates(characterId);
         const template = templates[templateName];
         
         if (!template) {

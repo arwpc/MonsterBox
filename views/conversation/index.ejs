@@ -68,10 +68,11 @@
             <span id="chatCharacterName">Loading...</span>
           </h6>
           <div class="d-flex align-items-center gap-2">
-            <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 120px; font-size: 0.7rem;">
+            <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 120px; font-size: 0.7rem;"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
               <option value="">Auto</option>
             </select>
-            <div class="form-check form-switch mb-0" title="Connect to ElevenLabs conversational AI agent">
+            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Connect to ElevenLabs conversational AI agent">
               <input class="form-check-input" type="checkbox" id="chatAiOnToggle">
               <label class="form-check-label small" for="chatAiOnToggle" style="font-size:0.75rem;">AI</label>
             </div>
@@ -96,28 +97,31 @@
           </div>
           <!-- Audio Controls (compact) -->
           <div class="px-2 py-1 border-top d-flex flex-wrap align-items-center gap-2" style="background: var(--bs-tertiary-bg); font-size: 0.75rem;">
-            <div class="form-check form-switch mb-0">
-              <input class="form-check-input" type="checkbox" id="chatMuteSpeaker">
-              <label class="form-check-label" for="chatMuteSpeaker" style="font-size:0.7rem;"><i class="bi bi-volume-mute"></i></label>
-            </div>
-            <div class="form-check form-switch mb-0">
+            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
               <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
-              <label class="form-check-label" for="chatBrowserSpeaker" style="font-size:0.7rem;"><i class="bi bi-broadcast"></i> Spk</label>
+              <label class="form-check-label" for="chatBrowserSpeaker" style="font-size:0.7rem;"><i class="bi bi-broadcast"></i> Browser Spk</label>
             </div>
-            <div class="form-check form-switch mb-0">
+            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
               <input class="form-check-input" type="checkbox" id="chatBrowserMic">
-              <label class="form-check-label" for="chatBrowserMic" style="font-size:0.7rem;"><i class="bi bi-mic"></i> Mic</label>
+              <label class="form-check-label" for="chatBrowserMic" style="font-size:0.7rem;"><i class="bi bi-mic"></i> Browser Mic</label>
             </div>
             <small id="chatAudioStatus" class="text-info" style="font-size:0.65rem;"></small>
           </div>
-          <!-- Chat Input -->
+          <!-- Unified Chat/Say Input -->
           <div class="p-2 border-top">
             <div class="input-group input-group-sm">
-              <input type="text" class="form-control" id="chatInput" placeholder="Speak to the character..." autocomplete="off">
+              <button class="btn btn-outline-secondary btn-sm" type="button" id="chatModeToggle"
+                      data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="Switch between asking the AI and making the character say exact text"
+                      style="font-size: 0.7rem; min-width: 70px;">
+                <i class="bi bi-chat-dots"></i> Ask AI
+              </button>
+              <input type="text" class="form-control" id="chatInput" placeholder="Ask the character something..." autocomplete="off">
               <button class="btn btn-success" type="button" id="chatSendBtn">
                 <i class="bi bi-send"></i>
               </button>
             </div>
+            <div id="sayStatus" class="small" style="font-size:0.65rem;"></div>
           </div>
         </div>
       </div>
@@ -143,10 +147,6 @@
           <label class="form-check-label small fw-bold" for="parrotToggle"><i class="bi bi-megaphone"></i> Parrot</label>
         </div>
         <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="translateToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="AI restates heard speech in character voice and persona">
-          <label class="form-check-label small fw-bold" for="translateToggle"><i class="bi bi-translate"></i> Translate</label>
-        </div>
-        <div class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" id="idleToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable idle movement loop with character personality">
           <label class="form-check-label small fw-bold" for="idleToggle"><i class="bi bi-person-walking"></i> Idle</label>
         </div>
@@ -158,16 +158,6 @@
                 data-bs-toggle="tooltip" data-bs-placement="top">
           <i class="bi bi-stop-circle"></i> Stop Audio
         </button>
-        <div class="ms-auto" data-panel-id="say">
-          <div class="input-group input-group-sm" style="width: auto;">
-            <select id="convSpeakerSelect" class="form-select form-select-sm" style="width: 140px; font-size: 0.75rem;">
-              <option value="">Loading...</option>
-            </select>
-            <input id="sayInput" type="text" class="form-control" placeholder="Make character say..." style="min-width: 160px;">
-            <button id="sayBtn" class="btn btn-primary btn-sm"><i class="bi bi-send"></i></button>
-          </div>
-          <div id="sayStatus" class="small" style="font-size:0.65rem;"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -181,6 +171,7 @@
     <div class="accordion-item" data-panel-id="scenes">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes">
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-film me-2"></i> Scenes
           <span id="scenesQueueStatus" class="badge bg-secondary small ms-2" style="display:none;"></span>
         </button>
@@ -206,6 +197,7 @@
     <div class="accordion-item" data-panel-id="poses">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses">
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-person-arms-up me-2"></i> Poses
         </button>
       </h2>
@@ -228,6 +220,7 @@
     <div class="accordion-item" data-panel-id="manual-controls">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual">
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-joystick me-2"></i> Manual Controls
           <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
         </button>
@@ -269,6 +262,7 @@
     <div class="accordion-item" data-panel-id="console">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole">
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-terminal me-2"></i> Live Console
         </button>
       </h2>
@@ -296,6 +290,7 @@
     <div class="accordion-item" data-panel-id="audio-bridge">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge">
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-headset me-2"></i> Browser Audio Bridge
         </button>
       </h2>
@@ -379,16 +374,18 @@
 <script>
   (function () {
     const ui = {
-      sayBtn: null,
-      sayInput: null,
       sayStatus: null,
-      speakerSelect: null,
       jawToggle: null,
       headTrackToggle: null,
       parrotToggle: null,
-      translateToggle: null,
       idleToggle: null,
+      chatModeToggle: null,
+      chatInput: null,
+      chatSendBtn: null,
     };
+
+    // Unified input mode: 'ask' = AI conversation, 'say' = TTS exact text
+    var chatMode = 'ask';
 
     let currentCharacterId = null;
     let speakers = [];
@@ -448,46 +445,6 @@
     }
     try { window.__parrotSay = parrotSay; } catch (e) { }
 
-    // Translate Mode
-    var translateEnabled = false;
-    var lastTranslateAt = 0;
-    function translateSay(text) {
-      var t = (text || '').trim();
-      if (!t) return;
-      var now = Date.now();
-      if (now - lastTranslateAt < 2000) {
-        console.log('[Translate] Throttled — too soon since last translate');
-        return;
-      }
-      lastTranslateAt = now;
-      var spkId = chatSpeakerPartId || selectedSpeakerPartId || undefined;
-      console.log('[Translate] Translating: "' + t.slice(0, 80) + '" via speaker=' + spkId);
-      ui.sayStatus.innerHTML = '<span class="text-info">Translating...</span>';
-      fetch('/conversation/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: t, speakerPartId: spkId })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(j) {
-        if (j && j.success) {
-          console.log('[Translate] Success: "' + (j.translatedText || '').slice(0, 80) + '"');
-          ui.sayStatus.innerHTML = '<span class="text-success">Translated</span>';
-          if (j.translatedText) {
-            appendChatMessage('AI', j.translatedText);
-          }
-        } else {
-          var errMsg = (j && j.error) || 'unknown';
-          console.error('[Translate] Failed:', errMsg);
-          ui.sayStatus.innerHTML = '<span class="text-danger">Translate failed: ' + errMsg.replace(/</g, '&lt;').slice(0, 100) + '</span>';
-        }
-      })
-      .catch(function(e) {
-        console.error('[Translate] Error:', e);
-        ui.sayStatus.innerHTML = '<span class="text-danger">Translate error: ' + ((e && e.message) || '').replace(/</g, '&lt;').slice(0, 100) + '</span>';
-      });
-    }
-    try { window.__translateSay = translateSay; } catch (e) { }
 
     // Browser PCM audio player for AI speech output
     const BrowserAudioPlayer = (() => {
@@ -679,9 +636,9 @@
           updateLurkUI(enabled, j.results);
           if (statusEl) statusEl.textContent = enabled ? 'Active — Character is alive' : 'Off';
 
-          // Start/stop motion status polling
-          if (enabled) startLurkMotionPolling();
-          else stopLurkMotionPolling();
+          // Start/stop motion status polling and activity badge polling
+          if (enabled) { startLurkMotionPolling(); startActivityPolling(); }
+          else { stopLurkMotionPolling(); stopActivityPolling(); }
         } else {
           toggle.checked = !enabled;
           if (statusEl) statusEl.textContent = 'Failed: ' + (j.error || 'Unknown');
@@ -730,8 +687,40 @@
 
     function setBadge(el, on) {
       if (!el) return;
-      el.classList.remove('lurk-badge-on', 'lurk-badge-error');
+      el.classList.remove('lurk-badge-on', 'lurk-badge-error', 'lurk-badge-active');
       if (on) el.classList.add('lurk-badge-on');
+    }
+
+    // Real-time activity polling — green flash when hardware is firing
+    var activityPollTimer = null;
+    function startActivityPolling() {
+      if (activityPollTimer) return;
+      activityPollTimer = setInterval(pollActivity, 1000);
+    }
+    function stopActivityPolling() {
+      if (activityPollTimer) { clearInterval(activityPollTimer); activityPollTimer = null; }
+      // Clear all active badges
+      ['lurkBadgeAI', 'lurkBadgeJaw', 'lurkBadgeHead', 'lurkBadgeIdle', 'lurkBadgeMotion'].forEach(function (id) {
+        var el = $(id);
+        if (el) el.classList.remove('lurk-badge-active');
+      });
+    }
+    async function pollActivity() {
+      try {
+        var r = await fetch('/conversation/api/lurk-mode/activity-status');
+        var j = await r.json();
+        if (!j || !j.activity) return;
+        var map = { lurkBadgeJaw: 'jaw', lurkBadgeHead: 'head', lurkBadgeIdle: 'idle', lurkBadgeMotion: 'motion', lurkBadgeAI: 'ai' };
+        Object.entries(map).forEach(function (kv) {
+          var el = $(kv[0]);
+          if (!el) return;
+          if (j.activity[kv[1]]) {
+            el.classList.add('lurk-badge-active');
+          } else {
+            el.classList.remove('lurk-badge-active');
+          }
+        });
+      } catch (_) {}
     }
 
     async function loadLurkCapabilities() {
@@ -780,6 +769,7 @@
               : 'Active — Character is alive';
           }
           startLurkMotionPolling();
+          startActivityPolling();
         }
       } catch { /* ignore */ }
     }
@@ -854,16 +844,84 @@
       fetch('/conversation/api/lurk-mode/activity', { method: 'POST' }).catch(function () {});
     }
 
+    // ─── Panel Drag-Sort ──────────────────────────────────────
+    function initPanelDragSort() {
+      var accordion = document.getElementById('dashboardAccordion');
+      if (!accordion) return;
+      var dragItem = null;
+
+      // Load saved order
+      try {
+        var saved = localStorage.getItem('mb_panel_order');
+        if (saved) {
+          var order = JSON.parse(saved);
+          var items = Array.from(accordion.querySelectorAll('.accordion-item[data-panel-id]'));
+          var itemMap = {};
+          items.forEach(function (el) { itemMap[el.getAttribute('data-panel-id')] = el; });
+          order.forEach(function (id) {
+            if (itemMap[id]) accordion.appendChild(itemMap[id]);
+          });
+        }
+      } catch (_) {}
+
+      // Setup drag events on each accordion item
+      accordion.querySelectorAll('.accordion-item[data-panel-id]').forEach(function (item) {
+        item.setAttribute('draggable', 'true');
+
+        // Only allow drag from the grip handle
+        item.addEventListener('dragstart', function (e) {
+          var handle = e.target.closest('.panel-drag-handle');
+          if (!handle) { e.preventDefault(); return; }
+          dragItem = item;
+          item.style.opacity = '0.5';
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        item.addEventListener('dragend', function () {
+          item.style.opacity = '';
+          dragItem = null;
+          // Remove all drop indicators
+          accordion.querySelectorAll('.accordion-item').forEach(function (el) { el.style.borderTop = ''; });
+        });
+
+        item.addEventListener('dragover', function (e) {
+          if (!dragItem || dragItem === item) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          item.style.borderTop = '2px solid #6f42c1';
+        });
+
+        item.addEventListener('dragleave', function () {
+          item.style.borderTop = '';
+        });
+
+        item.addEventListener('drop', function (e) {
+          e.preventDefault();
+          item.style.borderTop = '';
+          if (!dragItem || dragItem === item) return;
+          accordion.insertBefore(dragItem, item);
+          savePanelOrder();
+        });
+      });
+
+      function savePanelOrder() {
+        var order = [];
+        accordion.querySelectorAll('.accordion-item[data-panel-id]').forEach(function (el) {
+          order.push(el.getAttribute('data-panel-id'));
+        });
+        try { localStorage.setItem('mb_panel_order', JSON.stringify(order)); } catch (_) {}
+      }
+    }
+
     async function init() {
-      ui.sayBtn = $('sayBtn');
-      ui.sayInput = $('sayInput');
       ui.sayStatus = $('sayStatus');
-      ui.speakerSelect = $('convSpeakerSelect');
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
       ui.parrotToggle = $('parrotToggle');
-      ui.translateToggle = $('translateToggle');
       ui.idleToggle = $('idleToggle');
+      ui.chatModeToggle = $('chatModeToggle');
+      ui.chatInput = $('chatInput');
+      ui.chatSendBtn = $('chatSendBtn');
       currentCharacterId = getCurrentCharacterIdFromLabel();
 
       setCharName();
@@ -888,6 +946,9 @@
       // Bind Lurk Mode toggle
       const lurkToggle = $('lurkToggle');
       if (lurkToggle) lurkToggle.addEventListener('change', toggleLurkMode);
+
+      // Initialize panel drag-sort
+      initPanelDragSort();
     }
 
     function setCharName() {
@@ -928,8 +989,13 @@
     }
 
     function bindEvents() {
-      ui.sayBtn.addEventListener('click', sendSay);
-      ui.sayInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendSay(); } });
+      // Unified input mode toggle
+      if (ui.chatModeToggle) {
+        ui.chatModeToggle.addEventListener('click', function () {
+          chatMode = chatMode === 'ask' ? 'say' : 'ask';
+          updateChatModeUI();
+        });
+      }
 
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
@@ -949,7 +1015,7 @@
         }
       });
 
-      // Monster Features Mute Speaker toggle — syncs with chat panel
+      // Mute Speaker toggle
       const muteToggle = $('speakerMuteToggle');
       if (muteToggle) {
         muteToggle.addEventListener('change', async function () {
@@ -959,8 +1025,6 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ muted: muteToggle.checked })
             });
-            const chatMute = $('chatMuteSpeaker');
-            if (chatMute) chatMute.checked = muteToggle.checked;
             if (chatWs && chatConnected) {
               try { chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !muteToggle.checked })); } catch (_) {}
             }
@@ -1033,17 +1097,12 @@
         chatAgentId = await getCharacterAgentId();
       }
 
-      // Load speaker parts into chat speaker dropdown
-      await loadChatSpeakers();
-
       // Load mute state
       try {
         const muteResp = await fetch('/conversation/api/speaker-mute');
         const muteJson = await muteResp.json();
         if (muteJson && muteJson.success) {
-          const chatMute = $('chatMuteSpeaker');
           const featureMute = $('speakerMuteToggle');
-          if (chatMute) chatMute.checked = !!muteJson.muted;
           if (featureMute) featureMute.checked = !!muteJson.muted;
         }
       } catch (_) {}
@@ -1072,23 +1131,6 @@
       }, 10000);
     }
 
-    async function loadChatSpeakers() {
-      const select = $('chatSpeakerSelect');
-      if (!select) return;
-      try {
-        const resp = await fetch('/conversation/api/speakers');
-        const data = await resp.json();
-        if (!data || !data.speakers) return;
-        data.speakers.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = String(s.id);
-          let label = s.name || ('Speaker #' + s.id);
-          if (s.characterId) label += ' (char ' + s.characterId + ')';
-          opt.textContent = label;
-          select.appendChild(opt);
-        });
-      } catch (_) {}
-    }
 
     async function getCharacterAgentId() {
       if (!currentCharacterId) return null;
@@ -1128,8 +1170,8 @@
           }
           const useBrowserMic = $('chatBrowserMic');
           chatWs.send(JSON.stringify({ type: 'set_mic_source', source: (useBrowserMic && useBrowserMic.checked) ? 'browser' : 'server' }));
-          const chatMute = $('chatMuteSpeaker');
-          const isMuted = chatMute && chatMute.checked;
+          const featureMute = $('speakerMuteToggle');
+          const isMuted = featureMute && featureMute.checked;
           chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !isMuted && _audioPlaybackEnabled }));
           const browserSpeaker = $('chatBrowserSpeaker');
           if (browserSpeaker && browserSpeaker.checked) {
@@ -1389,12 +1431,12 @@
         });
       }
 
-      // Chat send
+      // Unified send — routes to chat or say based on mode
       const chatSendBtn = $('chatSendBtn');
       const chatInput = $('chatInput');
-      if (chatSendBtn) chatSendBtn.addEventListener('click', sendChatMessage);
+      if (chatSendBtn) chatSendBtn.addEventListener('click', handleUnifiedSend);
       if (chatInput) chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+        if (e.key === 'Enter') { e.preventDefault(); handleUnifiedSend(); }
       });
 
       // Speaker select
@@ -1408,22 +1450,6 @@
         });
       }
 
-      // Mute Speaker (chat panel)
-      const chatMute = $('chatMuteSpeaker');
-      if (chatMute) {
-        chatMute.addEventListener('change', () => {
-          fetch('/conversation/api/speaker-mute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ muted: chatMute.checked })
-          }).catch(() => {});
-          const featureMute = $('speakerMuteToggle');
-          if (featureMute) featureMute.checked = chatMute.checked;
-          if (chatWs && chatConnected) {
-            try { chatWs.send(JSON.stringify({ type: 'set_audio_playback', enabled: !chatMute.checked })); } catch (_) {}
-          }
-        });
-      }
 
       // Browser Speaker
       const chatBrowserSpeaker = $('chatBrowserSpeaker');
@@ -1492,15 +1518,18 @@
     }
 
     function renderSpeakerSelect() {
-      const sel = ui.speakerSelect;
+      // Use chatSpeakerSelect as the single speaker selector
+      const sel = $('chatSpeakerSelect');
+      if (!sel) return;
       sel.innerHTML = '';
 
       if (!speakers.length) {
-        sel.appendChild(new Option('Default System Output', ''));
+        sel.appendChild(new Option('Auto', ''));
         sel.disabled = true;
         return;
       }
 
+      sel.appendChild(new Option('Auto', ''));
       speakers.forEach(sp => {
         const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : '');
         const opt = new Option(label, sp.id);
@@ -1510,7 +1539,6 @@
       selectedSpeakerPartId = speakers[0].id;
       sel.value = String(selectedSpeakerPartId);
       sel.disabled = false;
-      sel.addEventListener('change', e => { selectedSpeakerPartId = e.target.value || null; });
     }
 
     async function loadWebcam() {
@@ -1653,10 +1681,15 @@
     (function initClickToTrack() {
       const img = document.getElementById('webcamImg');
       if (!img) return;
+      img.style.cursor = 'crosshair';
       img.addEventListener('click', async (e) => {
         const rect = img.getBoundingClientRect();
         const xPct = ((e.clientX - rect.left) / rect.width) * 100;
         const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Show visual target box on webcam
+        showTargetBox(img, xPct, yPct);
+
         try {
           const r = await fetch('/conversation/api/head-tracking/target', {
             method: 'POST',
@@ -1665,16 +1698,38 @@
           });
           const j = await r.json();
           if (j && j.success) {
-            showToast('Tracking target set for 30s', 'success');
+            showToast('Tracking target — keeping centered for 30s', 'success');
             startClickTrackCountdown(30);
           } else {
+            removeTargetBox();
             showToast('Target failed: ' + (j.error || 'Unknown'), 'error');
           }
         } catch (err) {
+          removeTargetBox();
           showToast('Target error: ' + err.message, 'error');
         }
       });
     })();
+
+    function showTargetBox(img, xPct, yPct) {
+      removeTargetBox();
+      var container = img.parentElement;
+      if (!container) return;
+      container.style.position = 'relative';
+      var box = document.createElement('div');
+      box.id = 'trackTargetBox';
+      box.style.cssText = 'position:absolute;width:60px;height:60px;border:2px solid #00ff88;border-radius:4px;' +
+        'box-shadow:0 0 8px rgba(0,255,136,0.6);pointer-events:none;transform:translate(-50%,-50%);z-index:10;' +
+        'left:' + xPct + '%;top:' + yPct + '%;';
+      // Crosshair inside
+      box.innerHTML = '<div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(0,255,136,0.5);"></div>' +
+        '<div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(0,255,136,0.5);"></div>';
+      container.appendChild(box);
+    }
+    function removeTargetBox() {
+      var existing = document.getElementById('trackTargetBox');
+      if (existing) existing.remove();
+    }
 
     function startClickTrackCountdown(seconds) {
       const badge = document.getElementById('clickTrackCountdown');
@@ -1689,6 +1744,7 @@
           clearInterval(clickTrackTimer);
           clickTrackTimer = null;
           badge.classList.add('d-none');
+          removeTargetBox();
         } else {
           badge.textContent = remaining + 's';
         }
@@ -1715,35 +1771,62 @@
       } catch { }
     }
 
+    function updateChatModeUI() {
+      var btn = ui.chatModeToggle;
+      var input = ui.chatInput;
+      if (!btn || !input) return;
+      if (chatMode === 'say') {
+        btn.innerHTML = '<i class="bi bi-megaphone"></i> Say This';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-outline-primary');
+        input.placeholder = 'Type what the character should say...';
+      } else {
+        btn.innerHTML = '<i class="bi bi-chat-dots"></i> Ask AI';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-outline-secondary');
+        input.placeholder = 'Ask the character something...';
+      }
+    }
+
+    function handleUnifiedSend() {
+      if (chatMode === 'say') {
+        sendSay();
+      } else {
+        sendChatMessage();
+      }
+    }
+
     async function sendSay() {
-      const text = (ui.sayInput.value || '').trim();
+      var input = ui.chatInput || $('chatInput');
+      var text = (input ? input.value : '').trim();
       if (!text) {
-        ui.sayStatus.innerHTML = '<span class="text-warning">Enter text</span>';
+        if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-warning">Enter text</span>';
         return;
       }
 
-      ui.sayBtn.disabled = true;
-      ui.sayBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Speaking...';
+      var sendBtn = ui.chatSendBtn || $('chatSendBtn');
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
 
       try {
-        const r = await fetch('/conversation/api/say', {
+        var r = await fetch('/conversation/api/say', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, speakerPartId: selectedSpeakerPartId || undefined })
+          body: JSON.stringify({ text: text, speakerPartId: chatSpeakerPartId || selectedSpeakerPartId || undefined })
         });
-        const j = await r.json();
-        notifyLurkActivity(); // Speech counts as activity
+        var j = await r.json();
+        notifyLurkActivity();
+        if (input) input.value = '';
 
         if (j && j.success) {
-          ui.sayStatus.innerHTML = '<span class="text-success">Done</span>';
+          if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-success">Spoken</span>';
+          appendChatMessage('Character', text);
         } else {
-          ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>';
+          if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-danger">Failed: ' + ((j && j.error) || '') + '</span>';
         }
       } catch (e) {
-        ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
+        if (ui.sayStatus) ui.sayStatus.innerHTML = '<span class="text-danger">Error: ' + (e && e.message ? e.message : e) + '</span>';
       } finally {
-        ui.sayBtn.disabled = false;
-        ui.sayBtn.innerHTML = '<i class="bi bi-send"></i> Speak';
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = '<i class="bi bi-send"></i>'; }
       }
     }
 

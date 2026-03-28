@@ -1360,6 +1360,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
+     * Get summary of active sessions for status display
+     */
+    getActiveSessions() {
+        const sessions = [];
+        for (const [id, c] of this.activeConnections) {
+            sessions.push({ sessionId: id, isActive: !!c.isActive, characterId: c.characterId });
+        }
+        return sessions;
+    }
+
+    /**
      * Stop WebSocket server
      */
     /**

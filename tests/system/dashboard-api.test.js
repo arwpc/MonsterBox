@@ -213,35 +213,6 @@ describe('Dashboard API — Deep Functional Tests', () => {
     });
   });
 
-  // ── Translate Mode ───────────────────────────────────────────────
-  describe('Translate Mode', () => {
-    it('POST /conversation/api/translate should accept text', async function() {
-      this.timeout(60000); // AI calls can take time
-      const res = await request(BASE_URL)
-        .post('/conversation/api/translate')
-        .send({ text: 'Hello friend' })
-        .expect(200);
-      expect(res.body).to.have.property('success', true);
-      expect(res.body).to.have.property('translatedText').that.is.a('string');
-      expect(res.body.translatedText.length).to.be.greaterThan(0);
-    });
-
-    it('should reject empty text', async () => {
-      const res = await request(BASE_URL)
-        .post('/conversation/api/translate')
-        .send({ text: '' })
-        .expect(400);
-      expect(res.body).to.have.property('success', false);
-    });
-
-    it('should reject missing text', async () => {
-      const res = await request(BASE_URL)
-        .post('/conversation/api/translate')
-        .send({})
-        .expect(400);
-      expect(res.body).to.have.property('success', false);
-    });
-  });
 
   // ── Scenes Panel ─────────────────────────────────────────────────
   describe('Scenes Panel', () => {
@@ -371,7 +342,6 @@ describe('Dashboard API — Deep Functional Tests', () => {
       expect(res.text).to.include('jawToggle');
       expect(res.text).to.include('parrotToggle');
       expect(res.text).to.include('headTrackToggle');
-      expect(res.text).to.include('translateToggle');
       expect(res.text).to.include('speakerMuteToggle');
     });
 

@@ -101,6 +101,16 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
                                     <script src="/js/monsterbox4.js"></script>
                                     <script src="/js/character-menu.js"></script>
 
+                                    <!-- Initialize Bootstrap tooltips globally -->
+                                    <script>
+                                    (function () {
+                                        var els = document.querySelectorAll('[data-bs-toggle="tooltip"], [data-bs-tooltip="tooltip"]');
+                                        for (var i = 0; i < els.length; i++) {
+                                            new bootstrap.Tooltip(els[i], els[i].getAttribute('data-bs-tooltip') === 'tooltip' ? { trigger: 'hover' } : {});
+                                        }
+                                    })();
+                                    </script>
+
                                     <!-- Page-specific scripts -->
                                     <% if (typeof scripts !=='undefined' && scripts) { %>
                                         <% if (Array.isArray(scripts)) { %>

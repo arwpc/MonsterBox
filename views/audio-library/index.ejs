@@ -10,12 +10,12 @@
                     <!-- Speaker Part Selector -->
                     <div class="d-inline-flex align-items-center">
                         <label for="speakerSelect" class="me-1 mb-0 small text-muted"><i class="bi bi-speaker"></i></label>
-                        <select id="speakerSelect" class="form-select form-select-sm" style="min-width: 180px;"></select>
+                        <select id="speakerSelect" class="form-select form-select-sm" style="min-width: 180px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Select audio output speaker"></select>
                     </div>
-                    <button class="btn btn-danger btn-sm" id="stopAllBtn">
+                    <button class="btn btn-danger btn-sm" id="stopAllBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback">
                         <i class="bi bi-stop-circle"></i> Stop All
                     </button>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal" data-bs-tooltip="tooltip" data-bs-placement="top" title="Upload audio files to the library">
                         <i class="bi bi-cloud-upload"></i> Upload
                     </button>
                 </div>
@@ -29,11 +29,11 @@
 
             <!-- Search/Filter: single compact row -->
             <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
-                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search files..." style="max-width:300px;">
-                <select class="form-select form-select-sm" id="categoryFilter" style="max-width:150px;">
+                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search files..." style="max-width:300px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Search audio files by name">
+                <select class="form-select form-select-sm" id="categoryFilter" style="max-width:150px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter by category">
                     <option value="all">All Categories</option>
                 </select>
-                <select class="form-select form-select-sm" id="sortBy" style="max-width:150px;">
+                <select class="form-select form-select-sm" id="sortBy" style="max-width:150px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Sort audio files">
                     <option value="title">Title A-Z</option>
                     <option value="uploadedAt">Newest First</option>
                     <option value="duration">Duration</option>
@@ -41,7 +41,7 @@
                     <option value="playCount">Most Played</option>
                 </select>
                 <div class="form-check form-switch d-flex align-items-center ms-1">
-                    <input class="form-check-input" type="checkbox" id="favoritesOnly">
+                    <input class="form-check-input" type="checkbox" id="favoritesOnly" data-bs-toggle="tooltip" data-bs-placement="top" title="Show favorites only">
                     <label class="form-check-label ms-1 small" for="favoritesOnly">Favs</label>
                 </div>
             </div>
@@ -94,7 +94,8 @@
                             <p class="text-muted">Or click to browse files</p>
                             <input type="file" id="audioFileInput" multiple accept="audio/*" style="display: none;">
                             <button type="button" class="btn btn-outline-primary"
-                                onclick="document.getElementById('audioFileInput').click()">
+                                onclick="document.getElementById('audioFileInput').click()"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="Browse local files to upload">
                                 <i class="bi bi-folder2-open"></i> Browse Files
                             </button>
                         </div>

@@ -760,6 +760,17 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
     }
 
+    // Start movement telemetry auto-flush and servo command buffer
+    try {
+        const { startAutoFlush } = await import('./services/movement/movementTelemetry.js');
+        startAutoFlush(30000);
+        console.log(`📊 Movement telemetry auto-flush started (30s interval)`);
+    } catch (error) {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
+            console.error(`❌ Failed to start movement telemetry:`, error.message);
+        }
+    }
+
     // Start system performance collector (records snapshots every 5 minutes)
     try {
         systemService.startPerformanceCollector(300000);
