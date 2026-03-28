@@ -4,9 +4,9 @@
     "isMoving": false,
     "positionKnown": true,
     "confidence": "tracked",
-    "movesSinceHome": 60,
-    "lastUpdatedAt": "2026-03-28T00:24:33.359Z",
+    "movesSinceHome": 45,
+    "lastUpdatedAt": "2026-03-27T22:38:29.531Z",
     "lastDir": "extend",
-    "cleanShutdown": false
+    "cleanShutdown": true
   }
 }
