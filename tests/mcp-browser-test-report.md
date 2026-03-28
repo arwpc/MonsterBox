@@ -251,7 +251,7 @@
   - **Templates**: Saved templates table (1 existing: "ARW 2.20.26"), Save New Template form
 
 ### Characters (/setup/characters)
-- 5 characters listed: PumpkinHead (ID 1), Coffin Breaker (ID 2), Orlok (ID 3, Current), Skulltalker (ID 4), Groundbreaker (ID 5)
+- 5 characters listed: PumpkinHead (ID 1), Coffin Breaker (ID 2), Orlok (ID 3, Current), Sir Dragomir (ID 4), Groundbreaker (ID 5)
 - All with Agent Assigned status
 - Each row: avatar, ID, name, AI agent status, current badge, action buttons (edit, duplicate, images, delete)
 - Create Character button
@@ -354,15 +354,15 @@
 
 ## Phase 9: Cross-Character Testing — PASS (with 1 bug)
 
-**Test:** Switched from Orlok to Skulltalker via navbar dropdown and via first-run page.
+**Test:** Switched from Orlok to Sir Dragomir via navbar dropdown and via first-run page.
 
 **Findings:**
-- Character data DID switch correctly — Calibration page showed 0 devices for Skulltalker (vs 12 for Orlok)
-- Animation Studio Part Palette showed only action types (no hardware parts) — correct for Skulltalker
-- **BUG: Navbar avatar/name doesn't update after character switch** — still shows "Orlok" avatar and name even when Skulltalker is selected. The data is correct but the UI display is stale.
+- Character data DID switch correctly — Calibration page showed 0 devices for Sir Dragomir (vs 12 for Orlok)
+- Animation Studio Part Palette showed only action types (no hardware parts) — correct for Sir Dragomir
+- **BUG: Navbar avatar/name doesn't update after character switch** — still shows "Orlok" avatar and name even when Sir Dragomir is selected. The data is correct but the UI display is stale.
 - Chat panel header shows "Chat — Loading..." instead of character name after switch
-- "Make Character Say" becomes generic instead of "Make Skulltalker Say"
-- Speaker dropdown shows character-specific speaker ("Speaker Skulltalker") — this IS correct
+- "Make Character Say" becomes generic instead of "Make Sir Dragomir Say"
+- Speaker dropdown shows character-specific speaker ("Speaker Sir Dragomir") — this IS correct
 
 ---
 
@@ -394,13 +394,13 @@
 
 ### BUG-2: Navbar Doesn't Update After Character Switch (Medium)
 - **Page:** All pages after character switch via dropdown
-- **Symptom:** Navbar continues showing previous character's avatar and name (e.g., "Orlok") even after switching to another character (e.g., "Skulltalker"). The underlying data IS correct.
+- **Symptom:** Navbar continues showing previous character's avatar and name (e.g., "Orlok") even after switching to another character (e.g., "Sir Dragomir"). The underlying data IS correct.
 - **Impact:** Confusing UX — user can't tell which character is active from the navbar
 - **Fix:** Force navbar refresh after character switch API call, or use server-side rendering for current character
 
 ### BUG-3: Character Images Missing for Some Characters (Low)
 - **Page:** `/first-run`, `/setup/characters`
-- **Symptom:** PumpkinHead and Coffin Breaker show fallback emoji (💀) instead of images; Skulltalker image sometimes fails
+- **Symptom:** PumpkinHead and Coffin Breaker show fallback emoji (💀) instead of images; Sir Dragomir image sometimes fails
 - **Impact:** Cosmetic only
 - **Fix:** Ensure all characters have valid image files, or improve fallback display
 

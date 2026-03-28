@@ -63,12 +63,12 @@ This file contains historical hardware configuration settings that were previous
   - PWM Pin: 13
 
 ### Character 4: Sir Dragomir
-- **ID 18: Motion Skulltalker**
+- **ID 18: Motion Sir Dragomir**
   - GPIO Pin: 17
 - **ID 19: Jaw Servo**
   - Type: Miuzei MG90S
   - Min/Max Pulse: 500-2400
-- **ID 20: SkulltalkerCam**
+- **ID 20: SirDragomirCam**
   - Path: /dev/video0
   - Res: 1280x720 @ 15fps
 - **ID 21: ChatterPi AI System**
