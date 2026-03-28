@@ -151,6 +151,10 @@
           <label class="form-check-label small fw-bold" for="idleToggle"><i class="bi bi-person-walking"></i> Idle</label>
         </div>
         <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="motionSensorToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Monitor PIR motion sensor — detects nearby visitors and keeps animatronic awake">
+          <label class="form-check-label small fw-bold" for="motionSensorToggle"><i class="bi bi-radar"></i> Motion</label>
+        </div>
+        <div class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
           <label class="form-check-label small fw-bold" for="speakerMuteToggle"><i class="bi bi-volume-mute"></i> Mute</label>
         </div>
@@ -932,6 +936,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadMotionSensorStatus();
       await loadLurkState();
       await loadScenes();
       await loadPoses();
@@ -1052,6 +1057,29 @@
           } catch (e) {
             ui.idleToggle.checked = !enabled;
             console.error('Idle toggle error:', e);
+          }
+        });
+      }
+
+      // Motion sensor toggle
+      const motionToggle = $('motionSensorToggle');
+      if (motionToggle) {
+        motionToggle.addEventListener('change', async function () {
+          var enabled = motionToggle.checked;
+          try {
+            var r = await fetch('/conversation/api/motion-sensor', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ enabled: enabled })
+            });
+            var j = await r.json();
+            if (!j.success) {
+              motionToggle.checked = !enabled;
+              console.error('Motion sensor toggle error:', j.error);
+            }
+          } catch (e) {
+            motionToggle.checked = !enabled;
+            console.error('Motion sensor toggle error:', e);
           }
         });
       }
@@ -1749,6 +1777,22 @@
           badge.textContent = remaining + 's';
         }
       }, 1000);
+    }
+
+    async function loadMotionSensorStatus() {
+      try {
+        var r = await fetch('/conversation/api/motion-sensor');
+        var j = await r.json();
+        var toggle = $('motionSensorToggle');
+        if (toggle && j && j.success) {
+          toggle.checked = !!j.active;
+        }
+        // Disable toggle if no sensor available
+        if (j && !j.hasSensor && toggle) {
+          toggle.disabled = true;
+          toggle.parentElement.setAttribute('title', 'No motion sensor configured for this character');
+        }
+      } catch (_) {}
     }
 
     async function loadJawSettings() {

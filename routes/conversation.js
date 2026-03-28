@@ -847,6 +847,61 @@ router.post('/api/manual-controls-layout/rename', express.json(), async (req, re
 
 // ─── Lurk Mode ────────────────────────────────────────────────────────
 // Lurk Mode enables all superpowers at once: AI conversation, jaw animation,
+// ─── Motion Sensor Standalone Toggle ──────────────────────────────────
+// GET /conversation/api/motion-sensor — current motion sensor state
+router.get('/api/motion-sensor', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    const parts = await loadParts();
+    const sensor = parts.find(p =>
+      String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
+    );
+    const motionStatus = lurkMotionWatcher.getStatus();
+    res.json({
+      success: true,
+      hasSensor: !!sensor,
+      active: motionStatus.active,
+      sleeping: motionStatus.sleeping,
+      lastMotionAt: motionStatus.lastMotionAt || null
+    });
+  } catch (e) {
+    res.json({ success: true, hasSensor: false, active: false });
+  }
+});
+
+// POST /conversation/api/motion-sensor { enabled } — start/stop motion sensor polling
+router.post('/api/motion-sensor', express.json(), async (req, res) => {
+  try {
+    const enabled = !!(req.body && req.body.enabled);
+    const characterId = getCurrentCharacterId(req);
+
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, enabled });
+    }
+
+    if (enabled) {
+      const parts = await loadParts();
+      const sensor = parts.find(p =>
+        String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
+      );
+      if (!sensor) {
+        return res.json({ success: false, error: 'No motion sensor found for this character' });
+      }
+      lurkMotionWatcher.start(characterId, {
+        sensorPart: sensor,
+        inactivityTimeoutMs: 0 // No timeout in standalone mode — just detect
+      });
+      res.json({ success: true, enabled: true, sensorPartId: sensor.id });
+    } else {
+      lurkMotionWatcher.stop();
+      res.json({ success: true, enabled: false });
+    }
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// ─── Lurk Mode ────────────────────────────────────────────────────────
 // head tracking, and random idle poses. One toggle to bring the character to life.
 //
 // Motion Sensor Integration: While lurk mode is active, the PIR motion sensor
