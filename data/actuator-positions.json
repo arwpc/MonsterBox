@@ -1,12 +1,30 @@
 {
-  "2": {
+  "1": {
     "currentP": 0.7,
     "isMoving": false,
     "positionKnown": true,
     "confidence": "tracked",
-    "movesSinceHome": 45,
-    "lastUpdatedAt": "2026-03-27T22:38:29.531Z",
+    "movesSinceHome": 4,
+    "lastUpdatedAt": "2026-03-28T01:55:42.343Z",
+    "cleanShutdown": true
+  },
+  "2": {
+    "currentP": 0.6499999999999999,
+    "isMoving": false,
+    "positionKnown": true,
+    "confidence": "tracked",
+    "movesSinceHome": 48,
+    "lastUpdatedAt": "2026-03-28T01:55:47.155Z",
     "lastDir": "extend",
+    "cleanShutdown": true
+  },
+  "3": {
+    "currentP": 0.6,
+    "isMoving": false,
+    "positionKnown": true,
+    "confidence": "tracked",
+    "movesSinceHome": 3,
+    "lastUpdatedAt": "2026-03-28T01:55:52.744Z",
     "cleanShutdown": true
   }
 }

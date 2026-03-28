@@ -12,10 +12,15 @@ This README provides an accurate quick-start and operational overview and links 
 
 ## What's New — v7.9.6 (March 2026)
 
-### Pose Execution Performance
+### Pose Execution & Movement
 - **Instant pose response** — Dashboard pose buttons fire-and-forget; hardware moves in background with no UI delay
 - **Batch PCA9685 commands** — All servos in a pose sent in a single Python call (~500ms total vs ~1350ms+ sequential)
+- **Idle loop fixed** — Transition engine now correctly reads pose angle format; servos move between idle poses during Lurk Mode
 - **Browser speaker for TTS** — "Say This" mode plays audio through browser when Browser Spk is enabled
+
+### Listen In Audio (Browser Audio Bridge)
+- **Clean audio streaming** — Fixed static/noise by buffering pw-record output into fixed 200ms chunks at 48kHz (matches browser AudioContext native rate)
+- **Motion sensor toggle** — Standalone PIR sensor control in superpowers strip, independent of Lurk Mode
 
 ### Dashboard UX Overhaul
 - **Unified chat input** — "Ask AI" and "Say This" modes in a single input with toggle button; no more hunting between two text fields

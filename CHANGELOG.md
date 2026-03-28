@@ -2,15 +2,46 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [7.9.6] - 2026-03-27 — Full Test Sweep & Documentation Update
+## [7.9.6] - 2026-03-27 — Hardware Verification, Movement Fixes & Listen In Audio
+
+### Idle Loop Movement Fix (Critical)
+- **Fixed undefined servo angles** — Transition engine expected `part.value` (movement system format) but idle loop passes pose parts with `part.target.angleDeg`. All batch PCA9685 commands were sending `channel:undefined`, producing zero movement. Now resolves angles from either format.
+- **Idle loop verified working** — Webcam before/after screenshots confirm head, elbow, and forearm physically moving between idle poses during Lurk Mode
+
+### Listen In Audio Fix (Browser Audio Bridge)
+- **Fixed static/noise** — `pw-record` emitted arbitrary-sized stdout chunks causing AudioContext scheduling gaps. Server now buffers into fixed 200ms chunks (19200 bytes at 48kHz)
+- **Switched to 48kHz** — Browser AudioContext runs natively at 48kHz; capturing at 16kHz caused resampling artifacts at every chunk boundary. Now captures and plays at matching 48kHz
+- **PCM16 chunk alignment** — Added leftover byte buffer for odd-byte chunks that split 16-bit samples across SSE messages
+- **300ms jitter buffer** — Absorbs network timing variance for gap-free playback
+
+### Click-to-Track Direct Servo Control
+- **Head moves on click** — Clicking webcam now directly calculates and commands the head servo angle based on click position, regardless of whether OpenCV tracking is running
+
+### Motion Sensor Dashboard Toggle
+- **New Motion toggle** in superpowers strip — enables/disables PIR sensor polling independently of Lurk Mode
+- **New endpoints** `GET/POST /conversation/api/motion-sensor` for standalone sensor control
+- **Auto-disables** when character has no motion sensor part
+
+### Jaw Animation Tuning (Orlok)
+- **Smoother jaw** — quantizationLevels 10→18, sensitivity 1→1.5, smoothing 0.6→0.4, attack 50→30ms, release 150→100ms
+
+### Hardware Verification (All 12 Parts)
+- All 4 PCA9685 servos (jaw, elbow, forearm, head) — verified via calibration goto + webcam screenshots
+- All 3 linear actuators (right arm, left arm, bow) — verified via calibration nudge + position tracking
+- Light relay (GPIO 16) — toggle on/off verified
+- Motion sensor (GPIO 17 PIR) — enable/detect/disable verified
+- Speaker — TTS playback verified
+- Webcam — MJPG snapshot verified
+- 4 poses executed and visually confirmed via webcam
+
+### Character Documentation Cleanup
+- Removed `docs/character_spinster.md` — character 8 does not exist
+- Fixed Groundbreaker ID from 7 to 5 across all docs
+- Updated Orlok servo models and calibration values
+- Removed hardcoded version strings from deployment and session docs
 
 ### Test Verification
 - **All 460+ tests passing** — 167 unit, 293 system, 58 browser E2E (0 failures)
-- **Dashboard test fix** — Updated "Monster Features" text match to data attribute `monster-features`
-
-### Documentation
-- **MkDocs index updated** — Added Dashboard, Lurk Mode, Movement System, tooltips, batch PCA9685, head tracking scanning to feature list
-- **Added missing page links** — Head Animation, Audio Library, Video Library added to Key URLs
 
 ---
 
