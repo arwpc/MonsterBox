@@ -173,7 +173,7 @@ ls -la data/character-{id}/
 python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 
 # Check parts configuration
-curl http://localhost:3000/setup/parts/api/parts
+curl -k https://localhost:3000/setup/parts/api/parts
 ```
 
 ### Audio Issues

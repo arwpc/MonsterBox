@@ -10,7 +10,14 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v7.9.6 (March 2026)
+## What's New — v8.0.0 (March 2026)
+
+### Orchestration (Multi-Animatronic Control)
+- **HTTPS inter-node communication** — Orchestration now properly uses HTTPS with self-signed cert support to communicate between MonsterBox nodes
+- **40 new tests** — 26 system API tests + 14 browser E2E tests covering all orchestration endpoints
+- **Multi-node deployment** — Code synced across Orlok and Mina via git push/pull
+
+### Previous — v7.9.6 (March 2026)
 
 ### Pose Execution & Movement
 - **Instant pose response** — Dashboard pose buttons fire-and-forget; hardware moves in background with no UI delay
@@ -175,7 +182,7 @@ sudo reboot
 For manual/partial setup or multi-node deployment: docs/deployment/README.md
 
 ## Key Services and Ports
-- MonsterBox app: :3000 (HTTP)
+- MonsterBox app: :3000 (HTTPS, self-signed cert)
 - Real-time chat WS (conversation): :8795
 - Webcam (mjpg-streamer): :8090
 - Goblin player API (on Goblins): :3001

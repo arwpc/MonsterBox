@@ -239,4 +239,27 @@ describe('Audio Setup API', function () {
             expect(res.body.success).to.equal(false);
         });
     });
+
+    describe('POST /api/elevenlabs/stt/testSample (Mic Calibration)', function () {
+        it('should capture audio sample in dry-run mode', async function () {
+            const res = await apiPost('/api/elevenlabs/stt/testSample?duration=1&dryRun=1', {
+                deviceId: 'default'
+            });
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('success', true);
+            expect(res.body).to.have.property('sizeBytes').that.is.a('number');
+            expect(res.body.sizeBytes).to.be.greaterThan(0);
+            expect(res.body).to.have.property('usedPath').that.is.a('string');
+        });
+
+        it('should capture and attempt transcription', async function () {
+            this.timeout(15000);
+            const res = await apiPost('/api/elevenlabs/stt/testSample?duration=1', {
+                deviceId: 'default'
+            });
+            // May succeed or fail depending on ElevenLabs API key and ambient audio
+            expect(res.status).to.be.oneOf([200, 400, 500]);
+            expect(res.body).to.have.property('success').that.is.a('boolean');
+        });
+    });
 });

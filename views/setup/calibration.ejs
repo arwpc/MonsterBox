@@ -2661,7 +2661,7 @@
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
       } else if (part.type === 'microphone') {
-        // Full microphone controls matching Audio Configuration page
+        // Full microphone controls with speech detection testing
         var micDevId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
         var micSens = (part.config && part.config.sensitivity != null) ? part.config.sensitivity : 1;
         var micGainPct = (part.config && part.config.inputGainPercent != null) ? part.config.inputGainPercent : 100;
@@ -2681,7 +2681,42 @@
           '<div class="col-md-6">' +
           '<label class="form-label small">Input Gain <span class="badge bg-secondary" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
           '<input type="range" min="0" max="200" step="1" class="form-range" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
-          '</div></div></div>' +
+          '</div></div>' +
+          '<hr class="my-3">' +
+          '<div class="mb-2"><strong><i class="bi bi-mic"></i> Speech Detection Test</strong></div>' +
+          '<div class="row g-3 align-items-end">' +
+          '<div class="col-md-5">' +
+          '<label class="form-label small">Test Phrase (speak this aloud):</label>' +
+          '<input type="text" class="form-control form-control-sm" id="calMicPhrase-' + part.id + '" value="Hey Monster, how are you?">' +
+          '</div>' +
+          '<div class="col-md-2">' +
+          '<label class="form-label small">Duration:</label>' +
+          '<select class="form-select form-select-sm" id="calMicDuration-' + part.id + '">' +
+          '<option value="2">2s</option><option value="3" selected>3s</option><option value="4">4s</option><option value="5">5s</option>' +
+          '</select>' +
+          '</div>' +
+          '<div class="col-md-2">' +
+          '<button class="btn btn-warning btn-sm w-100" id="calMicTest-' + part.id + '" onclick="testMicSTT(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<i class="bi bi-record-circle"></i> Record & Test</button>' +
+          '</div>' +
+          '<div class="col-md-3">' +
+          '<button class="btn btn-info btn-sm w-100" id="calMicAutoTune-' + part.id + '" onclick="autoTuneMic(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<i class="bi bi-magic"></i> Auto-Tune Gain</button>' +
+          '</div></div>' +
+          '<div id="calMicResult-' + part.id + '" class="mt-2 p-2 border rounded bg-dark small" style="display:none">' +
+          '<div class="d-flex justify-content-between"><span id="calMicResultLabel-' + part.id + '">Result:</span>' +
+          '<span class="badge" id="calMicResultBadge-' + part.id + '"></span></div>' +
+          '<div id="calMicResultText-' + part.id + '" class="mt-1 font-monospace"></div></div>' +
+          '<div class="mt-2 p-2 border rounded small" style="background:rgba(255,255,255,0.03)">' +
+          '<strong><i class="bi bi-lightbulb"></i> Outdoor Speech Tips:</strong>' +
+          '<ul class="mb-0 mt-1 ps-3" style="font-size:0.85em">' +
+          '<li>Set gain to <strong>130-180%</strong> for outdoor use (wind/ambient noise)</li>' +
+          '<li>Aim the microphone toward the speaker path, away from fans/motors</li>' +
+          '<li>Use a <strong>windscreen/foam cover</strong> on the mic to cut wind noise</li>' +
+          '<li>Test at the distance visitors will actually stand (6-10 feet typical)</li>' +
+          '<li>If STT picks up garbage, <strong>lower gain</strong>; if it misses words, <strong>raise gain</strong></li>' +
+          '<li>Sensitivity affects the VAD threshold — higher = picks up quieter speech</li>' +
+          '</ul></div></div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
 
         // VU meter monitoring
@@ -5674,6 +5709,188 @@
             </div>
           </div>
         `;
+  }
+
+  // ── Microphone Speech Detection Test ──────────────────────────────
+  function testMicSTT(partId, deviceId) {
+    var btn = document.getElementById('calMicTest-' + partId);
+    var resultDiv = document.getElementById('calMicResult-' + partId);
+    var resultLabel = document.getElementById('calMicResultLabel-' + partId);
+    var resultBadge = document.getElementById('calMicResultBadge-' + partId);
+    var resultText = document.getElementById('calMicResultText-' + partId);
+    var durationEl = document.getElementById('calMicDuration-' + partId);
+    var phraseEl = document.getElementById('calMicPhrase-' + partId);
+    var duration = durationEl ? parseInt(durationEl.value, 10) : 3;
+    var phrase = phraseEl ? phraseEl.value.trim() : '';
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Recording...'; }
+    if (resultDiv) { resultDiv.style.display = 'block'; }
+    if (resultLabel) { resultLabel.textContent = 'Recording ' + duration + 's...'; }
+    if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'badge'; }
+    if (resultText) { resultText.textContent = ''; }
+
+    fetch('/api/elevenlabs/stt/testSample?duration=' + duration, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: deviceId })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-record-circle"></i> Record & Test'; }
+      if (!data.success) {
+        if (resultLabel) resultLabel.textContent = 'Error:';
+        if (resultBadge) { resultBadge.textContent = 'FAILED'; resultBadge.className = 'badge bg-danger'; }
+        if (resultText) resultText.textContent = data.error || 'No audio captured';
+        return { success: false };
+      }
+      var text = (data.text || '').trim();
+      if (!text) {
+        if (resultLabel) resultLabel.textContent = 'No speech detected';
+        if (resultBadge) { resultBadge.textContent = 'SILENCE'; resultBadge.className = 'badge bg-secondary'; }
+        if (resultText) resultText.textContent = 'The microphone captured audio but no words were recognized. Try increasing gain or speaking louder.';
+        return { success: true, detected: false, text: '' };
+      }
+      // Calculate match if reference phrase is provided
+      var matchPct = 0;
+      if (phrase) {
+        var refWords = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+        var gotWords = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+        var matched = 0;
+        refWords.forEach(function (w) { if (gotWords.indexOf(w) >= 0) matched++; });
+        matchPct = refWords.length > 0 ? Math.round((matched / refWords.length) * 100) : 0;
+      }
+      if (resultLabel) resultLabel.textContent = 'Recognized:';
+      if (resultText) resultText.textContent = '"' + text + '"';
+      if (matchPct >= 70) {
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-success'; }
+      } else if (matchPct >= 40) {
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-warning text-dark'; }
+      } else if (phrase) {
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-danger'; }
+      } else {
+        if (resultBadge) { resultBadge.textContent = 'DETECTED'; resultBadge.className = 'badge bg-success'; }
+      }
+      return { success: true, detected: true, text: text, matchPct: matchPct };
+    })
+    .catch(function (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-record-circle"></i> Record & Test'; }
+      if (resultLabel) resultLabel.textContent = 'Error:';
+      if (resultBadge) { resultBadge.textContent = 'ERROR'; resultBadge.className = 'badge bg-danger'; }
+      if (resultText) resultText.textContent = e.message || 'Request failed';
+      return { success: false };
+    });
+  }
+
+  // ── Auto-Tune Microphone Gain ─────────────────────────────────────
+  // Iteratively increases gain from current level, testing STT at each step,
+  // until speech is reliably detected. Best practice for outdoor/ambient setups.
+  function autoTuneMic(partId, deviceId) {
+    var btn = document.getElementById('calMicAutoTune-' + partId);
+    var gainEl = document.getElementById('calMicGain-' + partId);
+    var gainValEl = document.getElementById('calMicGain-' + partId + '-val');
+    var resultDiv = document.getElementById('calMicResult-' + partId);
+    var resultLabel = document.getElementById('calMicResultLabel-' + partId);
+    var resultBadge = document.getElementById('calMicResultBadge-' + partId);
+    var resultText = document.getElementById('calMicResultText-' + partId);
+    var phraseEl = document.getElementById('calMicPhrase-' + partId);
+    var phrase = phraseEl ? phraseEl.value.trim() : '';
+
+    if (!phrase) {
+      alert('Enter a test phrase first, then speak it during each recording round.');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tuning...'; }
+    if (resultDiv) resultDiv.style.display = 'block';
+
+    var currentGain = gainEl ? parseInt(gainEl.value, 10) : 100;
+    var step = 20; // Increase gain by 20% each round
+    var maxGain = 200;
+    var round = 0;
+    var maxRounds = 6;
+
+    function tryRound() {
+      round++;
+      if (currentGain > maxGain || round > maxRounds) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic"></i> Auto-Tune Gain'; }
+        if (resultLabel) resultLabel.textContent = 'Auto-tune complete:';
+        if (resultBadge) { resultBadge.textContent = 'MAX REACHED'; resultBadge.className = 'badge bg-warning text-dark'; }
+        if (resultText) resultText.textContent = 'Reached gain ' + currentGain + '% without reliable detection. Try a different mic position or add a windscreen.';
+        return;
+      }
+
+      if (resultLabel) resultLabel.textContent = 'Round ' + round + ': Setting gain to ' + currentGain + '%, speak now...';
+      if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'badge'; }
+
+      // Set the gain
+      fetch('/setup/audio/api/set-input-gain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: deviceId, gainPercent: currentGain })
+      })
+      .then(function () {
+        // Update the slider UI
+        if (gainEl) gainEl.value = currentGain;
+        if (gainValEl) gainValEl.textContent = currentGain + '%';
+
+        // Wait 500ms for gain to settle, then prompt and record
+        if (resultLabel) resultLabel.textContent = 'Round ' + round + ' (gain ' + currentGain + '%): Speak the phrase now!';
+        return new Promise(function (resolve) { setTimeout(resolve, 1500); });
+      })
+      .then(function () {
+        // Capture and transcribe
+        return fetch('/api/elevenlabs/stt/testSample?duration=3', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId: deviceId })
+        }).then(function (r) { return r.json(); });
+      })
+      .then(function (data) {
+        var text = (data.success && data.text) ? data.text.trim() : '';
+        if (!text) {
+          if (resultText) resultText.textContent = 'Round ' + round + ': No speech detected at ' + currentGain + '% gain. Increasing...';
+          currentGain += step;
+          setTimeout(tryRound, 500);
+          return;
+        }
+        // Check match quality
+        var refWords = phrase.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+        var gotWords = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+        var matched = 0;
+        refWords.forEach(function (w) { if (gotWords.indexOf(w) >= 0) matched++; });
+        var matchPct = refWords.length > 0 ? Math.round((matched / refWords.length) * 100) : 0;
+
+        if (matchPct >= 50) {
+          // Success! Save the gain to part config
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic"></i> Auto-Tune Gain'; }
+          if (resultLabel) resultLabel.textContent = 'Auto-tune success at ' + currentGain + '% gain:';
+          if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-success'; }
+          if (resultText) resultText.textContent = 'Detected: "' + text + '"\nGain saved to ' + currentGain + '%.';
+
+          // Persist gain to part config
+          fetch('/setup/calibration/api/parts/' + partId).then(function (r) { return r.json(); }).then(function (pd) {
+            if (pd.success) {
+              var cfg = Object.assign({}, pd.part.config || {}, { inputGainPercent: currentGain });
+              fetch('/setup/calibration/api/parts/' + partId, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: cfg })
+              });
+            }
+          });
+        } else {
+          if (resultText) resultText.textContent = 'Round ' + round + ' (' + currentGain + '%): Heard "' + text + '" (' + matchPct + '% match). Increasing...';
+          currentGain += step;
+          setTimeout(tryRound, 500);
+        }
+      })
+      .catch(function (e) {
+        if (resultText) resultText.textContent = 'Round ' + round + ' error: ' + (e.message || e) + '. Trying next level...';
+        currentGain += step;
+        setTimeout(tryRound, 500);
+      });
+    }
+
+    tryRound();
   }
 
 </script>

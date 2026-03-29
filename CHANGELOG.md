@@ -2,6 +2,28 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.0.0] - 2026-03-29 — Orchestration HTTPS Fix & Multi-Node Deployment
+
+### Orchestration HTTPS Fix (Critical)
+- **Fixed inter-node communication** — All orchestration HTTP calls now use HTTPS with self-signed certificate support, matching the HTTPS-only configuration of all MonsterBox nodes. Previously, every orchestration call to remote animatronics silently failed because the service used `http://` while nodes only serve HTTPS on port 3000.
+- **Verified working** — Orlok and Mina both report ONLINE via orchestration status; health checks, broadcasts, and per-animatronic commands all functional.
+
+### Orchestration System Tests (New)
+- **26 new system tests** in `tests/system/orchestration.test.js` covering:
+  - Status and health-check endpoints
+  - Broadcast commands (animatronics, goblins, all)
+  - Say-all with test-mode response validation
+  - Random poses enable/disable
+  - Queue loop start
+  - Auto AI CRUD (start, stop, status, stop-all)
+  - Per-animatronic validation (say, ask-ai, play-audio, webcam-url, audio-files)
+  - Orchestration page rendering
+- **14 browser tests rewritten** to match actual orchestration UI elements (command log, status panels, broadcast controls, system commands)
+
+### Multi-Node Deployment
+- Code pushed to origin and deployed to Mina (192.168.8.140) — both nodes on same git revision
+- Added `test:system:orchestration` npm script for targeted test runs
+
 ## [7.9.6] - 2026-03-27 — Hardware Verification, Movement Fixes & Listen In Audio
 
 ### Idle Loop Movement Fix (Critical)
