@@ -68,10 +68,33 @@ export async function saveSTTConfig(cfg) {
   return writeJson('stt-config.json', cfg);
 }
 
+// Per-character default voices — each character has a distinct voice fallback
+// so no character ever accidentally sounds like another
+const CHARACTER_DEFAULT_VOICES = {
+  1: 'wXvR48IpOq9HACltTmt7', // PumpkinHead: Ancient Monster - Evil and Scary
+  2: 'hkk1bPcdsxSQCLzLFMT2', // Mina: The Siren's Voicemail – Scarlett's Seductive Soundscape
+  3: 'Tj9l48J9AJbry5yCP5eW', // Orlok: Count Orlok, Nosferatu
+  4: 'SOYHLrjzK2X1ezoPC6cr', // Sir Dragomir: Harry - Fierce Warrior
+  5: 'vfaqCOvlrKi4Zp7C2IAm', // Groundbreaker: Demon Monster
+};
+const GLOBAL_DEFAULT_VOICE = 'Tj9l48J9AJbry5yCP5eW';
+
+function getDefaultVoiceForCharacter(characterId) {
+  return CHARACTER_DEFAULT_VOICES[characterId] || GLOBAL_DEFAULT_VOICE;
+}
+
 export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
+  // Resolve character-aware default voice
+  let defaultVoice = GLOBAL_DEFAULT_VOICE;
+  try {
+    const cfg = await readConfig();
+    if (cfg && cfg.selectedCharacter) {
+      defaultVoice = getDefaultVoiceForCharacter(cfg.selectedCharacter);
+    }
+  } catch (_) { /* ignore */ }
   const base = {
-    voice_id: 'Tj9l48J9AJbry5yCP5eW', // Default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
+    voice_id: defaultVoice,
     model: 'eleven_v3',
     stability: 0.5,
     similarity_boost: 0.5,
@@ -114,11 +137,12 @@ export async function getTTSConfigForCharacter(characterId) {
     const txt = await fs.readFile(charConfigPath, 'utf8');
     const parsed = JSON.parse(txt);
 
-    // Merge with defaults to ensure all required fields exist
+    // Merge with defaults — use character-specific default voice, never another character's
+    const charDefaultVoice = getDefaultVoiceForCharacter(characterId);
     return {
       // include agent_id if specified for this character
       agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
-      voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : 'Tj9l48J9AJbry5yCP5eW',
+      voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : charDefaultVoice,
       model: parsed.model || 'eleven_v3',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
       similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,
