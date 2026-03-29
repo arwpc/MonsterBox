@@ -607,7 +607,11 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
             });
         }
 
-        const webcamPath = streamUrlResponse.data.url;
+        let webcamPath = streamUrlResponse.data.url;
+        // If the URL is absolute (contains protocol), extract just the path
+        if (webcamPath.startsWith('http')) {
+            try { webcamPath = new URL(webcamPath).pathname; } catch (_) { /* keep as-is */ }
+        }
         const webcamUrl = `https://${animatronic.ip}:${animatronic.port}${webcamPath}`;
 
         console.log(`📹 Streaming webcam for ${animatronic.name} from ${webcamUrl}`);
