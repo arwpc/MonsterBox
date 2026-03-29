@@ -12406,5 +12406,124 @@
     "metric": {
       "characterId": 3
     }
+  },
+  {
+    "timestamp": 1774745059006,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "306",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774745059006,
+    "characterId": "commands_per_second",
+    "servoPartId": "6.5359477124183005",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774745737301,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "195",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774745737301,
+    "characterId": "commands_per_second",
+    "servoPartId": "15.384615384615383",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774746027972,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "7",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774746027972,
+    "characterId": "commands_per_second",
+    "servoPartId": "142.85714285714286",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774746559497,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "3",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774746559497,
+    "characterId": "commands_per_second",
+    "servoPartId": "333.3333333333333",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774746796935,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "9",
+    "metric": {
+      "characterId": 3,
+      "partCount": 2
+    }
+  },
+  {
+    "timestamp": 1774746796935,
+    "characterId": "commands_per_second",
+    "servoPartId": "222.22222222222223",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774746944575,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "2",
+    "metric": {
+      "characterId": 3,
+      "partCount": 1
+    }
+  },
+  {
+    "timestamp": 1774746944575,
+    "characterId": "commands_per_second",
+    "servoPartId": "500",
+    "metric": {
+      "characterId": 3
+    }
+  },
+  {
+    "timestamp": 1774747076210,
+    "characterId": "cycle_time_ms",
+    "servoPartId": "224",
+    "metric": {
+      "characterId": 3,
+      "partCount": 3
+    }
+  },
+  {
+    "timestamp": 1774747076210,
+    "characterId": "commands_per_second",
+    "servoPartId": "13.392857142857142",
+    "metric": {
+      "characterId": 3
+    }
   }
 ]

@@ -24,19 +24,26 @@
     ]
   },
   "headTracking": {
+    "opencvEnabled": false,
     "enabled": false,
     "panServoId": null,
     "webcamPartId": null,
-    "centerDeg": 0,
-    "rangeDeg": 60,
-    "invertPan": false,
-    "smoothing": 0.3,
-    "deadzone": 5,
-    "motionThreshold": 30,
-    "minContourArea": 300,
-    "maxContourArea": 30000,
-    "backgroundLearningRate": 0.02,
-    "noiseReductionKernelSize": 3,
-    "presets": []
+    "centerDeg": 10,
+    "rangeDeg": 45,
+    "invertPan": true,
+    "smoothing": 0.5,
+    "deadzone": 8,
+    "motionThreshold": 40,
+    "minContourArea": 500,
+    "maxContourArea": 20000,
+    "backgroundLearningRate": 0.05,
+    "noiseReductionKernelSize": 5,
+    "blurSize": 5,
+    "dilateSize": 9,
+    "varThreshold": 25,
+    "targetLockStrength": 5,
+    "confirmFrames": 3,
+    "detectInterval": 5,
+    "detectionMode": "person"
   }
 }

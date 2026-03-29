@@ -6,19 +6,19 @@
     "confidence": "homed",
     "movesSinceHome": 16,
     "lastUpdatedAt": "2026-03-28T20:59:38.618Z",
-    "cleanShutdown": false,
+    "cleanShutdown": true,
     "lastDir": "retract",
     "lastHomedAt": "2026-03-28T17:16:51.433Z"
   },
   "2": {
-    "currentP": 0.7,
+    "currentP": 0.48500000000000004,
     "isMoving": false,
     "positionKnown": true,
     "confidence": "homed",
-    "movesSinceHome": 8,
-    "lastUpdatedAt": "2026-03-28T22:00:52.247Z",
-    "lastDir": "extend",
-    "cleanShutdown": false,
+    "movesSinceHome": 3,
+    "lastUpdatedAt": "2026-03-28T17:19:47.391Z",
+    "lastDir": "retract",
+    "cleanShutdown": true,
     "lastHomedAt": "2026-03-28T17:19:42.675Z"
   },
   "3": {
@@ -28,7 +28,7 @@
     "confidence": "tracked",
     "movesSinceHome": 14,
     "lastUpdatedAt": "2026-03-28T17:20:51.841Z",
-    "cleanShutdown": false,
+    "cleanShutdown": true,
     "lastDir": "retract"
   }
 }
