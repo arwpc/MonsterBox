@@ -164,23 +164,31 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦴 Linear Actuator - extending/retracting movements (real hardware via Python wrapper)
     linear_actuator: {
-        async jog({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, direction, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
-            console.log(`🦴 linear_actuator.jog: direction=${direction}, speed=${speed}%, duration=${duration}ms`);
+        async jog({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, invertDirection, direction, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+            // If invertDirection is set, swap extend/retract so wiring polarity doesn't matter
+            const effectiveDir = invertDirection ? (direction === 'extend' ? 'retract' : 'extend') : direction;
+            console.log(`🦴 linear_actuator.jog: direction=${direction}${invertDirection ? ` (inverted→${effectiveDir})` : ''}, speed=${speed}%, duration=${duration}ms`);
             // Unified jog action that routes to extend/retract based on direction
-            if (direction === 'extend') {
+            if (effectiveDir === 'extend') {
                 const result = await this.extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
                 console.log(`🦴 linear_actuator.jog: extend completed`);
-                return result;
-            } else if (direction === 'retract') {
+                return { ...result, action: direction }; // report original direction to caller
+            } else if (effectiveDir === 'retract') {
                 const result = await this.retract({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
                 console.log(`🦴 linear_actuator.jog: retract completed`);
-                return result;
+                return { ...result, action: direction }; // report original direction to caller
             } else {
                 throw new Error(`Invalid direction for jog: ${direction}. Must be 'extend' or 'retract'.`);
             }
         },
 
-        async extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+        async extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, invertDirection, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+            // When called directly (not via jog), handle invertDirection by delegating to retract
+            if (invertDirection) {
+                console.log(`🦴 extend() inverted → calling retract() instead`);
+                const result = await this.retract({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
+                return { ...result, action: 'extend' };
+            }
             console.log(`🦴 extend() called: board=${controlBoard}, dirPin=${directionPin}, pwmPin=${pwmPin}, speed=${speed}, duration=${duration}`);
             try {
                 const dur = typeof duration === 'number' ? duration : 1000; // safe default
@@ -254,7 +262,13 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async retract({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+        async retract({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, invertDirection, speed = 50, distance = 100, duration, maxExtension = 15000, maxRetraction = 15000 }) {
+            // When called directly (not via jog), handle invertDirection by delegating to extend
+            if (invertDirection) {
+                console.log(`🦴 retract() inverted → calling extend() instead`);
+                const result = await this.extend({ pin, directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, speed, distance, duration, maxExtension, maxRetraction });
+                return { ...result, action: 'retract' };
+            }
             try {
                 const dur = typeof duration === 'number' ? duration : 1000;
                 const board = controlBoard || 'MDD10A';
@@ -1484,6 +1498,9 @@ export async function controlPart(partId, action, params = {}) {
             if (part.controlBoard != null) normalized.controlBoard = part.controlBoard;
             if (part.maxExtension != null) normalized.maxExtension = Number(part.maxExtension);
             if (part.maxRetraction != null) normalized.maxRetraction = Number(part.maxRetraction);
+            // Per-part direction inversion for actuators wired with reversed polarity
+            if (part.invertDirection != null) normalized.invertDirection = !!part.invertDirection;
+            if (part.config && part.config.invertDirection != null) normalized.invertDirection = !!part.config.invertDirection;
         }
         if (type === 'motor') {
             // MDD10A/Cytron pins
