@@ -4,8 +4,14 @@
  */
 
 import express from 'express';
+import axios from 'axios';
+import https from 'https';
 import autoAIService from '../../services/autoAIService.js';
 import orchestrationService from '../../services/orchestrationService.js';
+
+// HTTPS agent for self-signed certificates on MonsterBox nodes
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+const axiosHttps = axios.create({ httpsAgent });
 
 const router = express.Router();
 
@@ -586,11 +592,11 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         }
 
         // Import axios for streaming
-        const axios = (await import('axios')).default;
+        // Using top-level axiosHttps instance
 
         // Get the webcam stream URL from the animatronic's conversation API
-        const streamUrlResponse = await axios.get(
-            `http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`,
+        const streamUrlResponse = await axiosHttps.get(
+            `https://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`,
             { timeout: 5000 }
         );
 
@@ -602,12 +608,12 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         }
 
         const webcamPath = streamUrlResponse.data.url;
-        const webcamUrl = `http://${animatronic.ip}:${animatronic.port}${webcamPath}`;
+        const webcamUrl = `https://${animatronic.ip}:${animatronic.port}${webcamPath}`;
 
         console.log(`📹 Streaming webcam for ${animatronic.name} from ${webcamUrl}`);
 
         // Stream the webcam feed
-        const response = await axios({
+        const response = await axiosHttps({
             method: 'get',
             url: webcamUrl,
             responseType: 'stream',
@@ -663,19 +669,19 @@ router.get('/animatronic/:id/audio-files', async (req, res) => {
         }
 
         // Proxy request to animatronic's audio files API with robust fallbacks
-        const axios = (await import('axios')).default;
+        // Using top-level axiosHttps instance
 
         const tryEndpoints = async () => {
             const endpoints = [
-                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, type: 'array' },
-                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/library?format=legacy`, type: 'object-legacy' },
-                { url: `http://${animatronic.ip}:${animatronic.port}/audio-library/api/library`, type: 'object' }
+                { url: `https://${animatronic.ip}:${animatronic.port}/audio-library/api/audio-select`, type: 'array' },
+                { url: `https://${animatronic.ip}:${animatronic.port}/audio-library/api/library?format=legacy`, type: 'object-legacy' },
+                { url: `https://${animatronic.ip}:${animatronic.port}/audio-library/api/library`, type: 'object' }
             ];
 
             let lastError;
             for (const ep of endpoints) {
                 try {
-                    const resp = await axios.get(ep.url, { timeout: 8000 });
+                    const resp = await axiosHttps.get(ep.url, { timeout: 8000 });
                     let files = [];
                     if (Array.isArray(resp.data)) {
                         files = resp.data;
@@ -735,13 +741,13 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
         }
 
         // Proxy request to animatronic's webcam URL API (will fail if offline)
-        const axios = (await import('axios')).default;
+        // Using top-level axiosHttps instance
         // Retry webcam URL too, slightly longer timeout
         const maxAttempts = 2;
         let response;
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                response = await axios.get(`http://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`, {
+                response = await axiosHttps.get(`https://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`, {
                     timeout: 8000
                 });
                 break;
@@ -763,7 +769,7 @@ router.get('/animatronic/:id/webcam-url', async (req, res) => {
             }
 
             // Build the full URL with the animatronic's IP
-            const fullUrl = `http://${animatronic.ip}:${animatronic.port}${webcamUrl}`;
+            const fullUrl = `https://${animatronic.ip}:${animatronic.port}${webcamUrl}`;
 
             res.json({
                 success: true,
@@ -809,9 +815,9 @@ router.post('/animatronic/:id/say', express.json(), async (req, res) => {
         }
 
         // Proxy to animatronic's generate-and-play API
-        const axios = (await import('axios')).default;
-        const response = await axios.post(
-            `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`,
+        // Using top-level axiosHttps instance
+        const response = await axiosHttps.post(
+            `https://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`,
             { text, characterId: animatronic.characterId },
             { timeout: 30000 }
         );
@@ -855,10 +861,10 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
         }
 
         // Prefer device agent-speak API with explicit characterId to avoid reliance on device-selected character
-        const axios = (await import('axios')).default;
-        const url = `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/agent-speak`;
+        // Using top-level axiosHttps instance
+        const url = `https://${animatronic.ip}:${animatronic.port}/api/elevenlabs/agent-speak`;
         try {
-            const response = await axios.post(
+            const response = await axiosHttps.post(
                 url,
                 { text, characterId: animatronic.characterId, fallbackToTTS: true },
                 { timeout: 60000 }
@@ -889,8 +895,8 @@ router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
 
         // Fallback path: use generate-and-play which is widely available across device versions
         try {
-            const ttsUrl = `http://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`;
-            const tts = await axios.post(ttsUrl, { text, characterId: animatronic.characterId }, { timeout: 60000 });
+            const ttsUrl = `https://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`;
+            const tts = await axiosHttps.post(ttsUrl, { text, characterId: animatronic.characterId }, { timeout: 60000 });
             if (tts.data && tts.data.success) {
                 return res.json({
                     success: true,
@@ -944,10 +950,10 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
         }
 
         // First try animatronic's audio playback API (exact ID): /audio-library/api/audio/:id/play
-        const axios = (await import('axios')).default;
-        const url = `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/${encodeURIComponent(audioId)}/play`;
+        // Using top-level axiosHttps instance
+        const url = `https://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/${encodeURIComponent(audioId)}/play`;
         try {
-            const response = await axios.post(
+            const response = await axiosHttps.post(
                 url,
                 {
                     characterId: animatronic.characterId,
@@ -974,7 +980,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
             console.warn(`Play-audio primary failed for ${animatronic.name} -> ${url} [${status || 'no-status'}]:`, (e && e.message) || 'error');
             // Attempt fallback A: device conversation API can resolve by multiple fields (newer builds)
             try {
-                const fallbackUrl = `http://${animatronic.ip}:${animatronic.port}/conversation/api/play-audio`;
+                const fallbackUrl = `https://${animatronic.ip}:${animatronic.port}/conversation/api/play-audio`;
                 const body = {
                     audioId,
                     audio: { id: audioId, title: audioTitle || undefined, filename: filename || undefined },
@@ -983,7 +989,7 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                     volume: Number.isFinite(volume) ? volume : 100,
                     loop: loop === true  // Include loop in fallback
                 };
-                const fb = await axios.post(fallbackUrl, body, { timeout: 30000 });
+                const fb = await axiosHttps.post(fallbackUrl, body, { timeout: 30000 });
                 if (fb.data && fb.data.success) {
                     return res.json({ success: true, message: `Playing audio on ${animatronic.name} (fallback)`, data: fb.data, fallback: true });
                 }
@@ -998,14 +1004,14 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
             // Attempt fallback B: try to resolve by filename via audio-library directly (older builds)
             try {
                 if (filename) {
-                    const altUrl = `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/play-by-filename`;
+                    const altUrl = `https://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/play-by-filename`;
                     const altBody = {
                         filename,
                         characterId: animatronic.characterId,
                         volume: Number.isFinite(volume) ? volume : 100,
                         loop: loop === true  // Include loop in filename fallback
                     };
-                    const alt = await axios.post(altUrl, altBody, { timeout: 30000 }).catch(() => null);
+                    const alt = await axiosHttps.post(altUrl, altBody, { timeout: 30000 }).catch(() => null);
                     if (alt && alt.data && alt.data.success) {
                         return res.json({ success: true, message: `Playing audio on ${animatronic.name} (filename)`, data: alt.data, fallback: 'filename' });
                     }
@@ -1040,12 +1046,12 @@ router.post('/animatronic/:id/stop-audio', async (req, res) => {
         }
 
         // Try multiple known endpoints across versions
-        const axios = (await import('axios')).default;
+        // Using top-level axiosHttps instance
 
         // A) Newer: audio-library mounted route
         const tryStop = async (endpoint) => {
             try {
-                const resp = await axios.post(endpoint, {}, { timeout: 8000 });
+                const resp = await axiosHttps.post(endpoint, {}, { timeout: 8000 });
                 if (resp.data && resp.data.success) return { ok: true, data: resp.data };
                 return { ok: false, error: resp.data && (resp.data.error || resp.data.message) };
             } catch (err) {
@@ -1054,8 +1060,8 @@ router.post('/animatronic/:id/stop-audio', async (req, res) => {
         };
 
         const endpoints = [
-            `http://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/stop-all`,
-            `http://${animatronic.ip}:${animatronic.port}/api/audio/stop-all`
+            `https://${animatronic.ip}:${animatronic.port}/audio-library/api/audio/stop-all`,
+            `https://${animatronic.ip}:${animatronic.port}/api/audio/stop-all`
         ];
 
         for (const ep of endpoints) {

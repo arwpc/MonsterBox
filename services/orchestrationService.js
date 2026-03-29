@@ -5,11 +5,16 @@
  */
 
 import axios from 'axios';
+import https from 'https';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+
+// HTTPS agent that accepts self-signed certificates (all MonsterBox nodes use self-signed SSL)
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+const axiosHttps = axios.create({ httpsAgent });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,7 +155,7 @@ class OrchestrationService {
      */
     async healthCheck(ip, port) {
         try {
-            const response = await axios.get(`http://${ip}:${port}/`, { timeout: 5000 });
+            const response = await axiosHttps.get(`https://${ip}:${port}/`, { timeout: 5000 });
             return {
                 success: true,
                 online: response.status === 200,
@@ -175,8 +180,8 @@ class OrchestrationService {
         const timer = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
-            const response = await axios.post(
-                `http://${ip}:${port}/api/elevenlabs/agent-speak`,
+            const response = await axiosHttps.post(
+                `https://${ip}:${port}/api/elevenlabs/agent-speak`,
                 { text, characterId },
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -200,8 +205,8 @@ class OrchestrationService {
      */
     async enableRandomPoses(ip, port, characterId, options = {}) {
         try {
-            const response = await axios.post(
-                `http://${ip}:${port}/api/random-poses/enable`,
+            const response = await axiosHttps.post(
+                `https://${ip}:${port}/api/random-poses/enable`,
                 { characterId, ...options },
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -219,8 +224,8 @@ class OrchestrationService {
      */
     async disableRandomPoses(ip, port) {
         try {
-            const response = await axios.post(
-                `http://${ip}:${port}/api/random-poses/disable`,
+            const response = await axiosHttps.post(
+                `https://${ip}:${port}/api/random-poses/disable`,
                 {},
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -355,8 +360,8 @@ class OrchestrationService {
      */
     async playGoblinVideo(ip, port, filename) {
         try {
-            const response = await axios.post(
-                `http://${ip}:${port}/play-video`,
+            const response = await axiosHttps.post(
+                `https://${ip}:${port}/play-video`,
                 { filename, loop: true },
                 {
                     headers: { 'Content-Type': 'application/json' },
@@ -374,8 +379,8 @@ class OrchestrationService {
      */
     async stopGoblinVideo(ip, port) {
         try {
-            const response = await axios.post(
-                `http://${ip}:${port}/stop-video`,
+            const response = await axiosHttps.post(
+                `https://${ip}:${port}/stop-video`,
                 {},
                 { timeout: 5000 }
             );
@@ -404,8 +409,8 @@ class OrchestrationService {
                         };
                     }
 
-                    const base = `http://${animatronic.ip}:${animatronic.port}/scenes/api/queue`;
-                    const postJSON = async (url, body, timeout) => axios.post(url, body, { headers: { 'Content-Type': 'application/json' }, timeout });
+                    const base = `https://${animatronic.ip}:${animatronic.port}/scenes/api/queue`;
+                    const postJSON = async (url, body, timeout) => axiosHttps.post(url, body, { headers: { 'Content-Type': 'application/json' }, timeout });
 
                     // Clear queue
                     try {

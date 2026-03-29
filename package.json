@@ -28,6 +28,7 @@
     "test:system:models": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/models.test.js --reporter spec --exit --timeout 10000",
     "test:system:video": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/video-library.test.js --reporter spec --exit --timeout 10000",
     "test:system:movement": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/movement.test.js --reporter spec --exit --timeout 10000",
+    "test:system:orchestration": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/orchestration.test.js --reporter spec --exit --timeout 15000",
     "test:ai": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/ai --reporter spec --exit --timeout 10000",
     "test:browser": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser --reporter=list",
     "test:browser:quick": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser/setup-parts.spec.js tests/browser/audio-library.spec.js --reporter=list",
