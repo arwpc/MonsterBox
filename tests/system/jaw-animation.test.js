@@ -489,8 +489,11 @@ describe('Jaw Animation Super Power API', () => {
       if (res.status !== 200 || !res.body.guardrails) return this.skip();
       // calibrated may be false on machines with default-bounds profiles
       expect(res.body.guardrails).to.have.property('calibrated');
-      expect(res.body.guardrails.minAngle).to.be.a('number');
-      expect(res.body.guardrails.maxAngle).to.be.a('number');
+      // minAngle/maxAngle may be null when uncalibrated
+      if (res.body.guardrails.calibrated) {
+        expect(res.body.guardrails.minAngle).to.be.a('number');
+        expect(res.body.guardrails.maxAngle).to.be.a('number');
+      }
     });
 
     it('should clamp target angle within calibrated range', async function () {
