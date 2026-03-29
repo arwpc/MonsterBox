@@ -334,15 +334,9 @@ router.post('/api/system-config', async (req, res) => {
                 results
             });
         } else {
-            // Avoid hard 5xx in environments without audio tooling; surface as success:false 200
-            if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
-                return res.json({
-                    success: false,
-                    error: 'Some configuration changes failed (test mode)',
-                    results
-                });
-            }
-            res.status(500).json({
+            // Return 200 with success:false — audio config failures are non-fatal
+            // (e.g. pactl not installed, PipeWire not running, wrong device name)
+            res.json({
                 success: false,
                 error: 'Some configuration changes failed',
                 results

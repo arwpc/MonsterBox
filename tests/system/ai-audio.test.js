@@ -226,6 +226,14 @@ describe('AI Audio System Tests', function() {
 
     describe('Jaw Animation Route Tests', () => {
         const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+        let charId = 1; // default fallback
+        before(async () => {
+            try {
+                const cfgRes = await fetch(`${BASE_URL}/api/config`);
+                const cfgData = await cfgRes.json();
+                charId = (cfgData.config && cfgData.config.selectedCharacter) || 1;
+            } catch (_) { /* use default */ }
+        });
 
         it('GET /setup/jaw-animation should return 200', async () => {
             try {
@@ -236,9 +244,11 @@ describe('AI Audio System Tests', function() {
             }
         });
 
-        it('POST test-tts should return success in test mode', async () => {
+        it('POST test-tts should return success', async function () {
+            // Real TTS calls ElevenLabs which can take >10s; allow 30s
+            this.timeout(30000);
             try {
-                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/3/test-tts`, {
+                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/test-tts`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: 'Hello world' })
@@ -257,7 +267,7 @@ describe('AI Audio System Tests', function() {
 
         it('POST adjust-calibration should adjust and return new value', async () => {
             try {
-                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/3/adjust-calibration`, {
+                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/adjust-calibration`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ servoPartId: '14', marker: 'Min', delta: 1 })
@@ -277,7 +287,7 @@ describe('AI Audio System Tests', function() {
 
         it('POST stop should return success', async () => {
             try {
-                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/3/stop`, {
+                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/stop`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -291,7 +301,7 @@ describe('AI Audio System Tests', function() {
 
         it('GET audio-levels should return real data', async () => {
             try {
-                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/3/audio-levels`);
+                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/audio-levels`);
                 expect(res.status).to.equal(200);
                 const data = await res.json();
                 expect(data).to.have.property('success', true);
