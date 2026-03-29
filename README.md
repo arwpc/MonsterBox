@@ -12,8 +12,15 @@ This README provides an accurate quick-start and operational overview and links 
 
 ## What's New — v8.0.0 (March 2026)
 
+### Mina Fully Operational
+- **All 10 hardware parts working** — Servos, coffin door actuator, laser, light, PIR sensor, speaker, webcam, microphone verified
+- **Per-character TTS voices** — Each character has a unique ElevenLabs voice fallback; no character accidentally sounds like another
+- **invertDirection for actuators** — Per-part flag for reversed wiring polarity (Mina's coffin door vs Orlok's)
+- **8 poses + head tracking** — Full pose library and head tracking configured for Mina
+
 ### Orchestration (Multi-Animatronic Control)
 - **HTTPS inter-node communication** — Orchestration now properly uses HTTPS with self-signed cert support to communicate between MonsterBox nodes
+- **Webcam proxy fix** — Orchestration webcam streams now work correctly (URL path extraction from absolute URLs)
 - **40 new tests** — 26 system API tests + 14 browser E2E tests covering all orchestration endpoints
 - **Multi-node deployment** — Code synced across Orlok and Mina via git push/pull
 

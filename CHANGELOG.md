@@ -2,11 +2,34 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [8.0.0] - 2026-03-29 — Orchestration HTTPS Fix & Multi-Node Deployment
+## [8.0.0] - 2026-03-29 — Mina 100%, Orchestration Fixes, Multi-Node Deployment
+
+### Mina Fully Operational
+- **All 10 hardware parts verified** — 3 PCA9685 servos (jaw/neck/eye), PCA9685 laser, MDD10A coffin door actuator, GPIO light, PIR sensor, USB speaker, webcam, microphone
+- **Fixed calibration profiles** — Profiles synced from Orlok via git had wrong capability types (servos marked as openloop-linear and vice versa). Wrote correct profiles for all 10 Mina parts
+- **Distinct TTS voice** — Mina now uses "The Siren's Voicemail" voice, not Orlok's "Count Orlok, Nosferatu"
+- **Head tracking configured** — Neck servo (part 2) as pan servo, Mina Cam (part 7) as webcam source
+- **8 poses created** — Neutral, Glance Left/Right, Mouth Open/Closed, Look Up, Menacing, All Center
+- **Scene execution verified** — "Coffin Awakening" runs all 5 steps: coffin door, TTS with jaw sync, servo positioning
+
+### Per-Character Default TTS Voices
+- **Each character gets a unique fallback voice** — Previously all characters fell back to Orlok's voice when voice_id was missing from tts-config.json. Now PumpkinHead, Mina, Orlok, Sir Dragomir, and Groundbreaker each have distinct default voices
+
+### Linear Actuator Direction Inversion
+- **invertDirection support** — Per-part flag for actuators wired with reversed polarity. Mina's coffin door has opposite wiring from Orlok's; this flag swaps extend/retract at the hardware service layer without rewiring
+
+### Orchestration Webcam Fix
+- **Fixed webcam proxy URL construction** — The webcam-stream-url endpoint returns a full URL but the orchestration proxy prepended the animatronic IP again, creating a malformed double-URL. Now extracts the pathname correctly
 
 ### Orchestration HTTPS Fix (Critical)
 - **Fixed inter-node communication** — All orchestration HTTP calls now use HTTPS with self-signed certificate support, matching the HTTPS-only configuration of all MonsterBox nodes. Previously, every orchestration call to remote animatronics silently failed because the service used `http://` while nodes only serve HTTPS on port 3000.
 - **Verified working** — Orlok and Mina both report ONLINE via orchestration status; health checks, broadcasts, and per-animatronic commands all functional.
+
+### Test Fixes
+- **Audio setup test** — Returns 200 with success:false when pactl not installed (was 500)
+- **Jaw TTS test** — Removed hardcoded char_id=3, increased timeout for real TTS calls
+- **Jaw guardrails test** — Handles uncalibrated servos with null angle bounds
+- **Character independence** — All jaw animation tests now use selected character from config
 
 ### Orchestration System Tests (New)
 - **26 new system tests** in `tests/system/orchestration.test.js` covering:
