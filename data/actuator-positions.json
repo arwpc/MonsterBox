@@ -1,13 +1,13 @@
 {
   "1": {
-    "currentP": 1,
+    "currentP": 0.7,
     "isMoving": false,
     "positionKnown": true,
     "confidence": "homed",
-    "movesSinceHome": 16,
-    "lastUpdatedAt": "2026-03-28T20:59:38.618Z",
-    "cleanShutdown": true,
-    "lastDir": "retract",
+    "movesSinceHome": 26,
+    "lastUpdatedAt": "2026-03-30T00:34:10.091Z",
+    "cleanShutdown": false,
+    "lastDir": "extend",
     "lastHomedAt": "2026-03-28T17:16:51.433Z"
   },
   "2": {
@@ -18,7 +18,7 @@
     "movesSinceHome": 3,
     "lastUpdatedAt": "2026-03-28T17:19:47.391Z",
     "lastDir": "retract",
-    "cleanShutdown": true,
+    "cleanShutdown": false,
     "lastHomedAt": "2026-03-28T17:19:42.675Z"
   },
   "3": {
@@ -28,7 +28,7 @@
     "confidence": "tracked",
     "movesSinceHome": 14,
     "lastUpdatedAt": "2026-03-28T17:20:51.841Z",
-    "cleanShutdown": true,
+    "cleanShutdown": false,
     "lastDir": "retract"
   }
 }

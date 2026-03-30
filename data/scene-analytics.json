@@ -4675,6 +4675,84 @@
       "success": true,
       "errors": [],
       "performance": {}
+    },
+    {
+      "id": "177474998117192zomrr3w",
+      "sceneId": 109,
+      "characterId": 3,
+      "timestamp": "2026-03-29T02:06:21.171Z",
+      "startTime": "2026-03-29T02:06:20.872Z",
+      "endTime": "2026-03-29T02:06:21.163Z",
+      "duration": 291,
+      "stepsExecuted": 0,
+      "totalSteps": 8,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774749989077dsgh30pyp",
+      "sceneId": 111,
+      "characterId": 3,
+      "timestamp": "2026-03-29T02:06:29.077Z",
+      "startTime": "2026-03-29T02:06:28.537Z",
+      "endTime": "2026-03-29T02:06:29.020Z",
+      "duration": 483,
+      "stepsExecuted": 0,
+      "totalSteps": 12,
+      "success": false,
+      "errors": [
+        {
+          "message": "{\"level\": \"error\", \"message\": \"Error during actuator control: Duration must be positive. Got 0\"}"
+        }
+      ],
+      "performance": {}
+    },
+    {
+      "id": "1774761956390c077htnge",
+      "sceneId": 100,
+      "characterId": 3,
+      "timestamp": "2026-03-29T05:25:56.390Z",
+      "startTime": "2026-03-29T05:25:44.192Z",
+      "endTime": "2026-03-29T05:25:56.387Z",
+      "duration": 12195,
+      "stepsExecuted": 4,
+      "totalSteps": 4,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1774817750345x9xcx6jis",
+      "sceneId": 100,
+      "characterId": 3,
+      "timestamp": "2026-03-29T20:55:50.345Z",
+      "startTime": "2026-03-29T20:55:36.521Z",
+      "endTime": "2026-03-29T20:55:50.342Z",
+      "duration": 13821,
+      "stepsExecuted": 4,
+      "totalSteps": 4,
+      "success": true,
+      "errors": [],
+      "performance": {}
+    },
+    {
+      "id": "1774817764864b5w2bjfet",
+      "sceneId": 100,
+      "characterId": 3,
+      "timestamp": "2026-03-29T20:56:04.864Z",
+      "startTime": "2026-03-29T20:55:50.357Z",
+      "endTime": "2026-03-29T20:56:04.861Z",
+      "duration": 14504,
+      "stepsExecuted": 4,
+      "totalSteps": 4,
+      "success": true,
+      "errors": [],
+      "performance": {}
     }
   ],
   "usage": {
@@ -4923,6 +5001,14 @@
       "characterId": 3,
       "executionCount": 1,
       "lastExecuted": "2026-03-28T21:03:41.381Z",
+      "totalDuration": 0,
+      "averageDuration": 0
+    },
+    "3_100": {
+      "sceneId": 100,
+      "characterId": 3,
+      "executionCount": 3,
+      "lastExecuted": "2026-03-29T20:56:04.870Z",
       "totalDuration": 0,
       "averageDuration": 0
     }
