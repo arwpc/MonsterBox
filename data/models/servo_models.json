@@ -81,6 +81,27 @@
     }
   },
   {
+    "id": "servo_miuzei_25kg_continuous",
+    "name": "Miuzei 25KG Continuous Rotation Servo (360deg)",
+    "manufacturer": "Miuzei",
+    "defaults": {
+      "minPulse": 900,
+      "maxPulse": 2100,
+      "neutralPulse": 1500,
+      "rotationRangeDeg": 360,
+      "servoType": "continuous"
+    },
+    "meta": {
+      "notes": "Continuous rotation variant of the Miuzei 25kg servo. 1500us=stop; <1500us=CW; >1500us=CCW. IMPORTANT: Cannot hold angular position — only speed/direction control. Do NOT assign to head tracking pan servo or angle-based poses. Use rotate_continuous_pca commands only.",
+      "controlType": [
+        "PWM"
+      ],
+      "torque": "25kg·cm",
+      "voltage": "4.8-7.4V",
+      "gotchas": "Cannot hold position. Angle commands (move_to_pca) are meaningless — the servo interprets pulse width as speed/direction, not angle. Must use rotate_continuous_pca with direction + speed + duration."
+    }
+  },
+  {
     "id": "servo_gobilda_stingray2",
     "name": "goBILDA Stingray-2 Servo Gearbox",
     "manufacturer": "goBILDA",

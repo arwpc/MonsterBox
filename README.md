@@ -436,7 +436,7 @@ See: `goblin/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
 - PumpkinHead (Character 1): 192.168.8.150
 - Mina (Character 2, controller): 192.168.8.140
 - Orlok (Character 3): 192.168.8.120
-- Sir Dragomir (Character 4): 192.168.8.130 ⚠️ Currently offline
+- Sir Dragomir (Character 4): 192.168.8.130 - 3 PCA9685 servos (head continuous, jaw, magic box), webcam, mic, speaker
 - Groundbreaker (Character 5): 192.168.8.200
 
 **Goblins (Video Display):**

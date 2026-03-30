@@ -2,7 +2,17 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [8.0.0] - 2026-03-29 — Mina 100%, Orchestration Fixes, Multi-Node Deployment
+## [8.0.0] - 2026-03-29 — Mina 100%, Sir Dragomir Online, Orchestration Fixes, Multi-Node Deployment
+
+### Sir Dragomir Deployed (Fresh Install)
+- **Fresh v8.0.0 deployment** on 192.168.8.130 — old repo deleted, clean install
+- **All 6 parts configured** — 3 PCA9685 servos (head continuous ch0, jaw ch1, magic box ch3), webcam, mic, speaker
+- **Head servo is continuous rotation (360°)** — cannot hold angular position, uses speed/direction commands only. Not assigned to head tracking or poses
+- **TTS voice** — "Harry - Fierce Warrior" (`SOYHLrjzK2X1ezoPC6cr`)
+- **Jaw animation configured** — Part 2 (ch1), sensitivity 1.5, smoothing 0.4, quantization 18
+- **4 poses created** — Neutral, Mouth Open, Magic Box Open, All Center (standard servos only)
+- **New servo model** — `servo_miuzei_25kg_continuous` added to servo_models.json with continuous rotation gotchas documented
+- **467 tests passing** on the Knight (156 unit + 311 system)
 
 ### Mina Fully Operational
 - **All 10 hardware parts verified** — 3 PCA9685 servos (jaw/neck/eye), PCA9685 laser, MDD10A coffin door actuator, GPIO light, PIR sensor, USB speaker, webcam, microphone

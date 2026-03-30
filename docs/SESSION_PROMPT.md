@@ -80,7 +80,7 @@ Parts are controlled through a hardware service layer:
 | 1 | PumpkinHead | 192.168.8.150 | Active |
 | 2 | Mina | 192.168.8.140 | Active |
 | 3 | **Orlok** | 192.168.8.120 | **Current host** — primary dev target |
-| 4 | Sir Dragomir | 192.168.8.130 | Offline |
+| 4 | Sir Dragomir | 192.168.8.130 | Active (head=continuous servo) |
 | 5 | Groundbreaker | 192.168.8.200 | Active |
 
 ### Orlok's Parts (Character ID 3) — 12 parts

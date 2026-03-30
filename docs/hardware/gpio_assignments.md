@@ -40,6 +40,17 @@
 | 16 | Burning Rose light | Output (relay) |
 | 26 | PIR Motion Sensor | Input |
 
+### Sir Dragomir (Character 4, 192.168.8.130)
+
+**PCA9685 I2C (0x40, 50Hz):**
+| Channel | Part | Type |
+|---------|------|------|
+| 0 | Head servo | **Continuous rotation** (360°) |
+| 1 | Jaw servo | Standard (180°) |
+| 3 | Magic Box servo | Standard (180°) |
+
+*No GPIO-direct parts on Sir Dragomir.*
+
 ### PumpkinHead (Character 1, 192.168.8.150)
 
 **PCA9685 I2C (0x40, 50Hz):**

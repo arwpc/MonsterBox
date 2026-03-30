@@ -1,5 +1,104 @@
 {
   "characterId": 4,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "Neutral",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "weight": 15,
+      "holdVariance": 1000,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        }
+      ],
+      "created": "2026-03-29T22:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Mouth Open",
+      "category": "expression",
+      "tags": [
+        "expression"
+      ],
+      "weight": 5,
+      "holdVariance": 500,
+      "transitionProfile": "ease_in",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 150
+          }
+        }
+      ],
+      "created": "2026-03-29T22:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Magic Box Open",
+      "category": "performance",
+      "tags": [
+        "performance"
+      ],
+      "weight": 5,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 150
+          }
+        }
+      ],
+      "created": "2026-03-29T22:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "All Center",
+      "category": "utility",
+      "tags": [
+        "utility"
+      ],
+      "weight": 0,
+      "holdVariance": 0,
+      "transitionProfile": "linear",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        }
+      ],
+      "created": "2026-03-29T22:00:00.000Z"
+    }
+  ],
   "templates": {}
 }

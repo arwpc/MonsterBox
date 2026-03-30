@@ -1,0 +1,48 @@
+{
+  "jawAnimation": {
+    "enabled": true,
+    "servoPartId": "2",
+    "activeConfigId": "config-1",
+    "configs": [
+      {
+        "id": "config-1",
+        "name": "Default",
+        "sensitivity": 1.5,
+        "smoothing": 0.4,
+        "volumeThreshold": 0.02,
+        "attackTime": 30,
+        "releaseTime": 100,
+        "useBandpassFilter": true,
+        "useAGC": true,
+        "quantizationLevels": 18,
+        "preset": "speech",
+        "minAngle": 0,
+        "maxAngle": 180,
+        "audioLeadTimeMs": 300
+      }
+    ]
+  },
+  "headTracking": {
+    "opencvEnabled": true,
+    "enabled": false,
+    "panServoId": "",
+    "webcamPartId": "4",
+    "centerDeg": 90,
+    "rangeDeg": 120,
+    "invertPan": false,
+    "smoothing": 0.65,
+    "deadzone": 5,
+    "motionThreshold": 44,
+    "minContourArea": 3000,
+    "maxContourArea": 100000,
+    "backgroundLearningRate": 0.013,
+    "noiseReductionKernelSize": 5,
+    "blurSize": 7,
+    "dilateSize": 11,
+    "varThreshold": 20,
+    "targetLockStrength": 9,
+    "confirmFrames": 4,
+    "detectInterval": 5,
+    "detectionMode": "person"
+  }
+}
