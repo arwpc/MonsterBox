@@ -1,0 +1,439 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Body Map — Interactive SVG character silhouette for Manual Controls
+   Halloween-themed animatronic control surface
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Layout ── */
+#mcBodyMapWrap {
+  display: flex;
+  gap: 12px;
+  min-height: 380px;
+}
+
+#mcBodyMapCol {
+  flex: 0 0 auto;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#mcControlCol {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── SVG Container ── */
+#mcBodyMap {
+  width: 200px;
+  height: auto;
+  max-height: 360px;
+}
+
+/* Eerie idle breathing on the whole silhouette */
+#mcBodyMap:not(.mc-no-breathe) {
+  animation: bm-breathe 5s ease-in-out infinite;
+}
+
+@keyframes bm-breathe {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(111, 66, 193, 0.2)); }
+  50%      { filter: drop-shadow(0 0 8px rgba(111, 66, 193, 0.45)); }
+}
+
+/* ── Body Region Fills ── */
+.bm-fill {
+  fill: rgba(111, 66, 193, 0.12);
+  stroke: rgba(111, 66, 193, 0.5);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  transition: fill 0.25s ease, stroke 0.25s ease, filter 0.25s ease;
+  cursor: pointer;
+}
+
+/* Region has parts assigned */
+.bm-region.bm-has-parts .bm-fill {
+  fill: rgba(111, 66, 193, 0.22);
+  stroke: rgba(111, 66, 193, 0.7);
+}
+
+/* Hover */
+.bm-region:hover .bm-fill {
+  fill: rgba(253, 126, 20, 0.2);
+  stroke: #fd7e14;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px rgba(253, 126, 20, 0.4));
+}
+
+/* Selected/Active */
+.bm-region.bm-active .bm-fill {
+  fill: rgba(253, 126, 20, 0.28);
+  stroke: #fd7e14;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 10px rgba(253, 126, 20, 0.6));
+}
+
+/* Empty region (no parts) — dim */
+.bm-region:not(.bm-has-parts) .bm-fill {
+  fill: rgba(50, 50, 60, 0.15);
+  stroke: rgba(100, 100, 110, 0.25);
+  cursor: default;
+}
+.bm-region:not(.bm-has-parts):hover .bm-fill {
+  fill: rgba(50, 50, 60, 0.15);
+  stroke: rgba(100, 100, 110, 0.25);
+  filter: none;
+}
+
+/* ── Part Indicators ── */
+.bm-indicator {
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Servo joint: blue dot */
+.bm-ind-servo {
+  fill: var(--bs-primary, #0d6efd);
+  stroke: rgba(255,255,255,0.6);
+  stroke-width: 1;
+  opacity: 0.85;
+}
+.bm-region:hover .bm-ind-servo,
+.bm-region.bm-active .bm-ind-servo {
+  opacity: 1;
+  stroke: #fff;
+}
+
+/* Linear actuator: amber diamond shape (rendered as rotated rect in JS) */
+.bm-ind-actuator {
+  fill: var(--bs-warning, #ffc107);
+  stroke: rgba(255,255,255,0.5);
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+
+/* Motor: green gear */
+.bm-ind-motor {
+  fill: var(--bs-success, #198754);
+  stroke: rgba(255,255,255,0.5);
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+
+/* Light/LED: glowing circle */
+.bm-ind-light {
+  fill: #ffd700;
+  opacity: 0.9;
+}
+
+.bm-region.bm-has-parts .bm-ind-light {
+  animation: bm-led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes bm-led-pulse {
+  0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 2px #ffd700); }
+  50%      { opacity: 1;   filter: drop-shadow(0 0 8px #ff8c00); }
+}
+
+/* ── Region Labels ── */
+.bm-label {
+  font-size: 7px;
+  fill: rgba(200, 200, 210, 0.6);
+  text-anchor: middle;
+  pointer-events: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.bm-region.bm-has-parts .bm-label {
+  fill: rgba(200, 200, 210, 0.85);
+}
+.bm-region.bm-active .bm-label {
+  fill: #fd7e14;
+}
+
+/* ── Part Count Badge (in SVG) ── */
+.bm-count-bg {
+  fill: rgba(111, 66, 193, 0.8);
+  rx: 5;
+}
+.bm-count-text {
+  font-size: 7px;
+  fill: #fff;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+}
+
+/* ── Peripheral Devices ── */
+#mcPeripherals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(111, 66, 193, 0.2);
+}
+
+.bm-periph {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 16px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  background: rgba(0,0,0,0.2);
+  color: var(--bs-body-color);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.bm-periph:hover {
+  background: rgba(111, 66, 193, 0.15);
+  border-color: rgba(111, 66, 193, 0.5);
+}
+
+.bm-periph.bm-periph-active {
+  background: rgba(253, 126, 20, 0.15);
+  border-color: #fd7e14;
+  box-shadow: 0 0 8px rgba(253, 126, 20, 0.3);
+}
+
+.bm-periph i {
+  font-size: 0.8rem;
+}
+
+.bm-periph-speaker i { color: var(--bs-success, #198754); }
+.bm-periph-microphone i { color: var(--bs-info, #0dcaf0); }
+.bm-periph-webcam i { color: var(--bs-primary, #0d6efd); }
+.bm-periph-sensor i { color: var(--bs-danger, #dc3545); }
+
+/* Sensor radar pulse on the peripheral badge */
+.bm-periph-sensor {
+  position: relative;
+  overflow: visible;
+}
+
+/* ── Control Panel ── */
+#mcControlPanel {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 120px;
+}
+
+#mcControlPanel .mc-ctrl-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--bs-body-color);
+}
+
+#mcControlPanel .mc-ctrl-type {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Part list within a region */
+.bm-part-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bm-part-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: rgba(0,0,0,0.15);
+}
+
+.bm-part-item:hover {
+  background: rgba(111, 66, 193, 0.12);
+  border-color: rgba(111, 66, 193, 0.4);
+}
+
+.bm-part-item.bm-part-selected {
+  background: rgba(253, 126, 20, 0.15);
+  border-color: #fd7e14;
+  box-shadow: 0 0 6px rgba(253, 126, 20, 0.25);
+}
+
+.bm-part-item .bm-part-icon {
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.bm-part-item .bm-part-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bm-part-item .bm-part-badge {
+  font-size: 0.55rem;
+  padding: 1px 5px;
+}
+
+/* ── Hardware Controls (inline in control panel) ── */
+.bm-hw-controls {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.bm-hw-controls .btn {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+}
+
+/* Position slider for servos */
+.bm-position-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(90deg, var(--bs-primary) 0%, var(--bs-warning) 50%, var(--bs-danger) 100%);
+  border-radius: 3px;
+  outline: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.bm-position-slider:hover {
+  opacity: 1;
+}
+.bm-position-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--bs-primary);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+.bm-position-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--bs-primary);
+  cursor: pointer;
+}
+
+/* Position display */
+.bm-pos-display {
+  font-size: 0.7rem;
+  font-family: monospace;
+  text-align: center;
+  margin-top: 2px;
+  color: var(--bs-body-color);
+  opacity: 0.8;
+}
+
+/* ── Quick Actions (Poses & Sounds) ── */
+#mcQuickActions {
+  border-top: 1px solid var(--bs-border-color);
+  padding-top: 8px;
+}
+
+.bm-quick-section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(200,200,210,0.6);
+  margin-bottom: 4px;
+}
+
+.bm-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  margin: 2px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 14px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  background: rgba(0,0,0,0.2);
+  color: var(--bs-body-color);
+  transition: all 0.15s ease;
+}
+.bm-quick-btn:hover {
+  background: rgba(111, 66, 193, 0.15);
+  border-color: rgba(111, 66, 193, 0.5);
+}
+
+.bm-quick-btn.bm-pose-btn i { color: #6f42c1; }
+.bm-quick-btn.bm-sound-btn i { color: var(--bs-info, #0dcaf0); }
+
+/* Fire flash on quick action */
+.bm-quick-btn.bm-fired {
+  animation: bm-quick-flash 0.35s ease-out;
+}
+@keyframes bm-quick-flash {
+  0% { box-shadow: 0 0 0 3px var(--bs-success), 0 0 12px rgba(var(--bs-success-rgb), 0.5); }
+  100% { box-shadow: none; }
+}
+
+/* ── Empty state ── */
+.bm-empty-hint {
+  text-align: center;
+  padding: 24px 12px;
+  color: rgba(200,200,210,0.5);
+  font-size: 0.8rem;
+}
+.bm-empty-hint i {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 576px) {
+  #mcBodyMapWrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  #mcBodyMapCol {
+    width: 160px;
+  }
+  #mcBodyMap {
+    width: 160px;
+  }
+  #mcControlCol {
+    width: 100%;
+  }
+}
+
+/* ── Tooltip ── */
+.bm-tooltip {
+  position: fixed;
+  background: rgba(13, 17, 23, 0.95);
+  color: #e6edf3;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  pointer-events: none;
+  display: none;
+  z-index: 1060;
+  border: 1px solid rgba(111, 66, 193, 0.4);
+  box-shadow: 0 0 8px rgba(111, 66, 193, 0.2);
+  white-space: nowrap;
+}

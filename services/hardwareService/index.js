@@ -1673,9 +1673,16 @@ export async function batchMoveServos(commands) {
     const pcaPairs = [];
     const fallbackCmds = [];
 
+    // Part types that support moveToAngle
+    const servoTypes = new Set(['servo', 'continuous_servo', 'continuous-servo']);
+
     for (const cmd of commands) {
         const part = parts.find(p => String(p.id) === String(cmd.partId));
         if (!part) continue;
+
+        // Skip non-servo parts — they don't support moveToAngle
+        const partType = (part.type || '').replace(/-/g, '_');
+        if (!servoTypes.has(partType) && !servoTypes.has(part.type)) continue;
 
         const partCfg = part.config || {};
         const isPCA = partCfg.controllerType === 'pca9685' || part.usePCA9685 === true ||

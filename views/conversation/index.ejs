@@ -2,7 +2,7 @@
   try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
 </script>
 
-<link rel="stylesheet" href="/css/manual-controls.css">
+<link rel="stylesheet" href="/css/body-map.css">
 <link rel="stylesheet" href="/css/lurk-mode.css">
 
 <div class="container-fluid px-2 px-md-3">
@@ -231,31 +231,16 @@
       </h2>
       <div id="collapseManual" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2" id="manual-controls-card">
-          <div class="d-flex gap-2 align-items-center mb-2">
-            <div class="input-group input-group-sm" style="width: auto;">
-              <select id="mcLayoutSelect" class="form-select form-select-sm" style="width:140px; font-size:0.75rem;">
-                <option value="Default">Default</option>
-              </select>
-              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutNewBtn" title="New layout"><i class="bi bi-plus"></i></button>
-              <button class="btn btn-outline-secondary btn-sm" id="mcLayoutRenameBtn" title="Rename layout"><i class="bi bi-pencil-square"></i></button>
-              <button class="btn btn-outline-danger btn-sm" id="mcLayoutDeleteBtn" title="Delete layout"><i class="bi bi-trash"></i></button>
+          <div id="mcBodyMapWrap">
+            <!-- Left: SVG body silhouette + peripherals -->
+            <div id="mcBodyMapCol">
+              <svg id="mcBodyMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 340" style="width:200px;height:auto;"></svg>
+              <div id="mcPeripherals"></div>
             </div>
-            <button class="btn btn-sm btn-outline-warning" id="mcEditToggle" title="Toggle edit mode"><i class="bi bi-pencil"></i> Edit</button>
-          </div>
-          <div style="position:relative;">
-            <div id="mcDirectionalControls" class="d-none position-absolute bg-dark border rounded p-2 shadow"
-                 style="top:16px; right:16px; z-index:20; min-width:200px;">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong class="small text-truncate" id="mcSelectedPartName">--</strong>
-                <button class="btn-close btn-close-white btn-sm" id="mcDeselectBtn" title="Deselect"></button>
-              </div>
-              <div id="mcControlsBody"></div>
-              <div class="small text-muted mt-1" id="mcControlStatus"></div>
-            </div>
-            <div id="mcCanvas"></div>
-            <div id="mcDrawer" class="mc-drawer d-none">
-              <small class="text-muted d-block mb-1">Click to add items to the canvas:</small>
-              <div id="mcDrawerItems"></div>
+            <!-- Right: control panel + quick actions -->
+            <div id="mcControlCol">
+              <div id="mcControlPanel"></div>
+              <div id="mcQuickActions"></div>
             </div>
           </div>
         </div>
@@ -942,7 +927,7 @@
       await loadPoses();
 
       if (typeof ManualControls !== 'undefined') {
-        await ManualControls.init({ characterId: currentCharacterId, canvasId: 'mcCanvas' });
+        await ManualControls.init({ characterId: currentCharacterId });
       }
 
       // Initialize Bootstrap tooltips

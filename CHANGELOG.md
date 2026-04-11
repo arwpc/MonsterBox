@@ -2,6 +2,23 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.0.1] - 2026-04-11 — Body Map Manual Controls, System Page Fixes
+
+### Interactive Body Map for Manual Controls
+- **SVG character silhouette** replaces drag-and-drop canvas — parts auto-map to body regions (head, arms, hands, torso, waist, legs) by analyzing part names
+- **Visual part indicators** — servo joints (blue dots), actuators (amber diamonds), motors (green), lights (pulsing gold), all rendered as SVG elements on the body
+- **Peripheral device bar** — speakers, microphones, webcams, and motion sensors displayed as clickable badges below the silhouette
+- **Contextual hardware controls** — click a body region to see its parts, click a part to get type-specific controls: position slider + goto buttons for servos/actuators, forward/reverse/stop for motors, toggle for lights
+- **Quick action buttons** — poses and sounds as one-click pill buttons below the control panel
+- **Halloween aesthetic** — eerie breathing animation on the silhouette, orange glow on hover/selection, pulsing LED indicators, dark spooky theme integration
+- **Zero configuration** — no manual layout setup required, parts auto-arrange by name intelligence
+- **New CSS** — `public/css/body-map.css` with SVG styles, animations, responsive layout
+
+### System Page Fixes
+- **Fixed Resources & Movement tabs showing no data** — all 6 `apiGet` callbacks had wrong signature (missing `err` parameter), silently receiving `null` instead of API data
+- **Moved Live Performance gauges above Theme Gallery** in the Overview tab for better visibility
+- **Fixed batchMoveServos motion_sensor error** — idle loop was trying `moveToAngle` on non-servo parts; added type filter to only process servo-compatible parts
+
 ## [8.0.0] - 2026-03-29 — Mina 100%, Sir Dragomir Online, Orchestration Fixes, Multi-Node Deployment
 
 ### Sir Dragomir Deployed (Fresh Install)

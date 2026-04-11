@@ -88,28 +88,6 @@
         </div>
       </div>
 
-      <!-- Theme Gallery -->
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
-            <div>
-              <span class="badge bg-secondary me-2" id="themePreviewLabel">Previewing: --</span>
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview">
-                <i class="bi bi-arrow-counterclockwise"></i> Reset
-              </button>
-              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme">
-                <i class="bi bi-check-circle"></i> Apply Theme
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div id="themeMessage" class="mb-3"></div>
-            <div class="row g-3" id="themeGallery"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Live Gauges -->
       <div class="col-12">
         <div class="card">
@@ -148,6 +126,28 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Gallery -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
+            <div>
+              <span class="badge bg-secondary me-2" id="themePreviewLabel">Previewing: --</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme">
+                <i class="bi bi-check-circle"></i> Apply Theme
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="themeMessage" class="mb-3"></div>
+            <div class="row g-3" id="themeGallery"></div>
           </div>
         </div>
       </div>
@@ -1411,8 +1411,8 @@
   var resRefreshTimer = null;
 
   function loadResourceStatus() {
-    apiGet('/api/resource/status', function (data) {
-      if (!data || !data.success) return;
+    apiGet('/api/resource/status', function (err, data) {
+      if (err || !data || !data.success) return;
       var s = data.status;
       var el = function (id) { return document.getElementById(id); };
       if (el('resPid')) el('resPid').textContent = s.pid;
@@ -1427,8 +1427,8 @@
       if (el('resCpuCores')) el('resCpuCores').textContent = s.cpu.cores;
     });
 
-    apiGet('/api/resource/memory', function (data) {
-      if (!data || !data.success) return;
+    apiGet('/api/resource/memory', function (err, data) {
+      if (err || !data || !data.success) return;
       var m = data.memory;
       var el = function (id) { return document.getElementById(id); };
       if (el('resHeapUsed')) el('resHeapUsed').textContent = m.heapUsedMB + ' MB';
@@ -1448,7 +1448,7 @@
       }
     });
 
-    apiGet('/api/resource/health', function (data) {
+    apiGet('/api/resource/health', function (err, data) {
       var body = document.getElementById('resHealthBody');
       if (!body) return;
       if (!data || !data.success || !data.health) {
@@ -1493,8 +1493,8 @@
     var periodSel = document.getElementById('mvtPeriod');
     var period = periodSel ? periodSel.value : '3600000';
 
-    apiGet('/api/movement/telemetry?period=' + period, function (data) {
-      if (!data || !data.success) return;
+    apiGet('/api/movement/telemetry?period=' + period, function (err, data) {
+      if (err || !data || !data.success) return;
       var t = data.telemetry || {};
       var el = function (id) { return document.getElementById(id); };
       if (el('mvtLatencyAvg')) el('mvtLatencyAvg').textContent = t.latency && t.latency.avg != null ? t.latency.avg.toFixed(1) + ' ms' : '—';
@@ -1503,7 +1503,7 @@
       if (el('mvtCmdRate')) el('mvtCmdRate').textContent = t.commandRate && t.commandRate.avg != null ? t.commandRate.avg.toFixed(1) : '—';
     });
 
-    apiGet('/api/movement/claims', function (data) {
+    apiGet('/api/movement/claims', function (err, data) {
       var el = document.getElementById('mvtClaims');
       if (!el) return;
       if (!data || !data.success || !data.claims || Object.keys(data.claims).length === 0) {
@@ -1521,8 +1521,8 @@
       el.innerHTML = html;
     });
 
-    apiGet('/api/movement/idle/status', function (data) {
-      if (!data || !data.success) return;
+    apiGet('/api/movement/idle/status', function (err, data) {
+      if (err || !data || !data.success) return;
       var s = data.status || {};
       var el = function (id) { return document.getElementById(id); };
       var statusBadge = el('mvtIdleStatus');
