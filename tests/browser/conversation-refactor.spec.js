@@ -43,15 +43,15 @@ test.describe('Conversation Control - Accordion Layout', () => {
     await expect(aiToggle).toBeVisible();
     await expect(aiToggle).toHaveAttribute('type', 'checkbox');
 
-    // Chat input and send button
+    // Unified chat input and send button (handles both Ask AI and Say This modes)
     await expect(page.locator('#chatInput')).toBeVisible();
     await expect(page.locator('#chatSendBtn')).toBeVisible();
 
     // VU meter (label badge is always visible; bar itself starts at 0% width)
     await expect(page.locator('#chatVULabel')).toBeVisible();
 
-    // Audio controls
-    await expect(page.locator('#chatMuteSpeaker')).toBeVisible();
+    // Audio controls — mute is in superpowers strip, browser spk/mic in chat panel
+    await expect(page.locator('#speakerMuteToggle')).toBeVisible();
     await expect(page.locator('#chatBrowserSpeaker')).toBeVisible();
     await expect(page.locator('#chatBrowserMic')).toBeVisible();
 
@@ -59,17 +59,15 @@ test.describe('Conversation Control - Accordion Layout', () => {
     await expect(page.locator('#chatSpeakerSelect')).toBeVisible();
   });
 
-  test('should have Make Character Say inline in superpowers strip', async ({ page }) => {
-    // Say controls are inline in the monster-features strip with data-panel-id="say"
-    const sayPanel = page.locator('[data-panel-id="say"]');
-    await expect(sayPanel).toBeVisible();
+  test('should have unified input with Ask AI / Say This modes', async ({ page }) => {
+    // Unified input replaces separate Chat and Say panels
+    // The AI toggle switches between Ask AI (on) and Say This (off) modes
+    const aiToggle = page.locator('#chatAiOnToggle');
+    await expect(aiToggle).toBeVisible();
 
-    // Check for speaker select
-    await expect(page.locator('#convSpeakerSelect')).toBeVisible();
-
-    // Check for input and button
-    await expect(page.locator('#sayInput')).toBeVisible();
-    await expect(page.locator('#sayBtn')).toBeVisible();
+    // Chat input serves both modes
+    await expect(page.locator('#chatInput')).toBeVisible();
+    await expect(page.locator('#chatSendBtn')).toBeVisible();
   });
 
   test('should have Monster Features panel', async ({ page }) => {
@@ -119,32 +117,37 @@ test.describe('Conversation Control - Accordion Layout', () => {
   });
 });
 
-test.describe('Conversation Control - Make Character Say', () => {
+test.describe('Conversation Control - Unified Input (Say This mode)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
     await page.waitForLoadState('networkidle');
   });
 
-  test('should send text and get response', async ({ page }) => {
-    const input = page.locator('#sayInput');
-    const button = page.locator('#sayBtn');
-    const status = page.locator('#sayStatus');
+  test('should send text via unified input in Say This mode', async ({ page }) => {
+    // Ensure AI toggle is OFF (Say This mode)
+    const aiToggle = page.locator('#chatAiOnToggle');
+    if (await aiToggle.isChecked()) {
+      await aiToggle.click();
+      await page.waitForTimeout(300);
+    }
+
+    const input = page.locator('#chatInput');
+    const button = page.locator('#chatSendBtn');
 
     // Type test message
     await input.fill('Test message from Playwright');
 
-    // Click Say button
+    // Click Send button
     await button.click();
 
     // Wait for response
     await page.waitForTimeout(3000);
 
-    // Status may or may not have text depending on TTS config
     // Just verify no error was thrown
   });
 
-  test('should show warning for empty text', async ({ page }) => {
-    const button = page.locator('#sayBtn');
+  test('should handle empty text without crashing', async ({ page }) => {
+    const button = page.locator('#chatSendBtn');
 
     // Click without entering text - just verify it doesn't crash
     await button.click();

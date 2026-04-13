@@ -306,14 +306,14 @@ test.describe('1. Dashboard — All Panels', () => {
     await snap(page, '1.7-monster-features');
   });
 
-  test('1.8 Chat panel', async ({ page }) => {
+  test('1.8 Chat panel (unified input)', async ({ page }) => {
     // Chat log
     await expect(page.locator('#chatLog')).toBeVisible();
 
-    // AI on toggle
+    // AI on toggle (switches between Ask AI and Say This modes)
     await expect(page.locator('#chatAiOnToggle')).toBeVisible();
 
-    // Chat input
+    // Unified chat input
     const chatInput = page.locator('#chatInput');
     await expect(chatInput).toBeVisible();
     await chatInput.fill('Test message from exhaustive testing');
@@ -326,8 +326,8 @@ test.describe('1. Dashboard — All Panels', () => {
     // Speaker select
     await safeSelect(page, '#chatSpeakerSelect', 'Chat speaker select');
 
-    // Audio control buttons
-    await expect(page.locator('#chatMuteSpeaker')).toBeVisible();
+    // Audio controls — mute is in superpowers strip, browser spk/mic in chat panel
+    await expect(page.locator('#speakerMuteToggle')).toBeVisible();
     await expect(page.locator('#chatBrowserSpeaker')).toBeVisible();
     await expect(page.locator('#chatBrowserMic')).toBeVisible();
 
@@ -340,26 +340,30 @@ test.describe('1. Dashboard — All Panels', () => {
     await snap(page, '1.8-chat-panel');
   });
 
-  test('1.9 Say panel', async ({ page }) => {
-    // Say input
-    const sayInput = page.locator('#sayInput');
-    await expect(sayInput).toBeVisible();
-    await sayInput.fill('Test speech from exhaustive testing');
+  test('1.9 Say This mode (via unified input)', async ({ page }) => {
+    // Ensure AI toggle is OFF (Say This mode)
+    const aiToggle = page.locator('#chatAiOnToggle');
+    if (await aiToggle.isChecked()) {
+      await aiToggle.click();
+      await page.waitForTimeout(300);
+    }
+
+    // Use unified chat input in Say This mode
+    const chatInput = page.locator('#chatInput');
+    await expect(chatInput).toBeVisible();
+    await chatInput.fill('Test speech from exhaustive testing');
     await page.waitForTimeout(SLOW);
 
-    // Speaker select
-    await safeSelect(page, '#convSpeakerSelect', 'Say speaker select');
-
-    // Say button - click it to test TTS
-    const sayBtn = page.locator('#sayBtn');
-    await expect(sayBtn).toBeVisible();
-    await sayBtn.click();
+    // Send button triggers TTS in Say This mode
+    const sendBtn = page.locator('#chatSendBtn');
+    await expect(sendBtn).toBeVisible();
+    await sendBtn.click();
     await page.waitForTimeout(1000);
 
     // Clear
-    await sayInput.fill('');
+    await chatInput.fill('');
 
-    await snap(page, '1.9-say-panel');
+    await snap(page, '1.9-say-this-mode');
   });
 
   test('1.10 Webcam panel', async ({ page }) => {
