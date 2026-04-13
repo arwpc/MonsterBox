@@ -6,6 +6,7 @@ import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
 import { getCalibrationStore } from './store.js';
 import { loadParts } from '../../controllers/partsController.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
+import hardwareService from '../../services/hardwareService/index.js';
 
 const router = express.Router();
 const store = getCalibrationStore();
