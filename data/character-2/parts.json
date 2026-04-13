@@ -22,7 +22,7 @@
     "name": "Neck",
     "type": "servo",
     "pin": null,
-    "description": "Head/neck servo for turning",
+    "description": "Head/neck servo for turning — pan servo for head tracking",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -33,7 +33,7 @@
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-03-28T23:00:00.000Z"
+    "updated": "2026-04-13T17:00:00.000Z"
   },
   {
     "id": "3",
@@ -62,10 +62,12 @@
     "config": {
       "controllerType": "pca9685",
       "address": 64,
-      "channel": 0
+      "channel": 0,
+      "brightness": 100
     },
     "created": "2026-03-28T23:00:00.000Z",
     "enabled": true,
+    "modelId": "relay_aceirmc_3v_1ch",
     "updated": "2026-03-28T23:00:00.000Z"
   },
   {
@@ -125,7 +127,7 @@
         "trackingDeadzone": 8
       },
       "headTracking": {
-        "panServoId": "",
+        "panServoId": "2",
         "rangeDeg": 90,
         "smoothing": 0.35
       }
