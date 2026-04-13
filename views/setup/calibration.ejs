@@ -2465,34 +2465,20 @@
 
         const spd = () => parseInt(document.getElementById('laSpd').value || '90', 10);
         const dur = () => parseInt(document.getElementById('laDur').value || '1500', 10);
+        // Extend/Retract use jog-raw — NO position limits, NO clamping.
+        // This lets you find the true physical range before setting Min/Max.
         el.querySelector('#extendBtn').addEventListener('click', async () => {
           const st = document.getElementById('ctrlStatus');
           try {
-            if (window && window.MB_TEST_MODE) {
-              if (st) st.textContent = 'Done';
-              const d = 2000;
-              setTimeout(() => { if (st) st.textContent = ''; }, d);
-              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() })
-              }).catch(() => { });
-              return;
-            }
-            if (st) st.textContent = 'Extending…';
-            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+            if (st) st.textContent = 'Extending… (no limits)';
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/jog-raw`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ delta: 0.1, speedPct: spd(), durationMs: dur() })
+              body: JSON.stringify({ direction: 'extend', speedPct: spd(), durationMs: dur() })
             });
             const data = await response.json();
-            if (st) st.textContent = 'Done';
-            if (data.currentP != null) {
-              updateCurrentPositionDisplay(data.currentP);
-              syncLASlider(data.currentP);
-            }
-            const d = 800;
-            setTimeout(() => { if (st) st.textContent = ''; }, d);
+            if (st) st.textContent = data.success ? 'Done' : ('Failed: ' + (data.error || 'unknown'));
+            setTimeout(() => { if (st) st.textContent = ''; }, 800);
           } catch (e) {
             if (st) st.textContent = 'Failed';
           }
@@ -2500,31 +2486,15 @@
         el.querySelector('#retractBtn').addEventListener('click', async () => {
           const st = document.getElementById('ctrlStatus');
           try {
-            if (window && window.MB_TEST_MODE) {
-              if (st) st.textContent = 'Done';
-              const d = 2000;
-              setTimeout(() => { if (st) st.textContent = ''; }, d);
-              fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() })
-              }).catch(() => { });
-              return;
-            }
-            if (st) st.textContent = 'Retracting…';
-            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/nudge`, {
+            if (st) st.textContent = 'Retracting… (no limits)';
+            const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/jog-raw`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ delta: -0.1, speedPct: spd(), durationMs: dur() })
+              body: JSON.stringify({ direction: 'retract', speedPct: spd(), durationMs: dur() })
             });
             const data = await response.json();
-            if (st) st.textContent = 'Done';
-            if (data.currentP != null) {
-              updateCurrentPositionDisplay(data.currentP);
-              syncLASlider(data.currentP);
-            }
-            const d = 800;
-            setTimeout(() => { if (st) st.textContent = ''; }, d);
+            if (st) st.textContent = data.success ? 'Done' : ('Failed: ' + (data.error || 'unknown'));
+            setTimeout(() => { if (st) st.textContent = ''; }, 800);
           } catch (e) {
             if (st) st.textContent = 'Failed';
           }
