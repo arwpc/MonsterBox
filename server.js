@@ -520,6 +520,16 @@ app.get('/setup', (req, res) => {
     });
 });
 
+// UX design-system reference — dev/internal only, not in main nav.
+// See docs/UX_REDESIGN_PLAN.md (Phase 2).
+app.get('/setup/style-guide', (req, res) => {
+    res.renderWithLayout('setup/style-guide', {
+        title: 'Style Guide - MonsterBox',
+        page: 'setup',
+        currentCharacter: (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null
+    });
+});
+
 // Recover gracefully from JSON parse errors on parts creation (common in CI when headers mismatch)
 // If body-parser failed, attempt to parse as URL-encoded or loose JSON and delegate to controller
 app.use(async (err, req, res, next) => {

@@ -1,0 +1,352 @@
+/* ==========================================================================
+   MonsterBox Design Tokens — Phase 2 Foundation
+   --------------------------------------------------------------------------
+   Single source of truth for colors, typography, spacing, radii, shadows,
+   motion, and z-index. Every component MUST reference these tokens — no
+   hard-coded colors, pixels, or font stacks in components.css or page CSS.
+
+   Loaded globally via views/layouts/master.ejs (before all other CSS).
+
+   Three curated themes:
+     - haunted-console  (default dark, Halloween green-on-black)
+     - cold-crypt       (dark, cyan/violet)
+     - bright-ops       (light, daylight setup work)
+
+   Theme is selected by the `data-mb-theme` attribute on <html> (set by
+   master.ejs from config.theme). `data-bs-theme` stays synchronized so
+   Bootstrap utility classes keep working.
+   ========================================================================== */
+
+/* ---------- Font imports (single location — removed from main.css/input.css in Phase 4) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap');
+
+/* ==========================================================================
+   Default theme: Haunted Console
+   ========================================================================== */
+:root,
+[data-mb-theme="haunted-console"],
+[data-mb-theme="default-dark"] /* legacy alias */ {
+  /* --- Surfaces (layered from deepest to brightest) --- */
+  --mb-bg-0: #07080a;          /* page background — deep ink */
+  --mb-bg-1: #101217;          /* panel surface */
+  --mb-bg-2: #1a1d24;          /* elevated panel / card */
+  --mb-bg-3: #242833;          /* modal / popover */
+  --mb-bg-hover: #2d3340;      /* hover state for interactive surfaces */
+
+  /* --- Foregrounds --- */
+  --mb-fg-primary: #e8f4ea;    /* main text — bone white */
+  --mb-fg-secondary: #a8b4aa;  /* secondary text */
+  --mb-fg-muted: #667066;      /* placeholders, disabled */
+  --mb-fg-on-accent: #07080a;  /* text on a colored fill */
+
+  /* --- Accents --- */
+  --mb-accent-poison: #39ff6a;   /* primary action — radioactive green */
+  --mb-accent-poison-dim: #2bc854;
+  --mb-accent-blood: #c8232c;    /* destructive / emergency */
+  --mb-accent-blood-dim: #941820;
+  --mb-accent-amber: #ffb347;    /* warning / caution lamp */
+  --mb-accent-amber-dim: #c88432;
+  --mb-accent-bone: #f1e6c7;     /* highlights / muted accent */
+  --mb-accent-violet: #7b3ff2;   /* AI / supernatural */
+  --mb-accent-violet-dim: #5a2db0;
+  --mb-accent-cyan: #42e2f5;     /* sensor / telemetry */
+  --mb-accent-cyan-dim: #2ba8b8;
+
+  /* --- Semantic --- */
+  --mb-primary: var(--mb-accent-poison);
+  --mb-primary-dim: var(--mb-accent-poison-dim);
+  --mb-success: var(--mb-accent-poison);
+  --mb-warning: var(--mb-accent-amber);
+  --mb-danger: var(--mb-accent-blood);
+  --mb-info: var(--mb-accent-cyan);
+  --mb-ai: var(--mb-accent-violet);
+
+  /* --- Borders --- */
+  --mb-border-subtle: rgba(232, 244, 234, 0.08);
+  --mb-border-default: rgba(232, 244, 234, 0.16);
+  --mb-border-strong: rgba(232, 244, 234, 0.32);
+  --mb-border-accent: var(--mb-accent-poison);
+
+  /* --- Selection / focus --- */
+  --mb-selection-bg: rgba(57, 255, 106, 0.24);
+  --mb-focus-ring: 0 0 0 3px rgba(57, 255, 106, 0.35);
+
+  /* --- Glow halos (Halloween flavor) --- */
+  --mb-glow-poison: 0 0 12px rgba(57, 255, 106, 0.45);
+  --mb-glow-blood: 0 0 12px rgba(200, 35, 44, 0.45);
+  --mb-glow-violet: 0 0 12px rgba(123, 63, 242, 0.45);
+  --mb-glow-cyan: 0 0 12px rgba(66, 226, 245, 0.45);
+
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Theme: Cold Crypt (cyan / violet, still dark)
+   ========================================================================== */
+[data-mb-theme="cold-crypt"] {
+  --mb-bg-0: #070910;
+  --mb-bg-1: #0f1420;
+  --mb-bg-2: #182033;
+  --mb-bg-3: #222c44;
+  --mb-bg-hover: #2c3852;
+
+  --mb-fg-primary: #e2f2ff;
+  --mb-fg-secondary: #97b0c8;
+  --mb-fg-muted: #5a6a80;
+  --mb-fg-on-accent: #07090f;
+
+  --mb-accent-poison: #38e2d4;   /* swap "primary" to cyan-teal */
+  --mb-accent-poison-dim: #26a79b;
+  --mb-accent-blood: #e24870;
+  --mb-accent-blood-dim: #a8304f;
+  --mb-accent-amber: #f6c26b;
+  --mb-accent-amber-dim: #b88a3f;
+  --mb-accent-bone: #dde6f5;
+  --mb-accent-violet: #9a6bff;
+  --mb-accent-violet-dim: #6c43c8;
+  --mb-accent-cyan: #38e2d4;
+  --mb-accent-cyan-dim: #26a79b;
+
+  --mb-primary: var(--mb-accent-violet);
+  --mb-primary-dim: var(--mb-accent-violet-dim);
+  --mb-success: var(--mb-accent-cyan);
+  --mb-warning: var(--mb-accent-amber);
+  --mb-danger: var(--mb-accent-blood);
+  --mb-info: var(--mb-accent-cyan);
+  --mb-ai: var(--mb-accent-violet);
+
+  --mb-border-subtle: rgba(226, 242, 255, 0.08);
+  --mb-border-default: rgba(226, 242, 255, 0.16);
+  --mb-border-strong: rgba(226, 242, 255, 0.32);
+  --mb-border-accent: var(--mb-accent-violet);
+
+  --mb-selection-bg: rgba(154, 107, 255, 0.24);
+  --mb-focus-ring: 0 0 0 3px rgba(154, 107, 255, 0.35);
+
+  --mb-glow-poison: 0 0 12px rgba(56, 226, 212, 0.45);
+  --mb-glow-blood: 0 0 12px rgba(226, 72, 112, 0.45);
+  --mb-glow-violet: 0 0 12px rgba(154, 107, 255, 0.45);
+  --mb-glow-cyan: 0 0 12px rgba(56, 226, 212, 0.45);
+
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Theme: Bright Ops (light, daylight setup work)
+   ========================================================================== */
+[data-mb-theme="bright-ops"],
+[data-mb-theme="default-light"] /* legacy alias */ {
+  --mb-bg-0: #f4f5f2;
+  --mb-bg-1: #ffffff;
+  --mb-bg-2: #eceee7;
+  --mb-bg-3: #e1e4dc;
+  --mb-bg-hover: #d6dace;
+
+  --mb-fg-primary: #171a14;
+  --mb-fg-secondary: #4a5248;
+  --mb-fg-muted: #8a9088;
+  --mb-fg-on-accent: #ffffff;
+
+  --mb-accent-poison: #1f8f3c;   /* darker, legible green for light bg */
+  --mb-accent-poison-dim: #14682a;
+  --mb-accent-blood: #9c1a22;
+  --mb-accent-blood-dim: #7a141b;
+  --mb-accent-amber: #b8741a;
+  --mb-accent-amber-dim: #8b5710;
+  --mb-accent-bone: #6c614a;
+  --mb-accent-violet: #5225b5;
+  --mb-accent-violet-dim: #3a1782;
+  --mb-accent-cyan: #1680a0;
+  --mb-accent-cyan-dim: #105a73;
+
+  --mb-primary: var(--mb-accent-poison);
+  --mb-primary-dim: var(--mb-accent-poison-dim);
+  --mb-success: var(--mb-accent-poison);
+  --mb-warning: var(--mb-accent-amber);
+  --mb-danger: var(--mb-accent-blood);
+  --mb-info: var(--mb-accent-cyan);
+  --mb-ai: var(--mb-accent-violet);
+
+  --mb-border-subtle: rgba(23, 26, 20, 0.08);
+  --mb-border-default: rgba(23, 26, 20, 0.16);
+  --mb-border-strong: rgba(23, 26, 20, 0.32);
+  --mb-border-accent: var(--mb-accent-poison);
+
+  --mb-selection-bg: rgba(31, 143, 60, 0.22);
+  --mb-focus-ring: 0 0 0 3px rgba(31, 143, 60, 0.35);
+
+  /* Subtler glows on a light background */
+  --mb-glow-poison: 0 0 6px rgba(31, 143, 60, 0.35);
+  --mb-glow-blood: 0 0 6px rgba(156, 26, 34, 0.35);
+  --mb-glow-violet: 0 0 6px rgba(82, 37, 181, 0.35);
+  --mb-glow-cyan: 0 0 6px rgba(22, 128, 160, 0.35);
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   Typography — theme-independent
+   ========================================================================== */
+:root {
+  --mb-font-display: 'Creepster', 'Chiller', cursive;
+  --mb-font-mono: 'VT323', 'Courier New', ui-monospace, monospace;
+  --mb-font-retro: 'Press Start 2P', 'VT323', monospace;
+  --mb-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Type scale (rem) */
+  --mb-text-xs:   0.75rem;   /* 12px */
+  --mb-text-sm:   0.875rem;  /* 14px */
+  --mb-text-base: 1rem;      /* 16px */
+  --mb-text-lg:   1.125rem;  /* 18px */
+  --mb-text-xl:   1.375rem;  /* 22px */
+  --mb-text-2xl:  1.75rem;   /* 28px */
+  --mb-text-3xl:  2.5rem;    /* 40px */
+  --mb-text-4xl:  3.5rem;    /* 56px — display / hero */
+
+  /* Line heights */
+  --mb-leading-tight: 1.2;
+  --mb-leading-normal: 1.45;
+  --mb-leading-loose: 1.7;
+
+  /* Letter spacing */
+  --mb-tracking-tight: -0.01em;
+  --mb-tracking-normal: 0;
+  --mb-tracking-wide: 0.04em;
+  --mb-tracking-wider: 0.12em;
+
+  /* Font weights */
+  --mb-weight-regular: 400;
+  --mb-weight-medium: 500;
+  --mb-weight-bold: 700;
+}
+
+/* ==========================================================================
+   Spacing (4px base) — theme-independent
+   ========================================================================== */
+:root {
+  --mb-space-0:  0;
+  --mb-space-1:  0.25rem;  /* 4 */
+  --mb-space-2:  0.5rem;   /* 8 */
+  --mb-space-3:  0.75rem;  /* 12 */
+  --mb-space-4:  1rem;     /* 16 */
+  --mb-space-5:  1.25rem;  /* 20 */
+  --mb-space-6:  1.5rem;   /* 24 */
+  --mb-space-7:  2rem;     /* 32 */
+  --mb-space-8:  2.5rem;   /* 40 */
+  --mb-space-9:  3.5rem;   /* 56 */
+  --mb-space-10: 4.5rem;   /* 72 */
+}
+
+/* ==========================================================================
+   Radii, shadows, motion, z-index
+   ========================================================================== */
+:root {
+  --mb-radius-xs: 2px;
+  --mb-radius-sm: 4px;
+  --mb-radius-md: 8px;
+  --mb-radius-lg: 14px;
+  --mb-radius-xl: 22px;
+  --mb-radius-pill: 999px;
+
+  --mb-shadow-panel: 0 1px 2px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.35);
+  --mb-shadow-panel-strong: 0 2px 4px rgba(0,0,0,0.35), 0 10px 32px rgba(0,0,0,0.55);
+  --mb-shadow-modal: 0 8px 24px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.65);
+  --mb-shadow-inset: inset 0 1px 2px rgba(0,0,0,0.35);
+
+  --mb-dur-fast: 120ms;
+  --mb-dur-base: 200ms;
+  --mb-dur-slow: 400ms;
+  --mb-ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --mb-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --mb-ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --mb-z-base: 0;
+  --mb-z-sticky: 100;
+  --mb-z-fixed: 200;
+  --mb-z-overlay: 900;
+  --mb-z-modal: 1050;
+  --mb-z-popover: 1060;
+  --mb-z-tooltip: 1080;
+  --mb-z-toast: 1100;
+
+  /* Responsive breakpoints (reference — use via media queries) */
+  --mb-bp-sm: 480px;
+  --mb-bp-md: 768px;
+  --mb-bp-lg: 1024px;
+  --mb-bp-xl: 1440px;
+}
+
+/* ==========================================================================
+   Global base styles — minimal, theme-driven
+   ========================================================================== */
+html {
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  font-family: var(--mb-font-ui);
+  font-size: 16px;
+  line-height: var(--mb-leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+}
+
+::selection {
+  background: var(--mb-selection-bg);
+  color: var(--mb-fg-primary);
+}
+
+/* Scrollbar (dark themes only; bright-ops inherits browser default) */
+[data-mb-theme="haunted-console"] ::-webkit-scrollbar,
+[data-mb-theme="default-dark"] ::-webkit-scrollbar,
+[data-mb-theme="cold-crypt"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+
+[data-mb-theme="haunted-console"] ::-webkit-scrollbar-track,
+[data-mb-theme="default-dark"] ::-webkit-scrollbar-track,
+[data-mb-theme="cold-crypt"] ::-webkit-scrollbar-track { background: var(--mb-bg-1); }
+
+[data-mb-theme="haunted-console"] ::-webkit-scrollbar-thumb,
+[data-mb-theme="default-dark"] ::-webkit-scrollbar-thumb,
+[data-mb-theme="cold-crypt"] ::-webkit-scrollbar-thumb {
+  background: var(--mb-bg-3);
+  border-radius: var(--mb-radius-pill);
+}
+
+[data-mb-theme="haunted-console"] ::-webkit-scrollbar-thumb:hover,
+[data-mb-theme="default-dark"] ::-webkit-scrollbar-thumb:hover,
+[data-mb-theme="cold-crypt"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--mb-accent-poison-dim);
+}
+
+/* ==========================================================================
+   Shared animation keyframes (replace per-page duplicates in Phase 4)
+   ========================================================================== */
+@keyframes mb-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+@keyframes mb-glow-pulse {
+  0%, 100% { box-shadow: var(--mb-glow-poison); }
+  50%      { box-shadow: 0 0 22px rgba(57, 255, 106, 0.7); }
+}
+
+@keyframes mb-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.55; }
+}
+
+@keyframes mb-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

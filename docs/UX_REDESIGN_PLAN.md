@@ -161,6 +161,19 @@ Full inventory lives in `docs/UX_AUDIT_PHASE1.md`.
 
 | Date | Phase | Commit | Notes |
 |------|-------|--------|-------|
-| 2026-04-14 | Plan + Phase 1 | _pending_ | Initial audit and master plan |
+| 2026-04-14 | Plan + Phase 1 | f8f677db | Initial audit and master plan |
+| 2026-04-14 | Phase 2 decisions | — | Answers to open questions (below) |
 
 Update this log after every phase completion.
+
+---
+
+## Phase 2 Decisions (user, 2026-04-14)
+
+1. **Palette:** Shift neon `#00ff00` → warmer poison-green `#39ff6a`. Approved.
+2. **Themes:** Curate to 3 — default `haunted-console` (green-on-black Halloween), `cold-crypt` (cyan/violet), `bright-ops` (light mode for daylight setup work). Retire Bootswatch options from the UI picker (keep vendor files for rollback).
+3. **Character portraits:** No high-res assets exist; Phase 3 will generate placeholder hero imagery.
+4. **Kiosk mode:** Not needed. Halloween-night users will run from desktop browser or mobile phone — **responsive design (phone width) is a hard requirement** from Phase 3 onward.
+5. **Accessibility:** No WCAG target. Optimize for legibility and operator speed, not compliance.
+
+These decisions override the corresponding points in §7 of `UX_AUDIT_PHASE1.md` where applicable.

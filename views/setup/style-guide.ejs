@@ -1,0 +1,360 @@
+<%
+// MonsterBox Style Guide — Phase 2 reference page
+// Every `.mb-*` component rendered side-by-side for visual QA.
+// Dev/internal only — not linked from main navigation.
+%>
+<div class="container-fluid" style="max-width: 1200px; margin: 0 auto; padding: var(--mb-space-6) var(--mb-space-4);">
+
+  <header style="margin-bottom: var(--mb-space-8);">
+    <div class="mb-eyebrow">MonsterBox · Design System · Phase 2</div>
+    <h1 class="mb-heading mb-heading-1" style="margin-top: var(--mb-space-2);">Haunted Console</h1>
+    <p class="mb-text-secondary" style="max-width: 70ch;">
+      Reference for every component in <code>components.css</code>. Switch themes from
+      <a href="/setup/system" class="mb-btn-link">System Settings</a> to preview
+      <strong>haunted-console</strong>, <strong>cold-crypt</strong>, and <strong>bright-ops</strong>.
+      Every color, size, and spacing value here comes from <code>tokens.css</code> — never hard-coded.
+    </p>
+  </header>
+
+  <!-- ========= TYPOGRAPHY ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Typography</h2><span class="mb-badge">.mb-heading · .mb-text-*</span></div>
+    <div class="mb-panel-body mb-stack">
+      <div>
+        <div class="mb-eyebrow">Display · Creepster</div>
+        <div class="mb-display mb-text-4xl">The Orlok stirs…</div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Mono · VT323</div>
+        <div class="mb-mono mb-text-2xl">SERVO-03 · CH 08 · 124.5°</div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Retro · Press Start 2P</div>
+        <div class="mb-retro mb-text-sm">MONSTERBOX v8.0.1</div>
+      </div>
+      <div class="mb-stack-sm">
+        <span class="mb-text-xs">xs · the quick brown fox</span>
+        <span class="mb-text-sm">sm · the quick brown fox</span>
+        <span class="mb-text-base">base · the quick brown fox</span>
+        <span class="mb-text-lg">lg · the quick brown fox</span>
+        <span class="mb-text-xl">xl · the quick brown fox</span>
+        <span class="mb-text-2xl">2xl · the quick brown fox</span>
+      </div>
+      <div class="mb-row">
+        <span class="mb-text-primary">primary</span>
+        <span class="mb-text-secondary">secondary</span>
+        <span class="mb-text-muted">muted</span>
+        <span class="mb-text-success">success</span>
+        <span class="mb-text-warning">warning</span>
+        <span class="mb-text-danger">danger</span>
+        <span class="mb-text-info">info</span>
+        <span class="mb-text-ai">ai</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= BUTTONS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Buttons</h2><span class="mb-badge">.mb-btn</span></div>
+    <div class="mb-panel-body mb-stack-lg">
+      <div>
+        <div class="mb-eyebrow">Variants</div>
+        <div class="mb-row" style="margin-top: var(--mb-space-2);">
+          <button class="mb-btn mb-btn-primary">Primary</button>
+          <button class="mb-btn mb-btn-secondary">Secondary</button>
+          <button class="mb-btn mb-btn-ghost">Ghost</button>
+          <button class="mb-btn mb-btn-danger">Danger</button>
+          <button class="mb-btn mb-btn-ai">Ask AI</button>
+          <button class="mb-btn mb-btn-link">Link</button>
+          <button class="mb-btn mb-btn-primary" disabled>Disabled</button>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Sizes</div>
+        <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
+          <button class="mb-btn mb-btn-primary mb-btn-sm">Small</button>
+          <button class="mb-btn mb-btn-primary">Medium</button>
+          <button class="mb-btn mb-btn-primary mb-btn-lg">Large</button>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Icon buttons</div>
+        <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
+          <button class="mb-btn mb-btn-secondary mb-btn-icon mb-btn-sm" aria-label="Play"><i class="bi bi-play-fill"></i></button>
+          <button class="mb-btn mb-btn-primary mb-btn-icon" aria-label="Record"><i class="bi bi-record-circle"></i></button>
+          <button class="mb-btn mb-btn-danger mb-btn-icon mb-btn-lg" aria-label="Stop"><i class="bi bi-stop-fill"></i></button>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Glow variants + Panic</div>
+        <div class="mb-row" style="margin-top: var(--mb-space-2);">
+          <button class="mb-btn mb-btn-primary mb-btn-glow">Live</button>
+          <button class="mb-btn mb-btn-ai mb-btn-glow">Summon AI</button>
+          <button class="mb-btn mb-btn-danger mb-btn-glow">Abort</button>
+          <button class="mb-btn mb-btn-panic mb-btn-lg"><i class="bi bi-exclamation-octagon-fill"></i> Stop Everything</button>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Button group</div>
+        <div class="mb-btn-group" style="margin-top: var(--mb-space-2);">
+          <button class="mb-btn mb-btn-secondary">Play</button>
+          <button class="mb-btn mb-btn-secondary">Pause</button>
+          <button class="mb-btn mb-btn-secondary">Stop</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= FORM CONTROLS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Form Controls</h2><span class="mb-badge">.mb-input · .mb-select · .mb-switch</span></div>
+    <div class="mb-panel-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--mb-space-5);">
+      <div class="mb-stack">
+        <div class="mb-field">
+          <label class="mb-field-label" for="sg-input-1">Character name</label>
+          <input id="sg-input-1" class="mb-input" type="text" placeholder="e.g. Orlok" value="Orlok">
+          <span class="mb-field-hint">Display name shown on the dashboard.</span>
+        </div>
+        <div class="mb-field">
+          <label class="mb-field-label" for="sg-input-2">Servo channel</label>
+          <div class="mb-input-group">
+            <span class="mb-input-addon">CH</span>
+            <input id="sg-input-2" class="mb-input mb-input-mono" type="number" value="8">
+            <span class="mb-input-addon">°</span>
+          </div>
+        </div>
+        <div class="mb-field">
+          <label class="mb-field-label" for="sg-select-1">TTS Voice</label>
+          <select id="sg-select-1" class="mb-select">
+            <option>Orlok — bass</option>
+            <option>Mina — soft</option>
+            <option>Dragomir — growl</option>
+          </select>
+        </div>
+        <div class="mb-field">
+          <label class="mb-field-label" for="sg-textarea-1">Say this</label>
+          <textarea id="sg-textarea-1" class="mb-textarea" placeholder="Type a line for the character to speak…"></textarea>
+        </div>
+        <div class="mb-field">
+          <label class="mb-field-label" for="sg-error-1">Invalid input</label>
+          <input id="sg-error-1" class="mb-input" aria-invalid="true" value="bad">
+          <span class="mb-field-error">Value must be between 0 and 180.</span>
+        </div>
+      </div>
+      <div class="mb-stack">
+        <div>
+          <div class="mb-eyebrow">Toggle switch</div>
+          <div class="mb-stack-sm" style="margin-top: var(--mb-space-2);">
+            <label class="mb-switch"><input type="checkbox" checked><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Lurk Mode</span></label>
+            <label class="mb-switch"><input type="checkbox"><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Head tracking</span></label>
+            <label class="mb-switch"><input type="checkbox" disabled><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Disabled switch</span></label>
+          </div>
+        </div>
+        <div>
+          <div class="mb-eyebrow">Checkbox / Radio</div>
+          <div class="mb-stack-sm" style="margin-top: var(--mb-space-2);">
+            <label class="mb-check"><input type="checkbox" checked> Enable Orlok</label>
+            <label class="mb-check"><input type="checkbox"> Enable Mina</label>
+            <label class="mb-check"><input type="radio" name="sg-r" checked> Continuous</label>
+            <label class="mb-check"><input type="radio" name="sg-r"> Absolute</label>
+          </div>
+        </div>
+        <div>
+          <div class="mb-eyebrow">Range (servo angle)</div>
+          <input class="mb-range" type="range" min="0" max="180" value="90" style="margin-top: var(--mb-space-2);">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= PANELS / CARDS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Panels &amp; Cards</h2><span class="mb-badge">.mb-panel · .mb-card</span></div>
+    <div class="mb-panel-body" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--mb-space-4);">
+      <div class="mb-panel mb-panel-accent">
+        <div class="mb-panel-header"><h3 class="mb-panel-title">Scene Queue</h3></div>
+        <div class="mb-panel-body"><p class="mb-text-secondary">Primary accent</p></div>
+      </div>
+      <div class="mb-panel mb-panel-accent-danger">
+        <div class="mb-panel-header"><h3 class="mb-panel-title">Emergency</h3></div>
+        <div class="mb-panel-body"><p class="mb-text-secondary">Danger accent</p></div>
+      </div>
+      <div class="mb-panel mb-panel-accent-warning">
+        <div class="mb-panel-header"><h3 class="mb-panel-title">Calibration</h3></div>
+        <div class="mb-panel-body"><p class="mb-text-secondary">Warning accent</p></div>
+      </div>
+      <div class="mb-panel mb-panel-accent-ai">
+        <div class="mb-panel-header"><h3 class="mb-panel-title">Ask AI</h3></div>
+        <div class="mb-panel-body"><p class="mb-text-secondary">AI accent</p></div>
+      </div>
+      <div class="mb-card mb-card-interactive" tabindex="0">
+        <h4 class="mb-heading mb-heading-3">Pose · Wake</h4>
+        <p class="mb-text-secondary mb-text-sm">5 parts · 2.3s</p>
+        <button class="mb-btn mb-btn-primary mb-btn-sm" style="margin-top: var(--mb-space-2);">Play</button>
+      </div>
+      <div class="mb-card">
+        <div class="mb-eyebrow">Static card</div>
+        <h4 class="mb-heading mb-heading-3" style="margin-top: var(--mb-space-1);">Orlok</h4>
+        <p class="mb-text-muted mb-text-sm">192.168.8.120</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= BADGES / CHIPS / DOTS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Badges · Chips · Status Dots</h2></div>
+    <div class="mb-panel-body mb-stack-lg">
+      <div>
+        <div class="mb-eyebrow">Badges</div>
+        <div class="mb-row" style="margin-top: var(--mb-space-2);">
+          <span class="mb-badge">default</span>
+          <span class="mb-badge mb-badge-primary">primary</span>
+          <span class="mb-badge mb-badge-success">success</span>
+          <span class="mb-badge mb-badge-warning">warning</span>
+          <span class="mb-badge mb-badge-danger">danger</span>
+          <span class="mb-badge mb-badge-info">info</span>
+          <span class="mb-badge mb-badge-ai">ai</span>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Chips (filter / tag)</div>
+        <div class="mb-row" style="margin-top: var(--mb-space-2);">
+          <button class="mb-chip mb-chip-active">All</button>
+          <button class="mb-chip">Scenes</button>
+          <button class="mb-chip">Poses</button>
+          <button class="mb-chip">Ambient</button>
+          <button class="mb-chip">Stingers</button>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Status dots</div>
+        <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
+          <span><span class="mb-dot mb-dot-live"></span> <span class="mb-text-sm">Live</span></span>
+          <span><span class="mb-dot mb-dot-idle"></span> <span class="mb-text-sm">Idle</span></span>
+          <span><span class="mb-dot mb-dot-warning"></span> <span class="mb-text-sm">Warning</span></span>
+          <span><span class="mb-dot mb-dot-danger"></span> <span class="mb-text-sm">Danger</span></span>
+          <span><span class="mb-dot mb-dot-ai"></span> <span class="mb-text-sm">AI thinking</span></span>
+          <span><span class="mb-dot mb-dot-info"></span> <span class="mb-text-sm">Telemetry</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= TABS / TABLE ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Tabs &amp; Table</h2></div>
+    <div class="mb-panel-body">
+      <div class="mb-tabs">
+        <button class="mb-tab mb-tab-active">Overview</button>
+        <button class="mb-tab">Parts</button>
+        <button class="mb-tab">Poses</button>
+        <button class="mb-tab">Scenes</button>
+        <button class="mb-tab">Audio</button>
+      </div>
+      <table class="mb-table" style="margin-top: var(--mb-space-4);">
+        <thead><tr><th>Part</th><th>Type</th><th>Channel</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Jaw</td><td>Servo</td><td class="mb-mono">CH 00</td><td><span class="mb-dot mb-dot-live"></span> Live</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
+          <tr><td>Neck Pan</td><td>Servo</td><td class="mb-mono">CH 01</td><td><span class="mb-dot mb-dot-idle"></span> Idle</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
+          <tr><td>Left Eye</td><td>LED</td><td class="mb-mono">GPIO 17</td><td><span class="mb-dot mb-dot-warning"></span> Calibrating</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========= ALERTS / TOASTS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Alerts &amp; Toasts</h2></div>
+    <div class="mb-panel-body mb-stack">
+      <div class="mb-alert">Default alert — left border uses theme primary.</div>
+      <div class="mb-alert mb-alert-success">Scene queue saved.</div>
+      <div class="mb-alert mb-alert-warning">Servo approaching calibration limit.</div>
+      <div class="mb-alert mb-alert-danger">Lost connection to Goblin #2.</div>
+      <div class="mb-alert mb-alert-info">4 new audio files indexed.</div>
+    </div>
+  </section>
+
+  <!-- ========= METERS / LOADERS ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Meters &amp; Loading</h2></div>
+    <div class="mb-panel-body mb-stack-lg">
+      <div>
+        <div class="mb-eyebrow">Audio VU meter</div>
+        <div class="mb-meter mb-meter-lg" style="margin-top: var(--mb-space-2);">
+          <div class="mb-meter-fill" style="width: 62%;"></div>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Progress</div>
+        <div class="mb-meter" style="margin-top: var(--mb-space-2);">
+          <div class="mb-meter-fill" style="width: 34%;"></div>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Spinner</div>
+        <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
+          <span class="mb-spinner"></span>
+          <span class="mb-spinner mb-spinner-lg"></span>
+          <span class="mb-text-secondary mb-text-sm">Loading scenes…</span>
+        </div>
+      </div>
+      <div>
+        <div class="mb-eyebrow">Skeleton</div>
+        <div class="mb-stack-sm" style="margin-top: var(--mb-space-2);">
+          <span class="mb-skeleton" style="height: 1.5em; width: 40%;"></span>
+          <span class="mb-skeleton" style="height: 1em; width: 75%;"></span>
+          <span class="mb-skeleton" style="height: 1em; width: 60%;"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= EMPTY STATE / MODAL PREVIEW ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Empty State &amp; Modal</h2></div>
+    <div class="mb-panel-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--mb-space-5);">
+      <div class="mb-empty">
+        <i class="bi bi-moon-stars mb-empty-icon"></i>
+        <h3 class="mb-empty-title">No scenes queued</h3>
+        <p class="mb-empty-body">Drag a scene from the library to queue it up. Or press <kbd class="mb-mono">Q</kbd> to auto-queue favourites.</p>
+        <button class="mb-btn mb-btn-primary">Browse Scenes</button>
+      </div>
+      <div class="mb-modal-dialog" style="position: static; margin: 0; max-width: none;">
+        <div class="mb-modal-header">
+          <h3 class="mb-modal-title">Delete scene</h3>
+          <button class="mb-btn mb-btn-ghost mb-btn-icon mb-btn-sm" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="mb-modal-body"><p class="mb-text-secondary">This will permanently remove <strong>Orlok · Rise from Crypt</strong>. Linked audio files stay untouched.</p></div>
+        <div class="mb-modal-footer">
+          <button class="mb-btn mb-btn-secondary">Cancel</button>
+          <button class="mb-btn mb-btn-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========= THEME PREVIEW ========= -->
+  <section class="mb-panel" style="margin-bottom: var(--mb-space-6);">
+    <div class="mb-panel-header"><h2 class="mb-panel-title">Current Theme</h2><span class="mb-badge mb-badge-primary" id="sg-theme-name">—</span></div>
+    <div class="mb-panel-body mb-stack">
+      <p class="mb-text-secondary">
+        Change theme at <a href="/setup/system" class="mb-btn-link">/setup/system</a>. Three curated themes are shipped:
+        <strong>haunted-console</strong> (default Halloween green), <strong>cold-crypt</strong> (cyan/violet),
+        <strong>bright-ops</strong> (light mode).
+      </p>
+      <div class="mb-scanlines mb-panel" style="padding: var(--mb-space-5);">
+        <div class="mb-display mb-text-3xl">Scanline overlay · Halloween flavor</div>
+        <p class="mb-mono">Applied via <code>.mb-scanlines</code> — opt-in Halloween utility.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  (function () {
+    var t = document.documentElement.getAttribute('data-mb-theme') || 'haunted-console';
+    var el = document.getElementById('sg-theme-name');
+    if (el) el.textContent = t;
+  })();
+</script>
