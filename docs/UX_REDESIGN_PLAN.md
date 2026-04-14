@@ -166,6 +166,9 @@ Full inventory lives in `docs/UX_AUDIT_PHASE1.md`.
 | 2026-04-14 | Phase 2 | b7f07965 | tokens.css, components.css, style guide |
 | 2026-04-14 | Phase 3 | d2f183ca | Operator Command Bar, restyled hero/superpowers, panic + Esc-Esc |
 | 2026-04-14 | Phase 4a — Animation cluster | ae8055b0 | animation.css + studio.css, 5 views restyled, ~370 LOC inline CSS extracted |
+| 2026-04-14 | Phase 4b — Chrome + Setup cluster | 0db83444 | mb-page-chrome.css, cluster derivation in master.ejs, setup hub rebuilt |
+| 2026-04-14 | Phase 4c+d — Library / System / Onboarding | 1cc57465 | Page-headers on 9 views, first-run and error rebuilt |
+| 2026-04-14 | Release — v8.1.0 Haunted Console | _pending_ | Version bump + CHANGELOG entry |
 
 Update this log after every phase completion.
 

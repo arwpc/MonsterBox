@@ -2,6 +2,61 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.1.0] - 2026-04-14 — Haunted Console UX Redesign
+
+A four-phase, end-to-end redesign bringing MonsterBox under a single design system styled for Halloween-night live operation. Runs on desktop browser or mobile phone, preserves every existing feature, keeps all JS hooks and API contracts intact.
+
+### Phase 1 — Audit (`f8f677db`)
+- Full catalog of 36 views, 12 CSS files (6,240 LOC), 19 client-JS files (~13k LOC).
+- Gap report: three conflicting `:root` token blocks, 30+ overlapping button variants, 750+ LOC inline scripts, missing empty/loading/z-index/spacing scales.
+- `docs/UX_REDESIGN_PLAN.md` (master plan, 4 phases, progress log).
+- `docs/UX_AUDIT_PHASE1.md` (inventory + cluster assignments + draft palette).
+
+### Phase 2 — Design Tokens & Components (`b7f07965`)
+- `public/css/tokens.css` — single source of truth. Colors, typography (Creepster / VT323 / Press Start 2P / system-sans), 4px spacing scale, radii, shadows, motion, z-index. Three curated themes swap atomically via `data-mb-theme`:
+  - **haunted-console** (default — Halloween green-on-black, poison-green `#39ff6a`)
+  - **cold-crypt** (cyan/violet, dark)
+  - **bright-ops** (light mode for daylight setup)
+- `public/css/components.css` — full `.mb-*` component library: buttons (primary / secondary / ghost / danger / ai / link / panic + sizes + icon + glow), inputs, selects, textareas, switches, ranges, panels (+ accent variants), cards, tabs, badges, chips, status dots, tables, modals, tooltips, toasts, alerts, empty states, spinners, skeletons, meters, scanlines. Mobile-first, phone-width responsive.
+- `/setup/style-guide` — dev-only reference page rendering every variant side-by-side.
+- `prefers-reduced-motion` respected throughout.
+
+### Phase 3 — Operator Command Bar + Dashboard (`d2f183ca`)
+- Sticky top Operator Command Bar replaces the old Lurk bar.
+- Character avatar + name, huge Lurk toggle, status badges that light up when each subsystem activates, scene transport, and a **STOP EVERYTHING** panic button (double-Escape shortcut, full-screen flash on trigger, stops scenes + disables Lurk/jaw/head/parrot/idle/motion/AI + mutes + kills audio + best-effort orchestration stop).
+- Hero (webcam + chat) and Superpowers strip rebuilt on `.mb-*` components.
+- Accordion panels re-skinned via scoped overrides — drag-reorder, panel-sortable.js, and ~2000 LOC inline FSM script untouched.
+- Responsive: command bar wraps at <720 px, hero stacks at <960 px, chat compacts at <480 px.
+
+### Phase 4a — Animation cluster (`ae8055b0`)
+- `public/css/animation.css` — shared cluster styles.
+- `public/css/studio.css` — 308 LOC extracted verbatim from `studio.ejs`, retinted to tokens.
+- Views restyled: `poses/index.ejs`, `scenes/scenes.ejs`, `poses/editor.ejs`, `scenes/scene-editor.ejs`, `scenes/studio.ejs`.
+
+### Phase 4b — Page Chrome + Setup cluster (`0db83444`)
+- `public/css/mb-page-chrome.css` — generic `[class*="mb-cluster-"]` Bootstrap neutralizers + shared layout helpers.
+- `master.ejs` derives cluster class from the route's `page` var and applies it to `<main>` — one place, every remaining cluster.
+- `views/setup/index.ejs` — rebuilt with 10 interactive cards (up from 5).
+
+### Phase 4c+d — Library, System, Onboarding (`1cc57465`)
+- `audio-library`, `video-library`, `orchestration`, `goblin-management`, `ai-settings` (+ stt + tts): page-header upgrades + chrome-driven retint.
+- `first-run/index.ejs` — rebuilt "Welcome to the Crypt" landing with neon portraits.
+- `error.ejs` — rebuilt as `.mb-panel mb-panel-accent-danger` + `.mb-empty`.
+
+### Safety
+- Zero new server endpoints. Zero new npm dependencies.
+- Every JS-targeted ID, class hook, drag-drop, SortableJS binding, and data-* attribute preserved.
+- 167 smoke tests pass after each phase. Every touched EJS view compiles clean.
+- Bootswatch themes and legacy CSS files remain in place — tokens live on top.
+
+### Known follow-ups
+- Extract 2000+ LOC inline dashboard script to `/public/js/dashboard.js`.
+- Extract 750 LOC inline pose-editor script to `/public/js/poses-editor.js`.
+- Deep-dive restyle pass on `setup/calibration.ejs` PCA9685 board visualization.
+- Retire Bootswatch theme picker in favor of the 3 curated themes once stable.
+
+---
+
 ## [8.0.1] - 2026-04-11 — Body Map Manual Controls, System Page Fixes
 
 ### Interactive Body Map for Manual Controls
