@@ -1,0 +1,278 @@
+/* ==========================================================================
+   MonsterBox Animation Cluster — Phase 4a
+   --------------------------------------------------------------------------
+   Shared styles for the Animation pages:
+     /scenes          (studio)
+     /scenes (list)   (scenes.ejs)
+     /scenes/edit/*   (scene-editor)
+     /poses           (poses/index)
+     /poses/editor    (pose editor)
+
+   Uses tokens.css + components.css. Two responsibilities:
+     1. Net-new patterns (sticky page toolbar, part-card grid, drag opacity).
+     2. Bootstrap neutralizers scoped to this cluster so runtime-generated
+        .list-group-item / .btn / .badge markup picks up the design system
+        without touching the script that builds them.
+   ========================================================================== */
+
+/* ==========================================================================
+   Page header (sticky toolbar pattern used by scenes + poses)
+   ========================================================================== */
+.mb-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3) var(--mb-space-4);
+  margin-bottom: var(--mb-space-4);
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  box-shadow: var(--mb-shadow-panel);
+}
+.mb-page-header-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mb-space-3);
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-2xl);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+  margin: 0;
+}
+.mb-page-header-title .mb-text-secondary { font-family: var(--mb-font-ui); font-size: var(--mb-text-sm); }
+.mb-page-header-actions { display: flex; gap: var(--mb-space-2); flex-wrap: wrap; }
+
+.mb-page-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--mb-z-sticky);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--mb-bg-1) 92%, transparent);
+}
+
+/* ==========================================================================
+   Two-column cluster layout (scenes list + queue, poses list + actions)
+   ========================================================================== */
+.mb-split-7-5 {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--mb-space-4);
+}
+.mb-split-7-5 > * { min-width: 0; }
+@media (max-width: 960px) {
+  .mb-split-7-5 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   List items (scenes, poses, queue, stories)
+   ========================================================================== */
+.mb-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+}
+.mb-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              border-color var(--mb-dur-fast) var(--mb-ease-out),
+              transform var(--mb-dur-fast) var(--mb-ease-out);
+}
+.mb-list-item:hover { background: var(--mb-bg-hover); border-color: var(--mb-border-strong); }
+.mb-list-item-body { flex: 1; min-width: 0; }
+.mb-list-item-title { font-weight: var(--mb-weight-medium); color: var(--mb-fg-primary); }
+.mb-list-item-meta  { color: var(--mb-fg-muted); font-size: var(--mb-text-sm); }
+.mb-list-item-actions { display: flex; gap: var(--mb-space-1); }
+
+.mb-queue-item { cursor: grab; }
+.mb-queue-item.dragging { opacity: 0.45; cursor: grabbing; }
+.mb-queue-item-drop-top    { border-top: 2px solid var(--mb-primary); }
+.mb-queue-item-drop-bottom { border-bottom: 2px solid var(--mb-primary); }
+
+/* ==========================================================================
+   Part-type badges (servo, motor, linear actuator, light, led)
+   — used by poses/editor and scene step cards
+   ========================================================================== */
+.mb-part-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+  padding: 2px var(--mb-space-2);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--mb-tracking-wide);
+  border-radius: var(--mb-radius-sm);
+  border: 1px solid var(--mb-border-default);
+  background: var(--mb-bg-3);
+  color: var(--mb-fg-secondary);
+}
+.mb-part-badge-servo           { color: var(--mb-info);   border-color: var(--mb-info); }
+.mb-part-badge-motor           { color: var(--mb-warning);border-color: var(--mb-warning); }
+.mb-part-badge-linear_actuator,
+.mb-part-badge-linear-actuator { color: var(--mb-warning);border-color: var(--mb-warning); }
+.mb-part-badge-light,
+.mb-part-badge-led             { color: var(--mb-success);border-color: var(--mb-success); }
+.mb-part-badge-sensor          { color: var(--mb-ai);     border-color: var(--mb-ai); }
+
+/* ==========================================================================
+   Part card (pose editor hardware grid)
+   ========================================================================== */
+.mb-part-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--mb-space-3);
+}
+.part-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+  padding: var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  transition: border-color var(--mb-dur-fast) var(--mb-ease-out),
+              box-shadow var(--mb-dur-fast) var(--mb-ease-out);
+}
+.part-card.included {
+  border-color: var(--mb-primary);
+  box-shadow: 0 0 0 1px var(--mb-primary) inset, 0 0 14px color-mix(in srgb, var(--mb-primary) 35%, transparent);
+}
+.part-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-2);
+}
+.part-card-title { font-weight: var(--mb-weight-medium); color: var(--mb-fg-primary); }
+.part-card-angle,
+.angle-display,
+.part-angle-display {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-lg);
+  color: var(--mb-primary);
+}
+
+/* ==========================================================================
+   Step cards (scene-editor, studio timeline)
+   --------------------------------------------------------------------------
+   The studio uses .step-color-<type> classes baked into JS, so they live in
+   studio.css. Generic step card layout here.
+   ========================================================================== */
+.mb-step-card {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-left: 3px solid var(--mb-fg-muted);
+  border-radius: var(--mb-radius-md);
+}
+.mb-step-card-body { flex: 1; min-width: 0; }
+.mb-step-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--mb-radius-sm);
+  display: grid;
+  place-items: center;
+  background: var(--mb-bg-3);
+  color: var(--mb-fg-secondary);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Bootstrap neutralizers — scoped to cluster root containers
+   --------------------------------------------------------------------------
+   Scripts in these pages generate Bootstrap-class markup at runtime. Rather
+   than rewrite those ~1000 lines of JS, we repaint the Bootstrap classes to
+   match the design system. Scoped to page roots to avoid bleeding elsewhere.
+   ========================================================================== */
+.mb-cluster-animation .card {
+  background: var(--mb-bg-2);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+}
+.mb-cluster-animation .card-header {
+  background: var(--mb-bg-3);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+}
+.mb-cluster-animation .card-body { color: var(--mb-fg-primary); }
+
+.mb-cluster-animation .list-group { background: transparent; }
+.mb-cluster-animation .list-group-item {
+  background: var(--mb-bg-2);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+}
+.mb-cluster-animation .list-group-item:hover { background: var(--mb-bg-hover); }
+
+.mb-cluster-animation .btn { font-family: var(--mb-font-ui); }
+.mb-cluster-animation .btn-success  { background: var(--mb-success); border-color: var(--mb-success); color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-info     { background: var(--mb-info);    border-color: var(--mb-info);    color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-warning  { background: var(--mb-warning); border-color: var(--mb-warning); color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-danger   { background: var(--mb-danger);  border-color: var(--mb-danger);  color: #fff; }
+.mb-cluster-animation .btn-primary  { background: var(--mb-primary); border-color: var(--mb-primary); color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-secondary{ background: var(--mb-bg-3);    border-color: var(--mb-border-strong); color: var(--mb-fg-primary); }
+
+.mb-cluster-animation .btn-outline-primary   { color: var(--mb-primary); border-color: var(--mb-primary); background: transparent; }
+.mb-cluster-animation .btn-outline-primary:hover   { background: var(--mb-primary); color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-outline-success   { color: var(--mb-success); border-color: var(--mb-success); background: transparent; }
+.mb-cluster-animation .btn-outline-success:hover   { background: var(--mb-success); color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .btn-outline-danger    { color: var(--mb-danger); border-color: var(--mb-danger); background: transparent; }
+.mb-cluster-animation .btn-outline-danger:hover    { background: var(--mb-danger); color: #fff; }
+.mb-cluster-animation .btn-outline-secondary { color: var(--mb-fg-secondary); border-color: var(--mb-border-strong); background: transparent; }
+.mb-cluster-animation .btn-outline-secondary:hover { background: var(--mb-bg-hover); color: var(--mb-fg-primary); border-color: var(--mb-primary); }
+
+.mb-cluster-animation .badge.bg-secondary { background: var(--mb-bg-3) !important; color: var(--mb-fg-secondary); border: 1px solid var(--mb-border-default); }
+.mb-cluster-animation .badge.bg-success   { background: var(--mb-success) !important; color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .badge.bg-info      { background: var(--mb-info) !important;    color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .badge.bg-warning   { background: var(--mb-warning) !important; color: var(--mb-fg-on-accent); }
+.mb-cluster-animation .badge.bg-danger    { background: var(--mb-danger) !important;  color: #fff; }
+
+.mb-cluster-animation .alert-success { background: color-mix(in srgb, var(--mb-success) 16%, transparent); color: var(--mb-success); border-color: var(--mb-success); }
+.mb-cluster-animation .alert-info    { background: color-mix(in srgb, var(--mb-info) 16%, transparent);    color: var(--mb-info);    border-color: var(--mb-info); }
+.mb-cluster-animation .alert-warning { background: color-mix(in srgb, var(--mb-warning) 16%, transparent); color: var(--mb-warning); border-color: var(--mb-warning); }
+.mb-cluster-animation .alert-danger  { background: color-mix(in srgb, var(--mb-danger) 16%, transparent);  color: var(--mb-danger);  border-color: var(--mb-danger); }
+
+.mb-cluster-animation .form-control,
+.mb-cluster-animation .form-select {
+  background: var(--mb-bg-1);
+  border-color: var(--mb-border-default);
+  color: var(--mb-fg-primary);
+}
+.mb-cluster-animation .form-control:focus,
+.mb-cluster-animation .form-select:focus { border-color: var(--mb-primary); box-shadow: var(--mb-focus-ring); }
+.mb-cluster-animation .form-check-input:checked { background-color: var(--mb-primary); border-color: var(--mb-primary); }
+
+.mb-cluster-animation .modal-content {
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-default);
+  color: var(--mb-fg-primary);
+}
+.mb-cluster-animation .modal-header,
+.mb-cluster-animation .modal-footer { border-color: var(--mb-border-subtle); }
+.mb-cluster-animation .btn-close { filter: invert(0.9); }
+
+/* Drag state for dynamically built .queue-item — preserved class, new look. */
+.mb-cluster-animation .queue-item { cursor: grab; }
+.mb-cluster-animation .queue-item.dragging { opacity: 0.45; cursor: grabbing; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 640px) {
+  .mb-page-header { padding: var(--mb-space-3); }
+  .mb-page-header-title { font-size: var(--mb-text-xl); }
+  .mb-part-grid { grid-template-columns: 1fr; }
+}

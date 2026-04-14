@@ -1,84 +1,83 @@
-<div class="container-fluid py-4">
-  <!-- Cache buster: v3.1 - 2025-10-23 - Fixed Loop Execution -->
-  <div class="row">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-film"></i> Scenes & Stories</h1>
-        <div>
-          <button class="btn btn-info me-2" onclick="window.showStoriesModal()"><i class="bi bi-collection"></i>
-            Stories</button>
-          <a href="/scenes/edit/new" class="btn btn-success"><i class="bi bi-plus-circle"></i> Create New Scene</a>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="mb-cluster-animation container-fluid py-3">
 
-  <div class="row">
+  <header class="mb-page-header">
+    <h1 class="mb-page-header-title">
+      <i class="bi bi-film"></i> Scenes &amp; Stories
+      <span class="mb-text-secondary">· queue up a show</span>
+    </h1>
+    <div class="mb-page-header-actions">
+      <button class="mb-btn mb-btn-secondary" onclick="window.showStoriesModal()">
+        <i class="bi bi-collection"></i> Stories
+      </button>
+      <a href="/scenes/edit/new" class="mb-btn mb-btn-primary">
+        <i class="bi bi-plus-circle"></i> New Scene
+      </a>
+    </div>
+  </header>
+
+  <div class="mb-split-7-5">
+
     <!-- Scenes List -->
-    <div class="col-lg-7">
-      <div class="card mb-3">
-        <div class="card-header">
-          <div class="d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-list-ul"></i> Scenes</span>
-            <button class="btn btn-sm btn-outline-primary" onclick="window.addSelectedToQueue()">
-              <i class="bi bi-plus-lg"></i> Add Selected to Queue
-            </button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div id="scenesStatus" class="mb-2"></div>
-          <div id="scenesList" class="list-group"></div>
-        </div>
+    <div class="mb-panel mb-panel-accent">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title"><i class="bi bi-list-ul"></i> Scenes</h2>
+        <button class="mb-btn mb-btn-ghost mb-btn-sm" onclick="window.addSelectedToQueue()">
+          <i class="bi bi-plus-lg"></i> Add Selected to Queue
+        </button>
+      </div>
+      <div class="mb-panel-body">
+        <div id="scenesStatus" style="margin-bottom: var(--mb-space-2);"></div>
+        <div id="scenesList" class="list-group"></div>
       </div>
     </div>
 
     <!-- Queue Panel -->
-    <div class="col-lg-5">
-      <div class="card mb-3 sticky-top" style="top: 20px;">
-        <div class="card-header bg-primary text-white">
-          <i class="bi bi-collection-play"></i> Scene Queue
+    <div class="mb-panel mb-panel-accent-ai" style="position: sticky; top: var(--mb-space-4); align-self: start;">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title"><i class="bi bi-collection-play"></i> Scene Queue</h2>
+      </div>
+      <div class="mb-panel-body">
+        <div id="queueStatus" style="margin-bottom: var(--mb-space-3);"></div>
+
+        <!-- Queue Controls -->
+        <div class="mb-btn-group" role="group" style="width: 100%; margin-bottom: var(--mb-space-3);">
+          <button class="mb-btn mb-btn-primary" style="flex:1;" onclick="window.playQueue(false)">
+            <i class="bi bi-play-fill"></i> Play
+          </button>
+          <button class="mb-btn mb-btn-ai" style="flex:1;" onclick="window.playQueue(true)">
+            <i class="bi bi-repeat"></i> Loop
+          </button>
+          <button class="mb-btn mb-btn-secondary" style="flex:1;" onclick="window.stopQueue()">
+            <i class="bi bi-stop-fill"></i> Stop
+          </button>
+          <button class="mb-btn mb-btn-danger" style="flex:1;" onclick="window.clearQueue()">
+            <i class="bi bi-trash"></i> Clear
+          </button>
         </div>
-        <div class="card-body">
-          <div id="queueStatus" class="mb-2"></div>
 
-          <!-- Queue Controls -->
-          <div class="btn-group w-100 mb-3" role="group">
-            <button class="btn btn-success" onclick="window.playQueue(false)">
-              <i class="bi bi-play-fill"></i> Play Queue
-            </button>
-            <button class="btn btn-info" onclick="window.playQueue(true)">
-              <i class="bi bi-repeat"></i> Play Loop
-            </button>
-            <button class="btn btn-warning" onclick="window.stopQueue()">
-              <i class="bi bi-stop-fill"></i> Stop
-            </button>
-            <button class="btn btn-danger" onclick="window.clearQueue()">
-              <i class="bi bi-trash"></i> Clear
-            </button>
-          </div>
+        <!-- Save Queue as Story -->
+        <div class="mb-input-group" style="margin-bottom: var(--mb-space-3);">
+          <input type="text" id="storyName" class="mb-input" placeholder="Story name…">
+          <button class="mb-btn mb-btn-secondary" onclick="window.saveQueueAsStory()">
+            <i class="bi bi-save"></i> Save Story
+          </button>
+        </div>
 
-          <!-- Save Queue as Story -->
-          <div class="input-group mb-3">
-            <input type="text" id="storyName" class="form-control" placeholder="Story name...">
-            <button class="btn btn-outline-secondary" onclick="window.saveQueueAsStory()">
-              <i class="bi bi-save"></i> Save as Story
-            </button>
-          </div>
-
-          <!-- Queue Items (Drag & Drop) -->
-          <div id="queueList" class="list-group" style="min-height: 200px;"></div>
-          <div id="emptyQueue" class="text-muted text-center py-4" style="display:none;">
-            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-            <p>No scenes in queue. Add scenes from the left.</p>
-          </div>
+        <!-- Queue Items (Drag & Drop) -->
+        <div id="queueList" class="list-group" style="min-height: 200px;"></div>
+        <div id="emptyQueue" class="mb-empty" style="display:none;">
+          <i class="bi bi-inbox mb-empty-icon"></i>
+          <h3 class="mb-empty-title">Queue is empty</h3>
+          <p class="mb-empty-body">Check scenes on the left, then press "Add Selected to Queue".</p>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- Stories Modal -->
-<div class="modal fade" id="storiesModal" tabindex="-1">
+<!-- Stories Modal (Bootstrap — retinted via .mb-cluster-animation overrides) -->
+<div class="mb-cluster-animation modal fade" id="storiesModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
@@ -90,25 +89,11 @@
         <div id="storiesList"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  .queue-item {
-    cursor: move;
-  }
-
-  .queue-item:hover {
-    background-color: var(--bs-tertiary-bg);
-  }
-
-  .dragging {
-    opacity: 0.5;
-  }
-</style>
 
 <script>
   (function () {

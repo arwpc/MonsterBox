@@ -165,6 +165,7 @@ Full inventory lives in `docs/UX_AUDIT_PHASE1.md`.
 | 2026-04-14 | Phase 2 decisions | — | Answers to open questions (below) |
 | 2026-04-14 | Phase 2 | b7f07965 | tokens.css, components.css, style guide |
 | 2026-04-14 | Phase 3 | d2f183ca | Operator Command Bar, restyled hero/superpowers, panic + Esc-Esc |
+| 2026-04-14 | Phase 4a — Animation cluster | _pending_ | animation.css + studio.css, 5 views restyled, ~370 LOC inline CSS extracted |
 
 Update this log after every phase completion.
 

@@ -1,143 +1,116 @@
-<div class="container-fluid py-4">
-  <div class="row">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-pencil"></i> <span id="editorTitle">Edit Scene</span></h1>
-        <a href="/scenes" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Scenes</a>
+<div class="mb-cluster-animation container-fluid py-3">
+
+  <header class="mb-page-header">
+    <h1 class="mb-page-header-title">
+      <i class="bi bi-pencil"></i> <span id="editorTitle">Edit Scene</span>
+    </h1>
+    <div class="mb-page-header-actions">
+      <a href="/scenes" class="mb-btn mb-btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Scenes
+      </a>
+    </div>
+  </header>
+
+  <div class="mb-panel mb-panel-accent" style="margin-bottom: var(--mb-space-4);">
+    <div class="mb-panel-header">
+      <h2 class="mb-panel-title"><i class="bi bi-info-circle"></i> Scene Details</h2>
+    </div>
+    <div class="mb-panel-body">
+      <div id="editorStatus" style="margin-bottom: var(--mb-space-3);"></div>
+      <div class="mb-field">
+        <label for="sceneName" class="mb-field-label">Scene Name</label>
+        <input type="text" id="sceneName" class="mb-input" placeholder="Enter scene name">
       </div>
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header"><i class="bi bi-info-circle"></i> Scene Details</div>
-        <div class="card-body">
-          <div id="editorStatus" class="mb-3"></div>
-          <div class="mb-3">
-            <label for="sceneName" class="form-label">Scene Name</label>
-            <input type="text" id="sceneName" class="form-control" placeholder="Enter scene name">
-          </div>
+  <div class="mb-panel mb-panel-accent-ai" style="margin-bottom: var(--mb-space-4);">
+    <div class="mb-panel-header">
+      <h2 class="mb-panel-title"><i class="bi bi-list-ol"></i> Steps</h2>
+      <button id="addStepBtn" class="mb-btn mb-btn-primary mb-btn-sm">
+        <i class="bi bi-plus-circle"></i> Add Step
+      </button>
+    </div>
+    <div class="mb-panel-body">
+      <div id="stepsList" class="sortable-steps" style="min-height: 100px;">
+        <div class="mb-empty">
+          <i class="bi bi-list-ol mb-empty-icon"></i>
+          <h3 class="mb-empty-title">No steps yet</h3>
+          <p class="mb-empty-body">Click "Add Step" to begin building this scene.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-list-ol"></i> Steps</span>
-          <button id="addStepBtn" class="btn btn-sm btn-success"><i class="bi bi-plus-circle"></i> Add Step</button>
-        </div>
-        <div class="card-body">
-          <div id="stepsList" class="sortable-steps">
-            <div class="text-muted text-center py-4">No steps yet. Click "Add Step" to begin.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row mt-4">
-    <div class="col-12">
-      <button id="saveSceneBtn" class="btn btn-primary btn-lg"><i class="bi bi-save"></i> Save Scene</button>
-      <button id="testSceneBtn" class="btn btn-outline-success btn-lg ms-2"><i class="bi bi-play-fill"></i> Test
-        Scene</button>
-      <a href="/scenes" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
-    </div>
+  <div class="mb-row" style="gap: var(--mb-space-2); margin-top: var(--mb-space-4);">
+    <button id="saveSceneBtn" class="mb-btn mb-btn-primary mb-btn-lg">
+      <i class="bi bi-save"></i> Save Scene
+    </button>
+    <button id="testSceneBtn" class="mb-btn mb-btn-ai mb-btn-lg">
+      <i class="bi bi-play-fill"></i> Test Scene
+    </button>
+    <a href="/scenes" class="mb-btn mb-btn-secondary mb-btn-lg">Cancel</a>
   </div>
 </div>
 
 <!-- Add Step Modal -->
-<div class="modal fade" id="addStepModal" tabindex="-1">
+<div class="mb-cluster-animation modal fade" id="addStepModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Add Step</h5>
+        <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Step</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <!-- Non-Part Step Types (Always Available) -->
-        <h6 class="text-muted mb-3">Actions</h6>
-        <div class="row g-3 mb-4">
+        <div class="mb-eyebrow" style="margin-bottom: var(--mb-space-3);">Actions</div>
+        <div class="row g-3" style="margin-bottom: var(--mb-space-5);">
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="pose">
-              <i class="bi bi-person-arms-up"></i><br>Pose
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="pose" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-person-arms-up"></i><span>Pose</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="audio">
-              <i class="bi bi-music-note-beamed"></i><br>Audio
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="audio" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-music-note-beamed"></i><span>Audio</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sayThis">
-              <i class="bi bi-chat-quote"></i><br>Say This (AI Voice)
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sayThis" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-chat-quote"></i><span>Say This (AI Voice)</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="askAI">
-              <i class="bi bi-question-circle"></i><br>Ask AI a Question
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="askAI" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-question-circle"></i><span>Ask AI a Question</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="goblin-video">
-              <i class="bi bi-display"></i><br>Goblin Video
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="goblin-video" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-display"></i><span>Goblin Video</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="wait">
-              <i class="bi bi-hourglass-split"></i><br>Wait/Pause
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="wait" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-hourglass-split"></i><span>Wait / Pause</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="btn btn-outline-primary w-100 step-action-btn" data-type="sensor">
-              <i class="bi bi-radar"></i><br>Sensor (Wait for Motion)
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sensor" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+              <i class="bi bi-radar"></i><span>Sensor (Wait for Motion)</span>
             </button>
           </div>
         </div>
 
-        <!-- Character Parts (Dynamically Populated) -->
-        <h6 class="text-muted mb-3">Character Parts</h6>
+        <div class="mb-eyebrow" style="margin-bottom: var(--mb-space-3);">Character Parts</div>
         <div id="partsStepContainer" class="row g-3">
-          <div class="col-12 text-center text-muted py-3">
-            <i class="bi bi-hourglass-split"></i> Loading parts...
+          <div class="col-12 mb-text-muted" style="text-align:center; padding: var(--mb-space-4);">
+            <i class="bi bi-hourglass-split"></i> Loading parts…
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  .sortable-steps {
-    min-height: 100px;
-  }
-
-  .step-card {
-    cursor: move;
-    transition: all 0.2s;
-  }
-
-  .step-card:hover {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  }
-
-  .step-card.dragging {
-    opacity: 0.5;
-  }
-
-  .step-type-btn {
-    padding: 1.5rem;
-    font-size: 1rem;
-  }
-
-  .step-type-btn:hover {
-    background-color: var(--bs-primary);
-    color: white;
-  }
-</style>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>

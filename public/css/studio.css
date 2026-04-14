@@ -1,0 +1,274 @@
+/* ==========================================================================
+   MonsterBox Animation Studio — Phase 4a
+   --------------------------------------------------------------------------
+   Extracted from views/scenes/studio.ejs inline <style> block. Retinted
+   to reference tokens.css variables. Class names PRESERVED verbatim — the
+   studio script (inline in studio.ejs) writes these class names literally
+   at runtime (e.g., .step-color-<type>, .lib-item, .palette-part).
+   ========================================================================== */
+
+.studio-toolbar {
+  background: var(--mb-bg-1);
+  border-bottom: 1px solid var(--mb-border-default);
+  padding: var(--mb-space-2) var(--mb-space-4);
+  position: sticky;
+  top: 0;
+  z-index: var(--mb-z-sticky);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.studio-panels {
+  height: calc(100vh - 140px);
+  overflow: hidden;
+}
+.studio-panel {
+  height: 100%;
+  overflow-y: auto;
+  border-right: 1px solid var(--mb-border-subtle);
+  background: var(--mb-bg-1);
+}
+.studio-panel:last-child { border-right: none; }
+
+.panel-section {
+  border-bottom: 1px solid var(--mb-border-subtle);
+  padding: var(--mb-space-3);
+}
+.panel-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: var(--mb-space-1) 0;
+  user-select: none;
+  color: var(--mb-fg-primary);
+}
+.panel-section-header h6 {
+  margin: 0;
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-sm);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+}
+.panel-section-body { padding-top: var(--mb-space-2); }
+.panel-section-body.collapsed { display: none; }
+
+/* ---- Scene / Pose library items ---- */
+.lib-item {
+  display: flex;
+  align-items: center;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  border-radius: var(--mb-radius-sm);
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+  margin-bottom: 2px;
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-primary);
+}
+.lib-item:hover { background: var(--mb-bg-hover); }
+.lib-item.active {
+  background: color-mix(in srgb, var(--mb-primary) 20%, transparent);
+  border-left: 3px solid var(--mb-primary);
+  padding-left: calc(var(--mb-space-2) - 3px);
+}
+.lib-item .lib-actions {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity var(--mb-dur-fast) var(--mb-ease-out);
+  white-space: nowrap;
+}
+.lib-item:hover .lib-actions { opacity: 1; }
+.lib-item .badge {
+  font-size: var(--mb-text-xs);
+  margin-left: var(--mb-space-1);
+}
+
+/* ---- Timeline step blocks ---- */
+.step-block {
+  position: relative;
+  padding: var(--mb-space-2) var(--mb-space-3);
+  margin-bottom: var(--mb-space-2);
+  border-radius: var(--mb-radius-md);
+  border: 1px solid var(--mb-border-subtle);
+  border-left: 4px solid var(--mb-fg-muted);
+  background: var(--mb-bg-2);
+  cursor: move;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              box-shadow var(--mb-dur-fast) var(--mb-ease-out),
+              opacity var(--mb-dur-fast) var(--mb-ease-out);
+}
+.step-block:hover { background: var(--mb-bg-hover); box-shadow: var(--mb-shadow-panel); }
+.step-block.dragging { opacity: 0.4; }
+.step-block.expanded .step-edit-form { display: block; }
+.step-edit-form {
+  display: none;
+  margin-top: var(--mb-space-2);
+  padding-top: var(--mb-space-2);
+  border-top: 1px solid var(--mb-border-subtle);
+}
+.step-block-header { display: flex; align-items: center; gap: var(--mb-space-2); }
+.step-type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--mb-text-sm);
+  flex-shrink: 0;
+}
+.step-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-primary);
+}
+.step-actions { display: flex; gap: 2px; }
+.step-actions .btn { padding: 2px 6px; font-size: var(--mb-text-xs); }
+
+/* ---- Step type colors — uses --mb-step-* vars from monsterbox4.css ---- */
+.step-color-servo { border-left-color: var(--mb-step-servo); }
+.step-color-servo .step-type-icon { background: color-mix(in srgb, var(--mb-step-servo) 20%, transparent); color: var(--mb-step-servo); }
+.step-color-audio { border-left-color: var(--mb-step-audio); }
+.step-color-audio .step-type-icon { background: color-mix(in srgb, var(--mb-step-audio) 20%, transparent); color: var(--mb-step-audio); }
+.step-color-sayThis { border-left-color: var(--mb-step-speech); }
+.step-color-sayThis .step-type-icon { background: color-mix(in srgb, var(--mb-step-speech) 20%, transparent); color: var(--mb-step-speech); }
+.step-color-askAI { border-left-color: var(--mb-step-askAI); }
+.step-color-askAI .step-type-icon { background: color-mix(in srgb, var(--mb-step-askAI) 20%, transparent); color: var(--mb-step-speech); }
+.step-color-wait { border-left-color: var(--mb-step-wait); }
+.step-color-wait .step-type-icon { background: color-mix(in srgb, var(--mb-step-wait) 20%, transparent); color: var(--mb-step-wait); }
+.step-color-pose { border-left-color: var(--mb-step-pose); }
+.step-color-pose .step-type-icon { background: color-mix(in srgb, var(--mb-step-pose) 20%, transparent); color: var(--mb-step-pose); }
+.step-color-light { border-left-color: var(--mb-step-light); }
+.step-color-light .step-type-icon { background: color-mix(in srgb, var(--mb-step-light) 20%, transparent); color: var(--mb-step-light); }
+.step-color-motor { border-left-color: var(--mb-step-motor); }
+.step-color-motor .step-type-icon { background: color-mix(in srgb, var(--mb-step-motor) 20%, transparent); color: var(--mb-step-motor); }
+.step-color-linear-actuator { border-left-color: var(--mb-step-linear-actuator); }
+.step-color-linear-actuator .step-type-icon { background: color-mix(in srgb, var(--mb-step-linear-actuator) 20%, transparent); color: var(--mb-step-linear-actuator); }
+.step-color-sensor { border-left-color: var(--mb-step-sensor); }
+.step-color-sensor .step-type-icon { background: color-mix(in srgb, var(--mb-step-sensor) 20%, transparent); color: var(--mb-step-sensor); }
+.step-color-goblin-video { border-left-color: var(--mb-step-goblin-video); }
+.step-color-goblin-video .step-type-icon { background: color-mix(in srgb, var(--mb-step-goblin-video) 20%, transparent); color: var(--mb-step-goblin-video); }
+.step-color-jaw-animation { border-left-color: var(--mb-step-jaw); }
+.step-color-jaw-animation .step-type-icon { background: color-mix(in srgb, var(--mb-step-jaw) 20%, transparent); color: var(--mb-step-jaw); }
+.step-color-head-tracking { border-left-color: var(--mb-step-head-tracking); }
+.step-color-head-tracking .step-type-icon { background: color-mix(in srgb, var(--mb-step-head-tracking) 20%, transparent); color: var(--mb-step-head-tracking); }
+
+/* ---- Concurrent indicator ---- */
+.concurrent-link {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: var(--mb-warning);
+  color: var(--mb-fg-on-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--mb-text-xs);
+  z-index: 5;
+}
+
+/* ---- Add step zone (drop target) ---- */
+.add-step-zone {
+  border: 2px dashed var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-5);
+  text-align: center;
+  color: var(--mb-fg-secondary);
+  cursor: pointer;
+  transition: all var(--mb-dur-base) var(--mb-ease-out);
+}
+.add-step-zone:hover,
+.add-step-zone.drag-over {
+  border-color: var(--mb-primary);
+  color: var(--mb-primary);
+  background: color-mix(in srgb, var(--mb-primary) 8%, transparent);
+}
+
+/* ---- Part palette (drag source) ---- */
+.palette-part,
+.palette-action {
+  display: flex;
+  align-items: center;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  border-radius: var(--mb-radius-sm);
+  cursor: grab;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+  margin-bottom: 2px;
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-primary);
+}
+.palette-part:hover,
+.palette-action:hover { background: var(--mb-bg-hover); }
+.palette-part.disabled-part { opacity: 0.4; cursor: not-allowed; }
+.palette-part .part-icon {
+  width: 24px;
+  text-align: center;
+  margin-right: var(--mb-space-1);
+  flex-shrink: 0;
+}
+
+/* ---- Queue items (studio right panel) ---- */
+.queue-item {
+  cursor: move;
+  font-size: var(--mb-text-sm);
+}
+.queue-item:hover { background: var(--mb-bg-hover); }
+
+/* ---- Webcam preview ---- */
+.webcam-preview {
+  background: #000;
+  border-radius: var(--mb-radius-md);
+  overflow: hidden;
+  position: relative;
+  min-height: 120px;
+}
+.webcam-preview img { width: 100%; display: block; }
+.webcam-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--mb-fg-muted);
+  font-size: var(--mb-text-sm);
+}
+
+/* ---- Mode toggles (header chips) ---- */
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-secondary);
+}
+.mode-toggle .form-check-input { margin-top: 0; accent-color: var(--mb-primary); }
+.tracking-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mb-success);
+  box-shadow: var(--mb-glow-poison);
+  animation: mb-pulse 1.5s infinite;
+}
+
+/* ---- Search input (compact) ---- */
+.search-input {
+  font-size: var(--mb-text-sm);
+  padding: var(--mb-space-1) var(--mb-space-2);
+}
+
+/* ---- Scrollbar styling inside studio panels ---- */
+.studio-panel::-webkit-scrollbar { width: 6px; }
+.studio-panel::-webkit-scrollbar-track { background: transparent; }
+.studio-panel::-webkit-scrollbar-thumb {
+  background: var(--mb-border-default);
+  border-radius: var(--mb-radius-pill);
+}
+.studio-panel::-webkit-scrollbar-thumb:hover { background: var(--mb-primary-dim); }
