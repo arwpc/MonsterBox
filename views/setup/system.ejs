@@ -1212,31 +1212,26 @@
   $('#btnSaveTemplateForm').addEventListener('click', saveTemplate);
 
   /* ─── Theme Gallery ─────────────────────────────────────────────────────── */
+  // v8.1.1: retired Bootswatch picker. Three curated MonsterBox themes only.
+  // Bootswatch files are still on disk for backwards compat — if someone has
+  // a legacy theme in config, it still renders — they just can't select it.
   var THEMES = [
-    { name: 'default-dark',  label: 'Default Dark',  dark: true,  colors: ['#0d1117','#6f42c1','#0dcaf0'] },
-    { name: 'default-light', label: 'Default Light', dark: false, colors: ['#f8f9fa','#0d6efd','#6c757d'] },
-    { name: 'cerulean',  label: 'Cerulean',  dark: false, colors: ['#ffffff','#2fa4e7','#033c73'] },
-    { name: 'cosmo',     label: 'Cosmo',     dark: false, colors: ['#ffffff','#2780e3','#373a3c'] },
-    { name: 'flatly',    label: 'Flatly',    dark: false, colors: ['#ffffff','#2c3e50','#18bc9c'] },
-    { name: 'journal',   label: 'Journal',   dark: false, colors: ['#ffffff','#eb6864','#333333'] },
-    { name: 'litera',    label: 'Litera',    dark: false, colors: ['#ffffff','#4582ec','#333333'] },
-    { name: 'lux',       label: 'Lux',       dark: false, colors: ['#ffffff','#1a1a2e','#c0a46b'] },
-    { name: 'minty',     label: 'Minty',     dark: false, colors: ['#ffffff','#78c2ad','#f3969a'] },
-    { name: 'sandstone', label: 'Sandstone', dark: false, colors: ['#ffffff','#325d88','#8e8c84'] },
-    { name: 'united',    label: 'United',    dark: false, colors: ['#ffffff','#e95420','#772953'] },
-    { name: 'yeti',      label: 'Yeti',      dark: false, colors: ['#ffffff','#008cba','#333333'] },
-    { name: 'cyborg',    label: 'Cyborg',    dark: true,  colors: ['#060606','#2a9fd6','#555555'] },
-    { name: 'darkly',    label: 'Darkly',    dark: true,  colors: ['#222222','#375a7f','#00bc8c'] },
-    { name: 'quartz',    label: 'Quartz',    dark: true,  colors: ['#1a1a2e','#e16e8a','#8661c1'] },
-    { name: 'slate',     label: 'Slate',     dark: true,  colors: ['#272b30','#3a3f44','#7a8288'] },
-    { name: 'solar',     label: 'Solar',     dark: true,  colors: ['#002b36','#b58900','#2aa198'] },
-    { name: 'superhero', label: 'Superhero', dark: true,  colors: ['#2b3e50','#df691a','#4e5d6c'] },
-    { name: 'vapor',     label: 'Vapor',     dark: true,  colors: ['#1a1a2e','#ea39b8','#6f42c1'] }
+    { name: 'haunted-console', label: 'Haunted Console', dark: true,  colors: ['#07080a','#39ff6a','#7b3ff2'] },
+    { name: 'cold-crypt',      label: 'Cold Crypt',      dark: true,  colors: ['#070910','#9a6bff','#38e2d4'] },
+    { name: 'bright-ops',      label: 'Bright Ops',      dark: false, colors: ['#f4f5f2','#1f8f3c','#5225b5'] }
   ];
 
-  var __rawCurrent = '<%= (typeof config !== "undefined" && config && config.theme) ? config.theme : "darkly" %>';
-  var __legacyMap = { 'dark': 'default-dark', 'light': 'default-light' };
+  var __rawCurrent = '<%= (typeof config !== "undefined" && config && config.theme) ? config.theme : "haunted-console" %>';
+  var __legacyMap = {
+    'dark':         'haunted-console',
+    'default-dark': 'haunted-console',
+    'light':        'bright-ops',
+    'default-light':'bright-ops'
+  };
   var currentTheme = __legacyMap[__rawCurrent] || __rawCurrent;
+  // If the saved theme is a legacy Bootswatch name, fall through to default.
+  var __validNames = THEMES.map(function (t) { return t.name; });
+  if (__validNames.indexOf(currentTheme) === -1) currentTheme = 'haunted-console';
   var previewTheme = currentTheme;
 
   function buildThemeGallery() {
@@ -1285,15 +1280,11 @@
     }
     if (!t) return;
 
-    // Swap CSS link
+    // Swap CSS link — curated themes all ride on the default Bootstrap core;
+    // the MonsterBox tokens.css handles the palette via data-mb-theme.
     var bsLink = document.querySelector('link[href*="/vendor/bootswatch/"], link[href*="/vendor/bootstrap/bootstrap"]');
     if (bsLink) {
-      var isBootswatch = ['cerulean','cosmo','cyborg','darkly','flatly','journal','litera','lux','minty','sandstone','united','yeti','quartz','slate','solar','superhero','vapor'].indexOf(name) !== -1;
-      if (isBootswatch) {
-        bsLink.href = '/vendor/bootswatch/' + name + '/bootstrap.min.css';
-      } else {
-        bsLink.href = '/vendor/bootstrap/bootstrap.min.css';
-      }
+      bsLink.href = '/vendor/bootstrap/bootstrap.min.css';
     }
 
     // Set data attributes

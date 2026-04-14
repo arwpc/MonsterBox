@@ -169,6 +169,7 @@ Full inventory lives in `docs/UX_AUDIT_PHASE1.md`.
 | 2026-04-14 | Phase 4b — Chrome + Setup cluster | 0db83444 | mb-page-chrome.css, cluster derivation in master.ejs, setup hub rebuilt |
 | 2026-04-14 | Phase 4c+d — Library / System / Onboarding | 1cc57465 | Page-headers on 9 views, first-run and error rebuilt |
 | 2026-04-14 | Release — v8.1.0 Haunted Console | 191342cb | Version bump + CHANGELOG entry + tag |
+| 2026-04-14 | v8.1.1 — Backlog cleanup | _pending_ | dashboard.js + poses-editor.js extracted, Bootswatch picker retired |
 
 Update this log after every phase completion.
 

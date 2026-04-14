@@ -2,6 +2,25 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.1.1] - 2026-04-14 — UX Redesign Backlog Cleanup
+
+Follow-up to v8.1.0. Clears the deferred items from the Phase 4 backlog so the redesign stands on a clean foundation before Halloween.
+
+### Extracted inline scripts
+- **`public/js/dashboard.js`** (2290 LOC) — combined lift of three inline `<script>` blocks from `views/conversation/index.ejs`: the main dashboard FSM (~1850 LOC), browser audio bridge (~286 LOC), and Phase 3 Operator Command Bar wiring (~136 LOC). Loaded once with `defer`. `views/conversation/index.ejs` shrinks from 2679 → 396 LOC.
+- **`public/js/poses-editor.js`** (616 LOC) — extracted from `views/poses/editor.ejs`. The two EJS-interpolated values (`editPoseId`, `currentCharacter`) now pass through a `<script id="mbPoseEditorBoot" type="application/json">` bootstrap block instead of templated JS. View shrinks from 738 → 127 LOC.
+
+### Retired Bootswatch theme picker
+- `views/setup/system.ejs` now only surfaces the three curated themes — **Haunted Console**, **Cold Crypt**, **Bright Ops**. The 16 Bootswatch theme entries were removed from the picker UI.
+- Bootswatch vendor files remain on disk so any user sitting on a legacy theme (`darkly`, `cyborg`, etc.) still renders; the picker falls back to Haunted Console when the saved theme isn't in the curated list.
+- Legacy aliases (`dark`, `default-dark`, `light`, `default-light`) still resolve correctly.
+
+### Tests
+- Full non-hardware suite green: 167 smoke + 311 system + unit = **478 passing**.
+- Browser E2E not run (production service holds the port on this RPi — known constraint).
+
+---
+
 ## [8.1.0] - 2026-04-14 — Haunted Console UX Redesign
 
 A four-phase, end-to-end redesign bringing MonsterBox under a single design system styled for Halloween-night live operation. Runs on desktop browser or mobile phone, preserves every existing feature, keeps all JS hooks and API contracts intact.
