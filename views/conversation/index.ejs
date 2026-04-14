@@ -4,167 +4,198 @@
 
 <link rel="stylesheet" href="/css/body-map.css">
 <link rel="stylesheet" href="/css/lurk-mode.css">
+<link rel="stylesheet" href="/css/dashboard.css">
 
-<div class="container-fluid px-2 px-md-3">
+<div class="container-fluid px-0 px-md-2">
 
   <!-- ════════════════════════════════════════════════════════════════════
-       LURK MODE BAR — The one-button "bring it to life" control
+       OPERATOR COMMAND BAR  (Phase 3 redesign, 2026-04)
+       Sticky top bar; character · Lurk master · live status · scene
+       transport · PANIC. Every element from the old Lurk bar keeps its
+       ID so the lurk FSM script (line ~571) binds unchanged.
        ════════════════════════════════════════════════════════════════════ -->
-  <div id="lurkBar" class="lurk-bar card mb-2">
-    <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-      <div class="d-flex align-items-center gap-3">
-        <div class="lurk-toggle-wrapper">
-          <div class="form-check form-switch lurk-switch mb-0">
-            <input class="form-check-input lurk-toggle-input" type="checkbox" id="lurkToggle">
-            <label class="form-check-label fw-bold lurk-label" for="lurkToggle">
-              <i class="bi bi-lightning-charge-fill"></i> Lurk Mode
-            </label>
-          </div>
-        </div>
-        <div id="lurkStatusIndicators" class="d-flex gap-2 align-items-center">
-          <span class="badge lurk-badge" id="lurkBadgeAI" title="AI Conversation"><i class="bi bi-chat-dots"></i> AI</span>
-          <span class="badge lurk-badge" id="lurkBadgeJaw" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
-          <span class="badge lurk-badge" id="lurkBadgeHead" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
-          <span class="badge lurk-badge" id="lurkBadgeIdle" title="Idle Movement"><i class="bi bi-person-walking"></i> Idle</span>
-          <span class="badge lurk-badge" id="lurkBadgeMotion" title="Motion Sensor"><i class="bi bi-radar"></i> Motion</span>
-        </div>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <span id="lurkStatus" class="text-muted" style="font-size:0.95rem;">Off</span>
-        <span id="charName" class="fw-bold" style="font-size:0.95rem;"></span>
+  <div id="lurkBar" class="mb-opbar" role="toolbar" aria-label="Operator command bar">
+
+    <!-- Character identity -->
+    <div class="mb-opbar-character">
+      <a href="/setup/characters" class="mb-opbar-avatar" id="opbarAvatar"
+         data-bs-toggle="tooltip" data-bs-placement="bottom" title="Manage characters">
+        <i class="bi bi-person-bounding-box"></i>
+      </a>
+      <div class="mb-opbar-id">
+        <span class="mb-opbar-id-label">Character</span>
+        <span class="mb-opbar-id-name" id="charName">—</span>
       </div>
     </div>
+
+    <!-- Lurk master + live status indicators -->
+    <div class="mb-opbar-lurk-group">
+      <label class="mb-switch mb-opbar-lurk" data-bs-toggle="tooltip" data-bs-placement="bottom"
+             title="Bring the character to life — enables AI, jaw, head, idle, motion sensor together.">
+        <input type="checkbox" id="lurkToggle" class="lurk-toggle-input">
+        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+        <span class="mb-opbar-lurk-label"><i class="bi bi-lightning-charge-fill"></i> Lurk</span>
+      </label>
+      <div id="lurkStatusIndicators" class="mb-opbar-status">
+        <span class="mb-badge mb-badge-ai lurk-badge" id="lurkBadgeAI"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="AI Conversation"><i class="bi bi-chat-dots"></i> AI</span>
+        <span class="mb-badge mb-badge-primary lurk-badge" id="lurkBadgeJaw"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
+        <span class="mb-badge mb-badge-info lurk-badge" id="lurkBadgeHead"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
+        <span class="mb-badge mb-badge-warning lurk-badge" id="lurkBadgeIdle"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Idle Movement"><i class="bi bi-person-walking"></i> Idle</span>
+        <span class="mb-badge mb-badge-danger lurk-badge" id="lurkBadgeMotion"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Motion Sensor"><i class="bi bi-radar"></i> Motion</span>
+      </div>
+      <span id="lurkStatus" class="mb-text-muted mb-mono mb-text-sm" aria-live="polite">Off</span>
+    </div>
+
+    <!-- Transport + PANIC -->
+    <div class="mb-opbar-transport">
+      <button id="opbarLoopAll" class="mb-btn mb-btn-secondary mb-btn-sm" type="button"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Loop through every scene">
+        <i class="bi bi-arrow-repeat"></i> <span>Loop</span>
+      </button>
+      <button id="opbarStopLoop" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" style="display:none;"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="Stop the scene loop">
+        <i class="bi bi-stop-fill"></i> <span>Stop Loop</span>
+      </button>
+      <button id="mbPanicBtn" class="mb-btn mb-btn-panic mb-opbar-panic" type="button"
+              data-bs-toggle="tooltip" data-bs-placement="bottom"
+              title="Stop everything — scenes, audio, Lurk, idle, head, jaw, AI. Shortcut: Esc Esc">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="mb-opbar-panic-label">Stop Everything</span>
+      </button>
+    </div>
   </div>
+
+  <div class="px-2 px-md-3">
 
   <!-- ════════════════════════════════════════════════════════════════════
        HERO SECTION — Webcam + AI Chat side-by-side
        ════════════════════════════════════════════════════════════════════ -->
-  <div class="row g-2 mb-2">
+  <section class="mb-hero">
     <!-- Webcam — Primary View -->
-    <div class="col-12 col-lg-7">
-      <div class="card h-100" data-panel-id="webcam">
-        <div class="card-header py-1 d-flex justify-content-between align-items-center">
-          <h6 class="mb-0 small"><i class="bi bi-camera-video"></i> Live View</h6>
-          <div class="d-flex align-items-center gap-2">
-            <span id="headTrackStatusBadge" class="badge bg-secondary d-none" style="font-size:0.65rem;">Off</span>
-            <small class="text-muted" id="webcamHint" style="font-size:0.65rem;"></small>
-          </div>
+    <div class="mb-panel mb-panel-accent" data-panel-id="webcam">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title"><i class="bi bi-camera-video"></i> Live View</h2>
+        <div class="mb-row-sm" style="align-items:center;">
+          <span id="headTrackStatusBadge" class="mb-badge mb-badge-info" style="display:none;">Off</span>
+          <small class="mb-text-muted mb-mono mb-text-xs" id="webcamHint"></small>
         </div>
-        <div class="card-body text-center p-1" style="position: relative; min-height: 200px;">
-          <img id="webcamImg" src="" alt="Webcam Stream" class="img-fluid rounded"
-            style="width: 100%; height: 100%; max-height: 55vh; object-fit: contain; background: #000; cursor: crosshair;">
-          <span id="clickTrackCountdown" class="badge bg-info position-absolute d-none" style="top:8px;right:8px;font-size:0.75rem;z-index:10;"></span>
-          <div id="webcamStatus" class="text-muted mt-1 small" style="font-size:0.7rem;">Finding webcam...</div>
+      </div>
+      <div class="mb-panel-body">
+        <div class="mb-webcam-frame">
+          <img id="webcamImg" src="" alt="Webcam Stream">
+          <span id="clickTrackCountdown" class="mb-badge mb-badge-info mb-webcam-overlay" style="display:none;"></span>
         </div>
+        <div id="webcamStatus" class="mb-webcam-status">Finding webcam…</div>
       </div>
     </div>
 
     <!-- Chat Panel — AI Conversation Portal -->
-    <div class="col-12 col-lg-5">
-      <div class="card h-100" data-panel-id="chat">
-        <div class="card-header py-1 d-flex justify-content-between align-items-center">
-          <h6 class="mb-0 small">
-            <i class="bi bi-chat-dots"></i>
-            <span id="chatCharacterName">Loading...</span>
-          </h6>
-          <div class="d-flex align-items-center gap-2">
-            <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 120px; font-size: 0.7rem;"
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
-              <option value="">Auto</option>
-            </select>
-            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Connect to ElevenLabs conversational AI agent">
-              <input class="form-check-input" type="checkbox" id="chatAiOnToggle">
-              <label class="form-check-label small" for="chatAiOnToggle" style="font-size:0.75rem;">AI</label>
-            </div>
-          </div>
+    <div class="mb-panel mb-panel-accent-ai" data-panel-id="chat">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title">
+          <i class="bi bi-chat-dots"></i>
+          <span id="chatCharacterName">Loading…</span>
+        </h2>
+        <div class="mb-row-sm" style="align-items:center;">
+          <select id="chatSpeakerSelect" class="mb-select" style="max-width: 130px; min-height: 28px; padding: 2px 8px; font-size: var(--mb-text-xs);"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
+            <option value="">Auto</option>
+          </select>
+          <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Connect to ElevenLabs conversational AI agent">
+            <input type="checkbox" id="chatAiOnToggle">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="mb-text-sm">AI</span>
+          </label>
         </div>
-        <div class="card-body p-0 d-flex flex-column" style="min-height: 300px;">
-          <!-- Chat Log -->
-          <div id="chatLog" class="p-2 font-monospace flex-grow-1"
-               style="overflow-y: auto; font-size: 0.8rem; background: var(--bs-tertiary-bg); max-height: 45vh;">
-            <div class="text-muted text-center small">Chat will appear here...</div>
+      </div>
+      <div class="mb-panel-body">
+        <div id="chatLog" class="mb-chat-log">
+          <div class="mb-text-muted mb-text-sm" style="text-align:center;">Chat will appear here…</div>
+        </div>
+        <div class="mb-chat-meter">
+          <small class="mb-text-muted"><i class="bi bi-activity"></i></small>
+          <div class="mb-meter" style="flex:1;">
+            <div id="chatVUMeter" class="mb-meter-fill" style="width:0%;"></div>
           </div>
-          <!-- VU Meter -->
-          <div class="px-2 py-1 border-top" style="background: var(--bs-tertiary-bg);">
-            <div class="d-flex align-items-center">
-              <small class="text-muted me-1" style="font-size:0.65rem;"><i class="bi bi-activity"></i></small>
-              <div class="progress flex-grow-1" style="height: 8px;">
-                <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
-                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-              <span id="chatVULabel" class="ms-1 badge bg-secondary" style="font-size: 0.6rem;">0%</span>
-            </div>
+          <span id="chatVULabel" class="mb-badge">0%</span>
+        </div>
+        <div class="mb-chat-controls">
+          <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
+            <input type="checkbox" id="chatBrowserSpeaker">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Spk</span>
+          </label>
+          <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
+            <input type="checkbox" id="chatBrowserMic">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
+          </label>
+          <small id="chatAudioStatus" class="mb-text-info mb-text-xs"></small>
+        </div>
+        <div class="mb-chat-input">
+          <div class="mb-input-group">
+            <button class="mb-btn mb-btn-secondary mb-btn-sm" type="button" id="chatModeToggle"
+                    data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Switch between asking the AI and making the character say exact text"
+                    style="min-width: 92px;">
+              <i class="bi bi-chat-dots"></i> Ask AI
+            </button>
+            <input type="text" class="mb-input" id="chatInput" placeholder="Ask the character something…" autocomplete="off">
+            <button class="mb-btn mb-btn-primary" type="button" id="chatSendBtn" aria-label="Send">
+              <i class="bi bi-send"></i>
+            </button>
           </div>
-          <!-- Audio Controls (compact) -->
-          <div class="px-2 py-1 border-top d-flex flex-wrap align-items-center gap-2" style="background: var(--bs-tertiary-bg); font-size: 0.75rem;">
-            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
-              <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker">
-              <label class="form-check-label" for="chatBrowserSpeaker" style="font-size:0.7rem;"><i class="bi bi-broadcast"></i> Browser Spk</label>
-            </div>
-            <div class="form-check form-switch mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
-              <input class="form-check-input" type="checkbox" id="chatBrowserMic">
-              <label class="form-check-label" for="chatBrowserMic" style="font-size:0.7rem;"><i class="bi bi-mic"></i> Browser Mic</label>
-            </div>
-            <small id="chatAudioStatus" class="text-info" style="font-size:0.65rem;"></small>
-          </div>
-          <!-- Unified Chat/Say Input -->
-          <div class="p-2 border-top">
-            <div class="input-group input-group-sm">
-              <button class="btn btn-outline-secondary btn-sm" type="button" id="chatModeToggle"
-                      data-bs-toggle="tooltip" data-bs-placement="top"
-                      title="Switch between asking the AI and making the character say exact text"
-                      style="font-size: 0.7rem; min-width: 70px;">
-                <i class="bi bi-chat-dots"></i> Ask AI
-              </button>
-              <input type="text" class="form-control" id="chatInput" placeholder="Ask the character something..." autocomplete="off">
-              <button class="btn btn-success" type="button" id="chatSendBtn">
-                <i class="bi bi-send"></i>
-              </button>
-            </div>
-            <div id="sayStatus" class="small" style="font-size:0.65rem;"></div>
-          </div>
+          <div id="sayStatus" class="mb-text-xs mb-text-muted" style="margin-top:4px;"></div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- ════════════════════════════════════════════════════════════════════
        SUPERPOWERS STRIP — Compact horizontal toggles
        ════════════════════════════════════════════════════════════════════ -->
-  <div class="card mb-2" data-panel-id="monster-features">
-    <div class="card-body py-2 px-3">
-      <div class="d-flex flex-wrap align-items-center gap-3">
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="jawToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
-          <label class="form-check-label small fw-bold" for="jawToggle"><i class="bi bi-soundwave"></i> Jaw</label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="headTrackToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
-          <label class="form-check-label small fw-bold" for="headTrackToggle"><i class="bi bi-eye"></i> Head Track</label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="parrotToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
-          <label class="form-check-label small fw-bold" for="parrotToggle"><i class="bi bi-megaphone"></i> Parrot</label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="idleToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable idle movement loop with character personality">
-          <label class="form-check-label small fw-bold" for="idleToggle"><i class="bi bi-person-walking"></i> Idle</label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="motionSensorToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Monitor PIR motion sensor — detects nearby visitors and keeps animatronic awake">
-          <label class="form-check-label small fw-bold" for="motionSensorToggle"><i class="bi bi-radar"></i> Motion</label>
-        </div>
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" id="speakerMuteToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
-          <label class="form-check-label small fw-bold" for="speakerMuteToggle"><i class="bi bi-volume-mute"></i> Mute</label>
-        </div>
-        <button id="stopAllAudioBtn" class="btn btn-outline-danger btn-sm ms-2" title="Stop all audio playback and loops"
-                data-bs-toggle="tooltip" data-bs-placement="top">
-          <i class="bi bi-stop-circle"></i> Stop Audio
-        </button>
-      </div>
-    </div>
-  </div>
+  <section class="mb-superpowers" data-panel-id="monster-features" aria-label="Character superpowers">
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
+      <input type="checkbox" id="jawToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-soundwave"></i> Jaw</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
+      <input type="checkbox" id="headTrackToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-eye"></i> Head Track</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
+      <input type="checkbox" id="parrotToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-megaphone"></i> Parrot</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable idle movement loop with character personality">
+      <input type="checkbox" id="idleToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-person-walking"></i> Idle</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Monitor PIR motion sensor — detects nearby visitors and keeps animatronic awake">
+      <input type="checkbox" id="motionSensorToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-radar"></i> Motion</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
+      <input type="checkbox" id="speakerMuteToggle">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-volume-mute"></i> Mute</span>
+    </label>
+    <span class="mb-superpowers-spacer"></span>
+    <button id="stopAllAudioBtn" class="mb-btn mb-btn-secondary mb-btn-sm"
+            data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback and loops">
+      <i class="bi bi-stop-circle"></i> Stop Audio
+    </button>
+  </section>
 
   <!-- ════════════════════════════════════════════════════════════════════
        EXPANDABLE PANELS — Accordion for Scenes, Poses, Controls, etc.
@@ -356,6 +387,7 @@
 
   </div><!-- /accordion -->
 
+  </div><!-- /px-2 px-md-3 wrapper -->
 </div><!-- /container-fluid -->
 
 <script src="/js/manual-controls.js"></script>
@@ -2498,3 +2530,150 @@
 })();
 </script>
 <!-- Panel sortable not needed with accordion layout -->
+
+<!-- ════════════════════════════════════════════════════════════════════
+     PHASE 3 — Operator Command Bar wiring
+     · mirror accordion Loop/Stop-Loop buttons into the top bar
+     · badge "is-active" state sync from the underlying checkbox state
+     · PANIC button + Esc-Esc keyboard shortcut
+     · character avatar image swap-in if a portrait exists
+     No new server endpoints — reuses existing click/change handlers.
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- Proxy the new top-bar Loop buttons to the accordion buttons. ----
+  function proxyClick(fromId, toId) {
+    var src = $(fromId), dst = $(toId);
+    if (!src || !dst) return;
+    src.addEventListener('click', function () { dst.click(); });
+  }
+  proxyClick('opbarLoopAll', 'btnLoopAll');
+  proxyClick('opbarStopLoop', 'btnStopLoop');
+
+  // Mirror visibility of the accordion's Stop Loop into the top bar.
+  var accordionStop = $('btnStopLoop');
+  var opbarStop = $('opbarStopLoop');
+  if (accordionStop && opbarStop) {
+    var sync = function () {
+      var hidden = accordionStop.style.display === 'none' || accordionStop.hasAttribute('hidden');
+      opbarStop.style.display = hidden ? 'none' : '';
+    };
+    new MutationObserver(sync).observe(accordionStop, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
+    sync();
+  }
+
+  // ---- Sync lurk-status badge "is-active" glow from the underlying toggles. ----
+  var badgeMap = [
+    { toggle: 'chatAiOnToggle',    badge: 'lurkBadgeAI' },
+    { toggle: 'jawToggle',         badge: 'lurkBadgeJaw' },
+    { toggle: 'headTrackToggle',   badge: 'lurkBadgeHead' },
+    { toggle: 'idleToggle',        badge: 'lurkBadgeIdle' },
+    { toggle: 'motionSensorToggle',badge: 'lurkBadgeMotion' }
+  ];
+  function refreshBadges() {
+    badgeMap.forEach(function (m) {
+      var t = $(m.toggle), b = $(m.badge);
+      if (!t || !b) return;
+      b.classList.toggle('is-active', !!t.checked);
+    });
+  }
+  badgeMap.forEach(function (m) {
+    var t = $(m.toggle);
+    if (t) t.addEventListener('change', refreshBadges);
+  });
+  // Initial state + polling catch-up for handlers that only flip the box without dispatching change
+  refreshBadges();
+  setInterval(refreshBadges, 1500);
+
+  // Also light up the Lurk label glow when lurk is on.
+  var lurkBar = $('lurkBar');
+  var lurkToggle = $('lurkToggle');
+  if (lurkBar && lurkToggle) {
+    var syncLurk = function () { lurkBar.classList.toggle('is-on', !!lurkToggle.checked); };
+    lurkToggle.addEventListener('change', syncLurk);
+    syncLurk();
+    setInterval(syncLurk, 1500);
+  }
+
+  // ---- Character avatar: use image if one exists for the current character. ----
+  (function loadAvatar() {
+    var charId = window.__MB_CHAR_ID;
+    if (!charId) return;
+    var avatar = $('opbarAvatar');
+    if (!avatar) return;
+    var url = '/images/characters/character-' + charId + '.png';
+    var img = new Image();
+    img.onload = function () {
+      avatar.innerHTML = '';
+      img.alt = '';
+      avatar.appendChild(img);
+    };
+    img.src = url;
+  })();
+
+  // ---- PANIC — stop everything. ----
+  function firePanic(reason) {
+    try { console.log('[PANIC]', reason || 'triggered'); } catch (_) {}
+
+    // Visual flash
+    try {
+      var flash = document.createElement('div');
+      flash.className = 'mb-panic-flash';
+      document.body.appendChild(flash);
+      setTimeout(function () { flash.remove(); }, 650);
+    } catch (_) {}
+
+    // Turn off every toggle that could be animating/speaking.
+    ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'headTrackToggle',
+     'parrotToggle', 'idleToggle', 'motionSensorToggle']
+      .forEach(function (id) {
+        var el = $(id);
+        if (el && el.checked) {
+          el.checked = false;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+
+    // Force mute speaker.
+    var mute = $('speakerMuteToggle');
+    if (mute && !mute.checked) {
+      mute.checked = true;
+      mute.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // Stop all audio + scene loop via their existing buttons.
+    var stopAudio = $('stopAllAudioBtn'); if (stopAudio) stopAudio.click();
+    var stopLoop  = $('btnStopLoop');     if (stopLoop && stopLoop.style.display !== 'none') stopLoop.click();
+
+    // Best-effort: also hit the orchestration stop endpoint if available.
+    try {
+      fetch('/api/orchestration/stop-all', { method: 'POST' }).catch(function () {});
+    } catch (_) {}
+  }
+
+  var panicBtn = $('mbPanicBtn');
+  if (panicBtn) {
+    panicBtn.addEventListener('click', function () { firePanic('button'); });
+  }
+
+  // Double-Escape shortcut.
+  var lastEsc = 0;
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') { lastEsc = 0; return; }
+    var now = Date.now();
+    if (now - lastEsc < 500) {
+      firePanic('esc-esc');
+      lastEsc = 0;
+    } else {
+      lastEsc = now;
+    }
+  });
+
+  // Expose for console/testing.
+  window.mbPanic = firePanic;
+})();
+</script>

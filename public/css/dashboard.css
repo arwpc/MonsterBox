@@ -1,0 +1,356 @@
+/* ==========================================================================
+   MonsterBox Dashboard — Phase 3
+   --------------------------------------------------------------------------
+   Operator-first dashboard styles. Built on tokens.css + components.css.
+   Targets: live Halloween-night use on desktop browser OR mobile phone.
+   ========================================================================== */
+
+/* ==========================================================================
+   Operator Command Bar — sticky top, always visible
+   ========================================================================== */
+.mb-opbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--mb-z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-2) var(--mb-space-3);
+  margin: 0 0 var(--mb-space-3) 0;
+  background: color-mix(in srgb, var(--mb-bg-1) 94%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--mb-border-default);
+  box-shadow: var(--mb-shadow-panel);
+}
+
+.mb-opbar-character {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+  min-width: 0;
+}
+.mb-opbar-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--mb-bg-3);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  color: var(--mb-primary);
+  border: 2px solid var(--mb-border-default);
+  flex-shrink: 0;
+  overflow: hidden;
+  text-decoration: none;
+  transition: border-color var(--mb-dur-fast) var(--mb-ease-out),
+              box-shadow var(--mb-dur-fast) var(--mb-ease-out);
+}
+.mb-opbar-avatar:hover,
+.mb-opbar-avatar:focus-visible { border-color: var(--mb-primary); box-shadow: var(--mb-glow-poison); outline: none; }
+.mb-opbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.mb-opbar-id { display: flex; flex-direction: column; min-width: 0; }
+.mb-opbar-id-label {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-xs);
+  letter-spacing: var(--mb-tracking-wider);
+  text-transform: uppercase;
+  color: var(--mb-fg-muted);
+  line-height: 1;
+}
+.mb-opbar-id-name {
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-xl);
+  color: var(--mb-fg-primary);
+  letter-spacing: var(--mb-tracking-wide);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-opbar-lurk {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-1) var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-pill);
+}
+.mb-opbar-lurk-label {
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-lg);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-secondary);
+  white-space: nowrap;
+}
+.mb-opbar-lurk input[type="checkbox"]:checked ~ .mb-switch-track + .mb-opbar-lurk-label,
+.mb-opbar-lurk.is-on .mb-opbar-lurk-label { color: var(--mb-primary); text-shadow: var(--mb-glow-poison); }
+
+.mb-opbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  flex-wrap: wrap;
+}
+.mb-opbar-status .mb-badge {
+  transition: opacity var(--mb-dur-fast) var(--mb-ease-out);
+  opacity: 0.4;
+}
+.mb-opbar-status .mb-badge.is-active { opacity: 1; }
+
+.mb-opbar-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+  margin-left: auto;
+}
+
+.mb-opbar-panic {
+  /* Uses .mb-btn-panic from components.css; override size/padding here */
+  padding: var(--mb-space-2) var(--mb-space-4);
+  min-height: 44px;
+  font-size: var(--mb-text-sm);
+}
+
+/* Desktop gap between lurk group and status — pushes transport to far right */
+@media (min-width: 900px) {
+  .mb-opbar-lurk-group { display: flex; align-items: center; gap: var(--mb-space-3); }
+}
+
+/* Phone width: stack the command bar into two rows */
+@media (max-width: 720px) {
+  .mb-opbar { padding: var(--mb-space-2); gap: var(--mb-space-2); }
+  .mb-opbar-id-name { font-size: var(--mb-text-lg); }
+  .mb-opbar-avatar { width: 38px; height: 38px; font-size: 22px; }
+  .mb-opbar-lurk-label { font-size: var(--mb-text-base); }
+  .mb-opbar-status { order: 10; width: 100%; justify-content: center; }
+  .mb-opbar-transport { margin-left: 0; flex: 1 1 auto; justify-content: flex-end; }
+  .mb-opbar-panic span.mb-opbar-panic-label { display: none; }
+  .mb-opbar-panic { padding: var(--mb-space-2); min-width: 44px; }
+}
+
+/* ==========================================================================
+   Hero section — Webcam + Chat
+   ========================================================================== */
+.mb-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--mb-space-3);
+  margin-bottom: var(--mb-space-3);
+}
+@media (max-width: 960px) {
+  .mb-hero { grid-template-columns: 1fr; }
+}
+
+.mb-hero .mb-panel { display: flex; flex-direction: column; }
+.mb-hero .mb-panel-body { flex: 1; display: flex; flex-direction: column; padding: 0; }
+
+.mb-webcam-frame {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  background: #000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.mb-webcam-frame img {
+  width: 100%;
+  height: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  cursor: crosshair;
+}
+.mb-webcam-overlay {
+  position: absolute;
+  top: var(--mb-space-2);
+  right: var(--mb-space-2);
+  z-index: 2;
+}
+.mb-webcam-status {
+  padding: var(--mb-space-1) var(--mb-space-3);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-muted);
+  background: var(--mb-bg-2);
+  border-top: 1px solid var(--mb-border-subtle);
+  text-align: center;
+}
+
+.mb-chat-log {
+  flex: 1;
+  padding: var(--mb-space-3);
+  overflow-y: auto;
+  background: var(--mb-bg-0);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-base);
+  min-height: 240px;
+  max-height: 45vh;
+}
+.mb-chat-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-2);
+  align-items: center;
+  padding: var(--mb-space-2) var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border-top: 1px solid var(--mb-border-subtle);
+  font-size: var(--mb-text-sm);
+}
+.mb-chat-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  padding: var(--mb-space-2) var(--mb-space-3);
+  background: var(--mb-bg-2);
+  border-top: 1px solid var(--mb-border-subtle);
+}
+.mb-chat-input {
+  padding: var(--mb-space-3);
+  border-top: 1px solid var(--mb-border-subtle);
+  background: var(--mb-bg-1);
+}
+
+/* ==========================================================================
+   Superpowers strip
+   ========================================================================== */
+.mb-superpowers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-4);
+  align-items: center;
+  padding: var(--mb-space-3) var(--mb-space-4);
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  margin-bottom: var(--mb-space-3);
+  box-shadow: var(--mb-shadow-panel);
+}
+.mb-superpowers > .mb-switch { flex: 0 0 auto; }
+.mb-superpowers-spacer { flex: 1; }
+
+/* ==========================================================================
+   Accordion re-skin — keep Bootstrap 5 interactivity, repaint surfaces
+   --------------------------------------------------------------------------
+   We don't rewrite the accordion markup (it would break drag-reorder and
+   panel-sortable.js). Instead, we scope overrides to #dashboardAccordion.
+   ========================================================================== */
+#dashboardAccordion.accordion {
+  --bs-accordion-bg: var(--mb-bg-1);
+  --bs-accordion-border-color: var(--mb-border-subtle);
+  --bs-accordion-border-radius: var(--mb-radius-lg);
+  --bs-accordion-inner-border-radius: var(--mb-radius-lg);
+  --bs-accordion-btn-bg: var(--mb-bg-2);
+  --bs-accordion-active-bg: var(--mb-bg-2);
+  --bs-accordion-active-color: var(--mb-primary);
+  --bs-accordion-btn-color: var(--mb-fg-primary);
+  --bs-accordion-btn-focus-border-color: var(--mb-primary);
+  --bs-accordion-btn-focus-box-shadow: var(--mb-focus-ring);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+}
+#dashboardAccordion .accordion-item {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--mb-shadow-panel);
+}
+#dashboardAccordion .accordion-button {
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-lg);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+  padding: var(--mb-space-3) var(--mb-space-4);
+}
+#dashboardAccordion .accordion-button:not(.collapsed) {
+  background: var(--mb-bg-2);
+  color: var(--mb-primary);
+  box-shadow: inset 0 -1px 0 var(--mb-border-default);
+}
+#dashboardAccordion .accordion-button::after {
+  filter: drop-shadow(0 0 2px var(--mb-primary));
+}
+#dashboardAccordion .accordion-body {
+  background: var(--mb-bg-1);
+  color: var(--mb-fg-primary);
+  padding: var(--mb-space-4);
+}
+
+/* Drag handle */
+#dashboardAccordion .panel-drag-handle { opacity: 0.4; cursor: grab; }
+#dashboardAccordion .panel-drag-handle:hover { opacity: 1; color: var(--mb-primary); }
+
+/* ==========================================================================
+   Bootstrap neutralizers inside the new shell
+   --------------------------------------------------------------------------
+   The dashboard still contains legacy .card, .badge, .btn, .form-switch
+   markup in the accordion bodies. We tint those using tokens so they feel
+   cohesive without changing inner markup.
+   ========================================================================== */
+#dashboardAccordion .card {
+  background: var(--mb-bg-2);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+}
+#dashboardAccordion .card-header { background: var(--mb-bg-3); border-color: var(--mb-border-subtle); }
+#dashboardAccordion .btn-outline-secondary { color: var(--mb-fg-secondary); border-color: var(--mb-border-strong); }
+#dashboardAccordion .btn-outline-secondary:hover { background: var(--mb-bg-hover); border-color: var(--mb-primary); color: var(--mb-fg-primary); }
+#dashboardAccordion .btn-outline-success { color: var(--mb-success); border-color: var(--mb-success); }
+#dashboardAccordion .btn-outline-success:hover { background: var(--mb-success); color: var(--mb-fg-on-accent); }
+#dashboardAccordion .btn-outline-danger { color: var(--mb-danger); border-color: var(--mb-danger); }
+#dashboardAccordion .btn-outline-danger:hover { background: var(--mb-danger); color: #fff; }
+#dashboardAccordion .btn-outline-info { color: var(--mb-info); border-color: var(--mb-info); }
+#dashboardAccordion .btn-info { background: var(--mb-info); border-color: var(--mb-info); color: var(--mb-fg-on-accent); }
+#dashboardAccordion .btn-warning { background: var(--mb-warning); border-color: var(--mb-warning); color: var(--mb-fg-on-accent); }
+#dashboardAccordion .btn-success { background: var(--mb-success); border-color: var(--mb-success); color: var(--mb-fg-on-accent); }
+#dashboardAccordion .text-info { color: var(--mb-info) !important; }
+#dashboardAccordion .text-warning { color: var(--mb-warning) !important; }
+#dashboardAccordion .text-success { color: var(--mb-success) !important; }
+#dashboardAccordion .text-danger { color: var(--mb-danger) !important; }
+#dashboardAccordion .bg-dark { background: var(--mb-bg-0) !important; }
+#dashboardAccordion .border-info { border-color: var(--mb-info) !important; }
+#dashboardAccordion .border-warning { border-color: var(--mb-warning) !important; }
+
+/* Badge color-scheme alignment for accordion */
+#dashboardAccordion .badge.bg-secondary { background: var(--mb-bg-3) !important; color: var(--mb-fg-secondary); border: 1px solid var(--mb-border-default); }
+#dashboardAccordion .badge.bg-success { background: var(--mb-success) !important; color: var(--mb-fg-on-accent); }
+#dashboardAccordion .badge.bg-info { background: var(--mb-info) !important; color: var(--mb-fg-on-accent); }
+
+/* Progress bars in the accordion */
+#dashboardAccordion .progress { background: var(--mb-bg-3); }
+#dashboardAccordion .progress-bar.bg-success { background: linear-gradient(90deg, var(--mb-success), var(--mb-warning) 75%, var(--mb-danger)) !important; }
+
+/* ==========================================================================
+   Compact / phone-width tuning
+   ========================================================================== */
+@media (max-width: 480px) {
+  .mb-chat-log { font-size: var(--mb-text-sm); max-height: 40vh; }
+  .mb-superpowers { gap: var(--mb-space-3); padding: var(--mb-space-2) var(--mb-space-3); }
+  .mb-superpowers > .mb-switch { font-size: var(--mb-text-sm); }
+  #dashboardAccordion .accordion-button { font-size: var(--mb-text-base); padding: var(--mb-space-2) var(--mb-space-3); }
+  #dashboardAccordion .accordion-body { padding: var(--mb-space-3); }
+}
+
+/* ==========================================================================
+   Panic flash — briefly flood-fills screen when panic fires
+   ========================================================================== */
+.mb-panic-flash {
+  position: fixed;
+  inset: 0;
+  background: var(--mb-danger);
+  opacity: 0;
+  pointer-events: none;
+  z-index: var(--mb-z-toast);
+  animation: mb-panic-flash-anim 600ms var(--mb-ease-out);
+}
+@keyframes mb-panic-flash-anim {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.55; }
+  100% { opacity: 0; }
+}
