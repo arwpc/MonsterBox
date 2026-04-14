@@ -2,6 +2,27 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.1.2] - 2026-04-14 — Test Coverage Pass
+
+Audit + gap-fill for the Phase 3/4 UX work. Not a coverage-number push — a focused pass that pins down the behaviors added or changed in v8.1.0 / v8.1.1 so a future refactor can't silently unwind them.
+
+### Added — `tests/system/ux-redesign.test.js` (28 tests)
+
+- **Design system CSS served** — `/css/tokens.css`, `/css/components.css`, `/css/mb-page-chrome.css`, `/css/animation.css`, `/css/studio.css`, `/css/dashboard.css` all return 200 and contain their signature selectors. `tokens.css` defines all three curated themes. `mb-page-chrome.css` actually retints Bootstrap cards and buttons via the cluster selector.
+- **`master.ejs` cluster derivation** — requests to `/setup`, `/setup/style-guide`, `/poses/editor`, `/audio-library`, `/video-library`, `/orchestration`, `/goblin-management`, `/ai-settings` all produce `<main>` with the matching `mb-cluster-*` class. Dashboard `/` correctly has no cluster class. `/scenes` (studio) skips `<main>` but loads `studio.css`.
+- **v8.1.1 script extractions** — `/js/dashboard.js` and `/js/poses-editor.js` serve, contain their expected IIFE anchors, and are referenced from their respective views. Pose editor view embeds the bootstrap JSON block; dashboard view no longer carries the inline FSM.
+- **Theme picker reduction** — `/setup/system` exposes only `haunted-console`, `cold-crypt`, `bright-ops`. Retired Bootswatch names (`darkly`, `cyborg`, `slate`, `cerulean`, `flatly`, `vapor`, `superhero`, `quartz`) are absent from the `THEMES` array literal. Fallback logic for legacy saved themes is present.
+- **Style guide route** — `/setup/style-guide` renders all 9 component sections and includes the panic-button demo.
+- **Stop-all plumbing** — `/api/audio-loop/stop-all` and the character audio stop endpoint respond (no 500), covering the paths the panic button fires.
+
+### Audit
+
+- Ran full unit + system: 167 + 311 → **478 → 506 passing**. Zero failures. 30+12 pending (all hardware/ElevenLabs-gated, as designed).
+- Browser E2E remains unavailable on the dev RPi because the production service holds port 3000 — known constraint.
+- Flaky tests catalogued in MEMORY.md (VU meter, jaw save, calibration timeout) are all browser-tier and couldn't be exercised in this pass.
+
+---
+
 ## [8.1.1] - 2026-04-14 — UX Redesign Backlog Cleanup
 
 Follow-up to v8.1.0. Clears the deferred items from the Phase 4 backlog so the redesign stands on a clean foundation before Halloween.
