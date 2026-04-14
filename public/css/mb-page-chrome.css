@@ -1,0 +1,249 @@
+/* ==========================================================================
+   MonsterBox Page Chrome — Phase 4b
+   --------------------------------------------------------------------------
+   Generic cluster-scoped styling. Any view wrapped in a root class matching
+   `mb-cluster-*` inherits:
+     · shared page-layout helpers (.mb-page-header, .mb-split-*)
+     · Bootstrap neutralizers (card/btn/badge/form/modal/alert/list-group
+       tinted from tokens.css — no rewrite of runtime-generated markup)
+
+   Uses attribute selector `[class*="mb-cluster-"]` so every cluster
+   (animation, setup, library, system, onboarding) picks this up without
+   duplicating the rule block per cluster.
+   ========================================================================== */
+
+/* ==========================================================================
+   Shared layout helpers (used by every cluster, previously duplicated in
+   animation.css — kept there as well for backwards compat with Phase 4a).
+   ========================================================================== */
+[class*="mb-cluster-"] .mb-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3) var(--mb-space-4);
+  margin-bottom: var(--mb-space-4);
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  box-shadow: var(--mb-shadow-panel);
+}
+[class*="mb-cluster-"] .mb-page-header-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mb-space-3);
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-2xl);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+  margin: 0;
+}
+[class*="mb-cluster-"] .mb-page-header-title .mb-text-secondary {
+  font-family: var(--mb-font-ui);
+  font-size: var(--mb-text-sm);
+}
+[class*="mb-cluster-"] .mb-page-header-actions { display: flex; gap: var(--mb-space-2); flex-wrap: wrap; }
+
+[class*="mb-cluster-"] .mb-split-7-5 {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--mb-space-4);
+}
+[class*="mb-cluster-"] .mb-split-5-7 {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--mb-space-4);
+}
+[class*="mb-cluster-"] .mb-split-1-1 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--mb-space-4);
+}
+@media (max-width: 960px) {
+  [class*="mb-cluster-"] .mb-split-7-5,
+  [class*="mb-cluster-"] .mb-split-5-7,
+  [class*="mb-cluster-"] .mb-split-1-1 { grid-template-columns: 1fr; }
+}
+
+/* Card-grid helper — setup hub / fleet views */
+[class*="mb-cluster-"] .mb-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--mb-space-4);
+}
+
+/* "Advanced" disclosure — collapsible panel for expert settings */
+[class*="mb-cluster-"] details.mb-advanced {
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-3);
+  margin-top: var(--mb-space-3);
+}
+[class*="mb-cluster-"] details.mb-advanced > summary {
+  cursor: pointer;
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  letter-spacing: var(--mb-tracking-wider);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+  list-style: none;
+}
+[class*="mb-cluster-"] details.mb-advanced > summary::before {
+  content: "▸ ";
+  color: var(--mb-primary);
+}
+[class*="mb-cluster-"] details.mb-advanced[open] > summary::before { content: "▾ "; }
+[class*="mb-cluster-"] details.mb-advanced > :not(summary) { margin-top: var(--mb-space-3); }
+
+/* ==========================================================================
+   Bootstrap neutralizers — the trick that lets us skip rewriting the
+   ~N thousand lines of script that generate Bootstrap-class markup at
+   runtime. Every rule scoped under [class*="mb-cluster-"] so it only
+   applies where a view has opted in.
+   ========================================================================== */
+[class*="mb-cluster-"] .card {
+  background: var(--mb-bg-2);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+}
+[class*="mb-cluster-"] .card-header {
+  background: var(--mb-bg-3);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+  font-family: var(--mb-font-display);
+  letter-spacing: var(--mb-tracking-wide);
+}
+[class*="mb-cluster-"] .card-body  { color: var(--mb-fg-primary); }
+[class*="mb-cluster-"] .card-title { color: var(--mb-fg-primary); }
+[class*="mb-cluster-"] .card-footer{ background: var(--mb-bg-1); border-color: var(--mb-border-subtle); }
+
+[class*="mb-cluster-"] .list-group { background: transparent; }
+[class*="mb-cluster-"] .list-group-item {
+  background: var(--mb-bg-2);
+  border-color: var(--mb-border-subtle);
+  color: var(--mb-fg-primary);
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+}
+[class*="mb-cluster-"] .list-group-item:hover { background: var(--mb-bg-hover); }
+[class*="mb-cluster-"] .list-group-item.active {
+  background: color-mix(in srgb, var(--mb-primary) 20%, var(--mb-bg-2));
+  border-color: var(--mb-primary);
+  color: var(--mb-fg-primary);
+}
+
+[class*="mb-cluster-"] .btn { font-family: var(--mb-font-ui); }
+[class*="mb-cluster-"] .btn-success   { background: var(--mb-success); border-color: var(--mb-success); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-info      { background: var(--mb-info);    border-color: var(--mb-info);    color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-warning   { background: var(--mb-warning); border-color: var(--mb-warning); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-danger    { background: var(--mb-danger);  border-color: var(--mb-danger);  color: #fff; }
+[class*="mb-cluster-"] .btn-primary   { background: var(--mb-primary); border-color: var(--mb-primary); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-secondary { background: var(--mb-bg-3);    border-color: var(--mb-border-strong); color: var(--mb-fg-primary); }
+
+[class*="mb-cluster-"] .btn-outline-primary   { color: var(--mb-primary); border-color: var(--mb-primary); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-primary:hover   { background: var(--mb-primary); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-outline-success   { color: var(--mb-success); border-color: var(--mb-success); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-success:hover   { background: var(--mb-success); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-outline-info      { color: var(--mb-info); border-color: var(--mb-info); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-info:hover      { background: var(--mb-info); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-outline-warning   { color: var(--mb-warning); border-color: var(--mb-warning); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-warning:hover   { background: var(--mb-warning); color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .btn-outline-danger    { color: var(--mb-danger); border-color: var(--mb-danger); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-danger:hover    { background: var(--mb-danger); color: #fff; }
+[class*="mb-cluster-"] .btn-outline-secondary { color: var(--mb-fg-secondary); border-color: var(--mb-border-strong); background: transparent; }
+[class*="mb-cluster-"] .btn-outline-secondary:hover { background: var(--mb-bg-hover); color: var(--mb-fg-primary); border-color: var(--mb-primary); }
+
+[class*="mb-cluster-"] .badge.bg-secondary { background: var(--mb-bg-3) !important; color: var(--mb-fg-secondary); border: 1px solid var(--mb-border-default); }
+[class*="mb-cluster-"] .badge.bg-success   { background: var(--mb-success) !important; color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .badge.bg-info      { background: var(--mb-info) !important;    color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .badge.bg-warning   { background: var(--mb-warning) !important; color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .badge.bg-danger    { background: var(--mb-danger) !important;  color: #fff; }
+[class*="mb-cluster-"] .badge.bg-primary   { background: var(--mb-primary) !important; color: var(--mb-fg-on-accent); }
+
+[class*="mb-cluster-"] .alert-success { background: color-mix(in srgb, var(--mb-success) 16%, transparent); color: var(--mb-success); border-color: var(--mb-success); }
+[class*="mb-cluster-"] .alert-info    { background: color-mix(in srgb, var(--mb-info) 16%, transparent);    color: var(--mb-info);    border-color: var(--mb-info); }
+[class*="mb-cluster-"] .alert-warning { background: color-mix(in srgb, var(--mb-warning) 16%, transparent); color: var(--mb-warning); border-color: var(--mb-warning); }
+[class*="mb-cluster-"] .alert-danger  { background: color-mix(in srgb, var(--mb-danger) 16%, transparent);  color: var(--mb-danger);  border-color: var(--mb-danger); }
+
+[class*="mb-cluster-"] .form-label    { color: var(--mb-fg-secondary); font-size: var(--mb-text-sm); }
+[class*="mb-cluster-"] .form-control,
+[class*="mb-cluster-"] .form-select {
+  background: var(--mb-bg-1);
+  border-color: var(--mb-border-default);
+  color: var(--mb-fg-primary);
+}
+[class*="mb-cluster-"] .form-control::placeholder { color: var(--mb-fg-muted); }
+[class*="mb-cluster-"] .form-control:focus,
+[class*="mb-cluster-"] .form-select:focus { border-color: var(--mb-primary); box-shadow: var(--mb-focus-ring); }
+[class*="mb-cluster-"] .form-check-input:checked { background-color: var(--mb-primary); border-color: var(--mb-primary); }
+[class*="mb-cluster-"] .form-range { accent-color: var(--mb-primary); }
+
+[class*="mb-cluster-"] .modal-content {
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-default);
+  color: var(--mb-fg-primary);
+}
+[class*="mb-cluster-"] .modal-header,
+[class*="mb-cluster-"] .modal-footer { border-color: var(--mb-border-subtle); }
+[class*="mb-cluster-"] .btn-close { filter: invert(0.9); }
+
+[class*="mb-cluster-"] .table {
+  color: var(--mb-fg-primary);
+  background: transparent;
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--mb-fg-primary);
+  --bs-table-border-color: var(--mb-border-subtle);
+  --bs-table-striped-bg: var(--mb-bg-2);
+  --bs-table-hover-bg: var(--mb-bg-hover);
+}
+[class*="mb-cluster-"] .table thead th {
+  background: var(--mb-bg-3);
+  color: var(--mb-fg-secondary);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--mb-tracking-wider);
+}
+
+[class*="mb-cluster-"] .progress { background: var(--mb-bg-3); }
+[class*="mb-cluster-"] .progress-bar.bg-success { background: var(--mb-success) !important; }
+[class*="mb-cluster-"] .progress-bar.bg-info    { background: var(--mb-info) !important; }
+[class*="mb-cluster-"] .progress-bar.bg-warning { background: var(--mb-warning) !important; }
+[class*="mb-cluster-"] .progress-bar.bg-danger  { background: var(--mb-danger) !important; }
+
+[class*="mb-cluster-"] .spinner-border { color: var(--mb-primary); }
+
+[class*="mb-cluster-"] .dropdown-menu {
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-default);
+  color: var(--mb-fg-primary);
+}
+[class*="mb-cluster-"] .dropdown-item { color: var(--mb-fg-primary); }
+[class*="mb-cluster-"] .dropdown-item:hover,
+[class*="mb-cluster-"] .dropdown-item:focus { background: var(--mb-bg-hover); color: var(--mb-fg-primary); }
+
+/* Bootstrap "soft" backgrounds — tint to our palette */
+[class*="mb-cluster-"] .bg-primary   { background: var(--mb-primary) !important; color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .bg-success   { background: var(--mb-success) !important; color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .bg-danger    { background: var(--mb-danger) !important;  color: #fff; }
+[class*="mb-cluster-"] .bg-warning   { background: var(--mb-warning) !important; color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .bg-info      { background: var(--mb-info) !important;    color: var(--mb-fg-on-accent); }
+[class*="mb-cluster-"] .bg-secondary { background: var(--mb-bg-3) !important;    color: var(--mb-fg-secondary); }
+[class*="mb-cluster-"] .bg-dark      { background: var(--mb-bg-0) !important;    color: var(--mb-fg-primary); }
+[class*="mb-cluster-"] .bg-light     { background: var(--mb-bg-2) !important;    color: var(--mb-fg-primary); }
+
+[class*="mb-cluster-"] .text-muted    { color: var(--mb-fg-muted) !important; }
+[class*="mb-cluster-"] .text-primary  { color: var(--mb-primary) !important; }
+[class*="mb-cluster-"] .text-success  { color: var(--mb-success) !important; }
+[class*="mb-cluster-"] .text-info     { color: var(--mb-info) !important; }
+[class*="mb-cluster-"] .text-warning  { color: var(--mb-warning) !important; }
+[class*="mb-cluster-"] .text-danger   { color: var(--mb-danger) !important; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 640px) {
+  [class*="mb-cluster-"] .mb-page-header { padding: var(--mb-space-3); }
+  [class*="mb-cluster-"] .mb-page-header-title { font-size: var(--mb-text-xl); }
+}

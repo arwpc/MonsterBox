@@ -29,7 +29,9 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
     <!-- MonsterBox Design System (Phase 2 foundation) -->
     <link href="/css/tokens.css" rel="stylesheet">
     <link href="/css/components.css" rel="stylesheet">
-    <!-- Animation cluster (scoped via .mb-cluster-animation root class) -->
+    <!-- Page chrome: applies to any view with a .mb-cluster-* root class -->
+    <link href="/css/mb-page-chrome.css" rel="stylesheet">
+    <!-- Cluster-specific styles -->
     <link href="/css/animation.css" rel="stylesheet">
 
     <!-- Custom CSS (legacy — being phased out in Phase 4) -->
@@ -89,8 +91,22 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
             <% } %>
 
                 <!-- Main Content -->
+                <%
+                // Derive a cluster class from the route's `page` so the page-chrome
+                // CSS selector [class*="mb-cluster-"] applies the design system.
+                // Phase 4b: setup / library / system / onboarding clusters.
+                var __mbCluster = (function (p) {
+                    if (!p) return null;
+                    if (p === 'scenes' || p === 'poses-editor') return 'mb-cluster-animation';
+                    if (p.indexOf('setup') === 0) return 'mb-cluster-setup';
+                    if (p === 'audio-library' || p === 'video-library') return 'mb-cluster-library';
+                    if (p === 'orchestration' || p === 'goblin-management' || p.indexOf('ai-settings') === 0) return 'mb-cluster-system';
+                    if (p === 'first-run' || p === 'error') return 'mb-cluster-onboarding';
+                    return null;
+                })(typeof page !== 'undefined' ? page : null);
+                %>
                 <% if (typeof includeMainWrapper==='undefined' || includeMainWrapper !==false) { %>
-                    <main class="container-fluid py-2">
+                    <main class="container-fluid py-2<%= __mbCluster ? ' ' + __mbCluster : '' %>">
                         <%- content %>
                     </main>
                     <% } else { %>

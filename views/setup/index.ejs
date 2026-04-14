@@ -1,68 +1,98 @@
-<div class="container-fluid">
-    <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-arms-up display-4 text-success mb-3"></i>
-                    <h5 class="card-title">Poses</h5>
-                    <p class="card-text">Create and manage poses for your animatronic character.</p>
-                    <a href="/setup/poses" class="btn btn-success">
-                        <i class="bi bi-arrow-right"></i> Manage Poses
-                    </a>
-                </div>
-            </div>
-        </div>
+<header class="mb-page-header">
+  <h1 class="mb-page-header-title">
+    <i class="bi bi-gear"></i> Setup
+    <span class="mb-text-secondary">· configure your animatronic</span>
+  </h1>
+  <div class="mb-page-header-actions">
+    <a href="/" class="mb-btn mb-btn-ghost">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+    <a href="/setup/style-guide" class="mb-btn mb-btn-ghost mb-btn-sm">
+      <i class="bi bi-palette"></i> Style Guide
+    </a>
+  </div>
+</header>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-sliders display-4 text-warning mb-3"></i>
-                    <h5 class="card-title">Calibration</h5>
-                    <p class="card-text">Calibrate servo positions and movement ranges.</p>
-                    <a href="/setup/calibration" class="btn btn-warning">
-                        <i class="bi bi-arrow-right"></i> Calibrate
-                    </a>
-                </div>
-            </div>
-        </div>
+<div class="mb-card-grid">
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-volume-up display-4 text-info mb-3"></i>
-                    <h5 class="card-title">Audio</h5>
-                    <p class="card-text">Configure audio settings and sound effects.</p>
-                    <a href="/setup/audio" class="btn btn-info">
-                        <i class="bi bi-arrow-right"></i> Audio Settings
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-camera-video display-4 text-secondary mb-3"></i>
-                    <h5 class="card-title">Webcam</h5>
-                    <p class="card-text">Configure webcam and vision settings.</p>
-                    <a href="/setup/calibration" class="btn btn-secondary">
-                        <i class="bi bi-arrow-right"></i> Calibration (Webcam)
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-pc-display display-4 text-secondary mb-3"></i>
-                    <h5 class="card-title">System</h5>
-                    <p class="card-text">System preferences and advanced settings.</p>
-                    <a href="/setup/system" class="btn btn-secondary">
-                        <i class="bi bi-arrow-right"></i> System Settings
-                    </a>
-                </div>
-            </div>
-        </div>
+  <a href="/setup/characters" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-person-badge" style="font-size: 2.5rem; color: var(--mb-primary);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Characters</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Add, edit, select the animatronic you're working on.</p>
     </div>
+  </a>
+
+  <a href="/setup/calibration" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-sliders" style="font-size: 2.5rem; color: var(--mb-warning);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Calibration</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Servo positions, linear actuator ranges, webcam devices.</p>
+    </div>
+  </a>
+
+  <a href="/poses/editor" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-person-arms-up" style="font-size: 2.5rem; color: var(--mb-success);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Poses</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Build and save named poses — the building blocks of scenes.</p>
+    </div>
+  </a>
+
+  <a href="/setup/jaw-animation" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-soundwave" style="font-size: 2.5rem; color: var(--mb-info);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Jaw Animation</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Sync jaw servo to audio amplitude. Tune envelope &amp; range.</p>
+    </div>
+  </a>
+
+  <a href="/setup/head-animation" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-eye" style="font-size: 2.5rem; color: var(--mb-ai);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Head Tracking</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Webcam-driven head tracking with OpenCV preview.</p>
+    </div>
+  </a>
+
+  <a href="/setup/audio" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-volume-up" style="font-size: 2.5rem; color: var(--mb-info);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Audio</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Speakers, microphones, volumes, and per-character routing.</p>
+    </div>
+  </a>
+
+  <a href="/setup/models" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-cpu" style="font-size: 2.5rem; color: var(--mb-fg-secondary);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Hardware Models</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Servo specs, pin assignments, model definitions.</p>
+    </div>
+  </a>
+
+  <a href="/setup/system" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-pc-display" style="font-size: 2.5rem; color: var(--mb-fg-secondary);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">System</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Theme, volume, performance, and advanced knobs.</p>
+    </div>
+  </a>
+
+  <a href="/ai-settings" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-cpu-fill" style="font-size: 2.5rem; color: var(--mb-ai);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">AI Settings</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">ElevenLabs voice, STT, agent configuration.</p>
+    </div>
+  </a>
+
+  <a href="/orchestration" class="mb-card mb-card-interactive" style="text-decoration:none; color:inherit;">
+    <div style="text-align:center; padding: var(--mb-space-3);">
+      <i class="bi bi-broadcast" style="font-size: 2.5rem; color: var(--mb-accent-violet);"></i>
+      <h3 class="mb-heading mb-heading-3" style="margin: var(--mb-space-3) 0 var(--mb-space-1);">Orchestration</h3>
+      <p class="mb-text-secondary mb-text-sm" style="margin: 0;">Multi-animatronic broadcast and fleet control.</p>
+    </div>
+  </a>
+
 </div>
