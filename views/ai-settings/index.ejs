@@ -1,9 +1,21 @@
 <div class="container-fluid">
-    <div class="d-flex justify-content-end mb-2">
-        <button class="btn btn-primary" id="testConnection" data-bs-toggle="tooltip" data-bs-placement="top" title="Test ElevenLabs API connection">
-            <i class="bi bi-plug"></i> Test Connection
-        </button>
-    </div>
+    <header class="mb-page-header">
+        <h1 class="mb-page-header-title">
+            <i class="bi bi-cpu-fill"></i> AI Settings
+            <span class="mb-text-secondary">· ElevenLabs voice, speech, and agent</span>
+        </h1>
+        <div class="mb-page-header-actions">
+            <a href="/ai-settings/stt" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-mic"></i> STT
+            </a>
+            <a href="/ai-settings/tts" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-megaphone"></i> TTS
+            </a>
+            <button class="btn btn-primary" id="testConnection" data-bs-toggle="tooltip" data-bs-placement="top" title="Test ElevenLabs API connection">
+                <i class="bi bi-plug"></i> Test Connection
+            </button>
+        </div>
+    </header>
 
     <!-- Configuration Status -->
     <div class="row mb-4">

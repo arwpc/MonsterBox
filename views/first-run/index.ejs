@@ -1,37 +1,38 @@
-<% /* First-run skull-themed character selection */ %>
-  <div class="container py-5 first-run">
-    <div class="text-center mb-4">
-      <h1 class="neon">Welcome to MonsterBox <%= typeof appVersion !== 'undefined' ? appVersion : '' %></h1>
-      <p class="lead text-muted">Pick the animatronic you are setting up on this device.</p>
-    </div>
+<% /* First-run character selection — Phase 4d redesign */ %>
+<div class="container" style="max-width: 1100px; padding: var(--mb-space-8) var(--mb-space-4);">
 
-    <div class="row g-4">
-      <% (characters || []).forEach(function(ch){ %>
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <div class="card skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>">
-            <div class="skull thumb d-flex align-items-center justify-content-center p-4">
-              <% if (ch.activeImage) { %>
-                <img src="/api/characters/<%= ch.id %>/images/<%= ch.activeImage %>" alt="<%= ch.name %>"
-                  class="character-first-run-image rounded-circle"
-                  style="width: 120px; height: 120px; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <span class="skull-emoji" style="display: none;">💀</span>
-                <% } else { %>
-                  <span class="skull-emoji">💀</span>
-                  <% } %>
-            </div>
-            <div class="card-body text-center">
-              <h5 class="card-title">
-                <%= ch.name %>
-              </h5>
-              <button class="btn btn-primary btn-select" data-id="<%= ch.id %>">Use <%= ch.name %></button>
-            </div>
-          </div>
+  <header style="text-align:center; margin-bottom: var(--mb-space-8);">
+    <div class="mb-eyebrow">MonsterBox <%= typeof appVersion !== 'undefined' ? appVersion : '' %></div>
+    <h1 class="mb-heading mb-heading-1" style="margin-top: var(--mb-space-2);">Welcome to the Crypt</h1>
+    <p class="mb-text-secondary" style="max-width: 60ch; margin: 0 auto;">
+      Pick the animatronic you're setting up on this device. You can always switch later from the dashboard.
+    </p>
+  </header>
+
+  <div class="mb-card-grid">
+    <% (characters || []).forEach(function(ch){ %>
+      <div class="mb-card mb-card-interactive skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>" tabindex="0">
+        <div style="display:flex; align-items:center; justify-content:center; padding: var(--mb-space-5); min-height: 160px;">
+          <% if (ch.activeImage) { %>
+            <img src="/api/characters/<%= ch.id %>/images/<%= ch.activeImage %>" alt="<%= ch.name %>"
+                 style="width: 128px; height: 128px; object-fit: cover; border-radius: 50%; border: 3px solid var(--mb-border-accent); box-shadow: var(--mb-glow-poison);"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <span class="skull-emoji" style="display:none; font-size: 72px;">💀</span>
+          <% } else { %>
+            <span class="skull-emoji" style="font-size: 72px;">💀</span>
+          <% } %>
         </div>
-        <% }) %>
-    </div>
-
-    <div class="text-center mt-4">
-      <a href="/" class="btn btn-outline-secondary">Skip for now</a>
-    </div>
+        <div style="text-align:center; padding: 0 var(--mb-space-4) var(--mb-space-4);">
+          <h3 class="mb-heading mb-heading-3" style="margin: 0 0 var(--mb-space-3);"><%= ch.name %></h3>
+          <button class="mb-btn mb-btn-primary mb-btn-block btn-select" data-id="<%= ch.id %>">
+            Use <%= ch.name %>
+          </button>
+        </div>
+      </div>
+    <% }) %>
   </div>
+
+  <div style="text-align:center; margin-top: var(--mb-space-8);">
+    <a href="/" class="mb-btn mb-btn-ghost">Skip for now</a>
+  </div>
+</div>
