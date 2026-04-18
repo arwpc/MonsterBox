@@ -81,3 +81,6 @@ data/performance-history.json
 data/startup-health.json
 data/actuator-positions.json
 data/character-*/lurk-mode-state.json
+# Per-node calibration — globally keyed by partId but partIds are per-character,
+# so syncing across nodes causes adapter/type mismatches (Orlok actuator → Mina servo).
+data/calibration_profiles.json

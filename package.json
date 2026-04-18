@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "8.1.3",
+  "version": "8.1.4",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
