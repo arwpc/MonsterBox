@@ -46,12 +46,12 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 12
+      "channel": 11
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-03-28T23:00:00.000Z"
+    "updated": "2026-04-18T22:55:00.000Z"
   },
   {
     "id": "10",

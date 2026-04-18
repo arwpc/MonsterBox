@@ -61,10 +61,35 @@ function persistPosition(partId, currentP, extra = {}) {
   actuatorPositionStore.markStopped(key, currentP);
 }
 
-// Auto-create a default calibration profile based on part type
+// Auto-create a default calibration profile based on part type.
+// Also reconciles channel/address with parts.json on every load — parts.json
+// is the source of truth, and stale cap.channel from a prior auto-create
+// would cause continuous-servo commands to drive the wrong PCA channel.
 async function getOrAutoCreateProfile(partId) {
   let profile = await store.get(partId);
-  if (profile) return profile;
+
+  if (profile) {
+    // Reconcile cached channel/address against current parts.json (continuous-servo only —
+    // absolute-servo doesn't store channel in cap, openloop-linear has no channel concept).
+    if (profile.capability && profile.capability.kind === 'continuous-servo') {
+      try {
+        const parts = await loadParts();
+        const part = parts.find(p => String(p.id) === String(partId));
+        if (part && part.config) {
+          const partChannel = part.config.channel != null ? part.config.channel : 0;
+          const partAddress = part.config.address != null ? part.config.address : 64;
+          if (profile.capability.channel !== partChannel || profile.capability.address !== partAddress) {
+            console.log(`🔄 Calibration profile for part ${partId} stale: ch ${profile.capability.channel}→${partChannel}, addr ${profile.capability.address}→${partAddress}. Syncing from parts.json.`);
+            profile.capability.channel = partChannel;
+            profile.capability.address = partAddress;
+            adapterCache.delete(partId); // force adapter rebuild with new channel
+            await store.upsert(profile);
+          }
+        }
+      } catch (_) { /* fall through with existing profile */ }
+    }
+    return profile;
+  }
 
   // Look up part data to determine capability
   try {
