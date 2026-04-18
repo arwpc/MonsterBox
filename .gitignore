@@ -72,3 +72,12 @@ apps/monsterbox4/tests/ui/traces/
 .claude/*
 !.claude/commands/
 !.claude/settings.json
+
+# Runtime state (regenerates every run, per-node — not source-of-truth)
+data/monsterbox.pid
+data/movement-telemetry.json
+data/scene-analytics.json
+data/performance-history.json
+data/startup-health.json
+data/actuator-positions.json
+data/character-*/lurk-mode-state.json

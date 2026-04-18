@@ -166,11 +166,21 @@
         "panServoId": "",
         "rangeDeg": 90,
         "smoothing": 0.35
+      },
+      "controls": {
+        "exposure_auto": 3,
+        "exposure_absolute": 156,
+        "gain": 0,
+        "saturation": 64,
+        "brightness": 0,
+        "contrast": 1,
+        "gamma": 100,
+        "nightMode": 0
       }
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2026-03-29T05:23:10.559Z",
+    "updated": "2026-04-13T19:29:20.125Z",
     "modelId": "arducam-b0205"
   },
   {

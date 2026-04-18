@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "created": "2025-11-01T12:00:00.000Z",
-  "lastModified": "2026-03-23T00:39:53.741Z",
+  "lastModified": "2026-04-13T19:40:44.078Z",
   "totalFiles": 132,
   "totalSize": 290540797,
   "categories": [
@@ -519,8 +519,8 @@
       "lastModified": "2026-02-16T02:45:44.731Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2026-04-11T21:10:24.338Z"
     },
     {
       "id": "12 - Ghostly Music",
@@ -766,11 +766,11 @@
       "genre": "Terror",
       "year": 2006,
       "uploadedAt": "2026-01-06T00:14:22.283Z",
-      "lastModified": "2026-03-23T00:37:32.585Z",
+      "lastModified": "2026-04-13T19:40:44.078Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 36,
-      "lastPlayed": "2026-03-23T00:39:53.741Z"
+      "playCount": 40,
+      "lastPlayed": "2026-04-13T19:40:35.845Z"
     },
     {
       "id": "206c8836-bc34-4ac9-a426-f773eaf943c8",
@@ -844,8 +844,8 @@
       "lastModified": "2026-02-16T02:45:45.475Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2026-04-12T22:15:34.025Z"
     },
     {
       "id": "23ed0f58-41b5-41a8-9344-e7033985e750",
