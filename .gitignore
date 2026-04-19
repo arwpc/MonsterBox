@@ -83,6 +83,9 @@ data/performance-history.json
 data/startup-health.json
 data/actuator-positions.json
 data/character-*/lurk-mode-state.json
+# Timestamp-only rewrites by the running service that pollute git status without signal.
+data/character-*/audio-config.json
+data/character-*/microphones.json
 # Per-node calibration — globally keyed by partId but partIds are per-character,
 # so syncing across nodes causes adapter/type mismatches (Orlok actuator → Mina servo).
 data/calibration_profiles.json
