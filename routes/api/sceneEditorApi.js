@@ -8,11 +8,13 @@ import { loadParts } from '../../controllers/partsController.js';
 import poseRepository from '../../services/poses/poseRepository.js';
 import audioLibraryService from '../../services/audioLibraryService.js';
 import goblinManagerService from '../../services/goblinManagerService.js';
+import { resolveCharacterSync } from '../../services/characterContext.js';
 
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
-  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
+  const ctx = resolveCharacterSync(req);
+  return ctx ? ctx.id : null;
 }
 
 /**

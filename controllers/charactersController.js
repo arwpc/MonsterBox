@@ -1,5 +1,6 @@
 import { loadCharacters, getCharacterById, createCharacter, updateCharacter, deleteCharacter } from '../services/characterService.js';
 import { readConfig, updateSelectedCharacter } from '../services/configService.js';
+import { resolveCharacter, invalidateCache as invalidateCharacterCache } from '../services/characterContext.js';
 
 function parseId(param) {
   var n = parseInt(param, 10);
@@ -85,12 +86,9 @@ export async function remove(req, res) {
   var id = parseId(req.params.id);
   if (id === null) return res.status(400).json({ success: false, error: 'Invalid id' });
   try {
-    // Prefer in-memory selection (authoritative during runtime), fall back to disk
-    var selected = (req.app && req.app.locals && req.app.locals.config && req.app.locals.config.selectedCharacter) || null;
-    if (selected === null) {
-      var cfg = await readConfig();
-      selected = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
-    }
+    // Canonical resolver handles in-memory → disk fallback precedence
+    var ctx = await resolveCharacter(req);
+    var selected = ctx ? ctx.id : null;
     if (selected !== null && selected === id) {
       return res.status(400).json({ success: false, error: 'Cannot delete the currently selected character' });
     }
@@ -110,15 +108,9 @@ export async function remove(req, res) {
 
 export async function getCurrent(req, res) {
   try {
-    // Prefer in-memory config first for responsiveness in tests
-    var sel = null;
-    if (req.app && req.app.locals && req.app.locals.config && typeof req.app.locals.config.selectedCharacter !== 'undefined') {
-      sel = req.app.locals.config.selectedCharacter;
-    }
-    if (sel === null) {
-      var cfg = await readConfig();
-      sel = (cfg && typeof cfg.selectedCharacter !== 'undefined') ? cfg.selectedCharacter : null;
-    }
+    // Canonical resolver handles in-memory → disk fallback precedence
+    var ctx = await resolveCharacter(req);
+    var sel = ctx ? ctx.id : null;
     res.json({ success: true, selectedCharacter: sel });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

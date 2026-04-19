@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "8.1.8",
+  "version": "8.1.9",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
@@ -70,7 +70,8 @@
     "postinstall": "node scripts/post-install.js",
     "migrate:models": "node scripts/migrate-models.js",
     "migrate:calibration": "node scripts/migrate-calibration-v15.mjs",
-    "validate:schemas": "node scripts/validate-schemas.mjs"
+    "validate:schemas": "node scripts/validate-schemas.mjs",
+    "audit:resolver": "node scripts/ensure-resolver-usage.mjs"
   },
   "keywords": [
     "animatronic",

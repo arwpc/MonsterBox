@@ -7,6 +7,7 @@ import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveCharacter } from '../../services/characterContext.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,7 +45,8 @@ async function loadServices() {
 // GET /api/movement/config/:characterId — get movement config
 router.get('/config/:characterId', async (req, res) => {
     try {
-        const charId = parseInt(req.params.characterId, 10);
+        const ctx = await resolveCharacter(req);
+        const charId = ctx ? ctx.id : null;
         const configPath = path.join(__dirname, '..', '..', 'data', `character-${charId}`, 'movement-config.json');
         const data = await fs.readFile(configPath, 'utf8');
         res.json({ success: true, config: JSON.parse(data) });
@@ -69,7 +71,8 @@ router.get('/config/:characterId', async (req, res) => {
 // PUT /api/movement/config/:characterId — update movement config
 router.put('/config/:characterId', async (req, res) => {
     try {
-        const charId = parseInt(req.params.characterId, 10);
+        const ctx = await resolveCharacter(req);
+        const charId = ctx ? ctx.id : null;
         const configPath = path.join(__dirname, '..', '..', 'data', `character-${charId}`, 'movement-config.json');
 
         // Ensure directory exists
@@ -88,7 +91,8 @@ router.post('/idle/start', async (req, res) => {
         if (!idleLoopService) {
             return res.status(503).json({ success: false, error: 'Idle loop service not available' });
         }
-        const characterId = req.app.locals.config.selectedCharacter;
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         if (!characterId) {
             return res.status(400).json({ success: false, error: 'No character selected' });
         }
@@ -134,7 +138,8 @@ router.get('/telemetry', async (req, res) => {
         if (!movementTelemetry) {
             return res.json({ success: true, telemetry: {} });
         }
-        const characterId = req.app.locals.config.selectedCharacter;
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         const periodMs = parseInt(req.query.period || '3600000', 10); // default 1 hour
         const latency = movementTelemetry.getMetricSummary(characterId, 'servo_latency_ms', periodMs);
         const cycleTime = movementTelemetry.getMetricSummary(characterId, 'cycle_time_ms', periodMs);
@@ -157,7 +162,8 @@ router.get('/telemetry/servo/:partId', async (req, res) => {
         if (!movementTelemetry) {
             return res.json({ success: true, health: { status: 'unknown' } });
         }
-        const characterId = req.app.locals.config.selectedCharacter;
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         const health = movementTelemetry.getServoHealth(characterId);
         const servoHealth = health.find(h => String(h.partId) === String(req.params.partId));
         res.json({ success: true, health: servoHealth || { partId: req.params.partId, status: 'unknown' } });

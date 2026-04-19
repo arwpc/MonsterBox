@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../services/configService.js';
+import { resolveCharacter } from '../services/characterContext.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -121,8 +122,8 @@ router.get('/tts', async (req, res) => {
 router.get('/api/settings', async (req, res) => {
     try {
         const appRoot = path.resolve(__dirname, '..');
-        const appConfig = await readConfig();
-        const characterId = parseInt(appConfig.selectedCharacter, 10) || null;
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         const dataPath = characterId
             ? path.resolve(appRoot, 'data', `character-${characterId}`)
             : path.resolve(appRoot, 'data');

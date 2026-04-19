@@ -12,6 +12,7 @@ import hardwareService from '../../services/hardwareService/index.js';
 
 import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
+import { resolveCharacter } from '../../services/characterContext.js';
 import webcamController from '../../controllers/webcamController.js';
 import webcamModelsController from '../../controllers/webcamModelsController.js';
 import * as motionTrackingController from '../../controllers/motionTrackingController.js';
@@ -162,9 +163,9 @@ router.get('/unified', async (req, res) => {
 // Setup calibration main page - Parts CRUD + Calibration Management
 router.get('/', async (req, res) => {
     try {
-        // Read selected character from config (same pattern as jaw-animation)
-        const cfg = await readConfig();
-        const currentCharacterId = cfg.selectedCharacter || null;
+        // Resolve via canonical character context (supports ?characterId=N override)
+        const ctx = await resolveCharacter(req);
+        const currentCharacterId = ctx ? ctx.id : null;
 
         res.renderWithLayout('setup/calibration', {
             title: 'Setup Calibration - MonsterBox',
@@ -293,14 +294,8 @@ router.post('/api/parts', express.json(), async (req, res) => {
             return res.status(400).json({ success: false, error: 'name and type are required' });
         }
 
-        // Get current character from config
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (e) {
-            console.warn('Could not get current character for part create:', e);
-        }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
 
         const parts = await loadCharacterParts(characterId);
 
@@ -338,14 +333,8 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
         const { id } = req.params;
         const updates = req.body;
 
-        // Get current character from config
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (e) {
-            console.warn('Could not get current character for part update:', e);
-        }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
 
         const parts = await loadCharacterParts(characterId);
         const partIndex = parts.findIndex(p => String(p.id) === String(id));
@@ -387,14 +376,8 @@ router.delete('/api/parts/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Get current character from config
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (e) {
-            console.warn('Could not get current character for part delete:', e);
-        }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
 
         const parts = await loadCharacterParts(characterId);
         const filtered = parts.filter(p => String(p.id) !== String(id));
@@ -558,11 +541,8 @@ router.get('/api/parts/:id/effective', async (req, res) => {
 // Stores data under part.config.simpleCalibration = { safeMin, safeMax, points: [{ name, value }] }
 router.get('/api/simple/:id', async (req, res) => {
     try {
-        let characterId = null;
-        try {
-            const cfg = await readConfig();
-            characterId = cfg.selectedCharacter || null;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
 
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
@@ -596,11 +576,8 @@ router.post('/api/simple/:id/set-safe', express.json(), async (req, res) => {
         if (!isFinite(v)) {
             return res.status(400).json({ success: false, error: 'value must be a number' });
         }
-        let characterId = null;
-        try {
-            const cfg = await readConfig();
-            characterId = cfg.selectedCharacter || null;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) {
@@ -631,11 +608,8 @@ router.post('/api/simple/:id/points', express.json(), async (req, res) => {
         if (!name || !String(name).trim()) return res.status(400).json({ success: false, error: 'name required' });
         const v = Number(value);
         if (!isFinite(v)) return res.status(400).json({ success: false, error: 'value must be a number' });
-        let characterId = null;
-        try {
-            const cfg = await readConfig();
-            characterId = cfg.selectedCharacter || null;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) {
@@ -698,11 +672,8 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
     try {
         const { name, kind = 'absolute', value, unit, speed, durationMs, locked } = req.body || {};
         if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'name required' });
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) {
@@ -734,11 +705,8 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
 
 router.delete('/api/parts/:id/markers/:name', async (req, res) => {
     try {
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) {
@@ -763,11 +731,8 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
     try {
         const { newName } = req.body || {};
         if (!newName || !newName.trim()) return res.status(400).json({ success: false, error: 'newName required' });
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (_) { }
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
         let parts = await loadCharacterParts(characterId);
         let idx = parts.findIndex(p => String(p.id) === String(req.params.id));
         if (idx === -1) {

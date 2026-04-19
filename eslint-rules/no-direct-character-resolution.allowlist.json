@@ -1,0 +1,35 @@
+{
+  "description": "Files still permitted to read character state directly without going through resolveCharacter(req). This list only shrinks — adding a new file requires plan approval. Remove a file from this list once fully migrated to services/characterContext.js.",
+  "banned_patterns": [
+    "req\\.app\\.locals\\.config\\.selectedCharacter",
+    "req\\.app\\.locals\\?\\.config\\?\\.selectedCharacter",
+    "cfg\\.selectedCharacter",
+    "config\\.selectedCharacter",
+    "appConfig\\.selectedCharacter",
+    "req\\.query\\.characterId",
+    "req\\.params\\.characterId",
+    "req\\.params\\.charId"
+  ],
+  "allowlist": {
+    "services/characterContext.js": "canonical resolver — reads these patterns is its job",
+    "services/configService.js": "config file reader — boundary",
+    "services/aiConfigStore.js": "service-layer boundary (no req)",
+    "services/hardwareService/index.js": "service-layer boundary (no req)",
+    "services/hardwareService/servo.js": "service-layer boundary (no req)",
+    "services/elevenLabsWebSocketService.js": "service-layer boundary (no req)",
+    "server.js": "bootstrap and character-switch endpoints write app.locals.config",
+    "controllers/charactersController.js": "character CRUD writes selectedCharacter — read sites migrated",
+    "controllers/motionTrackingController.js": "pending migration — add to Pillar 2 follow-up",
+    "controllers/webcamController.js": "pending migration — add to Pillar 2 follow-up",
+    "controllers/partsController.js": "pending migration — add to Pillar 2 follow-up",
+    "routes/aiSettingsRoutes.js": "one helper function (getCurrentCharacterInfo) has no req — service-layer boundary",
+    "routes/api/audioLoopRoutes.js": "pending migration — add to Pillar 2 follow-up",
+    "routes/api/elevenLabsApiRoutes.js": "inline fallback only — audit notes (354-356)",
+    "routes/api/partsApi.js": "pending migration — add to Pillar 2 follow-up",
+    "routes/firstRun.js": "pending migration — first-run wizard; low frequency, low risk",
+    "routes/scenes/api.js": "remaining req.query.characterId reads used with Pattern C explicit override",
+    "routes/setup/calibration.js": "three helper functions (loadCharacterParts, saveCharacterParts, getMarkersForPart) have no req — service-layer boundary",
+    "routes/setup/head-animation.js": "pending migration — add to Pillar 2 follow-up",
+    "routes/setup/jaw-animation.js": "pending migration — add to Pillar 2 follow-up"
+  }
+}

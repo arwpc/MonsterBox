@@ -5,6 +5,7 @@
 
 import poseRepository from '../services/poses/poseRepository.js';
 import poseEngine from '../services/poses/poseEngine.js';
+import { resolveCharacterSync } from '../services/characterContext.js';
 
 /**
  * Get all poses for current character
@@ -363,8 +364,8 @@ function createPoseFromTemplate(templateName, option, partId, customName) {
  * @returns {number} - Character ID
  */
 function getCurrentCharacterId(req) {
-    const characterId = parseInt(req.query.characterId) ||
-           parseInt(req.app.locals?.config?.selectedCharacter);
+    const ctx = resolveCharacterSync(req);
+    const characterId = ctx ? ctx.id : null;
     if (!characterId) {
         throw new Error('Character ID required — no character selected');
     }

@@ -21,6 +21,7 @@ import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.j
 import lurkMotionWatcher from '../services/lurkMotionWatcherService.js';
 import { getStatus as getIdleStatus } from '../services/movement/idleLoopService.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
+import { resolveCharacterSync } from '../services/characterContext.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +29,8 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
-  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
+  const ctx = resolveCharacterSync(req);
+  return ctx ? ctx.id : null;
 }
 
 function getDataDir(characterId) {

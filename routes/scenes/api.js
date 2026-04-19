@@ -9,11 +9,13 @@ import sceneExecutor from '../../services/scenes/sceneExecutor.js';
 import sceneQueue from '../../services/scenes/sceneQueue.js';
 import scenesService from '../../services/scenes/scenesService.js';
 import armedModeRoutes from './armed-mode.js';
+import { resolveCharacterSync } from '../../services/characterContext.js';
 
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
-  return (parseInt(req.app.locals?.config?.selectedCharacter, 10)) || null;
+  const ctx = resolveCharacterSync(req);
+  return ctx ? ctx.id : null;
 }
 
 async function respondWithScenes(req, res) {
