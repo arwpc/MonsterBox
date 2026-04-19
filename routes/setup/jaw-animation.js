@@ -5,7 +5,7 @@ import * as jawAnimationService from '../../services/jawAnimationSuperPowerServi
 import { getTTSConfigForCharacter } from '../../services/aiConfigStore.js';
 import elevenLabsTTSService from '../../services/elevenLabsTTSService.js';
 import serverPlaybackService from '../../services/serverPlaybackService.js';
-import { loadParts as loadPartsFromController, saveParts } from '../../controllers/partsController.js';
+import { loadParts as loadPartsFromController } from '../../controllers/partsController.js';
 
 const router = express.Router();
 
@@ -485,33 +485,16 @@ router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, re
     }
 
     const parts = await loadPartsFromController();
-    const partIndex = parts.findIndex(p => String(p.id) === String(servoPartId));
-
-    if (partIndex === -1) {
+    const part = parts.find(p => String(p.id) === String(servoPartId));
+    if (!part) {
       return res.status(404).json({ success: false, error: 'Servo part not found' });
     }
 
-    const part = parts[partIndex];
-    if (!Array.isArray(part.markers)) {
-      return res.status(400).json({ success: false, error: 'Part has no calibration markers' });
-    }
-
-    const markerObj = part.markers.find(m => m.name === marker);
-    if (!markerObj) {
-      return res.status(400).json({ success: false, error: `Marker "${marker}" not found on part` });
-    }
-
-    // Apply delta
-    markerObj.value = parseFloat(markerObj.value) + parseFloat(delta);
-
-    // Clamp to 0-180
-    markerObj.value = Math.max(0, Math.min(180, markerObj.value));
-
-    // Save parts
-    await saveParts(parts);
-
-    // Read updated calibration
-    const { calibrated, minAngle, maxAngle } = jawAnimationService.getCalibrationFromMarkers(part);
+    // Write to calibration_profiles.json (new source of truth) rather than
+    // legacy part.markers. Auto-creates an absolute-servo profile if needed.
+    const { newValue, minAngle, maxAngle } = await jawAnimationService.adjustPartCalibration(
+      servoPartId, marker, delta
+    );
 
     // Also update jaw config to reflect new calibration
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
@@ -521,12 +504,7 @@ router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, re
       await jawAnimationService.writeJawConfig(characterId, jawConfig);
     }
 
-    res.json({
-      success: true,
-      newValue: markerObj.value,
-      minAngle: minAngle,
-      maxAngle: maxAngle
-    });
+    res.json({ success: true, newValue, minAngle, maxAngle });
   } catch (error) {
     console.error('Error adjusting calibration:', error);
     res.status(500).json({ success: false, error: error.message });
