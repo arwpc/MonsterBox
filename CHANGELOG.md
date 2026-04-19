@@ -2,6 +2,21 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.1.7] - 2026-04-19 — Stop Cross-Character Jaw Calibration Bleed
+
+v8.1.6's new `readJawConfig()` overlay merged the canonical `calibration_profiles.json` bounds into the flat config returned to the UI. But `calibration_profiles.json` is keyed globally by partId (not per-character), and `writeJawConfig()`'s `tuningKeys` whitelist happily persisted `minAngle` / `maxAngle` back to `super-powers.json`. Result: opening or saving jaw-animation for Character A on Node B (where Node B's profile store has different bounds for the same partId) stamped Node B's bounds into A's `super-powers.json`. Observed on this Orlok node: `data/character-1/super-powers.json` (servoPartId "10") got overwritten from 63/131 to Orlok's 102/143.
+
+### Fixed — `services/jawAnimationSuperPowerService.js`
+- `writeJawConfig()` no longer persists `minAngle` / `maxAngle`. Calibration store remains source of truth; `readJawConfig()` overlay still drives the UI display; runtime `loadCalibrationGuardrails()` still reads from the profile store. The stripped keys just stop the overlay→write round-trip from stamping one character's bounds onto another.
+
+### Reverted
+- `data/character-1/super-powers.json` — restored to HEAD (63/131). PumpkinHead (.150) is offline; its local mirror was already legacy template data pointing at a non-existent partId "10", not authoritative.
+
+### Tests
+- 14 jaw unit + 52 jaw system + 41 calibration unit + 22 parts system + 167 smoke all pass on Orlok. No regressions.
+
+---
+
 ## [8.1.6] - 2026-04-18 — Jaw Animation Calibration Reads Profile Store
 
 The `/setup/calibration` page writes to `data/calibration_profiles.json` (absolute-servo `bounds.minAngle` / `bounds.maxAngle`), but the jaw-animation service was still reading from the legacy `part.markers[]` array in `parts.json`. Result: parts created or recalibrated after the profile-store rollout (e.g. Sir Dragomir's Jaw Servo) appeared uncalibrated to jaw-animation, even with valid bounds in the store. Saving a jaw-animation config returned "Selected servo must be calibrated before use."

@@ -16,8 +16,8 @@
         "useAGC": true,
         "quantizationLevels": 10,
         "preset": "speech",
-        "minAngle": 63,
-        "maxAngle": 131,
+        "minAngle": 102,
+        "maxAngle": 143,
         "audioLeadTimeMs": 300,
         "testText": "cats and dogs for emmy"
       },

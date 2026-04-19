@@ -199,14 +199,18 @@ async function writeJawConfig(characterId, jawConfig) {
     if (jawConfig.enabled !== undefined) jaw.enabled = !!jawConfig.enabled;
     if (jawConfig.servoPartId !== undefined) jaw.servoPartId = jawConfig.servoPartId;
 
-    // Update the active config's tuning params
+    // Update the active config's tuning params.
+    // Intentionally excludes minAngle/maxAngle — calibration_profiles.json is the
+    // source of truth and readJawConfig overlays it on every read. Persisting the
+    // overlaid values here caused cross-character bleed when two characters shared
+    // a servo partId (profiles are keyed globally).
     const activeId = jaw.activeConfigId || (jaw.configs[0] && jaw.configs[0].id);
     const activeIdx = jaw.configs.findIndex(c => c.id === activeId);
     if (activeIdx >= 0) {
       const tuningKeys = [
         'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
         'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
-        'minAngle', 'maxAngle', 'audioLeadTimeMs', 'testText'
+        'audioLeadTimeMs', 'testText'
       ];
       for (const key of tuningKeys) {
         if (jawConfig[key] !== undefined) {
