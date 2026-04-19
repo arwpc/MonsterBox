@@ -25,6 +25,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      - name: Run pre-deploy gate
+        run: npm run gate
       - name: Run unit tests
         run: npm run test:unit
       - name: Start server for system tests

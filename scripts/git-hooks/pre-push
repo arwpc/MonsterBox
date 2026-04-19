@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# MonsterBox pre-push gate hook.
+# Installed by scripts/install-git-hooks.sh — do not edit the copy in .git/hooks
+# directly; edit this source file and re-run the installer.
+#
+# Emergency bypass (use sparingly):  MB_SKIP_GATE=1 git push
+
+set -e
+
+if [ "${MB_SKIP_GATE:-0}" = "1" ]; then
+  echo "⚠️  MB_SKIP_GATE=1 — pre-push gate bypassed."
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+exec npm run --silent gate

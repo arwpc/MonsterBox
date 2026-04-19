@@ -455,6 +455,12 @@ cd "$REPO_DIR"
 sudo -u "$ACTUAL_USER" npm ci
 print_success "Node.js dependencies installed (production + dev)"
 
+# Install the pre-push gate hook
+if [ -f "$REPO_DIR/scripts/install-git-hooks.sh" ]; then
+    sudo -u "$ACTUAL_USER" bash "$REPO_DIR/scripts/install-git-hooks.sh" || \
+        print_warning "git-hooks install step failed — run scripts/install-git-hooks.sh manually."
+fi
+
 # Install Playwright browsers for testing (optional, non-fatal)
 sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \
     print_success "Playwright browsers installed for testing" || \
