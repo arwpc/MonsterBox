@@ -77,10 +77,7 @@ MonsterBox/
 - **Animation Studio:** Unified scene/pose editor at `/scenes` — three-panel layout with timeline editor, drag-and-drop, and live preview. Replaces the separate Scenes and Poses pages (legacy routes redirect to `/scenes`)
 - **Pose Editor:** Dedicated page at `/poses/editor` for visually positioning hardware parts and saving as named poses. Supports servo angles, motor/actuator controls, lights, and optional audio (file or TTS)
 - **Dashboard (`/`):** Primary operator interface with draggable/reorderable panels. Scenes panel supports drag-reorder, delete, play individual, and loop-all. Monster Features panel has jaw/head-tracking/parrot toggles
-- **Character ID in routes:** Three patterns exist — **prefer Pattern B** for new code:
-  - **A:** `(await readConfig()).selectedCharacter` — re-reads config file each call
-  - **B:** `req.app.locals.config.selectedCharacter` — in-memory, fastest (preferred)
-  - **C:** `req.query.characterId` — explicit override (used in calibration unified view)
+- **Character ID in routes:** Use `resolveCharacter(req)` from `services/characterContext.js`. It is the only supported path to character context. Precedence: `req.query.characterId` > `req.params.characterId` > `req.app.locals.config.selectedCharacter` > `readConfig()` fallback. Direct reads of `selectedCharacter` or `req.query.characterId` outside the resolver are blocked by `npm run audit:resolver`. Service-layer helpers that have no `req` may still use `readConfig()`; they are allowlisted in `eslint-rules/no-direct-character-resolution.allowlist.json`.
 
 ## Character Data Files
 Each character at `data/character-{id}/` contains:
@@ -239,6 +236,23 @@ npm run test:unit -- --grep "calibration" # Unit tests matching "calibration"
 - Commit message format: `vX.Y.Z: [phase] brief description` (use current version from package.json)
 - Example: `v6.7.0: [animation-studio] add jaw-animation step type to executor`
 - Tag final version: `git tag -a vX.Y.Z -m "MonsterBox X.Y.Z release"`
+- `git push` runs `npm run gate` as a pre-push hook (~30 s on RPi4B). Bypass in emergencies only: `MB_SKIP_GATE=1 git push` — CI still runs the gate.
+
+## Pre-Deploy Gate
+Every commit and push is gated by `npm run gate`, which runs in this order:
+1. `validate:schemas` — per-character data files conform to `config/schemas/`
+2. `audit:resolver` — no direct character-state reads outside the resolver allowlist
+3. `audit:independence` — bias violations (Orlok refs, hardcoded IPs, name equality) outside the baseline allowlist
+4. `test:smoke` — unit-level sanity pass
+5. `test:pact` — per-character contract suite
+
+Failures surface `file:line` and a suggested fix. See `docs/development/STABILIZATION-PLAN.md` for the design and `docs/development/STABILIZATION-RESULTS.md` for the baseline numbers.
+
+Allowlists:
+- `eslint-rules/no-direct-character-resolution.allowlist.json` — service-layer helpers and pending migrations.
+- `tests/baseline/character-independence-allowlist.json` — known bias violations, shrinks over time only.
+
+Use the `character-auditor` subagent (`.claude/agents/character-auditor.md`) proactively before any cross-character change. It is read-only and runs the same four audit commands as the gate.
 
 ## Performance Notes (RPi4B)
 - 8GB RAM, quad-core ARM Cortex-A72 — capable but not a desktop
@@ -250,10 +264,16 @@ npm run test:unit -- --grep "calibration" # Unit tests matching "calibration"
 ## Claude Code Integration
 
 ### Custom Skills (Slash Commands)
-Custom slash commands are available in `.claude/commands/`:
+Custom slash commands are available in `.claude/commands/` and `.claude/skills/`:
 - `/learn-monsterbox` — Full codebase onboarding: reads all key docs, code, and memory files, then reports readiness. Use at the start of any session for deep context.
 - `/check-health` — Quick health check: git status, test baseline, config, version, service status.
 - `/test-browser` — Run browser tests using the appropriate mode for the current environment.
+- `/add-part` — Scaffold a new hardware part entry, validate against schema, run pact for the target character.
+- `/add-character` — Bootstrap a new character: creates `data/character-<N>/` with valid files, updates `data/characters.json` and `config/animatronics.json`, runs pact.
+- `/pre-deploy-gate` — User-invoked only. Runs `npm run gate` and classifies failures with `file:line` and suggested fixes.
+
+### Subagents (`.claude/agents/`)
+- `character-auditor` — Read-only; runs `validate:schemas`, `audit:resolver`, `audit:independence`, and `test:pact`; returns a structured report. Use proactively before cross-character work.
 
 ### MCP Servers
 - **@playwright/mcp** — Configured in `.mcp.json`, provides `browser_*` tools for interactive browser testing and debugging from within Claude Code sessions.

@@ -2,6 +2,54 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.2.3] - 2026-04-19 — Stabilization Pass (Pillars 1–5 + Claude Code primitives)
+
+Structural fix for the class of bug where work on one character breaks another. Five pillars, each a separate commit, plus `.claude/` primitives. No new frameworks, no new dependencies, no transport or DB changes. Total added tests: 56 (pact suite). Gate wall-clock: ~30 s on RPi4B.
+
+### Pillar 1 — Schemas (8.1.8)
+- 7 JSON Schema files in `config/schemas/` covering `parts.json`, `poses.json`, `scenes.json`, `super-powers.json`, `ai-config/tts-config.json`, `ai-config/stt-config.json`, and the top-level `characters.json`.
+- Hand-written validator at `services/schemaValidator.js` (no `ajv` dep).
+- `npm run validate:schemas`.
+- Server startup records per-subsystem health on `app.locals.subsystemHealth` without crashing on failure.
+
+### Pillar 2 — Canonical character resolver (8.1.9)
+- `services/characterContext.js` exports `resolveCharacter(req)`, `resolveCharacterSync(req)`, and `getCharacterById(id)`. Precedence: `req.query.characterId` > `req.params.characterId` > `req.app.locals.config.selectedCharacter` > `readConfig()` fallback.
+- 13 route/controller files migrated: `routes/api/movement.js`, `routes/setup/calibration.js`, `routes/aiSettingsRoutes.js`, `routes/scenes/api.js`, `controllers/charactersController.js` (read sites), `controllers/posesController.js`, `routes/api/sceneEditorApi.js`, `routes/conversation.js`.
+- `eslint-rules/no-direct-character-resolution.allowlist.json` — 20-file baseline of allowed direct reads (service boundaries + pending migrations).
+- `scripts/ensure-resolver-usage.mjs` + `npm run audit:resolver`.
+
+### Pillar 3 — Character pact suite (8.2.0)
+- `tests/pact/character-contract.test.mjs` — 11 assertions iterated over every entry in `data/characters.json` (55 total for 5 characters; 1 skipped for char-5's missing `super-powers.json`).
+- `scripts/pact-runner.mjs` filters by `--char <id>`.
+- `npm run test:pact` and `npm run test:pact:character`.
+
+### Pillar 4 — Pre-deploy gate (8.2.1)
+- `scripts/gate.mjs` runs `validate:schemas` → `audit:resolver` → `audit:independence` → `test:smoke` → `test:pact` (fail-fast, 30 s on RPi4B).
+- `npm run gate`.
+- `scripts/git-hooks/pre-push` + `scripts/install-git-hooks.sh` (installed by `install.sh`).
+- `.github/workflows/ci.yml` runs the gate before existing unit / system / browser jobs.
+- `MB_SKIP_GATE=1` opt-out for emergency pushes (CI still runs the gate).
+
+### Pillar 5 — Character-independence auditor (8.2.2)
+- `scripts/audit-character-independence.mjs` greps `.js` / `.mjs` / `.ejs` for bias patterns. Modes: default, `--json`, `--list-allowlisted`, `--stale-allowlist`.
+- `tests/baseline/character-independence-allowlist.json` — 72-entry baseline (Phase-0 audit underreported; all surfaced violations are allowlisted per plan). Ratchet only tightens.
+- `tests/system/audit-ratchet.test.mjs` + `npm run audit:independence`.
+
+### Phase 6 — Claude Code primitives (8.2.3)
+- `.claude/agents/character-auditor.md` — read-only subagent that runs the four audit commands and returns a structured report.
+- `.claude/skills/add-part/SKILL.md` — scaffold new `parts.json` entry, schema-validated, pact-verified.
+- `.claude/skills/add-character/SKILL.md` — bootstrap `data/character-<N>/` with schema-valid minimal files, register in `characters.json` and `animatronics.json`.
+- `.claude/skills/pre-deploy-gate/SKILL.md` — user-invoked only (`disable-model-invocation: true`). Parses `npm run gate` output and classifies failures with suggested fixes.
+- `.gitignore` updated to track `.claude/agents/` and `.claude/skills/`.
+
+### Docs
+- `docs/development/STABILIZATION-AUDIT.md` — Phase-0 baseline synthesis.
+- `docs/development/STABILIZATION-RESULTS.md` — commits, test-count delta, allowlist sizes, gate runtime.
+- `CLAUDE.md` — three-patterns paragraph replaced with single-resolver policy; Pre-Deploy Gate and Character Auditor sections added.
+- `README.md` — `npm run gate` and ratchet commands added; "Testing philosophy" subsection.
+
+---
+
 ## [8.1.7] - 2026-04-19 — Stop Cross-Character Jaw Calibration Bleed
 
 v8.1.6's new `readJawConfig()` overlay merged the canonical `calibration_profiles.json` bounds into the flat config returned to the UI. But `calibration_profiles.json` is keyed globally by partId (not per-character), and `writeJawConfig()`'s `tuningKeys` whitelist happily persisted `minAngle` / `maxAngle` back to `super-powers.json`. Result: opening or saving jaw-animation for Character A on Node B (where Node B's profile store has different bounds for the same partId) stamped Node B's bounds into A's `super-powers.json`. Observed on this Orlok node: `data/character-1/super-powers.json` (servoPartId "10") got overwritten from 63/131 to Orlok's 102/143.

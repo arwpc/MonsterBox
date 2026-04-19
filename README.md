@@ -462,6 +462,9 @@ MonsterBox has comprehensive test coverage across system, unit, and browser test
 All tests passing.
 
 ```bash
+# Pre-deploy gate — runs automatically via .git/hooks/pre-push and in CI
+npm run gate                # schemas + resolver + independence + smoke + pact (~30s RPi4B)
+
 # Run all tests
 npm test
 
@@ -470,8 +473,18 @@ npm run test:system         # Mocha system tests
 npm run test:unit           # Mocha unit tests
 npm run test:browser        # Playwright browser tests (headless Chromium)
 npm run test:hardware       # Hardware tests (needs real GPIO)
+npm run test:pact           # Per-character contract suite (iterates every character)
+npm run test:pact:character -- --char 3   # Same, scoped to one character
 npm run verify              # system + unit + browser
+
+# Ratchets (also wrapped by `npm run gate`)
+npm run validate:schemas    # Per-character data files vs config/schemas/
+npm run audit:resolver      # No direct character-state reads outside services/characterContext.js
+npm run audit:independence  # No bias violations outside tests/baseline/character-independence-allowlist.json
 ```
+
+### Testing philosophy
+Per-character contract tests (the pact suite) run the same assertions against every character registered in `data/characters.json`. Adding a 6th character automatically adds every assertion in the suite — no new test code required. Character-specific tests in `tests/system/` and `tests/browser/` catch runtime behavior the pact can't reach; together they form the safety net that the gate enforces on every commit.
 
 ## Troubleshooting Quick Commands
 ```bash
