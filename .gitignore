@@ -68,9 +68,11 @@ apps/monsterbox4/tests/ui/traces/
 .augment/
 .cursor/
 
-# Claude Code — ignore session data, keep commands and settings
+# Claude Code — ignore session data, keep commands/agents/skills/settings
 .claude/*
 !.claude/commands/
+!.claude/agents/
+!.claude/skills/
 !.claude/settings.json
 
 # Runtime state (regenerates every run, per-node — not source-of-truth)
