@@ -2,6 +2,29 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.1.6] - 2026-04-18 — Jaw Animation Calibration Reads Profile Store
+
+The `/setup/calibration` page writes to `data/calibration_profiles.json` (absolute-servo `bounds.minAngle` / `bounds.maxAngle`), but the jaw-animation service was still reading from the legacy `part.markers[]` array in `parts.json`. Result: parts created or recalibrated after the profile-store rollout (e.g. Sir Dragomir's Jaw Servo) appeared uncalibrated to jaw-animation, even with valid bounds in the store. Saving a jaw-animation config returned "Selected servo must be calibrated before use."
+
+### Fixed — `services/jawAnimationSuperPowerService.js`
+- New `getCalibrationForPart(part)` — prefers `calibration_profiles.json` bounds for absolute-servo parts; falls back to legacy `part.markers` for backward compatibility with parts still on the old system.
+- `getAvailableServos()` now resolves calibration async-per-servo using the new helper.
+- `loadCalibrationGuardrails()` reads through the same helper, so the runtime jaw envelope respects bounds set by the calibration page.
+- `readJawConfig()` overlays current profile bounds onto the flat config returned to the UI, keeping the display in sync with the canonical source.
+
+### Fixed — `routes/setup/jaw-animation.js`
+- `/adjust-calibration` route writes to the calibration store (via new `adjustPartCalibration()` helper) instead of mutating `part.markers`. Previously 400'd on parts without a markers array.
+
+### Tests
+- All 52 jaw-animation system tests pass.
+- Parts + calibration unit/system suites pass (22 + 41).
+- Full system suite: 339 passing, 12 pending (hardware-gated). No regressions.
+
+### Deployed to
+- Orlok (192.168.8.120), Sir Dragomir (192.168.8.130), Mina (192.168.8.140) all on v8.1.6.
+
+---
+
 ## [8.1.2] - 2026-04-14 — Test Coverage Pass
 
 Audit + gap-fill for the Phase 3/4 UX work. Not a coverage-number push — a focused pass that pins down the behaviors added or changed in v8.1.0 / v8.1.1 so a future refactor can't silently unwind them.
