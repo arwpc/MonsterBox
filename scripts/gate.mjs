@@ -32,7 +32,7 @@ if (process.env.MB_SKIP_GATE === '1') {
 const STEPS = [
   { name: 'validate:schemas',     cmd: 'npm', args: ['run', '--silent', 'validate:schemas'], timeoutMs: 10_000 },
   { name: 'audit:resolver',       cmd: 'npm', args: ['run', '--silent', 'audit:resolver'],   timeoutMs: 10_000 },
-  { name: 'audit:independence',   cmd: 'npm', args: ['run', '--silent', 'audit:independence'], timeoutMs: 10_000, optional: true },
+  { name: 'audit:independence',   cmd: 'npm', args: ['run', '--silent', 'audit:independence'], timeoutMs: 10_000 },
   { name: 'test:smoke',           cmd: 'npm', args: ['run', '--silent', 'test:smoke'],       timeoutMs: 60_000 },
   { name: 'test:pact',            cmd: 'npm', args: ['run', '--silent', 'test:pact'],        timeoutMs: 30_000 },
 ];

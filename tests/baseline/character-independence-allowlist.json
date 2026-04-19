@@ -1,0 +1,511 @@
+{
+  "description": "Baseline of known character-bias violations as of v8.2.2 (stabilization Pillar 5). This list only shrinks — adding a new violation without a corresponding allowlist entry fails npm run gate. Remove entries as bias is parameterized out of the codebase.",
+  "approvedDate": "2026-04-19",
+  "approvedBy": "stabilization plan Phase 0 baseline",
+  "entries": [
+    {
+      "pattern": "orlok-reference",
+      "file": "goblin/goblin-pi.js",
+      "line": 339,
+      "snippet": "addresses = ['orlok', 'mina', 'pumpkinhead', 'sirdragomir', 'groundbreaker', 'localhost'];",
+      "reason": "Hostname->character fallback list; acceptable default until character registry drives it."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "public/js/character-menu.js",
+      "line": 43,
+      "snippet": "var wanted = ['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir'];",
+      "reason": "Client-side character menu may reference character names in labels."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/clean-test-artifacts.js",
+      "line": 12,
+      "snippet": "- Keeps canonical characters: PumpkinHead, Mina, Orlok, Sir Dragomir (ids typically 1..4)",
+      "reason": "Test-artifact cleanup script references legacy test scripts above."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/clean-test-artifacts.js",
+      "line": 26,
+      "snippet": "const canonicalNames = new Set(['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir']);",
+      "reason": "Test-artifact cleanup script references legacy test scripts above."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 7,
+      "snippet": "const ORLOK_PARTS_FILE = path.join(DATA_DIR, 'character-3/parts.json');",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 13,
+      "snippet": "const orlokRaw = await fs.readFile(ORLOK_PARTS_FILE, 'utf8');",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 16,
+      "snippet": "const orlokParts = JSON.parse(orlokRaw);",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 19,
+      "snippet": "console.log(`Orlok parts found: ${orlokParts.length}`);",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 25,
+      "snippet": "// Process Orlok parts",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/restore_parts.js",
+      "line": 27,
+      "snippet": "for (const part of orlokParts) {",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "characterId-3",
+      "file": "scripts/restore_parts.js",
+      "line": 39,
+      "snippet": "characterId: 3",
+      "reason": "One-off Orlok parts restoration script; retain for disaster recovery."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 5,
+      "snippet": "{ name: 'PumpkinHead', ip: '192.168.8.150', characterId: 1 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 6,
+      "snippet": "{ name: 'Mina', ip: '192.168.8.140', characterId: 2 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 7,
+      "snippet": "{ name: 'Orlok', ip: '192.168.8.120', characterId: 3 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "characterId-3",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 7,
+      "snippet": "{ name: 'Orlok', ip: '192.168.8.120', characterId: 3 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 7,
+      "snippet": "{ name: 'Orlok', ip: '192.168.8.120', characterId: 3 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 8,
+      "snippet": "{ name: 'Sir Dragomir', ip: '192.168.8.130', characterId: 4 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/start-conversation-all.mjs",
+      "line": 9,
+      "snippet": "{ name: 'Groundbreaker', ip: '192.168.8.200', characterId: 5 },",
+      "reason": "Inter-node orchestration script with hardcoded IP/characterId map — parameterize via config/animatronics.json in a follow-up pass."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-calibration-page.js",
+      "line": 41,
+      "snippet": "console.log('📍 Navigating to http://192.168.8.120:3000/setup/calibration\\n');",
+      "reason": "Legacy hardcoded Orlok calibration test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-calibration-page.js",
+      "line": 42,
+      "snippet": "await page.goto('http://192.168.8.120:3000/setup/calibration', {",
+      "reason": "Legacy hardcoded Orlok calibration test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-jaw-sync.mjs",
+      "line": 18,
+      "snippet": "body: JSON.stringify({text: 'Hello, I am Count Orlok. Welcome to my castle.'})",
+      "reason": "Manual sync tester — legacy hardcoded."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 3,
+      "snippet": "* Test Orlok Actuators via Calibration UI",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 12,
+      "snippet": "console.log('🧪 Testing Orlok Actuators via Calibration UI...\\n');",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 19,
+      "snippet": "console.log('🎯 Selecting character 3 (Orlok) as active...');",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 20,
+      "snippet": "await page.goto('http://192.168.8.120:3000/setup/characters', { waitUntil: 'domcontentloaded', timeout: 30000 });",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 26,
+      "snippet": "console.log('📍 Navigating to http://192.168.8.120:3000/setup/calibration\\n');",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-orlok-actuators-ui.js",
+      "line": 27,
+      "snippet": "await page.goto('http://192.168.8.120:3000/setup/calibration', {",
+      "reason": "Legacy hardcoded Orlok UI test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 3,
+      "snippet": "* Test Orlok's Linear Actuators and Servos",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 9,
+      "snippet": "const ORLOK_URL = 'http://192.168.8.120:3000';",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 9,
+      "snippet": "const ORLOK_URL = 'http://192.168.8.120:3000';",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 10,
+      "snippet": "const CHARACTER_ID = 3; // Orlok",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 24,
+      "snippet": "const response = await fetch(`${ORLOK_URL}/setup/parts/api/parts/${partId}/test`, {",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 55,
+      "snippet": "const response = await fetch(`${ORLOK_URL}/setup/parts/api/parts/${partId}/test`, {",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 97,
+      "snippet": "console.log('🎃 ORLOK HARDWARE TEST 🎃');",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/test-orlok-hardware.js",
+      "line": 101,
+      "snippet": "console.log('Fetching Orlok parts...');",
+      "reason": "Legacy hardcoded Orlok hardware test script — candidate for deletion once pact covers scope."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/verify-fixes.js",
+      "line": 15,
+      "snippet": "// 1. Load Parts for Orlok",
+      "reason": "Manual verification script — legacy hardcoded."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "server.js",
+      "line": 722,
+      "snippet": "console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj \"",
+      "reason": "Doc-only console output for OpenSSL cert generation."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "services/aiConfigStore.js",
+      "line": 76,
+      "snippet": "3: 'Tj9l48J9AJbry5yCP5eW', // Orlok: Count Orlok, Nosferatu",
+      "reason": "Service-layer default voice-id map by character — parameterize via data/character-N/ai-config/tts-config.json.voice_id in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "services/characterService.js",
+      "line": 53,
+      "snippet": "{ id: 3, name: 'Orlok' },",
+      "reason": "Character service may have default-fallback name references."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/exhaustive-system-test.spec.js",
+      "line": 358,
+      "snippet": "const navCharBtn = page.locator('nav button:has-text(\"Orlok\"), nav .dropdown-toggle');",
+      "reason": "Exhaustive test spec with character name references — migrate to pact iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/exhaustive-system-test.spec.js",
+      "line": 382,
+      "snippet": "const navCharBtn2 = page.locator('nav button:has-text(\"Orlok\"), nav .dropdown-toggle').first();",
+      "reason": "Exhaustive test spec with character name references — migrate to pact iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/relay-toggle.spec.js",
+      "line": 12,
+      "snippet": "// These tests require Orlok (char_id=3) with specific hardware parts",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "char_id-3",
+      "file": "tests/browser/relay-toggle.spec.js",
+      "line": 12,
+      "snippet": "// These tests require Orlok (char_id=3) with specific hardware parts",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/relay-toggle.spec.js",
+      "line": 14,
+      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "char_id-3",
+      "file": "tests/browser/relay-toggle.spec.js",
+      "line": 14,
+      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/test-calibration-presets-ui.js",
+      "line": 6,
+      "snippet": "* 1. Iterates through all 5 target animatronics (PumpkinHead, Mina, Orlok, Sir Dragomir, Groundbreaker)",
+      "reason": "UI test with character-specific expectations."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/test-calibration-presets-ui.js",
+      "line": 24,
+      "snippet": "{ id: 3, name: 'Orlok' },",
+      "reason": "UI test with character-specific expectations."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 3,
+      "snippet": "* Verifies that the Arducam B0205 (Eye of Orlok, part 9) captures a real image",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 15,
+      "snippet": "// These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "char_id-3",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 15,
+      "snippet": "// These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 17,
+      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "char_id-3",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 17,
+      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/browser/webcam-capture.spec.js",
+      "line": 73,
+      "snippet": "expect(res.part.name).toBe('Eye of Orlok');",
+      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-fix.js",
+      "line": 35,
+      "snippet": "async function testOrlokParts() {",
+      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-fix.js",
+      "line": 36,
+      "snippet": "console.log('\\n🧛 TESTING ORLOK PARTS...\\n');",
+      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-fix.js",
+      "line": 97,
+      "snippet": "} else if (hostname.includes('orlok')) {",
+      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-fix.js",
+      "line": 98,
+      "snippet": "await testOrlokParts();",
+      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-fix.js",
+      "line": 100,
+      "snippet": "console.log('Unknown host. Please run this on mina or orlok.');",
+      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-timing.js",
+      "line": 65,
+      "snippet": "console.log('🎯 Testing 8000ms movements at 100% position on Mina and Orlok');",
+      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-timing.js",
+      "line": 74,
+      "snippet": "// Test Orlok system - common servo parts",
+      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-timing.js",
+      "line": 75,
+      "snippet": "results.push(await testHardwareMovement('Orlok', 'head_tilt_servo', 8000, 100));",
+      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/hardware/test-hardware-timing.js",
+      "line": 76,
+      "snippet": "results.push(await testHardwareMovement('Orlok', 'jaw_servo', 8000, 100));",
+      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/system/dashboard-api.test.js",
+      "line": 182,
+      "snippet": "// Orlok should have at least one speaker",
+      "reason": "Dashboard API test with character-specific expectation."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/system/head-animation.test.js",
+      "line": 328,
+      "snippet": "// All servos for Orlok should have config info",
+      "reason": "Head-animation test with character-specific expectation."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "tests/unit/movement.test.js",
+      "line": 740,
+      "snippet": "// Use character 3 (Orlok) which is most likely to have poses",
+      "reason": "Movement unit test with character-specific expectation."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 25,
+      "snippet": "<div class=\"mb-display mb-text-4xl\">The Orlok stirs…</div>",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 115,
+      "snippet": "<input id=\"sg-input-1\" class=\"mb-input\" type=\"text\" placeholder=\"e.g. Orlok\" value=\"Orlok\">",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 129,
+      "snippet": "<option>Orlok — bass</option>",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 156,
+      "snippet": "<label class=\"mb-check\"><input type=\"checkbox\" checked> Enable Orlok</label>",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 197,
+      "snippet": "<h4 class=\"mb-heading mb-heading-3\" style=\"margin-top: var(--mb-space-1);\">Orlok</h4>",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "monsternet-ip",
+      "file": "views/setup/style-guide.ejs",
+      "line": 198,
+      "snippet": "<p class=\"mb-text-muted mb-text-sm\">192.168.8.120</p>",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "views/setup/style-guide.ejs",
+      "line": 327,
+      "snippet": "<div class=\"mb-modal-body\"><p class=\"mb-text-secondary\">This will permanently remove <strong>Orlok · Rise from Crypt</strong>. Linked audio ",
+      "reason": "Style guide doc with example IPs and character names — not runtime code."
+    }
+  ]
+}

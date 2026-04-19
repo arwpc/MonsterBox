@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "8.2.1",
+  "version": "8.2.2",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
@@ -72,6 +72,7 @@
     "migrate:calibration": "node scripts/migrate-calibration-v15.mjs",
     "validate:schemas": "node scripts/validate-schemas.mjs",
     "audit:resolver": "node scripts/ensure-resolver-usage.mjs",
+    "audit:independence": "node scripts/audit-character-independence.mjs",
     "test:pact": "BASE_URL=http://localhost:3100 mocha --require tests/setup.js tests/pact --reporter spec --exit --timeout 10000",
     "test:pact:character": "node scripts/pact-runner.mjs",
     "gate": "node scripts/gate.mjs"
