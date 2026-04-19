@@ -10,7 +10,18 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
 
-## What's New — v8.0.0 (March 2026)
+## What's New — v8.3.0 (April 2026)
+
+### Stabilization Pass
+- **Pre-deploy gate** — `npm run gate` runs schemas + resolver audit + bias audit + smoke + pact in ~30 s on RPi4B. Blocks regressions at pre-push and in CI. Opt-out via `MB_SKIP_GATE=1` (use sparingly — CI still runs).
+- **Canonical character resolver** — `services/characterContext.js` is the only supported path to character context. Direct reads of `selectedCharacter` / `characterId` outside the resolver are blocked by `npm run audit:resolver`.
+- **Per-character schemas** — `config/schemas/*.schema.json` cover `parts.json`, `poses.json`, `scenes.json`, `super-powers.json`, `ai-config/*`. Startup validates without crashing; failures degrade the affected subsystem only.
+- **Pact suite** — `tests/pact/character-contract.test.mjs` runs 11 assertions per character from `data/characters.json`. Adding a 6th character auto-adds 11 assertions with no new code.
+- **Ratchet allowlists** (shrink-only): 20-file resolver allowlist, 72-entry character-independence allowlist.
+- **Claude Code primitives** — `character-auditor` subagent, `/add-part`, `/add-character`, `/pre-deploy-gate` skills in `.claude/`.
+- See [docs/development/STABILIZATION-RESULTS.md](docs/development/STABILIZATION-RESULTS.md) for full metrics.
+
+### Previous — v8.0.0 (March 2026)
 
 ### Mina Fully Operational
 - **All 10 hardware parts working** — Servos, coffin door actuator, laser, light, PIR sensor, speaker, webcam, microphone verified

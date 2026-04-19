@@ -2,6 +2,20 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.3.0] - 2026-04-19 — Stabilization Release Mark
+
+Minor-version bump that marks the stabilization pass (v8.1.8 → v8.2.3) as a coherent release. Structural guarantees against character-leakage and dependency-cascade failures are now live on `origin/main`.
+
+- **Gate enforced everywhere.** `npm run gate` runs in `.git/hooks/pre-push` on every push from every checkout; same gate runs in `.github/workflows/ci.yml` before the existing unit/system/browser jobs. 30 s on RPi4B.
+- **Orlok verified 100%.** Service active, `Schema validation passed for 5 character(s)` at startup, `GET /api/parts` returns Orlok's 12 parts, `npm run gate` green end-to-end.
+- **Deploy to other nodes:** `bash scripts/deploy-to-animatronic.sh <id> <ip>`. Mina (.140) and Sir Dragomir (.130) are SSH-reachable. PumpkinHead (.150) and Groundbreaker (.200) were offline at release time.
+- **Docs:** `CLAUDE.md`, `README.md`, `docs/development/STABILIZATION-RESULTS.md` all reflect the resolver / gate / pact vocabulary. `docs/development/STABILIZATION-PLAN.md` and `docs/development/STABILIZATION-AUDIT.md` preserved for provenance.
+- **Memory:** new `stabilization.md` topic file documents the baseline; `MEMORY.md` index updated; `known-bugs.md` moves three-patterns + data shape divergence + no-detector issues into "Previously Fixed"; `testing.md` gains the gate and ratchet commands.
+
+See the [8.2.3] section below for the full per-pillar breakdown.
+
+---
+
 ## [8.2.3] - 2026-04-19 — Stabilization Pass (Pillars 1–5 + Claude Code primitives)
 
 Structural fix for the class of bug where work on one character breaks another. Five pillars, each a separate commit, plus `.claude/` primitives. No new frameworks, no new dependencies, no transport or DB changes. Total added tests: 56 (pact suite). Gate wall-clock: ~30 s on RPi4B.
