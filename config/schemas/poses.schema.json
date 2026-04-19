@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox poses.json",
+  "description": "Per-character pose library. Requires characterId, poses array, templates object. Each pose requires id, name, parts array.",
+  "type": "object",
+  "required": ["characterId", "poses"],
+  "properties": {
+    "characterId": { "type": "number" },
+    "poses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "parts"],
+        "properties": {
+          "id": { "type": ["string", "number"] },
+          "name": { "type": "string" },
+          "parts": { "type": "array" }
+        }
+      }
+    },
+    "templates": { "type": "object" }
+  }
+}

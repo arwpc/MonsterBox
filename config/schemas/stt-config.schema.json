@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox ai-config/stt-config.json",
+  "description": "Per-character ElevenLabs STT / microphone configuration. Only microphonePartId is required so that the audio pipeline can resolve a capture device. All other fields (model, language, VAD, audio filtering) are service-layer tunable and optional. Leading-underscore keys (_preset, _comment, etc.) are metadata.",
+  "type": "object",
+  "required": ["microphonePartId"],
+  "properties": {
+    "microphonePartId": { "type": ["string", "number", "null"] },
+    "microphoneDeviceId": { "type": "string" },
+    "model": { "type": "string" },
+    "language": { "type": "string" },
+    "format": { "type": "string", "enum": ["mp3", "wav", "pcm"] },
+    "sampleRate": { "type": "number" },
+    "channels": { "type": "number" },
+    "vadEnabled": { "type": "boolean" },
+    "vadThreshold": { "type": "number" },
+    "vadSilenceDuration": { "type": "number" }
+  }
+}

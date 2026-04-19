@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox scenes.json",
+  "description": "Per-character scene library. Array of scenes, each with an id, name, and ordered steps. Step types are an enum — unknown types fail validation.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name"],
+    "properties": {
+      "id": { "type": ["string", "number"] },
+      "name": { "type": "string" },
+      "steps": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "servo",
+                "motor",
+                "linear-actuator",
+                "linear_actuator",
+                "light",
+                "led",
+                "audio",
+                "sayThis",
+                "askAI",
+                "goblin-video",
+                "wait",
+                "delay",
+                "sensor",
+                "pose",
+                "hardware",
+                "jaw-animation",
+                "head-tracking"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

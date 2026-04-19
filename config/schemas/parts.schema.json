@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox parts.json",
+  "description": "Per-character hardware parts registry. Minimum-viable contract: each part has a stable id, a human-readable name, and a known type. Additional fields are allowed — the schema catches missing essentials, not stylistic drift.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "type"],
+    "properties": {
+      "id": { "type": ["string", "number"] },
+      "name": { "type": "string" },
+      "type": {
+        "type": "string",
+        "enum": [
+          "servo",
+          "continuous-servo",
+          "continuous_servo",
+          "motor",
+          "linear_actuator",
+          "linear-actuator",
+          "stepper",
+          "light",
+          "led",
+          "sensor",
+          "motion_sensor",
+          "speaker",
+          "microphone",
+          "webcam"
+        ]
+      },
+      "enabled": { "type": "boolean" },
+      "config": { "type": "object" }
+    }
+  }
+}

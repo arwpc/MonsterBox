@@ -141,6 +141,32 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port ||
 app.locals.config = config;
 app.locals._mainPort = PORT;
 
+// Schema validation — surface per-character data shape issues at startup.
+// Never crash: failing subsystems are recorded on app.locals.subsystemHealth
+// so routes can degrade gracefully and the /health endpoint can surface them.
+app.locals.subsystemHealth = { ok: true, failing: {}, validatedAt: null };
+try {
+    const { validateAll, describeErrors } = await import('./services/schemaValidator.js');
+    const schemaResult = validateAll();
+    app.locals.subsystemHealth.validatedAt = new Date().toISOString();
+    if (!schemaResult.valid) {
+        app.locals.subsystemHealth.ok = false;
+        for (const charResult of schemaResult.perCharacter) {
+            if (!charResult.valid) {
+                app.locals.subsystemHealth.failing[`character-${charResult.charId}`] = charResult.failingSubsystems;
+            }
+        }
+        console.error(`⚠️  Schema validation found ${schemaResult.errors.length} error(s) — affected subsystems will degrade:`);
+        console.error(describeErrors(schemaResult.errors));
+    } else {
+        console.log(`✓ Schema validation passed for ${schemaResult.perCharacter.length} character(s).`);
+    }
+} catch (err) {
+    console.error('⚠️  Schema validator itself failed to run:', err.message);
+    app.locals.subsystemHealth.ok = false;
+    app.locals.subsystemHealth.failing['_validator'] = ['all'];
+}
+
 // Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident
 try {
     const isTestEnv = (process.env.NODE_ENV === 'test') || (PORT === 3123);

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox ai-config/tts-config.json",
+  "description": "Per-character ElevenLabs TTS configuration. Model is required; tuning fields and voice_id override are optional. Leading-underscore keys (e.g. _preset) are metadata and permitted.",
+  "type": "object",
+  "required": ["model"],
+  "properties": {
+    "model": { "type": "string" },
+    "stability": { "type": "number" },
+    "similarity_boost": { "type": "number" },
+    "style": { "type": "number" },
+    "use_speaker_boost": { "type": "boolean" },
+    "voice_id": { "type": "string" }
+  }
+}

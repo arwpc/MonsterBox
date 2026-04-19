@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MonsterBox super-powers.json",
+  "description": "Per-character superpower configuration. All top-level subsystems are optional — a missing file or empty object is valid (the service layer supplies defaults). When jawAnimation.configs[] is present, each entry must name itself and provide an angle range.",
+  "type": "object",
+  "properties": {
+    "jawAnimation": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "servoPartId": { "type": ["string", "number", "null"] },
+        "activeConfigId": { "type": ["string", "number", "null"] },
+        "configs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "minAngle", "maxAngle"],
+            "properties": {
+              "id": { "type": ["string", "number"] },
+              "name": { "type": "string" },
+              "minAngle": { "type": "number" },
+              "maxAngle": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "headTracking": { "type": "object" },
+    "idleLoop": { "type": "object" },
+    "micromovements": { "type": "object" },
+    "sensitivity": { "type": ["number", "object"] }
+  }
+}
