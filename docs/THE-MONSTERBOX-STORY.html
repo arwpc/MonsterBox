@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>The MonsterBox Story — A Visual History (2024–2026)</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#12161d; --ink:#e7e2d6; --muted:#8b94a3;
+    --green:#4ade80; --red:#f0506e; --amber:#f5a623; --purple:#a78bfa;
+    --blue:#38bdf8; --grid:#222a35; --line:#f5a623;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#161b24,#0a0c10 60%);
+       color:var(--ink);font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  h1{font-size:40px;line-height:1.1;margin:0 0 8px;letter-spacing:-.5px}
+  h1 .sub{display:block;font-size:17px;color:var(--amber);font-weight:500;margin-top:10px}
+  h2{font-size:24px;margin:56px 0 6px;border-left:3px solid var(--amber);padding-left:12px}
+  h2 .era{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:4px;padding-left:1px}
+  p{color:#d7d2c6;max-width:78ch}
+  .lede{font-size:18px;color:#cfd6e0}
+  .panel{background:var(--panel);border:1px solid #1d242e;border-radius:14px;padding:22px 24px;margin:22px 0;
+         box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .cap{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  svg{width:100%;height:auto;display:block;overflow:visible}
+  .tick{fill:var(--muted);font-size:11px}
+  .axis{stroke:var(--grid);stroke-width:1}
+  blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--red);background:#16191f;
+             border-radius:0 8px 8px 0;color:#f3d6da;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px}
+  blockquote.win{border-left-color:var(--green);color:#d6f3e0}
+  code{background:#1b212b;padding:1px 6px;border-radius:5px;font-size:13px;color:#e9d9b6}
+  .pull{font-size:21px;color:#fff;font-weight:600;line-height:1.35;margin:30px 0;padding-left:14px;border-left:3px solid var(--purple)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .stat{background:#0e1218;border:1px solid #1d242e;border-radius:10px;padding:14px 16px}
+  .stat b{display:block;font-size:30px;color:var(--amber);line-height:1}
+  .stat span{color:var(--muted);font-size:13px}
+  .foot{color:var(--muted);font-size:13px;margin-top:60px;border-top:1px solid #1d242e;padding-top:18px}
+  table.tl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  table.tl td{padding:6px 10px;border-bottom:1px solid #1a212b;vertical-align:top}
+  table.tl td:first-child{color:var(--amber);white-space:nowrap;width:120px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>The MonsterBox Story
+    <span class="sub">Twenty months, 2,020 commits, and the slow handoff from a human typing <code>fff</code> at midnight to an AI that has to obey a constitution before it can commit.</span>
+  </h1>
+
+  <p class="lede">Every chart below is built from the project's own git history — Aug&nbsp;15&nbsp;2024 to Apr&nbsp;19&nbsp;2026. Nothing here was invented; it was measured. The story of how AI tooling changed is written into the commits, the file counts, and even the swear words.</p>
+
+  <div class="grid2" style="margin-top:24px">
+    <div class="stat"><b>2,020</b><span>commits across 20 months</span></div>
+    <div class="stat"><b>13 → 70</b><span>avg commit message length (chars/mo)</span></div>
+    <div class="stat"><b>601</b><span>commits in Oct 2024 alone — the hand-built grind</span></div>
+    <div class="stat"><b>11</b><span>distinct AI/dev tools came and went</span></div>
+  </div>
+
+  <!-- CHART 1: ACTIVITY + EMOTION -->
+  <h2>1 · The Heartbeat &amp; the Mood
+    <span class="era">Commits per month, with the emotional temperature of the messages overlaid</span></h2>
+  <p>The grey bars are raw activity. The red and green strips beneath each bar count <em>frustration</em> words
+  (<code>fuck</code>, <code>broke</code>, <code>suck</code>, <code>nightmare</code>, <code>again</code>, <code>risky</code>) versus
+  <em>triumph</em> words (<code>working</code>, <code>fully functional</code>, <code>complete</code>, <code>!!!</code>).
+  Frustration peaks in the Oct&nbsp;2024 manual grind; triumph peaks in the June&nbsp;2025 multi-agent burst.</p>
+  <div class="panel">
+    <svg id="c1" viewBox="0 0 1000 360" role="img" aria-label="Commits per month"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#46506180"></i>commits / month</span>
+      <span><i class="dot" style="background:var(--red)"></i>frustration markers</span>
+      <span><i class="dot" style="background:var(--green)"></i>triumph markers</span>
+      <span><i class="dot" style="background:#2a3340"></i>dormant months (no commits)</span>
+    </div>
+  </div>
+
+  <!-- CHART 2: AI SIGNATURE -->
+  <h2>2 · The AI Signature
+    <span class="era">Average commit-message length — the single cleanest fingerprint of AI adoption</span></h2>
+  <p>You didn't start typing more. The instant AI tools began authoring and describing changes (May 2025), the
+  average message <strong>tripled</strong>. The 2026 stabilization era pushes it higher still, because the project
+  now <em>enforces</em> a <code>vX.Y.Z: [area] description</code> grammar that both you and the machine must follow.</p>
+  <div class="panel">
+    <svg id="c2" viewBox="0 0 1000 320" role="img" aria-label="Average commit message length over time"></svg>
+  </div>
+
+  <!-- CHART 3: TOOL TIMELINE -->
+  <h2>3 · The Tools That Built It
+    <span class="era">Which IDEs, AI assistants, and agent frameworks were active when (from config-dir lifecycles + commit mentions)</span></h2>
+  <p>Read this as the evolution of <em>who was holding the keyboard.</em> It starts with a human in JetBrains/VSCode
+  copy-pasting from an early Claude. It swells in mid-2025 into a swarm of agent tools running in parallel —
+  Cursor, Windsurf, Roo, Augment, TaskMaster — all of which are deleted in a single Jan&nbsp;2026 purge. It ends with
+  a deliberately small, governed stack: Claude Code under a <code>CLAUDE.md</code> and a versioned MCP config.</p>
+  <div class="panel">
+    <svg id="c3" viewBox="0 0 1000 470" role="img" aria-label="Developer tool timeline"></svg>
+  </div>
+
+  <!-- CHART 4: CODE FOOTPRINT -->
+  <h2>4 · Bloat, then Discipline
+    <span class="era">Tracked-file count at each release tag — AI generation inflated the codebase; stabilization shrank it</span></h2>
+  <p>By <code>v5.3.0</code> the repository had ballooned to <strong>1,889 tracked files</strong> (including vendored
+  <code>node_modules</code> and a flood of AI-generated tests and scripts). The 2026 stabilization effort cut it nearly
+  in half — to <strong>908</strong> — while making the surviving code provably character-independent. Growth stopped
+  being the goal; <em>governed simplicity</em> became it.</p>
+  <div class="panel">
+    <svg id="c4" viewBox="0 0 1000 300" role="img" aria-label="File count at release tags"></svg>
+    <p class="cap">Tracked-file counts swing partly with vendoring decisions (node_modules was committed, then untracked).
+    The direction — explosive growth under AI generation, then deliberate reduction under governance — is the real signal.</p>
+  </div>
+
+  <!-- THE EMOTIONAL ARC IN HER OWN WORDS -->
+  <h2>5 · The Story, in the Commit Messages Themselves</h2>
+  <p>The log is a diary. Here is the arc, quoted verbatim:</p>
+
+  <p><strong style="color:var(--amber)">2024 — building by hand, breaking by hand.</strong></p>
+  <blockquote class="win">Final Update 8.15 Working!  ·  FullyFunctionalPID</blockquote>
+  <blockquote>End of Claude: Broke LED and Scenes  ·  Broken but expanded pre CodeAnywhere</blockquote>
+  <blockquote>fff · n · scnese · embracesuck · fuckucamfix · asdfuckoutside · fuckuwaziting · fuckyou · Fuckyou Replica</blockquote>
+  <p class="cap">October 2024: 601 commits, 13-char messages, 22 frustration markers. A person on real hardware, at midnight, before Halloween.</p>
+
+  <p><strong style="color:var(--blue)">Mid-2025 — the multi-agent experiment.</strong></p>
+  <blockquote class="win">🤖 Add Three Independent Augment Remote Agents - Complete Setup  ·  Complete Task 17: Core AI Integration - 100% DONE</blockquote>
+  <blockquote>MCP fixes for the billionth time · tailwind - mid conversion which sucks · fix the damn camn · fucked websockets</blockquote>
+  <p class="cap">June 2025: 279 commits, 40 triumph markers — the project's most optimistic month. AI is now a managed workforce.</p>
+
+  <p><strong style="color:var(--red)">Late 2025 — automation outruns the guardrails.</strong></p>
+  <blockquote>Major automated bug fix GPT5 · Reorg and Cleanup - risky · fucking sockers · mega detailed bugfixes from unfucked testing</blockquote>
+  <blockquote>Fucked Halloween - nothing works · Fucked Halloween · EMERGENCY FIX: Restore all critical animatronic systems after Halloween failure</blockquote>
+  <p class="cap">The Halloween failure post-mortem names its own causes: <code>remove test mode guards</code> and <code>filter global parts.json by characterId</code> — the exact two problems the 2026 governance layer was built to prevent.</p>
+
+  <p><strong style="color:var(--green)">2026 — the governed collaboration.</strong></p>
+  <blockquote class="win">v8.1.8: [stabilization] Pillar 1 - schemas + validator<br>v8.1.9: [stabilization] Pillar 2 - canonical character resolver<br>v8.2.0: [stabilization] Pillar 3 - character pact suite<br>v8.2.1: [stabilization] Pillar 4 - pre-deploy gate<br>v8.2.2: [stabilization] Pillar 5 - character-independence auditor</blockquote>
+  <p class="cap">Each pillar is a scar turned into an automated check the AI now cannot commit past.</p>
+
+  <div class="pull">The bottleneck moved from <em>capability</em> to <em>governance.</em> In 2024 AI simply couldn't build much without breaking the LEDs. By 2026 capability is abundant — what makes it safe is the constitution a human sat down and wrote after one too many <code>Fucked Halloween</code> nights.</div>
+
+  <div class="foot">
+    Sources: full <code>git log</code> of 2,020 commits (2024-08-15 → 2026-04-19). Metrics: monthly commit counts &amp;
+    message-length averages; lexical sentiment tally over subjects; config-directory add/remove lifecycles
+    (<code>.idea</code>, <code>.vscode</code>, <code>.cursor</code>, <code>.windsurf</code>, <code>.roo</code>,
+    <code>.augment</code>, <code>.taskmaster</code>, <code>.claude</code>, <code>.mcp.json</code>, <code>CLAUDE.md</code>,
+    <code>copilot-instructions.md</code>); tracked-file counts at release tags. Companion narrative:
+    <code>docs/THE-MONSTERBOX-STORY.md</code>.
+  </div>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function txt(p,x,y,s,cls,extra){const t=el("text",Object.assign({x,y,class:cls||"tick"},extra||{}));t.textContent=s;p.appendChild(t);return t;}
+
+// ---- DATA (measured from git) ----
+// month, commits, avgLen, frustration, triumph ; gaps marked separately
+const months=[
+ {m:"Aug'24",c:80, len:20, f:6, t:11},
+ {m:"Sep'24",c:49, len:17, f:4, t:10},
+ {m:"Oct'24",c:601,len:13, f:22,t:15},
+ {m:"Nov'24",c:13, len:14, f:0, t:0},
+ {m:"Dec–Apr",gap:true,label:"5 months dormant"},
+ {m:"May'25",c:144,len:41, f:2, t:3},
+ {m:"Jun'25",c:279,len:40, f:5, t:40},
+ {m:"Jul'25",gap:true,label:""},
+ {m:"Aug'25",c:61, len:35, f:1, t:16},
+ {m:"Sep'25",c:162,len:48, f:6, t:22},
+ {m:"Oct'25",c:332,len:57, f:3, t:20},
+ {m:"Nov'25",c:6,  len:59, f:1, t:0},
+ {m:"Dec'25",gap:true,label:""},
+ {m:"Jan'26",c:32, len:58, f:1, t:0},
+ {m:"Feb'26",c:116,len:65, f:0, t:7},
+ {m:"Mar'26",c:109,len:70, f:0, t:2},
+ {m:"Apr'26",c:36, len:62, f:0, t:0},
+];
+
+// ===== CHART 1: commits + emotion =====
+(function(){
+ const s=document.getElementById("c1"),W=1000,H=360,L=46,R=16,T=18,B=64;
+ const plotH=H-T-B, plotW=W-L-R, n=months.length, bw=plotW/n, max=601;
+ const y=v=>T+plotH-(v/max)*plotH;
+ // gridlines
+ [0,150,300,450,600].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ months.forEach((d,i)=>{
+   const x=L+i*bw+bw*0.15, w=bw*0.7;
+   if(d.gap){
+     s.appendChild(el("rect",{x:L+i*bw+2,y:T,width:bw-4,height:plotH,fill:"#161d27",stroke:"#222a35","stroke-dasharray":"3 4",rx:4}));
+     if(d.label){const tx=txt(s,L+i*bw+bw/2,T+plotH/2,d.label,"tick",{"text-anchor":"middle",fill:"#5a6675"});tx.setAttribute("transform",`rotate(-90 ${L+i*bw+bw/2} ${T+plotH/2})`);}
+   } else {
+     s.appendChild(el("rect",{x,y:y(d.c),width:w,height:plotH-(y(d.c)-T),fill:"#46506166",stroke:"#5b6678",rx:3}));
+     txt(s,x+w/2,y(d.c)-6,d.c,"tick",{"text-anchor":"middle",fill:"#aab3c2","font-size":"10"});
+     // emotion strips at base
+     const baseY=T+plotH+6;
+     if(d.f)s.appendChild(el("rect",{x,y:baseY,width:w*0.45,height:4+d.f*0.9,fill:"#f0506e",rx:1}));
+     if(d.t)s.appendChild(el("rect",{x:x+w*0.55,y:baseY,width:w*0.45,height:4+d.t*0.9,fill:"#4ade80",rx:1}));
+   }
+   txt(s,L+i*bw+bw/2,H-30,d.m,"tick",{"text-anchor":"middle","font-size":"10"});
+ });
+ txt(s,L-8,T-6,"commits","tick",{"text-anchor":"start",fill:"#6b7686"});
+})();
+
+// ===== CHART 2: message length =====
+(function(){
+ const s=document.getElementById("c2"),W=1000,H=320,L=46,R=16,T=22,B=46;
+ const plotH=H-T-B, plotW=W-L-R, pts=months.filter(d=>!d.gap), max=80;
+ const xi=i=>L+(plotW/(months.length-1))*i, y=v=>T+plotH-(v/max)*plotH;
+ [0,20,40,60,80].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ // build path using real index positions (skip gaps but keep x spacing)
+ let dpath="",coords=[];
+ months.forEach((d,i)=>{if(d.gap)return;coords.push([xi(i),y(d.len),d]);});
+ coords.forEach((p,k)=>dpath+=(k?"L":"M")+p[0]+" "+p[1]+" ");
+ // area
+ const area=dpath+`L ${coords[coords.length-1][0]} ${y(0)} L ${coords[0][0]} ${y(0)} Z`;
+ s.appendChild(el("path",{d:area,fill:"url(#g2)",opacity:.25}));
+ const defs=el("defs");const lg=el("linearGradient",{id:"g2",x1:0,y1:0,x2:0,y2:1});
+ lg.appendChild(el("stop",{offset:"0%","stop-color":"#f5a623"}));lg.appendChild(el("stop",{offset:"100%","stop-color":"#f5a62300"}));
+ defs.appendChild(lg);s.appendChild(defs);
+ s.appendChild(el("path",{d:dpath,fill:"none",stroke:"#f5a623","stroke-width":2.5}));
+ coords.forEach(p=>{s.appendChild(el("circle",{cx:p[0],cy:p[1],r:3.5,fill:"#0a0c10",stroke:"#f5a623","stroke-width":2}));
+   txt(s,p[0],p[1]-10,p[2].len,"tick",{"text-anchor":"middle",fill:"#f5d9a6","font-size":"10"});});
+ months.forEach((d,i)=>txt(s,xi(i),H-16,d.m,"tick",{"text-anchor":"middle","font-size":"10"}));
+ // annotations
+ txt(s,xi(2),y(13)+26,"manual grind","tick",{"text-anchor":"middle",fill:"#f0506e","font-size":"11"});
+ txt(s,xi(5),y(41)-26,"AI starts writing commits","tick",{"text-anchor":"middle",fill:"#4ade80","font-size":"11"});
+ txt(s,xi(15),y(70)-26,"enforced grammar","tick",{"text-anchor":"middle",fill:"#a78bfa","font-size":"11"});
+})();
+
+// ===== CHART 3: tool swimlanes =====
+(function(){
+ const s=document.getElementById("c3"),W=1000,L=150,R=20,T=30;
+ // timeline x: months from 2024-08 (0) to 2026-06 (22)
+ const start=2024+7/12, end=2026+5/12, span=end-start;
+ const X=ym=>L+((ym-start)/span)*(W-L-R);
+ const tools=[
+  {n:"JetBrains / VSCode",  a:2024+7/12,  b:2026+5/12, c:"#64748b", note:"human IDE — present throughout"},
+  {n:"Early Claude (copy-paste)", a:2024+7/12, b:2024+10/12, c:"#a78bfa", note:'"End of Claude: Broke LED"'},
+  {n:"CodeAnywhere",        a:2024+7/12,  b:2024+9/12,  c:"#475569"},
+  {n:"MCP servers",         a:2025+4/12,  b:2026+5/12,  c:"#38bdf8", note:"tool protocol — survives to today"},
+  {n:"TaskMaster-AI",       a:2025+5/12,  b:2025+5.5/12,c:"#f0506e", note:"task backlog (brief)"},
+  {n:"Cursor",              a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
+  {n:"Windsurf",            a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
+  {n:"Roo",                 a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
+  {n:"Augment (3 agents)",  a:2025+5/12,  b:2026+0/12,  c:"#fb923c", note:"multi-agent swarm — purged Jan'26"},
+  {n:"Playwright (E2E)",    a:2025+5/12,  b:2026+5/12,  c:"#4ade80"},
+  {n:"GPT-5 auto-fix",      a:2025+8/12,  b:2025+8.4/12,c:"#f0506e", note:"automated bug fix"},
+  {n:"GitHub Copilot",      a:2025+9/12,  b:2026+5/12,  c:"#22d3ee", note:"+ MCP testing"},
+  {n:"Claude Code + CLAUDE.md", a:2026+1/12, b:2026+5/12, c:"#a78bfa", note:"governed collaborator"},
+ ];
+ const rowH=30;
+ // year/quarter gridlines
+ [[2024+7/12,"Aug'24"],[2024+10/12,"Nov'24"],[2025+1/12,"Feb'25"],[2025+4/12,"May'25"],[2025+7/12,"Aug'25"],[2025+10/12,"Nov'25"],[2026+1/12,"Feb'26"],[2026+4/12,"May'26"]].forEach(g=>{
+   s.appendChild(el("line",{x1:X(g[0]),y1:T-8,x2:X(g[0]),y2:T+tools.length*rowH,class:"axis"}));
+   txt(s,X(g[0]),T-14,g[1],"tick",{"text-anchor":"middle","font-size":"10"});
+ });
+ // dormancy shade
+ s.appendChild(el("rect",{x:X(2024+11/12),y:T-8,width:X(2025+4/12)-X(2024+11/12),height:tools.length*rowH+8,fill:"#0e1218",opacity:.6}));
+ txt(s,(X(2024+11/12)+X(2025+4/12))/2,T+tools.length*rowH+22,"dormant winter","tick",{"text-anchor":"middle",fill:"#5a6675","font-size":"10"});
+ tools.forEach((tl,i)=>{
+   const y=T+i*rowH;
+   txt(s,L-10,y+15,tl.n,"tick",{"text-anchor":"end",fill:"#cdd4df","font-size":"11.5"});
+   const x1=X(tl.a),x2=Math.max(X(tl.b),x1+6);
+   s.appendChild(el("rect",{x:x1,y:y+4,width:x2-x1,height:18,rx:9,fill:tl.c,opacity:.85}));
+   if(tl.note)txt(s,x2+8,y+16,tl.note,"tick",{fill:"#7c8696","font-size":"10"});
+ });
+})();
+
+// ===== CHART 4: file count at tags =====
+(function(){
+ const s=document.getElementById("c4"),W=1000,H=300,L=46,R=20,T=24,B=54;
+ const data=[
+  {t:"v0.1.0",d:"Jun'25",v:312},{t:"v5.3.0",d:"Oct 8",v:1889},{t:"v5.4.0",d:"Oct 23",v:1313},
+  {t:"v5.5.0",d:"Oct 27",v:1385},{t:"v5.5.1",d:"Feb'26",v:1436},{t:"v8.1.0",d:"Apr 14",v:908},{t:"v8.3.0",d:"Apr 19",v:921}];
+ const plotH=H-T-B, plotW=W-L-R, n=data.length, bw=plotW/n, max=2000;
+ const y=v=>T+plotH-(v/max)*plotH;
+ [0,500,1000,1500,2000].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ data.forEach((d,i)=>{
+   const x=L+i*bw+bw*0.2,w=bw*0.6;
+   const col=d.v>1500?"#f0506e":(d.v>1000?"#f5a623":"#4ade80");
+   s.appendChild(el("rect",{x,y:y(d.v),width:w,height:plotH-(y(d.v)-T),fill:col,opacity:.85,rx:4}));
+   txt(s,x+w/2,y(d.v)-6,d.v,"tick",{"text-anchor":"middle",fill:"#e7e2d6","font-size":"11"});
+   txt(s,x+w/2,H-30,d.t,"tick",{"text-anchor":"middle","font-size":"11",fill:"#cdd4df"});
+   txt(s,x+w/2,H-16,d.d,"tick",{"text-anchor":"middle","font-size":"9.5"});
+ });
+ txt(s,L-8,T-8,"tracked files","tick",{fill:"#6b7686","text-anchor":"start"});
+})();
+</script>
+</body>
+</html>
