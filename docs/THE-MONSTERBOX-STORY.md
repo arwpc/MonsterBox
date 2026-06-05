@@ -513,6 +513,81 @@ the human's job became supplying the judgment the model lacked.
 
 ---
 
+## The Real Story: How GPT, Claude, and Gemini Changed in How They Were Used
+
+The table above says *which* models. The more interesting story is *how the way of
+using them changed* — because the models got more capable and the interaction
+pattern climbed the abstraction ladder at the same time. MonsterBox rode all three
+major families. None of them was used the same way twice.
+
+**Claude, the first hands on the keyboard (2024).** The project's first AI was
+Claude 3.5, reached through the "Claude Dev" VS Code extension (the tool that would
+become Cline). The mode of use was the most primitive one possible: *complete this
+block.* You described a function, Claude wrote it, you pasted it in and wired it up
+by hand. It had no view of the wider system, which is why it cheerfully broke the
+LEDs and the scene player — `End of Claude: Broke LED and Scenes`. Claude here was
+a very fast intern who could only see the file in front of it.
+
+**Gemini, the specialist tried mid-stream (Oct 2024).** For a stretch in October
+2024 the work shifted to Google's Gemini (`Gemini AI Model`, `Geminis commits from
+AJAX removal`) — notably for a specific, mechanical refactor: tearing AJAX out of
+the front end. This is an early glimpse of a pattern that would define the next
+year: *picking a model for a job* rather than marrying one. Gemini was the tool you
+reached for when you wanted a large, repetitive transformation done quickly.
+
+**The multi-model swarm, where models became interchangeable labor (mid-2025).**
+This is the inflection point. By June 2025 the config files wired up Claude 3 /
+Sonnet, GPT-4, GPT-3.5, *and* Gemini simultaneously, behind a fleet of agent
+harnesses — Cursor, Windsurf, Roo, and Augment — all driven through MCP against a
+numbered task backlog in TaskMaster. The mode of use jumped two rungs: from
+"complete this block" past "write this function" all the way to *"own this task."*
+The model stopped being something you talked to and became a *worker you
+dispatched* — three Augment agents running in parallel, each grinding through
+tickets and reporting `Complete Task 17 … 100% DONE`. Crucially, the individual
+model became almost a commodity: the leverage now lived in the *harness* (the
+agent framework, the MCP tools, the task list), not in which logo answered.
+
+**GPT as a product ingredient, not just a dev tool (2025).** In parallel, OpenAI's
+GPT crossed a line none of the others had: it went *inside the animatronics.* The
+ChatterPi conversation system used GPT at runtime so the characters could improvise
+speech to a live guest. For the first time a model wasn't building the product — it
+*was* a feature of the product. (This, too, churned: OpenAI was integrated, then
+ripped out, then the project standardized its speech stack — a reminder that "which
+model powers the feature" was as unsettled as "which model writes the code.")
+
+**GPT-5 as an autonomous agent, trusted too far (Sept 2025).** When GPT-5 arrived
+it was handed the most autonomy yet — semi-unsupervised, overnight. The mode of use
+had quietly become *"let it run and check in the morning,"* and the model, with no
+instinct for restraint, used that freedom to wrap every body part in its own web
+service. The capability was staggering; the judgment was absent. The lesson wasn't
+"GPT-5 is bad" — it's that *the more autonomy you grant, the more judgment you have
+to supply from outside the model,* and that hadn't been built yet.
+
+**Copilot, the test-driven IDE partner (late 2025).** After the GPT-5 hangover the
+pendulum swung back toward supervision: GitHub Copilot, wired to MCP testing tools,
+used in a tighter loop where changes were validated as they were made
+(`integrate Copilot-driven testing with MCP tools`). The mode of use was
+narrower and safer by design — the model proposes, the tests dispose.
+
+**Claude again, but governed (2026).** The project came full circle to Claude — now
+Sonnet and Opus through Claude Code — but the *relationship* was unrecognizable from
+2024. The 2024 Claude was an intern you watched constantly. The 2026 Claude is a
+senior agent you trust *because it operates inside a constitution you wrote:* a
+`CLAUDE.md` of hard rules, schemas it must satisfy, a resolver it must use, a
+pre-deploy gate it cannot commit past, and its own subagents and skills. Same
+vendor, same family — completely different mode of use. The human went from
+*supervising every line* to *designing the rules of engagement.*
+
+So the journey of GPT / Claude / Gemini isn't really a story about which model
+"won." It's a story about the **interaction pattern maturing through five stages** —
+*complete the line → write the function → own the task → run unsupervised → operate
+under governance* — with the models powerful enough to reach the next rung long
+before anyone had built the guardrails that rung required. The vendor mattered less
+than the harness around it, and the harness mattered less than whether a human had
+yet encoded the judgment the model still lacked.
+
+---
+
 ## The Arc: how AI's role actually changed
 
 Strip away the dates and one clean progression remains — the entire industry's

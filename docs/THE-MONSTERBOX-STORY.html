@@ -148,11 +148,13 @@
 
   <!-- CHART 3: TOOL TIMELINE -->
   <h2>3 · The Tools That Built It
-    <span class="era">Which IDEs, AI assistants, and agent frameworks were active when (from config-dir lifecycles + commit mentions)</span></h2>
-  <p>Read this as the evolution of <em>who was holding the keyboard.</em> It starts with a human in JetBrains/VSCode
-  copy-pasting from an early Claude. It swells in mid-2025 into a swarm of agent tools running in parallel —
-  Cursor, Windsurf, Roo, Augment, TaskMaster — all of which are deleted in a single Jan&nbsp;2026 purge. It ends with
-  a deliberately small, governed stack: Claude Code under a <code>CLAUDE.md</code> and a versioned MCP config.</p>
+    <span class="era">Grouped by kind — LLMs, agent harnesses/IDEs, testing, and CI/CD — from config-dir lifecycles, package.json, and commit mentions</span></h2>
+  <p>Read this as the evolution of <em>who (and what) was holding the keyboard.</em> It starts with a human in JetBrains/VSCode
+  copy-pasting from an early Claude. It swells in mid-2025 into a swarm of agent harnesses running in parallel —
+  Cursor, Windsurf, Roo, Augment, TaskMaster — all deleted in a single Jan&nbsp;2026 purge. It ends with a deliberately small,
+  governed stack: Claude Code under a <code>CLAUDE.md</code>. Note the <strong>testing</strong> lane: <strong>Mocha</strong> (with
+  Chai + Supertest) has been there since <em>August 2024</em> — older than every AI agent — joined by <strong>Playwright</strong>
+  for browser E2E in 2025 and the custom pact/gate/auditors in 2026. <strong>GitHub Actions</strong> CI shipped on day one.</p>
   <div class="panel">
     <svg id="c3" viewBox="0 0 1000 470" role="img" aria-label="Developer tool timeline"></svg>
   </div>
@@ -172,6 +174,16 @@
     <tr><td>Oct '25</td><td><strong>GitHub Copilot</strong> + MCP testing</td></tr>
     <tr><td>2026</td><td><strong>Claude Sonnet → Claude Opus</strong> via Claude Code, under <code>CLAUDE.md</code> — the governed era</td></tr>
   </table>
+  <p><strong>The real story isn't which model won — it's how the <em>way of using them</em> climbed five rungs:</strong></p>
+  <table class="tl">
+    <tr><td>1 · Complete the line</td><td><strong>Claude 3.5</strong> via Claude Dev (2024) — describe a function, paste the result, wire it up by hand. No view of the system, so it broke the LEDs.</td></tr>
+    <tr><td>2 · Pick a model for a job</td><td><strong>Gemini</strong> (Oct 2024) for a mechanical refactor (tearing out AJAX) — the first "right tool for this task" move.</td></tr>
+    <tr><td>3 · Own the task</td><td><strong>Claude + GPT + Gemini together</strong> behind Cursor/Windsurf/Roo/Augment + TaskMaster over MCP (2025) — models became interchangeable <em>labor you dispatched</em>; leverage moved to the harness.</td></tr>
+    <tr><td>3.5 · Become the product</td><td><strong>OpenAI GPT inside ChatterPi</strong> (2025) — the model stopped building the product and <em>became a feature</em> of it.</td></tr>
+    <tr><td>4 · Run unsupervised</td><td><strong>GPT-5</strong> overnight (Sept 2025) — maximum autonomy, zero restraint → a web service for every body part.</td></tr>
+    <tr><td>5 · Operate under governance</td><td><strong>Claude Opus</strong> via Claude Code (2026) — a senior agent trusted <em>because</em> it works inside a constitution, schemas, and a gate it can't commit past.</td></tr>
+  </table>
+  <p class="cap">Same three model families throughout — the change was the interaction pattern maturing faster than the guardrails each new rung required. The vendor mattered less than the harness; the harness mattered less than whether a human had yet encoded the judgment the model still lacked.</p>
 
   <!-- THE MICROSERVICES DEBACLE -->
   <h2 style="border-left-color:var(--red)">3c · The Microservices Debacle
@@ -350,43 +362,68 @@ const months=[
  txt(s,xi(15),y(70)-26,"enforced grammar","tick",{"text-anchor":"middle",fill:"#a78bfa","font-size":"11"});
 })();
 
-// ===== CHART 3: tool swimlanes =====
+// ===== CHART 3: tool swimlanes, grouped by category =====
 (function(){
- const s=document.getElementById("c3"),W=1000,L=150,R=20,T=30;
- // timeline x: months from 2024-08 (0) to 2026-06 (22)
+ const s=document.getElementById("c3"),W=1000,L=200,R=20,T=30;
  const start=2024+7/12, end=2026+5/12, span=end-start;
  const X=ym=>L+((ym-start)/span)*(W-L-R);
- const tools=[
-  {n:"JetBrains / VSCode",  a:2024+7/12,  b:2026+5/12, c:"#64748b", note:"human IDE — present throughout"},
-  {n:"Early Claude (copy-paste)", a:2024+7/12, b:2024+10/12, c:"#a78bfa", note:'"End of Claude: Broke LED"'},
-  {n:"CodeAnywhere",        a:2024+7/12,  b:2024+9/12,  c:"#475569"},
-  {n:"MCP servers",         a:2025+4/12,  b:2026+5/12,  c:"#38bdf8", note:"tool protocol — survives to today"},
-  {n:"TaskMaster-AI",       a:2025+5/12,  b:2025+5.5/12,c:"#f0506e", note:"task backlog (brief)"},
-  {n:"Cursor",              a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
-  {n:"Windsurf",            a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
-  {n:"Roo",                 a:2025+5/12,  b:2026+0/12,  c:"#f5a623"},
-  {n:"Augment (3 agents)",  a:2025+5/12,  b:2026+0/12,  c:"#fb923c", note:"multi-agent swarm — purged Jan'26"},
-  {n:"Playwright (E2E)",    a:2025+5/12,  b:2026+5/12,  c:"#4ade80"},
-  {n:"GPT-5 auto-fix",      a:2025+8/12,  b:2025+8.4/12,c:"#f0506e", note:"automated bug fix"},
-  {n:"GitHub Copilot",      a:2025+9/12,  b:2026+5/12,  c:"#22d3ee", note:"+ MCP testing"},
-  {n:"Claude Code + CLAUDE.md", a:2026+1/12, b:2026+5/12, c:"#a78bfa", note:"governed collaborator"},
+ // grouped by KIND of tool. order: LLMs, agent harnesses/IDEs, testing, CI/CD & docs
+ const groups=[
+  {cat:"LLMs (the models)", col:"#a78bfa", rows:[
+    {n:"Claude 3.5 (Claude Dev)", a:2024+7/12, b:2024+10/12, c:"#a78bfa", note:'snippet gen — "Broke LED"'},
+    {n:"Google Gemini",          a:2024+9/12, b:2024+10.5/12, c:"#a78bfa", note:"AJAX refactor"},
+    {n:"Claude 3/Sonnet + GPT-4/3.5 + Gemini", a:2025+4/12, b:2026+0/12, c:"#a78bfa", note:"multi-model swarm"},
+    {n:"OpenAI GPT (in-product)", a:2025+5/12, b:2026+5/12, c:"#8b7ad6", note:"ChatterPi runtime AI"},
+    {n:"GPT-5",                  a:2025+7.5/12, b:2025+9/12, c:"#f0506e", note:"overnight autonomy → debacle"},
+    {n:"Claude Sonnet → Opus",   a:2026+1/12, b:2026+5/12, c:"#a78bfa", note:"governed"},
+  ]},
+  {cat:"Agent harnesses / IDEs", col:"#f5a623", rows:[
+    {n:"JetBrains / VSCode",     a:2024+7/12, b:2026+5/12, c:"#64748b", note:"human IDE — throughout"},
+    {n:"CodeAnywhere",           a:2024+7/12, b:2024+9/12, c:"#475569"},
+    {n:"Cursor · Windsurf · Roo", a:2025+5/12, b:2026+0/12, c:"#f5a623", note:"purged Jan'26"},
+    {n:"Augment (3 remote agents)", a:2025+5/12, b:2026+0/12, c:"#fb923c", note:"multi-agent swarm"},
+    {n:"TaskMaster-AI",          a:2025+5/12, b:2025+5.5/12, c:"#f0506e", note:"task backlog (brief)"},
+    {n:"GitHub Copilot",         a:2025+9/12, b:2026+5/12, c:"#22d3ee"},
+    {n:"Claude Code + CLAUDE.md", a:2026+1/12, b:2026+5/12, c:"#a78bfa", note:"governed collaborator"},
+    {n:"MCP servers",            a:2025+4/12, b:2026+5/12, c:"#38bdf8", note:"tool protocol — survives"},
+  ]},
+  {cat:"Testing", col:"#4ade80", rows:[
+    {n:"Mocha (unit/system)",    a:2024+7.3/12, b:2026+5/12, c:"#4ade80", note:"since Aug'24"},
+    {n:"Chai + Supertest",       a:2024+7.3/12, b:2026+5/12, c:"#4ade80", note:"assertions + HTTP"},
+    {n:"Playwright (browser E2E)", a:2025+5/12, b:2026+5/12, c:"#4ade80"},
+    {n:"Pact / gate / auditors", a:2026+3/12, b:2026+5/12, c:"#34d399", note:"contract + independence"},
+  ]},
+  {cat:"CI/CD, lint & docs", col:"#38bdf8", rows:[
+    {n:"GitHub Actions (5 workflows)", a:2024+7/12, b:2026+5/12, c:"#38bdf8", note:"node.js.yml since day 1"},
+    {n:"nodemon (dev runtime)",  a:2024+9.6/12, b:2026+5/12, c:"#0ea5e9"},
+    {n:"ESLint custom rules",    a:2026+3/12, b:2026+5/12, c:"#0ea5e9", note:"resolver guard"},
+    {n:"MkDocs (docs site)",     a:2025+4/12, b:2026+5/12, c:"#0ea5e9"},
+  ]},
  ];
- const rowH=30;
- // year/quarter gridlines
+ // flatten with category header rows
+ const rowH=27, hH=24; let rows=[], y=T;
+ groups.forEach(g=>{ rows.push({header:g.cat,col:g.col,y}); y+=hH; g.rows.forEach(r=>{rows.push({...r,y}); y+=rowH;}); y+=6; });
+ const bottom=y;
+ // gridlines
  [[2024+7/12,"Aug'24"],[2024+10/12,"Nov'24"],[2025+1/12,"Feb'25"],[2025+4/12,"May'25"],[2025+7/12,"Aug'25"],[2025+10/12,"Nov'25"],[2026+1/12,"Feb'26"],[2026+4/12,"May'26"]].forEach(g=>{
-   s.appendChild(el("line",{x1:X(g[0]),y1:T-8,x2:X(g[0]),y2:T+tools.length*rowH,class:"axis"}));
+   s.appendChild(el("line",{x1:X(g[0]),y1:T-8,x2:X(g[0]),y2:bottom,class:"axis"}));
    txt(s,X(g[0]),T-14,g[1],"tick",{"text-anchor":"middle","font-size":"10"});
  });
  // dormancy shade
- s.appendChild(el("rect",{x:X(2024+11/12),y:T-8,width:X(2025+4/12)-X(2024+11/12),height:tools.length*rowH+8,fill:"#0e1218",opacity:.6}));
- txt(s,(X(2024+11/12)+X(2025+4/12))/2,T+tools.length*rowH+22,"dormant winter","tick",{"text-anchor":"middle",fill:"#5a6675","font-size":"10"});
- tools.forEach((tl,i)=>{
-   const y=T+i*rowH;
-   txt(s,L-10,y+15,tl.n,"tick",{"text-anchor":"end",fill:"#cdd4df","font-size":"11.5"});
-   const x1=X(tl.a),x2=Math.max(X(tl.b),x1+6);
-   s.appendChild(el("rect",{x:x1,y:y+4,width:x2-x1,height:18,rx:9,fill:tl.c,opacity:.85}));
-   if(tl.note)txt(s,x2+8,y+16,tl.note,"tick",{fill:"#7c8696","font-size":"10"});
+ s.appendChild(el("rect",{x:X(2024+11/12),y:T-8,width:X(2025+4/12)-X(2024+11/12),height:bottom-T+8,fill:"#0e1218",opacity:.55}));
+ txt(s,(X(2024+11/12)+X(2025+4/12))/2,bottom+14,"dormant winter","tick",{"text-anchor":"middle",fill:"#5a6675","font-size":"10"});
+ rows.forEach(r=>{
+   if(r.header){
+     s.appendChild(el("line",{x1:8,y1:r.y+16,x2:L-10,y2:r.y+16,stroke:r.col,"stroke-width":1.5,opacity:.5}));
+     txt(s,8,r.y+13,r.header.toUpperCase(),"tick",{"text-anchor":"start",fill:r.col,"font-size":"11","font-weight":"bold","letter-spacing":"0.5"});
+     return;
+   }
+   txt(s,L-10,r.y+15,r.n,"tick",{"text-anchor":"end",fill:"#cdd4df","font-size":"11"});
+   const x1=X(r.a),x2=Math.max(X(r.b),x1+6);
+   s.appendChild(el("rect",{x:x1,y:r.y+4,width:x2-x1,height:16,rx:8,fill:r.c,opacity:.85}));
+   if(r.note)txt(s,x2+8,r.y+15,r.note,"tick",{fill:"#7c8696","font-size":"9.5"});
  });
+ s.setAttribute("viewBox",`0 0 1000 ${bottom+28}`);
 })();
 
 // ===== CHART 4: file count at tags =====
