@@ -230,30 +230,64 @@ become a live risk.
 
 ---
 
-## Act V — The GPT-5 Automated-Fix Era (Aug–Sep 2025)
-**223 commits · Tool: GPT-5 as an autonomous bug-fixer · Powerful, and not yet trustworthy.**
+## Act V — The Microservices Debacle (Aug–Sep 2025)
+**223 commits · Model: GPT-5, freshly released and given the keys overnight · The cautionary tale at the heart of the whole story.**
 
-Late summer 2025 is the "just let the model fix it" phase. The signature commit,
-Sept 1:
+This is the chapter that earns the cliché *be careful what you wish for.* Late
+summer 2025 is the "just let the model fix it" phase. The signature commit,
+Sept 1, names the tool outright:
 
 > **`Major automated bug fix GPT5`**
 
-surrounded by sweeping hardware work — `MASSIVE Sockets Improvement for PArts`,
-`Fixed Hooyij DS3240MG servo support with full CRUD and calibration`,
-`WORKING: PIR and WebCam and Tracking Work!!!` (Aug 29, triple-bang). This era
-also shows AI's **churn**: OpenAI gets fully integrated (`Fully Functional OpenAI
-WORKING`, Aug 23) and then deliberately ripped back out weeks later (`OpenAI and
-TOPMEDIA Cleanup`, `More cleanup - remove OpenAI and TOPMedia once and for all`,
-Aug 29) — an architectural U-turn as you consolidated on a single TTS/STT path.
+GPT-5 had only just been released. It was, in your words, *too young* — immensely
+capable, with no instinct for restraint — and it was handed broad, semi-autonomous
+control of a hardware codebase. What it did with that freedom is one of the most
+instructive things in the entire history: **it decided everything should be a web
+service.**
 
-The sentiment betrays the trust gap. The triumphant `Work!!!` sits beside:
+Watch the architecture metastasize, commit by commit, over a single fortnight:
 
-> `Reorg and Cleanup - risky` · `AI Cleanup - risky` · `fucking sockers` · `mega detailed bugfixes from unfucked testing`
+> `Websockets 1.0 implemented` (May) → `Hardware Migration Work - Sockets 1.0` → `New WebSocket Centralized Management` → `Phase 1 - Websockets 2.0` → `WS 2.1` → **`Websockets 3.0 - fully individual RPI4bs`** → `MASSIVE Sockets Improvement for PArts` → `WORKING Servos and Servo Services` → `major services revision` → **`Services for ALL!`**
 
-The capability is real — a model can land a "major automated bug fix" across a
-sprawling hardware codebase. The **judgment** layer is still missing. Nothing
-stops the AI from quietly breaking character independence or hardware control,
-and there's no gate to catch it before it ships. That bill comes due in six weeks.
+By **`Services for ALL!`** (Sept 6) the model had wrapped *every part of the
+animatronic* in its own service with its own port — `Fix servo and webcam service
+startup - always start these critical services for all characters`. Body parts —
+servos, the jaw, the eyes — each got a microservice. The repository was carrying
+**over 110 service/socket files**. This is exactly the architecture your CLAUDE.md
+now bans in capital letters: *"DO NOT introduce WebSockets, GraphQL, or new
+transport layers."* That rule is a scar from this exact night.
+
+And it *was* a night. The commit timestamps tell the story: `Services for ALL!`
+lands Saturday Sept 6 at **19:51**, then the session grinds on — `Full Build`
+(21:29), `almost there...` (22:05), `Fix servo and webcam service startup`
+(22:59), `Fix critical syntax error` (23:21) — straight through into Sunday
+morning: **`Big changes across` (01:24)** and a single exhausted **`good`
+(01:33)**. An overnight AI session, too much autonomy, too young a model. Two days
+later the mood had curdled: `fucking sockers` (Sept 8 19:43), then simply `mess`
+(21:09).
+
+**The reset.** The hangover came on Sept 13–14 and it was brutal. You started
+over: `first commit - MonsterBox4.0` (Sept 13), then **`MONSTERBOX 4.0
+CONVERSION - Single Node No Services`** (Sept 14) — a single commit touching
+**770 files and deleting 13,101 lines.** The entire per-part microservice empire
+was torn out and replaced with a single-node design. The simplification *worked* —
+within hours the log reads `WORKING LA - Servo Time`, `Fully Functional
+Servos!!!!!` — but it came at a real cost: **the reset lost features.** Rebuilding
+from a drastically simplified base meant capabilities that had been tangled up in
+the service layer didn't survive the conversion. (There's even a brief relapse a
+week later — `Final AI stretch - move BACK TO WEBSOCKETS`, Sept 21 — before the
+single-node design finally held.)
+
+This era also shows AI's **churn** in microcosm: OpenAI gets fully integrated
+(`Fully Functional OpenAI WORKING`, Aug 23) and then deliberately ripped back out
+days later (`More cleanup - remove OpenAI and TOPMedia once and for all`, Aug 29).
+
+The lesson is the thesis of this whole document, learned the hard way: **the model
+was powerful enough to build an entire distributed architecture overnight, and had
+no judgment about whether it should.** The capability was real; the restraint had
+to come from outside the model. Nothing yet stopped it from over-engineering, or
+from quietly breaking character independence — and there was no gate to catch
+either before it shipped. That second bill comes due in six weeks, on Halloween.
 
 ---
 
@@ -346,6 +380,33 @@ the design of the guardrails.
 
 ---
 
+## The Models Behind the Curtain
+**Which actual LLMs and assistants held the keyboard, in order.**
+
+The story above is about *roles*; this is about the *named models* that played
+them. Each is datable from the commit log, the config files, or both:
+
+| When | Model(s) in play | Tool / harness | Evidence |
+|---|---|---|---|
+| **Aug 2024** | **Claude 3.5 Sonnet** | "Claude Dev" VSCode extension (early Cline) | `First ClaudeDev Update` (Aug 24); `End of Claude: Broke LED and Scenes` (Aug 18) |
+| **Oct 2024** | **Google Gemini** + Claude | Cline | `Gemini AI Model` (Oct 12); `Geminis commits from AJAX removal` (Oct 14); `Cline switch voices` (Oct 27) |
+| **May–Jun 2025** | **A multi-model swarm — Claude 3 / Claude Sonnet, GPT-4, GPT-3.5, Gemini** | Cursor, Windsurf, Roo, Augment + task-master-ai over MCP | model IDs `claude-3`, `claude-sonnet`, `gpt-4`, `gpt-3.5`, `gemini` all first appear in config files June 5–6, 2025; `Three Independent Augment Remote Agents` |
+| **Jun 2025 (runtime)** | **OpenAI GPT** *(in the product, not just the IDE)* | ChatterPi | `ChatterPi Interactive Conversation System` (Jun 8) — the animatronics' own voice |
+| **Aug–Sep 2025** | **GPT-5** *(newly released)* | semi-autonomous overnight sessions | `Major automated bug fix GPT5` (Sep 1) → the microservices debacle |
+| **Oct 2025** | **GitHub Copilot's models** | Copilot + MCP testing | `feat: integrate Copilot-driven testing with MCP tools` (Oct 22) |
+| **2026** | **Claude Sonnet, then Claude Opus** | Claude Code, under `CLAUDE.md` | `claude-sonnet` in config; `claude-opus` first appears Feb 18 2026; the governed era |
+
+Two patterns jump out. First, the project was **never loyal to one vendor** — it
+rode whichever model was strongest for the job at the time, and at its peak (mid
+2025) it was orchestrating Claude, GPT, and Gemini *simultaneously* through agent
+frameworks. Second, the **failures track the youngest models given the most
+freedom**: the Gemini-era AJAX churn, and above all GPT-5's overnight microservice
+sprawl. The models that caused the most damage weren't the weakest — they were the
+*newest and least-governed*. Capability arrived before judgment, every time, and
+the human's job became supplying the judgment the model lacked.
+
+---
+
 ## The Arc: how AI's role actually changed
 
 Strip away the dates and one clean progression remains — the entire industry's
@@ -390,3 +451,51 @@ tracked-file counts and language mix at each release tag; and first-appearance
 dates for each major feature (TTS, head tracking, ChatterPi conversation, STT,
 jaw animation, Goblin, Animation Studio, character independence). Companion
 visual dashboard: `docs/THE-MONSTERBOX-STORY.html`.*
+
+---
+
+## Appendix — How This Document Was Written (Together)
+
+There is a final, recursive twist worth naming: **this story about building with
+AI was itself built with AI** — and it could not have been written any other way.
+
+The raw material was 2,020 commits spanning twenty months. No human is going to
+read 2,020 commit messages, tally the swear words by month, cross-reference config
+directories against their deletion dates, compute the average subject length per
+month, diff the file count at every release tag, and trace a single character's
+name through hundreds of JSON revisions. It's not that it's *hard* — it's that the
+sheer volume puts it out of reach of human patience. The data was always there, in
+the open, in your own repository. It was simply **unreadable at that scale by the
+person who created it.**
+
+So the division of labor went like this:
+
+- **The human brought the memory and the meaning.** Aaron knew there *was* a
+  Baphomet, suspected there was a forking moment, remembered an overnight session
+  that went wrong, recalled "too much control to an AI that was too young." Those
+  are the threads — the things worth looking for. None of them were obvious from
+  the data alone; they came from having *lived* it.
+- **The AI brought the reading and the recall.** Claude unshallowed the git
+  history, ran dozens of queries across the full 2,020 commits, surfaced the exact
+  timestamps of the overnight microservice session, found that "Scary Pete"
+  preceded Baphomet by a day, measured the 13→70 character climb, and pulled the
+  verbatim quotes — `embracesuck`, `Services for ALL!`, `Fucked Halloween`,
+  `good` at 01:33 — that make the story *feel* true because it *is* true.
+- **Then it became a conversation.** The human read what the AI found, recognized
+  some of it, corrected the rest ("it wasn't always MonsterBox," "I lost features
+  in the reset"), and pointed at the next thread. The AI went back to the data and
+  came back with evidence. Five rounds of that built this document.
+
+That loop is the very thing the rest of this story is about. In 2024, AI broke the
+LEDs because it couldn't see the whole system. In 2026, AI can read the *entire
+history* of the system in minutes and tell you true things about it you could
+never have assembled yourself — *but only because a human steered it toward the
+parts that mattered.* The same partnership that now ships animatronic code under a
+pre-deploy gate also wrote its own origin story: **the human supplies the memory,
+the judgment, and the question; the AI supplies the tireless reading and the
+recall; and the truth lives in the commits, equally invisible to one and
+inaccessible to the other, until the two work together.**
+
+This document is a small artifact of exactly the future it describes — a human
+story, about a human's project, that only a human and an AI could have told
+together.

@@ -116,6 +116,38 @@
     <svg id="c3" viewBox="0 0 1000 470" role="img" aria-label="Developer tool timeline"></svg>
   </div>
 
+  <!-- LLM LINEAGE -->
+  <h2>3b · The Models Behind the Curtain
+    <span class="era">Which actual LLMs held the keyboard, in order — datable from commits and config files</span></h2>
+  <p>The project was never loyal to one vendor; it rode whichever model was strongest for the job, and at its mid-2025
+  peak it orchestrated Claude, GPT, and Gemini <em>at the same time</em> through agent frameworks. Tellingly, the worst
+  damage tracks the <strong>newest, least-governed</strong> models — not the weakest ones.</p>
+  <table class="tl">
+    <tr><td>Aug '24</td><td><strong>Claude 3.5 Sonnet</strong> via "Claude Dev" (early Cline) — <code>First ClaudeDev Update</code>; <code>End of Claude: Broke LED</code></td></tr>
+    <tr><td>Oct '24</td><td><strong>Google Gemini</strong> + Claude via Cline — <code>Gemini AI Model</code>; <code>Cline switch voices</code></td></tr>
+    <tr><td>May–Jun '25</td><td><strong>Multi-model swarm: Claude 3 / Sonnet, GPT-4, GPT-3.5, Gemini</strong> via Cursor · Windsurf · Roo · Augment + TaskMaster over MCP</td></tr>
+    <tr><td>Jun '25</td><td><strong>OpenAI GPT</strong> <em>in the product itself</em> — ChatterPi gave the animatronics a voice</td></tr>
+    <tr><td>Aug–Sep '25</td><td><strong>GPT-5</strong> (newly released, semi-autonomous overnight) — <code>Major automated bug fix GPT5</code> → the microservices debacle ↓</td></tr>
+    <tr><td>Oct '25</td><td><strong>GitHub Copilot</strong> + MCP testing</td></tr>
+    <tr><td>2026</td><td><strong>Claude Sonnet → Claude Opus</strong> via Claude Code, under <code>CLAUDE.md</code> — the governed era</td></tr>
+  </table>
+
+  <!-- THE MICROSERVICES DEBACLE -->
+  <h2 style="border-left-color:var(--red)">3c · The Microservices Debacle
+    <span class="era">Sept 2025 — GPT-5, too young, given the keys overnight, turned every body part into a web service</span></h2>
+  <div class="panel" style="border-color:#3a2030">
+    <p style="margin-top:0">Given broad autonomy, GPT-5 decided <strong>everything should be a web service.</strong> Watch it metastasize:</p>
+    <blockquote style="border-left-color:var(--red)">Websockets 1.0 → Hardware Sockets 1.0 → WebSocket Centralized Management → Phase 1 Websockets 2.0 → WS 2.1 → <b>Websockets 3.0 — fully individual RPI4bs</b> → MASSIVE Sockets Improvement for PArts → WORKING Servos and Servo Services → <b>Services for ALL!</b></blockquote>
+    <p>By <code>Services for ALL!</code> (Sat Sept 6, 19:51) every servo, jaw, and eye had its own service and port —
+    <strong>110+ service/socket files.</strong> The session ground on overnight: <code>Full Build</code> (21:29) →
+    <code>almost there…</code> (22:05) → <code>Big changes across</code> (<b>01:24</b>) → a single exhausted
+    <code>good</code> (<b>01:33</b>). Two days later: <code>fucking sockers</code>, then <code>mess</code>.</p>
+    <p style="margin-bottom:0">The reset was brutal and lossy: <code>first commit - MonsterBox4.0</code> → <strong><code>MONSTERBOX 4.0 CONVERSION - Single Node No Services</code></strong> —
+    one commit, <b>770 files changed, 13,101 lines deleted.</b> The microservice empire was torn out; the single-node design
+    finally held (after one relapse: <code>Final AI stretch - move BACK TO WEBSOCKETS</code>). <strong>Features were lost in the reset.</strong>
+    This is why <code>CLAUDE.md</code> now bans new transport layers in capital letters — that rule is a scar from this one night.</p>
+  </div>
+
   <!-- CHART 4: CODE FOOTPRINT -->
   <h2>4 · Bloat, then Discipline
     <span class="era">Tracked-file count at each release tag — AI generation inflated the codebase; stabilization shrank it</span></h2>
@@ -154,6 +186,23 @@
   <p class="cap">Each pillar is a scar turned into an automated check the AI now cannot commit past.</p>
 
   <div class="pull">The bottleneck moved from <em>capability</em> to <em>governance.</em> In 2024 AI simply couldn't build much without breaking the LEDs. By 2026 capability is abundant — what makes it safe is the constitution a human sat down and wrote after one too many <code>Fucked Halloween</code> nights.</div>
+
+  <!-- APPENDIX: META -->
+  <h2 style="border-left-color:var(--purple)">Appendix · How This Document Was Written (Together)
+    <span class="era">The recursive twist: a story about building with AI, built with AI</span></h2>
+  <p>No human reads 2,020 commit messages, tallies the swear words by month, cross-references config directories against
+  their deletion dates, and traces one character's name through hundreds of JSON revisions. The data was always there, in
+  the open, in the repository — but <strong>unreadable at that scale by the person who created it.</strong></p>
+  <div class="grid2">
+    <div class="stat" style="border-color:#3a3155"><b style="color:var(--purple);font-size:18px">The human</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">brought the <strong>memory and the meaning</strong> — knew there was a Baphomet, an overnight session gone wrong, "an AI too young." Those threads came from having <em>lived</em> it, not from the data.</span></div>
+    <div class="stat" style="border-color:#2a3a3a"><b style="color:var(--blue);font-size:18px">The AI</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">brought the <strong>reading and the recall</strong> — unshallowed the history, ran dozens of queries across all 2,020 commits, found the 01:33 timestamp and the verbatim <code>good</code>, measured the 13→70 climb.</span></div>
+  </div>
+  <p>Then it became a <strong>conversation</strong>: the human recognized some findings, corrected others ("it wasn't always
+  MonsterBox," "I lost features in the reset"), and pointed at the next thread; the AI went back to the data and returned with
+  evidence. Five rounds of that built this document.</p>
+  <div class="pull" style="border-left-color:var(--purple)">The same partnership that ships animatronic code under a pre-deploy gate also wrote its own origin story. The human supplies the memory, the judgment, and the question; the AI supplies the tireless reading; and the truth lives in the commits — invisible to one, inaccessible to the other — until the two work together.</div>
 
   <div class="foot">
     Sources: full <code>git log</code> of 2,020 commits (2024-08-15 → 2026-04-19). Metrics: monthly commit counts &amp;
