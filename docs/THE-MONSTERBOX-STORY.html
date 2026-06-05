@@ -60,6 +60,35 @@
     <div class="stat"><b>11</b><span>distinct AI/dev tools came and went</span></div>
   </div>
 
+  <!-- WHAT IS MONSTERBOX -->
+  <h2>First — what is MonsterBox?
+    <span class="era">A web app that runs living Halloween creatures on a $75 computer</span></h2>
+  <p>It's Halloween night in a garage in Coralville, Iowa. A life-sized vampire — <strong>Orlok</strong> — turns his head to
+  track a kid coming up the driveway. His eyes glow; he leans in, jaw moving in time, and <em>speaks</em>: not a recording, but
+  a live, AI-generated reply to whatever the kid just said. A video flickers across a tombstone, lights pulse with the audio,
+  a second creature stirs. Nobody is backstage pulling levers. It's all <strong>MonsterBox</strong> — an animatronic control
+  platform on a Raspberry Pi 4B wired to servos, motors, lights, sensors, a camera, a speaker, and a mic.</p>
+  <p><strong>What you can do with it on Halloween today:</strong></p>
+  <table class="tl">
+    <tr><td>🎬 Animation Studio</td><td>Drag servo moves, motors, lights, audio, and pauses onto a timeline; loop scenes all night or fire them on a sensor</td></tr>
+    <tr><td>🗣️ Talk &amp; listen</td><td>Built-in <strong>text-to-speech</strong> gives each character a voice; <strong>speech-to-text</strong> lets it hear a guest</td></tr>
+    <tr><td>🤖 Converse with AI</td><td>An <code>askAI</code> step sends what a guest said to an LLM and speaks the reply back — the monster improvises, jaw auto-synced</td></tr>
+    <tr><td>👁️ Track people</td><td>USB camera + OpenCV motion detection drives <strong>head-tracking</strong> so a character's gaze follows movement</td></tr>
+    <tr><td>📺 Project video</td><td>The <strong>Goblin</strong> subsystem plays synchronized video/playlists on external displays</td></tr>
+    <tr><td>💡 Move &amp; light it all</td><td>LEDs, PWM servos (PCA9685), motors, linear actuators — live from the dashboard or sequenced in a scene</td></tr>
+  </table>
+  <p class="cap">In short: video, lights, motion, voice, hearing, and AI conversation — all coordinated from one web app.</p>
+  <div class="panel" style="border-color:#2a2535">
+    <p style="margin:0"><strong>It didn't start anywhere near here.</strong> The first version (Aug 2024) was one demon named
+    <strong>Baphomet</strong>, a couple hundred lines of hand-written Node.js, three flat JSON files, and commit messages like
+    <code>fff</code> and <code>embracesuck</code> typed at midnight before the holiday. No AI conversation, no video, no
+    head-tracking, no multi-character support, no tests — one person copy-pasting code and hoping it held for one night.
+    Getting from there to here took two years, and the road runs exactly parallel to how AI coding tools evolved in real
+    time — from a clever autocomplete that broke the lights, to a swarm of agents that over-built everything overnight, to a
+    governed collaborator that finally earned trust. That's the story below; the
+    <a href="#lessons" style="color:var(--purple)">lessons for anyone building with AI in 2026</a> are at the end.</p>
+  </div>
+
   <!-- PROLOGUE -->
   <h2>0 · Before It Was MonsterBox — The Baphomet Origin
     <span class="era">One animatronic's control code, generalized outward into a platform for many</span></h2>
@@ -186,6 +215,21 @@
   <p class="cap">Each pillar is a scar turned into an automated check the AI now cannot commit past.</p>
 
   <div class="pull">The bottleneck moved from <em>capability</em> to <em>governance.</em> In 2024 AI simply couldn't build much without breaking the LEDs. By 2026 capability is abundant — what makes it safe is the constitution a human sat down and wrote after one too many <code>Fucked Halloween</code> nights.</div>
+
+  <!-- LESSONS -->
+  <h2 id="lessons" style="border-left-color:var(--green)">Lessons for Anyone Building With AI in 2026
+    <span class="era">Eight scars from 2,020 commits, each paid for in a <code>Fucked Halloween</code></span></h2>
+  <table class="tl">
+    <tr><td style="color:var(--green)">1 · Capability before judgment</td><td>The newest, most powerful models did the most spectacular damage — not because they were dumb, but because they had no instinct for restraint. Knowing what <em>not</em> to build is your job, not the model's.</td></tr>
+    <tr><td style="color:var(--green)">2 · Autonomy is a loan</td><td>The overnight "let it run" session felt like a windfall and cost a 770-file, 13,000-line teardown. Give an agent rope only as fast as you build the checks that catch it.</td></tr>
+    <tr><td style="color:var(--green)">3 · Safety in the system</td><td>Nothing improved reliability until guardrails became <strong>automated and unskippable</strong> — schemas, a resolver, a contract suite, a pre-deploy gate. Reviewing by eye doesn't scale; a gate the AI can't commit past does.</td></tr>
+    <tr><td style="color:var(--green)">4 · Write the constitution down</td><td>A <code>CLAUDE.md</code> that says "DO NOT introduce new transport layers" turns a hard-won scar into a rule honored on every future task. Encode decisions as machine-readable constraints, not tribal knowledge.</td></tr>
+    <tr><td style="color:var(--green)">5 · Beware the load-bearing default</td><td>So much was hardcoded to Orlok that "character independence" became a multi-month crusade. AI cements whatever it sees first into an assumption everywhere. Design for the general case early.</td></tr>
+    <tr><td style="color:var(--green)">6 · Smaller is a feature</td><td>AI generation inflated the repo to 1,889 files; the healthiest era cut it nearly in half. More code is not more progress — the most mature commits here <em>removed</em> things.</td></tr>
+    <tr><td style="color:var(--green)">7 · Commit messages are an instrument</td><td>The clearest signal of how the work was really going — tooling, discipline, even mood — was hiding in the log the whole time. Write them like they'll be read later.</td></tr>
+    <tr><td style="color:var(--green)">8 · The human's job changed, not shrank</td><td>Over two years the human wrote less code and became <em>more</em> essential. AI got better at the <em>how</em>; the <em>whether</em> and the <em>why</em> stayed human.</td></tr>
+  </table>
+  <div class="pull" style="border-left-color:var(--green)">AI in 2026 is powerful enough to build almost anything and wise enough to build almost nothing. The leverage comes from a human supplying the judgment — and encoding it into systems the AI must obey. That's not a limitation to wait out. It's the job.</div>
 
   <!-- APPENDIX: META -->
   <h2 style="border-left-color:var(--purple)">Appendix · How This Document Was Written (Together)

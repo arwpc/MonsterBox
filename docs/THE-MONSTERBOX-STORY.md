@@ -8,6 +8,68 @@
 
 ---
 
+## First, what is MonsterBox?
+
+It's Halloween night in a garage in Coralville, Iowa. A life-sized vampire —
+**Orlok** — turns his head to track a kid coming up the driveway. His eyes glow.
+As the kid gets close, Orlok leans in, jaw moving in time, and *speaks*: not a
+recorded clip, but a live, AI-generated reply to whatever the kid just said. A
+video flickers across a tombstone, lights pulse with the audio, a second creature
+stirs. Nobody is backstage pulling levers. It's all **MonsterBox**.
+
+MonsterBox is an **animatronic control platform** — the software brain that drives
+physical Halloween creatures. It runs on a Raspberry Pi 4B wired to servos,
+motors, linear actuators, LEDs, sensors, a camera, speakers, and a microphone.
+From a web dashboard you build *characters* (Orlok the vampire, Mina, Sir
+Dragomir, the Groundbreaker, PumpkinHead), define their hardware *parts*,
+choreograph *scenes*, and then turn them loose to perform, react, and hold a
+conversation on their own.
+
+**What you can actually do with it on Halloween today:**
+
+- **Choreograph performances in the Animation Studio** — a timeline editor where
+  you drag servo moves, motor runs, lights, audio, and pauses into a scene, then
+  hit play. Scenes can loop all night or fire on a sensor trip.
+- **Make a creature talk and listen** — built-in **text-to-speech** gives each
+  character a voice; **speech-to-text** lets it *hear* a guest. Drop a `sayThis`
+  step into a scene for scripted lines.
+- **Hold a real conversation** — an `askAI` step sends what the guest said to a
+  large language model and speaks the reply back, so the monster improvises. The
+  jaw animates to the speech automatically.
+- **Track and follow people** — a USB camera with OpenCV motion detection drives
+  **head-tracking**, so a character's gaze follows movement in the room.
+- **Project video and play media** — the **Goblin** subsystem drives synchronized
+  video/playlist playback on external displays (a face on a screen, a scene on a
+  wall).
+- **Light and move everything** — LEDs, PWM servos (via PCA9685), motors, and
+  linear actuators, all controllable live from the dashboard or sequenced in a
+  scene. Toggle features like jaw-sync, head-tracking, and "parrot" mode from a
+  single panel.
+
+In short: **video, lights, motion, voice, hearing, and AI conversation — all
+coordinated from one web app on a $75 computer.**
+
+### It didn't start anywhere near here
+
+The first version, in August 2024, was the opposite of all that: one animatronic
+(a demon named **Baphomet**), a couple hundred lines of hand-written Node.js,
+three flat JSON files, and commit messages like `fff` and `embracesuck` typed at
+midnight before the holiday. No AI conversation, no video subsystem, no
+head-tracking, no multi-character support, no tests — one person copy-pasting
+code, wiring motors, and hoping it held for one night.
+
+Getting from there to here took two years, and the road runs exactly parallel to
+how AI coding tools evolved in real time. So this isn't really a history of an
+animatronic platform. It's a case study in *what it was actually like to build
+software with AI between 2024 and 2026*, reconstructed from all 2,020 commits — as
+the tools went from a clever autocomplete that broke the lights, to a swarm of
+agents that over-built everything overnight, to a governed collaborator that
+finally earned trust. The lessons are collected at the end. The short version:
+**the AI got dramatically more capable, and the human's job shifted from writing
+the code to governing the thing that writes it.**
+
+---
+
 ## How to read this history
 
 You don't need to read the code to see the story — it's written into the commit
@@ -441,6 +503,63 @@ AI sustainable.
 
 ---
 
+## Lessons for Anyone Building With AI in 2026
+
+MonsterBox is one project by one person, but the scars generalize. Here is what
+two years and 2,020 commits taught — each lesson paid for in a `Fucked Halloween`:
+
+1. **Capability arrives before judgment — every time.** The newest, most powerful
+   models did the most spectacular damage (GPT-5 building a microservice for every
+   body part overnight), not because they were dumb but because they had no
+   instinct for restraint. *Assume the model can do far more than it should, and
+   that knowing the difference is your job, not its.*
+
+2. **Autonomy without guardrails is a loan, not a gift.** The overnight "let it
+   run" session felt like a windfall and cost a 770-file, 13,000-line teardown and
+   lost features. Give an agent more rope only as fast as you build the checks that
+   catch it. Unsupervised AI is fastest at writing code you'll later have to
+   delete.
+
+3. **Put the safety in the system, not in your vigilance.** Nothing improved
+   reliability until the guardrails became *automated and unskippable* — schemas,
+   a canonical resolver, a contract test suite, a pre-deploy gate. Reviewing AI
+   output by eye does not scale; a gate the AI literally cannot commit past does.
+   The reliability win was a *governance* win, not a model upgrade.
+
+4. **Write the constitution down where the AI can read it.** A `CLAUDE.md` that
+   says "DO NOT introduce new transport layers" turns a hard-won scar into a
+   standing rule the assistant honors on every future task. Encode your
+   architectural decisions as machine-readable constraints, not tribal knowledge.
+
+5. **Beware the one load-bearing default.** So much was hardcoded to Orlok that
+   "character independence" became a multi-month crusade. AI will happily cement
+   whatever it sees first into an assumption everywhere. Design for the general
+   case early, or pay to retrofit it later.
+
+6. **Smaller is a feature.** AI generation inflated the repo to 1,889 files; the
+   healthiest era cut it nearly in half. More code is not more progress — under AI
+   it's often the opposite. Deletion and consolidation are real work, and the most
+   mature commits in this history are the ones that *removed* things.
+
+7. **Commit messages are a cheap, honest instrument.** The single clearest signal
+   of how the work was actually going — tooling, discipline, even mood — was hiding
+   in the commit log the whole time. Write them like they'll be read later,
+   because the story of your project is being recorded in them whether you mean it
+   to be or not.
+
+8. **The human's job changed, but didn't shrink.** Across two years the human
+   stopped writing most of the code — and became *more* essential, not less. The
+   memory, the judgment, the questions, the decision of *what's worth doing and
+   what must never happen* stayed stubbornly human. AI got better at the *how*;
+   the *whether* and the *why* are still yours.
+
+The throughline: **AI in 2026 is powerful enough to build almost anything and
+wise enough to build almost nothing.** The leverage comes from a human supplying
+the judgment — and, increasingly, from encoding that judgment into systems the AI
+must obey. That's not a limitation to wait out. It's the job.
+
+---
+
 *Sources: full `git log` of 2,020 commits (2024-08-15 → 2026-04-19). Quantitative
 signals: monthly commit counts; per-month average commit-subject length; lexical
 sentiment tally (frustration vs. triumph word families); config-directory
@@ -456,17 +575,16 @@ visual dashboard: `docs/THE-MONSTERBOX-STORY.html`.*
 
 ## Appendix — How This Document Was Written (Together)
 
-There is a final, recursive twist worth naming: **this story about building with
-AI was itself built with AI** — and it could not have been written any other way.
+One last twist worth naming: **this story about building with AI was itself built
+with AI** — and it couldn't have been written any other way.
 
-The raw material was 2,020 commits spanning twenty months. No human is going to
-read 2,020 commit messages, tally the swear words by month, cross-reference config
-directories against their deletion dates, compute the average subject length per
-month, diff the file count at every release tag, and trace a single character's
-name through hundreds of JSON revisions. It's not that it's *hard* — it's that the
-sheer volume puts it out of reach of human patience. The data was always there, in
-the open, in your own repository. It was simply **unreadable at that scale by the
-person who created it.**
+The raw material was 2,020 commits over twenty months. No human reads 2,020 commit
+messages, tallies the swear words by month, cross-references config directories
+against their deletion dates, computes the average subject length per month, diffs
+the file count at every release tag, and traces one character's name through
+hundreds of JSON revisions. It's not hard — the volume just puts it past human
+patience. The data was always there, in the open, in the repository. It was simply
+**unreadable at that scale by the person who created it.**
 
 So the division of labor went like this:
 
@@ -486,16 +604,14 @@ So the division of labor went like this:
   in the reset"), and pointed at the next thread. The AI went back to the data and
   came back with evidence. Five rounds of that built this document.
 
-That loop is the very thing the rest of this story is about. In 2024, AI broke the
-LEDs because it couldn't see the whole system. In 2026, AI can read the *entire
-history* of the system in minutes and tell you true things about it you could
-never have assembled yourself — *but only because a human steered it toward the
-parts that mattered.* The same partnership that now ships animatronic code under a
-pre-deploy gate also wrote its own origin story: **the human supplies the memory,
-the judgment, and the question; the AI supplies the tireless reading and the
-recall; and the truth lives in the commits, equally invisible to one and
-inaccessible to the other, until the two work together.**
+That loop is the whole point. In 2024, AI broke the LEDs because it couldn't see
+the whole system. In 2026, AI can read the *entire history* of that system in
+minutes and tell you true things about it you'd never have assembled yourself —
+but only because a human steered it toward the parts that mattered. The same
+partnership that now ships animatronic code under a pre-deploy gate wrote its own
+origin story: **the human supplies the memory, the judgment, and the question; the
+AI supplies the tireless reading; and the truth lives in the commits — invisible
+to one, inaccessible to the other — until the two work together.**
 
-This document is a small artifact of exactly the future it describes — a human
-story, about a human's project, that only a human and an AI could have told
-together.
+That's the artifact this document really is: a human story, about a human's
+project, that only a human and an AI could have told together.
