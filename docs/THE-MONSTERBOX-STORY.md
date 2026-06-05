@@ -31,6 +31,53 @@ say, and how it all **felt**.
 
 ---
 
+## Prologue — Before It Was MonsterBox: The Baphomet Origin
+**It started as the control code for a single animatronic, and grew outward into a platform for many.**
+
+MonsterBox didn't begin as MonsterBox. Its git history *is* the continuous
+lineage of one demon. The root commit (Aug 15, 2024) opens with a throwaway
+placeholder character — `"Scary Pete" — "Someone with buttholes for eyes"` — and
+a flat, single-character data layout: one `data/characters.json`, one
+`parts.json`, one `scenes.json` sitting at the repo root, describing exactly one
+bot with five parts (two arms, two legs, glowing eyes). This is the shape of a
+project built to run *one* animatronic.
+
+By **day two** (Aug 16, `Motor Integrated halfway`) the placeholder is gone and
+the real subject appears: **Baphomet**. Two days after that it's briefly renamed
+**"Lord Satan Production"** — Baphomet's alter ego — before settling back. For the
+first stretch of its life, this repository was simply *the code that runs
+Baphomet.*
+
+The "fork one into many" you remember is real, and it happened **gradually, in
+place** — not as a separate repo merged in, but as the original single-bot
+codebase being generalized outward:
+
+1. **One bot (Aug 2024):** Baphomet only, flat root-level data files.
+2. **A small troupe (by Nov 2024):** the roster grows to **Baphomet + Coffin
+   Breaker + PumpkinHead** — `Post Halloween Commit - Baphomet` is the last time
+   the founding character is named in the log.
+3. **The unification (May 5, 2025):** `First rev to sync all Bots to same
+   codebase` — the deliberate pivot from per-bot code to one shared engine.
+4. **The platform (2026):** per-character `data/character-{id}/` directories,
+   schemas, and the canonical resolver — *any* character, no hardcoding.
+
+There is a poignant footnote: **Baphomet is no longer in the roster.** Today's
+characters are PumpkinHead, Mina, Orlok, Sir Dragomir, and Groundbreaker. The
+demon that started it all was retired along the way, and **Orlok** (char_id 3)
+became the dominant character — so dominant that "hardcoded to Orlok" is now the
+single most-warned-against bug class in `CLAUDE.md`. The whole Character
+Independence crusade of 2026 is, in a sense, the project working to ensure no
+*future* character ever becomes as load-bearing as Baphomet once was. The origin
+animatronic left its fingerprint on the architecture precisely by being the thing
+everything was once wired to.
+
+> *Note: the full git graph contains three parentless root commits. Only one
+> (Aug 15 2024) is the application's origin; the other two — Sept 30 2025 and
+> Apr 19 2026 — are MkDocs / `gh-pages` documentation-deploy branch roots, not a
+> separate codebase.*
+
+---
+
 ## Act I — The Hand-Built Origin (Aug 2024)
 **~130 commits · IDEs: JetBrains, then VSCode · AI: an early Claude, used like copy-paste.**
 
