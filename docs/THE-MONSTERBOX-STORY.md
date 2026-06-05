@@ -49,6 +49,50 @@ conversation on their own.
 In short: **video, lights, motion, voice, hearing, and AI conversation — all
 coordinated from one web app on a $75 computer.**
 
+### The cast on Halloween night
+
+MonsterBox doesn't run one creature. It runs an ensemble, and they share a world —
+a gothic tableau staged at **Warner Castle** (the family's own house). The dialogue
+is real; every quote below is lifted verbatim from the characters' scene files.
+
+- **Orlok** — Count Orlok of the Carpathians, "Ruler of Walechia," a
+  Nosferatu-styled vampire lord and the most hardware-rich character (12 parts:
+  dual linear-actuator arms, an elbow and a forearm servo, a swiveling head, the
+  glowing "Hand of Azura," the IR-night-vision "Eye of Orlok"). He greets guests
+  with *"Welcome to Warner Castle, mortal! I am Count Orlok, and tonight your soul
+  belongs to me!"* — and when the mood turns to old grudges, *"I am Orlok of the
+  Carpathians — Ruler of Walechia. Feel my wrath, Turk!"* and *"Release the wolves!
+  Go my Pets, do your Worst!"*
+
+- **Mina** — a coffin-bound vampire who rises through a motorized door, eyes lit by
+  a laser, a "Burning Rose" beside her, speaking in a voice literally named *The
+  Siren's Voicemail*: *"I have risen from eternal slumber. The darkness calls, and
+  I answer!"* Her story is bound to Orlok's — guests can ask her *"Who is Orlok and
+  what has he done to you?"* and *"What ancient curse binds you to this coffin?"*,
+  to which she answers, *"My story is long and filled with sorrow."* She is the
+  Mina to his Count: the horror and the heartbreak at the center of the scene.
+
+- **Sir Dragomir** — the knight, wearing the face of John Hunyadi (the real
+  Hungarian-Wallachian general who fought the Ottomans). He's the historical
+  counterweight to the vampire warlord — the Turk-fighter Orlok taunts across the
+  yard.
+
+- **Groundbreaker** — a creature that claws up out of the ground and talks trash:
+  *"You want some of this? I'll tear you apart and bury you in pieces!"* (the scene
+  is, in fact, named "Groundbreaker Insult Loop").
+
+- **PumpkinHead** — the oldest, simplest archetype, walking terror itself: *"Fear
+  me! I am the terror that walks in darkness!"*
+
+Underneath the horror there's a family running the show: parrot mode pipes in
+personalized Easter eggs — *"Hello Polly!! Welcome to Warner Castle!!!"*, *"Kiley
+is the Koolest and Nugget is Queen Skribidi!"* The whole point of the platform is
+that all of these — different hardware, different voices, different personalities —
+run on the *same* engine, react to the *same* guests, and perform on the *same*
+night. That ensemble is exactly why "character independence" stopped being a
+nicety and became the architecture: when five creatures share one codebase, one
+of them hardcoded as the favorite breaks the other four.
+
 ### It didn't start anywhere near here
 
 The first version, in August 2024, was the opposite of all that: one animatronic
