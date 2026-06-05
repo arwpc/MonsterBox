@@ -60,6 +60,19 @@
     <div class="stat"><b>11</b><span>distinct AI/dev tools came and went</span></div>
   </div>
 
+  <!-- COMMIT PRIMER CALLOUT -->
+  <div class="panel" style="background:#0f1830;border:1px solid #1d4ed8;margin-top:24px">
+    <div style="font:600 18px/1.3 inherit;color:#7aa7ff;margin-bottom:8px">First — what's a &ldquo;commit&rdquo;? (a 30-second primer)</div>
+    <p style="margin:0 0 8px;color:#dfe6f2;font-size:15.5px">A <strong>commit</strong> is a saved snapshot of the code at one moment — like hitting
+    &ldquo;save&rdquo; on the entire project, with a short note attached describing what just changed. Developers commit
+    <strong>constantly</strong> (often dozens of times a day).</p>
+    <p style="margin:0 0 6px;color:#aeb8c8;font-size:13.5px"><strong>Why they do it:</strong> every commit is a checkpoint they can rewind to,
+    so a mistake is never fatal — you roll back to the last good snapshot. It's also how a team works on the same code without
+    overwriting each other, and a running history of <em>who changed what, when, and why.</em></p>
+    <p style="margin:0;color:#aeb8c8;font-size:13.5px">Every commit carries a one-line <strong>message</strong>. Those messages are
+    what this document reads — all <strong>2,020</strong> of them — to reconstruct how the project, and the AI building it, evolved.</p>
+  </div>
+
   <!-- WHAT IS MONSTERBOX -->
   <h2>First — what is MonsterBox?
     <span class="era">A web app that runs living Halloween creatures on a $75 computer</span></h2>
@@ -269,7 +282,16 @@
   </div>
   <p>Then it became a <strong>conversation</strong>: the human recognized some findings, corrected others ("it wasn't always
   MonsterBox," "I lost features in the reset"), and pointed at the next thread; the AI went back to the data and returned with
-  evidence. Five rounds of that built this document.</p>
+  evidence. Round after round, that built this document.</p>
+  <p>And the document you're reading is the product of that loop, <em>still running.</em> It didn't arrive whole — it accreted,
+  one prompt at a time. The first pass was a plain timeline. Then: <em>more narrative, the sentiments in the commits, the tools used</em>
+  → the AI mined the swear-word counts and tool lifecycles. <em>Was there an older Baphomet repo?</em> → it found the "Scary Pete"
+  root commit and corrected the myth. <em>The overnight microservice disaster</em> → it pulled the 01:33 timestamps that proved it.
+  <em>Look into the characters</em> → Orlok, Mina, and Sir Dragomir walked out of the scene files. <em>The real LLM story</em> → it mapped
+  the five-rung climb from "complete the line" to "operate under governance." <em>I hate Markdown — give me a publication PDF that
+  keeps the visuals</em> → it wrote a renderer that redraws the charts natively. <em>The pagination sucks, add a legend, explain what
+  a commit is up front</em> → and that's why this page is laid out the way it is. Even this paragraph exists because the human asked
+  the AI to write down how the two of them were writing it.</p>
   <div class="pull" style="border-left-color:var(--purple)">The same partnership that ships animatronic code under a pre-deploy gate also wrote its own origin story. The human supplies the memory, the judgment, and the question; the AI supplies the tireless reading; and the truth lives in the commits — invisible to one, inaccessible to the other — until the two work together.</div>
 
   <div class="foot">

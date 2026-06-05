@@ -13,7 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
-    Spacer, Table, TableStyle, HRFlowable, KeepTogether, PageBreak, Flowable)
+    Spacer, Table, TableStyle, HRFlowable, KeepTogether, PageBreak, Flowable, CondPageBreak)
 from reportlab.graphics.shapes import Drawing, Rect, String, Line, Group, PolyLine
 from reportlab.graphics import renderPDF
 
@@ -58,7 +58,13 @@ S['h1'] = ParagraphStyle('h1', fontName='Head-Bold', fontSize=17, leading=20,
 S['h2'] = ParagraphStyle('h2', fontName='Head-Bold', fontSize=12.5, leading=15,
     textColor=AMBER, spaceBefore=12, spaceAfter=2, keepWithNext=True)
 S['meta'] = ParagraphStyle('meta', fontName='Body-BoldItalic', fontSize=10,
-    leading=13.5, textColor=GREY, spaceAfter=8)
+    leading=13.5, textColor=GREY, spaceAfter=8, keepWithNext=True)
+S['callh'] = ParagraphStyle('callh', fontName='Head-Bold', fontSize=15, leading=18,
+    textColor=HexColor(0x1d4ed8), spaceAfter=6)
+S['callb'] = ParagraphStyle('callb', fontName='Body', fontSize=11.5, leading=16.5,
+    textColor=INK, spaceAfter=6)
+S['callbi'] = ParagraphStyle('callbi', fontName='Body', fontSize=10, leading=14,
+    textColor=HexColor(0x374151))
 S['quote'] = ParagraphStyle('quote', fontName='Mono', fontSize=8.5, leading=12.5,
     textColor=HexColor(0x3a2a10))
 S['quotew'] = ParagraphStyle('quotew', fontName='Mono', fontSize=8.5, leading=12.5,
@@ -115,6 +121,33 @@ def pullbox(text):
     ]))
     return KeepTogether([Spacer(1,6), tb, Spacer(1,6)])
 
+def callout_commit():
+    head = Paragraph("First — what's a &ldquo;commit&rdquo;? (a 30-second primer)", S['callh'])
+    body = Paragraph(
+        "A <b>commit</b> is a saved snapshot of the code at one moment &mdash; like hitting "
+        "&ldquo;save&rdquo; on the entire project, with a short note attached describing what just "
+        "changed. Developers commit <b>constantly</b> (often dozens of times a day).", S['callb'])
+    why = Paragraph(
+        "<b>Why they do it:</b> every commit is a checkpoint they can rewind to, so a mistake is "
+        "never fatal &mdash; you just roll back to the last good snapshot. It&rsquo;s also how a team "
+        "works on the same code without overwriting each other, and a running history of <i>who "
+        "changed what, when, and why.</i>", S['callbi'])
+    note = Paragraph(
+        "Every commit carries a one-line <b>message</b>. Those messages are what this document reads "
+        "&mdash; all <b>2,020</b> of them &mdash; to reconstruct how the project, and the AI building "
+        "it, evolved.", S['callbi'])
+    inner = Table([[head],[body],[why],[Spacer(1,2)],[note]], colWidths=[6.5*inch])
+    inner.setStyle(TableStyle([('LEFTPADDING',(0,0),(-1,-1),0),('RIGHTPADDING',(0,0),(-1,-1),0),
+        ('TOPPADDING',(0,0),(-1,-1),2),('BOTTOMPADDING',(0,0),(-1,-1),2)]))
+    box = Table([[inner]], colWidths=[6.7*inch])
+    box.setStyle(TableStyle([
+        ('BACKGROUND',(0,0),(-1,-1),HexColor(0xeef3fb)),
+        ('BOX',(0,0),(-1,-1),1.2,HexColor(0x1d4ed8)),
+        ('LEFTPADDING',(0,0),(-1,-1),16),('RIGHTPADDING',(0,0),(-1,-1),16),
+        ('TOPPADDING',(0,0),(-1,-1),13),('BOTTOMPADDING',(0,0),(-1,-1),13),
+    ]))
+    return KeepTogether([box, Spacer(1,12)])
+
 def md_table(rows):
     # rows: list of list of cell strings; first row header
     hdr = rows[0]
@@ -163,11 +196,26 @@ MONTHS = [("Aug'24",80,20,6,11),("Sep'24",49,17,4,10),("Oct'24",601,13,22,15),
  ("Dec'25",None,None,None,None),("Jan'26",32,58,1,0),("Feb'26",116,65,0,7),
  ("Mar'26",109,70,0,2),("Apr'26",36,62,0,0)]
 
+def legend(d, x, y, items, sw=10):
+    """items: list of (color, label). draws swatch+label row, returns end x."""
+    cx = x
+    for col, label in items:
+        if col == 'shade':
+            d.add(Rect(cx, y, sw, sw, fillColor=HexColor(0xf0eee9), strokeColor=GRID, strokeWidth=0.5))
+        else:
+            d.add(Rect(cx, y, sw, sw, fillColor=col, strokeColor=None))
+        lbl(d, cx+sw+3, y+1.5, label, 7, HexColor(0x374151), 'start')
+        cx += sw + 6 + len(label)*3.7 + 12
+    return cx
+
 def chart_activity():
-    W,H = DW, 250; L,R,T,B = 34,10,16,54
+    W,H = DW, 268; L,R,T,B = 34,10,40,54
     d = Drawing(W,H)
     pw,ph = W-L-R, H-T-B; n=len(MONTHS); bw=pw/n; mx=601
     yy=lambda v: B+(v/mx)*ph    # bottom-up: 0 at baseline B, max near top
+    # legend across the top
+    legend(d, L, H-16, [(HexColor(0xcbd5e1),"commits / month"), (RED,"frustration words"),
+        (GREEN,"triumph words"), ('shade',"dormant months (no commits)")])
     for gv in (0,150,300,450,600):
         d.add(Line(L,yy(gv),W-R,yy(gv),strokeColor=GRID,strokeWidth=0.5))
         lbl(d,L-4,yy(gv)-2,str(gv),6,MUTED,'end')
@@ -181,7 +229,8 @@ def chart_activity():
             if f: d.add(Rect(x,B-(3+f*0.7),w*0.45,3+f*0.7,fillColor=RED,strokeColor=None))
             if t: d.add(Rect(x+w*0.55,B-(3+t*0.7),w*0.45,3+t*0.7,fillColor=GREEN,strokeColor=None))
         lbl(d,L+i*bw+bw/2,10,m,6,MUTED,'middle')
-    lbl(d,L+pw/2,H-6,"commits / month  (red = frustration words · green = triumph words, below baseline)",6.5,MUTED,'middle')
+    # frustration/triumph strips sit just below the baseline (0 line)
+    lbl(d,L+pw/2,H-32,"red & green strips below the zero-line count emotional words in that month's commit messages",6,MUTED,'middle')
     return d
 
 def chart_msglen():
@@ -321,14 +370,17 @@ def parse_md(path):
             continue
         if first.startswith('## '):
             htext = first[3:].strip()
-            out_flow.append(HRFlowable(width="100%", thickness=0.8, color=RULE,
-                spaceBefore=14, spaceAfter=2, lineCap='round'))
-            out_flow.append(Paragraph(inline(htext), S['h1']))
+            # don't strand a section heading near the bottom of a page
+            out_flow.append(CondPageBreak(1.7*inch))
+            # the rule + heading (+ any chart for this section) travel together as one block,
+            # so a heading is never the last thing on a page and a chart never splits from it
+            group = [HRFlowable(width="100%", thickness=0.8, color=RULE,
+                        spaceBefore=14, spaceAfter=2, lineCap='round'),
+                     Paragraph(inline(htext), S['h1'])]
             for key,(cap,fn) in chart_after.items():
                 if key in htext:
-                    out_flow.append(Spacer(1,6))
-                    out_flow.append(fn())
-                    out_flow.append(Paragraph(cap, S['cap']))
+                    group += [Spacer(1,6), fn(), Paragraph(cap, S['cap'])]
+            out_flow.append(KeepTogether(group))
             continue
         if first.startswith('### '):
             out_flow.append(Paragraph(inline(first[4:].strip()), S['h2']))
@@ -391,10 +443,9 @@ def title_page():
         ('LEFTPADDING',(0,0),(-1,-1),10),('VALIGN',(0,0),(-1,-1),'MIDDLE')]))
     fl.append(t)
     fl.append(Spacer(1,0.3*inch))
-    fl.append(chart_activity())
-    fl.append(Paragraph("The project's heartbeat and mood — commit volume per month, "
-        "with frustration (red) and triumph (green) word-counts beneath each bar. "
-        "This whole document is reconstructed from the git history; nothing is invented.", S['cap']))
+    fl.append(KeepTogether([chart_activity(),
+        Paragraph("The project's heartbeat and mood. This whole document is reconstructed "
+        "from the git history; nothing here is invented.", S['cap'])]))
     fl.append(PageBreak())
     return fl
 
@@ -416,7 +467,7 @@ def build():
         title="The MonsterBox Story", author="Aaron Warner")
     frame=Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='main')
     doc.addPageTemplates([PageTemplate(id='main', frames=[frame], onPage=footer)])
-    story = title_page() + parse_md(MD)
+    story = title_page() + [callout_commit()] + parse_md(MD)
     doc.build(story)
     print("WROTE", OUT, "%.0f KB" % (os.path.getsize(OUT)/1024))
 
