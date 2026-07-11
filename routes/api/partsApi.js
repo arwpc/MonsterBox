@@ -16,6 +16,7 @@ import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
 import * as configService from '../../services/configService.js';
+import { resolveCharacter } from '../../services/characterContext.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,10 +26,19 @@ const router = express.Router();
  * Load parts for the currently selected character (character-aware).
  * Falls back to global data/parts.json if no character is selected.
  */
-async function loadParts() {
-    const cfg = await configService.readConfig();
+async function loadParts(req) {
     const appRoot = path.resolve(__dirname, '../..');
-    const charId = cfg && cfg.selectedCharacter;
+    // Honor the canonical resolver so an explicit ?characterId=N wins over the
+    // globally-selected character (it was previously ignored). Falls back to the
+    // selected character when no override is supplied.
+    let charId = null;
+    try {
+        const ctx = await resolveCharacter(req);
+        charId = ctx && ctx.id;
+    } catch (_) {
+        const cfg = await configService.readConfig();
+        charId = cfg && cfg.selectedCharacter;
+    }
 
     if (charId) {
         const charPath = path.resolve(appRoot, `data/character-${charId}/parts.json`);
@@ -49,7 +59,7 @@ async function loadParts() {
  */
 router.get('/:id/gpio-read', async (req, res) => {
     try {
-        const parts = await loadParts();
+        const parts = await loadParts(req);
         const part = parts.find(p => String(p.id) === String(req.params.id));
         if (!part || part.type !== 'motion_sensor' || part.pin == null) {
             return res.status(404).json({ error: 'Motion sensor part not found' });
@@ -70,7 +80,12 @@ router.get('/:id/gpio-read', async (req, res) => {
  */
 router.get('/', async (req, res) => {
     try {
-        const parts = await loadParts();
+        let parts = await loadParts(req);
+        // Optional ?type= filter (previously silently ignored).
+        const type = req.query.type;
+        if (type) {
+            parts = parts.filter(p => String(p.type).toLowerCase() === String(type).toLowerCase());
+        }
         res.json({ success: true, parts });
     } catch (error) {
         console.error('Error reading parts:', error);
@@ -83,7 +98,7 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
     try {
-        const parts = await loadParts();
+        const parts = await loadParts(req);
         const part = parts.find(p => String(p.id) === String(req.params.id));
 
         if (!part) {
@@ -106,7 +121,7 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/:id/test', express.json(), async (req, res) => {
     try {
-        const parts = await loadParts();
+        const parts = await loadParts(req);
         const part = parts.find(p => String(p.id) === String(req.params.id));
 
         if (!part) {

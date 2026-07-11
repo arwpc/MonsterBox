@@ -878,7 +878,15 @@ async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
       emit && emit({ type: 'concurrent-started', index: i, stepType: step.type });
       const promise = executeStep(step, characterId, emit, opts)
         .then(r => { results.push(r); return r; })
-        .catch(err => { console.error(`Background step ${i} (${step.type}) failed:`, err.message); return { success: false, error: err.message }; });
+        .catch(err => {
+          console.error(`Background step ${i} (${step.type}) failed:`, err.message);
+          // Record the failure in results so it isn't silently swallowed — the
+          // scene used to report success:true even when a concurrent hardware
+          // step failed. Keep the fire-and-forget (non-throwing) model.
+          const failed = { success: false, error: err.message, index: i, stepType: step.type };
+          results.push(failed);
+          return failed;
+        });
       backgroundPromises.push(promise);
       stepsExecuted++;
     } else {
@@ -912,7 +920,14 @@ export async function executeScene(scene, characterId, emit, options) {
     results.push(...execResult.results);
     stepsExecuted = execResult.stepsExecuted;
 
-    emit && emit({ type: 'scene', status: 'complete', id: scene.id, name: scene.name, resultsCount: results.length });
+    // Surface any concurrent (fire-and-forget) step failures instead of always
+    // reporting success. Sequential-step failures throw and are handled below.
+    const stepErrors = results
+      .filter(r => r && r.success === false)
+      .map(r => ({ message: r.error, stepType: r.stepType, index: r.index }));
+    const sceneSuccess = stepErrors.length === 0;
+
+    emit && emit({ type: 'scene', status: 'complete', id: scene.id, name: scene.name, resultsCount: results.length, success: sceneSuccess, errors: stepErrors });
 
     // Log analytics (don't fail scene execution if analytics fails)
     if (!opts.dryRun && scene.id && characterId) {
@@ -923,8 +938,8 @@ export async function executeScene(scene, characterId, emit, options) {
           duration: Date.now() - startTs,
           stepsExecuted,
           totalSteps: steps.length,
-          success: true,
-          errors: [],
+          success: sceneSuccess,
+          errors: stepErrors,
           performance: {}
         });
         await sceneAnalytics.updateSceneUsageStats(scene.id, characterId);
@@ -933,7 +948,7 @@ export async function executeScene(scene, characterId, emit, options) {
       }
     }
 
-    return { success: true, results };
+    return { success: sceneSuccess, results, errors: stepErrors };
   } catch (error) {
     // Log failed execution
     if (!opts.dryRun && scene.id && characterId) {

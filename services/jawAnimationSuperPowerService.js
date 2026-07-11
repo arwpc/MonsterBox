@@ -28,21 +28,20 @@ let envelopeState = new Map(); // characterId -> { lastAngle, lastTime }
  * Get the data directory for the current character
  */
 async function getCharacterDataDir(characterId) {
+  // characterId is authoritative. The old code returned config.dataPath whenever
+  // it contained "character-", ignoring the requested id — so reading/writing jaw
+  // config for character B while character A was selected hit A's data dir,
+  // corrupting the wrong character. Only fall back to config when no id is given.
+  if (characterId != null) {
+    // characterId reaches here from route params; reject non-integers so a
+    // "../.." payload can't build a path outside the data directory.
+    if (!/^\d+$/.test(String(characterId))) {
+      throw new Error(`Invalid characterId: ${characterId}`);
+    }
+    return path.resolve(`data/character-${characterId}`);
+  }
   const config = await readConfig();
-  const baseDataPath = config.dataPath || 'data';
-
-  if (baseDataPath.includes('character-')) {
-    // Already character-specific path
-    return path.resolve(baseDataPath);
-  }
-
-  // Create character-specific path. characterId reaches here from route params
-  // (e.g. /setup/jaw-animation/api/jaw-animation/:charId), so reject anything
-  // that is not a plain integer before it can build a traversal path.
-  if (!/^\d+$/.test(String(characterId))) {
-    throw new Error(`Invalid characterId: ${characterId}`);
-  }
-  return path.resolve(`data/character-${characterId}`);
+  return path.resolve(config.dataPath || 'data');
 }
 
 /**
