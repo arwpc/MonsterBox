@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { spawnSync } from 'child_process';
 
 // Import the service functions directly
 import {
@@ -52,6 +53,18 @@ describe('Jaw Pre-Analysis Engine', () => {
   const testGuardrails = { minAngle: 70, maxAngle: 93, calibrated: true };
 
   describe('preAnalyzeAudio()', () => {
+    // preAnalyzeAudio shells out to ffmpeg to decode audio into PCM. On hosts
+    // without ffmpeg (some CI images, cloud dev containers) these tests cannot
+    // run at all, so skip them rather than reporting spurious ENOENT failures.
+    // The RPi4B and the release CI both have ffmpeg, where these run normally.
+    before(function () {
+      const probe = spawnSync('ffmpeg', ['-version']);
+      if (probe.error) {
+        console.warn('  ⚠️  ffmpeg not found — skipping preAnalyzeAudio() suite');
+        this.skip();
+      }
+    });
+
     it('should return frames for a 500ms sine wave', async function() {
       this.timeout(10000);
       const pcm = generateSineWavePCM(1000, 500, 0.5);
