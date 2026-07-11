@@ -56,6 +56,21 @@ Full detail: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STAB
   correctness bugs (rotateContinuous duration, telemetry `record()` args, memory-monitor
   cooldown, servo priority, ESM `__dirname`) fixed.
 
+### UX — complete mouseover/help coverage + page-error sweep
+- **Every interactive control now has a native `title` tooltip.** A two-part pass
+  brought every `<button>`, `<select>`, link-button, and interactive `<input>`
+  (checkbox/range/radio) to full coverage — including the many controls emitted at
+  runtime from inline-script string literals (scene-editor/studio step fields,
+  orchestration animatronic cards, scenes list/queue/stories, audio device tests,
+  models, system presets/SSH, unified-calibration presets/PCA test).
+- **`scripts/audit-tooltips.mjs`** — a reusable checker that parses each view (HTML
+  *and* JS-emitted tags) and flags any control whose opening tag lacks a `title`, so
+  the coverage guarantee can be re-verified. Current status: 0 gaps.
+- **`tests/browser/all-pages-health.spec.js`** — visits all 24 pages, opens every
+  Bootstrap modal, and asserts zero uncaught JS errors, console errors, 4xx/5xx
+  responses, or server-side errors per page. Caught and fixed a broken dashboard
+  avatar (404) and a shared-layout script regression along the way.
+
 See [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md)
 for the full per-finding table and status.
 
