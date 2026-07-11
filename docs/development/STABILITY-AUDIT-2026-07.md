@@ -24,6 +24,19 @@ general bug-fixing. This pass is that bug-fix pass.
   in the audit environment), pact **54/0**. Schema / resolver / independence gate audits
   stay clean.
 
+### Note on browser tests in a hardware-less environment
+
+The unit / system / pact tiers are the authoritative validation for cloud sessions and
+cover the same endpoints the browser specs drive. The full Playwright suite
+(`npm run test:browser`) is intended for the RPi (or a live production server with real
+hardware, audio, and a display) — `actual-usage-testing.spec.js` and
+`exhaustive-system-test.spec.js` in particular target `npm run test:actual-usage`'s
+live-server mode. In a hardware-less container the suite runs long and its
+audio/PipeWire/webcam/AI-chat assertions fail environmentally (the same reason the one
+system failure above fails), and the WirePlumber-less `AudioHealthMonitor` adds constant
+log noise. The core, test-mode-friendly specs do pass here: `scenes.spec.js` (the scene
+CRUD surface for #44) ran clean. Run the full browser suite on the target hardware.
+
 ### Highest-impact fixes
 
 - **Security:** closed two path-traversals (arbitrary file read/delete via image
