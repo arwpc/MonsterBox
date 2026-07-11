@@ -2,6 +2,55 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.3.1] - 2026-07-11 — Stability Audit (bug-fix pass)
+
+A 14-subsystem, adversarially-verified audit of the whole application produced 58
+confirmed defects (2 critical, 14 high, 21 medium, 21 low). 53 fully fixed, 2
+corruption-fixed with a low-value lost-update serialization deferred, 2 deferred, 1
+intentionally unchanged. No new dependencies, no framework/DB/transport changes, no API
+contract changes. Unit 162/0, system 339/1 throughout (the one failure needs a real mic).
+Full detail: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md).
+
+### Security
+- Path traversal (arbitrary file read/delete/serve) closed on the character-image
+  endpoints and hardened centrally in `characterImageService`.
+- Unauthenticated **OS command injection** via `journalctl --since`, plus `ssh-keygen`/
+  `ssh-copy-id` argument injection, fixed by switching to `execFile` (argv, no shell).
+- `/api/play-audio` path-traversal + unbounded-read **OOM DoS** closed by confining
+  `getAudioFilePath` to the audio directory.
+- Destructive `/api/system` endpoints (reboot/shutdown/restart/optimize) guarded:
+  optional `MB_ADMIN_TOKEN`, CSRF rejection of cross-origin browser requests by default.
+- Always-on test ports (3100/3200) bound to loopback (were `0.0.0.0`, re-exposing the
+  whole app over plaintext HTTP to the LAN on HTTPS production nodes).
+- `GET /__kill` gated to test mode. SSH creds moved off the process table (`sshpass -e`)
+  and into `MONSTERBOX_SSH_PASSWORD` (rotate the committed value).
+
+### Crashes / broken features
+- Server no longer dies at boot when the ElevenLabs key is unconfigured (lazy config).
+- Audio-loop children get an `error` handler (async spawn failure no longer crashes).
+- Goblin video + playlist deployment now actually work (un-awaited `getGoblin()`);
+  deployment copies from the real `goblin/` dir and a correct systemd `ExecStart`.
+
+### RPi stability
+- Bounded the movement-telemetry file; halved-and-serialized scene-analytics writes;
+  250ms floor on queue lifecycle loops; in-flight guard on the lurk motion watcher;
+  throttled the perf monitor; added timeouts to Goblin `fetch` and one-shot AI playback;
+  webcam capture reuses one /tmp file.
+
+### Data integrity
+- New `services/atomicStore.js` (temp-file+rename writes + promise-chain mutex). Routed
+  scenes, poses, super-powers, parts, app-config and calibration writes through it;
+  serialized pose/scene/calibration read-modify-write to stop duplicate IDs / lost updates.
+
+### Correctness / character-independence / leaks
+- Jaw config and `/api/parts` now honor the requested character; concurrent scene-step
+  failures are surfaced instead of reported as success; armed-mode timeout waits for the
+  running scene to settle; idle-loop transitions are cancellable; STT/WS session leaks and
+  a never-settling `askAgentQuestion` fixed; `gpio_read.py` degrades instead of crashing;
+  stuck dashboard play-button spinner fixed; several correctness bugs (rotateContinuous
+  duration, telemetry `record()` args, memory-monitor cooldown, servo priority, ESM
+  `__dirname`) fixed.
+
 ## [8.3.0] - 2026-04-19 — Stabilization Release Mark
 
 Minor-version bump that marks the stabilization pass (v8.1.8 → v8.2.3) as a coherent release. Structural guarantees against character-leakage and dependency-cascade failures are now live on `origin/main`.
