@@ -13,6 +13,8 @@
   "allowlist": {
     "services/characterContext.js": "canonical resolver — reads these patterns is its job",
     "services/configService.js": "config file reader — boundary",
+    "server/calibration/store.js": "persistence-layer boundary (no req) — resolves the selected character to namespace calibration profiles by character; callers may pass an explicit characterId",
+    "services/actuatorPositionStore.js": "persistence-layer boundary (no req) — resolves the selected character to namespace actuator positions by character; callers may pass an explicit characterId",
     "services/aiConfigStore.js": "service-layer boundary (no req)",
     "services/hardwareService/index.js": "service-layer boundary (no req)",
     "services/hardwareService/servo.js": "service-layer boundary (no req)",

@@ -24,8 +24,34 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const STATE_FILE = path.resolve(__dirname, '..', 'data', 'actuator-positions.json');
+const CONFIG_FILE = path.resolve(__dirname, '..', 'config', 'app-config.json');
 
-let _cache = null; // in-memory cache: { partId: state }
+let _cache = null; // in-memory cache: { key: state }, key = `${characterId}:${partId}`
+
+// Part IDs are not globally unique, so position state is namespaced by character
+// (see server/calibration/store.js for the full rationale). Reads fall back to a
+// legacy bare-partId entry so existing data keeps working until it is re-written.
+// The character defaults to the node's selected character, read synchronously (this
+// store is sync for crash-recovery durability) and cached to avoid per-call reads.
+let _selCache = { id: undefined, at: 0 };
+const SEL_TTL_MS = 2000;
+
+function selectedCharacterId() {
+  const now = Date.now();
+  if (_selCache.id !== undefined && (now - _selCache.at) < SEL_TTL_MS) return _selCache.id;
+  try {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    _selCache = { id: (cfg && cfg.selectedCharacter != null) ? cfg.selectedCharacter : null, at: now };
+  } catch (_) {
+    _selCache = { id: null, at: now };
+  }
+  return _selCache.id;
+}
+
+function _writeKey(partId, characterId) {
+  const cid = characterId !== undefined ? characterId : selectedCharacterId();
+  return cid != null ? `${cid}:${String(partId)}` : String(partId);
+}
 
 function _loadFromDisk() {
   try {
@@ -52,8 +78,13 @@ function _getAll() {
  * @param {string|number} partId
  * @returns {object|null} state or null if not tracked
  */
-function load(partId) {
+function load(partId, characterId) {
   const all = _getAll();
+  const cid = characterId !== undefined ? characterId : selectedCharacterId();
+  if (cid != null) {
+    const scoped = all[`${cid}:${String(partId)}`];
+    if (scoped) return scoped;
+  }
   return all[String(partId)] || null;
 }
 
@@ -70,9 +101,9 @@ function loadAll() {
  * @param {string|number} partId
  * @param {object} state
  */
-function save(partId, state) {
+function save(partId, state, characterId) {
   const all = _getAll();
-  all[String(partId)] = {
+  all[_writeKey(partId, characterId)] = {
     ...state,
     lastUpdatedAt: new Date().toISOString()
   };
@@ -84,10 +115,12 @@ function save(partId, state) {
  * @param {string|number} partId
  * @param {object} fields — fields to merge
  */
-function update(partId, fields) {
+function update(partId, fields, characterId) {
   const all = _getAll();
-  const key = String(partId);
-  const existing = all[key] || {};
+  const key = _writeKey(partId, characterId);
+  // Seed from the character-scoped or legacy entry (migrates a legacy entry to the
+  // scoped key on first write) so partial updates don't drop existing fields.
+  const existing = all[key] || load(partId, characterId) || {};
   all[key] = {
     ...existing,
     ...fields,
@@ -100,8 +133,8 @@ function update(partId, fields) {
  * Mark that a move is starting (crash recovery: if we crash mid-move,
  * position is unknown on next startup).
  */
-function markMoving(partId, direction) {
-  update(partId, { isMoving: true, lastDir: direction });
+function markMoving(partId, direction, characterId) {
+  update(partId, { isMoving: true, lastDir: direction }, characterId);
 }
 
 /**
@@ -109,15 +142,15 @@ function markMoving(partId, direction) {
  * @param {string|number} partId
  * @param {number} newP — new normalized position
  */
-function markStopped(partId, newP) {
-  const existing = load(partId) || {};
+function markStopped(partId, newP, characterId) {
+  const existing = load(partId, characterId) || {};
   update(partId, {
     currentP: newP,
     isMoving: false,
     positionKnown: true,
     confidence: existing.confidence === 'homed' ? 'homed' : 'tracked',
     movesSinceHome: (existing.movesSinceHome || 0) + 1
-  });
+  }, characterId);
 }
 
 /**
@@ -125,7 +158,7 @@ function markStopped(partId, newP) {
  * @param {string|number} partId
  * @param {number} p — position after homing (0 or 1)
  */
-function markHomed(partId, p) {
+function markHomed(partId, p, characterId) {
   update(partId, {
     currentP: p,
     isMoving: false,
@@ -133,18 +166,18 @@ function markHomed(partId, p) {
     confidence: 'homed',
     movesSinceHome: 0,
     lastHomedAt: new Date().toISOString()
-  });
+  }, characterId);
 }
 
 /**
  * Mark position as unknown (e.g. emergency stop, crash recovery).
  */
-function markUnknown(partId) {
+function markUnknown(partId, characterId) {
   update(partId, {
     positionKnown: false,
     isMoving: false,
     confidence: 'unknown'
-  });
+  }, characterId);
 }
 
 /**
@@ -186,6 +219,7 @@ function recoverFromCrash() {
  */
 function clearCache() {
   _cache = null;
+  _selCache = { id: undefined, at: 0 };
 }
 
 export default {
