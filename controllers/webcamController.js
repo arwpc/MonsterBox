@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 
 import { readConfig } from '../services/configService.js';
 import hardwareService from '../services/hardwareService/index.js';
+import { writeJsonAtomic } from '../services/atomicStore.js';
 
 // mjpg-streamer service configuration
 // Use 127.0.0.1 instead of localhost to avoid DNS resolution issues
@@ -275,7 +276,8 @@ export const setControls = async (req, res) => {
       const nextCfg = Object.assign({}, part.config || {}, { controls: Object.assign({}, (part.config && part.config.controls) || {}, controls) });
       parts[idx] = Object.assign({}, part, { config: nextCfg, updated: new Date().toISOString() });
       const filePath = await getPartsFilePath();
-      await fs.writeFile(filePath, JSON.stringify(parts, null, 2));
+      // Atomic write so an interrupted save can't corrupt parts.json.
+      await writeJsonAtomic(filePath, parts);
     }
 
     if (!hardwareOk) {

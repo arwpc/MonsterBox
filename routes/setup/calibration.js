@@ -13,6 +13,7 @@ import hardwareService from '../../services/hardwareService/index.js';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
 import { resolveCharacter } from '../../services/characterContext.js';
+import { writeJsonAtomic } from '../../services/atomicStore.js';
 import webcamController from '../../controllers/webcamController.js';
 import webcamModelsController from '../../controllers/webcamModelsController.js';
 import * as motionTrackingController from '../../controllers/motionTrackingController.js';
@@ -130,7 +131,7 @@ async function saveCharacterParts(characterId, parts) {
         const partsPath = path.resolve(targetDir, 'parts.json');
         // Ensure directory exists
         await fs.mkdir(path.dirname(partsPath), { recursive: true });
-        await fs.writeFile(partsPath, JSON.stringify(parts, null, 2));
+        await writeJsonAtomic(partsPath, parts);
         console.log(`✅ Saved ${parts.length} parts to ${partsPath} (selectedCharacter=${cfg && cfg.selectedCharacter})`);
     } catch (e) {
         console.warn('saveCharacterParts fell back to controllers.saveParts():', e && e.message);

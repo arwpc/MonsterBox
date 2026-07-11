@@ -17,6 +17,7 @@ import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
 import * as configService from '../../services/configService.js';
 import { resolveCharacter } from '../../services/characterContext.js';
+import { writeJsonAtomic } from '../../services/atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -339,7 +340,7 @@ router.put('/:id', express.json(), async (req, res) => {
         // Update part with new data
         parts[index] = { ...parts[index], ...req.body, id: req.params.id };
 
-        await fs.writeFile(partsPath, JSON.stringify(parts, null, 2));
+        await writeJsonAtomic(partsPath, parts);
 
         res.json({ success: true, part: parts[index] });
     } catch (error) {

@@ -6,6 +6,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonAtomic } from '../services/atomicStore.js';
 import { readConfig } from '../services/configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,7 +44,7 @@ export async function loadParts() {
 export async function saveParts(parts) {
     try {
         const partsFile = await getPartsFilePath();
-        await fs.writeFile(partsFile, JSON.stringify(parts, null, 2), 'utf8');
+        await writeJsonAtomic(partsFile, parts);
         return { success: true };
     } catch (error) {
         console.error('Failed to save parts:', error.message);
