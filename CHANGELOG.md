@@ -71,6 +71,18 @@ Full detail: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STAB
   responses, or server-side errors per page. Caught and fixed a broken dashboard
   avatar (404) and a shared-layout script regression along the way.
 
+### Follow-up fixes (2026-07-11)
+- **Null byte in `servo_cli.py` broke ALL PCA9685 servo moves (#59).** A stray `\x00`
+  on line 90 (the `u` in the `(1500us)` comment) made Python refuse to compile the
+  whole file, so every `servo_cli.py move_to_pca …` — the standard-servo positioning
+  path — had failed with `SyntaxError: source code string cannot contain null bytes`
+  since v7.9.6. Restored the byte; all 40 Python wrappers now `py_compile` clean, and a
+  repo-wide scan confirmed no other source file carries null/stray control bytes.
+- **Fully closed the #39/#47 cross-writer JSON races.** Both were already crash-safe
+  (atomic writes); a new `updateJsonUnderLock` helper now serializes the read-modify-write
+  so simultaneous writers can't lose an update — webcam `setControls` (parts.json) and
+  the jaw↔head config writers (super-powers.json).
+
 See [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md)
 for the full per-finding table and status.
 

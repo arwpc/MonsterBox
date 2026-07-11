@@ -83,6 +83,9 @@ data/performance-history.json
 data/startup-health.json
 data/actuator-positions.json
 data/character-*/lurk-mode-state.json
+# PID-based lock files created by the audio/video library services at runtime.
+data/audio-library/library.lock
+data/video-library/library.lock
 # Timestamp-only rewrites by the running service that pollute git status without signal.
 data/character-*/audio-config.json
 data/character-*/microphones.json
