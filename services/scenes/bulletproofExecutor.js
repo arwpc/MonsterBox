@@ -67,12 +67,20 @@ async function delay(ms) {
  * Execute with timeout
  */
 async function executeWithTimeout(fn, timeoutMs, timeoutError = 'Operation timed out') {
-    return Promise.race([
-        fn(),
-        new Promise((_, reject) => 
-            setTimeout(() => reject(new Error(timeoutError)), timeoutMs)
-        )
-    ]);
+    // Track the timer so it is always cleared — otherwise every step that
+    // finishes before the timeout leaves a pending 30s timer holding the event
+    // loop open, which delays clean shutdown and churns timers on the RPi4B.
+    let timer = null;
+    try {
+        return await Promise.race([
+            fn(),
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(timeoutError)), timeoutMs);
+            })
+        ]);
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
 }
 
 /**

@@ -408,14 +408,12 @@ app.post('/api/audio/stop-all', async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to stop audio playback' });
     }
 });
-// Debug: list registered routes once on startup
+// Debug: list registered routes once on startup.
+// NOTE: this function performs NO route registration — it only inspects and
+// logs. Route mounting and the test-only kill switch are registered explicitly
+// at the call site below so registration order stays visible and predictable.
 function printRoutes() {
     const routes = [];
-    // Dev-only helper to terminate a running server (used by tests to reset)
-    app.get('/__kill', (req, res) => {
-        res.status(200).send('Shutting down');
-        setTimeout(() => process.exit(0), 50);
-    });
 
     function walk(path, layer) {
         if (layer.route) {
@@ -435,10 +433,23 @@ function printRoutes() {
     });
     console.log('Registered routes count:', routes.length);
     const interesting = routes.filter(r => r.includes('/setup/parts') || r.includes('/setup'));
-    app.use('/api', characterImagesApiRoutes);
-
     console.log('Some routes:', interesting.slice(0, 25));
 }
+
+// Mount character images API. Kept at this position to preserve the historical
+// route-registration order (previously mounted as a side-effect of printRoutes).
+app.use('/api', characterImagesApiRoutes);
+
+// Test-only server kill switch. Previously registered unconditionally, which let
+// any LAN client shut down a production animatronic via GET /__kill. Now gated so
+// it exists only under test mode, matching its documented "test use only" intent.
+if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true' || process.env.NODE_ENV === 'test') {
+    app.get('/__kill', (req, res) => {
+        res.status(200).send('Shutting down');
+        setTimeout(() => process.exit(0), 50);
+    });
+}
+
 printRoutes();
 
 app.use('/api/elevenlabs', elevenLabsApiRoutes);
