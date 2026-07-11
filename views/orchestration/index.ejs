@@ -259,7 +259,7 @@
 
             // Webcam controls and stream (default OFF for performance)
             html += '      <div class="d-flex justify-content-between align-items-center mb-2" onclick="event.stopPropagation();">';
-            html += '        <button id="webcam-toggle-' + anim.id + '" class="btn btn-sm btn-outline-light" onclick="toggleWebcam(' + anim.id + '); event.stopPropagation();">';
+            html += '        <button id="webcam-toggle-' + anim.id + '" class="btn btn-sm btn-outline-light" title="Toggle the live webcam feed for this animatronic" onclick="toggleWebcam(' + anim.id + '); event.stopPropagation();">';
             html += '          <i class="bi bi-camera-video-off"></i> Webcam Off';
             html += '        </button>';
             html += '      </div>';
@@ -272,19 +272,19 @@
 
             // Audio file selector with Play/Loop controls
             html += '      <div class="p-2 rounded bg-body-secondary mb-2" onclick="event.stopPropagation();">';
-            html += '        <select class="form-select form-select-sm mb-1" id="audio-' + anim.id + '">';
+            html += '        <select class="form-select form-select-sm mb-1" title="Select an audio file to play on this animatronic" id="audio-' + anim.id + '">';
             html += '          <option value="">Select audio file...</option>';
             html += '        </select>';
             html += '        <div class="btn-group w-100 mb-1" role="group">';
-            html += '          <button class="btn btn-sm btn-success" onclick="playAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+            html += '          <button class="btn btn-sm btn-success" title="Play audio on this animatronic" onclick="playAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
             html += '            <i class="bi bi-play-fill"></i> Play';
             html += '          </button>';
-            html += '          <button class="btn btn-sm btn-danger" onclick="stopAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+            html += '          <button class="btn btn-sm btn-danger" title="Stop audio on this animatronic" onclick="stopAudio(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
             html += '            <i class="bi bi-stop-fill"></i> Stop';
             html += '          </button>';
             html += '        </div>';
             html += '        <div class="form-check form-check-sm">';
-            html += '          <input class="form-check-input" type="checkbox" id="loop-' + anim.id + '">';
+            html += '          <input title="Loop audio playback continuously" class="form-check-input" type="checkbox" id="loop-' + anim.id + '">';
             html += '          <label class="form-check-label small" for="loop-' + anim.id + '">Loop continuously</label>';
             html += '        </div>';
             html += '      </div>';
@@ -293,10 +293,10 @@
             html += '      <div class="mb-2" onclick="event.stopPropagation();">';
             html += '        <input type="text" class="form-control form-control-sm mb-1" id="text-' + anim.id + '" placeholder="Type message...">';
             html += '        <div class="btn-group w-100 mb-1" role="group">';
-            html += '          <button class="btn btn-sm btn-primary" onclick="askAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+            html += '          <button class="btn btn-sm btn-primary" title="Ask this animatronic an AI question" onclick="askAI(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
             html += '            <i class="bi bi-chat-dots"></i> Ask AI';
             html += '          </button>';
-            html += '          <button class="btn btn-sm btn-success" onclick="makeSay(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
+            html += '          <button class="btn btn-sm btn-success" title="Make this animatronic speak a phrase" onclick="makeSay(\'' + anim.id + '\', \'' + anim.ip + '\', \'' + anim.port + '\', \'' + anim.name + '\')">';
             html += '            <i class="bi bi-megaphone"></i> Say';
             html += '          </button>';
             html += '        </div>';
@@ -306,7 +306,7 @@
             html += '      <div class="d-flex align-items-center gap-2" onclick="event.stopPropagation();">';
             html += '        <input type="number" id="autoai-interval-' + anim.id + '" class="form-control form-control-sm" ';
             html += '               value="30" min="10" max="300" placeholder="Interval (s)" style="width: 80px;">';
-            html += '        <button id="autoai-btn-' + anim.id + '" class="btn btn-sm btn-warning flex-grow-1" ';
+            html += '        <button id="autoai-btn-' + anim.id + '" class="btn btn-sm btn-warning flex-grow-1" title="Start or stop automatic AI conversation on this animatronic" ';
             html += '                onclick="toggleAutoAI(' + anim.id + ')">';
             html += '          <i class="bi bi-robot"></i> <span id="autoai-text-' + anim.id + '">Auto AI</span>';
             html += '        </button>';

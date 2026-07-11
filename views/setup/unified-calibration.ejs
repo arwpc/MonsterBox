@@ -1274,8 +1274,8 @@
         <div class="preset-value">p = ${preset.p.toFixed(3)}</div>
       </div>
       <div class="preset-actions">
-        <button class="btn-small btn-go" onclick="goToPreset('${escapeHtml(preset.name)}')">Go</button>
-        <button class="btn-small btn-delete" onclick="deletePreset('${escapeHtml(preset.name)}')">Delete</button>
+        <button title="Move the part to this saved preset" class="btn-small btn-go" onclick="goToPreset('${escapeHtml(preset.name)}')">Go</button>
+        <button title="Delete this saved preset" class="btn-small btn-delete" onclick="deletePreset('${escapeHtml(preset.name)}')">Delete</button>
       </div>
     </div>
   `).join('');
@@ -1673,8 +1673,8 @@
 
         rows += '<tr' + (ch === selectedPcaChannel ? ' style="background:rgba(51,153,255,0.1);"' : '') + '>';
         rows += '<td class="ch-num">' + ch + '</td>';
-        rows += '<td><select class="pca-ch-select" data-channel="' + ch + '" onchange="assignPartToChannel(' + ch + ', this.value)">' + partOptions + '</select>' + conflictBadge + '</td>';
-        rows += '<td><button class="pca-test-btn" id="pcaTestBtn' + ch + '" onclick="testPcaChannel(' + ch + ')"' + (!assigned ? ' disabled' : '') + '>Test</button></td>';
+        rows += '<td><select title="Assign a hardware part to this PCA9685 channel" class="pca-ch-select" data-channel="' + ch + '" onchange="assignPartToChannel(' + ch + ', this.value)">' + partOptions + '</select>' + conflictBadge + '</td>';
+        rows += '<td><button title="Test this PCA9685 servo channel" class="pca-test-btn" id="pcaTestBtn' + ch + '" onclick="testPcaChannel(' + ch + ')"' + (!assigned ? ' disabled' : '') + '>Test</button></td>';
         rows += '</tr>';
       }
 

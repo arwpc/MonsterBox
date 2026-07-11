@@ -531,14 +531,14 @@
       html += '    <div class="col-md-6">';
       html += '      <label class="form-label">Sensitivity</label>';
       html += '      <div class="input-group">';
-      html += '        <input type="range" min="0.1" max="3.0" step="any" class="form-range" id="mic-sens-' + part.id + '" value="' + sens + '" />';
+      html += '        <input title="Adjust microphone sensitivity" type="range" min="0.1" max="3.0" step="any" class="form-range" id="mic-sens-' + part.id + '" value="' + sens + '" />';
       html += '        <span class="ms-2 small" id="mic-sens-' + part.id + '-val">' + sens + '</span>';
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="col-md-6">';
       html += '      <label class="form-label">Input Level (Gain)</label>';
       html += '      <div class="input-group">';
-      html += '        <input type="range" min="0" max="200" step="1" class="form-range" id="mic-gain-' + part.id + '" value="' + gainPct + '" />';
+      html += '        <input title="Adjust microphone input gain" type="range" min="0" max="200" step="1" class="form-range" id="mic-gain-' + part.id + '" value="' + gainPct + '" />';
       html += '        <span class="ms-2 small" id="mic-gain-' + part.id + '-val">' + gainPct + '%</span>';
       html += '      </div>';
       html += '    </div>';
@@ -745,7 +745,7 @@
           (isDefault ? ' <span class="badge bg-primary">Default</span>' : '') +
           '<br><small class="text-muted">ID: ' + sink.id + '</small>' +
           '</div>' +
-          '<button class="btn btn-outline-primary btn-sm" onclick="testSpecificSink(\'' + sink.id + '\')">' +
+          '<button title="Test this audio output device" class="btn btn-outline-primary btn-sm" onclick="testSpecificSink(\'' + sink.id + '\')">' +
           '<i class="bi bi-play-circle"></i>' +
           '</button>';
 
@@ -771,7 +771,7 @@
           (isDefault ? ' <span class="badge bg-primary">Default</span>' : '') +
           '<br><small class="text-muted">ID: ' + source.id + '</small>' +
           '</div>' +
-          '<button class="btn btn-outline-primary btn-sm" onclick="testSpecificSource(\'' + source.id + '\')">' +
+          '<button title="Test this audio input device" class="btn btn-outline-primary btn-sm" onclick="testSpecificSource(\'' + source.id + '\')">' +
           '<i class="bi bi-mic"></i>' +
           '</button>';
 
@@ -1171,7 +1171,7 @@
           html += '<br><small class="text-muted">ID: ' + stream.id + ' | State: ' + stream.state + '</small>';
           html += '</div>';
           html += '<div class="stream-controls">';
-          html += '<button class="btn btn-sm btn-outline-primary" onclick="moveStreamToSink(' + stream.id + ')">Move</button>';
+          html += '<button title="Move this audio stream to the selected output" class="btn btn-sm btn-outline-primary" onclick="moveStreamToSink(' + stream.id + ')">Move</button>';
           html += '</div>';
           html += '</div>';
         });

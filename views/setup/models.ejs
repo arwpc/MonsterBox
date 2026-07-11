@@ -233,7 +233,7 @@
       if (Array.isArray(val)) val = val.join(', ');
       if (f.type === 'select') {
         html += '<div class="col-md-6"><label class="form-label small">' + f.label + '</label>' +
-          '<select class="form-select form-select-sm defaults-field" data-key="' + f.key + '">' +
+          '<select title="Select the default value for this field" class="form-select form-select-sm defaults-field" data-key="' + f.key + '">' +
           '<option value="">—</option>';
         (f.options || []).forEach(function (o) {
           html += '<option value="' + o + '"' + (String(val) === o ? ' selected' : '') + '>' + o + '</option>';
@@ -337,11 +337,11 @@
         } else {
           models.forEach(function (m) {
             html += '<tr class="model-row" data-model-id="' + m.id + '" style="cursor:pointer">' +
-              '<td><input type="checkbox" class="model-checkbox" data-model-id="' + m.id + '" onclick="event.stopPropagation()"></td>' +
+              '<td><input title="Select this model" type="checkbox" class="model-checkbox" data-model-id="' + m.id + '" onclick="event.stopPropagation()"></td>' +
               '<td class="fw-semibold">' + (m.name || '') + '</td>' +
               '<td class="small text-muted">' + (m.description || '') + '</td>' +
               '<td>' + summarizeDefaults(type, m.defaults) + '</td>' +
-              '<td><button class="btn btn-sm btn-outline-primary" data-choose-apply="' + m.id + '" onclick="event.stopPropagation()">' +
+              '<td><button title="Apply this model" class="btn btn-sm btn-outline-primary" data-choose-apply="' + m.id + '" onclick="event.stopPropagation()">' +
               '<i class="bi bi-link"></i></button></td>' +
               '</tr>';
           });

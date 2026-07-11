@@ -577,7 +577,7 @@
     var el = document.getElementById(containerId);
     if (!el) return;
     el.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' + msg +
-      '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+      '<button title="Dismiss this message" type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
   }
 
   function formatUptime(seconds) {
@@ -967,7 +967,7 @@
       var html = '';
       for (var i = 0; i < tasks.length; i++) {
         html += '<div class="form-check form-switch mb-2">' +
-          '<input class="form-check-input startup-toggle" type="checkbox" data-service="' + tasks[i].service + '"' +
+          '<input title="Enable or disable this service at startup" class="form-check-input startup-toggle" type="checkbox" data-service="' + tasks[i].service + '"' +
           (tasks[i].enabled ? ' checked' : '') + '>' +
           '<label class="form-check-label">' + tasks[i].service + '</label></div>';
       }
@@ -1023,7 +1023,7 @@
           '<li>ARM Freq: <strong>' + s.arm_freq + ' MHz</strong></li>' +
           '<li>I2C: <strong>' + (s.i2c_baudrate / 1000) + ' kHz</strong></li>' +
           '</ul>' +
-          '<button class="btn btn-sm btn-outline-primary w-100 preset-apply-btn" data-preset="' + id + '">Apply</button>' +
+          '<button title="Apply this system preset" class="btn btn-sm btn-outline-primary w-100 preset-apply-btn" data-preset="' + id + '">Apply</button>' +
           '</div></div></div>';
       }
       $('#presetsList').innerHTML = html || '<p class="text-muted">No presets available</p>';
@@ -1082,7 +1082,7 @@
         var created = k.created ? new Date(k.created).toLocaleDateString() : '--';
         html += '<tr><td>' + k.name + '</td><td><code class="small">' +
           (k.fingerprint || '--').substring(0, 47) + '</code></td><td>' + created + '</td>' +
-          '<td><button class="btn btn-sm btn-outline-danger ssh-delete-btn" data-name="' + k.name + '"><i class="bi bi-trash"></i></button></td></tr>';
+          '<td><button title="Remove this SSH credential" class="btn btn-sm btn-outline-danger ssh-delete-btn" data-name="' + k.name + '"><i class="bi bi-trash"></i></button></td></tr>';
         dhtml += '<option value="' + k.name + '">' + k.name + '</option>';
       }
       tbody.innerHTML = html;

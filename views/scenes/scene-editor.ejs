@@ -250,7 +250,7 @@
           const info = typeInfo[type];
           grouped[type].forEach(part => {
             html += '<div class="col-md-6">';
-            html += '<button class="btn btn-outline-success w-100 step-type-btn" data-type="' + type + '" data-part-id="' + part.id + '" data-part-name="' + part.name + '">';
+            html += '<button class="btn btn-outline-success w-100 step-type-btn" title="Add ' + part.name + ' as a scene step" data-type="' + type + '" data-part-id="' + part.id + '" data-part-name="' + part.name + '">';
             html += '<i class="bi ' + info.icon + '"></i><br>';
             html += '<strong>' + part.name + '</strong>';
             html += '<br><small class="text-muted">' + info.label.slice(0, -1) + '</small>';
@@ -546,7 +546,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-12">';
       html += '<label class="form-label">Pose</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="poseId">';
+      html += '<select title="Select a pose to run" class="form-select step-input" data-index="' + index + '" data-field="poseId">';
       html += '<option value="">Select a pose...</option>';
       poses.forEach(p => {
         const sel = (step.poseId == p.id) ? ' selected' : '';
@@ -555,7 +555,7 @@
       html += '</select></div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -565,7 +565,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-8">';
       html += '<label class="form-label">Audio File</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="audioId">';
+      html += '<select title="Select an audio file to play" class="form-select step-input" data-index="' + index + '" data-field="audioId">';
       html += '<option value="">Select audio...</option>';
       sounds.forEach(s => {
         const sel = (step.audioId == s.id || step.audioId == s.filename) ? ' selected' : '';
@@ -578,7 +578,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -591,12 +591,12 @@
       html += '<textarea class="form-control step-input" data-index="' + index + '" data-field="text" rows="2" placeholder="Enter text for AI to speak...">' + (step.text || '') + '</textarea>';
       html += '</div>';
       html += '<div class="col-md-12">';
-      html += '<button class="btn btn-sm btn-outline-primary btn-preview-voice" data-index="' + index + '"><i class="bi bi-play-circle"></i> Preview Voice</button>';
+      html += '<button class="btn btn-sm btn-outline-primary btn-preview-voice" title="Preview this voice line" data-index="' + index + '"><i class="bi bi-play-circle"></i> Preview Voice</button>';
       html += '<span class="ms-2 text-muted voice-preview-status" id="voiceStatus' + index + '"></span>';
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -613,7 +613,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -624,7 +624,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Servo Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'servo\')">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'servo\')">';
       html += '<option value="">Select servo...</option>';
       servoParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -633,7 +633,7 @@
       html += '</select></div>';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Control Mode</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'servo\')">';
+      html += '<select title="Choose a saved preset or set values manually" class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'servo\')">';
       html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
       html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
       html += '</select></div>';
@@ -642,7 +642,7 @@
         const profile = calibrationProfiles[step.partId];
         html += '<div class="col-md-12 preset-container">';
         html += '<label class="form-label">Position Preset</label>';
-        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<select title="Select a saved preset" class="form-select step-input" data-index="' + index + '" data-field="presetName">';
         html += '<option value="">Select preset...</option>';
         html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
         html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
@@ -667,7 +667,7 @@
       }
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -678,7 +678,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Motor Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'motor\')">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'motor\')">';
       html += '<option value="">Select motor...</option>';
       motorParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -687,7 +687,7 @@
       html += '</select></div>';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Control Mode</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'motor\')">';
+      html += '<select title="Choose a saved preset or set values manually" class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'motor\')">';
       html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
       html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
       html += '</select></div>';
@@ -696,7 +696,7 @@
         const profile = calibrationProfiles[step.partId];
         html += '<div class="col-md-12 preset-container">';
         html += '<label class="form-label">Position Preset</label>';
-        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<select title="Select a saved preset" class="form-select step-input" data-index="' + index + '" data-field="presetName">';
         html += '<option value="">Select preset...</option>';
         html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
         html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
@@ -712,7 +712,7 @@
       if (!step.usePreset) {
         html += '<div class="col-md-6 manual-container">';
         html += '<label class="form-label">Direction</label>';
-        html += '<select class="form-select step-input" data-index="' + index + '" data-field="direction">';
+        html += '<select title="Select the movement direction" class="form-select step-input" data-index="' + index + '" data-field="direction">';
         html += '<option value="forward"' + (step.direction === 'forward' ? ' selected' : '') + '>Forward</option>';
         html += '<option value="backward"' + (step.direction === 'backward' ? ' selected' : '') + '>Backward</option>';
         html += '</select></div>';
@@ -727,7 +727,7 @@
       }
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -738,7 +738,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Linear Actuator Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'linear_actuator\')">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId" onchange="handlePartChange(' + index + ', \'linear_actuator\')">';
       html += '<option value="">Select actuator...</option>';
       actuatorParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -747,7 +747,7 @@
       html += '</select></div>';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Control Mode</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'linear_actuator\')">';
+      html += '<select title="Choose a saved preset or set values manually" class="form-select step-input" data-index="' + index + '" data-field="usePreset" onchange="handleModeChange(' + index + ', \'linear_actuator\')">';
       html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual Control</option>';
       html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Position Preset</option>';
       html += '</select></div>';
@@ -756,7 +756,7 @@
         const profile = calibrationProfiles[step.partId];
         html += '<div class="col-md-12 preset-container">';
         html += '<label class="form-label">Position Preset</label>';
-        html += '<select class="form-select step-input" data-index="' + index + '" data-field="presetName">';
+        html += '<select title="Select a saved preset" class="form-select step-input" data-index="' + index + '" data-field="presetName">';
         html += '<option value="">Select preset...</option>';
         html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min Position</option>';
         html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max Position</option>';
@@ -772,7 +772,7 @@
       if (!step.usePreset) {
         html += '<div class="col-md-6 manual-container">';
         html += '<label class="form-label">Direction</label>';
-        html += '<select class="form-select step-input" data-index="' + index + '" data-field="direction">';
+        html += '<select title="Select the movement direction" class="form-select step-input" data-index="' + index + '" data-field="direction">';
         html += '<option value="extend"' + (step.direction === 'extend' ? ' selected' : '') + '>Extend</option>';
         html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
         html += '</select></div>';
@@ -787,7 +787,7 @@
       }
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -798,7 +798,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Light/LED Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId">';
       html += '<option value="">Select light...</option>';
       lightParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -807,7 +807,7 @@
       html += '</select></div>';
       html += '<div class="col-md-3">';
       html += '<label class="form-label">State</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="state">';
+      html += '<select title="Select the on/off state" class="form-select step-input" data-index="' + index + '" data-field="state">';
       html += '<option value="on"' + (step.state === 'on' ? ' selected' : '') + '>On</option>';
       html += '<option value="off"' + (step.state === 'off' ? ' selected' : '') + '>Off</option>';
       html += '</select></div>';
@@ -821,7 +821,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -832,7 +832,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-12">';
       html += '<label class="form-label">Sensor Part (PIR Motion)</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId">';
       html += '<option value="">Select sensor...</option>';
       sensorParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -852,7 +852,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -862,7 +862,7 @@
       let html = '<div class="row g-3">';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Goblin Device</label>';
-      html += '<select class="form-select step-input goblin-selector" data-index="' + index + '" data-field="goblinId">';
+      html += '<select title="Select the target Goblin device" class="form-select step-input goblin-selector" data-index="' + index + '" data-field="goblinId">';
       html += '<option value="">Select goblin...</option>';
       goblins.forEach(g => {
         const sel = (step.goblinId == g.id) ? ' selected' : '';
@@ -871,7 +871,7 @@
       html += '</select></div>';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Video File</label>';
-      html += '<select class="form-select step-input video-dropdown" data-index="' + index + '" data-field="videoId" data-goblin-index="' + index + '">';
+      html += '<select title="Select a video to play" class="form-select step-input video-dropdown" data-index="' + index + '" data-field="videoId" data-goblin-index="' + index + '">';
       html += '<option value="">Select video...</option>';
       html += '</select>';
       html += '</div>';
@@ -881,12 +881,12 @@
       html += '</div>';
       html += '<div class="col-md-6">';
       html += '<div class="form-check mt-4">';
-      html += '<input type="checkbox" class="form-check-input step-input" data-index="' + index + '" data-field="loop" id="loop' + index + '"' + (step.loop ? ' checked' : '') + '>';
+      html += '<input title="Loop this media for the duration of the step" type="checkbox" class="form-check-input step-input" data-index="' + index + '" data-field="loop" id="loop' + index + '"' + (step.loop ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="loop' + index + '">Loop Video</label>';
       html += '</div></div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -903,7 +903,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;
@@ -918,7 +918,7 @@
       html += '</div>';
       html += '<div class="col-md-6">';
       html += '<label class="form-label">Part</label>';
-      html += '<select class="form-select step-input" data-index="' + index + '" data-field="partId">';
+      html += '<select title="Select the hardware part for this step" class="form-select step-input" data-index="' + index + '" data-field="partId">';
       html += '<option value="">Select part...</option>';
       allParts.forEach(p => {
         const sel = (step.partId == p.id) ? ' selected' : '';
@@ -935,7 +935,7 @@
       html += '</div>';
       html += '<div class="col-md-12">';
       html += '<div class="form-check">';
-      html += '<input class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
+      html += '<input title="Run this step at the same time as the next step" class="form-check-input step-input" type="checkbox" data-index="' + index + '" data-field="concurrent" id="concurrent' + index + '"' + (step.concurrent ? ' checked' : '') + '>';
       html += '<label class="form-check-label" for="concurrent' + index + '">Run concurrently with next step</label>';
       html += '</div></div></div>';
       return html;

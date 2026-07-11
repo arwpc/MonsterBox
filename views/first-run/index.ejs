@@ -24,7 +24,7 @@
         </div>
         <div style="text-align:center; padding: 0 var(--mb-space-4) var(--mb-space-4);">
           <h3 class="mb-heading mb-heading-3" style="margin: 0 0 var(--mb-space-3);"><%= ch.name %></h3>
-          <button class="mb-btn mb-btn-primary mb-btn-block btn-select" data-id="<%= ch.id %>">
+          <button class="mb-btn mb-btn-primary mb-btn-block btn-select" data-id="<%= ch.id %>" title="Select <%= ch.name %> and continue setup">
             Use <%= ch.name %>
           </button>
         </div>
@@ -33,6 +33,6 @@
   </div>
 
   <div style="text-align:center; margin-top: var(--mb-space-8);">
-    <a href="/" class="mb-btn mb-btn-ghost">Skip for now</a>
+    <a href="/" class="mb-btn mb-btn-ghost" title="Skip character selection and go to the dashboard">Skip for now</a>
   </div>
 </div>

@@ -846,7 +846,7 @@
 
     // Concurrent toggle (for all types)
     html += '<div class="form-check mt-2">';
-    html += '<input class="form-check-input sf-input" type="checkbox" data-idx="' + idx + '" data-field="concurrent" id="conc' + idx + '"' + (step.concurrent ? ' checked' : '') + '>';
+    html += '<input title="Run this step at the same time as the next step" class="form-check-input sf-input" type="checkbox" data-idx="' + idx + '" data-field="concurrent" id="conc' + idx + '"' + (step.concurrent ? ' checked' : '') + '>';
     html += '<label class="form-check-label" for="conc' + idx + '" style="font-size:0.8rem;">Run with next step</label>';
     html += '</div>';
 
@@ -857,14 +857,14 @@
     var servos = allParts.filter(function(p) { return p.type === 'servo' && p.enabled; });
     var html = '<div class="row g-2">';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Servo</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId">';
+    html += '<select title="Select the hardware part for this step" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId">';
     html += '<option value="">Select...</option>';
     servos.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
     html += '</select></div>';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Mode</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="usePreset">';
+    html += '<select title="Choose a saved preset or set values manually" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="usePreset">';
     html += '<option value="false"' + (!step.usePreset ? ' selected' : '') + '>Manual</option>';
     html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Preset</option>';
     html += '</select></div>';
@@ -875,7 +875,7 @@
       html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
     } else {
       html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Preset</label>';
-      html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="presetName">';
+      html += '<select title="Select a saved preset" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="presetName">';
       html += '<option value="__MIN__"' + (step.presetName === '__MIN__' ? ' selected' : '') + '>Min</option>';
       html += '<option value="__MAX__"' + (step.presetName === '__MAX__' ? ' selected' : '') + '>Max</option>';
       if (step.partId && calibrationProfiles[step.partId] && calibrationProfiles[step.partId].presets) {
@@ -893,13 +893,13 @@
     var motors = allParts.filter(function(p) { return p.type === 'motor' && p.enabled; });
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Motor</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    html += '<select title="Select the hardware part for this step" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
     motors.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
     html += '</select></div>';
     html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Direction</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
+    html += '<select title="Select the movement direction" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
     html += '<option value="forward"' + (step.direction === 'forward' ? ' selected' : '') + '>Forward</option>';
     html += '<option value="backward"' + (step.direction === 'backward' ? ' selected' : '') + '>Backward</option>';
     html += '</select></div>';
@@ -915,13 +915,13 @@
     var acts = allParts.filter(function(p) { return p.type === 'linear_actuator' && p.enabled; });
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Actuator</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    html += '<select title="Select the hardware part for this step" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
     acts.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
     html += '</select></div>';
     html += '<div class="col-4"><label class="form-label" style="font-size:0.75rem;">Direction</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
+    html += '<select title="Select the movement direction" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="direction">';
     html += '<option value="extend"' + (step.direction === 'extend' ? ' selected' : '') + '>Extend</option>';
     html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
     html += '</select></div>';
@@ -937,13 +937,13 @@
     var lights = allParts.filter(function(p) { return (p.type === 'light' || p.type === 'led') && p.enabled; });
     var html = '<div class="row g-2">';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Light</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    html += '<select title="Select the hardware part for this step" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
     lights.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
     html += '</select></div>';
     html += '<div class="col-3"><label class="form-label" style="font-size:0.75rem;">State</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="state">';
+    html += '<select title="Select the on/off state" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="state">';
     html += '<option value="on"' + (step.state === 'on' ? ' selected' : '') + '>On</option>';
     html += '<option value="off"' + (step.state === 'off' ? ' selected' : '') + '>Off</option>';
     html += '</select></div>';
@@ -956,7 +956,7 @@
   function renderAudioForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-8"><label class="form-label" style="font-size:0.75rem;">Audio File</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="audioId"><option value="">Select...</option>';
+    html += '<select title="Select an audio file to play" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="audioId"><option value="">Select...</option>';
     sounds.forEach(function(s) {
       var sel = (step.audioId === s.filename || step.audioId === s.id) ? ' selected' : '';
       html += '<option value="' + escHtml(s.filename || s.id) + '"' + sel + '>' + escHtml(s.name || s.filename) + '</option>';
@@ -997,7 +997,7 @@
   function renderPoseForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Pose</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="poseId"><option value="">Select pose...</option>';
+    html += '<select title="Select a pose to run" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="poseId"><option value="">Select pose...</option>';
     allPoses.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (step.poseId == p.id ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
@@ -1010,7 +1010,7 @@
     var sensors = allParts.filter(function(p) { return (p.type === 'motion_sensor' || p.type === 'sensor') && p.enabled; });
     var html = '<div class="row g-2">';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Sensor</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
+    html += '<select title="Select the hardware part for this step" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="partId"><option value="">Select...</option>';
     sensors.forEach(function(p) {
       html += '<option value="' + p.id + '"' + (String(step.partId) === String(p.id) ? ' selected' : '') + '>' + escHtml(p.name) + '</option>';
     });
@@ -1024,16 +1024,16 @@
   function renderGoblinForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Goblin</label>';
-    html += '<select class="form-select form-select-sm sf-input goblin-sel" data-idx="' + idx + '" data-field="goblinId"><option value="">Select...</option>';
+    html += '<select title="Select the target Goblin device" class="form-select form-select-sm sf-input goblin-sel" data-idx="' + idx + '" data-field="goblinId"><option value="">Select...</option>';
     goblins.forEach(function(g) {
       html += '<option value="' + g.id + '"' + (step.goblinId == g.id ? ' selected' : '') + '>' + escHtml(g.name || g.id) + '</option>';
     });
     html += '</select></div>';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Video</label>';
-    html += '<select class="form-select form-select-sm sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select goblin first</option></select></div>';
+    html += '<select title="Select a video to play" class="form-select form-select-sm sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select goblin first</option></select></div>';
     html += '<div class="col-6"><label class="form-label" style="font-size:0.75rem;">Volume %</label>';
     html += '<input type="number" class="form-control form-control-sm sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
-    html += '<div class="col-6"><div class="form-check mt-4"><input type="checkbox" class="form-check-input sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
+    html += '<div class="col-6"><div class="form-check mt-4"><input title="Loop this media for the duration of the step" type="checkbox" class="form-check-input sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
     html += '<label class="form-check-label" for="gloop' + idx + '" style="font-size:0.8rem;">Loop</label></div></div>';
     html += '</div>';
     return html;
@@ -1042,7 +1042,7 @@
   function renderJawAnimForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Action</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
+    html += '<select title="Select the action to perform" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
     html += '<option value="enable"' + (step.action === 'enable' || !step.action ? ' selected' : '') + '>Enable Jaw Animation</option>';
     html += '<option value="disable"' + (step.action === 'disable' ? ' selected' : '') + '>Disable Jaw Animation</option>';
     html += '</select></div>';
@@ -1053,7 +1053,7 @@
   function renderHeadTrackForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="form-label" style="font-size:0.75rem;">Action</label>';
-    html += '<select class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
+    html += '<select title="Select the action to perform" class="form-select form-select-sm sf-input" data-idx="' + idx + '" data-field="action">';
     html += '<option value="start"' + (step.action === 'start' || !step.action ? ' selected' : '') + '>Start Head Tracking</option>';
     html += '<option value="stop"' + (step.action === 'stop' ? ' selected' : '') + '>Stop Head Tracking</option>';
     html += '</select></div>';
@@ -1134,7 +1134,7 @@
     ];
     var aHtml = '';
     actions.forEach(function(a) {
-      aHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-primary w-100 modal-step-btn" data-type="' + a.type + '"><i class="bi ' + a.icon + '"></i><br><small>' + a.label + '</small></button></div>';
+      aHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-primary w-100 modal-step-btn" title="Add a ' + a.label + ' step" data-type="' + a.type + '"><i class="bi ' + a.icon + '"></i><br><small>' + a.label + '</small></button></div>';
     });
     setHtml('modalActions', aHtml);
 
@@ -1142,7 +1142,7 @@
     var pHtml = '';
     allParts.filter(function(p) { return p.enabled && ['servo', 'motor', 'linear_actuator', 'light', 'led', 'motion_sensor'].indexOf(p.type) >= 0; }).forEach(function(p) {
       var stepType = p.type === 'linear_actuator' ? 'linear-actuator' : (p.type === 'motion_sensor' ? 'sensor' : (p.type === 'led' ? 'light' : p.type));
-      pHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-success w-100 modal-step-btn" data-type="' + stepType + '" data-part="' + p.id + '"><i class="bi bi-gear"></i><br><small>' + escHtml(p.name) + '</small></button></div>';
+      pHtml += '<div class="col-md-4 col-6"><button class="btn btn-outline-success w-100 modal-step-btn" title="Add a step for ' + escHtml(p.name) + '" data-type="' + stepType + '" data-part="' + p.id + '"><i class="bi bi-gear"></i><br><small>' + escHtml(p.name) + '</small></button></div>';
     });
     if (!pHtml) pHtml = '<div class="col-12 text-muted text-center">No parts configured</div>';
     setHtml('modalParts', pHtml);
@@ -1189,7 +1189,7 @@
         html += '<div class="list-group-item list-group-item-action queue-item py-1 px-2" draggable="true" data-queue-idx="' + i + '">';
         html += '<div class="d-flex justify-content-between align-items-center">';
         html += '<span style="font-size:0.8rem;"><i class="bi bi-grip-vertical"></i> ' + escHtml(it.name) + '</span>';
-        html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 queue-remove-btn" data-idx="' + i + '" style="font-size:0.7rem;"><i class="bi bi-x"></i></button>';
+        html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 queue-remove-btn" title="Remove this scene from the queue" data-idx="' + i + '" style="font-size:0.7rem;"><i class="bi bi-x"></i></button>';
         html += '</div></div>';
       });
       setHtml('queueList', html);
