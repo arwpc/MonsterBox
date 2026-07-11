@@ -258,7 +258,7 @@
                         <h5 class="modal-title">
                             <i class="bi bi-cloud-upload"></i> Upload Video Files
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Drag and Drop Zone -->
@@ -279,7 +279,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Category</label>
-                                    <select class="form-select" name="category" id="uploadCategory">
+                                    <select class="form-select" name="category" id="uploadCategory" title="Select a category">
                                         <option value="general">General</option>
                                         <option value="halloween">Halloween</option>
                                         <option value="christmas">Christmas</option>
@@ -291,12 +291,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Tags (comma separated)</label>
-                                    <input type="text" class="form-control" name="tags"
+                                    <input type="text" class="form-control" name="tags" title="Comma-separated tags"
                                         placeholder="spooky, halloween, animation">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Description</label>
-                                    <textarea class="form-control" name="description" rows="2"
+                                    <textarea class="form-control" name="description" rows="2" title="Optional description"
                                         placeholder="Optional description for the video files"></textarea>
                                 </div>
                             </div>
@@ -319,7 +319,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
                         <button type="button" class="btn btn-primary" id="uploadBtn" disabled
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Start uploading selected video files">
                             <i class="bi bi-cloud-upload"></i> Upload Videos
@@ -337,7 +337,7 @@
                         <h5 class="modal-title">
                             <i class="bi bi-broadcast"></i> Deploy to Goblins
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row">
@@ -366,7 +366,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
                         <button type="button" class="btn btn-success" id="deployBtn"
                             onclick="videoLibrary.executeDeployment()"
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Deploy selected videos to chosen Goblins">

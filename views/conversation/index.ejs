@@ -32,7 +32,7 @@
     <div class="mb-opbar-lurk-group">
       <label class="mb-switch mb-opbar-lurk" data-bs-toggle="tooltip" data-bs-placement="bottom"
              title="Bring the character to life — enables AI, jaw, head, idle, motion sensor together.">
-        <input type="checkbox" id="lurkToggle" class="lurk-toggle-input">
+        <input type="checkbox" id="lurkToggle" class="lurk-toggle-input" title="Enable all character superpowers at once">
         <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
         <span class="mb-opbar-lurk-label"><i class="bi bi-lightning-charge-fill"></i> Lurk</span>
       </label>
@@ -107,7 +107,7 @@
             <option value="">Auto</option>
           </select>
           <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Connect to ElevenLabs conversational AI agent">
-            <input type="checkbox" id="chatAiOnToggle">
+            <input type="checkbox" id="chatAiOnToggle" title="Connect to conversational AI agent">
             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
             <span class="mb-text-sm">AI</span>
           </label>
@@ -126,12 +126,12 @@
         </div>
         <div class="mb-chat-controls">
           <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
-            <input type="checkbox" id="chatBrowserSpeaker">
+            <input type="checkbox" id="chatBrowserSpeaker" title="Play AI speech through browser speaker">
             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
             <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Spk</span>
           </label>
           <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
-            <input type="checkbox" id="chatBrowserMic">
+            <input type="checkbox" id="chatBrowserMic" title="Use browser microphone for AI">
             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
             <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
           </label>
@@ -145,8 +145,8 @@
                     style="min-width: 92px;">
               <i class="bi bi-chat-dots"></i> Ask AI
             </button>
-            <input type="text" class="mb-input" id="chatInput" placeholder="Ask the character something…" autocomplete="off">
-            <button class="mb-btn mb-btn-primary" type="button" id="chatSendBtn" aria-label="Send">
+            <input type="text" class="mb-input" id="chatInput" placeholder="Ask the character something…" autocomplete="off" title="Type your message to the character">
+            <button class="mb-btn mb-btn-primary" type="button" id="chatSendBtn" aria-label="Send" title="Send message to the AI">
               <i class="bi bi-send"></i>
             </button>
           </div>
@@ -161,32 +161,32 @@
        ════════════════════════════════════════════════════════════════════ -->
   <section class="mb-superpowers" data-panel-id="monster-features" aria-label="Character superpowers">
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
-      <input type="checkbox" id="jawToggle">
+      <input type="checkbox" id="jawToggle" title="Toggle jaw animation">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-soundwave"></i> Jaw</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
-      <input type="checkbox" id="headTrackToggle">
+      <input type="checkbox" id="headTrackToggle" title="Toggle head tracking">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-eye"></i> Head Track</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
-      <input type="checkbox" id="parrotToggle">
+      <input type="checkbox" id="parrotToggle" title="Toggle parrot mode">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-megaphone"></i> Parrot</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable idle movement loop with character personality">
-      <input type="checkbox" id="idleToggle">
+      <input type="checkbox" id="idleToggle" title="Toggle idle movement">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-person-walking"></i> Idle</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Monitor PIR motion sensor — detects nearby visitors and keeps animatronic awake">
-      <input type="checkbox" id="motionSensorToggle">
+      <input type="checkbox" id="motionSensorToggle" title="Toggle motion sensor">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-radar"></i> Motion</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
-      <input type="checkbox" id="speakerMuteToggle">
+      <input type="checkbox" id="speakerMuteToggle" title="Mute character speaker">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-volume-mute"></i> Mute</span>
     </label>
@@ -205,7 +205,7 @@
     <!-- Scenes -->
     <div class="accordion-item" data-panel-id="scenes">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes" title="Expand or collapse the Scenes panel">
           <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-film me-2"></i> Scenes
           <span id="scenesQueueStatus" class="badge bg-secondary small ms-2" style="display:none;"></span>
@@ -231,7 +231,7 @@
     <!-- Poses -->
     <div class="accordion-item" data-panel-id="poses">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses" title="Expand or collapse the Poses panel">
           <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-person-arms-up me-2"></i> Poses
         </button>
@@ -239,7 +239,7 @@
       <div id="collapsePoses" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2">
           <div class="d-flex mb-2">
-            <a href="/poses/editor" class="btn btn-sm btn-outline-secondary ms-auto"><i class="bi bi-pencil"></i> Pose Editor</a>
+            <a href="/poses/editor" class="btn btn-sm btn-outline-secondary ms-auto" title="Open the Pose Editor"><i class="bi bi-pencil"></i> Pose Editor</a>
           </div>
           <div id="posesContainer" style="max-height: 300px; overflow-y: auto;">
             <div class="text-center text-muted py-3">
@@ -254,7 +254,7 @@
     <!-- Manual Controls -->
     <div class="accordion-item" data-panel-id="manual-controls">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual" title="Expand or collapse Manual Controls">
           <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-joystick me-2"></i> Manual Controls
           <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
@@ -281,7 +281,7 @@
     <!-- Live Console -->
     <div class="accordion-item" data-panel-id="console">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole" title="Expand or collapse the Live Console">
           <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-terminal me-2"></i> Live Console
         </button>
@@ -289,14 +289,14 @@
       <div id="collapseConsole" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2">
           <div class="d-flex gap-1 align-items-center mb-2">
-            <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;">
+            <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;" title="Number of console lines to show">
               <option value="50">50</option>
               <option value="100" selected>100</option>
               <option value="200">200</option>
               <option value="500">500</option>
             </select>
             <div class="form-check form-switch mb-0 ms-1">
-              <input class="form-check-input" type="checkbox" id="consoleLive" checked>
+              <input class="form-check-input" type="checkbox" id="consoleLive" checked title="Toggle live console updates">
               <label class="form-check-label small" for="consoleLive">Live</label>
             </div>
             <button class="btn btn-sm btn-outline-secondary" id="btnConsoleRefresh" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
@@ -309,7 +309,7 @@
     <!-- Browser Audio Bridge -->
     <div class="accordion-item" data-panel-id="audio-bridge">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge" title="Expand or collapse Browser Audio Bridge">
           <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
           <i class="bi bi-headset me-2"></i> Browser Audio Bridge
         </button>
@@ -325,14 +325,14 @@
                 </div>
                 <div class="card-body py-2">
                   <div class="mb-1">
-                    <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                    <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.75rem;" title="Select audio input source">
                       <option value="default">System Default Input</option>
                     </select>
                   </div>
                   <div class="mb-1">
                     <div class="d-flex align-items-center gap-1">
                       <small class="text-muted" style="min-width: 28px;">Vol</small>
-                      <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;">
+                      <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;" title="Adjust listen-in volume">
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 mb-1">
@@ -342,7 +342,7 @@
                     <span id="bridge-listenin-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.7rem;">
+                    <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.7rem;" title="Start listening to character audio">
                       <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
                     </button>
                     <span id="bridge-listenin-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>
@@ -358,7 +358,7 @@
                 </div>
                 <div class="card-body py-2">
                   <div class="mb-1">
-                    <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                    <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.75rem;" title="Select audio output device">
                       <option value="default">System Default Output</option>
                     </select>
                   </div>
@@ -369,7 +369,7 @@
                     <span id="bridge-talkthrough-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.7rem;">
+                    <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.7rem;" title="Start talking through character speaker">
                       <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
                     </button>
                     <span id="bridge-talkthrough-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>

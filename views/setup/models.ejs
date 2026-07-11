@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-end mb-2">
-  <a class="btn btn-outline-secondary btn-sm" href="/setup/calibration">
+  <a class="btn btn-outline-secondary btn-sm" href="/setup/calibration" title="Back to Calibration">
     <i class="bi bi-arrow-left"></i> Back to Calibration
   </a>
 </div>
@@ -11,7 +11,7 @@
       <div class="card mb-3">
         <div class="card-header"><i class="bi bi-funnel"></i> Part Type</div>
         <div class="card-body">
-          <select id="typeSelect" class="form-select">
+          <select id="typeSelect" class="form-select" title="Select part type">
             <option value="servo">Servo</option>
             <option value="linear_actuator">Linear Actuator</option>
             <option value="motor">Motor (DC)</option>
@@ -37,11 +37,11 @@
           <input type="hidden" id="modelId" />
           <div class="mb-2">
             <label class="form-label">Name <span class="text-danger">*</span></label>
-            <input id="modelName" class="form-control" placeholder="e.g., MG90S Micro Servo" />
+            <input id="modelName" class="form-control" placeholder="e.g., MG90S Micro Servo" title="Model name" />
           </div>
           <div class="mb-2">
             <label class="form-label">Description</label>
-            <input id="modelDesc" class="form-control" placeholder="Optional description" />
+            <input id="modelDesc" class="form-control" placeholder="Optional description" title="Model description" />
           </div>
 
           <hr />
@@ -51,20 +51,20 @@
           </div>
 
           <div class="mb-2">
-            <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawDefaultsCollapse" role="button">
+            <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawDefaultsCollapse" role="button" title="Toggle raw JSON editor">
               <i class="bi bi-code-slash"></i> Raw JSON (advanced)
             </a>
             <div class="collapse" id="rawDefaultsCollapse">
               <textarea id="modelDefaults" rows="5" class="form-control font-monospace mt-1"
-                placeholder='{"key": "value"}'></textarea>
+                placeholder='{"key": "value"}' title="Raw JSON defaults"></textarea>
             </div>
           </div>
 
           <div class="d-grid gap-2 mt-3">
-            <button class="btn btn-success" id="btnSaveModel"><i class="bi bi-save"></i> Save Model</button>
+            <button class="btn btn-success" id="btnSaveModel" title="Save model"><i class="bi bi-save"></i> Save Model</button>
             <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary flex-fill" id="btnNewModel"><i class="bi bi-plus"></i> New</button>
-              <button class="btn btn-danger flex-fill" id="btnDeleteModel" disabled><i class="bi bi-trash"></i> Delete</button>
+              <button class="btn btn-outline-secondary flex-fill" id="btnNewModel" title="Create new model"><i class="bi bi-plus"></i> New</button>
+              <button class="btn btn-danger flex-fill" id="btnDeleteModel" disabled title="Delete model"><i class="bi bi-trash"></i> Delete</button>
             </div>
           </div>
         </div>
@@ -77,10 +77,10 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <span><i class="bi bi-list-ul"></i> <span id="listTitle">Servo</span> Models</span>
           <div>
-            <button class="btn btn-sm btn-danger me-2" id="btnDeleteSelected" style="display:none;">
+            <button class="btn btn-sm btn-danger me-2" id="btnDeleteSelected" style="display:none;" title="Delete selected models">
               <i class="bi bi-trash"></i> Delete Selected (<span id="selectedCount">0</span>)
             </button>
-            <button class="btn btn-sm btn-outline-secondary" id="btnRefresh">
+            <button class="btn btn-sm btn-outline-secondary" id="btnRefresh" title="Refresh models list">
               <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
           </div>
@@ -112,14 +112,14 @@
           <div class="row g-2 align-items-end">
             <div class="col-md-5">
               <label class="form-label">Parts of this type</label>
-              <select multiple id="partsSelect" class="form-select" size="5"></select>
+              <select multiple id="partsSelect" class="form-select" size="5" title="Select parts to apply model"></select>
             </div>
             <div class="col-md-4">
               <label class="form-label">Selected Model</label>
-              <input id="applyModelId" class="form-control" placeholder="Click a model row" readonly />
+              <input id="applyModelId" class="form-control" placeholder="Click a model row" readonly title="Selected model to apply" />
             </div>
             <div class="col-md-3 d-grid gap-2">
-              <button id="btnApplyModel" class="btn btn-primary"><i class="bi bi-link"></i> Assign Model</button>
+              <button id="btnApplyModel" class="btn btn-primary" title="Assign model to selected parts"><i class="bi bi-link"></i> Assign Model</button>
               <button id="btnPushDefaults" class="btn btn-outline-primary"
                 title="Merge model defaults into each part's config"><i class="bi bi-box-arrow-in-down"></i> Push Defaults</button>
             </div>

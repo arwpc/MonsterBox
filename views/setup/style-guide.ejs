@@ -10,7 +10,7 @@
     <h1 class="mb-heading mb-heading-1" style="margin-top: var(--mb-space-2);">Haunted Console</h1>
     <p class="mb-text-secondary" style="max-width: 70ch;">
       Reference for every component in <code>components.css</code>. Switch themes from
-      <a href="/setup/system" class="mb-btn-link">System Settings</a> to preview
+      <a href="/setup/system" class="mb-btn-link" title="System settings link example">System Settings</a> to preview
       <strong>haunted-console</strong>, <strong>cold-crypt</strong>, and <strong>bright-ops</strong>.
       Every color, size, and spacing value here comes from <code>tokens.css</code> — never hard-coded.
     </p>
@@ -60,46 +60,46 @@
       <div>
         <div class="mb-eyebrow">Variants</div>
         <div class="mb-row" style="margin-top: var(--mb-space-2);">
-          <button class="mb-btn mb-btn-primary">Primary</button>
-          <button class="mb-btn mb-btn-secondary">Secondary</button>
-          <button class="mb-btn mb-btn-ghost">Ghost</button>
-          <button class="mb-btn mb-btn-danger">Danger</button>
-          <button class="mb-btn mb-btn-ai">Ask AI</button>
-          <button class="mb-btn mb-btn-link">Link</button>
-          <button class="mb-btn mb-btn-primary" disabled>Disabled</button>
+          <button class="mb-btn mb-btn-primary" title="Primary button example">Primary</button>
+          <button class="mb-btn mb-btn-secondary" title="Secondary button example">Secondary</button>
+          <button class="mb-btn mb-btn-ghost" title="Ghost button example">Ghost</button>
+          <button class="mb-btn mb-btn-danger" title="Danger button example">Danger</button>
+          <button class="mb-btn mb-btn-ai" title="Ask AI button example">Ask AI</button>
+          <button class="mb-btn mb-btn-link" title="Link button example">Link</button>
+          <button class="mb-btn mb-btn-primary" disabled title="Disabled button example">Disabled</button>
         </div>
       </div>
       <div>
         <div class="mb-eyebrow">Sizes</div>
         <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
-          <button class="mb-btn mb-btn-primary mb-btn-sm">Small</button>
-          <button class="mb-btn mb-btn-primary">Medium</button>
-          <button class="mb-btn mb-btn-primary mb-btn-lg">Large</button>
+          <button class="mb-btn mb-btn-primary mb-btn-sm" title="Small button example">Small</button>
+          <button class="mb-btn mb-btn-primary" title="Medium button example">Medium</button>
+          <button class="mb-btn mb-btn-primary mb-btn-lg" title="Large button example">Large</button>
         </div>
       </div>
       <div>
         <div class="mb-eyebrow">Icon buttons</div>
         <div class="mb-row" style="align-items: center; margin-top: var(--mb-space-2);">
-          <button class="mb-btn mb-btn-secondary mb-btn-icon mb-btn-sm" aria-label="Play"><i class="bi bi-play-fill"></i></button>
-          <button class="mb-btn mb-btn-primary mb-btn-icon" aria-label="Record"><i class="bi bi-record-circle"></i></button>
-          <button class="mb-btn mb-btn-danger mb-btn-icon mb-btn-lg" aria-label="Stop"><i class="bi bi-stop-fill"></i></button>
+          <button class="mb-btn mb-btn-secondary mb-btn-icon mb-btn-sm" aria-label="Play" title="Play icon button example"><i class="bi bi-play-fill"></i></button>
+          <button class="mb-btn mb-btn-primary mb-btn-icon" aria-label="Record" title="Record icon button example"><i class="bi bi-record-circle"></i></button>
+          <button class="mb-btn mb-btn-danger mb-btn-icon mb-btn-lg" aria-label="Stop" title="Stop icon button example"><i class="bi bi-stop-fill"></i></button>
         </div>
       </div>
       <div>
         <div class="mb-eyebrow">Glow variants + Panic</div>
         <div class="mb-row" style="margin-top: var(--mb-space-2);">
-          <button class="mb-btn mb-btn-primary mb-btn-glow">Live</button>
-          <button class="mb-btn mb-btn-ai mb-btn-glow">Summon AI</button>
-          <button class="mb-btn mb-btn-danger mb-btn-glow">Abort</button>
-          <button class="mb-btn mb-btn-panic mb-btn-lg"><i class="bi bi-exclamation-octagon-fill"></i> Stop Everything</button>
+          <button class="mb-btn mb-btn-primary mb-btn-glow" title="Glow button example">Live</button>
+          <button class="mb-btn mb-btn-ai mb-btn-glow" title="AI glow button example">Summon AI</button>
+          <button class="mb-btn mb-btn-danger mb-btn-glow" title="Danger glow button example">Abort</button>
+          <button class="mb-btn mb-btn-panic mb-btn-lg" title="Panic button example"><i class="bi bi-exclamation-octagon-fill"></i> Stop Everything</button>
         </div>
       </div>
       <div>
         <div class="mb-eyebrow">Button group</div>
         <div class="mb-btn-group" style="margin-top: var(--mb-space-2);">
-          <button class="mb-btn mb-btn-secondary">Play</button>
-          <button class="mb-btn mb-btn-secondary">Pause</button>
-          <button class="mb-btn mb-btn-secondary">Stop</button>
+          <button class="mb-btn mb-btn-secondary" title="Play button example">Play</button>
+          <button class="mb-btn mb-btn-secondary" title="Pause button example">Pause</button>
+          <button class="mb-btn mb-btn-secondary" title="Stop button example">Stop</button>
         </div>
       </div>
     </div>
@@ -112,20 +112,20 @@
       <div class="mb-stack">
         <div class="mb-field">
           <label class="mb-field-label" for="sg-input-1">Character name</label>
-          <input id="sg-input-1" class="mb-input" type="text" placeholder="e.g. Orlok" value="Orlok">
+          <input id="sg-input-1" class="mb-input" type="text" placeholder="e.g. Orlok" value="Orlok" title="Text input example">
           <span class="mb-field-hint">Display name shown on the dashboard.</span>
         </div>
         <div class="mb-field">
           <label class="mb-field-label" for="sg-input-2">Servo channel</label>
           <div class="mb-input-group">
             <span class="mb-input-addon">CH</span>
-            <input id="sg-input-2" class="mb-input mb-input-mono" type="number" value="8">
+            <input id="sg-input-2" class="mb-input mb-input-mono" type="number" value="8" title="Number input example">
             <span class="mb-input-addon">°</span>
           </div>
         </div>
         <div class="mb-field">
           <label class="mb-field-label" for="sg-select-1">TTS Voice</label>
-          <select id="sg-select-1" class="mb-select">
+          <select id="sg-select-1" class="mb-select" title="Dropdown select example">
             <option>Orlok — bass</option>
             <option>Mina — soft</option>
             <option>Dragomir — growl</option>
@@ -133,11 +133,11 @@
         </div>
         <div class="mb-field">
           <label class="mb-field-label" for="sg-textarea-1">Say this</label>
-          <textarea id="sg-textarea-1" class="mb-textarea" placeholder="Type a line for the character to speak…"></textarea>
+          <textarea id="sg-textarea-1" class="mb-textarea" placeholder="Type a line for the character to speak…" title="Text area example"></textarea>
         </div>
         <div class="mb-field">
           <label class="mb-field-label" for="sg-error-1">Invalid input</label>
-          <input id="sg-error-1" class="mb-input" aria-invalid="true" value="bad">
+          <input id="sg-error-1" class="mb-input" aria-invalid="true" value="bad" title="Invalid input example">
           <span class="mb-field-error">Value must be between 0 and 180.</span>
         </div>
       </div>
@@ -145,23 +145,23 @@
         <div>
           <div class="mb-eyebrow">Toggle switch</div>
           <div class="mb-stack-sm" style="margin-top: var(--mb-space-2);">
-            <label class="mb-switch"><input type="checkbox" checked><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Lurk Mode</span></label>
-            <label class="mb-switch"><input type="checkbox"><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Head tracking</span></label>
-            <label class="mb-switch"><input type="checkbox" disabled><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Disabled switch</span></label>
+            <label class="mb-switch"><input type="checkbox" checked title="Toggle switch example"><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Lurk Mode</span></label>
+            <label class="mb-switch"><input type="checkbox" title="Toggle switch example"><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Head tracking</span></label>
+            <label class="mb-switch"><input type="checkbox" disabled title="Disabled toggle switch example"><span class="mb-switch-track"><span class="mb-switch-thumb"></span></span><span>Disabled switch</span></label>
           </div>
         </div>
         <div>
           <div class="mb-eyebrow">Checkbox / Radio</div>
           <div class="mb-stack-sm" style="margin-top: var(--mb-space-2);">
-            <label class="mb-check"><input type="checkbox" checked> Enable Orlok</label>
-            <label class="mb-check"><input type="checkbox"> Enable Mina</label>
-            <label class="mb-check"><input type="radio" name="sg-r" checked> Continuous</label>
-            <label class="mb-check"><input type="radio" name="sg-r"> Absolute</label>
+            <label class="mb-check"><input type="checkbox" checked title="Checkbox example"> Enable Orlok</label>
+            <label class="mb-check"><input type="checkbox" title="Checkbox example"> Enable Mina</label>
+            <label class="mb-check"><input type="radio" name="sg-r" checked title="Radio button example"> Continuous</label>
+            <label class="mb-check"><input type="radio" name="sg-r" title="Radio button example"> Absolute</label>
           </div>
         </div>
         <div>
           <div class="mb-eyebrow">Range (servo angle)</div>
-          <input class="mb-range" type="range" min="0" max="180" value="90" style="margin-top: var(--mb-space-2);">
+          <input class="mb-range" type="range" min="0" max="180" value="90" style="margin-top: var(--mb-space-2);" title="Range slider example">
         </div>
       </div>
     </div>
@@ -190,7 +190,7 @@
       <div class="mb-card mb-card-interactive" tabindex="0">
         <h4 class="mb-heading mb-heading-3">Pose · Wake</h4>
         <p class="mb-text-secondary mb-text-sm">5 parts · 2.3s</p>
-        <button class="mb-btn mb-btn-primary mb-btn-sm" style="margin-top: var(--mb-space-2);">Play</button>
+        <button class="mb-btn mb-btn-primary mb-btn-sm" style="margin-top: var(--mb-space-2);" title="Play button example">Play</button>
       </div>
       <div class="mb-card">
         <div class="mb-eyebrow">Static card</div>
@@ -219,11 +219,11 @@
       <div>
         <div class="mb-eyebrow">Chips (filter / tag)</div>
         <div class="mb-row" style="margin-top: var(--mb-space-2);">
-          <button class="mb-chip mb-chip-active">All</button>
-          <button class="mb-chip">Scenes</button>
-          <button class="mb-chip">Poses</button>
-          <button class="mb-chip">Ambient</button>
-          <button class="mb-chip">Stingers</button>
+          <button class="mb-chip mb-chip-active" title="Active chip example">All</button>
+          <button class="mb-chip" title="Chip example">Scenes</button>
+          <button class="mb-chip" title="Chip example">Poses</button>
+          <button class="mb-chip" title="Chip example">Ambient</button>
+          <button class="mb-chip" title="Chip example">Stingers</button>
         </div>
       </div>
       <div>
@@ -245,18 +245,18 @@
     <div class="mb-panel-header"><h2 class="mb-panel-title">Tabs &amp; Table</h2></div>
     <div class="mb-panel-body">
       <div class="mb-tabs">
-        <button class="mb-tab mb-tab-active">Overview</button>
-        <button class="mb-tab">Parts</button>
-        <button class="mb-tab">Poses</button>
-        <button class="mb-tab">Scenes</button>
-        <button class="mb-tab">Audio</button>
+        <button class="mb-tab mb-tab-active" title="Active tab example">Overview</button>
+        <button class="mb-tab" title="Tab example">Parts</button>
+        <button class="mb-tab" title="Tab example">Poses</button>
+        <button class="mb-tab" title="Tab example">Scenes</button>
+        <button class="mb-tab" title="Tab example">Audio</button>
       </div>
       <table class="mb-table" style="margin-top: var(--mb-space-4);">
         <thead><tr><th>Part</th><th>Type</th><th>Channel</th><th>Status</th><th></th></tr></thead>
         <tbody>
-          <tr><td>Jaw</td><td>Servo</td><td class="mb-mono">CH 00</td><td><span class="mb-dot mb-dot-live"></span> Live</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
-          <tr><td>Neck Pan</td><td>Servo</td><td class="mb-mono">CH 01</td><td><span class="mb-dot mb-dot-idle"></span> Idle</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
-          <tr><td>Left Eye</td><td>LED</td><td class="mb-mono">GPIO 17</td><td><span class="mb-dot mb-dot-warning"></span> Calibrating</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm">Test</button></td></tr>
+          <tr><td>Jaw</td><td>Servo</td><td class="mb-mono">CH 00</td><td><span class="mb-dot mb-dot-live"></span> Live</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm" title="Test button example">Test</button></td></tr>
+          <tr><td>Neck Pan</td><td>Servo</td><td class="mb-mono">CH 01</td><td><span class="mb-dot mb-dot-idle"></span> Idle</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm" title="Test button example">Test</button></td></tr>
+          <tr><td>Left Eye</td><td>LED</td><td class="mb-mono">GPIO 17</td><td><span class="mb-dot mb-dot-warning"></span> Calibrating</td><td><button class="mb-btn mb-btn-ghost mb-btn-sm" title="Test button example">Test</button></td></tr>
         </tbody>
       </table>
     </div>
@@ -317,17 +317,17 @@
         <i class="bi bi-moon-stars mb-empty-icon"></i>
         <h3 class="mb-empty-title">No scenes queued</h3>
         <p class="mb-empty-body">Drag a scene from the library to queue it up. Or press <kbd class="mb-mono">Q</kbd> to auto-queue favourites.</p>
-        <button class="mb-btn mb-btn-primary">Browse Scenes</button>
+        <button class="mb-btn mb-btn-primary" title="Browse scenes button example">Browse Scenes</button>
       </div>
       <div class="mb-modal-dialog" style="position: static; margin: 0; max-width: none;">
         <div class="mb-modal-header">
           <h3 class="mb-modal-title">Delete scene</h3>
-          <button class="mb-btn mb-btn-ghost mb-btn-icon mb-btn-sm" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+          <button class="mb-btn mb-btn-ghost mb-btn-icon mb-btn-sm" aria-label="Close" title="Close icon button example"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="mb-modal-body"><p class="mb-text-secondary">This will permanently remove <strong>Orlok · Rise from Crypt</strong>. Linked audio files stay untouched.</p></div>
         <div class="mb-modal-footer">
-          <button class="mb-btn mb-btn-secondary">Cancel</button>
-          <button class="mb-btn mb-btn-danger">Delete</button>
+          <button class="mb-btn mb-btn-secondary" title="Cancel button example">Cancel</button>
+          <button class="mb-btn mb-btn-danger" title="Delete button example">Delete</button>
         </div>
       </div>
     </div>
@@ -338,7 +338,7 @@
     <div class="mb-panel-header"><h2 class="mb-panel-title">Current Theme</h2><span class="mb-badge mb-badge-primary" id="sg-theme-name">—</span></div>
     <div class="mb-panel-body mb-stack">
       <p class="mb-text-secondary">
-        Change theme at <a href="/setup/system" class="mb-btn-link">/setup/system</a>. Three curated themes are shipped:
+        Change theme at <a href="/setup/system" class="mb-btn-link" title="System settings link example">/setup/system</a>. Three curated themes are shipped:
         <strong>haunted-console</strong> (default Halloween green), <strong>cold-crypt</strong> (cyan/violet),
         <strong>bright-ops</strong> (light mode).
       </p>

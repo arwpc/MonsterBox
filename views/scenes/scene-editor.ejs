@@ -5,7 +5,7 @@
       <i class="bi bi-pencil"></i> <span id="editorTitle">Edit Scene</span>
     </h1>
     <div class="mb-page-header-actions">
-      <a href="/scenes" class="mb-btn mb-btn-secondary">
+      <a href="/scenes" class="mb-btn mb-btn-secondary" title="Back to scenes list">
         <i class="bi bi-arrow-left"></i> Back to Scenes
       </a>
     </div>
@@ -19,7 +19,7 @@
       <div id="editorStatus" style="margin-bottom: var(--mb-space-3);"></div>
       <div class="mb-field">
         <label for="sceneName" class="mb-field-label">Scene Name</label>
-        <input type="text" id="sceneName" class="mb-input" placeholder="Enter scene name">
+        <input type="text" id="sceneName" class="mb-input" placeholder="Enter scene name" title="Scene name">
       </div>
     </div>
   </div>
@@ -27,7 +27,7 @@
   <div class="mb-panel mb-panel-accent-ai" style="margin-bottom: var(--mb-space-4);">
     <div class="mb-panel-header">
       <h2 class="mb-panel-title"><i class="bi bi-list-ol"></i> Steps</h2>
-      <button id="addStepBtn" class="mb-btn mb-btn-primary mb-btn-sm">
+      <button id="addStepBtn" class="mb-btn mb-btn-primary mb-btn-sm" title="Add a step to the scene">
         <i class="bi bi-plus-circle"></i> Add Step
       </button>
     </div>
@@ -43,13 +43,13 @@
   </div>
 
   <div class="mb-row" style="gap: var(--mb-space-2); margin-top: var(--mb-space-4);">
-    <button id="saveSceneBtn" class="mb-btn mb-btn-primary mb-btn-lg">
+    <button id="saveSceneBtn" class="mb-btn mb-btn-primary mb-btn-lg" title="Save this scene">
       <i class="bi bi-save"></i> Save Scene
     </button>
-    <button id="testSceneBtn" class="mb-btn mb-btn-ai mb-btn-lg">
+    <button id="testSceneBtn" class="mb-btn mb-btn-ai mb-btn-lg" title="Test play this scene">
       <i class="bi bi-play-fill"></i> Test Scene
     </button>
-    <a href="/scenes" class="mb-btn mb-btn-secondary mb-btn-lg">Cancel</a>
+    <a href="/scenes" class="mb-btn mb-btn-secondary mb-btn-lg" title="Cancel and return to scenes">Cancel</a>
   </div>
 </div>
 
@@ -59,43 +59,43 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add Step</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
       </div>
       <div class="modal-body">
         <div class="mb-eyebrow" style="margin-bottom: var(--mb-space-3);">Actions</div>
         <div class="row g-3" style="margin-bottom: var(--mb-space-5);">
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="pose" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="pose" title="Add a pose step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-person-arms-up"></i><span>Pose</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="audio" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="audio" title="Add an audio step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-music-note-beamed"></i><span>Audio</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sayThis" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sayThis" title="Add a Say This AI voice step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-chat-quote"></i><span>Say This (AI Voice)</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="askAI" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="askAI" title="Add an Ask AI step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-question-circle"></i><span>Ask AI a Question</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="goblin-video" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="goblin-video" title="Add a Goblin video step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-display"></i><span>Goblin Video</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="wait" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="wait" title="Add a wait or pause step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-hourglass-split"></i><span>Wait / Pause</span>
             </button>
           </div>
           <div class="col-md-6">
-            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sensor" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
+            <button class="mb-btn mb-btn-secondary step-action-btn" data-type="sensor" title="Add a sensor motion-wait step" style="width:100%; padding: var(--mb-space-5); flex-direction: column;">
               <i class="bi bi-radar"></i><span>Sensor (Wait for Motion)</span>
             </button>
           </div>

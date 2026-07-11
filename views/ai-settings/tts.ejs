@@ -5,10 +5,10 @@
             <span class="mb-text-secondary">· voice assignment and tuning</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm">
+            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm" title="Back to AI Settings">
                 <i class="bi bi-arrow-left"></i> AI Settings
             </a>
-            <button class="btn btn-primary btn-sm" id="testTTS">
+            <button class="btn btn-primary btn-sm" id="testTTS" title="Test text-to-speech">
                 <i class="bi bi-play-circle"></i> Test TTS
             </button>
         </div>
@@ -42,7 +42,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="ttsModel" class="form-label">TTS Model</label>
-                                    <select class="form-select" id="ttsModel" name="model">
+                                    <select class="form-select" id="ttsModel" name="model" title="Select the text-to-speech model">
                                         <option value="eleven_v3">Eleven v3 (Most Expressive)</option>
                                         <option value="eleven_flash_v2_5">Eleven Flash v2.5 (Fastest)</option>
                                         <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
@@ -52,7 +52,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="defaultVoice" class="form-label"><i class="bi bi-person-badge me-1"></i>Character Voice</label>
-                                    <select class="form-select" id="defaultVoice" name="voice_id">
+                                    <select class="form-select" id="defaultVoice" name="voice_id" title="Voice for text-to-speech output">
                                         <option value="">Loading voices...</option>
                                     </select>
                                     <small class="text-muted">This voice will be used for all TTS output for this character</small>
@@ -67,7 +67,7 @@
                                 <div class="mb-3">
                                     <label for="stability" class="form-label">Stability</label>
                                     <input type="range" class="form-range" id="stability" name="stability" min="0"
-                                        max="1" step="0.1" value="0.5">
+                                        max="1" step="0.1" value="0.5" title="Voice stability setting">
                                     <div class="d-flex justify-content-between">
                                         <small class="text-muted">Variable</small>
                                         <small class="text-muted">Stable</small>
@@ -77,7 +77,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="similarityBoost" class="form-label">Similarity Boost</label>
-                                    <input type="range" class="form-range" id="similarityBoost" name="similarity_boost"
+                                    <input type="range" class="form-range" id="similarityBoost" name="similarity_boost" title="Voice similarity boost setting"
                                         min="0" max="1" step="0.1" value="0.5">
                                     <div class="d-flex justify-content-between">
                                         <small class="text-muted">Low</small>
@@ -96,7 +96,7 @@
                                 <div class="mb-3">
                                     <label for="style" class="form-label">Style</label>
                                     <input type="range" class="form-range" id="style" name="style" min="0" max="1"
-                                        step="0.1" value="0.0">
+                                        step="0.1" value="0.0" title="Voice style expressiveness">
                                     <div class="d-flex justify-content-between">
                                         <small class="text-muted">Natural</small>
                                         <small class="text-muted">Expressive</small>
@@ -105,7 +105,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3 form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="speakerBoost"
+                                    <input class="form-check-input" type="checkbox" id="speakerBoost" title="Use speaker boost"
                                         name="use_speaker_boost" checked>
                                     <label class="form-check-label" for="speakerBoost">
                                         Use Speaker Boost
@@ -115,7 +115,7 @@
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" title="Save TTS configuration">
                                 <i class="bi bi-check-circle"></i> Save Configuration
                             </button>
                         </div>
@@ -133,12 +133,12 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="speakerPart" class="form-label">Select Speaker Part</label>
-                        <select class="form-select" id="speakerPart">
+                        <select class="form-select" id="speakerPart" title="Select the speaker hardware part">
                             <option value="">Loading speaker parts...</option>
                         </select>
                     </div>
                     <div class="d-grid">
-                        <button type="button" class="btn btn-info" id="testSpeakerIntegration">
+                        <button type="button" class="btn btn-info" id="testSpeakerIntegration" title="Test text-to-speech through speaker">
                             <i class="bi bi-arrow-repeat"></i> Test TTS &rarr; Speaker
                         </button>
                     </div>
@@ -156,7 +156,7 @@
                     <p class="small text-muted">Clone custom voices from audio samples</p>
                     <div class="d-grid">
                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                            data-bs-target="#voiceCloningModal">
+                            data-bs-target="#voiceCloningModal" title="Open voice cloning dialog">
                             <i class="bi bi-plus-circle"></i> Clone Voice
                         </button>
                     </div>
@@ -177,17 +177,17 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="testText" class="form-label">Test Text</label>
-                            <textarea class="form-control" id="testText" rows="3"
+                            <textarea class="form-control" id="testText" rows="3" title="Text to convert to speech"
                                 placeholder="Enter text to convert to speech...">Hello! This is a test of the ElevenLabs text-to-speech system. How does this voice sound?</textarea>
                         </div>
                         <div class="mb-3">
                             <label for="testVoice" class="form-label">Preview Voice</label>
-                            <select class="form-select" id="testVoice">
+                            <select class="form-select" id="testVoice" title="Voice to preview">
                                 <option value="">Use character voice</option>
                             </select>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-primary" id="generateSpeech">
+                            <button type="button" class="btn btn-primary" id="generateSpeech" title="Generate speech preview">
                                 <i class="bi bi-play-circle"></i> Generate Speech
                             </button>
                         </div>
@@ -230,22 +230,22 @@
                     <h5 class="modal-title">
                         <i class="bi bi-person-plus"></i> Clone Voice
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="voiceCloningForm">
                         <div class="mb-3">
                             <label for="voiceName" class="form-label">Voice Name</label>
-                            <input type="text" class="form-control" id="voiceName" name="name" required>
+                            <input type="text" class="form-control" id="voiceName" name="name" required title="Name for the cloned voice">
                         </div>
                         <div class="mb-3">
                             <label for="voiceDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="voiceDescription" name="description" rows="2"></textarea>
+                            <textarea class="form-control" id="voiceDescription" name="description" rows="2" title="Description of the cloned voice"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="audioSamples" class="form-label">Audio Samples</label>
                             <input type="file" class="form-control" id="audioSamples" name="files" multiple
-                                accept="audio/*">
+                                accept="audio/*" title="Upload audio samples to clone">
                             <div class="form-text">Upload 3-5 audio samples (WAV, MP3) of the voice you want to
                                 clone
                             </div>
@@ -253,8 +253,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-warning" id="cloneVoice">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel voice cloning">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="cloneVoice" title="Clone voice from samples">
                         <i class="bi bi-upload"></i> Clone Voice
                     </button>
                 </div>

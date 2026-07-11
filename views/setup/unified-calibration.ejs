@@ -784,7 +784,7 @@
     <div class="cal-header">
       <div class="cal-controls">
         <div class="part-selector">
-          <select id="partSelect" class="form-control">
+          <select id="partSelect" class="form-control" title="Select a part to calibrate">
             <option value="">Select a part...</option>
             <% if (parts && parts.length> 0) { %>
               <% parts.forEach(part=> { %>
@@ -796,13 +796,13 @@
           </select>
         </div>
 
-        <button class="emergency-stop" id="eStopBtn" disabled>
+        <button class="emergency-stop" id="eStopBtn" disabled title="Emergency stop all movement">
           🛑 E-STOP
         </button>
 
         <div class="speed-cap">
           <label>Speed Cap:</label>
-          <input type="range" id="speedCap" min="0" max="100" value="50" />
+          <input type="range" id="speedCap" min="0" max="100" value="50" title="Set global speed cap" />
           <span class="speed-value" id="speedValue">50%</span>
         </div>
       </div>
@@ -867,7 +867,7 @@
               <!-- Row 1: Channels 0-7 -->
               <div class="pca-channels-row" id="pcaRow1">
                 <% for (var ch = 0; ch < 8; ch++) { %>
-                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)">
+                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)" title="Select this servo channel">
                   <div class="pca-channel-tooltip" id="pcaTooltip<%= ch %>">
                     Ch <%= ch %>: <span class="pca-tooltip-part">Empty</span>
                   </div>
@@ -883,7 +883,7 @@
               <!-- Row 2: Channels 8-15 -->
               <div class="pca-channels-row" id="pcaRow2">
                 <% for (var ch = 8; ch < 16; ch++) { %>
-                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)">
+                <div class="pca-channel" data-channel="<%= ch %>" id="pcaCh<%= ch %>" onclick="selectPcaChannel(<%= ch %>)" title="Select this servo channel">
                   <div class="pca-channel-tooltip" id="pcaTooltip<%= ch %>">
                     Ch <%= ch %>: <span class="pca-tooltip-part">Empty</span>
                   </div>
@@ -943,22 +943,22 @@
 
           <!-- Home Button (open-loop parts only) -->
           <div id="calHomeSection" class="text-center mb-2" style="display: none;">
-            <button class="btn btn-warning btn-sm" id="homeBtn" disabled>
+            <button class="btn btn-warning btn-sm" id="homeBtn" disabled title="Home part to retract endstop">
               <i class="bi bi-house-door"></i> Home (Retract to Endstop)
             </button>
           </div>
 
           <div class="jog-pad">
             <div class="scale-selector">
-              <button class="scale-btn active" data-scale="fine">Fine</button>
-              <button class="scale-btn" data-scale="med">Med</button>
-              <button class="scale-btn" data-scale="coarse">Coarse</button>
+              <button class="scale-btn active" data-scale="fine" title="Use fine jog step">Fine</button>
+              <button class="scale-btn" data-scale="med" title="Use medium jog step">Med</button>
+              <button class="scale-btn" data-scale="coarse" title="Use coarse jog step">Coarse</button>
             </div>
 
             <div class="jog-buttons">
-              <button class="jog-btn" id="jogMin" disabled>◀ Min</button>
-              <button class="jog-btn stop" id="stopBtn" disabled>STOP</button>
-              <button class="jog-btn" id="jogMax" disabled>Max ▶</button>
+              <button class="jog-btn" id="jogMin" disabled title="Jog toward minimum">◀ Min</button>
+              <button class="jog-btn stop" id="stopBtn" disabled title="Stop movement">STOP</button>
+              <button class="jog-btn" id="jogMax" disabled title="Jog toward maximum">Max ▶</button>
             </div>
           </div>
         </div>
@@ -977,8 +977,8 @@
           </div>
 
           <div class="bounds-actions">
-            <button class="cal-action-btn" id="setMinBtn" disabled>Set Min</button>
-            <button class="cal-action-btn" id="setMaxBtn" disabled>Set Max</button>
+            <button class="cal-action-btn" id="setMinBtn" disabled title="Set minimum bound here">Set Min</button>
+            <button class="cal-action-btn" id="setMaxBtn" disabled title="Set maximum bound here">Set Max</button>
           </div>
         </div>
 
@@ -993,25 +993,25 @@
             <div class="probe-inputs">
               <div class="probe-row">
                 <span>30% PWM</span>
-                <input type="number" id="probe1Time" placeholder="Time (ms)" value="600" />
-                <input type="number" id="probe1Delta" placeholder="Distance moved" step="0.01" />
-                <button class="btn-small btn-go" onclick="runProbe(0)">Run</button>
+                <input type="number" id="probe1Time" placeholder="Time (ms)" value="600" title="Probe run time in milliseconds" />
+                <input type="number" id="probe1Delta" placeholder="Distance moved" step="0.01" title="Measured distance moved" />
+                <button class="btn-small btn-go" onclick="runProbe(0)" title="Run probe at 30% PWM">Run</button>
               </div>
               <div class="probe-row">
                 <span>50% PWM</span>
-                <input type="number" id="probe2Time" placeholder="Time (ms)" value="600" />
-                <input type="number" id="probe2Delta" placeholder="Distance moved" step="0.01" />
-                <button class="btn-small btn-go" onclick="runProbe(1)">Run</button>
+                <input type="number" id="probe2Time" placeholder="Time (ms)" value="600" title="Probe run time in milliseconds" />
+                <input type="number" id="probe2Delta" placeholder="Distance moved" step="0.01" title="Measured distance moved" />
+                <button class="btn-small btn-go" onclick="runProbe(1)" title="Run probe at 50% PWM">Run</button>
               </div>
               <div class="probe-row">
                 <span>70% PWM</span>
-                <input type="number" id="probe3Time" placeholder="Time (ms)" value="600" />
-                <input type="number" id="probe3Delta" placeholder="Distance moved" step="0.01" />
-                <button class="btn-small btn-go" onclick="runProbe(2)">Run</button>
+                <input type="number" id="probe3Time" placeholder="Time (ms)" value="600" title="Probe run time in milliseconds" />
+                <input type="number" id="probe3Delta" placeholder="Distance moved" step="0.01" title="Measured distance moved" />
+                <button class="btn-small btn-go" onclick="runProbe(2)" title="Run probe at 70% PWM">Run</button>
               </div>
             </div>
 
-            <button class="cal-action-btn" id="saveLearnBtn" disabled>Save Learned Motion</button>
+            <button class="cal-action-btn" id="saveLearnBtn" disabled title="Save learned motion model">Save Learned Motion</button>
           </div>
         </div>
       </div>
@@ -1022,8 +1022,8 @@
           <h2>Position Presets</h2>
 
           <div class="add-preset">
-            <input type="text" id="presetName" placeholder="Preset name..." />
-            <button class="cal-action-btn" id="addPresetBtn" disabled>Set Here</button>
+            <input type="text" id="presetName" placeholder="Preset name..." title="Enter a preset name" />
+            <button class="cal-action-btn" id="addPresetBtn" disabled title="Save current position as preset">Set Here</button>
           </div>
 
           <div class="presets-list" id="presetsList">

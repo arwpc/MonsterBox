@@ -25,7 +25,7 @@
   <% if (typeof error !== 'undefined' && error) { %>
   <div class="alert alert-warning alert-dismissible py-2 mb-2" role="alert">
     <i class="bi bi-exclamation-triangle"></i> <%= error %>
-    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" title="Dismiss this alert"></button>
   </div>
   <% } %>
 
@@ -36,13 +36,13 @@
       <!-- OpenCV Detection Toggle & Webcam -->
       <div class="head-section opencv-section">
         <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="ocvEnabled">
+          <input class="form-check-input" type="checkbox" role="switch" id="ocvEnabled" title="Enable OpenCV motion detection">
           <label class="form-check-label" for="ocvEnabled" title="Starts the camera motion detection process" data-bs-toggle="tooltip"><strong><i class="bi bi-eye-fill text-success"></i> OpenCV Detection</strong></label>
         </div>
 
         <div class="mb-0">
           <label for="webcamSelect" class="compact-label" title="Which camera to use for tracking" data-bs-toggle="tooltip"><i class="bi bi-webcam"></i> Webcam</label>
-          <select class="form-select form-select-sm" id="webcamSelect">
+          <select class="form-select form-select-sm" id="webcamSelect" title="Select the tracking webcam">
             <option value="">Select a webcam...</option>
           </select>
         </div>
@@ -52,18 +52,18 @@
       <div class="head-section opencv-section">
         <h6 class="text-success mb-2" style="font-size:0.9rem;"><i class="bi bi-lightning"></i> Presets</h6>
         <div id="presetsContainer" class="d-flex gap-1 flex-wrap mb-2">
-          <button type="button" class="btn btn-outline-success btn-sm" id="presetPerson">
+          <button type="button" class="btn btn-outline-success btn-sm" id="presetPerson" title="Apply person tracking preset">
             <i class="bi bi-person-walking"></i> Person Tracking
           </button>
-          <button type="button" class="btn btn-outline-info btn-sm" id="presetNoisy">
+          <button type="button" class="btn btn-outline-info btn-sm" id="presetNoisy" title="Apply noisy environment preset">
             <i class="bi bi-tv"></i> Noisy Environment
           </button>
-          <button type="button" class="btn btn-outline-warning btn-sm" id="presetSensitive">
+          <button type="button" class="btn btn-outline-warning btn-sm" id="presetSensitive" title="Apply high sensitivity preset">
             <i class="bi bi-bullseye"></i> High Sensitivity
           </button>
         </div>
         <div class="d-flex gap-1">
-          <button type="button" class="btn btn-outline-primary btn-sm" id="savePresetBtn">
+          <button type="button" class="btn btn-outline-primary btn-sm" id="savePresetBtn" title="Save current settings as preset">
             <i class="bi bi-floppy"></i> Save Current as Preset
           </button>
         </div>
@@ -72,7 +72,7 @@
       <!-- Detection Mode -->
       <div class="head-section opencv-section">
         <h6 class="text-success mb-2" style="font-size:0.9rem;"><i class="bi bi-search"></i> Detection Mode</h6>
-        <select class="form-select form-select-sm" id="detectionMode">
+        <select class="form-select form-select-sm" id="detectionMode" title="Select the detection mode">
           <option value="person">Person (HOG Pedestrian Detector)</option>
           <option value="person+motion">Person + Motion (Hybrid)</option>
           <option value="upperbody">Upper Body (Haar Cascade)</option>
@@ -92,17 +92,17 @@
           <label for="motionThresholdRange" class="compact-label" title="How much a pixel must change to count as motion. Higher = less sensitive, ignores small changes. Lower = catches subtle movement but more noise." data-bs-toggle="tooltip">
             Motion Threshold <span class="badge bg-secondary ms-1" id="motionThresholdValue">25</span>
           </label>
-          <input type="range" class="form-range" id="motionThresholdRange" min="5" max="100" step="1" value="25">
+          <input type="range" class="form-range" id="motionThresholdRange" min="5" max="100" step="1" value="25" title="Adjust motion threshold">
         </div>
 
         <div class="row g-2 mb-2">
           <div class="col-6">
             <label for="minContourArea" class="compact-label" title="Minimum size of motion blob in pixels. Increase to ignore small movements (pets, shadows). A person at mid-range is ~5000-15000." data-bs-toggle="tooltip">Min Contour</label>
-            <input type="number" class="form-control form-control-sm" id="minContourArea" min="100" max="50000" step="100" value="3000">
+            <input type="number" class="form-control form-control-sm" id="minContourArea" min="100" max="50000" step="100" value="3000" title="Set minimum contour area">
           </div>
           <div class="col-6">
             <label for="maxContourArea" class="compact-label" title="Maximum motion blob size. Decrease to ignore full-frame changes (lighting shifts, camera bumps)." data-bs-toggle="tooltip">Max Contour</label>
-            <input type="number" class="form-control form-control-sm" id="maxContourArea" min="1000" max="300000" step="1000" value="100000">
+            <input type="number" class="form-control form-control-sm" id="maxContourArea" min="1000" max="300000" step="1000" value="100000" title="Set maximum contour area">
           </div>
         </div>
 
@@ -110,63 +110,63 @@
           <label for="bgLearningRateRange" class="compact-label" title="How fast the background model adapts to changes. Lower = more stable background (better for static cameras). Higher = adapts quickly (handles lighting changes)." data-bs-toggle="tooltip">
             BG Learning Rate <span class="badge bg-secondary ms-1" id="bgLearningRateValue">0.005</span>
           </label>
-          <input type="range" class="form-range" id="bgLearningRateRange" min="0.001" max="0.1" step="0.001" value="0.005">
+          <input type="range" class="form-range" id="bgLearningRateRange" min="0.001" max="0.1" step="0.001" value="0.005" title="Adjust background learning rate">
         </div>
 
         <div class="mb-2">
           <label for="noiseKernelRange" class="compact-label" title="Morphological filter size to remove speckle noise. Higher = more aggressive noise removal but may lose small targets." data-bs-toggle="tooltip">
             Noise Kernel <span class="badge bg-secondary ms-1" id="noiseKernelValue">5</span>
           </label>
-          <input type="range" class="form-range" id="noiseKernelRange" min="1" max="11" step="2" value="5">
+          <input type="range" class="form-range" id="noiseKernelRange" min="1" max="11" step="2" value="5" title="Adjust noise kernel size">
         </div>
 
         <div class="mb-2">
           <label for="blurSizeRange" class="compact-label" title="Gaussian blur before detection. Higher = smoother image, fewer false detections, but less precise target edges." data-bs-toggle="tooltip">
             Blur Size <span class="badge bg-secondary ms-1" id="blurSizeValue">5</span>
           </label>
-          <input type="range" class="form-range" id="blurSizeRange" min="1" max="15" step="2" value="5">
+          <input type="range" class="form-range" id="blurSizeRange" min="1" max="15" step="2" value="5" title="Adjust blur size">
         </div>
 
         <div class="mb-2">
           <label for="dilateSizeRange" class="compact-label" title="Merges nearby motion blobs into one target. Higher = treats spread-out motion (walking person) as one target." data-bs-toggle="tooltip">
             Dilate/Merge Size <span class="badge bg-secondary ms-1" id="dilateSizeValue">9</span>
           </label>
-          <input type="range" class="form-range" id="dilateSizeRange" min="1" max="21" step="2" value="9">
+          <input type="range" class="form-range" id="dilateSizeRange" min="1" max="21" step="2" value="9" title="Adjust dilate and merge size">
         </div>
 
         <div class="mb-2">
           <label for="varThresholdRange" class="compact-label" title="Background model sensitivity. Higher = ignores more variation (good for noisy environments). Lower = detects subtle changes." data-bs-toggle="tooltip">
             MOG2 Var Threshold <span class="badge bg-secondary ms-1" id="varThresholdValue">25</span>
           </label>
-          <input type="range" class="form-range" id="varThresholdRange" min="5" max="80" step="1" value="25">
+          <input type="range" class="form-range" id="varThresholdRange" min="5" max="80" step="1" value="25" title="Adjust MOG2 variance threshold">
         </div>
 
         <div class="mb-2">
           <label for="targetLockRange" class="compact-label" title="How strongly to stick with the current target. Higher = won't jump to new motion. Lower = switches targets more readily." data-bs-toggle="tooltip">
             Target Lock <span class="badge bg-secondary ms-1" id="targetLockValue">5</span>
           </label>
-          <input type="range" class="form-range" id="targetLockRange" min="1" max="10" step="1" value="5">
+          <input type="range" class="form-range" id="targetLockRange" min="1" max="10" step="1" value="5" title="Adjust target lock strength">
         </div>
 
         <div class="mb-2">
           <label for="confirmFramesRange" class="compact-label" title="Frames a new motion must persist before tracking it. Higher = ignores brief flickers (TVs, screens). Lower = faster target acquisition." data-bs-toggle="tooltip">
             Confirm Frames <span class="badge bg-secondary ms-1" id="confirmFramesValue">3</span>
           </label>
-          <input type="range" class="form-range" id="confirmFramesRange" min="1" max="10" step="1" value="3">
+          <input type="range" class="form-range" id="confirmFramesRange" min="1" max="10" step="1" value="3" title="Adjust confirm frames count">
         </div>
       </div>
 
       <!-- Head Tracking Toggle & Servo -->
       <div class="head-section servo-section">
         <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="htEnabled">
+          <input class="form-check-input" type="checkbox" role="switch" id="htEnabled" title="Enable head tracking servo">
           <label class="form-check-label" for="htEnabled" title="Enables servo movement to follow detected motion. Requires OpenCV to be running." data-bs-toggle="tooltip"><strong><i class="bi bi-robot text-warning"></i> Head Tracking (Servo)</strong></label>
           <span class="toggle-disabled-hint" id="htDisabledHint" style="display:none;">Requires OpenCV</span>
         </div>
 
         <div class="mb-0">
           <label for="panServoSelect" class="compact-label"><i class="bi bi-robot"></i> Pan Servo</label>
-          <select class="form-select form-select-sm" id="panServoSelect">
+          <select class="form-select form-select-sm" id="panServoSelect" title="Select the pan servo">
             <option value="">Select a servo...</option>
           </select>
           <div class="servo-bounds-info" id="servoBoundsInfo" style="display:none;"></div>
@@ -181,36 +181,36 @@
           <label for="smoothingRange" class="compact-label" title="How gradually the servo follows the target. Higher = smoother but slower response. Lower = faster but may jitter." data-bs-toggle="tooltip">
             Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.25</span>
           </label>
-          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.25">
+          <input type="range" class="form-range" id="smoothingRange" min="0.05" max="0.95" step="0.05" value="0.25" title="Adjust servo smoothing">
         </div>
 
         <div class="mb-2">
           <label for="deadzoneRange" class="compact-label" title="Center region (% of frame) where no servo movement occurs. Prevents jitter when target is near center." data-bs-toggle="tooltip">
             Deadzone <span class="badge bg-secondary ms-1" id="deadzoneValue">5</span>
           </label>
-          <input type="range" class="form-range" id="deadzoneRange" min="1" max="25" step="1" value="5">
+          <input type="range" class="form-range" id="deadzoneRange" min="1" max="25" step="1" value="5" title="Adjust center deadzone">
         </div>
 
         <div class="row g-2 mb-2">
           <div class="col-6">
             <label for="centerDeg" class="compact-label" title="Servo angle for the 'looking straight ahead' position." data-bs-toggle="tooltip">Center (&deg;)</label>
-            <input type="number" class="form-control form-control-sm" id="centerDeg" value="0">
+            <input type="number" class="form-control form-control-sm" id="centerDeg" value="0" title="Set servo center angle">
           </div>
           <div class="col-6">
             <label for="rangeDeg" class="compact-label" title="Total degrees the servo can sweep. Larger = wider tracking range." data-bs-toggle="tooltip">Range (&deg;)</label>
-            <input type="number" class="form-control form-control-sm" id="rangeDeg" min="1" max="180" value="60">
+            <input type="number" class="form-control form-control-sm" id="rangeDeg" min="1" max="180" value="60" title="Set servo sweep range">
           </div>
         </div>
 
         <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="invertPan">
+          <input class="form-check-input" type="checkbox" role="switch" id="invertPan" title="Invert pan direction">
           <label class="form-check-label compact-label" for="invertPan" title="Reverse the pan direction if servo moves opposite to target." data-bs-toggle="tooltip">Invert Pan Direction</label>
         </div>
       </div>
 
       <!-- Save Button -->
       <div class="d-flex gap-2 mb-2">
-        <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="saveConfigBtn">
+        <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="saveConfigBtn" title="Save head tracking configuration">
           <i class="bi bi-save"></i> Save Config
         </button>
       </div>
@@ -261,10 +261,10 @@
       <!-- Servo Test Panel -->
       <div class="servo-test-panel">
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testSweepBtn">
+          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testSweepBtn" title="Test servo sweep">
             <i class="bi bi-arrow-left-right"></i> Test Sweep
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn">
+          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn" title="Emergency stop servo">
             <i class="bi bi-exclamation-triangle"></i> E-Stop
           </button>
         </div>

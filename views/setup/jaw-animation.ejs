@@ -23,7 +23,7 @@
   <% if (typeof error !== 'undefined' && error) { %>
   <div class="alert alert-warning alert-dismissible py-2 mb-2" role="alert">
     <i class="bi bi-exclamation-triangle"></i> <%= error %>
-    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" title="Dismiss this alert"></button>
   </div>
   <% } %>
 
@@ -31,7 +31,7 @@
   <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
     <div class="input-group input-group-sm" style="max-width:280px;">
       <label class="input-group-text" for="configSelector"><i class="bi bi-collection"></i></label>
-      <select class="form-select form-select-sm" id="configSelector">
+      <select class="form-select form-select-sm" id="configSelector" title="Select a saved jaw config">
         <option value="">Loading...</option>
       </select>
     </div>
@@ -47,7 +47,7 @@
       </button>
     </div>
     <div class="ms-auto">
-      <button type="button" class="btn btn-primary btn-sm" id="saveConfigBtn">
+      <button type="button" class="btn btn-primary btn-sm" id="saveConfigBtn" title="Save jaw configuration">
         <i class="bi bi-save"></i> Save Config
       </button>
     </div>
@@ -60,14 +60,14 @@
       <!-- Enable Toggle -->
       <div class="jaw-section">
         <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="jawEnabled">
+          <input class="form-check-input" type="checkbox" role="switch" id="jawEnabled" title="Enable jaw animation">
           <label class="form-check-label" for="jawEnabled"><strong>Enable Jaw Animation</strong></label>
         </div>
 
         <!-- Servo Selection -->
         <div class="mb-2">
           <label for="jawServoSelect" class="compact-label"><i class="bi bi-robot"></i> Jaw Servo</label>
-          <select class="form-select form-select-sm" id="jawServoSelect">
+          <select class="form-select form-select-sm" id="jawServoSelect" title="Select the jaw servo">
             <option value="">Select a servo...</option>
           </select>
           <small class="text-muted">
@@ -85,21 +85,21 @@
           <label for="sensitivityRange" class="compact-label">
             Sensitivity <span class="badge bg-secondary ms-1" id="sensitivityValue">1.0</span>
           </label>
-          <input type="range" class="form-range" id="sensitivityRange" min="0.1" max="5.0" step="0.1" value="1.0">
+          <input type="range" class="form-range" id="sensitivityRange" min="0.1" max="5.0" step="0.1" value="1.0" title="Adjust jaw sensitivity">
         </div>
 
         <div class="mb-2" title="Controls how much the jaw movement is smoothed between frames. Lower = more responsive but jittery. Higher = smoother but slower to react. For speech, 0.5-0.7 is typical.">
           <label for="smoothingRange" class="compact-label">
             Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.6</span>
           </label>
-          <input type="range" class="form-range" id="smoothingRange" min="0.1" max="0.9" step="0.1" value="0.6">
+          <input type="range" class="form-range" id="smoothingRange" min="0.1" max="0.9" step="0.1" value="0.6" title="Adjust jaw smoothing">
         </div>
 
         <div class="mb-2" title="Audio below this level is treated as silence (jaw stays closed). Increase to ignore background noise. Decrease if the jaw doesn't move during quiet speech.">
           <label for="volumeThresholdRange" class="compact-label">
             Vol Threshold <span class="badge bg-secondary ms-1" id="volumeThresholdValue">0.02</span>
           </label>
-          <input type="range" class="form-range" id="volumeThresholdRange" min="0.01" max="0.1" step="0.01" value="0.02">
+          <input type="range" class="form-range" id="volumeThresholdRange" min="0.01" max="0.1" step="0.01" value="0.02" title="Adjust volume threshold">
         </div>
 
         <div class="row g-2 mb-2">
@@ -119,18 +119,18 @@
         <div class="mb-2" title="Quick presets that set optimal filter/quantization values. Speech: bandpass ON, 10 positions. Music: bandpass OFF, 15 positions. Custom: manual control.">
           <label class="compact-label">Preset</label>
           <div class="btn-group btn-group-sm w-100" role="group">
-            <input type="radio" class="btn-check" name="jawPreset" id="presetSpeech" value="speech" checked>
+            <input type="radio" class="btn-check" name="jawPreset" id="presetSpeech" value="speech" checked title="Select speech preset">
             <label class="btn btn-outline-info" for="presetSpeech" title="Optimized for TTS/voice: bandpass filter ON, 10 jaw positions">Speech</label>
-            <input type="radio" class="btn-check" name="jawPreset" id="presetMusic" value="music">
+            <input type="radio" class="btn-check" name="jawPreset" id="presetMusic" value="music" title="Select music preset">
             <label class="btn btn-outline-info" for="presetMusic" title="Optimized for music: bandpass OFF (full spectrum), 15 jaw positions">Music</label>
-            <input type="radio" class="btn-check" name="jawPreset" id="presetCustom" value="custom">
+            <input type="radio" class="btn-check" name="jawPreset" id="presetCustom" value="custom" title="Select custom preset">
             <label class="btn btn-outline-info" for="presetCustom" title="Manual control of all filter settings">Custom</label>
           </div>
         </div>
 
         <!-- Speech Filter Toggle -->
         <div class="form-check form-switch mb-2" title="Filters audio to 500-2500Hz range (human speech formants). Reduces jaw movement from non-speech sounds like bass, music, or background noise. Keep ON for TTS, turn OFF for music lip-sync.">
-          <input class="form-check-input" type="checkbox" role="switch" id="bandpassFilter" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="bandpassFilter" checked title="Toggle speech bandpass filter">
           <label class="form-check-label compact-label" for="bandpassFilter">
             Speech Filter <small class="text-muted">(500-2500Hz bandpass)</small>
           </label>
@@ -138,7 +138,7 @@
 
         <!-- AGC Toggle -->
         <div class="form-check form-switch mb-2" title="Automatic Gain Control normalizes audio volume so quiet and loud audio both produce full jaw range. Recommended ON for consistent jaw movement regardless of TTS volume.">
-          <input class="form-check-input" type="checkbox" role="switch" id="agcEnabled" checked>
+          <input class="form-check-input" type="checkbox" role="switch" id="agcEnabled" checked title="Toggle automatic gain control">
           <label class="form-check-label compact-label" for="agcEnabled">
             Auto Gain Control
           </label>
@@ -149,7 +149,7 @@
           <label for="quantizationRange" class="compact-label">
             Jaw Positions <span class="badge bg-secondary ms-1" id="quantizationValue">10</span>
           </label>
-          <input type="range" class="form-range" id="quantizationRange" min="5" max="20" step="1" value="10">
+          <input type="range" class="form-range" id="quantizationRange" min="5" max="20" step="1" value="10" title="Adjust number of jaw positions">
         </div>
 
         <hr class="my-2 border-secondary">
@@ -159,7 +159,7 @@
           <label for="audioLeadTimeRange" class="compact-label">
             Audio Sync Offset <span class="badge bg-secondary ms-1" id="audioLeadTimeValue">0ms</span>
           </label>
-          <input type="range" class="form-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0">
+          <input type="range" class="form-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0" title="Adjust audio sync offset">
           <div class="d-flex justify-content-between">
             <small class="text-muted">Jaw leads &larr;</small>
             <small class="text-muted">&rarr; Audio leads</small>
@@ -204,14 +204,14 @@
               <i class="bi bi-save"></i> Save
             </button>
           </div>
-          <textarea class="form-control form-control-sm" id="ttsTestText" rows="2">The quick brown fox jumped over the lazy dog</textarea>
+          <textarea class="form-control form-control-sm" id="ttsTestText" rows="2" title="Enter TTS test text">The quick brown fox jumped over the lazy dog</textarea>
         </div>
 
         <div class="d-flex gap-2 mb-2">
-          <button type="button" class="btn btn-success btn-sm flex-grow-1" id="playTtsBtn">
+          <button type="button" class="btn btn-success btn-sm flex-grow-1" id="playTtsBtn" title="Play TTS and animate jaw">
             <i class="bi bi-play-fill"></i> Play TTS &amp; Jaw
           </button>
-          <button type="button" class="btn btn-danger btn-sm" id="stopBtn">
+          <button type="button" class="btn btn-danger btn-sm" id="stopBtn" title="Stop TTS playback">
             <i class="bi bi-stop-fill"></i> Stop
           </button>
         </div>
@@ -262,10 +262,10 @@
       <!-- Servo Test -->
       <div class="servo-test-panel">
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testJawBtn">
+          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testJawBtn" title="Test jaw mechanical sweep">
             <i class="bi bi-arrow-left-right"></i> Test Mechanical Sweep
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn">
+          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn" title="Emergency stop jaw servo">
             <i class="bi bi-exclamation-triangle"></i> E-Stop
           </button>
         </div>

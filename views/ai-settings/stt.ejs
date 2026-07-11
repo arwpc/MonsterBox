@@ -5,7 +5,7 @@
             <span class="mb-text-secondary">· microphone and recognition model</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm">
+            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm" title="Back to AI Settings">
                 <i class="bi bi-arrow-left"></i> AI Settings
             </a>
         </div>
@@ -38,18 +38,18 @@
                 <div class="card-body">
                     <div class="row g-3 align-items-center mb-3">
                         <div class="col-auto">
-                            <button type="button" class="btn btn-success btn-lg" id="startListening">
+                            <button type="button" class="btn btn-success btn-lg" id="startListening" title="Start real-time transcription">
                                 <i class="bi bi-record-circle"></i> Start Listening
                             </button>
                         </div>
                         <div class="col-auto">
-                            <button type="button" class="btn btn-danger btn-lg" id="stopListening"
+                            <button type="button" class="btn btn-danger btn-lg" id="stopListening" title="Stop real-time transcription"
                                 style="opacity: 0.5; cursor: not-allowed;">
                                 <i class="bi bi-stop-circle"></i> Stop Listening
                             </button>
                         </div>
                         <div class="col-auto">
-                            <button type="button" class="btn btn-outline-info" id="sttTwoSecTest">
+                            <button type="button" class="btn btn-outline-info" id="sttTwoSecTest" title="Run a 2-second microphone test">
                                 <i class="bi bi-mic-fill"></i> 2s Test
                             </button>
                         </div>
@@ -83,13 +83,13 @@
                                     <p class="small text-muted mb-2">Hear what the character's microphone picks up through your browser.</p>
                                     <div class="mb-2">
                                         <label class="form-label small">Source Microphone</label>
-                                        <select id="stt-listenin-source" class="form-select form-select-sm">
+                                        <select id="stt-listenin-source" class="form-select form-select-sm" title="Source microphone to listen in on">
                                             <option value="default">System Default Input</option>
                                         </select>
                                     </div>
                                     <div class="mb-2">
                                         <label class="form-label small">Browser Volume</label>
-                                        <input type="range" id="stt-listenin-volume" class="form-range" min="0" max="100" value="75" step="5">
+                                        <input type="range" id="stt-listenin-volume" class="form-range" min="0" max="100" value="75" step="5" title="Browser playback volume">
                                     </div>
                                     <div class="d-flex align-items-center gap-2 mb-2">
                                         <div class="progress flex-grow-1" style="height: 12px;">
@@ -98,7 +98,7 @@
                                         <span id="stt-listenin-vu-label" class="badge bg-secondary" style="min-width:40px">0%</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <button id="btn-stt-listenin" class="btn btn-info btn-sm" type="button">
+                                        <button id="btn-stt-listenin" class="btn btn-info btn-sm" type="button" title="Start listening through browser speaker">
                                             <i class="bi bi-headphones"></i> <span id="stt-listenin-text">Start Listening</span>
                                         </button>
                                         <span id="stt-listenin-status" class="badge bg-secondary">Off</span>
@@ -116,7 +116,7 @@
                                     <p class="small text-muted mb-2">Speak into your browser mic and hear it through the character's speaker.</p>
                                     <div class="mb-2">
                                         <label class="form-label small">Target Speaker</label>
-                                        <select id="stt-talkthrough-sink" class="form-select form-select-sm">
+                                        <select id="stt-talkthrough-sink" class="form-select form-select-sm" title="Target speaker for talk-through">
                                             <option value="default">System Default Output</option>
                                         </select>
                                     </div>
@@ -127,7 +127,7 @@
                                         <span id="stt-talkthrough-vu-label" class="badge bg-secondary" style="min-width:40px">0%</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
-                                        <button id="btn-stt-talkthrough" class="btn btn-warning btn-sm" type="button">
+                                        <button id="btn-stt-talkthrough" class="btn btn-warning btn-sm" type="button" title="Talk through the character speaker">
                                             <i class="bi bi-mic-fill"></i> <span id="stt-talkthrough-text">Start Talking</span>
                                         </button>
                                         <span id="stt-talkthrough-status" class="badge bg-secondary">Off</span>
@@ -170,7 +170,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="sttModel" class="form-label">STT Model</label>
-                                    <select class="form-select" id="sttModel" name="model">
+                                    <select class="form-select" id="sttModel" name="model" title="Select the speech-to-text model">
                                         <option value="">Loading models...</option>
                                     </select>
                                     <small class="text-muted">
@@ -182,7 +182,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="sttLanguage" class="form-label">Language</label>
-                                    <select class="form-select" id="sttLanguage" name="language">
+                                    <select class="form-select" id="sttLanguage" name="language" title="Language for speech recognition">
                                         <option value="en">English (Recommended)</option>
                                         <option value="es">Spanish</option>
                                         <option value="fr">French</option>
@@ -202,7 +202,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="sampleRate" class="form-label">Sample Rate</label>
-                                    <select class="form-select" id="sampleRate" name="sampleRate">
+                                    <select class="form-select" id="sampleRate" name="sampleRate" title="Audio sample rate">
                                         <option value="8000">8 kHz</option>
                                         <option value="16000" selected>16 kHz</option>
                                         <option value="22050">22.05 kHz</option>
@@ -215,7 +215,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Voice Activity Detection (VAD)</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="vadEnabled"
+                                        <input class="form-check-input" type="checkbox" id="vadEnabled" title="Enable voice activity detection"
                                             name="vadEnabled" checked>
                                         <label class="form-check-label" for="vadEnabled">
                                             Enable VAD
@@ -235,7 +235,7 @@
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label for="microphonePart" class="form-label">Microphone Part</label>
-                                    <select class="form-select" id="microphonePart">
+                                    <select class="form-select" id="microphonePart" title="Select the microphone hardware">
                                         <option value="">Loading microphone parts...</option>
                                     </select>
                                     <small class="text-muted">Select the microphone hardware for this character</small>
@@ -245,7 +245,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Input Gain <span id="inputGainLabel"
                                             class="text-muted">100%</span></label>
-                                    <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1"
+                                    <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1" title="Adjust microphone input gain"
                                         value="100">
                                     <small class="text-muted">Adjusted via PipeWire/PulseAudio (applies
                                         immediately)</small>
@@ -254,7 +254,7 @@
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <button type="button" class="btn btn-info w-100 mt-4"
-                                        id="testMicrophoneIntegration">
+                                        id="testMicrophoneIntegration" title="Test microphone through speech-to-text">
                                         <i class="bi bi-arrow-repeat"></i> Test Microphone → STT
                                     </button>
                                 </div>
@@ -274,7 +274,7 @@
                                         <span id="vadThresholdLabel" class="ms-2 text-muted"
                                             style="display:none">40%</span>
                                     </label>
-                                    <input type="range" class="form-range" id="vadThreshold" name="vadThreshold"
+                                    <input type="range" class="form-range" id="vadThreshold" name="vadThreshold" title="Voice activity detection threshold"
                                         min="0.05" max="0.95" step="0.05" value="0.40">
                                     <small class="text-muted">Lower = more sensitive (may pick up noise). Tune while
                                         watching VU meter.</small>
@@ -285,7 +285,7 @@
                                     <label for="vadSilenceDuration" class="form-label">
                                         Silence Duration: <span id="vadSilenceDurationValue">500</span>ms
                                     </label>
-                                    <input type="range" class="form-range" id="vadSilenceDuration"
+                                    <input type="range" class="form-range" id="vadSilenceDuration" title="Silence duration before ending speech"
                                         name="vadSilenceDuration" min="100" max="2000" step="100" value="500">
                                     <small class="text-muted">How long to wait before ending speech</small>
                                 </div>
@@ -302,7 +302,7 @@
                                     <label for="captureChunkDuration" class="form-label">
                                         Capture Chunk Duration: <span id="captureChunkDurationValue">0.5</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="captureChunkDuration"
+                                    <input type="range" class="form-range" id="captureChunkDuration" title="Duration of each audio capture chunk"
                                         name="captureChunkDuration" min="0.25" max="1.0" step="0.25" value="0.5">
                                     <small class="text-muted">Duration of each audio capture chunk (0.5s
                                         recommended)</small>
@@ -313,7 +313,7 @@
                                     <label for="sttThrottleInterval" class="form-label">
                                         STT Throttle Interval: <span id="sttThrottleIntervalValue">2500</span>ms
                                     </label>
-                                    <input type="range" class="form-range" id="sttThrottleInterval"
+                                    <input type="range" class="form-range" id="sttThrottleInterval" title="How often audio is sent to STT"
                                         name="sttThrottleInterval" min="1000" max="5000" step="500" value="2500">
                                     <small class="text-muted">How often to send audio to STT service</small>
                                 </div>
@@ -326,7 +326,7 @@
                                     <label for="minBufferDuration" class="form-label">
                                         Minimum Buffer Duration: <span id="minBufferDurationValue">2.5</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="minBufferDuration"
+                                    <input type="range" class="form-range" id="minBufferDuration" title="Minimum audio duration before transcription"
                                         name="minBufferDuration" min="1.0" max="5.0" step="0.5" value="2.5">
                                     <small class="text-muted">Minimum audio duration before transcription (2.5s captures
                                         full sentences)</small>
@@ -337,7 +337,7 @@
                                     <label for="maxBufferDuration" class="form-label">
                                         Maximum Buffer Duration: <span id="maxBufferDurationValue">6.0</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="maxBufferDuration"
+                                    <input type="range" class="form-range" id="maxBufferDuration" title="Maximum audio buffer size"
                                         name="maxBufferDuration" min="3.0" max="10.0" step="1.0" value="6.0">
                                     <small class="text-muted">Maximum audio buffer size (6s allows long phrases)</small>
                                 </div>
@@ -350,7 +350,7 @@
                                     <label for="microphoneInputGain" class="form-label">
                                         Microphone Input Gain: <span id="microphoneInputGainValue">70</span>%
                                     </label>
-                                    <input type="range" class="form-range" id="microphoneInputGain"
+                                    <input type="range" class="form-range" id="microphoneInputGain" title="System microphone input volume"
                                         name="microphoneInputGain" min="25" max="100" step="5" value="70">
                                     <small class="text-muted">System microphone volume (70% prevents clipping)</small>
                                 </div>
@@ -366,7 +366,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Audio Preprocessing</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="audioFilterEnabled"
+                                        <input class="form-check-input" type="checkbox" id="audioFilterEnabled" title="Enable bandpass and denoise filters"
                                             name="audioFilterEnabled" checked>
                                         <label class="form-check-label" for="audioFilterEnabled">
                                             Enable Bandpass & Denoise Filters
@@ -381,7 +381,7 @@
                                     <label for="highpassFreq" class="form-label">
                                         Highpass Filter: <span id="highpassFreqValue">180</span>Hz
                                     </label>
-                                    <input type="range" class="form-range" id="highpassFreq" name="highpassFreq"
+                                    <input type="range" class="form-range" id="highpassFreq" name="highpassFreq" title="Highpass filter cutoff frequency"
                                         min="50" max="500" step="50" value="180">
                                     <small class="text-muted">Remove low-frequency rumble</small>
                                 </div>
@@ -394,7 +394,7 @@
                                     <label for="lowpassFreq" class="form-label">
                                         Lowpass Filter: <span id="lowpassFreqValue">4200</span>Hz
                                     </label>
-                                    <input type="range" class="form-range" id="lowpassFreq" name="lowpassFreq"
+                                    <input type="range" class="form-range" id="lowpassFreq" name="lowpassFreq" title="Lowpass filter cutoff frequency"
                                         min="2000" max="8000" step="200" value="4200">
                                     <small class="text-muted">Remove high-frequency hiss</small>
                                 </div>
@@ -404,7 +404,7 @@
                                     <label for="denoiseLevel" class="form-label">
                                         Denoise Level: <span id="denoiseLevelValue">-22</span>dB
                                     </label>
-                                    <input type="range" class="form-range" id="denoiseLevel" name="denoiseLevel"
+                                    <input type="range" class="form-range" id="denoiseLevel" name="denoiseLevel" title="Noise reduction strength"
                                         min="-50" max="-10" step="5" value="-22">
                                     <small class="text-muted">Noise reduction strength</small>
                                 </div>
@@ -420,7 +420,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Sound Effects Filtering</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="filterSfx" name="filterSfx"
+                                        <input class="form-check-input" type="checkbox" id="filterSfx" name="filterSfx" title="Filter bracketed sound effects"
                                             checked>
                                         <label class="form-check-label" for="filterSfx">
                                             Filter Bracketed Sound Effects
@@ -434,7 +434,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Language Validation</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="validateEnglish"
+                                        <input class="form-check-input" type="checkbox" id="validateEnglish" title="Validate transcriptions are English"
                                             name="validateEnglish" checked>
                                         <label class="form-check-label" for="validateEnglish">
                                             Validate English Text
@@ -452,7 +452,7 @@
                                     <label for="minLetterRatio" class="form-label">
                                         Min Letter Ratio: <span id="minLetterRatioValue">55</span>%
                                     </label>
-                                    <input type="range" class="form-range" id="minLetterRatio" name="minLetterRatio"
+                                    <input type="range" class="form-range" id="minLetterRatio" name="minLetterRatio" title="Minimum percentage of letters in text"
                                         min="30" max="90" step="5" value="55">
                                     <small class="text-muted">Minimum percentage of letters in text</small>
                                 </div>
@@ -461,7 +461,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Require Vowels</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="requireVowels"
+                                        <input class="form-check-input" type="checkbox" id="requireVowels" title="Require at least one vowel"
                                             name="requireVowels" checked>
                                         <label class="form-check-label" for="requireVowels">
                                             Require At Least One Vowel
@@ -472,7 +472,7 @@
                             </div>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" title="Save STT configuration">
                                 <i class="bi bi-check-circle"></i> Save Configuration
                             </button>
                         </div>

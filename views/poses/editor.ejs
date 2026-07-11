@@ -36,18 +36,18 @@
           <div class="mb-panel-body">
             <div class="mb-field">
               <label for="poseName" class="mb-field-label">Name</label>
-              <input type="text" id="poseName" class="mb-input" placeholder="e.g. Scare, Wave, Rest">
+              <input type="text" id="poseName" class="mb-input" placeholder="e.g. Scare, Wave, Rest" title="Pose name">
             </div>
             <div class="mb-field">
               <label for="poseCategory" class="mb-field-label">Category</label>
-              <input type="text" id="poseCategory" class="mb-input" placeholder="e.g. attack, greeting, idle">
+              <input type="text" id="poseCategory" class="mb-input" placeholder="e.g. attack, greeting, idle" title="Pose category">
             </div>
             <div class="mb-field">
               <label for="poseDescription" class="mb-field-label">Description</label>
-              <textarea id="poseDescription" class="mb-textarea" rows="2" placeholder="Optional description"></textarea>
+              <textarea id="poseDescription" class="mb-textarea" rows="2" placeholder="Optional description" title="Optional pose description"></textarea>
             </div>
             <label class="mb-check">
-              <input type="checkbox" id="poseConcurrent">
+              <input type="checkbox" id="poseConcurrent" title="Move all parts simultaneously">
               Move all parts simultaneously
             </label>
           </div>
@@ -61,7 +61,7 @@
           <div class="mb-panel-body">
             <div class="mb-field">
               <label for="audioType" class="mb-field-label">Audio Type</label>
-              <select id="audioType" class="mb-select">
+              <select id="audioType" class="mb-select" title="Select audio type">
                 <option value="none">None</option>
                 <option value="file">Sound File</option>
                 <option value="tts">Text-to-Speech</option>
@@ -69,13 +69,13 @@
             </div>
             <div id="audioFileSection" class="mb-field" style="display:none;">
               <label for="audioFile" class="mb-field-label">Sound File</label>
-              <select id="audioFile" class="mb-select">
+              <select id="audioFile" class="mb-select" title="Select an audio file">
                 <option value="">Select audio…</option>
               </select>
             </div>
             <div id="audioTtsSection" class="mb-field" style="display:none;">
               <label for="audioTtsText" class="mb-field-label">TTS Text</label>
-              <input type="text" id="audioTtsText" class="mb-input" placeholder="What should the character say?">
+              <input type="text" id="audioTtsText" class="mb-input" placeholder="What should the character say?" title="Text for the character to speak">
             </div>
           </div>
         </div>

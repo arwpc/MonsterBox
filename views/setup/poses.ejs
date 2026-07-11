@@ -2,7 +2,7 @@
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h1><i class="bi bi-person-arms-up"></i> Setup Poses</h1>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPoseModal">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPoseModal" title="Create a new pose">
                             <i class="bi bi-plus-circle"></i> Create Pose
                         </button>
                     </div>
@@ -59,19 +59,19 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Create New Pose</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close this dialog"></button>
                         </div>
                         <div class="modal-body">
                             <ul class="nav nav-tabs" id="createPoseTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="template-tab" data-bs-toggle="tab"
-                                        data-bs-target="#template-pane" type="button" role="tab">
+                                        data-bs-target="#template-pane" type="button" role="tab" title="Create pose from a template">
                                         From Template
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="custom-tab" data-bs-toggle="tab"
-                                        data-bs-target="#custom-pane" type="button" role="tab">
+                                        data-bs-target="#custom-pane" type="button" role="tab" title="Create a custom pose">
                                         Custom Pose
                                     </button>
                                 </li>
@@ -83,19 +83,19 @@
                                     <form id="templatePoseForm">
                                         <div class="mb-3">
                                             <label for="templateName" class="form-label">Template</label>
-                                            <select class="form-select" id="templateName" required>
+                                            <select class="form-select" id="templateName" required title="Select a pose template">
                                                 <option value="">Select a template...</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
                                             <label for="templateOption" class="form-label">Option</label>
-                                            <select class="form-select" id="templateOption" required>
+                                            <select class="form-select" id="templateOption" required title="Select a template option">
                                                 <option value="">Select template first...</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
                                             <label for="templatePartId" class="form-label">Part</label>
-                                            <select class="form-select" id="templatePartId" required>
+                                            <select class="form-select" id="templatePartId" required title="Select a hardware part">
                                                 <option value="">Select a part...</option>
                                             </select>
                                         </div>
@@ -103,7 +103,7 @@
                                             <label for="templateCustomName" class="form-label">Custom Name
                                                 (optional)</label>
                                             <input type="text" class="form-control" id="templateCustomName"
-                                                placeholder="Leave blank to use default name">
+                                                placeholder="Leave blank to use default name" title="Optional custom name for the pose">
                                         </div>
                                     </form>
                                 </div>
@@ -113,16 +113,16 @@
                                     <form id="customPoseForm">
                                         <div class="mb-3">
                                             <label for="customName" class="form-label">Pose Name</label>
-                                            <input type="text" class="form-control" id="customName" required>
+                                            <input type="text" class="form-control" id="customName" required title="Name of the pose">
                                         </div>
                                         <div class="mb-3">
                                             <label for="customDescription" class="form-label">Description</label>
-                                            <textarea class="form-control" id="customDescription" rows="2"></textarea>
+                                            <textarea class="form-control" id="customDescription" rows="2" title="Description of the pose"></textarea>
                                         </div>
                                         <div class="mb-3">
                                             <label for="customCategory" class="form-label">Category</label>
                                             <input type="text" class="form-control" id="customCategory"
-                                                placeholder="e.g., head, elbow, arm">
+                                                placeholder="e.g., head, elbow, arm" title="Category for the pose">
                                         </div>
                                         <div class="alert alert-info">
                                             <i class="bi bi-info-circle"></i>
@@ -135,8 +135,8 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="createPoseBtn">Create Pose</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="createPoseBtn" title="Create the pose">Create Pose</button>
                         </div>
                     </div>
                 </div>

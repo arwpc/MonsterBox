@@ -26,7 +26,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="characterModalLabel">Create Character</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
           </div>
           <div class="modal-body">
             <form id="characterForm">
@@ -34,12 +34,12 @@
 
               <div class="mb-3">
                 <label for="characterName" class="form-label">Character Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="characterName" name="name" required>
+                <input type="text" class="form-control" id="characterName" name="name" required title="Character name">
               </div>
 
               <div class="mb-3">
                 <label for="characterAgent" class="form-label">ElevenLabs AI Agent</label>
-                <select class="form-select" id="characterAgent" name="elevenLabsAgentId">
+                <select class="form-select" id="characterAgent" name="elevenLabsAgentId" title="Assign an AI agent">
                   <option value="">No agent assigned</option>
                 </select>
                 <div class="form-text">Assign an AI agent for conversational interactions</div>
@@ -67,13 +67,13 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="testAgentModalLabel">Test AI Agent</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" title="Close"></button>
           </div>
           <div class="modal-body">
             <p>Testing agent: <strong id="testAgentName"></strong></p>
             <div class="mb-3">
               <label for="testMessage" class="form-label">Test Message</label>
-              <input type="text" class="form-control" id="testMessage" placeholder="Hello, how are you?"
+              <input type="text" class="form-control" id="testMessage" placeholder="Hello, how are you?" title="Test message to send"
                 value="Hello, how are you?">
             </div>
             <div id="testResult" class="alert alert-secondary d-none"></div>

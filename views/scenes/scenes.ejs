@@ -6,10 +6,10 @@
       <span class="mb-text-secondary">· queue up a show</span>
     </h1>
     <div class="mb-page-header-actions">
-      <button class="mb-btn mb-btn-secondary" onclick="window.showStoriesModal()">
+      <button class="mb-btn mb-btn-secondary" onclick="window.showStoriesModal()" title="Open stories">
         <i class="bi bi-collection"></i> Stories
       </button>
-      <a href="/scenes/edit/new" class="mb-btn mb-btn-primary">
+      <a href="/scenes/edit/new" class="mb-btn mb-btn-primary" title="Create a new scene">
         <i class="bi bi-plus-circle"></i> New Scene
       </a>
     </div>
@@ -21,7 +21,7 @@
     <div class="mb-panel mb-panel-accent">
       <div class="mb-panel-header">
         <h2 class="mb-panel-title"><i class="bi bi-list-ul"></i> Scenes</h2>
-        <button class="mb-btn mb-btn-ghost mb-btn-sm" onclick="window.addSelectedToQueue()">
+        <button class="mb-btn mb-btn-ghost mb-btn-sm" onclick="window.addSelectedToQueue()" title="Add selected scenes to queue">
           <i class="bi bi-plus-lg"></i> Add Selected to Queue
         </button>
       </div>
@@ -41,24 +41,24 @@
 
         <!-- Queue Controls -->
         <div class="mb-btn-group" role="group" style="width: 100%; margin-bottom: var(--mb-space-3);">
-          <button class="mb-btn mb-btn-primary" style="flex:1;" onclick="window.playQueue(false)">
+          <button class="mb-btn mb-btn-primary" style="flex:1;" onclick="window.playQueue(false)" title="Play queue">
             <i class="bi bi-play-fill"></i> Play
           </button>
-          <button class="mb-btn mb-btn-ai" style="flex:1;" onclick="window.playQueue(true)">
+          <button class="mb-btn mb-btn-ai" style="flex:1;" onclick="window.playQueue(true)" title="Loop queue">
             <i class="bi bi-repeat"></i> Loop
           </button>
-          <button class="mb-btn mb-btn-secondary" style="flex:1;" onclick="window.stopQueue()">
+          <button class="mb-btn mb-btn-secondary" style="flex:1;" onclick="window.stopQueue()" title="Stop queue">
             <i class="bi bi-stop-fill"></i> Stop
           </button>
-          <button class="mb-btn mb-btn-danger" style="flex:1;" onclick="window.clearQueue()">
+          <button class="mb-btn mb-btn-danger" style="flex:1;" onclick="window.clearQueue()" title="Clear queue">
             <i class="bi bi-trash"></i> Clear
           </button>
         </div>
 
         <!-- Save Queue as Story -->
         <div class="mb-input-group" style="margin-bottom: var(--mb-space-3);">
-          <input type="text" id="storyName" class="mb-input" placeholder="Story name…">
-          <button class="mb-btn mb-btn-secondary" onclick="window.saveQueueAsStory()">
+          <input type="text" id="storyName" class="mb-input" placeholder="Story name…" title="Story name">
+          <button class="mb-btn mb-btn-secondary" onclick="window.saveQueueAsStory()" title="Save queue as story">
             <i class="bi bi-save"></i> Save Story
           </button>
         </div>
@@ -82,14 +82,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-collection"></i> Stories</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
       </div>
       <div class="modal-body">
         <div id="storiesStatus" class="mb-2"></div>
         <div id="storiesList"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Close">Close</button>
       </div>
     </div>
   </div>

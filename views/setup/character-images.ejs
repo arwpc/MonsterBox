@@ -1,17 +1,17 @@
 <div class="container">
       <div class="d-flex justify-content-end mb-2 gap-2">
-        <button id="saveBtn" class="btn btn-success btn-sm"><i class="bi bi-check-circle"></i> Save & Return</button>
-        <a href="/setup/characters" class="btn btn-secondary btn-sm"><i class="bi bi-x-circle"></i> Cancel</a>
+        <button id="saveBtn" class="btn btn-success btn-sm" title="Save and return to characters"><i class="bi bi-check-circle"></i> Save & Return</button>
+        <a href="/setup/characters" class="btn btn-secondary btn-sm" title="Cancel and return to characters"><i class="bi bi-x-circle"></i> Cancel</a>
       </div>
       <div class="mb-3">
         <label class="form-label">Character ID</label>
-        <input id="charId" class="form-control" type="number"
+        <input id="charId" class="form-control" type="number" title="Character ID"
           value="<%= (typeof currentCharacter !== 'undefined' && currentCharacter) ? currentCharacter : (config && config.selectedCharacter ? config.selectedCharacter : '') %>" />
       </div>
       <form id="uploadForm" class="mb-3">
         <div class="input-group">
-          <input type="file" id="imageFile" name="image" class="form-control" accept="image/*" required>
-          <button class="btn btn-primary" type="submit"><i class="bi bi-upload"></i> Upload</button>
+          <input type="file" id="imageFile" name="image" class="form-control" accept="image/*" required title="Choose an image to upload">
+          <button class="btn btn-primary" type="submit" title="Upload an image"><i class="bi bi-upload"></i> Upload</button>
         </div>
       </form>
       <div id="activeBox" class="mb-3 text-muted">Active: <span id="activeName">(none)</span></div>
@@ -36,8 +36,8 @@
                 '<div class="card" style="width:12rem">' +
                 '<img src="' + esc(img.url) + '" class="card-img-top" alt="">' +
                 '<div class="card-body p-2 d-flex gap-1">' +
-                '<button class="btn btn-sm btn-outline-success" onclick="__imgs.setActive(\'' + esc(img.filename) + '\')"><i class="bi bi-check2"></i></button>' +
-                '<button class="btn btn-sm btn-outline-danger" onclick="__imgs.del(\'' + esc(img.filename) + '\')"><i class="bi bi-trash"></i></button>' +
+                '<button class="btn btn-sm btn-outline-success" title="Set as active image" onclick="__imgs.setActive(\'' + esc(img.filename) + '\')"><i class="bi bi-check2"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger" title="Delete this image" onclick="__imgs.del(\'' + esc(img.filename) + '\')"><i class="bi bi-trash"></i></button>' +
                 '</div></div></div>';
             }
             elList.innerHTML = html || '<div class="col-12 text-muted">No images yet</div>';

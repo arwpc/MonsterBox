@@ -6,7 +6,7 @@
             <span class="mb-text-secondary">· multi-animatronic broadcast control</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/goblin-management" class="btn btn-outline-secondary btn-sm">
+            <a href="/goblin-management" class="btn btn-outline-secondary btn-sm" title="Go to Goblin Management">
                 <i class="bi bi-hdd-network"></i> Goblins
             </a>
         </div>
@@ -18,7 +18,7 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-terminal"></i> Command Log
-                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">
+                    <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()" title="Clear the command log">
                         <i class="bi bi-trash"></i> Clear
                     </button>
                 </div>
@@ -37,13 +37,13 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-activity"></i> System Status
-                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="disableAllWebcams()">
+                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="disableAllWebcams()" title="Disable webcams on all nodes">
                         <i class="bi bi-camera-video-off"></i> Disable All Webcams
                     </button>
-                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="enableAllWebcams()">
+                    <button class="btn btn-sm btn-secondary float-end ms-2" onclick="enableAllWebcams()" title="Enable webcams on all nodes">
                         <i class="bi bi-camera-video"></i> Enable All Webcams
                     </button>
-                    <button class="btn btn-sm btn-warning float-end" onclick="refreshStatus()">
+                    <button class="btn btn-sm btn-warning float-end" onclick="refreshStatus()" title="Refresh system status">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -66,10 +66,10 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-display"></i> Goblin Status
-                    <a href="/goblin-management" class="btn btn-sm btn-outline-secondary float-end" target="_blank">
+                    <a href="/goblin-management" class="btn btn-sm btn-outline-secondary float-end" target="_blank" title="Open Goblin Management in new tab">
                         <i class="bi bi-box-arrow-up-right"></i> Goblin Management
                     </a>
-                    <button class="btn btn-sm btn-outline-secondary float-end me-2" onclick="refreshGoblins()">
+                    <button class="btn btn-sm btn-outline-secondary float-end me-2" onclick="refreshGoblins()" title="Refresh Goblin status">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -97,9 +97,9 @@
                     <div class="mb-3">
                         <label class="form-label">Message to All Animatronics:</label>
                         <textarea class="form-control" id="broadcastText" rows="3"
-                            placeholder="Enter message...">Welcome to Warner Castle!</textarea>
+                            placeholder="Enter message..." title="Message to broadcast to all animatronics">Welcome to Warner Castle!</textarea>
                     </div>
-                    <button class="btn btn-warning w-100" onclick="sayAll()">
+                    <button class="btn btn-warning w-100" onclick="sayAll()" title="Speak message on all animatronics">
                         <i class="bi bi-volume-up"></i> Say to All
                     </button>
                 </div>
@@ -114,16 +114,16 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">Cooldown (ms):</label>
-                        <input type="number" class="form-control" id="poseCooldown" value="3000">
+                        <input type="number" class="form-control" id="poseCooldown" value="3000" title="Cooldown between random poses in milliseconds">
                     </div>
                     <div class="row">
                         <div class="col-6">
-                            <button class="btn btn-success w-100" onclick="enableRandomPoses()">
+                            <button class="btn btn-success w-100" onclick="enableRandomPoses()" title="Enable random poses on all nodes">
                                 <i class="bi bi-play-circle"></i> Enable All
                             </button>
                         </div>
                         <div class="col-6">
-                            <button class="btn btn-danger w-100" onclick="disableRandomPoses()">
+                            <button class="btn btn-danger w-100" onclick="disableRandomPoses()" title="Disable random poses on all nodes">
                                 <i class="bi bi-stop-circle"></i> Disable All
                             </button>
                         </div>
@@ -143,22 +143,22 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <button class="btn btn-warning w-100" onclick="restartServices()">
+                            <button class="btn btn-warning w-100" onclick="restartServices()" title="Restart service on all nodes">
                                 <i class="bi bi-arrow-clockwise"></i> Restart All Services
                             </button>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <button class="btn btn-info w-100" onclick="healthCheck()">
+                            <button class="btn btn-info w-100" onclick="healthCheck()" title="Check health of all nodes">
                                 <i class="bi bi-heart-pulse"></i> Health Check
                             </button>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <button class="btn btn-danger w-100" onclick="rebootAll()">
+                            <button class="btn btn-danger w-100" onclick="rebootAll()" title="Reboot all online nodes">
                                 <i class="bi bi-power"></i> Reboot All
                             </button>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <button class="btn btn-success w-100" onclick="startAllQueueLoops()">
+                            <button class="btn btn-success w-100" onclick="startAllQueueLoops()" title="Start scene queue loops on all nodes">
                                 <i class="bi bi-play-circle"></i> Start All Queue Loops
                             </button>
                         </div>

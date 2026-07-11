@@ -16,42 +16,42 @@
 <!-- Tab Navigation -->
 <ul class="nav nav-tabs mb-3" id="systemTabs" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" title="Show system overview">
       <i class="bi bi-speedometer2"></i> Overview
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">
+    <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab" title="Show performance history">
       <i class="bi bi-graph-up"></i> Performance
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
+    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" title="Show system logs">
       <i class="bi bi-journal-text"></i> Logs
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" title="Show system settings">
       <i class="bi bi-gear"></i> Settings
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="ssh-tab" data-bs-toggle="tab" data-bs-target="#ssh" type="button" role="tab">
+    <button class="nav-link" id="ssh-tab" data-bs-toggle="tab" data-bs-target="#ssh" type="button" role="tab" title="Show SSH keys">
       <i class="bi bi-key"></i> SSH Keys
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab">
+    <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" title="Show config templates">
       <i class="bi bi-clipboard-data"></i> Templates
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="resource-tab" data-bs-toggle="tab" data-bs-target="#resource" type="button" role="tab">
+    <button class="nav-link" id="resource-tab" data-bs-toggle="tab" data-bs-target="#resource" type="button" role="tab" title="Show resource usage">
       <i class="bi bi-cpu"></i> Resources
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="movement-tab" data-bs-toggle="tab" data-bs-target="#movement" type="button" role="tab">
+    <button class="nav-link" id="movement-tab" data-bs-toggle="tab" data-bs-target="#movement" type="button" role="tab" title="Show movement telemetry">
       <i class="bi bi-activity"></i> Movement
     </button>
   </li>
@@ -137,10 +137,10 @@
             <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
             <div>
               <span class="badge bg-secondary me-2" id="themePreviewLabel">Previewing: --</span>
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview">
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview" title="Reset theme preview">
                 <i class="bi bi-arrow-counterclockwise"></i> Reset
               </button>
-              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme">
+              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme" title="Apply selected theme">
                 <i class="bi bi-check-circle"></i> Apply Theme
               </button>
             </div>
@@ -160,9 +160,9 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0"><i class="bi bi-graph-up"></i> Performance History</h5>
         <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-secondary active" data-period="24h">24 Hours</button>
-          <button class="btn btn-outline-secondary" data-period="1w">1 Week</button>
-          <button class="btn btn-outline-secondary" data-period="1m">1 Month</button>
+          <button class="btn btn-outline-secondary active" data-period="24h" title="Show last 24 hours">24 Hours</button>
+          <button class="btn btn-outline-secondary" data-period="1w" title="Show last 1 week">1 Week</button>
+          <button class="btn btn-outline-secondary" data-period="1m" title="Show last 1 month">1 Month</button>
         </div>
       </div>
       <div class="card-body">
@@ -184,14 +184,14 @@
       <div class="card-header">
         <div class="row align-items-center g-2">
           <div class="col-auto">
-            <select class="form-select form-select-sm" id="logSource">
+            <select class="form-select form-select-sm" id="logSource" title="Select log source">
               <option value="journal" selected>Journal (systemd)</option>
               <option value="console">Console Output (stdout)</option>
               <option value="errors">Error Output (stderr)</option>
             </select>
           </div>
           <div class="col-auto">
-            <select class="form-select form-select-sm" id="logService">
+            <select class="form-select form-select-sm" id="logService" title="Select service for logs">
               <option value="monsterbox">monsterbox</option>
               <option value="mjpg-streamer">mjpg-streamer</option>
               <option value="pigpiod">pigpiod</option>
@@ -199,7 +199,7 @@
             </select>
           </div>
           <div class="col-auto">
-            <select class="form-select form-select-sm" id="logLines">
+            <select class="form-select form-select-sm" id="logLines" title="Select number of log lines">
               <option value="50">50 lines</option>
               <option value="100" selected>100 lines</option>
               <option value="200">200 lines</option>
@@ -207,11 +207,11 @@
             </select>
           </div>
           <div class="col-auto">
-            <button class="btn btn-sm btn-primary" id="btnRefreshLogs"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <button class="btn btn-sm btn-primary" id="btnRefreshLogs" title="Refresh logs"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
           </div>
           <div class="col-auto">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="logAutoRefresh">
+              <input class="form-check-input" type="checkbox" id="logAutoRefresh" title="Toggle log auto-refresh">
               <label class="form-check-label" for="logAutoRefresh">Auto-refresh</label>
             </div>
           </div>
@@ -228,7 +228,7 @@
     <div class="accordion" id="settingsAccordion">
       <!-- System Volume -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#volumeSettings"><i class="bi bi-volume-up me-2"></i>System Volume</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#volumeSettings" title="Expand system volume settings"><i class="bi bi-volume-up me-2"></i>System Volume</button></h2>
         <div id="volumeSettings" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <div class="row align-items-center g-3">
@@ -236,7 +236,7 @@
                 <i class="bi bi-volume-off fs-5"></i>
               </div>
               <div class="col-md-7">
-                <input type="range" class="form-range" id="systemVolumeSlider" min="0" max="100" step="1" value="90">
+                <input type="range" class="form-range" id="systemVolumeSlider" min="0" max="100" step="1" value="90" title="Adjust system volume">
               </div>
               <div class="col-md-1 text-center">
                 <i class="bi bi-volume-up fs-5"></i>
@@ -245,7 +245,7 @@
                 <span class="badge bg-primary fs-6" id="systemVolumeDisplay">90%</span>
               </div>
               <div class="col-md-2">
-                <button class="btn btn-primary w-100" id="btnSaveVolume"><i class="bi bi-check-circle"></i> Apply</button>
+                <button class="btn btn-primary w-100" id="btnSaveVolume" title="Apply system volume"><i class="bi bi-check-circle"></i> Apply</button>
               </div>
             </div>
             <div id="volumeMessage" class="mt-2"></div>
@@ -255,20 +255,20 @@
 
       <!-- CPU Settings -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cpuSettings">CPU Settings</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cpuSettings" title="Expand CPU settings">CPU Settings</button></h2>
         <div id="cpuSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <div class="row align-items-end g-3">
               <div class="col-md-6">
                 <label class="form-label">CPU Governor</label>
-                <select class="form-select" id="cpuGovernor"><option>Loading...</option></select>
+                <select class="form-select" id="cpuGovernor" title="Select CPU governor"><option>Loading...</option></select>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Current</label>
-                <input type="text" class="form-control" id="cpuGovernorCurrent" readonly>
+                <input type="text" class="form-control" id="cpuGovernorCurrent" readonly title="Current CPU governor">
               </div>
               <div class="col-md-3">
-                <button class="btn btn-primary w-100" id="btnSaveCpuGovernor"><i class="bi bi-check-circle"></i> Apply</button>
+                <button class="btn btn-primary w-100" id="btnSaveCpuGovernor" title="Apply CPU governor"><i class="bi bi-check-circle"></i> Apply</button>
               </div>
             </div>
             <div id="cpuMessage" class="mt-2"></div>
@@ -278,7 +278,7 @@
 
       <!-- GPU Settings -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#gpuSettings">GPU Settings</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#gpuSettings" title="Expand GPU settings">GPU Settings</button></h2>
         <div id="gpuSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <dl class="row mb-0">
@@ -292,7 +292,7 @@
 
       <!-- Memory Settings -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#memSettings">Memory &amp; Swap</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#memSettings" title="Expand memory and swap settings">Memory &amp; Swap</button></h2>
         <div id="memSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <dl class="row mb-0">
@@ -307,7 +307,7 @@
 
       <!-- Startup Tasks -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#startupSettings">Startup Tasks</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#startupSettings" title="Expand startup tasks">Startup Tasks</button></h2>
         <div id="startupSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body" id="startupTasksList">
             <p class="text-muted">Loading startup tasks...</p>
@@ -317,7 +317,7 @@
 
       <!-- Performance Presets -->
       <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#presetSettings">Performance Presets</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#presetSettings" title="Expand performance presets">Performance Presets</button></h2>
         <div id="presetSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
             <p class="text-muted mb-3">Select a preset optimized for your Raspberry Pi model. CPU governor changes apply immediately. Boot config changes require manual editing of <code>/boot/firmware/config.txt</code> and a reboot.</p>
@@ -353,16 +353,16 @@
           <div class="card-body">
             <div class="mb-2">
               <label class="form-label">Key Type</label>
-              <select class="form-select form-select-sm" id="sshKeyType">
+              <select class="form-select form-select-sm" id="sshKeyType" title="Select SSH key type">
                 <option value="ed25519" selected>Ed25519 (Recommended)</option>
                 <option value="rsa">RSA 4096</option>
               </select>
             </div>
             <div class="mb-2">
               <label class="form-label">Comment</label>
-              <input type="text" class="form-control form-control-sm" id="sshKeyComment" placeholder="MonsterBox key">
+              <input type="text" class="form-control form-control-sm" id="sshKeyComment" placeholder="MonsterBox key" title="SSH key comment">
             </div>
-            <button class="btn btn-sm btn-primary w-100" id="btnGenerateKey"><i class="bi bi-plus-circle"></i> Generate</button>
+            <button class="btn btn-sm btn-primary w-100" id="btnGenerateKey" title="Generate new SSH key"><i class="bi bi-plus-circle"></i> Generate</button>
             <div id="sshGenMessage" class="mt-2"></div>
           </div>
         </div>
@@ -371,13 +371,13 @@
           <div class="card-body">
             <div class="mb-2">
               <label class="form-label">Key</label>
-              <select class="form-select form-select-sm" id="deployKeySelect"><option>-- select key --</option></select>
+              <select class="form-select form-select-sm" id="deployKeySelect" title="Select key to deploy"><option>-- select key --</option></select>
             </div>
             <div class="mb-2">
               <label class="form-label">Host</label>
-              <input type="text" class="form-control form-control-sm" id="deployHost" placeholder="user@host">
+              <input type="text" class="form-control form-control-sm" id="deployHost" placeholder="user@host" title="Host to deploy key to">
             </div>
-            <button class="btn btn-sm btn-success w-100" id="btnDeployKey"><i class="bi bi-send"></i> Deploy</button>
+            <button class="btn btn-sm btn-success w-100" id="btnDeployKey" title="Deploy SSH key to host"><i class="bi bi-send"></i> Deploy</button>
             <div id="sshDeployMessage" class="mt-2"></div>
           </div>
         </div>
@@ -392,7 +392,7 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0"><i class="bi bi-clipboard-data"></i> Saved Templates</h5>
-            <button class="btn btn-sm btn-primary" id="btnSaveTemplate"><i class="bi bi-plus-circle"></i> Save Current Config</button>
+            <button class="btn btn-sm btn-primary" id="btnSaveTemplate" title="Save current config as template"><i class="bi bi-plus-circle"></i> Save Current Config</button>
           </div>
           <div class="card-body">
             <div class="table-responsive">
@@ -410,13 +410,13 @@
           <div class="card-body">
             <div class="mb-2">
               <label class="form-label">Name</label>
-              <input type="text" class="form-control form-control-sm" id="tplName" placeholder="My Config">
+              <input type="text" class="form-control form-control-sm" id="tplName" placeholder="My Config" title="Template name">
             </div>
             <div class="mb-2">
               <label class="form-label">Description</label>
-              <textarea class="form-control form-control-sm" id="tplDesc" rows="2" placeholder="Description..."></textarea>
+              <textarea class="form-control form-control-sm" id="tplDesc" rows="2" placeholder="Description..." title="Template description"></textarea>
             </div>
-            <button class="btn btn-sm btn-primary w-100" id="btnSaveTemplateForm"><i class="bi bi-save"></i> Save</button>
+            <button class="btn btn-sm btn-primary w-100" id="btnSaveTemplateForm" title="Save template"><i class="bi bi-save"></i> Save</button>
             <div id="tplMessage" class="mt-2"></div>
           </div>
         </div>
@@ -506,7 +506,7 @@
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0"><i class="bi bi-activity"></i> Movement Telemetry</h5>
-            <select class="form-select form-select-sm" id="mvtPeriod" style="width:auto;">
+            <select class="form-select form-select-sm" id="mvtPeriod" style="width:auto;" title="Select telemetry time period">
               <option value="3600000">1 Hour</option>
               <option value="21600000">6 Hours</option>
               <option value="86400000">24 Hours</option>

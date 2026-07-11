@@ -4,7 +4,7 @@
             <span class="mb-text-secondary">· register, monitor, and broadcast to remote devices</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/orchestration" class="btn btn-outline-secondary btn-sm">
+            <a href="/orchestration" class="btn btn-outline-secondary btn-sm" title="Go to Orchestration control center">
                 <i class="bi bi-broadcast"></i> Orchestration
             </a>
         </div>
@@ -95,11 +95,11 @@
                     </h5>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                            <input class="form-check-input" type="checkbox" id="autoRefresh" checked title="Toggle automatic status refresh">
                             <label class="form-check-label" for="autoRefresh">Auto Refresh</label>
                         </div>
                         <select class="form-select form-select-sm d-inline-block ms-2" style="width: auto;"
-                            id="statusFilter">
+                            id="statusFilter" title="Filter Goblins by status">
                             <option value="all">All Status</option>
                             <option value="online">Online Only</option>
                             <option value="offline">Offline Only</option>
@@ -118,7 +118,7 @@
                         <i class="bi bi-cpu text-muted" style="font-size: 4rem;"></i>
                         <h3 class="text-muted mt-3">No Goblins Registered</h3>
                         <p class="text-muted">Register your first MonsterBox Goblin to get started!</p>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerGoblinModal">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#registerGoblinModal" title="Register your first Goblin">
                             <i class="bi bi-plus-circle"></i> Register First Goblin
                         </button>
                     </div>
@@ -161,14 +161,14 @@
                     </div>
                     <div class="card-body">
                         <button class="btn btn-sm btn-outline-primary w-100 mb-2"
-                            onclick="goblinManager.openVideoLibrary()">
+                            onclick="goblinManager.openVideoLibrary()" title="Open the video library">
                             <i class="bi bi-camera-video"></i> Video Library
                         </button>
                         <button class="btn btn-sm btn-outline-success w-100 mb-2"
-                            onclick="goblinManager.testAllConnections()">
+                            onclick="goblinManager.testAllConnections()" title="Test connection to all Goblins">
                             <i class="bi bi-wifi"></i> Test All
                         </button>
-                        <button class="btn btn-sm btn-outline-info w-100" onclick="goblinManager.showSystemHealth()">
+                        <button class="btn btn-sm btn-outline-info w-100" onclick="goblinManager.showSystemHealth()" title="Show system health details">
                             <i class="bi bi-heart-pulse"></i> System Health
                         </button>
                     </div>
@@ -180,7 +180,7 @@
                         <h6 class="mb-0">
                             <i class="bi bi-list-ul"></i> Activity Log
                         </h6>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.clearLog()">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.clearLog()" title="Clear the activity log">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -202,25 +202,25 @@
                 <h5 class="modal-title">
                     <i class="bi bi-plus-circle"></i> Register New Goblin
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close this dialog"></button>
             </div>
             <div class="modal-body">
                 <form id="registerGoblinForm">
                     <div class="mb-3">
                         <label class="form-label">Goblin Name *</label>
                         <input type="text" class="form-control" name="name" required
-                            placeholder="e.g., living-room-goblin, porch-display">
+                            placeholder="e.g., living-room-goblin, porch-display" title="Name for this Goblin">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">IP Address or Hostname *</label>
                         <input type="text" class="form-control" name="host" required
-                            placeholder="e.g., 192.168.1.100 or goblin1.local">
+                            placeholder="e.g., 192.168.1.100 or goblin1.local" title="IP address or hostname of the Goblin">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Port</label>
-                        <input type="number" class="form-control" name="port" value="3001" min="1" max="65535">
+                        <input type="number" class="form-control" name="port" value="3001" min="1" max="65535" title="Network port for the Goblin">
                     </div>
 
                     <div class="mb-3">
@@ -229,24 +229,24 @@
                             <div class="col-6">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="capabilities"
-                                        value="video-playback" id="cap1" checked>
+                                        value="video-playback" id="cap1" checked title="Enable video playback capability">
                                     <label class="form-check-label" for="cap1">Video Playback</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="capabilities"
-                                        value="audio-playback" id="cap2" checked>
+                                        value="audio-playback" id="cap2" checked title="Enable audio playback capability">
                                     <label class="form-check-label" for="cap2">Audio Playback</label>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="capabilities"
-                                        value="screen-effects" id="cap3">
+                                        value="screen-effects" id="cap3" title="Enable screen effects capability">
                                     <label class="form-check-label" for="cap3">Screen Effects</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="capabilities"
-                                        value="hardware-control" id="cap4">
+                                        value="hardware-control" id="cap4" title="Enable hardware control capability">
                                     <label class="form-check-label" for="cap4">Hardware Control</label>
                                 </div>
                             </div>
@@ -256,17 +256,17 @@
                     <div class="mb-3">
                         <label class="form-label">Location</label>
                         <input type="text" class="form-control" name="location"
-                            placeholder="e.g., Living Room, Front Porch, Basement">
+                            placeholder="e.g., Living Room, Front Porch, Basement" title="Physical location of this Goblin">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea class="form-control" name="description" rows="2"
-                            placeholder="Optional description of this Goblin's purpose"></textarea>
+                            placeholder="Optional description of this Goblin's purpose" title="Describe this Goblin's purpose"></textarea>
                     </div>
 
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="testConnection" id="testConnection"
+                        <input class="form-check-input" type="checkbox" name="testConnection" id="testConnection" title="Test connection before registering"
                             checked>
                         <label class="form-check-label" for="testConnection">
                             Test connection before registering
@@ -274,7 +274,7 @@
                     </div>
 
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="autoDeploy" id="autoDeploy">
+                        <input class="form-check-input" type="checkbox" name="autoDeploy" id="autoDeploy" title="Auto-deploy Goblin via SSH if not responding">
                         <label class="form-check-label" for="autoDeploy">
                             👽 <strong>FACEHUGGER MODE</strong> - Auto-deploy if not responding
                         </label>
@@ -286,7 +286,7 @@
                     <div id="sshPasswordGroup" class="mb-3" style="display: none;">
                         <label class="form-label">SSH Password *</label>
                         <input type="password" class="form-control" name="sshPassword" id="sshPassword"
-                            placeholder="Enter SSH password for deployment">
+                            placeholder="Enter SSH password for deployment" title="SSH password for deployment">
                         <small class="form-text text-muted">
                             Required for facehugger deployment (default: klrklr89!)
                         </small>
@@ -336,7 +336,7 @@
                 <h5 class="modal-title">
                     <i class="bi bi-cpu"></i> Goblin Details
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close this dialog"></button>
             </div>
             <div class="modal-body">
                 <div id="goblinDetailsContent">
@@ -363,7 +363,7 @@
                 <h5 class="modal-title">
                     <i class="bi bi-film"></i> Video Queue Manager
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close this dialog"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
@@ -484,13 +484,13 @@
                 <h5 class="modal-title">
                     <i class="bi bi-broadcast"></i> Broadcast Command
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close this dialog"></button>
             </div>
             <div class="modal-body">
                 <form id="broadcastForm">
                     <div class="mb-3">
                         <label class="form-label">Command</label>
-                        <select class="form-select" name="command" id="broadcastCommand">
+                        <select class="form-select" name="command" id="broadcastCommand" title="Select command to broadcast">
                             <option value="stop-all">Stop All Playback</option>
                             <option value="test-video">Test Video Playback</option>
                             <option value="health">Health Check</option>
@@ -503,16 +503,16 @@
                     <div class="mb-3" id="customCommandGroup" style="display: none;">
                         <label class="form-label">Custom Command</label>
                         <input type="text" class="form-control" name="customCommand"
-                            placeholder="Enter custom endpoint">
+                            placeholder="Enter custom endpoint" title="Custom command endpoint to send">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Data (JSON)</label>
-                        <textarea class="form-control" name="data" rows="3" placeholder='{"key": "value"}'></textarea>
+                        <textarea class="form-control" name="data" rows="3" placeholder='{"key": "value"}' title="JSON data to send with command"></textarea>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="onlineOnly" id="onlineOnly" checked>
+                        <input class="form-check-input" type="checkbox" name="onlineOnly" id="onlineOnly" checked title="Send command to online Goblins only">
                         <label class="form-check-label" for="onlineOnly">
                             Send to online Goblins only
                         </label>

@@ -30,10 +30,10 @@
 </style>
 
 <div class="d-flex justify-content-end mb-2 gap-2">
-  <button class="btn btn-outline-info btn-sm" onclick="refreshSystemStatus()">
+  <button class="btn btn-outline-info btn-sm" onclick="refreshSystemStatus()" title="Refresh system status">
     <i class="bi bi-arrow-clockwise"></i> Refresh
   </button>
-  <button class="btn btn-success btn-sm" onclick="saveConfiguration()">
+  <button class="btn btn-success btn-sm" onclick="saveConfiguration()" title="Save audio configuration">
     <i class="bi bi-check-lg"></i> Save Configuration
   </button>
 </div>
@@ -88,7 +88,7 @@
       <div class="card-body">
         <div class="mb-3">
           <label for="default-source" class="form-label">System Default Source</label>
-          <select class="form-select" id="default-source">
+          <select class="form-select" id="default-source" title="Select default audio input device">
             <option value="auto">Auto (Let PipeWire decide)</option>
           </select>
           <div class="form-text">This sets the system-wide default audio input device</div>
@@ -114,11 +114,11 @@
         </div>
 
         <div class="d-grid gap-2">
-          <button id="btnTestAudioInput" class="btn btn-outline-primary" onclick="testAudioInput(this)">
+          <button id="btnTestAudioInput" class="btn btn-outline-primary" onclick="testAudioInput(this)" title="Test audio input">
             <i class="bi bi-mic"></i> Test Audio Input <span class="visually-hidden">Testing</span>
           </button>
           <button id="btnToggleInputVU" class="btn btn-outline-secondary btn-sm"
-            onclick="try{toggleInputVUMeter();}catch(e){}">
+            onclick="try{toggleInputVUMeter();}catch(e){}" title="Toggle input level monitoring">
             <i class="bi bi-bar-chart"></i> <span id="input-vu-toggle">Start</span> Input Monitoring
           </button>
         </div>
@@ -135,7 +135,7 @@
       <div class="card-body">
         <div class="mb-3">
           <label for="default-sink" class="form-label">System Default Sink</label>
-          <select class="form-select" id="default-sink">
+          <select class="form-select" id="default-sink" title="Select default audio output device">
             <option value="auto">Auto (Let PipeWire decide)</option>
           </select>
           <div class="form-text">This sets the system-wide default audio output device</div>
@@ -161,11 +161,11 @@
         </div>
 
         <div class="d-grid gap-2">
-          <button id="btnTestAudioOutput" class="btn btn-outline-primary" onclick="testAudioOutput(this)">
+          <button id="btnTestAudioOutput" class="btn btn-outline-primary" onclick="testAudioOutput(this)" title="Test audio output">
             <i class="bi bi-play-circle"></i> Test Audio Output <span class="visually-hidden">Playing</span>
           </button>
           <button id="btnToggleOutputVU" class="btn btn-outline-secondary btn-sm"
-            onclick="try{toggleOutputVUMeter();}catch(e){}">
+            onclick="try{toggleOutputVUMeter();}catch(e){}" title="Toggle output level monitoring">
             <i class="bi bi-bar-chart"></i> <span id="output-vu-toggle">Start</span> Output Monitoring
           </button>
         </div>
@@ -180,7 +180,7 @@
     <div class="card panel-collapsible" data-panel-id="mic-parts">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-mic"></i> Microphone Parts Controls</h5>
-        <button class="btn btn-outline-secondary btn-sm" onclick="refreshMicParts()">
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshMicParts()" title="Refresh microphone parts">
           <i class="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
@@ -215,13 +215,13 @@
                 <p class="small text-muted mb-2">Hear what the character's microphone picks up through your browser.</p>
                 <div class="mb-2">
                   <label class="form-label small">Source Microphone</label>
-                  <select id="listenin-source-select" class="form-select form-select-sm">
+                  <select id="listenin-source-select" class="form-select form-select-sm" title="Select source microphone">
                     <option value="default">System Default Input</option>
                   </select>
                 </div>
                 <div class="mb-2">
                   <label class="form-label small">Browser Volume</label>
-                  <input type="range" id="listenin-volume" class="form-range" min="0" max="100" value="75" step="5">
+                  <input type="range" id="listenin-volume" class="form-range" min="0" max="100" value="75" step="5" title="Adjust browser volume">
                 </div>
                 <div class="vu-meter-container mb-2">
                   <div class="vu-meter" style="flex:1">
@@ -230,7 +230,7 @@
                   <span id="listenin-vu-label" class="vu-label small text-muted">0%</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <button id="btn-listenin-toggle" class="btn btn-info btn-sm" type="button">
+                  <button id="btn-listenin-toggle" class="btn btn-info btn-sm" type="button" title="Start or stop listening">
                     <i class="bi bi-headphones"></i> <span id="listenin-toggle-text">Start Listening</span>
                   </button>
                   <span id="listenin-status" class="badge bg-secondary">Off</span>
@@ -248,7 +248,7 @@
                 <p class="small text-muted mb-2">Speak into your browser mic and hear it through the character's speaker.</p>
                 <div class="mb-2">
                   <label class="form-label small">Target Speaker</label>
-                  <select id="talkthrough-sink-select" class="form-select form-select-sm">
+                  <select id="talkthrough-sink-select" class="form-select form-select-sm" title="Select target speaker">
                     <option value="default">System Default Output</option>
                   </select>
                 </div>
@@ -259,7 +259,7 @@
                   <span id="talkthrough-vu-label" class="vu-label small text-muted">0%</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <button id="btn-talkthrough-toggle" class="btn btn-warning btn-sm" type="button">
+                  <button id="btn-talkthrough-toggle" class="btn btn-warning btn-sm" type="button" title="Start or stop talking through">
                     <i class="bi bi-mic-fill"></i> <span id="talkthrough-toggle-text">Start Talking</span>
                   </button>
                   <span id="talkthrough-status" class="badge bg-secondary">Off</span>
@@ -309,7 +309,7 @@
     <div class="card panel-collapsible" data-panel-id="streams">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-broadcast"></i> Active Audio Streams</h5>
-        <button class="btn btn-outline-secondary btn-sm" onclick="refreshStreams()">
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshStreams()" title="Refresh active streams">
           <i class="bi bi-arrow-clockwise"></i> Refresh
         </button>
       </div>
@@ -328,7 +328,7 @@
     <div class="card panel-collapsible" data-panel-id="speaker-test">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Speaker Test</h5>
-        <button id="btnSpeakerTest" class="btn btn-outline-primary btn-sm" onclick="testSpeakerSection()">
+        <button id="btnSpeakerTest" class="btn btn-outline-primary btn-sm" onclick="testSpeakerSection()" title="Test speaker output">
           <i class="bi bi-megaphone"></i> Test Speaker
         </button>
       </div>

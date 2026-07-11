@@ -25,7 +25,7 @@
             <!-- Now Playing bar (hidden by default) -->
             <div id="nowPlaying" class="alert alert-info py-1 px-3 d-none mb-2 d-flex align-items-center">
                 <i class="bi bi-volume-up me-2"></i> Now Playing: <strong class="ms-1" id="nowPlayingTitle">-</strong>
-                <button class="btn btn-sm btn-outline-danger ms-auto" id="nowPlayingStop">Stop</button>
+                <button class="btn btn-sm btn-outline-danger ms-auto" id="nowPlayingStop" title="Stop playback">Stop</button>
             </div>
 
             <!-- Search/Filter: single compact row -->
@@ -72,7 +72,7 @@
                 <i class="bi bi-music-note-list text-muted" style="font-size:3rem;"></i>
                 <h5 class="text-muted mt-2">No Audio Files</h5>
                 <p class="text-muted">Upload some audio files to get started.</p>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal" title="Upload audio files">
                     <i class="bi bi-cloud-upload"></i> Upload Audio
                 </button>
             </div>
@@ -85,7 +85,7 @@
                         <h5 class="modal-title">
                             <i class="bi bi-cloud-upload"></i> Upload Audio Files
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Drag and Drop Zone -->
@@ -106,18 +106,18 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Category</label>
-                                    <select class="form-select" name="category" id="uploadCategory">
+                                    <select class="form-select" name="category" id="uploadCategory" title="Select a category">
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Tags (comma separated)</label>
-                                    <input type="text" class="form-control" name="tags"
+                                    <input type="text" class="form-control" name="tags" title="Comma-separated tags"
                                         placeholder="spooky, halloween, monster">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Description</label>
-                                    <textarea class="form-control" name="description" rows="2"
+                                    <textarea class="form-control" name="description" rows="2" title="Optional description"
                                         placeholder="Optional description for the audio files"></textarea>
                                 </div>
                             </div>
@@ -140,8 +140,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="uploadBtn" disabled>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel upload">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="uploadBtn" disabled title="Upload selected files">
                             <i class="bi bi-cloud-upload"></i> Upload Files
                         </button>
                     </div>
@@ -157,7 +157,7 @@
                         <h5 class="modal-title" id="playerTitle">
                             <i class="bi bi-play-circle"></i> Audio Player
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div id="audioPlayerContainer">

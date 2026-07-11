@@ -110,9 +110,9 @@
   <div class="mb-3 d-flex justify-content-between align-items-center">
     <div class="d-flex gap-2">
       <div class="btn-group" role="group">
-        <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" checked>
+        <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" title="Switch to calibrate mode" checked>
         <label class="btn btn-outline-warning" for="modeCal" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure part bounds, presets, and calibration profiles">CALIBRATE</label>
-        <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off">
+        <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off" title="Switch to operate mode">
         <label class="btn btn-outline-info" for="modeOperate" data-bs-toggle="tooltip" data-bs-placement="top" title="Test and operate parts with live controls">OPERATE</label>
       </div>
       <button class="btn btn-outline-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove all calibration profiles (bounds, presets) for every part on the current character">
@@ -248,11 +248,11 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Name</label>
-                  <input id="editName" class="form-control" placeholder="Part name">
+                  <input id="editName" class="form-control" title="Edit the part name" placeholder="Part name">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Type</label>
-                  <input id="editType" class="form-control" readonly>
+                  <input id="editType" class="form-control" title="Part type (read only)" readonly>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                   <div class="form-check form-switch">
@@ -268,7 +268,7 @@
 
                 <div class="col-12">
                   <label class="form-label">Description</label>
-                  <input id="editDescription" class="form-control" placeholder="Describe this part">
+                  <input id="editDescription" class="form-control" title="Edit the part description" placeholder="Describe this part">
                 </div>
 
                 <!-- Advanced JSON Config (collapsible) -->
@@ -282,7 +282,7 @@
                     </div>
                     <div class="collapse" id="advancedConfigCollapse">
                       <div class="card-body">
-                        <textarea id="editConfig" class="form-control" rows="6" placeholder="{}"></textarea>
+                        <textarea id="editConfig" class="form-control" title="Edit raw JSON configuration" rows="6" placeholder="{}"></textarea>
                         <div class="form-text">Direct JSON configuration - use with caution</div>
                       </div>
                     </div>
@@ -344,7 +344,7 @@
                     </div>
                     <div class="card-body">
                       <div class="input-group">
-                        <select id="modelSelect" class="form-select">
+                        <select id="modelSelect" class="form-select" title="Select a hardware model to assign">
                           <option value="">Select model...</option>
                         </select>
                         <button id="assignModelBtn" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Link the selected model to this part, applying its default settings"><i class="bi bi-link"></i> Assign</button>
@@ -364,11 +364,11 @@
                         <div class="text-muted small">Select a device and model to see override fields.</div>
                       </div>
                       <div class="mb-2">
-                        <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawOverridesCollapse" role="button">
+                        <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawOverridesCollapse" role="button" title="Show or hide the raw JSON editor">
                           <i class="bi bi-code-slash"></i> Raw JSON
                         </a>
                         <div class="collapse" id="rawOverridesCollapse">
-                          <textarea id="overridesEditor" class="form-control mt-1 font-monospace" rows="5"
+                          <textarea id="overridesEditor" class="form-control mt-1 font-monospace" title="Edit part overrides as raw JSON" rows="5"
                             placeholder='{}'></textarea>
                         </div>
                       </div>
@@ -591,7 +591,7 @@
               </button>
             </div>
             <div class="input-group input-group-sm">
-              <select class="form-select" id="gotoPresetSelect">
+              <select class="form-select" id="gotoPresetSelect" title="Select a preset to move to">
                 <option value="">— Select preset —</option>
               </select>
               <button type="button" class="btn btn-outline-warning" onclick="gotoPosition('preset')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the selected preset position">Go</button>
@@ -731,7 +731,7 @@
         if (p.needsCalibration) badges += '<span class="badge text-bg-info me-1">Needs Cal</span>';
         if (p.gpioConflict) badges += '<span class="badge text-bg-danger">GPIO</span>';
         const checked = selectedIdsMulti.has(String(p.id)) ? 'checked' : '';
-        a.innerHTML = `<div class="d-flex align-items-center"><input type="checkbox" class="form-check-input me-2 part-select" data-pid="${p.id}" ${checked}><div><div class=\"fw-semibold\">${p.name}</div><small class=\"text-muted\">${p.type}</small></div></div>` +
+        a.innerHTML = `<div class="d-flex align-items-center"><input type="checkbox" class="form-check-input me-2 part-select" title="Select this part for bulk actions" data-pid="${p.id}" ${checked}><div><div class=\"fw-semibold\">${p.name}</div><small class=\"text-muted\">${p.type}</small></div></div>` +
           `<div>${badges}</div>`;
         a.addEventListener('click', () => selectPart(p.id));
         elList.appendChild(a);
@@ -1682,13 +1682,13 @@
         const isOverridden = cfg[f.key] !== undefined && cfg[f.key] !== '';
         const cls = isOverridden ? 'border-info' : '';
         if (f.type === 'select') {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><select class="form-select form-select-sm override-field ${cls}" data-key="${f.key}"><option value="">${placeholder ? '(model: ' + placeholder + ')' : '— default —'}</option>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><select class="form-select form-select-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part"><option value="">${placeholder ? '(model: ' + placeholder + ')' : '— default —'}</option>`;
           (f.options || []).forEach(o => { html += `<option value="${o}" ${String(val) === o ? 'selected' : ''}>${o}</option>`; });
           html += `</select></div>`;
         } else if (f.type === 'number') {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="number" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" value="${val}" placeholder="${placeholder}" ${f.step ? 'step="' + f.step + '"' : ''}></div>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="number" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}" ${f.step ? 'step="' + f.step + '"' : ''}></div>`;
         } else {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="text" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" value="${val}" placeholder="${placeholder}"></div>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="text" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}"></div>`;
         }
       });
       area.innerHTML = html;
@@ -2296,11 +2296,11 @@
         const isCont = String(part.config?.servoType || 'standard') === 'continuous';
         if (isCont) {
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<button class="btn btn-primary btn-lg" data-dir="ccw"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
-            '<button class="btn btn-danger btn-lg" data-dir="stop"><i class="bi bi-stop-circle"></i> Stop</button>' +
-            '<button class="btn btn-primary btn-lg" data-dir="cw">CW <i class="bi bi-arrow-clockwise"></i></button>' +
-            '<input type="number" id="spd" class="form-control form-control-lg" value="90" style="width:110px">% ' +
-            '<input type="number" id="dur" class="form-control form-control-lg" value="1500" style="width:140px"> ms' +
+            '<button class="btn btn-primary btn-lg" data-dir="ccw" title="Rotate servo counter-clockwise"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
+            '<button class="btn btn-danger btn-lg" data-dir="stop" title="Stop servo movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
+            '<button class="btn btn-primary btn-lg" data-dir="cw" title="Rotate servo clockwise">CW <i class="bi bi-arrow-clockwise"></i></button>' +
+            '<input type="number" id="spd" class="form-control form-control-lg" title="Servo speed percent" value="90" style="width:110px">% ' +
+            '<input type="number" id="dur" class="form-control form-control-lg" title="Movement duration in milliseconds" value="1500" style="width:140px"> ms' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           el.querySelectorAll('button[data-dir]').forEach(b => b.addEventListener('click', async () => {
@@ -2342,10 +2342,10 @@
         } else {
           // Absolute servo: use angle (0-180°) controls
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<input id="ang" type="range" min="0" max="180" value="90" class="form-range" style="width:320px">' +
-            '<div class="input-group" style="width:150px"><input id="angNum" type="number" class="form-control form-control-lg" value="90" step="1" min="0" max="180">' +
+            '<input id="ang" type="range" title="Drag to set servo angle" min="0" max="180" value="90" class="form-range" style="width:320px">' +
+            '<div class="input-group" style="width:150px"><input id="angNum" type="number" title="Enter servo angle in degrees" class="form-control form-control-lg" value="90" step="1" min="0" max="180">' +
             '<span class="input-group-text">\u00B0</span></div>' +
-            '<button id="goAng" class="btn btn-success btn-lg"><i class="bi bi-cursor"></i> Move</button>' +
+            '<button id="goAng" class="btn btn-success btn-lg" title="Move servo to the set angle"><i class="bi bi-cursor"></i> Move</button>' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           var s = el.querySelector('#ang');
@@ -2401,17 +2401,17 @@
           '<label class="form-label fw-bold">Position Slider</label>' +
           '<div class="d-flex align-items-center gap-2">' +
           '<span class="text-muted small">0</span>' +
-          '<input type="range" id="laPosSlider" class="form-range flex-fill" min="0" max="1" step="0.01" value="0.5">' +
+          '<input type="range" id="laPosSlider" class="form-range flex-fill" title="Drag to set actuator position" min="0" max="1" step="0.01" value="0.5">' +
           '<span class="text-muted small">1</span>' +
-          '<input type="number" id="laPosNum" class="form-control" min="0" max="1" step="0.01" value="0.50" style="width:90px">' +
-          '<button class="btn btn-success" id="laPosGoBtn">Go</button>' +
+          '<input type="number" id="laPosNum" class="form-control" title="Enter actuator position 0 to 1" min="0" max="1" step="0.01" value="0.50" style="width:90px">' +
+          '<button class="btn btn-success" id="laPosGoBtn" title="Move actuator to the set position">Go</button>' +
           '</div></div>' +
           '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button class="btn btn-primary btn-lg" id="extendBtn"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
-          '<button class="btn btn-danger btn-lg" id="stopBtn"><i class="bi bi-stop-circle"></i> Stop</button>' +
-          '<button class="btn btn-primary btn-lg" id="retractBtn"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
-          '<input type="number" id="laSpd" class="form-control form-control-lg" value="90" style="width:110px">%' +
-          '<input type="number" id="laDur" class="form-control form-control-lg" value="1500" style="width:140px"> ms' +
+          '<button class="btn btn-primary btn-lg" id="extendBtn" title="Extend the linear actuator"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
+          '<button class="btn btn-danger btn-lg" id="stopBtn" title="Stop actuator movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<button class="btn btn-primary btn-lg" id="retractBtn" title="Retract the linear actuator"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
+          '<input type="number" id="laSpd" class="form-control form-control-lg" title="Actuator speed percent" value="90" style="width:110px">%' +
+          '<input type="number" id="laDur" class="form-control form-control-lg" title="Movement duration in milliseconds" value="1500" style="width:140px"> ms' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
 
@@ -2524,11 +2524,11 @@
         });
       } else if (part.type === 'motor') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<select id="motDir" class="form-select form-select-lg" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
-          '<input type="number" id="motSpd" class="form-control form-control-lg" value="90" style="width:110px">%' +
-          '<input type="number" id="motDur" class="form-control form-control-lg" value="15000" style="width:140px"> ms' +
-          '<button id="motRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Run</button>' +
-          '<button id="motStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<select id="motDir" class="form-select form-select-lg" title="Select motor direction" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
+          '<input type="number" id="motSpd" class="form-control form-control-lg" title="Motor speed percent" value="90" style="width:110px">%' +
+          '<input type="number" id="motDur" class="form-control form-control-lg" title="Run duration in milliseconds" value="15000" style="width:140px"> ms' +
+          '<button id="motRun" class="btn btn-success btn-lg" title="Run the motor"><i class="bi bi-play-fill"></i> Run</button>' +
+          '<button id="motStop" class="btn btn-danger btn-lg" title="Stop the motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#motRun').addEventListener('click', function () {
           var dir = document.getElementById('motDir').value;
@@ -2557,11 +2557,11 @@
         });
       } else if (part.type === 'stepper') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<select id="stDir" class="form-select form-select-lg" style="width:140px"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
-          '<input type="number" id="stSteps" class="form-control form-control-lg" value="200" style="width:120px"> steps' +
-          '<input type="number" id="stDelay" class="form-control form-control-lg" value="800" style="width:160px"> us/step' +
-          '<button id="stRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Move</button>' +
-          '<button id="stStop" class="btn btn-danger btn-lg"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<select id="stDir" class="form-select form-select-lg" title="Select stepper direction" style="width:140px"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
+          '<input type="number" id="stSteps" class="form-control form-control-lg" title="Number of steps to move" value="200" style="width:120px"> steps' +
+          '<input type="number" id="stDelay" class="form-control form-control-lg" title="Delay between steps in microseconds" value="800" style="width:160px"> us/step' +
+          '<button id="stRun" class="btn btn-success btn-lg" title="Move the stepper motor"><i class="bi bi-play-fill"></i> Move</button>' +
+          '<button id="stStop" class="btn btn-danger btn-lg" title="Stop the stepper motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         const runBtn = el.querySelector('#stRun');
         if (runBtn) runBtn.addEventListener('click', function () {
@@ -2587,7 +2587,7 @@
 
       } else if (part.type === 'light') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="lightToggle" class="btn btn-primary btn-lg"><i class="bi bi-lightbulb"></i> Toggle</button>' +
+          '<button id="lightToggle" class="btn btn-primary btn-lg" title="Toggle the light on or off"><i class="bi bi-lightbulb"></i> Toggle</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#lightToggle').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
@@ -2598,8 +2598,8 @@
         });
       } else if (part.type === 'led') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<input type="range" id="ledBri" min="0" max="100" value="50" class="form-range" style="width:320px">' +
-          '<button id="ledSet" class="btn btn-success btn-lg"><i class="bi bi-brightness-high"></i> Set</button>' +
+          '<input type="range" id="ledBri" title="Adjust LED brightness" min="0" max="100" value="50" class="form-range" style="width:320px">' +
+          '<button id="ledSet" class="btn btn-success btn-lg" title="Set LED brightness"><i class="bi bi-brightness-high"></i> Set</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#ledSet').addEventListener('click', function () {
           var bri = parseInt(document.getElementById('ledBri').value || '50', 10);
@@ -2611,7 +2611,7 @@
         });
       } else if (part.type === 'speaker') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="spkPlay" class="btn btn-success btn-lg"><i class="bi bi-megaphone"></i> Play Preview</button>' +
+          '<button id="spkPlay" class="btn btn-success btn-lg" title="Play a speaker preview"><i class="bi bi-megaphone"></i> Play Preview</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#spkPlay').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
@@ -2646,31 +2646,31 @@
           '<div class="row g-3">' +
           '<div class="col-md-6">' +
           '<label class="form-label small">Sensitivity <span class="badge bg-secondary" id="calMicSens-' + part.id + '-val">' + micSens + '</span></label>' +
-          '<input type="range" min="0.1" max="3.0" step="0.1" class="form-range" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
+          '<input type="range" min="0.1" max="3.0" step="0.1" class="form-range" title="Adjust microphone sensitivity" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
           '</div>' +
           '<div class="col-md-6">' +
           '<label class="form-label small">Input Gain <span class="badge bg-secondary" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
-          '<input type="range" min="0" max="200" step="1" class="form-range" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
+          '<input type="range" min="0" max="200" step="1" class="form-range" title="Adjust microphone input gain" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
           '</div></div>' +
           '<hr class="my-3">' +
           '<div class="mb-2"><strong><i class="bi bi-mic"></i> Speech Detection Test</strong></div>' +
           '<div class="row g-3 align-items-end">' +
           '<div class="col-md-5">' +
           '<label class="form-label small">Test Phrase (speak this aloud):</label>' +
-          '<input type="text" class="form-control form-control-sm" id="calMicPhrase-' + part.id + '" value="Hey Monster, how are you?">' +
+          '<input type="text" class="form-control form-control-sm" title="Phrase to speak during the test" id="calMicPhrase-' + part.id + '" value="Hey Monster, how are you?">' +
           '</div>' +
           '<div class="col-md-2">' +
           '<label class="form-label small">Duration:</label>' +
-          '<select class="form-select form-select-sm" id="calMicDuration-' + part.id + '">' +
+          '<select class="form-select form-select-sm" title="Recording duration for the test" id="calMicDuration-' + part.id + '">' +
           '<option value="2">2s</option><option value="3" selected>3s</option><option value="4">4s</option><option value="5">5s</option>' +
           '</select>' +
           '</div>' +
           '<div class="col-md-2">' +
-          '<button class="btn btn-warning btn-sm w-100" id="calMicTest-' + part.id + '" onclick="testMicSTT(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<button class="btn btn-warning btn-sm w-100" title="Record audio and test speech detection" id="calMicTest-' + part.id + '" onclick="testMicSTT(\'' + part.id + '\', \'' + micDevId + '\')">' +
           '<i class="bi bi-record-circle"></i> Record & Test</button>' +
           '</div>' +
           '<div class="col-md-3">' +
-          '<button class="btn btn-info btn-sm w-100" id="calMicAutoTune-' + part.id + '" onclick="autoTuneMic(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<button class="btn btn-info btn-sm w-100" title="Auto-tune the microphone gain" id="calMicAutoTune-' + part.id + '" onclick="autoTuneMic(\'' + part.id + '\', \'' + micDevId + '\')">' +
           '<i class="bi bi-magic"></i> Auto-Tune Gain</button>' +
           '</div></div>' +
           '<div id="calMicResult-' + part.id + '" class="mt-2 p-2 border rounded bg-dark small" style="display:none">' +
@@ -2782,24 +2782,24 @@
           '</div>' +
           '<div class="mt-2">' +
           '<label class="form-label small">Digital zoom: <span id="zoomVal">100%</span></label>' +
-          '<input type="range" class="form-range" id="camZoom" min="100" max="300" step="5" value="100">' +
+          '<input type="range" class="form-range" id="camZoom" title="Adjust digital zoom" min="100" max="300" step="5" value="100">' +
           '</div>' +
           '<div class="mt-2 d-flex flex-wrap gap-2">' +
-          '<a class="btn btn-outline-primary" href="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
-          '<button id="camSnap" class="btn btn-outline-secondary"><i class="bi bi-camera"></i> Capture</button>' +
+          '<a class="btn btn-outline-primary" title="Open the camera stream in a new tab" href="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+          '<button id="camSnap" class="btn btn-outline-secondary" title="Capture a still image"><i class="bi bi-camera"></i> Capture</button>' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>' +
           '<div class="col-md-6">' +
           '<div class="form-check form-switch mb-3 p-2 border rounded bg-body-secondary">' +
-          '<input class="form-check-input ms-0 me-2" type="checkbox" id="ctrl_nightMode" style="font-size:1.3em">' +
+          '<input class="form-check-input ms-0 me-2" type="checkbox" id="ctrl_nightMode" title="Toggle IR night mode" style="font-size:1.3em">' +
           '<label class="form-check-label fw-bold" for="ctrl_nightMode"><i class="bi bi-moon-stars"></i> Night Mode (IR Optimized)</label>' +
           '</div>' +
           '<div class="d-flex justify-content-between align-items-center mb-2">' +
           '<h6 class="mb-0"><i class="bi bi-sliders"></i> Controls</h6>' +
           '<div class="d-flex gap-2">' +
-          '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info"><i class="bi bi-arrow-repeat"></i> Refresh</button>' +
-          '<button id="applyCamCtrls" class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
+          '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info" title="Reload controls from the camera"><i class="bi bi-arrow-repeat"></i> Refresh</button>' +
+          '<button id="applyCamCtrls" class="btn btn-sm btn-success" title="Apply and save camera controls"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
           '</div>' +
           '</div>' +
           '<div id="dynamicControls" style="max-height:400px;overflow-y:auto">' +
@@ -2845,13 +2845,13 @@
             if (c.inactive) continue; // skip inactive controls
             if (c.type === 'bool') {
               html += '<div class="form-check form-switch mb-2">' +
-                '<input class="form-check-input" type="checkbox" id="ctrl_' + name + '"' + (val ? ' checked' : '') + '>' +
+                '<input class="form-check-input" type="checkbox" title="Toggle this camera control" id="ctrl_' + name + '"' + (val ? ' checked' : '') + '>' +
                 '<label class="form-check-label" for="ctrl_' + name + '">' + label + '</label>' +
                 '</div>';
             } else if (c.type === 'menu') {
               html += '<div class="mb-2">' +
                 '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
-                '<select id="ctrl_' + name + '" class="form-select form-select-sm">';
+                '<select id="ctrl_' + name + '" class="form-select form-select-sm" title="Select a value for this camera control">';
               var lo = (c.min != null) ? c.min : 0;
               var hi = (c.max != null) ? c.max : lo;
               for (var m = lo; m <= hi; m++) {
@@ -2865,7 +2865,7 @@
               var stp = (c.step != null) ? c.step : 1;
               html += '<div class="mb-2">' +
                 '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
-                '<input id="ctrl_' + name + '" type="range" class="form-range" min="' + mn + '" max="' + mx + '" step="' + stp + '" value="' + val + '">' +
+                '<input id="ctrl_' + name + '" type="range" class="form-range" title="Adjust this camera control" min="' + mn + '" max="' + mx + '" step="' + stp + '" value="' + val + '">' +
                 '</div>';
             }
           }
@@ -3062,7 +3062,7 @@
         });
       } else if (part.type === 'head_tracking') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="htGet" class="btn btn-primary btn-lg"><i class="bi bi-bullseye"></i> Get Position</button>' +
+          '<button id="htGet" class="btn btn-primary btn-lg" title="Read current head position"><i class="bi bi-bullseye"></i> Get Position</button>' +
           '<pre id="htOut" class="ms-2 small"></pre>' +
           '</div>';
         el.querySelector('#htGet').addEventListener('click', function () {
@@ -3084,12 +3084,12 @@
             '<div id="motionDetails" class="small text-muted mb-3">GPIO ' + part.pin + '</div>' +
           '</div>' +
           '<div class="d-grid gap-2 mb-3">' +
-            '<button id="toggleMonitoring" class="btn btn-success btn-lg"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
+            '<button id="toggleMonitoring" class="btn btn-success btn-lg" title="Start or stop motion monitoring"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
           '</div>' +
           '<div id="motionLog" class="border rounded p-2" style="max-height:200px;overflow-y:auto;display:none;">' +
             '<div class="d-flex justify-content-between align-items-center mb-2">' +
               '<small class="fw-semibold text-muted">Event Log</small>' +
-              '<button id="clearLog" class="btn btn-link btn-sm p-0 text-muted">Clear</button>' +
+              '<button id="clearLog" class="btn btn-link btn-sm p-0 text-muted" title="Clear the event log">Clear</button>' +
             '</div>' +
             '<div id="logEntries"></div>' +
           '</div>' +
@@ -3204,7 +3204,7 @@
         });
       } else {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="quickTest" class="btn btn-outline-secondary btn-lg"><i class="bi bi-gear"></i> Quick Test</button>' +
+          '<button id="quickTest" class="btn btn-outline-secondary btn-lg" title="Run a quick hardware test"><i class="bi bi-gear"></i> Quick Test</button>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>';
         el.querySelector('#quickTest').addEventListener('click', function () {
@@ -3222,7 +3222,7 @@
         var html = '';
         function field(id, label, type, placeholder) {
           return '<div class="col-md-3"><label class="form-label">' + label + '</label>' +
-            '<input id="' + id + '" class="form-control" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
+            '<input id="' + id + '" class="form-control" title="Enter GPIO pin number" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
         }
         if (part.type === 'motor' || part.type === 'linear_actuator') {
           html += '<div class="row g-3">';
@@ -3484,7 +3484,7 @@
       markers.filter(m => !['Min', 'Mid', 'Max'].includes(m.name)).forEach(marker => {
         const chip = document.createElement('span');
         chip.className = 'badge rounded-pill text-bg-secondary me-1 mb-1';
-        chip.innerHTML = `${marker.name}: ${marker.value}${marker.unit || ''} <button type="button" class="btn-close btn-close-white ms-1" onclick="deleteMarker('${marker.name}')"></button>`;
+        chip.innerHTML = `${marker.name}: ${marker.value}${marker.unit || ''} <button type="button" class="btn-close btn-close-white ms-1" title="Delete this marker" onclick="deleteMarker('${marker.name}')"></button>`;
         customMarkersEl.appendChild(chip);
       });
 
@@ -3704,7 +3704,7 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addGpioPin" class="form-label">GPIO Pin</label>
-                    <input type="number" class="form-control" id="addGpioPin" name="pin" min="1" max="40" required>
+                    <input type="number" class="form-control" id="addGpioPin" name="pin" min="1" max="40" required title="GPIO pin number for this part">
                   </div>
                 </div>
               </div>
@@ -3743,7 +3743,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addServoType" class="form-label">Servo Type</label>
-                  <select class="form-select" id="addServoType" name="servoType">
+                  <select class="form-select" id="addServoType" name="servoType" title="Select servo type">
                     <option value="standard">STANDARD - 0-180° positioning</option>
                     <option value="continuous">CONTINUOUS - continuous rotation</option>
                     <option value="feedback">FEEDBACK - position feedback servo</option>
@@ -3753,7 +3753,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addControllerType" class="form-label">Controller Type</label>
-                  <select class="form-select" id="addControllerType" name="controllerType" onchange="onAddControllerTypeChange()">
+                  <select class="form-select" id="addControllerType" name="controllerType" title="Select PWM controller type" onchange="onAddControllerTypeChange()">
                     <option value="gpio">Direct GPIO PWM</option>
                     <option value="pca9685">PCA9685 PWM Driver</option>
                   </select>
@@ -3769,12 +3769,12 @@
                   <div class="row mb-3">
                     <div class="col-md-6">
                       <label for="addPca9685Address" class="form-label">I2C Address</label>
-                      <input type="text" class="form-control" id="addPca9685Address" name="pca9685Address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                      <input type="text" class="form-control" id="addPca9685Address" name="pca9685Address" title="PCA9685 I2C address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
                       <div class="form-text">Default: 0x40</div>
                     </div>
                     <div class="col-md-6">
                       <label for="addPca9685Frequency" class="form-label">PWM Frequency (Hz)</label>
-                      <input type="number" class="form-control" id="addPca9685Frequency" name="pca9685Frequency" value="50" min="40" max="1000">
+                      <input type="number" class="form-control" id="addPca9685Frequency" name="pca9685Frequency" title="PWM frequency in hertz" value="50" min="40" max="1000">
                       <div class="form-text">Servo standard: 50Hz</div>
                     </div>
                   </div>
@@ -3798,7 +3798,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addControlBoard" class="form-label">Control Board</label>
-                  <select class="form-select" id="addControlBoard" name="controlBoard" onchange="(function(){
+                  <select class="form-select" id="addControlBoard" name="controlBoard" title="Select the motor driver board" onchange="(function(){
                     var v=document.getElementById('addControlBoard').value;
                     document.getElementById('addMddGroup').style.display = (v==='MDD10A')?'block':'none';
                     document.getElementById('addBtsGroup').style.display = (v==='BTS7960')?'block':'none';
@@ -3815,14 +3815,14 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addDirectionPin" class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="addDirectionPin" name="directionPin" min="1" max="40" value="18">
+                    <input type="number" class="form-control" id="addDirectionPin" name="directionPin" title="GPIO pin for direction control" min="1" max="40" value="18">
                     <div class="form-text">GPIO pin for direction control</div>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addPwmPin" class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="addPwmPin" name="pwmPin" min="1" max="40" value="13">
+                    <input type="number" class="form-control" id="addPwmPin" name="pwmPin" title="GPIO pin for PWM speed control" min="1" max="40" value="13">
                     <div class="form-text">GPIO pin for PWM speed control (12,13,18,19 recommended)</div>
                   </div>
                 </div>
@@ -3834,28 +3834,28 @@
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addRpwmPin" class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="addRpwmPin" name="rpwmPin" min="1" max="40" value="19">
+                    <input type="number" class="form-control" id="addRpwmPin" name="rpwmPin" title="GPIO pin for right PWM" min="1" max="40" value="19">
                     <div class="form-text">Right PWM (e.g., GPIO 19)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addLpwmPin" class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="addLpwmPin" name="lpwmPin" min="1" max="40" value="21">
+                    <input type="number" class="form-control" id="addLpwmPin" name="lpwmPin" title="GPIO pin for left PWM" min="1" max="40" value="21">
                     <div class="form-text">Left PWM (e.g., GPIO 21)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addRenPin" class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="addRenPin" name="renPin" min="1" max="40" value="5">
+                    <input type="number" class="form-control" id="addRenPin" name="renPin" title="GPIO pin for right enable" min="1" max="40" value="5">
                     <div class="form-text">Right Enable (e.g., GPIO 5)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addLenPin" class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="addLenPin" name="lenPin" min="1" max="40" value="22">
+                    <input type="number" class="form-control" id="addLenPin" name="lenPin" title="GPIO pin for left enable" min="1" max="40" value="22">
                     <div class="form-text">Left Enable (e.g., GPIO 22)</div>
                   </div>
                 </div>
@@ -3866,14 +3866,14 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addMaxExtension" class="form-label">Max Extension (ms)</label>
-                  <input type="number" class="form-control" id="addMaxExtension" name="maxExtension" min="1000" max="30000" value="15000">
+                  <input type="number" class="form-control" id="addMaxExtension" name="maxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
                   <div class="form-text">Maximum extension time to prevent damage</div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addMaxRetraction" class="form-label">Max Retraction (ms)</label>
-                  <input type="number" class="form-control" id="addMaxRetraction" name="maxRetraction" min="1000" max="30000" value="15000">
+                  <input type="number" class="form-control" id="addMaxRetraction" name="maxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
                   <div class="form-text">Maximum retraction time to prevent damage</div>
                 </div>
               </div>
@@ -3888,14 +3888,14 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addWebcamDevice" class="form-label">Webcam Device</label>
-                  <select class="form-select" id="addWebcamDevice">
+                  <select class="form-select" id="addWebcamDevice" title="Select a detected webcam">
                     <option value="">Select a detected webcam...</option>
                   </select>
                   <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()">Scan Devices</button>
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()" title="Scan for connected webcams">Scan Devices</button>
               </div>
             </div >
           `;
@@ -3907,14 +3907,14 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioInput" class="form-label">Audio Input</label>
-                  <select class="form-select" id="addAudioInput">
+                  <select class="form-select" id="addAudioInput" title="Select an audio input source">
                     <option value="">Select an audio input...</option>
                   </select>
                   <div class="form-text">Select a PipeWire input source for this Microphone.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()">Scan Inputs</button>
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()" title="Scan for audio inputs">Scan Inputs</button>
               </div>
             </div >
           `;
@@ -3926,33 +3926,33 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioOutput" class="form-label">Audio Output</label>
-                  <select class="form-select" id="addAudioOutput">
+                  <select class="form-select" id="addAudioOutput" title="Select an audio output sink">
                     <option value="">Select an audio output...</option>
                   </select>
                   <div class="form-text">Route this Speaker to a specific PipeWire sink.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()">Scan Outputs</button>
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()" title="Scan for audio outputs">Scan Outputs</button>
               </div>
             </div >
           <div class="row">
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
-                <input type="number" class="form-control" id="addSpeakerVolume" min="0" max="100" value="50">
+                <input type="number" class="form-control" id="addSpeakerVolume" title="Speaker volume 0 to 100" min="0" max="100" value="50">
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
-                <input type="number" class="form-control" id="addSpeakerBass" min="-10" max="10" value="0">
+                <input type="number" class="form-control" id="addSpeakerBass" title="Bass level in decibels" min="-10" max="10" value="0">
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
-                <input type="number" class="form-control" id="addSpeakerTreble" min="-10" max="10" value="0">
+                <input type="number" class="form-control" id="addSpeakerTreble" title="Treble level in decibels" min="-10" max="10" value="0">
               </div>
             </div>
           </div>
@@ -4070,19 +4070,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label for="addStepPin" class="form-label">Step Pin</label>
-                    <input type="number" class="form-control" id="addStepPin" name="stepPin" min="1" max="40" value="17" required>
+                    <input type="number" class="form-control" id="addStepPin" name="stepPin" title="GPIO pin for step pulses" min="1" max="40" value="17" required>
                   </div>
                   <div class="col-md-3">
                     <label for="addDirPin" class="form-label">Dir Pin</label>
-                    <input type="number" class="form-control" id="addDirPin" name="dirPin" min="1" max="40" value="27" required>
+                    <input type="number" class="form-control" id="addDirPin" name="dirPin" title="GPIO pin for direction" min="1" max="40" value="27" required>
                   </div>
                   <div class="col-md-3">
                     <label for="addEnablePin" class="form-label">Enable Pin (optional)</label>
-                    <input type="number" class="form-control" id="addEnablePin" name="enablePin" min="1" max="40" placeholder="">
+                    <input type="number" class="form-control" id="addEnablePin" name="enablePin" title="Optional GPIO pin for driver enable" min="1" max="40" placeholder="">
                   </div>
                   <div class="col-md-3">
                     <label for="addMicrostepping" class="form-label">Microstepping</label>
-                    <select class="form-select" id="addMicrostepping">
+                    <select class="form-select" id="addMicrostepping" title="Microstepping divisor">
                       <option value="1">1</option>
                       <option value="2">2</option>
                       <option value="4">4</option>
@@ -4094,7 +4094,7 @@
                 <div class="row g-3 mt-1">
                   <div class="col-md-3">
                     <label for="addStepsPerRev" class="form-label">Steps/Rev</label>
-                    <input type="number" class="form-control" id="addStepsPerRev" min="1" max="2000" value="200">
+                    <input type="number" class="form-control" id="addStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
                   </div>
                 </div>
               </div>
@@ -4590,7 +4590,7 @@
       const toast = document.createElement('div');
       toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
       toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
-      toast.innerHTML = `${message}\n<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+      toast.innerHTML = `${message}\n<button type="button" class="btn-close" title="Dismiss this notification" data-bs-dismiss="alert"></button>`;
       toastContainer.appendChild(toast);
       setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
     }
@@ -4999,26 +4999,26 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editServoPin" min="1" max="40">
+                  <input type="number" class="form-control" id="editServoPin" title="GPIO pin for the servo" min="1" max="40">
                   <div class="form-text">Not used with PCA9685</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Servo Type</label>
-                  <select class="form-select" id="editServoType">
+                  <select class="form-select" id="editServoType" title="Select servo type">
                     <option value="standard">Standard (0-180°)</option>
                     <option value="continuous">Continuous Rotation</option>
                   </select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Controller Type</label>
-                  <select class="form-select" id="editControllerType">
+                  <select class="form-select" id="editControllerType" title="Select PWM controller type">
                     <option value="gpio">Direct GPIO</option>
                     <option value="pca9685">PCA9685 PWM Board</option>
                   </select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Invert Direction</label>
-                  <select class="form-select" id="editInvertDirection">
+                  <select class="form-select" id="editInvertDirection" title="Invert servo direction">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                   </select>
@@ -5028,7 +5028,7 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-4">
                   <label class="form-label">Model</label>
-                  <select class="form-select" id="editServoModel">
+                  <select class="form-select" id="editServoModel" title="Assign a servo model">
                     <option value="">Select model...</option>
                   </select>
                 </div>
@@ -5041,12 +5041,12 @@
                     <div class="row g-3">
                       <div class="col-md-3">
                         <label class="form-label">I2C Address</label>
-                        <input type="text" class="form-control" id="editPca9685Address" placeholder="0x40">
+                        <input type="text" class="form-control" id="editPca9685Address" title="PCA9685 I2C address" placeholder="0x40">
                         <div class="form-text">Hex format (e.g., 0x40)</div>
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">PWM Frequency</label>
-                        <input type="number" class="form-control" id="editPca9685Frequency" min="40" max="1000" value="50">
+                        <input type="number" class="form-control" id="editPca9685Frequency" title="PWM frequency in hertz" min="40" max="1000" value="50">
                         <div class="form-text">Hz (typically 50)</div>
                       </div>
                     </div>
@@ -5074,7 +5074,7 @@
               <div class="row g-3 mb-2">
                 <div class="col-md-4">
                   <label class="form-label">Control Board</label>
-                  <select class="form-select" id="editControlBoard" name="controlBoard">
+                  <select class="form-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
                     <option value="MDD10A">MDD10A / Cytron (DIR + PWM)</option>
                     <option value="BTS7960">BTS7960 (RPWM/LPWM + R_EN/L_EN)</option>
                   </select>
@@ -5085,12 +5085,12 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
                     <div class="form-text">GPIO pin for direction control</div>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
                     <div class="form-text">GPIO pin for speed control</div>
                   </div>
                 </div>
@@ -5100,19 +5100,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="editRpwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="editLpwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="editRenPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="editLenPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
                   </div>
                 </div>
               </div>
@@ -5120,7 +5120,7 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-4">
                   <label class="form-label">Max Duration (ms)</label>
-                  <input type="number" class="form-control" id="editMaxDuration" min="100" max="10000" value="5000">
+                  <input type="number" class="form-control" id="editMaxDuration" title="Safety timeout in milliseconds" min="100" max="10000" value="5000">
                   <div class="form-text">Safety timeout</div>
                 </div>
               </div>
@@ -5137,7 +5137,7 @@
               <div class="row g-3 mb-2">
                 <div class="col-md-4">
                   <label class="form-label">Control Board</label>
-                  <select class="form-select" id="editControlBoard" name="controlBoard">
+                  <select class="form-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
                     <option value="MDD10A">MDD10A / Cytron (DIR + PWM)</option>
                     <option value="BTS7960">BTS7960 (RPWM/LPWM + R_EN/L_EN)</option>
                   </select>
@@ -5148,12 +5148,12 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="editDirectionPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
                     <div class="form-text">GPIO pin for direction</div>
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="editPwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
                     <div class="form-text">GPIO pin for speed</div>
                   </div>
                 </div>
@@ -5163,19 +5163,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="editRpwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="editLpwmPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="editRenPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="editLenPin" min="1" max="40">
+                    <input type="number" class="form-control" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
                   </div>
                 </div>
               </div>
@@ -5183,11 +5183,11 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-3">
                   <label class="form-label">Max Extension (ms)</label>
-                  <input type="number" class="form-control" id="editMaxExtension" min="1000" max="30000" value="15000">
+                  <input type="number" class="form-control" id="editMaxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Max Retraction (ms)</label>
-                  <input type="number" class="form-control" id="editMaxRetraction" min="1000" max="30000" value="15000">
+                  <input type="number" class="form-control" id="editMaxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
                 </div>
               </div>
             </div>
@@ -5203,12 +5203,12 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editLightPin" min="1" max="40">
+                  <input type="number" class="form-control" id="editLightPin" title="GPIO pin for the light" min="1" max="40">
                   <div class="form-text">GPIO pin for control</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Brightness (%)</label>
-                  <input type="number" class="form-control" id="editBrightness" min="0" max="100" value="100">
+                  <input type="number" class="form-control" id="editBrightness" title="Default brightness percent" min="0" max="100" value="100">
                   <div class="form-text">Default brightness level</div>
                 </div>
               </div>
@@ -5226,19 +5226,19 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editSensorPin" min="1" max="40">
+                  <input type="number" class="form-control" id="editSensorPin" title="GPIO pin for sensor input" min="1" max="40">
                   <div class="form-text">GPIO pin for sensor input</div>
                 </div>
                 ${isMotion ? `
                 <div class="col-md-4">
                   <label class="form-label">Sensitivity</label>
-                  <input type="number" class="form-control" id="editSensitivity" min="1" max="10" value="5">
+                  <input type="number" class="form-control" id="editSensitivity" title="Detection sensitivity 1 to 10" min="1" max="10" value="5">
                   <div class="form-text">Detection sensitivity (1-10)</div>
 
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Window (ms)</label>
-                  <input type="number" class="form-control" id="editWindowMs" min="50" max="1000" value="100">
+                  <input type="number" class="form-control" id="editWindowMs" title="Detection window in milliseconds" min="50" max="1000" value="100">
                   <div class="form-text">Detection window</div>
                 </div>
                 ` : ''}
@@ -5256,25 +5256,25 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Device Path</label>
-                  <input type="text" class="form-control" id="editDevicePath" placeholder="/dev/video0">
+                  <input type="text" class="form-control" id="editDevicePath" title="Video device path" placeholder="/dev/video0">
                   <div class="form-text">Video device path</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Device ID</label>
-                  <input type="number" class="form-control" id="editDeviceId" min="0" max="10" value="0">
+                  <input type="number" class="form-control" id="editDeviceId" title="Camera device number" min="0" max="10" value="0">
                   <div class="form-text">Camera device number</div>
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">Width</label>
-                  <input type="number" class="form-control" id="editWidth" value="1280">
+                  <input type="number" class="form-control" id="editWidth" title="Capture width in pixels" value="1280">
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">Height</label>
-                  <input type="number" class="form-control" id="editHeight" value="720">
+                  <input type="number" class="form-control" id="editHeight" title="Capture height in pixels" value="720">
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">FPS</label>
-                  <input type="number" class="form-control" id="editFps" min="1" max="60" value="30">
+                  <input type="number" class="form-control" id="editFps" title="Frames per second" min="1" max="60" value="30">
                 </div>
               </div>
             </div>
@@ -5291,17 +5291,17 @@
 
                 <div class="col-md-4">
                   <label class="form-label">Device Name</label>
-                  <input type="text" class="form-control" id="editMicDevice" placeholder="default">
+                  <input type="text" class="form-control" id="editMicDevice" title="Audio input device name" placeholder="default">
                   <div class="form-text">Audio input device</div>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Sample Rate</label>
-                  <input type="number" class="form-control" id="editSampleRate" value="44100">
+                  <input type="number" class="form-control" id="editSampleRate" title="Audio sample rate in hertz" value="44100">
                   <div class="form-text">Audio sample rate (Hz)</div>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Gain</label>
-                  <input type="number" class="form-control" id="editGain" min="0" max="100" value="50">
+                  <input type="number" class="form-control" id="editGain" title="Input gain percent" min="0" max="100" value="50">
                   <div class="form-text">Input gain (%)</div>
                 </div>
               </div>
@@ -5318,22 +5318,22 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Device Name</label>
-                  <input type="text" class="form-control" id="editSpeakerDevice" placeholder="default">
+                  <input type="text" class="form-control" id="editSpeakerDevice" title="Audio output device name" placeholder="default">
                   <div class="form-text">Audio output device</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Volume (%)</label>
-                  <input type="number" class="form-control" id="editVolume" min="0" max="100" value="80">
+                  <input type="number" class="form-control" id="editVolume" title="Default volume percent" min="0" max="100" value="80">
                   <div class="form-text">Default volume level</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Bass</label>
-                  <input type="number" class="form-control" id="editBass" min="-10" max="10" value="0">
+                  <input type="number" class="form-control" id="editBass" title="Bass adjustment in decibels" min="-10" max="10" value="0">
                   <div class="form-text">Bass adjustment</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Treble</label>
-                  <input type="number" class="form-control" id="editTreble" min="-10" max="10" value="0">
+                  <input type="number" class="form-control" id="editTreble" title="Treble adjustment in decibels" min="-10" max="10" value="0">
                   <div class="form-text">Treble adjustment</div>
                 </div>
               </div>
@@ -5649,19 +5649,19 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Step Pin</label>
-                  <input type="number" class="form-control" id="editStepPin" min="1" max="40">
+                  <input type="number" class="form-control" id="editStepPin" title="GPIO pin for step pulses" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Dir Pin</label>
-                  <input type="number" class="form-control" id="editDirPin" min="1" max="40">
+                  <input type="number" class="form-control" id="editDirPin" title="GPIO pin for direction" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Enable Pin (optional)</label>
-                  <input type="number" class="form-control" id="editEnablePin" min="1" max="40">
+                  <input type="number" class="form-control" id="editEnablePin" title="Optional GPIO pin for driver enable" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Microstepping</label>
-                  <select class="form-select" id="editMicrostepping">
+                  <select class="form-select" id="editMicrostepping" title="Microstepping divisor">
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="4">4</option>
@@ -5673,7 +5673,7 @@
               <div class="row g-3 mt-1">
                 <div class="col-md-3">
                   <label class="form-label">Steps/Rev</label>
-                  <input type="number" class="form-control" id="editStepsPerRev" min="1" max="2000" value="200">
+                  <input type="number" class="form-control" id="editStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
                 </div>
               </div>
             </div>
@@ -5871,7 +5871,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Add Hardware Part</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" title="Close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <form id="addPartForm">
@@ -5903,7 +5903,7 @@
               </div>
             </div>
             <div class="col-md-4 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn"
+              <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn" title="Open the Models page to add a model"
                 onclick="window.open('/setup/models', '_blank')">
                 <i class="bi bi-plus-circle"></i> Add Model
               </button>
