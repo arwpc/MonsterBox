@@ -18,6 +18,36 @@ const router = express.Router();
 const execAsync = promisify(exec);
 
 /**
+ * Guard for destructive system-control endpoints (reboot / shutdown /
+ * restart-service / optimize). These execute `sudo` operations and had no
+ * protection at all.
+ *
+ * - If MB_ADMIN_TOKEN is set, require a matching `x-mb-admin-token` header.
+ * - Otherwise (default), still reject cross-origin browser requests so a
+ *   malicious page the operator visits cannot CSRF a reboot. Same-origin UI
+ *   calls and non-browser callers (curl/scripts send no Origin) are unaffected,
+ *   so this adds protection without breaking the existing operator UI.
+ */
+function requireAdmin(req, res, next) {
+    const expected = process.env.MB_ADMIN_TOKEN;
+    if (expected) {
+        if (req.get('x-mb-admin-token') === expected) return next();
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    const origin = req.get('origin');
+    if (origin) {
+        try {
+            if (new URL(origin).host !== req.get('host')) {
+                return res.status(403).json({ success: false, error: 'Cross-origin request rejected' });
+            }
+        } catch (_) {
+            return res.status(403).json({ success: false, error: 'Invalid origin' });
+        }
+    }
+    return next();
+}
+
+/**
  * GET /api/system/info - Get system information
  */
 router.get('/info', (req, res) => {
@@ -367,7 +397,7 @@ router.delete('/templates/:id', async (req, res) => {
 /**
  * POST /api/system/restart-service - Restart the MonsterBox service
  */
-router.post('/restart-service', express.json(), async (req, res) => {
+router.post('/restart-service', requireAdmin, express.json(), async (req, res) => {
     try {
         console.log('⚠️ MonsterBox service restart requested');
 
@@ -399,7 +429,7 @@ router.post('/restart-service', express.json(), async (req, res) => {
 /**
  * POST /api/system/optimize - Run the animatronic optimization script
  */
-router.post('/optimize', express.json(), async (req, res) => {
+router.post('/optimize', requireAdmin, express.json(), async (req, res) => {
     try {
         console.log('⚠️ Animatronic optimization requested');
 
@@ -435,7 +465,7 @@ router.post('/optimize', express.json(), async (req, res) => {
 /**
  * POST /api/system/reboot - Reboot the animatronic
  */
-router.post('/reboot', express.json(), async (req, res) => {
+router.post('/reboot', requireAdmin, express.json(), async (req, res) => {
     try {
         console.log('⚠️ System reboot requested');
 
@@ -468,7 +498,7 @@ router.post('/reboot', express.json(), async (req, res) => {
 /**
  * POST /api/system/shutdown - Shutdown the system
  */
-router.post('/shutdown', express.json(), async (req, res) => {
+router.post('/shutdown', requireAdmin, express.json(), async (req, res) => {
     try {
         console.log('⚠️ System shutdown requested');
 

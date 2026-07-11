@@ -35,7 +35,12 @@ async function getCharacterDataDir(characterId) {
     return path.resolve(baseDataPath);
   }
 
-  // Create character-specific path
+  // Create character-specific path. characterId reaches here from route params
+  // (e.g. /setup/jaw-animation/api/jaw-animation/:charId), so reject anything
+  // that is not a plain integer before it can build a traversal path.
+  if (!/^\d+$/.test(String(characterId))) {
+    throw new Error(`Invalid characterId: ${characterId}`);
+  }
   return path.resolve(`data/character-${characterId}`);
 }
 

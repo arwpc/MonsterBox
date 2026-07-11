@@ -127,14 +127,17 @@ class GoblinDeploymentService {
 
     async testSSHConnection(ipAddress, password) {
         return new Promise((resolve) => {
+            // Pass the password via the SSHPASS env var (`-e`) instead of argv
+            // (`-p`), so it does not appear in the process table. Matches the
+            // executeSSH/executeSCP pattern used elsewhere in this service.
             const cmd = spawn('sshpass', [
-                '-p', password,
+                '-e',
                 'ssh',
                 '-o', 'StrictHostKeyChecking=no',
                 '-o', 'ConnectTimeout=5',
                 `${this.sshUser}@${ipAddress}`,
                 'echo "Connected"'
-            ]);
+            ], { env: { ...process.env, SSHPASS: password } });
 
             let success = false;
             cmd.stdout.on('data', (data) => {

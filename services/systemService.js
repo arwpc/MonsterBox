@@ -4,7 +4,7 @@
  * Uses only built-in Node.js modules (os, child_process, fs).
  */
 
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -12,6 +12,9 @@ import { fileURLToPath } from 'url';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
+// execFile passes arguments as an argv array (no /bin/sh), so untrusted values
+// can never be shell-interpreted. Used for every command that includes input.
+const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -170,14 +173,15 @@ async function getServiceLogs(service, lines, since) {
     var n = parseInt(lines, 10) || 100;
     if (n > 1000) n = 1000;
 
-    var cmd = 'journalctl -u ' + svc + ' --no-pager -n ' + n;
-    if (since) {
-        // Sanitize since param (e.g. "1 hour ago", "today")
-        cmd += ' --since "' + String(since).replace(/"/g, '') + '"';
-    }
+    // Pass args as an argv array (execFile, no shell). `since` is an
+    // unauthenticated query param, so stripping quotes was not enough —
+    // $(...) / backticks execute inside double quotes under /bin/sh. journalctl
+    // still receives values like "1 hour ago" as a single argument, unchanged.
+    var args = ['-u', svc, '--no-pager', '-n', String(n)];
+    if (since) { args.push('--since', String(since)); }
 
     try {
-        var result = await execAsync(cmd, { timeout: 10000, maxBuffer: 1024 * 1024 });
+        var result = await execFileAsync('journalctl', args, { timeout: 10000, maxBuffer: 1024 * 1024 });
         return result.stdout || '';
     } catch (err) {
         return err.stdout || err.message || 'Failed to retrieve logs';
@@ -320,8 +324,10 @@ async function generateSSHKey(type, comment) {
     var commentStr = comment || ('MonsterBox ' + keyType + ' key');
 
     try {
-        var bits = keyType === 'rsa' ? ' -b 4096' : '';
-        await execAsync('ssh-keygen -t ' + keyType + bits + ' -C "' + commentStr.replace(/"/g, '') + '" -f ' + keyPath + ' -N ""', { timeout: 15000 });
+        var args = ['-t', keyType];
+        if (keyType === 'rsa') { args.push('-b', '4096'); }
+        args.push('-C', commentStr, '-f', keyPath, '-N', '');
+        await execFileAsync('ssh-keygen', args, { timeout: 15000 });
         var pubKey = await fs.readFile(keyPath + '.pub', 'utf8');
         return { success: true, name: keyName, publicKey: pubKey.trim() };
     } catch (err) {
@@ -339,9 +345,16 @@ async function deployKeyToHost(host, keyName) {
         return { success: false, error: 'Public key not found: ' + keyName };
     }
 
+    // Restrict host to a plain hostname or user@host token, then pass via
+    // execFile (argv, no shell) so nothing in it can be interpreted.
+    var hostStr = String(host || '');
+    if (!/^[A-Za-z0-9._@-]+$/.test(hostStr)) {
+        return { success: false, error: 'Invalid host' };
+    }
+
     try {
-        await execAsync('ssh-copy-id -i ' + pubPath + ' ' + String(host).replace(/[;&|`$]/g, ''), { timeout: 30000 });
-        return { success: true, message: 'Key deployed to ' + host };
+        await execFileAsync('ssh-copy-id', ['-i', pubPath, hostStr], { timeout: 30000 });
+        return { success: true, message: 'Key deployed to ' + hostStr };
     } catch (err) {
         return { success: false, error: err.message };
     }

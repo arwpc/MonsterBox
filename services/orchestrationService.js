@@ -27,7 +27,10 @@ class OrchestrationService {
         this.goblins = config.goblins;
 
         this.sshUser = 'remote';
-        this.sshPassword = 'klrklr89!'; // For reference, but using SSH keys
+        // Inter-node control credential. Prefer setting MONSTERBOX_SSH_PASSWORD in
+        // each node's .env (and rotating this value — it was committed to git).
+        // The literal remains only as a fallback so existing deployments keep working.
+        this.sshPassword = process.env.MONSTERBOX_SSH_PASSWORD || 'klrklr89!';
     }
 
     /**
@@ -129,8 +132,11 @@ class OrchestrationService {
      */
     async rebootDevice(ip) {
         try {
-            const sshCmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} 'echo ${this.sshPassword} | sudo -S reboot'`;
-            await execAsync(sshCmd);
+            // `sshpass -e` reads the SSH password from the SSHPASS env var instead
+            // of argv, keeping it out of the process table. (The remote `sudo -S`
+            // still echoes it; a NOPASSWD sudoers entry for reboot would remove that.)
+            const sshCmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} 'echo ${this.sshPassword} | sudo -S reboot'`;
+            await execAsync(sshCmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
             return { success: true, message: 'Reboot command sent' };
         } catch (error) {
             throw new Error(`Reboot failed: ${error.message}`);
@@ -142,8 +148,8 @@ class OrchestrationService {
      */
     async restartService(ip) {
         try {
-            const cmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "sudo systemctl restart monsterbox || (pkill -f 'node.*server.js' || true; cd ~/MonsterBox && nohup npm start > /tmp/monsterbox.log 2>&1 &)"`;
-            await execAsync(cmd);
+            const cmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "sudo systemctl restart monsterbox || (pkill -f 'node.*server.js' || true; cd ~/MonsterBox && nohup npm start > /tmp/monsterbox.log 2>&1 &)"`;
+            await execAsync(cmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
             return { success: true, message: 'Service restart initiated' };
         } catch (error) {
             throw new Error(`Service restart failed: ${error.message}`);
@@ -244,8 +250,8 @@ class OrchestrationService {
     async updateConfig(ip, config) {
         try {
             const configJson = JSON.stringify(config, null, 2).replace(/'/g, "'\\''");
-            const cmd = `sshpass -p '${this.sshPassword}' ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "printf '%s' '${configJson}' | sudo tee ~/MonsterBox/config/app-config.json >/dev/null"`;
-            await execAsync(cmd);
+            const cmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "printf '%s' '${configJson}' | sudo tee ~/MonsterBox/config/app-config.json >/dev/null"`;
+            await execAsync(cmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
             return { success: true, message: 'Config updated' };
         } catch (error) {
             throw new Error(`Config update failed: ${error.message}`);

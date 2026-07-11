@@ -80,7 +80,11 @@ async function loadCharacterParts(characterId) {
         const appRoot = path.resolve(__dirname, '..', '..');
         // Always use the global data root so we can reliably find any character's directory
         const dataRoot = path.resolve(appRoot, 'data');
-        const effectiveCharId = characterId || cfg.selectedCharacter || null;
+        // characterId can come from a query param; only accept plain integers so
+        // a "../.." payload can't escape the data root. Anything else falls back
+        // to the global parts.json, which is the existing unknown-character path.
+        const rawCharId = characterId || cfg.selectedCharacter || null;
+        const effectiveCharId = (rawCharId != null && /^\d+$/.test(String(rawCharId))) ? String(rawCharId) : null;
 
         // Prefer character-specific parts.json when a character is selected
         if (effectiveCharId) {
@@ -112,7 +116,10 @@ async function saveCharacterParts(characterId, parts) {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '..', '..');
         const dataRoot = path.resolve(appRoot, 'data');
-        const effectiveCharId = characterId || cfg.selectedCharacter || null;
+        // Guard against traversal on the write path (mkdir + writeFile): only a
+        // plain-integer character id may build a per-character directory.
+        const rawCharId = characterId || cfg.selectedCharacter || null;
+        const effectiveCharId = (rawCharId != null && /^\d+$/.test(String(rawCharId))) ? String(rawCharId) : null;
 
         let targetDir;
         if (effectiveCharId) {

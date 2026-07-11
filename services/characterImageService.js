@@ -11,6 +11,21 @@ function imagesDirFor(characterId) {
   return path.resolve(appRoot, 'data', `character-${characterId}`, 'images');
 }
 
+/**
+ * Reject any filename that is not a bare, single-segment basename. Express
+ * decodes route params, so a percent-encoded "..%2f.." arrives as "../..";
+ * without this guard path.join would collapse it to a location outside the
+ * images dir, letting fs.unlink/stat/sendFile touch arbitrary files.
+ */
+function safeBasename(filename) {
+  const name = String(filename == null ? '' : filename);
+  const base = path.basename(name);
+  if (!base || base === '.' || base === '..' || base !== name || name.includes('/') || name.includes('\\')) {
+    throw new Error('Invalid filename');
+  }
+  return base;
+}
+
 export async function ensureImagesDir(characterId) {
   const dir = imagesDirFor(characterId);
   await fs.mkdir(dir, { recursive: true });
@@ -39,11 +54,12 @@ export async function saveImage(characterId, originalName, buffer) {
 }
 
 export async function deleteImage(characterId, filename) {
-  const filePath = path.join(imagesDirFor(characterId), filename);
+  const safe = safeBasename(filename);
+  const filePath = path.join(imagesDirFor(characterId), safe);
   try { await fs.unlink(filePath); } catch (_) { /* ignore */ }
   // If it was active, clear it
   const charObj = await getCharacterById(characterId);
-  if (charObj && charObj.activeImage === filename) {
+  if (charObj && charObj.activeImage === safe) {
     await updateCharacter(characterId, { activeImage: null });
   }
   return true;
@@ -51,9 +67,10 @@ export async function deleteImage(characterId, filename) {
 
 export async function setActiveImage(characterId, filename) {
   // Validate file exists
-  const filePath = path.join(imagesDirFor(characterId), filename);
+  const safe = safeBasename(filename);
+  const filePath = path.join(imagesDirFor(characterId), safe);
   try { await fs.stat(filePath); } catch (e) { throw new Error('Image not found'); }
-  await updateCharacter(characterId, { activeImage: filename });
-  return { filename, url: `/data/character-${characterId}/images/${filename}` };
+  await updateCharacter(characterId, { activeImage: safe });
+  return { filename: safe, url: `/data/character-${characterId}/images/${safe}` };
 }
 

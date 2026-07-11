@@ -715,7 +715,16 @@ class AudioLibraryService {
      * Get audio file path
      */
     getAudioFilePath(filename) {
-        return path.join(this.filesDir, filename);
+        // Confine the result to filesDir. A request-supplied filename (e.g. the
+        // /api/play-audio fallback) could otherwise contain "../.." to escape the
+        // audio directory and read arbitrary files — including unbounded special
+        // files like /dev/zero, which fs.readFile would buffer until the RPi OOMs.
+        const resolved = path.resolve(this.filesDir, String(filename || ''));
+        const base = path.resolve(this.filesDir);
+        if (resolved !== base && !resolved.startsWith(base + path.sep)) {
+            throw new Error('Invalid audio filename');
+        }
+        return resolved;
     }
 
     /**

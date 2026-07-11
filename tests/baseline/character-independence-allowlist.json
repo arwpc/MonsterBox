@@ -257,13 +257,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "server.js",
-      "line": 722,
-      "snippet": "console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj \"",
-      "reason": "Doc-only console output for OpenSSL cert generation."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "services/aiConfigStore.js",
       "line": 76,
       "snippet": "3: 'Tj9l48J9AJbry5yCP5eW', // Orlok: Count Orlok, Nosferatu",

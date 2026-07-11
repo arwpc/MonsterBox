@@ -50,7 +50,10 @@ router.post('/characters/:id/images/active', async (req, res) => {
 router.get('/characters/:id/images/:filename', async (req, res) => {
   try {
     const id = parseId(req.params.id);
-    const filename = req.params.filename;
+    // Collapse any traversal (Express decodes the param, so "..%2f.." → "../..")
+    // to a bare basename before it reaches the filesystem. Non-existent names
+    // fall through to the placeholder below, preserving the no-404 contract.
+    const filename = path.basename(req.params.filename || '');
     if (id === null || !filename) return res.status(400).json({ success: false, error: 'Invalid request' });
 
     const dir = await ensureImagesDir(id);

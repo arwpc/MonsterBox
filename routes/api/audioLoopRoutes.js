@@ -51,9 +51,14 @@ router.post('/start', express.json(), async (req, res) => {
             console.error('Error loading audio library:', error.message);
         }
 
-        // Fallback: treat audioId as direct file path
+        // Only play files resolved from the audio library. Previously an
+        // unresolved id was treated as a raw filesystem path, letting a request
+        // play (or probe for) arbitrary local files.
         if (!audioFile) {
-            audioFile = audioId.startsWith('/') ? audioId : path.resolve(process.cwd(), audioId);
+            return res.status(404).json({
+                success: false,
+                error: `Audio file not found: ${audioId}`
+            });
         }
 
         // Verify file exists

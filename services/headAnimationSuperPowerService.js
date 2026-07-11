@@ -13,6 +13,11 @@ import { getCalibrationStore } from '../server/calibration/store.js';
  * Always resolves to data/character-{id} to ensure character independence.
  */
 function getCharacterDataDir(characterId) {
+  // characterId arrives from route params; reject non-integer values so a
+  // "../.." payload can never build a path outside the data directory.
+  if (!/^\d+$/.test(String(characterId))) {
+    throw new Error(`Invalid characterId: ${characterId}`);
+  }
   return path.resolve(`data/character-${characterId}`);
 }
 

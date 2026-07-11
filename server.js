@@ -730,7 +730,7 @@ try {
     console.log(`🔒 SSL certificates loaded from certs/`);
 } catch (e) {
     console.warn(`⚠️  No SSL certs found — running HTTP only. Browser mic requires HTTPS.`);
-    console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj "/CN=orlok"`);
+    console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj "/CN=monsterbox"`);
 }
 
 // Start primary server: HTTPS if certs available, HTTP otherwise
@@ -862,8 +862,13 @@ try {
         if (tp === PORT) continue;
         import('http').then(({ default: http }) => {
             const testServer = http.createServer(app);
-            testServer.listen(tp, '0.0.0.0', () => {
-                console.log(`🧪 Test port listener active on ${tp}`);
+            // Bind to loopback only. This listener serves the ENTIRE app over
+            // plaintext HTTP; on a production RPi (HTTPS on the main port) binding
+            // to 0.0.0.0 silently re-exposed every hardware/calibration endpoint
+            // to the whole LAN without TLS. On-box Mocha/Playwright tests and the
+            // SSH-tunnel workflow all use localhost, so loopback is sufficient.
+            testServer.listen(tp, '127.0.0.1', () => {
+                console.log(`🧪 Test port listener active on ${tp} (loopback)`);
             });
             testServer.on('error', (e) => {
                 console.warn(`Test port ${tp} listener setup failed:`, e.message);
