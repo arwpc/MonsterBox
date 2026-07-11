@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { writeJsonAtomic, withFileLock } from '../../services/atomicStore.js';
 
 const DEFAULT_CAL_PATH = path.resolve(process.cwd(), 'data/calibration_profiles.json');
 
@@ -20,7 +21,8 @@ export class JsonCalibrationStore {
 
   async save(data) {
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-    await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf8');
+    // Atomic write so an interrupted calibration write can't corrupt the file.
+    await writeJsonAtomic(this.filePath, data);
   }
 
   async get(partId) {
@@ -29,9 +31,13 @@ export class JsonCalibrationStore {
   }
 
   async upsert(profile) {
-    const all = await this.load();
-    all[String(profile.partId)] = Object.assign({}, profile, { lastCalibratedAt: new Date().toISOString() });
-    await this.save(all);
+    // Serialize the load→mutate→save so two concurrent calibration writes don't
+    // each read the same snapshot and clobber the other (last-writer-wins).
+    return withFileLock(`calibration:${this.filePath}`, async () => {
+      const all = await this.load();
+      all[String(profile.partId)] = Object.assign({}, profile, { lastCalibratedAt: new Date().toISOString() });
+      await this.save(all);
+    });
   }
 
   async list() {
@@ -40,12 +46,14 @@ export class JsonCalibrationStore {
   }
 
   async delete(partId) {
-    const all = await this.load();
-    const key = String(partId);
-    if (!all[key]) return false;
-    delete all[key];
-    await this.save(all);
-    return true;
+    return withFileLock(`calibration:${this.filePath}`, async () => {
+      const all = await this.load();
+      const key = String(partId);
+      if (!all[key]) return false;
+      delete all[key];
+      await this.save(all);
+      return true;
+    });
   }
 }
 

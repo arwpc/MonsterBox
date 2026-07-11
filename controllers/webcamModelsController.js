@@ -1,17 +1,18 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readConfig } from '../services/configService.js';
+import { writeJsonAtomic } from '../services/atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function getModelsFilePath() {
-  const cfg = await readConfig();
+  // Webcam models are global/shared — resolve the SAME file modelsController
+  // uses (data/models/webcam_models.json). This previously used cfg.dataPath
+  // (character-scoped), so the two live controllers managed different files and
+  // the webcam-models list depended on which controller/route you hit (split-brain).
   const appRoot = path.resolve(__dirname, '..');
-  const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
-  const modelsDir = path.resolve(appRoot, dataDir, 'models');
-  return path.resolve(modelsDir, 'webcam_models.json');
+  return path.resolve(appRoot, 'data', 'models', 'webcam_models.json');
 }
 
 async function ensureDir(filePath) {
@@ -26,10 +27,8 @@ async function loadModels() {
     await fs.access(filePath);
   } catch (e) {
     try {
-      const cfg = await readConfig();
       const appRoot = path.resolve(__dirname, '..');
-      const dataDir = cfg && cfg.dataPath ? cfg.dataPath : '../data';
-      const legacyPath = path.resolve(appRoot, dataDir, 'webcam_models.json');
+      const legacyPath = path.resolve(appRoot, 'data', 'webcam_models.json');
       const legacyData = await fs.readFile(legacyPath, 'utf8');
       await ensureDir(filePath);
       await fs.writeFile(filePath, legacyData, 'utf8');
@@ -46,7 +45,7 @@ async function loadModels() {
 async function saveModels(models) {
   const filePath = await getModelsFilePath();
   await ensureDir(filePath);
-  await fs.writeFile(filePath, JSON.stringify(models, null, 2), 'utf8');
+  await writeJsonAtomic(filePath, models);
 }
 
 function toId(v) { return String(v); }
