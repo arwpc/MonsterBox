@@ -204,13 +204,27 @@ class ArmedModeService {
 
       console.log(`🔫 Armed Mode: Executing scene ${sceneId} (${scene.name}) - Loop ${this.loopCount}, Index ${this.currentSceneIndex}`);
 
-      // Execute scene with timeout
-      const result = await Promise.race([
-        sceneExecutor.executeScene(scene, this.characterId, null, { dryRun: false }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Scene execution timeout')), this.config.sceneTimeout)
-        )
-      ]);
+      // Execute scene with a timeout. Node can't abort an in-flight executeScene,
+      // so on timeout we do NOT just move on (that started the next scene while the
+      // timed-out one was still driving hardware). Instead we wait for the scene to
+      // actually settle before proceeding, and always clear the timer.
+      let timeoutHandle = null;
+      const scenePromise = sceneExecutor.executeScene(scene, this.characterId, null, { dryRun: false });
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutHandle = setTimeout(() => reject(new Error('Scene execution timeout')), this.config.sceneTimeout);
+      });
+
+      let result;
+      try {
+        result = await Promise.race([scenePromise, timeoutPromise]);
+      } catch (raceErr) {
+        // Timeout (or scene rejection): let the running scene finish before the
+        // next one starts so their hardware operations never overlap.
+        await scenePromise.catch(() => {});
+        throw raceErr;
+      } finally {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+      }
 
       if (result.success) {
         console.log(`🔫 Armed Mode: Scene ${sceneId} completed successfully`);

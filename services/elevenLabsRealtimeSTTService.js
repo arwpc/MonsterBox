@@ -173,10 +173,11 @@ class RealtimeSTTSession extends EventEmitter {
                     this._cleanup();
                     this.emit('disconnected', { code, reason: reasonStr, sessionId: this.sessionId });
 
-                    // Auto-reconnect on unexpected close (not user-initiated)
-                    if (code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-                        this._scheduleReconnect();
-                    }
+                    // No internal auto-reconnect: _cleanup() has already torn the
+                    // session down and 'disconnected' was emitted, so reconnecting
+                    // here resurrects an orphaned session and leaks the new WebSocket
+                    // and its keepalive interval. The caller creates a fresh session
+                    // on the next turn per the consumer contract.
                 });
 
                 this.ws.on('error', (error) => {

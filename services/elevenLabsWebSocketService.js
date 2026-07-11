@@ -1665,6 +1665,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 setTimeout(() => {
                     if (elevenLabsWs.readyState === WebSocket.OPEN) {
                         elevenLabsWs.close();
+                    } else {
+                        // Socket never reached OPEN (stalled in CONNECTING). Force
+                        // teardown and settle so the HTTP request can't hang forever
+                        // and the session isn't leaked in activeConnections.
+                        try { elevenLabsWs.terminate(); } catch (_) {}
+                        connection.isActive = false;
+                        this.activeConnections.delete(sessionId);
+                        resolve({ success: true, response: responseText || 'Response received' });
                     }
                 }, 30000);
 

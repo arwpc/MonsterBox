@@ -1630,17 +1630,20 @@
     }
 
     window.playScene = async function (sceneId) {
+      const btn = document.querySelector('.scene-play-btn[data-id="' + sceneId + '"]');
       try {
-        const btn = document.querySelector('.scene-play-btn[data-id="' + sceneId + '"]');
         if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         const r = await fetch('/scenes/api/' + sceneId + '/play', { method: 'POST' });
         const j = await r.json();
-        if (btn) btn.innerHTML = '<i class="bi bi-play-fill"></i>';
         if (!(j && j.success)) {
           alert('Failed to play scene');
         }
       } catch (e) {
         alert('Error playing scene: ' + e.message);
+      } finally {
+        // Always restore the icon — a thrown fetch/json used to leave the button
+        // stuck on the spinner (btn was also unreachable from the catch).
+        if (btn) btn.innerHTML = '<i class="bi bi-play-fill"></i>';
       }
     };
 

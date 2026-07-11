@@ -45,6 +45,7 @@ let characterId = null;
 let currentPoseId = null;
 let loopTimeout = null;
 let transitionEngine = null;
+let currentAbort = null; // AbortController for the in-flight servo transition
 
 /**
  * Lazily load transitionEngine so the module can still be imported
@@ -138,15 +139,21 @@ async function loopIteration() {
         try {
             const engine = await getTransitionEngine();
             if (engine && typeof engine.transitionServos === 'function') {
+                // Make the transition cancellable so stop() can abort it instead of
+                // letting servos keep driving toward the target after the loop stops.
+                currentAbort = new AbortController();
                 await engine.transitionServos(characterId, claimedParts, {
                     durationMs: idleConfig.transitionDurationMs || 2000,
-                    easing: pose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out'
+                    easing: pose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out',
+                    signal: currentAbort.signal
                 });
             } else {
                 console.log('[IdleLoop] No transitionEngine available, skipping hardware transition');
             }
         } catch (err) {
             console.warn('[IdleLoop] Hardware transition failed, continuing:', err.message);
+        } finally {
+            currentAbort = null;
         }
     }
 
@@ -209,6 +216,12 @@ export function stop() {
     if (loopTimeout) {
         clearTimeout(loopTimeout);
         loopTimeout = null;
+    }
+
+    // Abort any in-flight servo transition so servos stop where they are.
+    if (currentAbort) {
+        try { currentAbort.abort(); } catch (_) { /* ignore */ }
+        currentAbort = null;
     }
 
     // Release all servo claims owned by this service
