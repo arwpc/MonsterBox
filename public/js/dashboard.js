@@ -2220,13 +2220,18 @@
     if (!charId) return;
     var avatar = $('opbarAvatar');
     if (!avatar) return;
-    var url = '/images/characters/character-' + charId + '.png';
+    // Use the server-resolved active image for the current character. The old
+    // hardcoded '/images/characters/character-<id>.png' path did not exist and
+    // 404'd on every dashboard load (broken avatar + console error).
+    var url = window.__MB_CHAR_IMAGE;
+    if (!url) return;
     var img = new Image();
     img.onload = function () {
       avatar.innerHTML = '';
       img.alt = '';
       avatar.appendChild(img);
     };
+    img.onerror = function () { /* leave the placeholder avatar in place */ };
     img.src = url;
   })();
 

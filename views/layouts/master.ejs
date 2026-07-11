@@ -83,7 +83,8 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
 </head>
 
 <body data-ws-port="8795">
-    <script>window.__MB_CHAR_ID = <%= currentCharacter ? JSON.stringify(currentCharacter) : 'null' %>;</script>
+    <script>window.__MB_CHAR_ID = <%= currentCharacter ? JSON.stringify(currentCharacter) : 'null' %>;
+    window.__MB_CHAR_IMAGE = <%- (typeof currentCharacterImage !== 'undefined' && currentCharacterImage) ? JSON.stringify(currentCharacterImage) : 'null' %>;</script>
     <!-- Navigation - Automatically included on ALL pages (can be disabled with includeNavigation=false) -->
     <% if (typeof includeNavigation==='undefined' || includeNavigation !==false) { %>
         <%- include('../components/unified-navigation', { page: page || 'dashboard' , currentCharacter:
