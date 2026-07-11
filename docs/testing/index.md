@@ -2,7 +2,7 @@
 
 MonsterBox has comprehensive tests across Playwright (browser E2E) and Mocha (system/unit) frameworks.
 
-## Test Results (v6.7.6 — February 2026)
+## Test Results (v8.4.0 — July 2026)
 
 | Suite | Framework | Passing | Skipped | Notes |
 |-------|-----------|---------|---------|-------|
@@ -62,7 +62,7 @@ npm run verify              # system + unit + browser
 ## Test Environment
 
 ### Prerequisites
-- Node.js 20.x
+- Node.js 18+ (see `engines` in package.json)
 - Chromium (installed via `npx playwright install --with-deps chromium`)
 - ffmpeg (required for jaw pre-analysis tests)
 - `MB_TEST_MODE=1` for system tests (skips hardware init, defaults to char_id=1)
@@ -73,7 +73,7 @@ npm run verify              # system + unit + browser
 - All 5 CI pipelines pass: CI Test Suite, Node.js CI, SSH Deploy, Deep Tests, MkDocs
 - ffmpeg installed in CI for jaw pre-analysis engine tests
 - Hardware-dependent browser tests (relay-toggle, webcam-capture) auto-skip via `MB_TEST_MODE`
-- Playwright uses port 3100 in test mode
+- Playwright uses port 3200 in test mode (Mocha system tests use port 3100)
 
 ## Test File Structure
 
@@ -87,14 +87,15 @@ tests/
 │   ├── hardware.test.js                   # Hardware service layer
 │   ├── jaw-animation.test.js              # Jaw animation API + multi-config CRUD
 │   ├── models.test.js                     # Models CRUD API
-│   ├── parts.test.js                      # Parts API
+│   ├── parts-api.test.js                  # Parts API
 │   ├── scenes.test.js                     # Scene execution engine
-│   ├── theme.test.js                      # Theme API
+│   ├── head-animation.test.js             # Head-tracking API
 │   └── video-library.test.js              # Video library API
+│   (partial listing — see tests/system/ for the full set)
 ├── unit/                                  # Mocha unit tests
 │   ├── calibration-unified-api.test.js    # Calibration API (angle + normalized)
 │   ├── jaw-pre-analysis.test.js           # Jaw pre-analysis engine (ffmpeg)
-│   ├── webcam-api.test.js                 # Webcam APIs under calibration
+│   ├── webcam-calibration-api.test.js     # Webcam APIs under calibration
 │   └── index.test.js                      # Basic route tests
 ├── ai/                                    # AI-specific tests
 │   ├── ask-ai-endpoint.test.js            # Ask AI REST endpoint

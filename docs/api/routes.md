@@ -1,6 +1,8 @@
 # MonsterBox API Routes
 
-Auto-generated route documentation.
+Route inventory grouped by router file. Paths in each table are **relative to that
+router's mount point** in `server.js` (a `Mounted at …` note is given where the mount
+prefix matters). MonsterBox has no authentication — every route is open on the LAN.
 
 ## /aiSettingsRoutes.js
 
@@ -111,10 +113,13 @@ Auto-generated route documentation.
 
 ## /api/partsApi.js
 
+Mounted at `/api/parts`.
+
 | Method | Path |
 |--------|------|
 | GET | /parts |
 | GET | /parts/:id |
+| GET | /parts/:id/gpio-read |
 | POST | /parts/:id/test |
 | PUT | /parts/:id |
 
@@ -231,8 +236,12 @@ Auto-generated route documentation.
 
 ## /poses/index.js
 
+Mounted at `/poses`.
+
 | Method | Path |
 |--------|------|
+| GET | /editor |
+| GET | /editor/:id |
 | GET | / |
 | GET | /api/poses |
 | GET | /templates |
@@ -247,6 +256,8 @@ Auto-generated route documentation.
 | POST | /api/poses/:id/execute |
 
 ## /scenes/api.js
+
+Mounted at `/scenes/api`.
 
 | Method | Path |
 |--------|------|
@@ -275,6 +286,7 @@ Auto-generated route documentation.
 | GET | /queue/templates |
 | POST | /queue/templates/save |
 | POST | /queue/templates/enqueue |
+| POST | /reorder |
 | GET | /:id |
 | POST | / |
 | PUT | /:id |
@@ -333,6 +345,10 @@ Auto-generated route documentation.
 
 ## /setup/calibration.js
 
+Mounted at `/setup/calibration`. The former webcam and motion-tracking routes from
+the deleted `routes/setup/webcam.js` now live here under the `/api/webcam/*` prefix
+(e.g. `/setup/calibration/api/webcam/motion-tracking/*`).
+
 | Method | Path |
 |--------|------|
 | GET | /unified |
@@ -368,22 +384,27 @@ Auto-generated route documentation.
 | GET | /api/servos/:id/positions |
 | POST | /api/continuous_servo/:id/reset |
 | GET | /api/calibration/profiles |
-
-## /setup/characterAudio.js
-
-| Method | Path |
-|--------|------|
-| GET | /api/audio-config |
-| POST | /api/audio-config |
-| POST | /api/audio-config/:section |
-| GET | /api/microphone-config |
-| GET | /api/speaker-config |
-| GET | /api/stt-config |
-| GET | /api/jaw-animation-config |
-| GET | /api/microphones |
-| POST | /api/microphones |
-| PUT | /api/microphones/:id |
-| DELETE | /api/microphones/:id |
+| GET | /api/webcam/health |
+| GET | /api/webcam/parts/:id/controls/list |
+| PUT | /api/webcam/parts/:id/controls/set |
+| GET | /api/webcam/devices |
+| GET | /api/webcam/devices/probe |
+| GET | /api/webcam/devices/inuse |
+| POST | /api/webcam/parts/:id/apply-device |
+| GET | /api/webcam/parts/:id/stream |
+| GET | /api/webcam/models |
+| GET | /api/webcam/models/:id |
+| POST | /api/webcam/models |
+| PUT | /api/webcam/models/:id |
+| DELETE | /api/webcam/models/:id |
+| POST | /api/webcam/motion-tracking/start |
+| POST | /api/webcam/motion-tracking/stop |
+| POST | /api/webcam/motion-tracking/params |
+| GET | /api/webcam/motion-tracking/status |
+| GET | /api/webcam/motion-tracking/head-tracking-requirements |
+| POST | /api/webcam/motion-tracking/head-tracking/enable |
+| POST | /api/webcam/motion-tracking/head-tracking/disable |
+| GET | /api/webcam/motion-tracking/head-tracking/status |
 
 ## /setup/characters.js
 
@@ -400,6 +421,54 @@ Auto-generated route documentation.
 | GET | /api/character-assignments |
 | POST | /api/character-assignments |
 | GET | /images |
+
+## /setup/head-animation.js
+
+Mounted at `/setup/head-animation`. OpenCV motion detection + head-tracking servo mapping.
+
+| Method | Path |
+|--------|------|
+| GET | / |
+| GET | /api/head-tracking/:charId |
+| POST | /api/head-tracking/:charId |
+| GET | /api/head-tracking/:charId/status |
+| POST | /api/head-tracking/:charId/start |
+| POST | /api/head-tracking/:charId/stop |
+| POST | /api/head-tracking/:charId/enable-servo |
+| POST | /api/head-tracking/:charId/disable-servo |
+| POST | /api/head-tracking/:charId/params |
+| GET | /api/head-tracking/:charId/requirements |
+| GET | /api/head-tracking/:charId/presets |
+| POST | /api/head-tracking/:charId/presets |
+| DELETE | /api/head-tracking/:charId/presets/:presetId |
+| POST | /api/head-tracking/:charId/test-sweep |
+| POST | /api/head-tracking/:charId/manual-target |
+
+## /setup/jaw-animation.js
+
+Mounted at `/setup/jaw-animation`. `/setup/super-powers` 301-redirects here.
+
+| Method | Path |
+|--------|------|
+| GET | /api/list |
+| GET | / |
+| GET | /api/jaw-animation/:characterId |
+| POST | /api/jaw-animation/:characterId |
+| GET | /api/jaw-animation/:characterId/configs |
+| POST | /api/jaw-animation/:characterId/configs |
+| PUT | /api/jaw-animation/:characterId/configs/:configId |
+| DELETE | /api/jaw-animation/:characterId/configs/:configId |
+| POST | /api/jaw-animation/:characterId/configs/:configId/activate |
+| POST | /api/jaw-animation/:characterId/configs/:configId/rename |
+| POST | /api/jaw-animation/:characterId/test |
+| GET | /api/jaw-animation/:characterId/audio-levels |
+| POST | /api/jaw-animation/:characterId/start-monitoring |
+| POST | /api/jaw-animation/:characterId/stop-monitoring |
+| POST | /api/jaw-animation/:characterId/drive |
+| GET | /api/jaw-animation/:characterId/servos |
+| POST | /api/jaw-animation/:characterId/test-tts |
+| POST | /api/jaw-animation/:characterId/adjust-calibration |
+| POST | /api/jaw-animation/:characterId/stop |
 
 ## /setup/models.js
 
@@ -426,60 +495,18 @@ Auto-generated route documentation.
 | DELETE | /api/poses/:id |
 | POST | /api/poses/:id/test |
 
-## /setup/super-powers.js
+## /setup/super-powers (redirect)
 
-| Method | Path |
-|--------|------|
-| GET | /api/list |
-| GET | / |
-| GET | /api/jaw-animation/:characterId |
-| POST | /api/jaw-animation/:characterId |
-| POST | /api/jaw-animation/:characterId/test |
-| GET | /api/jaw-animation/:characterId/audio-levels |
-| POST | /api/jaw-animation/:characterId/start-monitoring |
-| POST | /api/jaw-animation/:characterId/stop-monitoring |
-| POST | /api/jaw-animation/:characterId/drive |
-| GET | /api/jaw-animation/:characterId/servos |
-| POST | /api/apply-settings-to-part/:characterId |
-| POST | /api/test-advanced-servo/:characterId |
-| POST | /api/test-jaw-with-audio/:characterId |
-| GET | /api/ai-chat-status/:characterId |
-| POST | /api/ai-chat-connect/:characterId |
-| POST | /api/ai-chat-disconnect/:characterId |
-| POST | /api/ai-chat-send/:characterId |
+The standalone `routes/setup/super-powers.js` router has been removed. `server.js`
+now mounts `/setup/super-powers` as a permanent **301 redirect** to
+`/setup/jaw-animation` (see `/setup/jaw-animation.js` above). No routes are served
+under `/setup/super-powers` directly.
 
 ## /setup/system.js
 
 | Method | Path |
 |--------|------|
 | GET | / |
-
-## /setup/webcam.js
-
-| Method | Path |
-|--------|------|
-| GET | / |
-| GET | /api/health |
-| GET | /api/parts/:id/controls/list |
-| PUT | /api/parts/:id/controls/set |
-| GET | /api/devices |
-| GET | /api/devices/probe |
-| GET | /api/devices/inuse |
-| POST | /api/parts/:id/apply-device |
-| GET | /api/parts/:id/stream |
-| GET | /api/models |
-| GET | /api/models/:id |
-| POST | /api/models |
-| PUT | /api/models/:id |
-| DELETE | /api/models/:id |
-| POST | /api/motion-tracking/start |
-| POST | /api/motion-tracking/stop |
-| POST | /api/motion-tracking/params |
-| GET | /api/motion-tracking/status |
-| GET | /api/motion-tracking/head-tracking-requirements |
-| POST | /api/motion-tracking/head-tracking/enable |
-| POST | /api/motion-tracking/head-tracking/disable |
-| GET | /api/motion-tracking/head-tracking/status |
 
 ## /videoLibrary.js
 

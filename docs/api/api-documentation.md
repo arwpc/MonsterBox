@@ -164,7 +164,8 @@ GET /api/elevenlabs/stt/realtime/status
 | Port | Service | Protocol |
 |------|---------|----------|
 | 8795 | ElevenLabs Conversational AI | WebSocket |
-| 8778 | Head Tracking | WebSocket |
+
+(Head tracking is HTTP, not WebSocket — see `POST /conversation/api/head-tracking` and `/head-tracking/target`.)
 
 ---
 
@@ -237,12 +238,13 @@ Nudges a servo/actuator by a relative amount. Returns `{ currentP }`.
 
 ### Go to Position
 ```http
-POST /api/calibration/:partId/nudge
+POST /api/calibration/:partId/goto
 Content-Type: application/json
 
 { "p": 0.5 }
 ```
-Moves to an absolute position (0 = min, 0.5 = center, 1 = max).
+Moves to an absolute position (0 = min, 0.5 = center, 1 = max). This is a separate
+endpoint from `nudge` (which only accepts `{ dir, scale }` or `{ delta }`).
 
 ---
 
@@ -484,7 +486,7 @@ Content-Type: application/json
 
 ### TTS Playback
 ```http
-POST /conversation/say
+POST /conversation/api/say
 Content-Type: application/json
 
 { "text": "Hello", "characterId": 3 }
@@ -492,12 +494,12 @@ Content-Type: application/json
 
 ### AI Conversation
 ```http
-POST /conversation/ask-ai
+POST /conversation/api/ask-ai
 ```
 
 ### Play Audio File
 ```http
-POST /conversation/play-audio
+POST /conversation/api/play-audio
 ```
 
 ### Manual Controls Layout

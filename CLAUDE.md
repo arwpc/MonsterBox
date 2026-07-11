@@ -57,9 +57,9 @@ MonsterBox/
 │   └── audio-library/     # Shared audio files
 ├── config/                # App configuration
 ├── tests/                 # Test suites (800+ tests)
-│   ├── unit/              # Mocha unit tests (4 files)
-│   ├── system/            # Mocha system/integration tests (14 files)
-│   ├── browser/           # Playwright E2E tests (23 spec files)
+│   ├── unit/              # Mocha unit tests (6 files)
+│   ├── system/            # Mocha system/integration tests (17 files)
+│   ├── browser/           # Playwright E2E tests (24 spec files)
 │   ├── hardware/          # Mocha hardware tests (4 files, need real GPIO)
 │   └── ai/                # AI service tests (2 files)
 ├── scripts/               # Utility and migration scripts
@@ -124,7 +124,7 @@ The full suite has 800+ tests and takes significant time on RPi4B. Use granular 
 ### Speed Tiers
 | Command | What it runs | Speed |
 |---------|-------------|-------|
-| `npm run test:smoke` | Unit + syntax only | ~10s |
+| `npm run test:smoke` | Unit tests only | ~10s |
 | `npm run test:quick` | System + 2 browser specs | ~2min |
 | `npm run verify:quick` | Same as test:quick | ~2min |
 | `npm run test:unit` | All unit tests | ~15s |

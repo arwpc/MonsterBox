@@ -20,7 +20,7 @@ tests/
 │   └── index.test.js           # Basic route and character tests (18 tests)
 ├── ai/                         # AI-specific tests
 │   ├── ask-ai-endpoint.test.js          # Ask AI REST endpoint (8 tests)
-│   ├── conversation-route.test.js       # Conversation API route (1 test)
+│   ├── conversation-service.test.js     # Conversation service (fallback path)
 │   └── conversation-service.test.js     # ConversationService unit (1 test)
 ├── hardware/                   # Hardware tests (real GPIO when available)
 │   ├── stepper.test.js                  # Stepper motor via lgpio (3 tests)
@@ -47,9 +47,9 @@ tests/
 npm test                    # browser + system + unit
 
 # Individual suites
-npm run test:system         # Mocha system tests (MB_TEST_MODE=1, port 3000)
+npm run test:system         # Mocha system tests (MB_TEST_MODE=1, port 3100)
 npm run test:unit           # Mocha unit tests
-npm run test:browser        # Playwright browser E2E (port 3123)
+npm run test:browser        # Playwright browser E2E (port 3200)
 npm run test:hardware       # Hardware tests (needs MONSTERBOX_HARDWARE_AVAILABLE=1)
 npm run verify              # system + unit + browser
 
@@ -73,7 +73,7 @@ MB_TEST_MODE=1 npx playwright test tests/browser --reporter=list
 | `MB_TEST_MODE` | Skip hardware init, use test defaults | `1` for system tests |
 | `ELEVENLABS_API_KEY` | Required for AI tests (dummy OK in CI) | Set in tests/setup.js |
 | `MONSTERBOX_HARDWARE_AVAILABLE` | Enable real GPIO tests | Not set (tests skip) |
-| `PORT` | Override server port | `3000` (tests use `3123` via Playwright config) |
+| `PORT` | Override server port | `3000` (Mocha system tests use `3100`; Playwright uses `3200`) |
 | `NODE_ENV` | Environment mode | Not required |
 
 ## Test Patterns
@@ -86,7 +86,7 @@ MB_TEST_MODE=1 npx playwright test tests/browser --reporter=list
 
 ### Playwright Tests
 - Chromium headless by default (`playwright.config.js`)
-- Test server starts automatically on port 3123
+- Test server starts automatically on port 3200
 - Each spec file uses `testNavigation()` from `framework.js`
 - Error tracking via `ErrorTracker` class
 - Screenshots and traces captured on failure

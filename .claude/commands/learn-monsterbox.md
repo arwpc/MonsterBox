@@ -12,7 +12,7 @@ Read these files completely to understand the project:
 
 ## Step 2: Read Architecture Files
 6. `server.js` — Entry point, route mounting, middleware, startup sequence
-7. `docs/SESSION_PROMPT.md` — Detailed developer briefing with character/parts inventory
+7. `config/animatronics.json` + `data/characters.json` — Character/network inventory (IPs, per-character part registry) — source of truth
 8. `docs/deployment/README.md` — Multi-node deployment, network map, port assignments
 
 ## Step 3: Read Key Service Files
@@ -47,7 +47,7 @@ Read these files completely to understand the project:
 
 ## Step 7: Read Scene & Pose System
 31. `services/scenes/sceneExecutor.js` — Scene step execution (servo, motor, audio, jaw, head-tracking)
-32. `services/poses/poseExecutionService.js` — Pose execution engine
+32. `services/poses/poseEngine.js` — Pose execution engine
 33. `routes/scenes/api.js` — Scene API routes (CRUD, play, queue)
 34. `routes/poses/index.js` — Pose API routes
 

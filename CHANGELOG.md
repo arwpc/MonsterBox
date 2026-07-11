@@ -2,6 +2,38 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.4.0] - 2026-07-11 — Gold Release (stability, security, UX)
+
+Consolidates the 8.3.x stability line into a gold release. No framework, database,
+transport, or public-API changes; no new runtime dependencies. Everything below was
+verified in a hardware-less container — unit **168/0**, system **339 passing** (the one
+failure needs a real microphone), jaw **52/0** + head **21/0**, all-pages browser health
+**24/24**, `npm audit` **0 vulnerabilities**, pre-deploy gate green.
+
+### Highlights
+- **Whole-application stability audit** — 14 subsystems, adversarially verified: 58
+  confirmed defects, **all fixed** bar one intentionally-unchanged sync-write. Includes a
+  batch of security fixes (path traversal, OS-command injection, DoS), crash/boot
+  hardening, RPi-SD write reduction, and character-independence corrections. Full
+  per-finding table: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md).
+- **Servo control restored (#59)** — a committed null byte in `servo_cli.py` had been
+  failing every PCA9685 servo move since v7.9.6; removed.
+- **Complete mouseover/help coverage** — every interactive control (buttons, selects,
+  link-buttons, checkboxes/ranges — including runtime-generated ones) now has a native
+  `title` tooltip, enforced by a reusable `scripts/audit-tooltips.mjs` checker.
+- **All-pages health test** — `tests/browser/all-pages-health.spec.js` visits all 24
+  pages, opens every modal, and asserts zero JS/console/network/server errors.
+- **Dependency security: 9 advisories → 0** — non-breaking `npm audit fix` on the root
+  project plus a new `goblin/package-lock.json` pinning the Goblin subsystem's express
+  tree to patched versions.
+- **Data-integrity races fully closed (#39/#47)** — a new `updateJsonUnderLock` helper
+  serializes the cross-writer read-modify-writes (webcam `parts.json`, jaw/head
+  `super-powers.json`).
+- **Repo cleanup** — removed stale `.bak` files and superseded session-handoff prompt
+  docs; refreshed README, CLAUDE.md, and developer docs for the release.
+
+The detailed, per-commit history of this work is preserved in the [8.3.1] section below.
+
 ## [8.3.1] - 2026-07-11 — Stability Audit (bug-fix pass)
 
 A 14-subsystem, adversarially-verified audit of the whole application produced 58

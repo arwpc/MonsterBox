@@ -8,16 +8,39 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 - Goblin video display subsystem for Pi 3B+/4B signage playback
 - GitHub Actions CI for automated testing on every commit
 
-This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history (see docs/archive/README_5.3_HISTORICAL_POINTER.md).
+This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
-## What's New — v8.3.0 (April 2026)
+## What's New — v8.4.0 (July 2026) — Gold Release
+
+MonsterBox 8.4.0 is a gold stability release. It consolidates a full application-wide
+audit, complete in-app help coverage, a new whole-app health test, and a clean
+dependency-security bill of health — no new frameworks, no new dependencies, no API
+contract changes.
+
+### Full Stability Audit — 58 fixes
+- **14-subsystem adversarial audit** of the whole app (server, routes, services, controllers, Python wrappers, client JS). 75 raw findings → **58 verified defects** (2 critical, 14 high, 21 medium, 21 low); all fixed bar one intentionally-unchanged sync write.
+- **Security:** closed path-traversal on the character-image and `/api/play-audio` endpoints, OS-command injection via `journalctl`/`ssh-keygen` (switched to `execFile`), guarded destructive `/api/system` endpoints (optional `MB_ADMIN_TOKEN` + CSRF rejection), bound always-on test ports (3100/3200) to loopback, gated `GET /__kill` to test mode, and moved SSH creds off the process table.
+- **Crashes & correctness:** server no longer dies at boot without an ElevenLabs key; Goblin video/playlist deployment now works; calibration and actuator-position stores are character-scoped (part IDs aren't globally unique); jaw config, `/api/parts`, and scene CRUD honor the requested character; fixed a null byte in `servo_cli.py` that had broken **all** PCA9685 servo moves since v7.9.6.
+- **Data integrity:** new `services/atomicStore.js` (temp-file+rename writes with a promise-chain mutex) and an `updateJsonUnderLock` helper serialize read-modify-write for scenes, poses, super-powers, parts, app-config, and calibration.
+- Full per-finding table: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md).
+
+### Complete Mouseover / Help Coverage
+- **Every interactive control now has a native `title` tooltip** — buttons, selects, link-buttons, and interactive inputs, including controls emitted at runtime from inline scripts. Enforced by `scripts/audit-tooltips.mjs` (current status: **0 gaps**).
+
+### All-Pages Health Test
+- **`tests/browser/all-pages-health.spec.js`** — visits all 24 pages, opens every modal, and asserts zero JS/console/network/server errors per page (**24/24** green).
+
+### Dependency Security — 0 Vulnerabilities
+- Non-breaking `npm audit fix` patched 9 advisories (multer, ws, axios, form-data, qs, express, body-parser, follow-redirects, js-yaml) inside existing `^` ranges, plus a new `goblin/package-lock.json` for the Goblin subsystem. `npm audit` now reports **0 vulnerabilities**.
+
+### Previous — v8.3.0 (April 2026)
 
 ### Stabilization Pass
 - **Pre-deploy gate** — `npm run gate` runs schemas + resolver audit + bias audit + smoke + pact in ~30 s on RPi4B. Blocks regressions at pre-push and in CI. Opt-out via `MB_SKIP_GATE=1` (use sparingly — CI still runs).
 - **Canonical character resolver** — `services/characterContext.js` is the only supported path to character context. Direct reads of `selectedCharacter` / `characterId` outside the resolver are blocked by `npm run audit:resolver`.
 - **Per-character schemas** — `config/schemas/*.schema.json` cover `parts.json`, `poses.json`, `scenes.json`, `super-powers.json`, `ai-config/*`. Startup validates without crashing; failures degrade the affected subsystem only.
 - **Pact suite** — `tests/pact/character-contract.test.mjs` runs 11 assertions per character from `data/characters.json`. Adding a 6th character auto-adds 11 assertions with no new code.
-- **Ratchet allowlists** (shrink-only): 20-file resolver allowlist, 72-entry character-independence allowlist.
+- **Ratchet allowlists** (shrink-only): a resolver allowlist and a character-independence allowlist that only shrink over time — see `eslint-rules/no-direct-character-resolution.allowlist.json` and `tests/baseline/character-independence-allowlist.json`.
 - **Claude Code primitives** — `character-auditor` subagent, `/add-part`, `/add-character`, `/pre-deploy-gate` skills in `.claude/`.
 - See [docs/development/STABILIZATION-RESULTS.md](docs/development/STABILIZATION-RESULTS.md) for full metrics.
 
@@ -226,7 +249,7 @@ curl -X POST http://localhost:3000/api/elevenlabs/generate-and-play \
   -d '{"text":"Hello from MonsterBox","characterId":3}'
 ```
 
-More: docs/characters/ORLOK_AUDIO_TEST_RESULTS.md and docs/deployment/README.md
+More: docs/deployment/README.md
 
 ## Webcam (MJPEG) - Verification
 Always verify actual image bytes, not just service status.
@@ -440,7 +463,7 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 - ⏳ Goblin1 (192.168.8.40) - Pending deployment
 - ⏳ Goblin2 (192.168.8.106) - Offline
 
-See: `goblin/`, `docs/GOBLIN_VIDEO_INTEGRATION.md`
+See: `goblin/`, `docs/integration/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
 **Animatronics:**
@@ -461,16 +484,19 @@ SSH for RPi4B: see docs/security/remote-access.md
 
 MonsterBox has comprehensive test coverage across system, unit, and browser tests.
 
-### Test Results (v7.5.0 - March 2026)
+### Test Results (v8.4.0 - July 2026)
 
-| Suite | Framework | Passing | Skipped | Failing |
+| Suite | Framework | Passing | Pending | Failing |
 |-------|-----------|---------|---------|---------|
-| System | Mocha | 278 | 2 | 0 |
-| Unit | Mocha | 85 | 30 | 0 |
-| Browser | Playwright | 453 | 20 | 0 |
-| **Total** | | **816** | **52** | **0** |
+| Unit | Mocha | 168 | 35 | 0 |
+| System | Mocha | 339 | 12 | 1† |
+| Browser — all-pages health | Playwright | 24 | 0 | 0 |
 
-All tests passing.
+Green except for one hardware-only case. Pending tests are hardware/character-conditional
+skips (no GPIO, no ffmpeg/mic, or a character without the relevant part in the dev container).
+
+† The single system failure is the `audio-setup` dry-run capture test, which needs a
+physical microphone not present in CI/dev containers. `npm audit` reports 0 vulnerabilities.
 
 ```bash
 # Pre-deploy gate — runs automatically via .git/hooks/pre-push and in CI

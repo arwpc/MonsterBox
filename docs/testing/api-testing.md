@@ -2,104 +2,131 @@
 
 ## Overview
 
-MonsterBox includes comprehensive API testing to ensure all endpoints function correctly across different environments and configurations.
+MonsterBox has **no authentication layer** — no JWT, no sessions, no roles. It is a
+local-network animatronic control tool, not an internet-facing service, so every
+endpoint is reachable by any device on the LAN (see `docs/api/api-documentation.md`).
+API testing therefore focuses on route correctness, JSON contracts, type-aware
+hardware dispatch, and character-independence — not on tokens or access control.
 
-## Test Structure
+API/system tests are written with **Mocha + Chai** (some use `supertest`, some use
+raw Node `http`) and run against a running MonsterBox app over plain HTTP on the
+loopback test port **3100**. The main server opens this listener automatically at
+startup (`server.js` binds `127.0.0.1:3100`), so tests just point `BASE_URL` at it.
 
-### API Test Categories
+## Test Layout
 
-1. **Authentication Tests**
-   - JWT token validation
-   - Session management
-   - Role-based access control
+| Directory | Purpose | Runner |
+|-----------|---------|--------|
+| `tests/system/` | HTTP/API integration tests against the running app | Mocha (`MB_TEST_MODE=1`) |
+| `tests/ai/` | AI endpoint tests (Ask AI, conversation service) | Mocha |
+| `tests/unit/` | Unit-level API tests (calibration, webcam) | Mocha |
+| `tests/pact/` | Per-character contract suite | Mocha |
+| `tests/hardware/` | Real-GPIO calibration tests | Mocha (needs hardware) |
 
-2. **Character API Tests**
-   - Character CRUD operations
-   - Character configuration validation
-   - Character-specific hardware integration
+Global setup lives in **`tests/setup.js`** (loaded via `--require tests/setup.js`):
+it sets `NODE_ENV=test` and injects a dummy `ELEVENLABS_API_KEY` so AI services
+initialize without real credentials. There is no `.env.test`, `setupTests.js`, or
+`test-helper.js` — `tests/setup.js` is the single setup file.
 
-3. **Hardware API Tests**
-   - GPIO control endpoints
-   - Servo and motor control
-   - Sensor data collection
+## Running API / System Tests
 
-4. **Scene Management Tests**
-   - Scene creation and modification
-   - Scene playback functionality
-   - Multi-character coordination
-
-## Running API Tests
-
-### Basic API Testing
 ```bash
-npm run test:api-keys
-npm test
+# All system (HTTP/API) tests — MB_TEST_MODE=1, BASE_URL=http://localhost:3100
+npm run test:system
+
+# Focused system suites
+npm run test:system:parts     # /api/parts + hardware dispatch
+npm run test:system:audio     # audio + audio-setup + audio-library
+npm run test:system:scenes    # scenes + animation studio
+npm run test:system:jaw       # jaw animation
+npm run test:system:head      # head animation
+npm run test:system:dashboard
+npm run test:system:models
+npm run test:system:video
+npm run test:system:movement
+npm run test:system:orchestration
+
+# AI endpoint tests
+npm run test:ai               # everything under tests/ai
+npm run test:system:ai        # ai-audio + ask-ai + conversation-service
+
+# Unit-level API tests
+npm run test:unit
+npm run test:unit:calibration
+
+# Per-character contract suite
+npm run test:pact
+
+# Ad-hoc filtering (Mocha --grep)
+npm run test:system -- --grep "parts"
 ```
 
-### Specific API Test Suites
-```bash
-# Character API tests
-npm run test -- tests/characterRoutes.test.js
+Every test script defaults `BASE_URL` to `http://localhost:3100`; override it to
+target another running instance (e.g. `BASE_URL=http://localhost:3000` for the live
+HTTPS server, or the running service on the Pi).
 
-# Sound API tests
-npm run test:sound
+## How a System Test Talks to the App
 
-# Voice API tests
-npm run test:voice-endpoints
+System tests hit real routes over HTTP. Two equivalent styles are in use:
+
+```js
+// supertest style (tests/system/orchestration.test.js, models.test.js, ...)
+import request from 'supertest';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
+const res = await request(BASE_URL).get('/api/parts').expect(200);
+
+// raw http style (tests/system/parts-api.test.js)
+const BASE = process.env.BASE_URL || 'http://localhost:3100';
+const res = await apiGet('/api/parts');   // small http.get helper
 ```
 
-## Test Configuration
+Under `MB_TEST_MODE=1` the server downgrades unexpected 5xx responses to benign
+`200`/JSON so UI navigation stays stable during tests. For error cases, assert on the
+JSON `success` field rather than relying on the status code alone.
 
-API tests use the following configuration:
-- Test environment variables in `.env.test`
-- Mock data in `tests/setupTests.js`
-- Test helper functions in `tests/test-helper.js`
+## Representative Endpoints Exercised
 
-## API Endpoints Tested
+Hardware — type-aware dispatch (there are **no** per-type control endpoints like
+`/api/hardware/servo`):
+- `GET /api/parts` — raw array of parts for the current character
+- `GET /api/parts/:id` — `{ success, part }`
+- `POST /api/parts/:id/test` — test a servo/motor/led/sensor/etc., dispatched by part type
+- `GET /api/parts/:id/gpio-read` — direct GPIO register read
 
-### Character Management
-- `GET /api/characters` - List all characters
-- `POST /api/characters` - Create new character
-- `PUT /api/characters/:id` - Update character
-- `DELETE /api/characters/:id` - Delete character
+Scenes — mounted under `/scenes/api` (not `/api/scenes`):
+- `GET /scenes/api/` — `{ success, scenes }`
+- `POST /scenes/api/:id/play` — execute one scene
+- `POST /scenes/api/reorder` — persist scene library order
+- `POST /scenes/api/queue/start-config` — start queue loop
 
-### Hardware Control
-- `POST /api/hardware/servo` - Control servo motors
-- `POST /api/hardware/led` - Control LED lights
-- `POST /api/hardware/motor` - Control motors
-- `GET /api/hardware/sensor` - Read sensor data
+Characters:
+- `GET /setup/characters/api/characters` — list characters
+- `POST /setup/characters/api/select` — set the selected character
 
-### Scene Management
-- `GET /api/scenes` - List scenes
-- `POST /api/scenes` - Create scene
-- `POST /api/scenes/:id/play` - Play scene
+AI / audio:
+- `POST /api/elevenlabs/tts/generate`, `POST /api/elevenlabs/stt/transcribe`
+- `POST /conversation/api/ask-ai`
 
-## Test Reports
+## Diagnostic Endpoints (used by tests / monitoring)
 
-API test results are automatically generated and stored in:
-- `tests/reports/` - Detailed test reports
-- Console output during test execution
-- CI/CD pipeline results
+`server.js` exposes lightweight, unauthenticated diagnostic endpoints that tests use
+to observe server state:
+
+- `GET /health` — `{ status, version, time }` (version read dynamically from `package.json`)
+- `GET /__errors` / `POST /__errors/reset` — structured server-error counter
+- `GET /__audio/active-device` — resolved output device for the current character
+- `GET /__audio/last-play`, `GET /__audio/last-ai` — last playback telemetry
+- `GET /__audio/tools` — availability of `mpg123` / `ffmpeg` / `pw-play`
+- `GET /__kill` — test-only shutdown (registered **only** under `MB_TEST_MODE` / `NODE_ENV=test`)
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **API Key Errors**
-   - Verify API keys in environment variables
-   - Check key permissions and quotas
-
-2. **Connection Timeouts**
-   - Verify network connectivity
-   - Check service availability
-
-3. **Authentication Failures**
-   - Verify JWT token configuration
-   - Check user permissions
-
-### Debug Mode
-
-Enable debug mode for detailed API testing:
-```bash
-NODE_ENV=test DEBUG=* npm test
-```
+- **Connection refused on :3100** — the app isn't running (or its test-port listener
+  didn't bind). Start the app with `npm start`, or run where `monsterbox.service` is
+  already up, then retry.
+- **Tests hang after passing** — Mocha needs the `--exit` flag; all `test:*` scripts
+  already include it.
+- **AI tests fail on a missing key** — `tests/setup.js` injects a dummy
+  `ELEVENLABS_API_KEY`; real TTS/STT generation requires a valid key in `.env`.
+- **Unexpected `200` on an error case** — expected under `MB_TEST_MODE=1`; assert on
+  the JSON `success` flag instead of the HTTP status.

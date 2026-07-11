@@ -1,8 +1,13 @@
 # MonsterBox Development Process
 
+> **Note:** The "Task Master" tooling described below has been retired. The current
+> authoritative gate on every commit/push is `npm run gate` (schemas + resolver audit +
+> independence audit + smoke + pact) — see [CLAUDE.md](../../CLAUDE.md). The planning and
+> quality guidance in this document still applies; only the task-tracking tool is gone.
+
 ## Overview
 
-The MonsterBox development process integrates Task Master with existing development workflows to ensure coordinated, efficient development across all project areas. This process balances agility with thorough planning and quality assurance.
+The MonsterBox development process integrates planning and review workflows to ensure coordinated, efficient development across all project areas. This process balances agility with thorough planning and quality assurance.
 
 ## Development Philosophy
 
@@ -194,4 +199,7 @@ The MonsterBox development process integrates Task Master with existing developm
 
 ---
 
-*This development process is continuously evolving. For the latest updates and specific procedures, refer to the [Task Master Guide](taskmaster-guide.md) and [Task Workflows](task-workflows.md).*
+*This development process is continuously evolving. The "Task Master" tooling referenced
+above has been retired; the current, authoritative process is the **pre-deploy gate**
+(`npm run gate` — schemas + resolver audit + independence audit + smoke + pact) documented
+in [CLAUDE.md](../../CLAUDE.md) and [STABILIZATION-PLAN.md](STABILIZATION-PLAN.md).*
