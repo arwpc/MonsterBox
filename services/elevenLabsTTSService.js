@@ -10,9 +10,23 @@ import elevenLabsConfigService from './elevenLabsConfigService.js';
 
 class ElevenLabsTTSService {
     constructor() {
-        this.config = elevenLabsConfigService.getElevenLabsConfig();
-        this.audioConfig = elevenLabsConfigService.getAudioConfig();
+        // Resolve config lazily (see getters below). getElevenLabsConfig() throws
+        // when no API key is provisioned; doing it here + `export default new ...`
+        // made a missing key abort module import and crash the ENTIRE server at
+        // startup. The error now surfaces only when a TTS method is actually used.
+        this._config = null;
+        this._audioConfig = null;
         this._preferMp3 = this._detectMpg123Availability();
+    }
+
+    get config() {
+        if (!this._config) this._config = elevenLabsConfigService.getElevenLabsConfig();
+        return this._config;
+    }
+
+    get audioConfig() {
+        if (!this._audioConfig) this._audioConfig = elevenLabsConfigService.getAudioConfig();
+        return this._audioConfig;
     }
 
     /**

@@ -9,8 +9,20 @@ import elevenLabsConfigService from './elevenLabsConfigService.js';
 
 class ElevenLabsSTTService {
     constructor() {
-        this.config = elevenLabsConfigService.getElevenLabsConfig();
-        this.audioConfig = elevenLabsConfigService.getAudioConfig();
+        // Lazy config resolution — a missing API key must not throw at import
+        // time (that would crash the whole server via `export default new ...`).
+        this._config = null;
+        this._audioConfig = null;
+    }
+
+    get config() {
+        if (!this._config) this._config = elevenLabsConfigService.getElevenLabsConfig();
+        return this._config;
+    }
+
+    get audioConfig() {
+        if (!this._audioConfig) this._audioConfig = elevenLabsConfigService.getAudioConfig();
+        return this._audioConfig;
     }
 
     /**

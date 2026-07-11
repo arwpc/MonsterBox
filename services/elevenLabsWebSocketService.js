@@ -144,7 +144,9 @@ async function getMicrophoneDeviceForCharacter(characterId) {
 class ElevenLabsWebSocketService extends EventEmitter {
     constructor() {
         super();
-        this.config = elevenLabsConfigService.getElevenLabsConfig();
+        // Lazy config (see getter) — a missing API key must not throw at import
+        // time and crash the whole server via `export default new ...`.
+        this._config = null;
         this.activeConnections = new Map(); // sessionId -> connection info
         this.wsServer = null;
         this.port = 8795; // Dedicated port for AI chat WebSocket
@@ -155,6 +157,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this._cleanupTimer = null;
 
         console.log('🎤 ElevenLabsWebSocketService initialized with hardening');
+    }
+
+    get config() {
+        if (!this._config) this._config = elevenLabsConfigService.getElevenLabsConfig();
+        return this._config;
     }
 
     /**
