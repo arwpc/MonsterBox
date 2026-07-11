@@ -20,7 +20,7 @@ function getCurrentCharacterId(req) {
 
 async function respondWithScenes(req, res) {
   try {
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     res.json({ success: true, scenes });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -276,7 +276,7 @@ router.post('/reorder', express.json(), async (req, res) => {
   try {
     const orderedIds = req.body && req.body.orderedIds;
     if (!Array.isArray(orderedIds)) return res.status(400).json({ success: false, error: 'orderedIds array required' });
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const byId = {};
     scenes.forEach(s => { byId[parseInt(s.id, 10)] = s; });
     const reordered = [];
@@ -286,7 +286,7 @@ router.post('/reorder', express.json(), async (req, res) => {
     });
     // Append any scenes not in orderedIds (safety)
     Object.values(byId).forEach(s => reordered.push(s));
-    await scenesService.saveScenes(reordered);
+    await scenesService.saveScenes(reordered, getCurrentCharacterId(req));
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -297,7 +297,7 @@ router.post('/reorder', express.json(), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const scene = scenes.find(s => parseInt(s.id, 10) === id);
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     res.json({ success: true, scene });
@@ -317,7 +317,7 @@ router.post('/', express.json(), async (req, res) => {
       const created = { id: maxId + 1, name: String(body.name), steps: Array.isArray(body.steps) ? body.steps : [], created: new Date().toISOString() };
       scenes.push(created);
       return created;
-    });
+    }, getCurrentCharacterId(req));
     res.json({ success: true, scene });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -328,13 +328,13 @@ router.put('/:id', express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const body = req.body || {};
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const idx = scenes.findIndex(s => parseInt(s.id, 10) === id);
     if (idx === -1) return res.status(404).json({ success: false, error: 'Scene not found' });
     const prev = scenes[idx];
     const next = Object.assign({}, prev, { name: body.name != null ? String(body.name) : prev.name, steps: Array.isArray(body.steps) ? body.steps : prev.steps, updated: new Date().toISOString() });
     scenes[idx] = next;
-    await scenesService.saveScenes(scenes);
+    await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, scene: next });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -344,11 +344,11 @@ router.put('/:id', express.json(), async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const idx = scenes.findIndex(s => parseInt(s.id, 10) === id);
     if (idx === -1) return res.status(404).json({ success: false, error: 'Scene not found' });
     const removed = scenes.splice(idx, 1)[0];
-    await scenesService.saveScenes(scenes);
+    await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, removed });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -379,7 +379,7 @@ router.post('/test-step', express.json(), async (req, res) => {
 router.post('/:id/play', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const scene = scenes.find(s => parseInt(s.id, 10) === id);
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
@@ -404,7 +404,7 @@ router.post('/:id/play', async (req, res) => {
 router.get('/:id/play-stream', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const scene = scenes.find(s => parseInt(s.id, 10) === id);
     if (!scene) return res.status(404).json({ success: false, error: 'Scene not found' });
     const characterId = getCurrentCharacterId(req);
@@ -467,7 +467,7 @@ router.post('/from-template', express.json(), async (req, res) => {
       };
       scenes.push(created);
       return created;
-    });
+    }, getCurrentCharacterId(req));
     res.json({ success: true, scene });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -480,11 +480,11 @@ router.post('/:id/duplicate', express.json(), async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const newName = req.body && req.body.name;
 
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const source = scenes.find(s => parseInt(s.id, 10) === id);
     if (!source) return res.status(404).json({ success: false, error: 'Scene not found' });
 
-    const newId = await scenesService.nextSceneId();
+    const newId = await scenesService.nextSceneId(getCurrentCharacterId(req));
     const duplicate = {
       id: newId,
       name: newName || `${source.name} (Copy)`,
@@ -494,7 +494,7 @@ router.post('/:id/duplicate', express.json(), async (req, res) => {
       duplicatedFrom: id
     };
     scenes.push(duplicate);
-    await scenesService.saveScenes(scenes);
+    await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, scene: duplicate });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -504,7 +504,7 @@ router.post('/:id/duplicate', express.json(), async (req, res) => {
 // --- Scene Import/Export ---
 router.get('/export', async (req, res) => {
   try {
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     const exportData = {
       version: '5.0',
       exported: new Date().toISOString(),
@@ -529,7 +529,7 @@ router.post('/import', express.json(), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid import data: scenes array required' });
     }
 
-    const scenes = await scenesService.loadScenes();
+    const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
     let imported = 0;
     let updated = 0;
     let skipped = 0;
@@ -550,7 +550,7 @@ router.post('/import', express.json(), async (req, res) => {
       }
     }
 
-    await scenesService.saveScenes(scenes);
+    await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, imported, updated, skipped, total: importData.scenes.length });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
