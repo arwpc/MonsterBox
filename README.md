@@ -10,6 +10,19 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v8.4.1 (July 2026)
+
+### Zero-config node discovery (mDNS)
+- **New animatronics are found automatically.** Name a node at setup, let DHCP assign its
+  address, and every other node discovers it over mDNS (`_monsterbox._tcp`) and shows it
+  come online — no hand-typed IPs, no `config/animatronics.json` edits on any peer.
+- Built on the system `avahi` daemon via `child_process` (**no new npm dependency**);
+  discovery only, control stays HTTPS. Falls back to the static config when mDNS is
+  unavailable, so existing setups are unchanged.
+- Manual-IP fallback for multicast-blocked networks (`POST /api/orchestration/nodes/manual`),
+  an optional `MB_NODE_TOKEN` trust secret, and `GET /api/orchestration/nodes` for the live
+  registry. See [docs/development/NODE-DISCOVERY.md](docs/development/NODE-DISCOVERY.md).
+
 ## What's New — v8.4.0 (July 2026) — Gold Release
 
 MonsterBox 8.4.0 is a gold stability release. It consolidates a full application-wide

@@ -52,6 +52,8 @@ import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import goblinManagerService from './services/goblinManagerService.js';
+import orchestrationService from './services/orchestrationService.js';
+import nodeDiscoveryService from './services/nodeDiscoveryService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import jawServoDaemon from './services/jawServoDaemon.js';
 import pipewireService from './services/pipewireService.js';
@@ -746,6 +748,23 @@ async function onServerReady(protocol) {
         console.log(`🔊 Audio Health Monitor started (checking every 30s)`);
     } catch (error) {
         console.error(`❌ Failed to start Audio Health Monitor:`, error.message);
+    }
+
+    // Zero-config node discovery (mDNS): advertise this node and browse for peers so
+    // orchestration finds animatronics without hand-typed IPs. Degrades silently when
+    // avahi is absent. See docs/development/NODE-DISCOVERY.md.
+    try {
+        const selfId = config && config.selectedCharacter;
+        let selfName = '';
+        try { selfName = (orchestrationService.getAnimatronicById(selfId) || {}).name || ''; } catch (_) { /* best-effort */ }
+        nodeDiscoveryService.start(selfId != null ? {
+            id: selfId,
+            character: selfName,
+            port: PORT,
+            version: pkg.version,
+        } : null);
+    } catch (error) {
+        console.error(`❌ Failed to start node discovery:`, error.message);
     }
 
     // Initialize jaw animation audio integration

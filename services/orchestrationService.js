@@ -11,6 +11,7 @@ import { promisify } from 'util';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import nodeDiscoveryService from './nodeDiscoveryService.js';
 
 // HTTPS agent that accepts self-signed certificates (all MonsterBox nodes use self-signed SSL)
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -66,7 +67,7 @@ class OrchestrationService {
         console.log(`📡 Broadcasting to all animatronics: ${command}`);
 
         const results = await Promise.allSettled(
-            this.animatronics.map(async (animatronic) => {
+            this.getAnimatronics().map(async (animatronic) => {
                 try {
                     const result = await this.executeOnAnimatronic(animatronic, command, params);
                     return {
@@ -281,7 +282,7 @@ class OrchestrationService {
      */
     async getAllStatus() {
         const results = await Promise.allSettled(
-            this.animatronics.map(async (animatronic) => {
+            this.getAnimatronics().map(async (animatronic) => {
                 try {
                     const health = await this.healthCheck(animatronic.ip, animatronic.port);
                     return {
@@ -404,7 +405,7 @@ class OrchestrationService {
         console.log('🎬 Starting all queue loops...');
 
         const results = await Promise.allSettled(
-            this.animatronics.map(async (animatronic) => {
+            this.getAnimatronics().map(async (animatronic) => {
                 try {
                     const sceneId = animatronic.defaultSceneId;
                     if (!sceneId) {
@@ -481,24 +482,39 @@ class OrchestrationService {
 
         return {
             success: successful > 0,
-            total: this.animatronics.length,
+            total: this.getAnimatronics().length,
             successful,
             results: processed
         };
     }
 
     /**
+     * Live animatronic list: the static config from animatronics.json with each
+     * entry's `ip` overlaid by mDNS discovery when the node is currently online.
+     * When nothing is discovered (dev host, mDNS-blocked network) this returns the
+     * static config unchanged, so behavior is identical to pre-discovery builds.
+     * @returns {Array<object>}
+     */
+    getAnimatronics() {
+        try {
+            return nodeDiscoveryService.overlay(this.animatronics);
+        } catch (_) {
+            return this.animatronics; // never let discovery break orchestration
+        }
+    }
+
+    /**
      * Get animatronic by ID
      */
     getAnimatronicById(id) {
-        return this.animatronics.find(a => a.id === parseInt(id));
+        return this.getAnimatronics().find(a => String(a.id) === String(id));
     }
 
     /**
      * Get all animatronics
      */
     getAllAnimatronics() {
-        return this.animatronics;
+        return this.getAnimatronics();
     }
 }
 

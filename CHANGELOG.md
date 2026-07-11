@@ -2,6 +2,41 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.4.1] - 2026-07-11 — Zero-config node discovery (mDNS)
+
+Removes the biggest single-operator wall: hand-typed node IPs. A new node just gets
+named at setup and picked up by DHCP; every other animatronic discovers it over mDNS and
+shows it come online, with no `config/animatronics.json` edits on any peer.
+
+### Added
+- **`services/nodeDiscoveryService.js`** — advertises this node as `_monsterbox._tcp` (via
+  the system `avahi` daemon, driven through `child_process` — **no new npm dependency**)
+  and browses for peers into a live in-memory registry (mirrors the Goblin heartbeat
+  registry: `status`/`lastSeen`/staleness). mDNS is discovery only; the control path stays
+  HTTPS.
+- **Orchestration overlay** — `orchestrationService.getAnimatronics()` overlays each config
+  entry's `ip` with the live discovered address when the node is online. When nothing is
+  discovered (non-RPi host, mDNS-blocked network) it returns the static config **unchanged**,
+  so existing deployments behave exactly as before — strictly non-regressive.
+- **API:** `GET /api/orchestration/nodes` (live merged registry with source/status/trust),
+  `POST /api/orchestration/nodes/manual` and `DELETE /api/orchestration/nodes/manual/:id`
+  (the manual-IP fallback for networks that block multicast).
+- **`npm run advertise-node`** (`scripts/advertise-node.mjs`) — write the avahi service file
+  at install/setup time or after renaming a node. The running server also advertises on
+  startup.
+- **Optional trust token** (`MB_NODE_TOKEN`) — when set, only peers advertising a matching
+  token hash are trusted; off by default (non-breaking). Endpoint-level enforcement is a
+  documented follow-up.
+- 16 unit tests (`tests/unit/node-discovery.test.js`) covering the browse parser, registry
+  merge/overlay, non-regressive fallback, staleness, manual pins, and token filtering —
+  driven from captured `avahi-browse` fixtures (character-independent, RFC-5737 IPs).
+- Design: [docs/development/NODE-DISCOVERY.md](docs/development/NODE-DISCOVERY.md).
+
+On-hardware mDNS behavior (multicast over WiFi, cross-node visibility) should be validated
+on the real RPi network; the parser/registry/overlay/fallback logic is unit-tested in a
+hardware-less container (unit 184/0). No framework/DB/transport changes; the mDNS path adds
+no persistent socket to the Node process.
+
 ## [8.4.0] - 2026-07-11 — Gold Release (stability, security, UX)
 
 Consolidates the 8.3.x stability line into a gold release. No framework, database,

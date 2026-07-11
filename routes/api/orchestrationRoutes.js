@@ -8,6 +8,7 @@ import axios from 'axios';
 import https from 'https';
 import autoAIService from '../../services/autoAIService.js';
 import orchestrationService from '../../services/orchestrationService.js';
+import nodeDiscoveryService from '../../services/nodeDiscoveryService.js';
 
 // HTTPS agent for self-signed certificates on MonsterBox nodes
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -30,6 +31,41 @@ router.get('/status', async (req, res) => {
             message: error.message
         });
     }
+});
+
+/**
+ * Live node registry: static config overlaid with mDNS discovery. Shows each
+ * node's source (config/discovered/manual), online status, and trust.
+ */
+router.get('/nodes', async (req, res) => {
+    try {
+        const nodes = orchestrationService.getAnimatronics();
+        res.json({
+            success: true,
+            avahiAvailable: nodeDiscoveryService.avahiAvailable,
+            count: nodes.length,
+            nodes,
+        });
+    } catch (error) {
+        console.error('Error listing nodes:', error);
+        res.status(500).json({ success: false, error: 'Failed to list nodes', message: error.message });
+    }
+});
+
+/**
+ * Manually pin a node by IP — the fallback for networks that block mDNS multicast.
+ */
+router.post('/nodes/manual', express.json(), async (req, res) => {
+    const result = nodeDiscoveryService.addManual(req.body || {});
+    res.status(result.success ? 200 : 400).json(result);
+});
+
+/**
+ * Forget a manually-pinned node.
+ */
+router.delete('/nodes/manual/:id', async (req, res) => {
+    const result = nodeDiscoveryService.removeManual(req.params.id);
+    res.status(result.success ? 200 : 404).json(result);
 });
 
 // Backward-compatible alias for health-check used by some tests/UI
