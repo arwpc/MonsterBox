@@ -82,6 +82,12 @@ Full detail: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STAB
   (atomic writes); a new `updateJsonUnderLock` helper now serializes the read-modify-write
   so simultaneous writers can't lose an update — webcam `setControls` (parts.json) and
   the jaw↔head config writers (super-powers.json).
+- **Dependency security: 9 advisories → 0.** `npm audit fix` (no `--force`, no breaking
+  changes — every fix landed inside existing `^` ranges, so `package.json` is untouched)
+  patched multer, ws, axios, form-data (high) and qs, express, body-parser,
+  follow-redirects, js-yaml (moderate). Verified non-regressive: unit 168/0, system 339
+  passing, jaw 52/0 + head 21/0 (char 3), all-pages browser health 24/24, `npm audit`
+  now reports **0 vulnerabilities**.
 
 See [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md)
 for the full per-finding table and status.
