@@ -17,12 +17,12 @@ general bug-fixing. This pass is that bug-fix pass.
 - **75** raw findings → **58** survived adversarial verification (17 rejected as
   false positives / intended behavior).
 - **2 critical, 14 high, 21 medium, 21 low.**
-- **53 fully fixed · 2 corruption-fixed with lost-update serialization deferred ·
-  2 deferred · 1 intentionally unchanged.**
-- Shipped as 11 focused commits (v8.3.1). Unit **162/0**, system **339/1** throughout
-  (the one system failure is `audio-setup` dry-run capture, which needs a real
-  microphone not present in the audit environment). Schema / resolver / independence
-  gate audits stay clean.
+- **55 fully fixed · 2 corruption-fixed (lost-update serialization deferred) ·
+  1 intentionally unchanged.**
+- Shipped as focused commits (v8.3.1). Unit **168/0**, system green (the single system
+  failure is `audio-setup` dry-run capture, which needs a real microphone not present
+  in the audit environment), pact **54/0**. Schema / resolver / independence gate audits
+  stay clean.
 
 ### Highest-impact fixes
 
@@ -40,10 +40,11 @@ general bug-fixing. This pass is that bug-fix pass.
 - **RPi stability:** removed unbounded SD-card growth (telemetry), SD thrash + a
   log-losing race (scene analytics), a queue busy-loop, a python3 spawn storm, and
   added missing timeouts (Goblin fetch, one-shot audio playback).
-- **Data integrity:** introduced a shared `services/atomicStore.js` (temp-file+rename
-  writes + a promise-chain mutex) and routed the boot-critical JSON files
-  (scenes, poses, super-powers, parts, app-config, calibration) through it, matching
-  the SD-safe idiom the codebase previously used in only one place.
+- **Data integrity & character-independence:** introduced a shared
+  `services/atomicStore.js` (temp-file+rename writes + a promise-chain mutex) and routed
+  the boot-critical JSON files (scenes, poses, super-powers, parts, app-config,
+  calibration) through it; **character-scoped the calibration & actuator-position stores**
+  (#5) so one character's calibration can no longer overwrite another's servo bounds.
 
 ## Full findings
 
@@ -53,7 +54,7 @@ general bug-fixing. This pass is that bug-fix pass.
 | 2 | critical | security | `services/systemService.js:176` | Unauthenticated OS command injection via `since` param in service logs endpoint | ✅ Fixed |
 | 3 | high | security | `routes/api/characterImagesRoutes.js:92` | Path traversal → arbitrary file deletion via image DELETE endpoint | ✅ Fixed |
 | 4 | high | security | `routes/conversation.js:439` | Unauthenticated path traversal + OOM DoS in /api/play-audio (user-controlled filename → fs.readFile) | ✅ Fixed |
-| 5 | high | character-independence | `server/calibration/store.js:4` | Calibration and actuator-position stores are global (keyed by partId only), corrupting data across characters | 🔶 Deferred — needs on-hardware validation + data migration (see §Deferred) |
+| 5 | high | character-independence | `server/calibration/store.js:4` | Calibration and actuator-position stores are global (keyed by partId only), corrupting data across characters | ✅ Fixed |
 | 6 | high | crash | `services/audioLoopService.js:142` | Spawned audio child processes lack an 'error' handler → uncaught exception crashes server on spawn failure | ✅ Fixed |
 | 7 | high | security | `services/characterImageService.js:42` | Path traversal in character image delete/read — arbitrary file deletion and read via :filename param | ✅ Fixed |
 | 8 | high | crash | `services/elevenLabsTTSService.js:13` | TTS/STT/WebSocket service singletons throw at import time when ElevenLabs key is unconfigured → server fails to boot | ✅ Fixed |
@@ -92,7 +93,7 @@ general bug-fixing. This pass is that bug-fix pass.
 | 41 | low | error-handling | `python_wrappers/gpio_read.py:8` | gpio_read.py has no error handling: a failed read silently disables motion detection and leaks the mmap/fd on exception | ✅ Fixed |
 | 42 | low | rpi-stability | `python_wrappers/webcam_cli.py:59` | webcam_cli capture writes a JPEG to /tmp on every call and never deletes it | ✅ Fixed |
 | 43 | low | security | `routes/api/audioLoopRoutes.js:56` | Audio-loop start plays arbitrary local file path from user input | ✅ Fixed |
-| 44 | low | character-independence | `routes/scenes/api.js:379` | Scene CRUD writes ignore resolved characterId, reading/writing the globally selected character's scenes.json | 🔶 Deferred — scene ops correctly use the selected character; explicit ?characterId override for scenes is a rare path (see §Deferred) |
+| 44 | low | character-independence | `routes/scenes/api.js:379` | Scene CRUD writes ignore resolved characterId, reading/writing the globally selected character's scenes.json | ✅ Fixed |
 | 45 | low | race | `routes/scenes/api.js:314` | Concurrent scene create/edit produces duplicate scene IDs and lost updates (unserialized read-modify-write) | ✅ Fixed |
 | 46 | low | security | `routes/setup/calibration.js:87` | Path traversal (read) via unvalidated characterId query in calibration parts loader | ✅ Fixed |
 | 47 | low | race | `routes/setup/jaw-animation.js:173` | Concurrent writes to super-powers.json clobber each other (jaw vs head config lost update) | 🟢 Atomic write applied; jaw↔head simultaneous-save lost-update serialization deferred (very low impact) |
@@ -108,49 +109,7 @@ general bug-fixing. This pass is that bug-fix pass.
 | 57 | low | race | `services/poses/poseRepository.js:105` | Concurrent pose add/update/delete produces duplicate pose IDs and lost updates | ✅ Fixed |
 | 58 | low | rpi-stability | `services/resource/singleInstance.js:41` | Stale-PID removal never verifies the PID belongs to MonsterBox; a reused PID after reboot causes a false 'already running' and blocks startup | ✅ Fixed |
 
-## Deferred items (need more than a static fix)
-
-### #5 — Calibration & actuator-position stores are keyed by `partId` only (HIGH)
-
-`data/calibration_profiles.json` and `data/actuator-positions.json` are single global
-files keyed solely by `String(partId)`, but **part IDs are not globally unique** — e.g.
-character-1 and character-3 both define part id 5 referring to different physical
-hardware. Calibrating part 5 on one character overwrites the other's profile, and the
-next move uses the wrong bounds — a potential mechanical-damage path.
-
-**Why deferred:** the fix (namespace the store keys by character, e.g. `${characterId}:${partId}`,
-thread `resolveCharacter(req)` through `server/calibration/router.js`, and migrate the
-existing bare-`partId` keys) changes the on-disk data layout and touches the
-servo-positioning read path in the scene executor. It needs on-hardware validation
-(no RPi/GPIO was available in this pass) and a data migration; landing it untested
-risks driving servos to wrong positions — the exact harm it prevents.
-
-**Recommended plan (for a hardware-present session):**
-1. In `server/calibration/router.js`, resolve the character per request and pass a
-   composite key `${characterId}:${partId}` to `store.get/upsert/delete` and to
-   `actuatorPositionStore`. `store.js` is already key-agnostic — only the caller changes.
-2. Update the runtime readers to use the same composite key: `sceneExecutor`
-   (`resolvePresetToAngle`/`resolvePresetToMotorParams`) and
-   `jawAnimationSuperPowerService.loadCalibrationGuardrails`.
-3. One-time migration: map each legacy bare-`partId` entry to the character whose
-   `parts.json` contains that id/type (entries carry `capability`, so this is safe).
-4. Validate on a real node: calibrate the same partId on two characters, confirm the
-   profiles no longer collide and each drives to its own bounds.
-
-### #44 — Scene CRUD uses the selected character, not `resolveCharacter(req)` (LOW)
-
-Scene create/edit/delete operate on the currently-selected character's `scenes.json`.
-That is correct for normal use; only an explicit `?characterId=N` override on a scene
-route (a rare path) is ignored. Threading `resolveCharacter` into `scenesService` is a
-straightforward follow-up; the scene create/from-template routes were already moved to a
-serialized `mutateScenes()` in this pass, which is the natural seam to add it.
-
-### #50 — Synchronous `fs.writeFileSync` on the calibration move path (NOT CHANGED)
-
-The audit's own verifier judged this optional: `actuatorPositionStore`'s
-`markMoving`/`markCleanShutdown` are intentionally synchronous so crash-recovery state
-is durable even if the process dies mid-move. The writes are small and infrequent. Left
-as-is by design.
+## Notes on the non-"fully-fixed" items
 
 ### #39 / #47 — cross-writer lost-update races (LOW, corruption already fixed)
 
@@ -159,6 +118,39 @@ Both write sites are now **atomic** (no torn files on power loss). The residual 
 (webcam controls vs. another parts.json writer; jaw config vs. head config for one
 character) — implausible for a single operator. Full cross-writer serialization via the
 new `withFileLock` helper is a low-value follow-up.
+
+### #50 — Synchronous `fs.writeFileSync` on the calibration move path (NOT CHANGED)
+
+The audit's own verifier judged this optional: `actuatorPositionStore`'s
+`markMoving`/`markCleanShutdown` are intentionally synchronous so crash-recovery state
+is durable even if the process dies mid-move. The writes are small and infrequent. Left
+as-is by design.
+
+## How #5 was resolved (character-scoped stores)
+
+`data/calibration_profiles.json` and `data/actuator-positions.json` were single global
+files keyed solely by `String(partId)`, but **part IDs are not globally unique** — e.g.
+character-1 and character-3 both define a part id 5 referring to different physical
+hardware. Calibrating part 5 on one character overwrote the other's profile, and the next
+move used the wrong bounds — a potential mechanical-damage path.
+
+The fix keys entries by `${characterId}:${partId}`. The character defaults to the node's
+selected character (a node runs one character), resolved from config and cached (2s) to
+avoid SD reads on the hot path; callers that know the character may pass it explicitly.
+Reads fall back to a legacy bare-`partId` entry, so existing calibration data keeps
+working until a part is re-calibrated — making the change strictly non-regressive. No
+runtime caller changes were needed because every reader (calibration router, scene
+executor, hardware service, jaw/head) already operates on the selected character.
+Verified by `tests/unit/calibration-character-scope.test.js` (isolation, legacy fallback,
+scoped-over-legacy precedence, scoped delete). On-hardware validation (calibrate the same
+partId on two characters and confirm each drives to its own bounds) is still recommended.
+
+## How #44 was resolved (scene CRUD honors resolveCharacter)
+
+Scene routes already resolved the character via `getCurrentCharacterId(req)` (honoring an
+explicit `?characterId`), but `scenesService` ignored it and used the selected character.
+An optional `characterId` was threaded through the service and passed at every scene-route
+call site; it is backward-compatible (callers that pass no id use the selected character).
 
 ## Operational notes (new environment variables)
 

@@ -43,13 +43,21 @@ Full detail: [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STAB
   serialized pose/scene/calibration read-modify-write to stop duplicate IDs / lost updates.
 
 ### Correctness / character-independence / leaks
-- Jaw config and `/api/parts` now honor the requested character; concurrent scene-step
-  failures are surfaced instead of reported as success; armed-mode timeout waits for the
-  running scene to settle; idle-loop transitions are cancellable; STT/WS session leaks and
-  a never-settling `askAgentQuestion` fixed; `gpio_read.py` degrades instead of crashing;
-  stuck dashboard play-button spinner fixed; several correctness bugs (rotateContinuous
-  duration, telemetry `record()` args, memory-monitor cooldown, servo priority, ESM
-  `__dirname`) fixed.
+- **Character-scoped the calibration & actuator-position stores (#5).** Part IDs are not
+  globally unique, so profiles keyed by bare partId let one character's calibration
+  overwrite another's servo bounds (a mechanical-damage path). Entries are now keyed by
+  `${characterId}:${partId}` with a legacy bare-key read fallback (non-regressive) and a
+  selected-character default; proven by `tests/unit/calibration-character-scope.test.js`.
+- Jaw config, `/api/parts`, and scene CRUD (#44) now honor the requested character;
+  concurrent scene-step failures are surfaced instead of reported as success; armed-mode
+  timeout waits for the running scene to settle; idle-loop transitions are cancellable;
+  STT/WS session leaks and a never-settling `askAgentQuestion` fixed; `gpio_read.py`
+  degrades instead of crashing; stuck dashboard play-button spinner fixed; several
+  correctness bugs (rotateContinuous duration, telemetry `record()` args, memory-monitor
+  cooldown, servo priority, ESM `__dirname`) fixed.
+
+See [docs/development/STABILITY-AUDIT-2026-07.md](docs/development/STABILITY-AUDIT-2026-07.md)
+for the full per-finding table and status.
 
 ## [8.3.0] - 2026-04-19 — Stabilization Release Mark
 
