@@ -1,45 +1,47 @@
 {
   "permissions": {
     "allow": [
-      "Bash",
       "Read",
       "Edit",
       "Write",
-      "MultiEdit",
       "Glob",
       "Grep",
-      "LS",
       "WebFetch",
       "WebSearch",
-      "NotebookRead",
       "NotebookEdit",
-      "TodoRead",
-      "TodoWrite",
-      "Task",
-      "mcp__*",
-      "mcp__playwright__browser_navigate",
-      "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_click",
-      "mcp__playwright__browser_close",
-      "mcp__playwright__browser_console_messages",
-      "mcp__playwright__browser_drag",
-      "mcp__playwright__browser_evaluate",
-      "mcp__playwright__browser_file_upload",
-      "mcp__playwright__browser_fill_form",
-      "mcp__playwright__browser_handle_dialog",
-      "mcp__playwright__browser_hover",
-      "mcp__playwright__browser_install",
-      "mcp__playwright__browser_navigate_back",
-      "mcp__playwright__browser_network_requests",
-      "mcp__playwright__browser_press_key",
-      "mcp__playwright__browser_resize",
-      "mcp__playwright__browser_run_code",
-      "mcp__playwright__browser_select_option",
-      "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_tabs",
-      "mcp__playwright__browser_take_screenshot",
-      "mcp__playwright__browser_type",
-      "mcp__playwright__browser_wait_for"
+      "Bash(npm test)",
+      "Bash(npm run test:*)",
+      "Bash(npm run verify:*)",
+      "Bash(npm run gate)",
+      "Bash(npm run validate:*)",
+      "Bash(npm run audit:*)",
+      "Bash(npm run check)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(node --check:*)",
+      "Bash(node scripts/:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "mcp__playwright__*"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d node_modules ] || npm install --no-audit --no-fund",
+            "timeout": 600,
+            "statusMessage": "Ensuring npm dependencies are installed…"
+          }
+        ]
+      }
     ]
   },
   "enableAllProjectMcpServers": true,
