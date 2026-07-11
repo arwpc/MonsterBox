@@ -88,6 +88,10 @@ class AudioHealthMonitor {
       }
 
       this.consecutiveFailures = 0;
+      // Rearm the recovery cap once healthy. Otherwise restartAttempts only ever
+      // reset inside the restart path, so it accumulated across the whole process
+      // lifetime and permanently disabled self-recovery after 5 total restarts.
+      this.restartAttempts = 0;
       this.lastCheckStatus = 'healthy';
 
       // Parse output to check for audio devices

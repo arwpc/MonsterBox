@@ -149,13 +149,19 @@ function isActive() {
 
 function pollSensor() {
   if (!watcherState.active) return;
+  // Skip if the previous poll's python3 child hasn't returned yet. Otherwise a
+  // slow or hung GPIO read stacks a new process on every interval — a spawn
+  // storm that piles up python3 processes on the RPi.
+  if (watcherState.polling) return;
 
   const pin = watcherState.sensorPin;
   const script = path.resolve(appRoot, 'python_wrappers/gpio_read.py');
 
   watcherState.lastPollAt = Date.now();
+  watcherState.polling = true;
 
   execFile('/usr/bin/python3', [script, String(pin)], { timeout: 2000 }, (err, stdout) => {
+    watcherState.polling = false;
     if (err || !watcherState.active) return;
 
     const value = parseInt((stdout || '').trim(), 10);

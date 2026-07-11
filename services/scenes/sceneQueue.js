@@ -122,6 +122,10 @@ async function awaitIfPaused(q) {
   }
 }
 
+// Floor between loop iterations so a fast/empty scene can't spin the CPU (and
+// storm hardware/audio spawns) by re-executing thousands of times per second.
+const MIN_LOOP_INTERVAL_MS = 250;
+
 async function runSceneWithLifecycle(q, characterId, item) {
   const s = item.scene || item;
   const lc = item.lifecycle || { mode: 'run_once' };
@@ -135,7 +139,10 @@ async function runSceneWithLifecycle(q, characterId, item) {
       while (Date.now() < deadline && !q.stopRequested) {
         await awaitIfPaused(q);
         if (q.stopRequested || q.skipRequested) break;
+        const iterStart = Date.now();
         await executeScene(s, characterId, null);
+        const rest = MIN_LOOP_INTERVAL_MS - (Date.now() - iterStart);
+        if (rest > 0) await new Promise(r => setTimeout(r, rest));
       }
     } else if (mode === 'loop_until_disabled') {
       const maxSec = Math.max(1, Math.floor(lc.max_duration || 1));
@@ -143,7 +150,10 @@ async function runSceneWithLifecycle(q, characterId, item) {
       while (Date.now() < deadline && !q.stopRequested) {
         await awaitIfPaused(q);
         if (q.stopRequested || q.skipRequested) break;
+        const iterStart = Date.now();
         await executeScene(s, characterId, null);
+        const rest = MIN_LOOP_INTERVAL_MS - (Date.now() - iterStart);
+        if (rest > 0) await new Promise(r => setTimeout(r, rest));
       }
     } else {
       await awaitIfPaused(q);

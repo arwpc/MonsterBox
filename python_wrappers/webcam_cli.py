@@ -51,8 +51,10 @@ if __name__ == '__main__':
             cap.release()
             if not ret or frame is None:
                 fail("failed to capture frame", deviceId=dev)
-            ts = int(time.time()*1000)
-            path = f"/tmp/monsterbox_capture_{dev}_{w}x{h}_{ts}.jpg"
+            # Overwrite one fixed file per device instead of minting a new
+            # timestamped file each call — otherwise /tmp fills up on the SD card
+            # (one JPEG per Snap, never cleaned up).
+            path = f"/tmp/monsterbox_capture_{dev}.jpg"
             ok_, buf = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
             if not ok_:
                 fail("jpeg encode failed")

@@ -779,15 +779,23 @@ async function onServerReady(protocol) {
         let lastVideoOk = mjpgHealthy;
         let lastVideoCheck = Date.now();
         let __perfIterations = 0;
+        let __perfTick = 0;
+        const __perfTestMode = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
         const __perfInterval = setInterval(async () => {
-            const load1 = (os.loadavg?.()[0] || 0).toFixed(2);
-            const rssMb = (process.memoryUsage().rss / (1024 * 1024)).toFixed(0);
-            let audioStreams = 0;
-            try { const streams = await pipewireService.listActiveStreams(); audioStreams = streams.length; } catch { }
-            const wsClients = (typeof elevenLabsWebSocketService.getActiveConnectionsCount === 'function') ? elevenLabsWebSocketService.getActiveConnectionsCount() : 0;
-            if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch { } lastVideoCheck = Date.now(); }
-            console.log(`Perf | CPU(load1): ${load1} | Mem(RSS): ${rssMb}MB | Audio streams: ${audioStreams} | WS clients: ${wsClients} | Webcam: ${lastVideoOk ? 'OK' : 'NO'}`);
-            if ((process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true')) {
+            __perfTick += 1;
+            // In production only run the expensive pipewire query + verbose log once
+            // a minute (every 12th 5s tick) to avoid constant CPU/SD churn on the RPi.
+            // Test mode keeps the 5s cadence so its 10-iteration cap still works.
+            if (__perfTestMode || (__perfTick % 12 === 0)) {
+                const load1 = (os.loadavg?.()[0] || 0).toFixed(2);
+                const rssMb = (process.memoryUsage().rss / (1024 * 1024)).toFixed(0);
+                let audioStreams = 0;
+                try { const streams = await pipewireService.listActiveStreams(); audioStreams = streams.length; } catch { }
+                const wsClients = (typeof elevenLabsWebSocketService.getActiveConnectionsCount === 'function') ? elevenLabsWebSocketService.getActiveConnectionsCount() : 0;
+                if ((Date.now() - lastVideoCheck) > 15000) { try { lastVideoOk = await checkMjpgStreamerHealth(); } catch { } lastVideoCheck = Date.now(); }
+                console.log(`Perf | CPU(load1): ${load1} | Mem(RSS): ${rssMb}MB | Audio streams: ${audioStreams} | WS clients: ${wsClients} | Webcam: ${lastVideoOk ? 'OK' : 'NO'}`);
+            }
+            if (__perfTestMode) {
                 __perfIterations += 1;
                 if (__perfIterations >= 10) {
                     clearInterval(__perfInterval);
@@ -799,6 +807,8 @@ async function onServerReady(protocol) {
                 }
             }
         }, 5000);
+        // Don't let this monitor hold the event loop open during shutdown.
+        __perfInterval.unref?.();
     } catch { }
 }
 

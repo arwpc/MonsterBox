@@ -12,6 +12,7 @@ const TELEMETRY_FILE = 'data/movement-telemetry.json';
 const RING_BUFFER_SIZE = 1000;
 const MIN_FLUSH_INTERVAL_MS = 30000;
 const RETENTION_DAYS = 30;
+const MAX_PERSISTED_ENTRIES = 5000; // hard count cap so the SD-card file can't grow unbounded
 
 // Ring buffer stored as array with a write index
 const ringBuffer = [];
@@ -75,9 +76,14 @@ async function flush() {
         // File doesn't exist or is invalid — start fresh
     }
 
-    // Merge and prune entries older than retention period
+    // Merge and prune entries older than retention period. Also enforce a hard
+    // count cap: the 30-day age filter alone let the file grow to ~2.6M entries
+    // (1000/flush every 30s), a multi-hundred-MB read+rewrite every 30s on the SD card.
     const cutoff = now - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    const merged = [...existing, ...snapshot].filter(e => e.timestamp >= cutoff);
+    let merged = [...existing, ...snapshot].filter(e => e.timestamp >= cutoff);
+    if (merged.length > MAX_PERSISTED_ENTRIES) {
+        merged = merged.slice(-MAX_PERSISTED_ENTRIES);
+    }
 
     try {
         await mkdir(dirname(TELEMETRY_FILE), { recursive: true });

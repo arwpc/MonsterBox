@@ -7,6 +7,21 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import goblinDeploymentService from './goblinDeploymentService.js';
 
+/**
+ * fetch() with a real timeout. Native fetch silently ignores a `timeout`
+ * option, so a hung/unreachable Goblin would otherwise stall the request
+ * handler indefinitely. Uses AbortController (no new dependency).
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 class GoblinManagerService {
     constructor() {
         this.goblinsFile = path.resolve('./data/goblins.json');
@@ -264,12 +279,11 @@ class GoblinManagerService {
             // Push settings to Goblin if it's online
             if (goblin.status === 'online') {
                 try {
-                    await fetch(`${goblin.endpoint}/settings`, {
+                    await fetchWithTimeout(`${goblin.endpoint}/settings`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings),
-                        timeout: 5000
-                    });
+                        body: JSON.stringify(settings)
+                    }, 5000);
                 } catch (error) {
                     console.warn(`Failed to push settings to goblin ${goblinId}:`, error.message);
                 }
@@ -401,12 +415,11 @@ class GoblinManagerService {
             }
 
             // Deploy video to Goblin
-            const response = await fetch(`${goblin.endpoint}/deploy-video`, {
+            const response = await fetchWithTimeout(`${goblin.endpoint}/deploy-video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(videoData),
-                timeout: 30000 // 30 second timeout for video uploads
-            });
+                body: JSON.stringify(videoData)
+            }, 30000); // 30 second timeout for video uploads
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -438,15 +451,14 @@ class GoblinManagerService {
             }
 
             // Play video immediately on Goblin using new API endpoint
-            const response = await fetch(`${goblin.endpoint}/api/video/play-immediate`, {
+            const response = await fetchWithTimeout(`${goblin.endpoint}/api/video/play-immediate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     filename,
                     returnToQueue: options.returnToQueue !== false // Default true
-                }),
-                timeout: 10000
-            });
+                })
+            }, 10000);
 
             const result = await response.json();
             return result;

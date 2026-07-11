@@ -23,8 +23,29 @@ function isProcessRunning(pid) {
     try {
         process.kill(pid, 0);
         return true;
-    } catch {
-        return false;
+    } catch (err) {
+        // EPERM means the process exists but is owned by another user — it IS
+        // running. Only ESRCH (and other errors) mean the process is gone.
+        return err.code === 'EPERM';
+    }
+}
+
+/**
+ * Verify a live PID actually belongs to a MonsterBox server, not an unrelated
+ * program that happened to reuse the PID after a reboot/crash (which would make
+ * a stale lock look live and block startup forever). Reads /proc/<pid>/cmdline;
+ * if that can't be read (non-Linux, permissions, race), conservatively assume it
+ * IS ours so we never start a second instance against a real running server.
+ * @param {number} pid
+ * @returns {Promise<boolean>}
+ */
+async function isMonsterBoxProcess(pid) {
+    try {
+        const raw = await fs.readFile(`/proc/${pid}/cmdline`, 'utf8');
+        const cmdline = raw.replace(/\0/g, ' ');
+        return /node/.test(cmdline) && /(server\.js|MonsterBox)/i.test(cmdline);
+    } catch (_) {
+        return true;
     }
 }
 
@@ -38,11 +59,11 @@ async function acquireLock() {
         const content = await fs.readFile(pidFile, 'utf8');
         const existingPid = parseInt(content.trim(), 10);
 
-        if (!isNaN(existingPid) && isProcessRunning(existingPid)) {
+        if (!isNaN(existingPid) && isProcessRunning(existingPid) && await isMonsterBoxProcess(existingPid)) {
             console.error(`MonsterBox already running (PID ${existingPid}). Exiting.`);
             process.exit(1);
         } else {
-            console.warn(`Removing stale PID file (PID ${existingPid} not running)`);
+            console.warn(`Removing stale PID file (PID ${existingPid} not a running MonsterBox process)`);
             await fs.unlink(pidFile);
         }
     } catch (err) {

@@ -127,10 +127,13 @@ class RandomPoseService {
             // Scale pose targets by amplitude for safety
             const scaledPose = this.scalePoseAmplitude(pose, amplitude);
 
-            // Execute the scaled pose
+            // Execute the scaled pose. Pass the pre-scaled pose through so the
+            // amplitude limit actually reaches the hardware — previously the
+            // executor re-loaded the full-range pose and the scaling was a no-op.
             const result = await poseEngine.executePose({
                 characterId,
                 poseId,
+                pose: scaledPose,
                 options: {
                     amplitudeScale: amplitude,
                     safetyMode: true

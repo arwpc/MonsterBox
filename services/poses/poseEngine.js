@@ -15,13 +15,13 @@ import { controlPart, batchMoveServos } from '../hardwareService/index.js';
  * @param {Object} params.options - Execution options
  * @returns {Promise<Object>} - Execution result
  */
-export async function executePose({ characterId, poseId, options = {} }) {
+export async function executePose({ characterId, poseId, pose: providedPose, options = {} }) {
     console.log(`🎭 Executing pose ${poseId} for character ${characterId}`);
     const startTime = Date.now();
 
     try {
-        // Load pose data
-        const pose = await getPose(characterId, poseId);
+        // Use a caller-provided (e.g. amplitude-scaled) pose if given, otherwise load it.
+        const pose = providedPose || await getPose(characterId, poseId);
         if (!pose) {
             throw new Error(`Pose ${poseId} not found for character ${characterId}`);
         }

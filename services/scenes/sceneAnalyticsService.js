@@ -7,8 +7,19 @@ const __dirname = path.dirname(__filename);
 
 const analyticsPath = path.join(__dirname, '../../data/scene-analytics.json');
 
+// Serialize every read-modify-write of scene-analytics.json. Two concurrent
+// scene executions (queue/armed loops, or different characters) would otherwise
+// each read the same state, modify it, and write back — the second clobbering
+// the first's appended log. This chains the whole RMW cycle so they never interleave.
+let _analyticsChain = Promise.resolve();
+const serialize = (fn) => {
+    const run = _analyticsChain.then(fn, fn);
+    _analyticsChain = run.then(() => {}, () => {}); // keep the chain alive after errors
+    return run;
+};
+
 // Scene execution analytics
-const logSceneExecution = async (sceneId, characterId, executionData) => {
+const logSceneExecution = async (sceneId, characterId, executionData) => serialize(async () => {
     try {
         const analytics = await getAnalytics();
         const executionLog = {
@@ -41,10 +52,10 @@ const logSceneExecution = async (sceneId, characterId, executionData) => {
         console.error('Error logging scene execution:', error);
         throw error;
     }
-};
+});
 
 // Scene usage statistics
-const updateSceneUsageStats = async (sceneId, characterId) => {
+const updateSceneUsageStats = async (sceneId, characterId) => serialize(async () => {
     try {
         const analytics = await getAnalytics();
         const sceneKey = `${characterId}_${sceneId}`;
@@ -71,7 +82,7 @@ const updateSceneUsageStats = async (sceneId, characterId) => {
         console.error('Error updating scene usage stats:', error);
         throw error;
     }
-};
+});
 
 // Get scene analytics
 const getSceneAnalytics = async (sceneId = null, characterId = null) => {

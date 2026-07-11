@@ -426,6 +426,16 @@ class ServerPlaybackService {
           this._lastAIPlay = { ...this._lastPlay };
 
           return await new Promise((resolve) => {
+            let done = false;
+            let timer = null;
+            const finishOnce = (result) => { if (done) return; done = true; if (timer) clearTimeout(timer); resolve(result); };
+            // Bound the wait: a blocked audio device would otherwise never emit
+            // 'exit', hanging the request (and its caller) indefinitely.
+            timer = setTimeout(() => {
+              try { pw.kill('SIGTERM'); } catch (_) {}
+              setTimeout(() => { try { pw.kill('SIGKILL'); } catch (_) {} }, 500);
+              finishOnce({ success: false, error: 'playback_timeout', player: 'pw-play', deviceId });
+            }, 15000);
             pw.on('exit', (code, sig) => {
               this._lastPlay = {
                 ts: Date.now(),
@@ -439,7 +449,7 @@ class ServerPlaybackService {
                 kind: 'ai'
               };
               this._lastAIPlay = { ...this._lastPlay };
-              resolve({ success: true, player: 'pw-play', code, signal: sig, deviceId });
+              finishOnce({ success: true, player: 'pw-play', code, signal: sig, deviceId });
             });
             try { pw.stdin.write(buffer); pw.stdin.end(); } catch (e) { console.error('pw-play write failed:', e.message); }
           });
@@ -460,10 +470,19 @@ class ServerPlaybackService {
 
           return await new Promise((resolve) => {
             let started = false;
+            let done = false;
+            let timer = null;
+            const finishOnce = (result) => { if (done) return; done = true; if (timer) clearTimeout(timer); resolve(result); };
+            // Bound the wait so a stuck audio device can't hang the request.
+            timer = setTimeout(() => {
+              try { proc.kill('SIGTERM'); } catch (_) {}
+              setTimeout(() => { try { proc.kill('SIGKILL'); } catch (_) {} }, 500);
+              finishOnce({ success: false, error: 'playback_timeout', player: 'mpg123', deviceId });
+            }, 15000);
             proc.on('error', (e) => {
               console.error('mpg123(ai) spawn error:', e && e.message);
               this._lastAIPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType, streamed: 0, volume, simulated: false, kind: 'ai', error: e && e.message };
-              resolve({ success: false, error: e && e.message });
+              finishOnce({ success: false, error: e && e.message });
             });
             proc.stdin.on('error', (err) => {
               console.error('mpg123(ai) stdin error:', err.message);
@@ -480,7 +499,7 @@ class ServerPlaybackService {
             proc.on('exit', (code, sig) => {
               this._lastPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType: 'audio/mpeg', streamed: buffer.length, volume, simulated: false, kind: 'ai' };
               this._lastAIPlay = { ...this._lastPlay };
-              resolve({ success: true, player: 'mpg123', code, signal: sig, deviceId });
+              finishOnce({ success: true, player: 'mpg123', code, signal: sig, deviceId });
             });
             try { proc.stdin.write(buffer); proc.stdin.end(); } catch (e) { console.error('mpg123(ai) write failed:', e.message); }
           });
@@ -521,9 +540,11 @@ class ServerPlaybackService {
 
         return await new Promise((resolve) => {
           let finished = false;
+          let timer = null;
           const finish = (playerName) => {
             if (finished) return;
             finished = true;
+            if (timer) clearTimeout(timer);
             this._lastPlay = {
               ts: Date.now(),
               characterId,
@@ -538,6 +559,14 @@ class ServerPlaybackService {
             this._lastAIPlay = { ...this._lastPlay };
             resolve({ success: true, player: playerName, deviceId });
           };
+          // Bound the wait so a stuck device can't hang the request forever.
+          timer = setTimeout(() => {
+            if (finished) return;
+            finished = true;
+            try { ff.kill('SIGKILL'); } catch (_) {}
+            try { pw.kill('SIGKILL'); } catch (_) {}
+            resolve({ success: false, error: 'playback_timeout', player: 'ffmpeg|pw-play', deviceId });
+          }, 15000);
 
           ff.on('exit', () => { /* wait for pw-play */ });
           pw.on('exit', () => finish('ffmpeg|pw-play'));
