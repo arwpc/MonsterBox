@@ -310,11 +310,14 @@ router.post('/', express.json(), async (req, res) => {
   try {
     const body = req.body || {};
     if (!body.name) return res.status(400).json({ success: false, error: 'name is required' });
-    const scenes = await scenesService.loadScenes();
-    const id = await scenesService.nextSceneId();
-    const scene = { id, name: String(body.name), steps: Array.isArray(body.steps) ? body.steps : [], created: new Date().toISOString() };
-    scenes.push(scene);
-    await scenesService.saveScenes(scenes);
+    // Serialize the whole read-modify-write so two concurrent creates can't both
+    // grab the same next id and produce duplicate scene IDs / lost writes.
+    const scene = await scenesService.mutateScenes((scenes) => {
+      const maxId = scenes.reduce((max, s) => Math.max(max, parseInt(s.id, 10) || 0), 0);
+      const created = { id: maxId + 1, name: String(body.name), steps: Array.isArray(body.steps) ? body.steps : [], created: new Date().toISOString() };
+      scenes.push(created);
+      return created;
+    });
     res.json({ success: true, scene });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -452,18 +455,19 @@ router.post('/from-template', express.json(), async (req, res) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return res.status(404).json({ success: false, error: 'Template not found' });
 
-    const scenes = await scenesService.loadScenes();
-    const id = await scenesService.nextSceneId();
-    const scene = {
-      id,
-      name: name || template.name,
-      description: template.description || '',
-      steps: JSON.parse(JSON.stringify(template.steps || [])), // Deep copy
-      created: new Date().toISOString(),
-      fromTemplate: templateId
-    };
-    scenes.push(scene);
-    await scenesService.saveScenes(scenes);
+    const scene = await scenesService.mutateScenes((scenes) => {
+      const maxId = scenes.reduce((max, s) => Math.max(max, parseInt(s.id, 10) || 0), 0);
+      const created = {
+        id: maxId + 1,
+        name: name || template.name,
+        description: template.description || '',
+        steps: JSON.parse(JSON.stringify(template.steps || [])), // Deep copy
+        created: new Date().toISOString(),
+        fromTemplate: templateId
+      };
+      scenes.push(created);
+      return created;
+    });
     res.json({ success: true, scene });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

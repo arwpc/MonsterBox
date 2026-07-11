@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
+import { writeJsonAtomic, withFileLock } from '../atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,8 +27,28 @@ export async function loadScenes() {
 
 export async function saveScenes(scenes) {
   const filePath = await getScenesFilePath();
-  await fs.writeFile(filePath, JSON.stringify(scenes || [], null, 2));
+  // Atomic write: a power loss mid-write previously left a truncated scenes.json
+  // that failed to parse on next boot — losing the entire scene library.
+  await writeJsonAtomic(filePath, scenes || []);
   return true;
+}
+
+/**
+ * Run a load → mutate → save cycle for the current character's scenes.json under
+ * a per-file lock so concurrent create/edit requests can't each read the same
+ * list and clobber the other's write (which produced duplicate scene IDs and
+ * lost updates). The mutator receives the scenes array and may return a value.
+ * @param {(scenes: Array) => (any|Promise<any>)} mutator
+ * @returns {Promise<any>} whatever the mutator returns
+ */
+export async function mutateScenes(mutator) {
+  const filePath = await getScenesFilePath();
+  return withFileLock(`scenes:${filePath}`, async () => {
+    const scenes = await loadScenes();
+    const result = await mutator(scenes);
+    await saveScenes(scenes);
+    return result;
+  });
 }
 
 export async function nextSceneId() {
@@ -55,5 +76,5 @@ export async function loadTemplates() {
   }
 }
 
-export default { loadScenes, saveScenes, nextSceneId, getSceneById, loadTemplates };
+export default { loadScenes, saveScenes, mutateScenes, nextSceneId, getSceneById, loadTemplates };
 

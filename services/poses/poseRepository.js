@@ -6,6 +6,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonAtomic, withFileLock } from '../atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,10 +71,10 @@ export async function loadPoses(characterId) {
 export async function savePoses(posesData) {
     try {
         const posesFile = getPosesFilePath(posesData.characterId);
-        const jsonData = JSON.stringify(posesData, null, 2);
         // Ensure directory exists
         await fs.mkdir(path.dirname(posesFile), { recursive: true });
-        await fs.writeFile(posesFile, jsonData, 'utf8');
+        // Atomic write so an interrupted write can't corrupt the whole poses file.
+        await writeJsonAtomic(posesFile, posesData);
         console.log('✅ Poses saved successfully');
     } catch (error) {
         console.error('❌ Failed to save poses:', error.message);
@@ -99,23 +100,27 @@ export async function getPose(characterId, poseId) {
  * @returns {Promise<Object>} - Created pose with ID
  */
 export async function addPose(characterId, poseData) {
-    const posesData = await loadPoses(characterId);
+    // Serialize the whole load→mutate→save so two concurrent adds can't both
+    // read the same max id and produce duplicate pose IDs / lose each other.
+    return withFileLock(`poses:${characterId}`, async () => {
+        const posesData = await loadPoses(characterId);
 
-    // Generate new ID
-    const maxId = posesData.poses.reduce((max, pose) => Math.max(max, pose.id), 0);
-    const newId = maxId + 1;
+        // Generate new ID
+        const maxId = posesData.poses.reduce((max, pose) => Math.max(max, pose.id), 0);
+        const newId = maxId + 1;
 
-    // Create new pose
-    const newPose = {
-        id: newId,
-        ...poseData,
-        created: new Date().toISOString()
-    };
+        // Create new pose
+        const newPose = {
+            id: newId,
+            ...poseData,
+            created: new Date().toISOString()
+        };
 
-    posesData.poses.push(newPose);
-    await savePoses(posesData);
+        posesData.poses.push(newPose);
+        await savePoses(posesData);
 
-    return newPose;
+        return newPose;
+    });
 }
 
 /**
@@ -126,23 +131,25 @@ export async function addPose(characterId, poseData) {
  * @returns {Promise<Object|null>} - Updated pose or null if not found
  */
 export async function updatePose(characterId, poseId, updates) {
-    const posesData = await loadPoses(characterId);
-    const poseIndex = posesData.poses.findIndex(pose => pose.id === poseId);
+    return withFileLock(`poses:${characterId}`, async () => {
+        const posesData = await loadPoses(characterId);
+        const poseIndex = posesData.poses.findIndex(pose => pose.id === poseId);
 
-    if (poseIndex === -1) {
-        return null;
-    }
+        if (poseIndex === -1) {
+            return null;
+        }
 
-    // Update pose
-    posesData.poses[poseIndex] = {
-        ...posesData.poses[poseIndex],
-        ...updates,
-        id: poseId, // Ensure ID doesn't change
-        modified: new Date().toISOString()
-    };
+        // Update pose
+        posesData.poses[poseIndex] = {
+            ...posesData.poses[poseIndex],
+            ...updates,
+            id: poseId, // Ensure ID doesn't change
+            modified: new Date().toISOString()
+        };
 
-    await savePoses(posesData);
-    return posesData.poses[poseIndex];
+        await savePoses(posesData);
+        return posesData.poses[poseIndex];
+    });
 }
 
 /**
@@ -152,17 +159,19 @@ export async function updatePose(characterId, poseId, updates) {
  * @returns {Promise<boolean>} - True if deleted, false if not found
  */
 export async function deletePose(characterId, poseId) {
-    const posesData = await loadPoses(characterId);
-    const poseIndex = posesData.poses.findIndex(pose => pose.id === poseId);
+    return withFileLock(`poses:${characterId}`, async () => {
+        const posesData = await loadPoses(characterId);
+        const poseIndex = posesData.poses.findIndex(pose => pose.id === poseId);
 
-    if (poseIndex === -1) {
-        return false;
-    }
+        if (poseIndex === -1) {
+            return false;
+        }
 
-    posesData.poses.splice(poseIndex, 1);
-    await savePoses(posesData);
+        posesData.poses.splice(poseIndex, 1);
+        await savePoses(posesData);
 
-    return true;
+        return true;
+    });
 }
 
 /**

@@ -7,6 +7,7 @@ import jawServoDaemon from './jawServoDaemon.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import { getCalibrationStore } from '../server/calibration/store.js';
+import { writeJsonAtomic } from './atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,7 +71,7 @@ async function readRawJawSection(characterId) {
     // Persist the migration
     fileConfig.jawAnimation = jaw;
     try {
-      await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+      await writeJsonAtomic(configFile, fileConfig);
     } catch (writeErr) {
       console.warn('Could not persist jaw config migration:', writeErr.message);
     }
@@ -225,7 +226,7 @@ async function writeJawConfig(characterId, jawConfig) {
     }
 
     fileConfig.jawAnimation = jaw;
-    await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+    await writeJsonAtomic(configFile, fileConfig);
 
     // Update in-memory cache with flat config
     characterConfigs.set(String(characterId), flattenJawConfig(jaw));
@@ -299,7 +300,7 @@ async function saveJawConfigById(characterId, configId, params) {
   }
 
   fileConfig.jawAnimation = jaw;
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
 
   // Refresh cache
   characterConfigs.set(String(characterId), flattenJawConfig(jaw));
@@ -338,7 +339,7 @@ async function deleteJawConfigById(characterId, configId) {
 
   jaw.configs = jaw.configs.filter(c => c.id !== configId);
   fileConfig.jawAnimation = jaw;
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
 
   characterConfigs.set(String(characterId), flattenJawConfig(jaw));
 
@@ -372,7 +373,7 @@ async function setActiveJawConfig(characterId, configId) {
 
   jaw.activeConfigId = configId;
   fileConfig.jawAnimation = jaw;
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
 
   characterConfigs.set(String(characterId), flattenJawConfig(jaw));
 

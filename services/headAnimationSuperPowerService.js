@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getCalibrationStore } from '../server/calibration/store.js';
+import { writeJsonAtomic } from './atomicStore.js';
 
 /**
  * Head Animation Super Power Service
@@ -116,7 +117,7 @@ async function writeHeadTrackingConfig(characterId, config) {
 
   // Ensure directory exists
   await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
 }
 
 /**
@@ -266,7 +267,7 @@ async function savePreset(characterId, preset) {
   }
 
   await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
   return entry;
 }
 
@@ -295,7 +296,7 @@ async function deletePreset(characterId, presetId) {
   if (idx < 0) throw new Error('Preset not found');
 
   fileConfig.headTracking.presets.splice(idx, 1);
-  await fs.writeFile(configFile, JSON.stringify(fileConfig, null, 2));
+  await writeJsonAtomic(configFile, fileConfig);
 }
 
 export {
