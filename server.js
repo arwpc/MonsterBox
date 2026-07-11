@@ -567,57 +567,6 @@ app.get('/setup/style-guide', (req, res) => {
     });
 });
 
-// Recover gracefully from JSON parse errors on parts creation (common in CI when headers mismatch)
-// If body-parser failed, attempt to parse as URL-encoded or loose JSON and delegate to controller
-app.use(async (err, req, res, next) => {
-    try {
-        const isBodyParseError = err && (err.type === 'entity.parse.failed' || err instanceof SyntaxError);
-        const isPartsCreate = req && req.method === 'POST' && req.path === '/setup/calibration/api/parts';
-        if (isBodyParseError && isPartsCreate) {
-            try {
-                console.warn('[Recovery] Body parse failed for %s %s, attempting fallback parse', req.method, req.path);
-                let raw = '';
-                try { raw = String(err.body || ''); } catch { raw = ''; }
-
-                // Try URL-encoded first
-                let body = {};
-                try {
-                    const parsed = new URLSearchParams(raw);
-                    body = Object.fromEntries(parsed.entries());
-                } catch { body = {}; }
-
-                // If still empty, attempt loose JSON by normalizing quotes
-                if (!body || Object.keys(body).length === 0) {
-                    try {
-                        const fixed = raw.replace(/'/g, '"');
-                        body = JSON.parse(fixed);
-                    } catch { body = {}; }
-                }
-
-                // Coerce simple numeric fields
-                if (body && typeof body.pin !== 'undefined') {
-                    const n = Number(body.pin);
-                    if (!Number.isNaN(n)) body.pin = n;
-                }
-
-                // Fallback: also accept query params as body
-                if (!body || Object.keys(body).length === 0) {
-                    body = Object.assign({}, req.query || {});
-                }
-
-                // Delegate to the existing controller
-                const fakeReq = Object.assign({}, req, { body });
-                // Use existing controller imported above
-                return partsController.createPart(fakeReq, res);
-            } catch (_) {
-                // If our recovery fails, fall through to next error handler
-            }
-        }
-        next(err);
-    } catch (_) {
-        next(err);
-    }
-});
 
 // MB_TEST_MODE: Convert unexpected 5xx into benign responses to enforce UI stability during tests
 if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {

@@ -19,6 +19,7 @@ class MemoryMonitor {
         this.checkIntervalMs = options.checkIntervalMs || 30000;
         this.intervalHandle = null;
         this.lastWarning = 0;
+        this.lastCritical = 0; // separate cooldown so a warning can't mute a critical
         this.warningCooldownMs = 300000; // 5 minutes between warning logs
         this.lastReading = null;
     }
@@ -55,9 +56,12 @@ class MemoryMonitor {
         const now = Date.now();
         if (rssMB > this.criticalThresholdMB) {
             result.level = 'critical';
-            if (now - this.lastWarning > this.warningCooldownMs) {
+            // Gate on a dedicated timestamp: RSS crosses the warning threshold first,
+            // and a shared cooldown let that earlier warning suppress the CRITICAL log
+            // that follows within 5 minutes — exactly the pre-OOM alert you need most.
+            if (now - this.lastCritical > this.warningCooldownMs) {
                 console.error(`CRITICAL: Memory RSS ${rssMB.toFixed(0)}MB exceeds ${this.criticalThresholdMB}MB threshold`);
-                this.lastWarning = now;
+                this.lastCritical = now;
             }
         } else if (rssMB > this.warningThresholdMB) {
             result.level = 'warning';

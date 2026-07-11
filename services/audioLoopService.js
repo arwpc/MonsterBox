@@ -184,6 +184,23 @@ class AudioLoopService {
                 // The monitor will restart it
             });
 
+            // A ChildProcess emits 'error' (ENOENT/EACCES/EAGAIN under memory pressure)
+            // when the spawn itself fails. With no listener Node turns that into an
+            // uncaught exception that crashes the whole server. Log it, drop the loop so
+            // the monitor doesn't restart-storm a permanently-missing binary, and stop
+            // the sibling process.
+            ffmpeg.on('error', (err) => {
+                console.error(`❌ ffmpeg loop spawn error (char ${characterId}):`, err.message);
+                this._loops.delete(characterId);
+                try { pwplay.kill('SIGKILL'); } catch (_) {}
+            });
+
+            pwplay.on('error', (err) => {
+                console.error(`❌ pw-play loop spawn error (char ${characterId}):`, err.message);
+                this._loops.delete(characterId);
+                try { ffmpeg.kill('SIGKILL'); } catch (_) {}
+            });
+
             // Store loop info
             this._loops.set(characterId, {
                 process: ffmpeg,  // Track ffmpeg as primary process

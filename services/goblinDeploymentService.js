@@ -18,7 +18,9 @@ const __dirname = path.dirname(__filename);
 class GoblinDeploymentService {
     constructor() {
         this.deployments = new Map(); // Track active deployments
-        this.goblinSystemPath = path.join(__dirname, '..', 'goblin-system');
+        // Real Goblin source lives in <repo>/goblin (not goblin-system, which does
+        // not exist — every deploy previously failed at the source SCP).
+        this.goblinSystemPath = path.join(__dirname, '..', 'goblin');
         this.sshUser = 'remote';
         this.goblinDir = '/home/remote/goblin';
         this.goblinPort = 3001;
@@ -176,6 +178,13 @@ class GoblinDeploymentService {
             `${this.goblinDir}/`
         );
 
+        // Copy the entry point (goblin/server.js lives at the root and requires
+        // ./src/*, so it must run from the goblin root — see systemd ExecStart).
+        await this.executeSCP(ipAddress, password,
+            `${this.goblinSystemPath}/server.js`,
+            `${this.goblinDir}/`
+        );
+
         // Copy package.json
         await this.executeSCP(ipAddress, password,
             `${this.goblinSystemPath}/package.json`,
@@ -239,7 +248,7 @@ WorkingDirectory=${this.goblinDir}
 Environment=NODE_ENV=production
 Environment=GOBLIN_ID=${goblinId}
 Environment=GOBLIN_PORT=${this.goblinPort}
-ExecStart=/usr/bin/node src/server.js
+ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=10
 StandardOutput=append:${this.goblinDir}/logs/goblin.log

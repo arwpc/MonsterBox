@@ -674,7 +674,10 @@ const HARDWARE_CONTROLLERS = {
                         message: success ? `PCA9685 ch${channel} ${servoType} servo ${effectiveDirection} at ${speed}%` : `Servo command failed: ${result}`
                     };
                 } else {
-                    const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed });
+                    // Pass duration through — it was dropped here, so the gpio branch
+                    // always ran continuous servos for servo.js's default 1000ms
+                    // regardless of the requested duration (which the response echoed).
+                    const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed, duration });
 
                     const success = typeof result === 'string' && result.includes('success');
 
@@ -684,6 +687,7 @@ const HARDWARE_CONTROLLERS = {
                         pin: pin,
                         direction: effectiveDirection,
                         speed: speed,
+                        duration,
                         controllerType: 'gpio',
                         rawOutput: result,
                         message: success ? `Continuous servo on pin ${pin} rotating ${direction}` : `Servo command failed: ${result}`

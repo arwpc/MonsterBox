@@ -225,7 +225,11 @@ class GoblinPlaylistService {
             // Deploy to each Goblin
             for (const goblinId of targets) {
                 try {
-                    const goblin = goblinManagerService.getGoblin(goblinId);
+                    // getGoblin is async and resolves to { success, goblin }; without
+                    // await, `goblin` was a Promise so this check ALWAYS failed and no
+                    // playlist ever deployed, even to online Goblins.
+                    const goblinResult = await goblinManagerService.getGoblin(goblinId);
+                    const goblin = goblinResult.success ? goblinResult.goblin : null;
                     if (!goblin || goblin.status !== 'online') {
                         results.failed.push({ goblinId, error: 'Goblin offline or not found' });
                         continue;

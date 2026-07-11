@@ -1,6 +1,12 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { loadCharacters, getCharacterById, createCharacter, updateCharacter, deleteCharacter } from '../services/characterService.js';
 import { readConfig, updateSelectedCharacter } from '../services/configService.js';
 import { resolveCharacter, invalidateCache as invalidateCharacterCache } from '../services/characterContext.js';
+
+// ESM has no __dirname; this file referenced it in getAll(), so the management
+// branch always threw and silently fell back to the service path.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function parseId(param) {
   var n = parseInt(param, 10);

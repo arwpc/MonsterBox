@@ -79,6 +79,16 @@ function queueTransitionSequence(partId, angles, priority = 0) {
     }
 
     const key = String(partId);
+
+    // A higher-priority single command may already own this servo this tick.
+    // Without this check, queueTransitionSequence would overwrite it below,
+    // defeating the "highest priority wins" invariant queueCommand enforces.
+    const existingPending = pendingCommands.get(key);
+    if (existingPending && existingPending.priority > priority) {
+        record('*', key, 'preemption_event', 1);
+        return;
+    }
+
     const existing = transitionQueues.get(key);
 
     // If there's an existing transition with higher priority, reject

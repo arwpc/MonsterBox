@@ -323,8 +323,10 @@ async function transitionServos(characterId, parts, options = {}) {
         try {
             const batchResult = await hwService.batchMoveServos(commands);
             const elapsed = Date.now() - startTime;
-            record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
-            record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
+            // record(characterId, servoPartId, metric, value) — was called with the
+            // wrong shape, corrupting telemetry (characterId='cycle_time_ms', etc.).
+            record(characterId, '*', 'cycle_time_ms', elapsed);
+            record(characterId, '*', 'commands_per_second', parts.length / (elapsed / 1000 || 1));
             return commands.map((c, i) => ({
                 partId: c.partId,
                 fromAngle: null,
@@ -363,8 +365,8 @@ async function transitionServos(characterId, parts, options = {}) {
     const results = await Promise.all(promises);
 
     const elapsed = Date.now() - startTime;
-    record('cycle_time_ms', elapsed, { characterId, partCount: parts.length });
-    record('commands_per_second', parts.length / (elapsed / 1000 || 1), { characterId });
+    record(characterId, '*', 'cycle_time_ms', elapsed);
+    record(characterId, '*', 'commands_per_second', parts.length / (elapsed / 1000 || 1));
 
     return results;
 }

@@ -19,9 +19,12 @@ class GoblinVideoService {
      */
     async scanGoblinVideos(goblinId) {
         try {
-            const goblin = goblinManagerService.getGoblin(goblinId);
+            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
+            // Promise, so every scan/play/status/stop reported the Goblin offline.
+            const goblinResult = await goblinManagerService.getGoblin(goblinId);
+            const goblin = goblinResult.success ? goblinResult.goblin : null;
             if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
+                return { success: false, error: goblinResult.error || 'Goblin not found' };
             }
 
             if (goblin.status !== 'online') {
@@ -138,9 +141,12 @@ class GoblinVideoService {
      */
     async playVideoImmediate(goblinId, filename, options = {}) {
         try {
-            const goblin = goblinManagerService.getGoblin(goblinId);
+            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
+            // Promise, so every scan/play/status/stop reported the Goblin offline.
+            const goblinResult = await goblinManagerService.getGoblin(goblinId);
+            const goblin = goblinResult.success ? goblinResult.goblin : null;
             if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
+                return { success: false, error: goblinResult.error || 'Goblin not found' };
             }
 
             if (goblin.status !== 'online') {
@@ -173,9 +179,12 @@ class GoblinVideoService {
      */
     async getPlaybackStatus(goblinId) {
         try {
-            const goblin = goblinManagerService.getGoblin(goblinId);
+            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
+            // Promise, so every scan/play/status/stop reported the Goblin offline.
+            const goblinResult = await goblinManagerService.getGoblin(goblinId);
+            const goblin = goblinResult.success ? goblinResult.goblin : null;
             if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
+                return { success: false, error: goblinResult.error || 'Goblin not found' };
             }
 
             if (goblin.status !== 'online') {
@@ -203,9 +212,12 @@ class GoblinVideoService {
      */
     async stopPlayback(goblinId) {
         try {
-            const goblin = goblinManagerService.getGoblin(goblinId);
+            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
+            // Promise, so every scan/play/status/stop reported the Goblin offline.
+            const goblinResult = await goblinManagerService.getGoblin(goblinId);
+            const goblin = goblinResult.success ? goblinResult.goblin : null;
             if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
+                return { success: false, error: goblinResult.error || 'Goblin not found' };
             }
 
             if (goblin.status !== 'online') {
