@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 
 import { readConfig } from '../services/configService.js';
 import hardwareService from '../services/hardwareService/index.js';
-import { writeJsonAtomic } from '../services/atomicStore.js';
+import { writeJsonAtomic, withFileLock } from '../services/atomicStore.js';
 
 // mjpg-streamer service configuration
 // Use 127.0.0.1 instead of localhost to avoid DNS resolution issues
@@ -273,11 +273,26 @@ export const setControls = async (req, res) => {
     // Persist to part config if requested (include nightMode flag for UI state)
     // Always persist when requested, even if hardware is unavailable — settings apply on next startup
     if (persist) {
-      const nextCfg = Object.assign({}, part.config || {}, { controls: Object.assign({}, (part.config && part.config.controls) || {}, controls) });
-      parts[idx] = Object.assign({}, part, { config: nextCfg, updated: new Date().toISOString() });
       const filePath = await getPartsFilePath();
-      // Atomic write so an interrupted save can't corrupt parts.json.
-      await writeJsonAtomic(filePath, parts);
+      // Serialize the read-modify-write so a concurrent parts.json writer can't
+      // clobber this update (lost-update race), and re-read inside the lock so the
+      // merge lands on the latest on-disk state. Atomic write prevents torn files.
+      await withFileLock(filePath, async () => {
+        const fresh = await loadParts();
+        const fidx = fresh.findIndex(p => String(p.id) === String(id));
+        if (fidx !== -1) {
+          const target = fresh[fidx];
+          const nextCfg = Object.assign({}, target.config || {}, { controls: Object.assign({}, (target.config && target.config.controls) || {}, controls) });
+          fresh[fidx] = Object.assign({}, target, { config: nextCfg, updated: new Date().toISOString() });
+          await writeJsonAtomic(filePath, fresh);
+        } else {
+          // Part vanished from disk between the initial read and the lock; persist
+          // the in-memory version rather than dropping the user's change silently.
+          const nextCfg = Object.assign({}, part.config || {}, { controls: Object.assign({}, (part.config && part.config.controls) || {}, controls) });
+          parts[idx] = Object.assign({}, part, { config: nextCfg, updated: new Date().toISOString() });
+          await writeJsonAtomic(filePath, parts);
+        }
+      });
     }
 
     if (!hardwareOk) {

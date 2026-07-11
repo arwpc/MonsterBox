@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getCalibrationStore } from '../server/calibration/store.js';
-import { writeJsonAtomic } from './atomicStore.js';
+import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
 
 /**
  * Head Animation Super Power Service
@@ -104,20 +104,17 @@ async function writeHeadTrackingConfig(characterId, config) {
   const dataDir = getCharacterDataDir(characterId);
   const configFile = path.join(dataDir, 'super-powers.json');
 
-  let fileConfig = {};
-  try {
-    const data = await fs.readFile(configFile, 'utf8');
-    fileConfig = JSON.parse(data);
-  } catch (_) {
-    // File missing — will create
-  }
-
-  // Merge with defaults to ensure all keys present, then overlay provided config
-  fileConfig.headTracking = { ...getDefaultHeadTrackingConfig(), ...config };
-
-  // Ensure directory exists
+  // Ensure directory exists before the locked read-modify-write.
   await fs.mkdir(dataDir, { recursive: true });
-  await writeJsonAtomic(configFile, fileConfig);
+
+  // Serialize the read-modify-write so a concurrent jaw-config save (which writes
+  // the same super-powers.json) can't clobber the headTracking section, and
+  // vice-versa (finding #47). The jaw service locks on the same configFile key.
+  await updateJsonUnderLock(configFile, (fileConfig) => {
+    // Merge with defaults to ensure all keys present, then overlay provided config
+    fileConfig.headTracking = { ...getDefaultHeadTrackingConfig(), ...config };
+    return fileConfig;
+  });
 }
 
 /**

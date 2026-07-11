@@ -15,10 +15,11 @@ general bug-fixing. This pass is that bug-fix pass.
 ## Result
 
 - **75** raw findings → **58** survived adversarial verification (17 rejected as
-  false positives / intended behavior).
-- **2 critical, 14 high, 21 medium, 21 low.**
-- **55 fully fixed · 2 corruption-fixed (lost-update serialization deferred) ·
-  1 intentionally unchanged.**
+  false positives / intended behavior). A later follow-up (2026-07-11) added **#59**,
+  a corruption bug found by the unit-test hardware log (see below).
+- **2 critical, 14 high, 21 medium, 21 low** (+1 follow-up high).
+- **58 fully fixed · 1 intentionally unchanged.** (#39 and #47 — originally
+  atomic-write-only — are now fully serialized via `withFileLock`; #59 fixed.)
 - Shipped as focused commits (v8.3.1). Unit **168/0**, system green (the single system
   failure is `audio-setup` dry-run capture, which needs a real microphone not present
   in the audit environment), pact **54/0**. Schema / resolver / independence gate audits
@@ -101,7 +102,7 @@ CRUD surface for #44) ran clean. Run the full browser suite on the target hardwa
 | 36 | medium | data-integrity | `services/scenes/scenesService.js:29` | scenes.json written non-atomically with no serialization — power loss corrupts the entire scene library; concurrent edits lose data / duplicate IDs | ✅ Fixed |
 | 37 | medium | rpi-stability | `services/serverPlaybackService.js:461` | One-shot AI playback processes have no timeout — a blocked audio device hangs the request indefinitely | ✅ Fixed |
 | 38 | low | correctness | `controllers/charactersController.js:19` | charactersController getAll() references undefined __dirname in ESM — management branch is dead code | ✅ Fixed |
-| 39 | low | race | `controllers/webcamController.js:278` | Unserialized read-modify-write of parts.json in setControls can clobber concurrent edits | 🟢 Atomic write applied; cross-writer parts.json lost-update serialization deferred (very low impact, single operator) |
+| 39 | low | race | `controllers/webcamController.js:278` | Unserialized read-modify-write of parts.json in setControls can clobber concurrent edits | ✅ Fixed — persist now runs inside `withFileLock` and re-reads parts.json under the lock before the atomic write |
 | 40 | low | error-handling | `public/js/dashboard.js:1642` | Scene play button spinner is never restored when the play request throws, leaving the button stuck spinning | ✅ Fixed |
 | 41 | low | error-handling | `python_wrappers/gpio_read.py:8` | gpio_read.py has no error handling: a failed read silently disables motion detection and leaks the mmap/fd on exception | ✅ Fixed |
 | 42 | low | rpi-stability | `python_wrappers/webcam_cli.py:59` | webcam_cli capture writes a JPEG to /tmp on every call and never deletes it | ✅ Fixed |
@@ -109,7 +110,7 @@ CRUD surface for #44) ran clean. Run the full browser suite on the target hardwa
 | 44 | low | character-independence | `routes/scenes/api.js:379` | Scene CRUD writes ignore resolved characterId, reading/writing the globally selected character's scenes.json | ✅ Fixed |
 | 45 | low | race | `routes/scenes/api.js:314` | Concurrent scene create/edit produces duplicate scene IDs and lost updates (unserialized read-modify-write) | ✅ Fixed |
 | 46 | low | security | `routes/setup/calibration.js:87` | Path traversal (read) via unvalidated characterId query in calibration parts loader | ✅ Fixed |
-| 47 | low | race | `routes/setup/jaw-animation.js:173` | Concurrent writes to super-powers.json clobber each other (jaw vs head config lost update) | 🟢 Atomic write applied; jaw↔head simultaneous-save lost-update serialization deferred (very low impact) |
+| 47 | low | race | `routes/setup/jaw-animation.js:173` | Concurrent writes to super-powers.json clobber each other (jaw vs head config lost update) | ✅ Fixed — `writeJawConfig` and `writeHeadTrackingConfig` share a per-file `withFileLock`, so the two cross-service writers serialize |
 | 48 | low | error-handling | `server.js:600` | Body-parse recovery middleware references undefined partsController (dead, silently swallowed) | ✅ Fixed |
 | 49 | low | rpi-stability | `server.js:822` | Perf-monitor setInterval logs every 5s forever and is never cleared on shutdown | ✅ Fixed |
 | 50 | low | rpi-stability | `server/calibration/router.js:333` | Synchronous fs.writeFileSync on the calibration move path blocks the event loop | ⚪ Not changed — audit verifier deemed it optional; sync markMoving/markCleanShutdown are intentional for crash-recovery durability |
@@ -124,13 +125,32 @@ CRUD surface for #44) ran clean. Run the full browser suite on the target hardwa
 
 ## Notes on the non-"fully-fixed" items
 
-### #39 / #47 — cross-writer lost-update races (LOW, corruption already fixed)
+### #39 / #47 — cross-writer lost-update races (LOW) — now fully closed (2026-07-11)
 
-Both write sites are now **atomic** (no torn files on power loss). The residual is a
-*lost update* only if two subsystems write the same file at the exact same moment
-(webcam controls vs. another parts.json writer; jaw config vs. head config for one
-character) — implausible for a single operator. Full cross-writer serialization via the
-new `withFileLock` helper is a low-value follow-up.
+Both write sites were already **atomic** (no torn files on power loss); the residual was
+a *lost update* if two writers touched the same file simultaneously. The follow-up added
+a shared `updateJsonUnderLock` helper (built on `withFileLock`) and routed the writers
+through it:
+- **#39** — webcam `setControls` persists inside `withFileLock(partsFilePath)` and
+  re-reads parts.json under the lock, so a concurrent parts.json writer can't clobber it.
+- **#47** — `writeJawConfig` and `writeHeadTrackingConfig` both take
+  `withFileLock(superPowersFilePath)`; since they resolve the identical path for a
+  character, the two cross-service writers now run one at a time. (The jaw multi-config
+  CRUD writers remain atomic-but-unlocked — same-section, same-service, single-operator;
+  they were never the flagged race.)
+
+Verified: jaw unit 5/0, jaw system 52/0, head system 21/0, unit suite 168/0.
+
+### #59 — Null byte in `servo_cli.py` broke ALL PCA9685 servo moves (HIGH, follow-up)
+
+Surfaced by the unit-test hardware log: `servo_cli.py` line 90 held a stray `\x00` inside
+the `(1500us)` comment (the `u` had been replaced by NUL, committed in v7.9.6 `ab083a0`).
+Python refuses to compile any file containing a null byte, so every
+`servo_cli.py move_to_pca …` invocation — the Node hardware layer's standard-servo
+positioning path on the PCA9685 — failed with
+`SyntaxError: source code string cannot contain null bytes`. Restored the `u`; the file
+compiles and all 40 Python wrappers `py_compile` clean. A repo-wide scan confirmed no
+other source file contains null or stray control bytes.
 
 ### #50 — Synchronous `fs.writeFileSync` on the calibration move path (NOT CHANGED)
 

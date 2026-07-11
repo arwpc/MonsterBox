@@ -7,7 +7,7 @@ import jawServoDaemon from './jawServoDaemon.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import { getCalibrationStore } from '../server/calibration/store.js';
-import { writeJsonAtomic } from './atomicStore.js';
+import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,49 +186,49 @@ async function writeJawConfig(characterId, jawConfig) {
 
     const configFile = path.join(dataDir, 'super-powers.json');
 
-    let fileConfig = {};
-    try {
-      const data = await fs.readFile(configFile, 'utf8');
-      fileConfig = JSON.parse(data);
-    } catch (_) {
-      // File doesn't exist, start fresh
-    }
+    // Serialize the whole read-modify-write of super-powers.json so a concurrent
+    // head-tracking save (which writes the same file) can't clobber this jaw
+    // update, and vice-versa (finding #47). The head service locks on the same
+    // configFile key, so the two cross-service writers run one at a time.
+    let savedJaw = null;
+    await updateJsonUnderLock(configFile, (fileConfig) => {
+      // Read existing multi-config structure (or migrate)
+      let jaw = fileConfig.jawAnimation;
+      if (!jaw || !Array.isArray(jaw.configs)) {
+        jaw = jaw ? migrateToMultiConfig(jaw) : buildDefaultMultiConfig();
+      }
 
-    // Read existing multi-config structure (or migrate)
-    let jaw = fileConfig.jawAnimation;
-    if (!jaw || !Array.isArray(jaw.configs)) {
-      jaw = jaw ? migrateToMultiConfig(jaw) : buildDefaultMultiConfig();
-    }
+      // Update top-level fields
+      if (jawConfig.enabled !== undefined) jaw.enabled = !!jawConfig.enabled;
+      if (jawConfig.servoPartId !== undefined) jaw.servoPartId = jawConfig.servoPartId;
 
-    // Update top-level fields
-    if (jawConfig.enabled !== undefined) jaw.enabled = !!jawConfig.enabled;
-    if (jawConfig.servoPartId !== undefined) jaw.servoPartId = jawConfig.servoPartId;
-
-    // Update the active config's tuning params.
-    // Intentionally excludes minAngle/maxAngle — calibration_profiles.json is the
-    // source of truth and readJawConfig overlays it on every read. Persisting the
-    // overlaid values here caused cross-character bleed when two characters shared
-    // a servo partId (profiles are keyed globally).
-    const activeId = jaw.activeConfigId || (jaw.configs[0] && jaw.configs[0].id);
-    const activeIdx = jaw.configs.findIndex(c => c.id === activeId);
-    if (activeIdx >= 0) {
-      const tuningKeys = [
-        'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
-        'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
-        'audioLeadTimeMs', 'testText'
-      ];
-      for (const key of tuningKeys) {
-        if (jawConfig[key] !== undefined) {
-          jaw.configs[activeIdx][key] = jawConfig[key];
+      // Update the active config's tuning params.
+      // Intentionally excludes minAngle/maxAngle — calibration_profiles.json is the
+      // source of truth and readJawConfig overlays it on every read. Persisting the
+      // overlaid values here caused cross-character bleed when two characters shared
+      // a servo partId (profiles are keyed globally).
+      const activeId = jaw.activeConfigId || (jaw.configs[0] && jaw.configs[0].id);
+      const activeIdx = jaw.configs.findIndex(c => c.id === activeId);
+      if (activeIdx >= 0) {
+        const tuningKeys = [
+          'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
+          'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
+          'audioLeadTimeMs', 'testText'
+        ];
+        for (const key of tuningKeys) {
+          if (jawConfig[key] !== undefined) {
+            jaw.configs[activeIdx][key] = jawConfig[key];
+          }
         }
       }
-    }
 
-    fileConfig.jawAnimation = jaw;
-    await writeJsonAtomic(configFile, fileConfig);
+      fileConfig.jawAnimation = jaw;
+      savedJaw = jaw;
+      return fileConfig;
+    });
 
     // Update in-memory cache with flat config
-    characterConfigs.set(String(characterId), flattenJawConfig(jaw));
+    characterConfigs.set(String(characterId), flattenJawConfig(savedJaw));
 
     return true;
   } catch (error) {

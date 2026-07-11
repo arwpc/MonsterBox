@@ -55,4 +55,39 @@ export function withFileLock(key, fn) {
   return run;
 }
 
-export default { writeJsonAtomic, withFileLock };
+/**
+ * Serialized read-modify-write of a JSON file. Under a per-file lock, reads and
+ * parses the file (falling back to `defaultValue` if missing/corrupt), hands the
+ * parsed object to `mutate`, and — unless `mutate` returns `SKIP_WRITE` —
+ * atomically writes the (possibly new) object back. Two concurrent callers for
+ * the same path run one at a time, so neither can clobber the other's update.
+ *
+ * `mutate(obj)` may mutate `obj` in place and return it, return a fresh object to
+ * write, or return `SKIP_WRITE` to leave the file untouched (e.g. a validation
+ * early-out). The value ultimately returned to the caller is whatever the write
+ * used, or — for SKIP_WRITE — the object as read.
+ *
+ * @param {string} filePath
+ * @param {(obj: any) => (any | Promise<any>)} mutate
+ * @param {{ defaultValue?: any, spaces?: number }} [opts]
+ * @returns {Promise<any>} the object as persisted (or read, when skipped)
+ */
+export function updateJsonUnderLock(filePath, mutate, { defaultValue = {}, spaces = 2 } = {}) {
+  return withFileLock(filePath, async () => {
+    let current = defaultValue;
+    try {
+      current = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    } catch (_) {
+      current = defaultValue;
+    }
+    const next = await mutate(current);
+    if (next === SKIP_WRITE) return current;
+    await writeJsonAtomic(filePath, next, { spaces });
+    return next;
+  });
+}
+
+/** Sentinel a `mutate` callback returns to skip the write entirely. */
+export const SKIP_WRITE = Symbol('SKIP_WRITE');
+
+export default { writeJsonAtomic, withFileLock, updateJsonUnderLock, SKIP_WRITE };
