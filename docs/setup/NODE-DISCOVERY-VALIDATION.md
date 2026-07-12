@@ -35,7 +35,18 @@ avahi-browse -rt _monsterbox._tcp                 # should list EVERY online nod
 
 ## 3. Confirm the live registry
 
-From any node's API:
+Fastest fleet-wide check — the **discovery matrix** (who sees whom), run from anywhere
+that can reach the nodes:
+
+```bash
+npm run check:discovery
+```
+
+- [ ] Every off-diagonal cell is `✓` (each node sees every other node online). A row/column
+      of `·` or `?` pinpoints exactly which node isn't being seen, and the summary flags
+      unreachable / avahi-down / multicast-blocked nodes.
+
+Or inspect one node directly:
 
 ```bash
 curl -sk https://localhost:3000/api/orchestration/nodes | jq '.nodes[] | {name,ip,status,source,discovered}'

@@ -2,6 +2,19 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.4.3] - 2026-07-12 — Fleet discovery matrix
+
+### Added
+- **`npm run check:discovery`** (`scripts/check-discovery.mjs`) — queries
+  `/api/orchestration/nodes` on every node in `config/animatronics.json` and prints a
+  who-sees-whom matrix (✓ online / · not discovered / — self / ? unreachable). Diagnoses
+  in one command whether a node is down, has avahi stopped, or is up-but-invisible
+  (multicast-blocked / wrong subnet). No dependency (built-in `https`); reads the roster
+  dynamically (character-independent). Referenced from the validation checklist.
+
+Completes the discovery tooling (8.4.1 feature → 8.4.2 fleet deploy → 8.4.3 fleet
+diagnostics). No app-runtime change; gate green.
+
 ## [8.4.2] - 2026-07-12 — Fleet deploy + discovery bring-up
 
 Tooling to push the codebase to every animatronic at once and light up mDNS discovery

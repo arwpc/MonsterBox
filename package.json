@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "8.4.2",
+  "version": "8.4.3",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
@@ -67,6 +67,7 @@
     "setup:webcam": "bash scripts/setup-webcam.sh",
     "advertise-node": "node scripts/advertise-node.mjs",
     "deploy:all": "bash scripts/deploy-all.sh",
+    "check:discovery": "node scripts/check-discovery.mjs",
     "check": "bash scripts/system-check.sh",
     "install:python": "python3 -m pip install --user -r utils/requirements.txt",
     "postinstall": "node scripts/post-install.js",
