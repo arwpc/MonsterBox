@@ -2,6 +2,31 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.4.2] - 2026-07-12 — Fleet deploy + discovery bring-up
+
+Tooling to push the codebase to every animatronic at once and light up mDNS discovery
+across the fleet in one command.
+
+### Added
+- **`npm run deploy:all`** (`scripts/deploy-all.sh`) — deploys the current codebase to
+  **every** node listed in `config/animatronics.json` (character-independent: add a 6th
+  character and it deploys too, no script edit). Runs per-node deploys in parallel and
+  prints a ✓/✗ summary. SSH credentials come from `MONSTERBOX_SSH_PASSWORD`/`SSH_PASS`
+  (never hardcoded); `--dry-run` previews without restarting anything.
+- **mDNS bring-up in the deploy path** — `scripts/deploy-to-animatronic.sh` now ensures
+  `avahi-daemon` is installed and writes `/etc/avahi/services/monsterbox.service` with
+  `sudo` on each node (the monsterbox service runs unprivileged and can't write it
+  itself), so discovery is live immediately after deploy.
+- **`scripts/advertise-node.mjs`** gained `MB_ADVERTISE_ID` / `MB_ADVERTISE_NAME`
+  overrides so a fleet deploy advertises a deterministic identity regardless of
+  in-flight `app-config.json` state.
+- **`docs/setup/NODE-DISCOVERY-VALIDATION.md`** — a 15-minute on-hardware checklist to
+  confirm advertisement, the live registry, dynamic offline/online + DHCP-change
+  behavior, and orchestration-over-discovery, with fixes for multicast-blocked networks.
+
+No app-runtime behavior changed; this release is deploy tooling + docs on top of the
+8.4.1 discovery feature. Gate green.
+
 ## [8.4.1] - 2026-07-11 — Zero-config node discovery (mDNS)
 
 Removes the biggest single-operator wall: hand-typed node IPs. A new node just gets

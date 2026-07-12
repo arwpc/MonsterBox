@@ -201,6 +201,18 @@ sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     sudo systemctl restart mjpg-streamer 2>/dev/null || true
 "
 
+# Zero-config node discovery (mDNS): ensure avahi is present and write the advertise
+# service file with sudo. The monsterbox service runs as an unprivileged user and
+# can't write /etc/avahi/services itself, so we place the file here at deploy time.
+# See docs/development/NODE-DISCOVERY.md.
+echo "Setting up mDNS node discovery..."
+sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    command -v avahi-browse >/dev/null 2>&1 || sudo apt-get install -y avahi-daemon avahi-utils >/dev/null 2>&1 || true
+    sudo systemctl enable --now avahi-daemon >/dev/null 2>&1 || true
+    cd ${REMOTE_PATH} && sudo MB_ADVERTISE_ID=${CHARACTER_ID} MB_SERVICE_FILE=/etc/avahi/services/monsterbox.service node scripts/advertise-node.mjs 2>/dev/null || echo '  (mDNS advertise skipped — check avahi is installed)'
+"
+echo ""
+
 # Check service status and select character
 echo "Checking service status..."
 sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "

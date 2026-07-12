@@ -24,15 +24,20 @@ const repoRoot = path.resolve(__dirname, '..');
 async function main() {
   const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
   const cfg = await readConfig();
-  const id = cfg && cfg.selectedCharacter;
+  // Deploys pass the character id explicitly (MB_ADVERTISE_ID) so the advertised
+  // identity is deterministic and doesn't depend on config/app-config.json — which
+  // may be mid-sync during a fleet deploy. Falls back to the selected character.
+  const id = process.env.MB_ADVERTISE_ID || (cfg && cfg.selectedCharacter);
 
   // Best-effort friendly name from config/animatronics.json (identity source).
-  let character = '';
-  try {
-    const anim = JSON.parse(readFileSync(path.join(repoRoot, 'config', 'animatronics.json'), 'utf8'));
-    const match = (anim.animatronics || []).find((a) => String(a.id) === String(id));
-    character = (match && match.name) || '';
-  } catch (_) { /* name is cosmetic */ }
+  let character = process.env.MB_ADVERTISE_NAME || '';
+  if (!character) {
+    try {
+      const anim = JSON.parse(readFileSync(path.join(repoRoot, 'config', 'animatronics.json'), 'utf8'));
+      const match = (anim.animatronics || []).find((a) => String(a.id) === String(id));
+      character = (match && match.name) || '';
+    } catch (_) { /* name is cosmetic */ }
+  }
 
   const svc = new NodeDiscoveryService({ serviceFile: process.env.MB_SERVICE_FILE || undefined });
   const ok = await svc.advertiseSelf({
@@ -44,7 +49,7 @@ async function main() {
 
   if (ok) {
     console.log(`✅ Advertised ${character || id} on _monsterbox._tcp (${svc.serviceFile}).`);
-    console.log('   Peers running MonsterBox 8.4.0+ will discover this node automatically.');
+    console.log('   Peers running MonsterBox 8.4.1+ will discover this node automatically.');
   } else {
     console.log('⚠️  Could not write the avahi service file (need sudo, and avahi-daemon installed).');
     console.log('   The node still works; orchestration will fall back to config/animatronics.json.');
