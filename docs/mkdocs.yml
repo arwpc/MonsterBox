@@ -62,6 +62,7 @@ nav:
   - Setup Guides:
       - Animatronic Setup: setup/ANIMATRONIC-SETUP-GUIDE.md
       - SSH Setup: setup/ANIMATRONIC-SSH-SETUP.md
+      - Node Discovery Validation: setup/NODE-DISCOVERY-VALIDATION.md
       - Head Tracking Setup: setup/HEAD-TRACKING-SETUP.md
       - Linear Actuator Calibration: setup/LINEAR_ACTUATOR_CALIBRATION.md
       - STT Tuning Guide: setup/STT_TUNING_GUIDE.md
@@ -98,6 +99,7 @@ nav:
   - Development:
       - Development Process: development/development-process.md
       - Backend Architecture: development/backend-architecture.md
+      - Node Discovery (mDNS): development/NODE-DISCOVERY.md
       - AI Integration Guide: development/ai-integration-guide.md
       - AI Management Feature: development/AI-Management-Feature.md
       - Goblin Management: development/goblin-management.md

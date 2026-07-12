@@ -10,9 +10,9 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
-## What's New — v8.4.1 (July 2026)
+## What's New — v8.4.1–8.4.3 (July 2026) — Multi-node made easy
 
-### Zero-config node discovery (mDNS)
+### Zero-config node discovery (mDNS) — v8.4.1
 - **New animatronics are found automatically.** Name a node at setup, let DHCP assign its
   address, and every other node discovers it over mDNS (`_monsterbox._tcp`) and shows it
   come online — no hand-typed IPs, no `config/animatronics.json` edits on any peer.
@@ -22,6 +22,17 @@ This README provides an accurate quick-start and operational overview and links 
 - Manual-IP fallback for multicast-blocked networks (`POST /api/orchestration/nodes/manual`),
   an optional `MB_NODE_TOKEN` trust secret, and `GET /api/orchestration/nodes` for the live
   registry. See [docs/development/NODE-DISCOVERY.md](docs/development/NODE-DISCOVERY.md).
+
+### One-command fleet deploy — v8.4.2
+- **`npm run deploy:all`** deploys the current codebase to **every** animatronic in
+  `config/animatronics.json` at once (in parallel, with a ✓/✗ summary) and lights up mDNS
+  discovery on each node. Character-independent — a 6th character deploys with no script
+  edit. SSH creds come from `MONSTERBOX_SSH_PASSWORD` (never hardcoded); `--dry-run` previews.
+
+### Fleet discovery matrix — v8.4.3
+- **`npm run check:discovery`** queries every node and prints a who-sees-whom matrix, so a
+  node that's up but not being discovered (multicast-blocked, avahi down) is obvious at a
+  glance. First-run guide: [docs/setup/NODE-DISCOVERY-VALIDATION.md](docs/setup/NODE-DISCOVERY-VALIDATION.md).
 
 ## What's New — v8.4.0 (July 2026) — Gold Release
 

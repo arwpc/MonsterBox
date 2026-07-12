@@ -42,13 +42,28 @@ sudo bash install.sh
 
 During install, you'll be prompted to:
 1. **Enter a character name** — creates the character in `characters.json`, scaffolds data files
-2. **Enter the RPi's static IP** — registers in `config/animatronics.json` for network discovery
+2. **Enter the RPi's IP** — recorded in `config/animatronics.json` as a fallback. As of v8.4.1 the
+   node also advertises itself over mDNS, so peers discover its live address automatically and this
+   static IP is only a fallback (see [Node Discovery](../development/NODE-DISCOVERY.md)).
 
 The installer also:
 - **Sets the RPi hostname** to match the character name (lowercase, e.g., "Mina" → `mina`)
 - **Registers in `animatronics.json`** — so `getHostnameCharacterId()` auto-selects the correct character on every boot
 - **Creates and starts the systemd service** — `Restart=always` ensures it comes back after crashes
 - **Verifies the service is responding** — checks HTTPS on port 3000 before finishing
+
+### Deploying to the whole fleet at once
+
+From a dev checkout, push the current code to every node in `config/animatronics.json` and light up
+mDNS discovery on each:
+
+```bash
+MONSTERBOX_SSH_PASSWORD='…' XI_API_KEY='sk_…' ./scripts/deploy-all.sh --dry-run   # preview
+MONSTERBOX_SSH_PASSWORD='…' XI_API_KEY='sk_…' ./scripts/deploy-all.sh             # deploy all
+npm run check:discovery                                                           # confirm the fleet sees itself
+```
+
+See [Node Discovery Validation](../setup/NODE-DISCOVERY-VALIDATION.md) for the on-hardware checklist.
 - **Generates SSL certificates** — required for browser microphone access
 
 After install, a reboot is recommended for I2C/SPI/GPU changes. The service starts automatically on boot.

@@ -57,7 +57,7 @@ MonsterBox/
 │   └── audio-library/     # Shared audio files
 ├── config/                # App configuration
 ├── tests/                 # Test suites (800+ tests)
-│   ├── unit/              # Mocha unit tests (6 files)
+│   ├── unit/              # Mocha unit tests (7 files)
 │   ├── system/            # Mocha system/integration tests (17 files)
 │   ├── browser/           # Playwright E2E tests (24 spec files)
 │   ├── hardware/          # Mocha hardware tests (4 files, need real GPIO)
@@ -101,6 +101,8 @@ Each character at `data/character-{id}/` contains:
 - `POST /poses` → create pose, `PUT /poses/:id` → update, `DELETE /poses/:id` → delete
 - `GET /setup/jaw-animation/api/jaw-animation/:charId` → jaw config + available servos
 - `POST /setup/jaw-animation/api/jaw-animation/:charId` → save jaw config (enabled, servoPartId, etc.)
+- `GET /api/orchestration/nodes` → live node registry (config overlaid with mDNS discovery: source/status/trust)
+- `POST /api/orchestration/nodes/manual` → pin a node by IP (fallback for multicast-blocked networks); `DELETE /api/orchestration/nodes/manual/:id` → forget it
 
 ## Scene Step Types
 `servo`, `motor`, `linear-actuator`, `light/led`, `audio`, `sayThis`, `askAI`, `goblin-video`, `wait`, `sensor`, `pose`, `hardware`, `jaw-animation`, `head-tracking`
@@ -117,6 +119,12 @@ Each character at `data/character-{id}/` contains:
 - `sudo systemctl restart monsterbox.service` — Restart after server changes
 - `sudo journalctl -u monsterbox.service -f` — Follow service logs
 - `git log --oneline -20` — Recent commit history
+
+### Multi-node (MonsterNet) / mDNS discovery
+- `npm run deploy:all` — deploy the current code to **every** animatronic in `config/animatronics.json` (parallel, `--dry-run` to preview). SSH creds from `MONSTERBOX_SSH_PASSWORD`.
+- `npm run check:discovery` — fleet who-sees-whom matrix (spots nodes up-but-not-discovered)
+- `npm run advertise-node` — write this node's `_monsterbox._tcp` avahi service file (also done on server startup and by the deploy)
+- Nodes discover each other over mDNS; orchestration overlays the live IP onto `config/animatronics.json` (static entries are a fallback). See `docs/development/NODE-DISCOVERY.md` and `docs/setup/NODE-DISCOVERY-VALIDATION.md`.
 
 ## Testing — Granular Test Commands
 The full suite has 800+ tests and takes significant time on RPi4B. Use granular commands to test only what you changed.
