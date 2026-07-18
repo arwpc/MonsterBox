@@ -103,6 +103,12 @@ Each character at `data/character-{id}/` contains:
 - `POST /setup/jaw-animation/api/jaw-animation/:charId` → save jaw config (enabled, servoPartId, etc.)
 - `GET /api/orchestration/nodes` → live node registry (config overlaid with mDNS discovery: source/status/trust)
 - `POST /api/orchestration/nodes/manual` → pin a node by IP (fallback for multicast-blocked networks); `DELETE /api/orchestration/nodes/manual/:id` → forget it
+- `GET /api/orchestration/fleet-health` → aggregated per-node health (version, CPU, RSS, uptime, servo latency)
+- `GET /api/orchestration/animatronic/:id/status` → single-node health
+- `POST /api/orchestration/superpower/:feature` → `{ enabled, ids? }` — fleet-wide toggle (feature: lurk|jaw|head|motion|mute|idle)
+- `POST /api/orchestration/stop-all-queue-loops` / `POST /api/orchestration/emergency-stop` → fleet transport + panic stop
+- `PUT /api/orchestration/volume` → `{ volume, ids? }` — master speaker volume across the fleet
+- `GET /api/orchestration/animatronic/:id/webcam-stream` → same-origin MJPEG proxy (forwards upstream boundary; the Fleet Command Center streams remote webcams through this)
 
 ## Scene Step Types
 `servo`, `motor`, `linear-actuator`, `light/led`, `audio`, `sayThis`, `askAI`, `goblin-video`, `wait`, `sensor`, `pose`, `hardware`, `jaw-animation`, `head-tracking`

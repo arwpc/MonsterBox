@@ -18,12 +18,16 @@ import { exec as _exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
 const SERVICE_TYPE = '_monsterbox._tcp';
 const DEFAULT_SERVICE_FILE = '/etc/avahi/services/monsterbox.service';
 const DEFAULT_BROWSE_INTERVAL_MS = 30 * 1000;
 const DEFAULT_STALE_AFTER_MS = 90 * 1000; // 3 missed browse cycles → offline
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Operator-pinned nodes survive restarts here. Written only on change (SD-friendly).
+const DEFAULT_MANUAL_STORE = path.resolve(__dirname, '..', 'data', 'manual-nodes.json');
 
 /**
  * Hash a shared secret to a short, non-reversible token for the TXT record.
@@ -98,11 +102,36 @@ export class NodeDiscoveryService {
     this.staleAfterMs = opts.staleAfterMs || DEFAULT_STALE_AFTER_MS;
     this.nodeToken = opts.nodeToken || process.env.MB_NODE_TOKEN || null;
     this.now = opts.now || (() => Date.now());
+    this.manualStore = opts.manualStore || DEFAULT_MANUAL_STORE;
 
     this.discovered = new Map(); // id -> record
     this.manual = new Map();     // id -> record (operator-pinned fallback)
     this.avahiAvailable = null;  // null = unknown, true/false after first probe
     this._timer = null;
+  }
+
+  /** Load persisted operator pins from disk (best-effort; called once at start). */
+  async loadManualPins() {
+    try {
+      const raw = await fs.readFile(this.manualStore, 'utf8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        for (const entry of arr) {
+          if (entry && entry.id != null && entry.ip) this.manual.set(String(entry.id), entry);
+        }
+        if (arr.length) console.log(`📌 Loaded ${arr.length} manually-pinned node(s) from ${path.basename(this.manualStore)}`);
+      }
+    } catch (_) { /* no pins file yet — fine */ }
+  }
+
+  /** Persist current pins to disk. Only called on actual change (SD-write friendly). */
+  async _persistManualPins() {
+    try {
+      await fs.mkdir(path.dirname(this.manualStore), { recursive: true });
+      await fs.writeFile(this.manualStore, JSON.stringify(Array.from(this.manual.values()), null, 2), 'utf8');
+    } catch (err) {
+      console.warn(`⚠️  Could not persist manual node pins: ${err.message}`);
+    }
   }
 
   /** Whether a discovered node's advertised token is trusted by this node. */
@@ -196,24 +225,31 @@ export class NodeDiscoveryService {
       return { success: false, error: 'id and ip are required' };
     }
     const id = String(entry.id);
+    // Default characterId to the numeric id when the operator didn't supply one, so
+    // per-node speech/AI/queue calls carry a usable character context.
+    const numericId = Number.isInteger(Number(id)) ? Number(id) : undefined;
     this.manual.set(id, {
       id,
       name: entry.name || id,
       character: entry.character || entry.name || null,
       ip: entry.ip,
       port: parseInt(entry.port, 10) || 3000,
-      characterId: entry.characterId != null ? entry.characterId : undefined,
+      characterId: entry.characterId != null ? entry.characterId : numericId,
+      defaultSceneId: entry.defaultSceneId != null ? entry.defaultSceneId : undefined,
       status: 'unknown',
       source: 'manual',
       trusted: true,
       lastSeen: null,
     });
+    this._persistManualPins();
     return { success: true, id };
   }
 
   /** Remove an operator-pinned node. */
   removeManual(id) {
-    return { success: this.manual.delete(String(id)) };
+    const removed = this.manual.delete(String(id));
+    if (removed) this._persistManualPins();
+    return { success: removed };
   }
 
   /**
@@ -249,8 +285,10 @@ export class NodeDiscoveryService {
           lastSeen: node.lastSeen,
         });
       } else {
-        // Fully dynamic node with no config entry.
-        byId.set(key, { ...node, discovered: true });
+        // Fully dynamic node with no config entry. Default characterId to the numeric
+        // mDNS id so per-node character-scoped calls have a usable context.
+        const numericId = Number.isInteger(Number(key)) ? Number(key) : undefined;
+        byId.set(key, { characterId: node.characterId != null ? node.characterId : numericId, ...node, discovered: true });
       }
     }
 
@@ -267,6 +305,7 @@ export class NodeDiscoveryService {
 
   /** Start the periodic browse loop. No-op-safe to call once at startup. */
   start(self = null) {
+    this.loadManualPins().catch(() => {}); // restore operator pins across restarts
     if (self) this.advertiseSelf(self).catch(() => {});
     if (this._timer) return;
     // Kick an immediate browse, then interval.

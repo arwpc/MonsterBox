@@ -652,16 +652,22 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
 
         console.log(`📹 Streaming webcam for ${animatronic.name} from ${webcamUrl}`);
 
-        // Stream the webcam feed
+        // Stream the webcam feed.
+        // timeout:0 — an MJPEG body is intentionally endless; axios' timer is not
+        // cleared for a streaming response and would abort a healthy feed. Client
+        // disconnect cleanup is handled by req.on('close') below.
         const response = await axiosHttps({
             method: 'get',
             url: webcamUrl,
             responseType: 'stream',
-            timeout: 30000
+            timeout: 0
         });
 
-        // Set headers for MJPEG stream
-        res.setHeader('Content-Type', 'multipart/x-mixed-replace; boundary=frame');
+        // Forward the upstream MJPEG Content-Type verbatim so the boundary token
+        // matches the bytes on the wire. mjpg-streamer uses boundary=boundarydonotcross;
+        // hardcoding boundary=frame here left the browser unable to segment frames,
+        // which is why remote webcams never rendered. Mirror webcamController.js.
+        res.setHeader('Content-Type', response.headers['content-type'] || 'multipart/x-mixed-replace; boundary=boundarydonotcross');
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -1120,6 +1126,112 @@ router.post('/animatronic/:id/stop-audio', async (req, res) => {
             error: 'Failed to stop audio',
             message: error.message
         });
+    }
+});
+
+/**
+ * FLEET COMMAND CENTER endpoints (v8.5.0)
+ * A single place to monitor and drive the entire network of animatronics.
+ */
+
+const isTestMode = () => process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true' || process.env.NODE_ENV === 'test';
+const parseIds = (body) => (Array.isArray(body?.ids) && body.ids.length ? body.ids : null);
+const mockSummary = () => {
+    const list = orchestrationService.getControllableAnimatronics();
+    return { total: list.length, successful: list.length, failed: 0, results: list.map(a => ({ animatronic: a.name, id: a.id, success: true, result: { testMode: true } })) };
+};
+
+/**
+ * Aggregated per-node health (version, CPU/RSS/uptime, servo latency) for the wall.
+ */
+router.get('/fleet-health', async (req, res) => {
+    try {
+        if (isTestMode()) {
+            const nodes = orchestrationService.getControllableAnimatronics().map(a => ({ id: a.id, name: a.name, ip: a.ip, port: a.port, source: a.source, online: false, testMode: true }));
+            return res.json({ success: true, total: nodes.length, online: 0, offline: nodes.length, nodes });
+        }
+        res.json(await orchestrationService.getFleetHealth(parseIds(req.query)));
+    } catch (error) {
+        console.error('Error getting fleet health:', error);
+        res.status(500).json({ success: false, error: 'Failed to get fleet health', message: error.message });
+    }
+});
+
+/**
+ * Status of a single animatronic by id.
+ */
+router.get('/animatronic/:id/status', async (req, res) => {
+    try {
+        if (isTestMode()) {
+            const node = orchestrationService.getAnimatronicById(req.params.id);
+            if (!node) return res.status(404).json({ success: false, error: `Animatronic ${req.params.id} not found` });
+            return res.json({ success: true, testMode: true, ...node, online: false });
+        }
+        const result = await orchestrationService.getAnimatronicStatus(req.params.id);
+        res.status(result.success ? 200 : 404).json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to get status', message: error.message });
+    }
+});
+
+/**
+ * Toggle a fleet superpower (lurk|jaw|head|motion|mute|idle) on all nodes or a subset.
+ */
+router.post('/superpower/:feature', express.json(), async (req, res) => {
+    try {
+        const { feature } = req.params;
+        const enabled = !!req.body?.enabled;
+        if (!Object.keys(orchestrationService.constructor.SUPERPOWER_ENDPOINTS).includes(feature)) {
+            return res.status(400).json({ success: false, error: `Unknown superpower: ${feature}` });
+        }
+        if (isTestMode()) return res.json({ success: true, feature, enabled, testMode: true, ...mockSummary() });
+        res.json(await orchestrationService.broadcastSuperpower(feature, enabled, parseIds(req.body)));
+    } catch (error) {
+        console.error('Error broadcasting superpower:', error);
+        res.status(500).json({ success: false, error: 'Failed to broadcast superpower', message: error.message });
+    }
+});
+
+/**
+ * Stop all scene queue loops across the fleet.
+ */
+router.post('/stop-all-queue-loops', express.json(), async (req, res) => {
+    try {
+        if (isTestMode()) return res.json({ success: true, testMode: true, ...mockSummary() });
+        res.json(await orchestrationService.stopAllQueueLoops(parseIds(req.body)));
+    } catch (error) {
+        console.error('Error stopping queue loops:', error);
+        res.status(500).json({ success: false, error: 'Failed to stop queue loops', message: error.message });
+    }
+});
+
+/**
+ * FLEET EMERGENCY STOP — halt every animatronic immediately.
+ */
+router.post('/emergency-stop', express.json(), async (req, res) => {
+    try {
+        if (isTestMode()) return res.json({ success: true, testMode: true, ...mockSummary() });
+        res.json(await orchestrationService.emergencyStop(parseIds(req.body)));
+    } catch (error) {
+        console.error('Error during emergency stop:', error);
+        res.status(500).json({ success: false, error: 'Emergency stop failed', message: error.message });
+    }
+});
+
+/**
+ * Set master speaker volume (0-100) across the fleet.
+ */
+router.put('/volume', express.json(), async (req, res) => {
+    try {
+        const volume = req.body?.volume;
+        if (volume == null || isNaN(parseInt(volume, 10))) {
+            return res.status(400).json({ success: false, error: 'volume (0-100) is required' });
+        }
+        if (isTestMode()) return res.json({ success: true, volume: Math.max(0, Math.min(100, parseInt(volume, 10))), testMode: true, ...mockSummary() });
+        res.json(await orchestrationService.setMasterVolume(volume, parseIds(req.body)));
+    } catch (error) {
+        console.error('Error setting master volume:', error);
+        res.status(500).json({ success: false, error: 'Failed to set volume', message: error.message });
     }
 });
 

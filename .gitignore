@@ -92,3 +92,6 @@ data/character-*/microphones.json
 # Per-node calibration — globally keyed by partId but partIds are per-character,
 # so syncing across nodes causes adapter/type mismatches (Orlok actuator → Mina servo).
 data/calibration_profiles.json
+
+# Operator-pinned discovery nodes (node-local runtime state)
+data/manual-nodes.json

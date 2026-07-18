@@ -1,14 +1,14 @@
 /**
- * Orchestration Page — Browser E2E Tests
- * Tests the multi-animatronic orchestration UI at /orchestration
+ * Fleet Command Center — Browser E2E Tests (v8.5.0)
+ * Tests the multi-animatronic orchestration UI at /orchestration.
  */
 
 import { test, expect } from '@playwright/test';
-import { testNavigation, ErrorTracker, getAllInteractiveElements } from './framework.js';
+import { testNavigation, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-test.describe('Orchestration Page', () => {
+test.describe('Fleet Command Center', () => {
     let page;
     let tracker;
 
@@ -21,132 +21,87 @@ test.describe('Orchestration Page', () => {
         await page.close();
     });
 
-    test('should load orchestration page with correct title', async () => {
+    test('loads with the correct title and heading', async () => {
         expect(await page.title()).toContain('Orchestration');
+        await expect(page.locator('h4:has-text("Fleet Command Center")')).toBeVisible();
     });
 
-    test('should display command log panel', async () => {
+    test('shows the command log with a ready message', async () => {
         const logPanel = page.locator('#commandLog');
         await expect(logPanel).toBeVisible();
-        // Should have initialization message
-        const logText = await logPanel.textContent();
-        expect(logText).toContain('initialized');
+        await expect(logPanel).toContainText('ready');
     });
 
-    test('should display system status panel with refresh button', async () => {
-        const statusPanel = page.locator('#animatronicsStatus');
-        await expect(statusPanel).toBeVisible();
-
-        // Use .first() since there are multiple Refresh buttons (status + goblin panels)
-        const refreshBtn = page.locator('button:has-text("Refresh")').first();
-        await expect(refreshBtn).toBeVisible();
+    test('shows the fleet health rollup pill', async () => {
+        await expect(page.locator('#fleetPill')).toBeVisible();
+        // populates to "N / M online" after the first fetch
+        await expect(page.locator('#fleetCount')).toContainText('online', { timeout: 10000 });
     });
 
-    test('should display goblin status panel', async () => {
-        const goblinsPanel = page.locator('#goblinsStatus');
-        await expect(goblinsPanel).toBeVisible();
+    test('shows all six superpower master toggles', async () => {
+        await expect(page.locator('.fcc-sp')).toHaveCount(6);
+        for (const sp of ['lurk', 'jaw', 'head', 'motion', 'idle', 'mute']) {
+            await expect(page.locator(`.fcc-sp[data-sp="${sp}"]`)).toBeVisible();
+        }
     });
 
-    test('should display broadcast speech controls', async () => {
-        const textarea = page.locator('#broadcastText');
-        await expect(textarea).toBeVisible();
-
-        const sayAllBtn = page.locator('button:has-text("Say to All")');
-        await expect(sayAllBtn).toBeVisible();
+    test('shows the transport + panic controls', async () => {
+        await expect(page.locator('#startLoops')).toBeVisible();
+        await expect(page.locator('#stopLoops')).toBeVisible();
+        await expect(page.locator('#estop')).toBeVisible();
+        await expect(page.locator('#estop')).toContainText('EMERGENCY STOP');
     });
 
-    test('should display random poses controls', async () => {
-        const cooldownInput = page.locator('#poseCooldown');
-        await expect(cooldownInput).toBeVisible();
-
-        // Use specific text to avoid matching "Enable All Webcams" button
-        const enableBtn = page.getByRole('button', { name: /Enable All$/ });
-        await expect(enableBtn).toBeVisible();
-
-        const disableBtn = page.getByRole('button', { name: /Disable All$/ });
-        await expect(disableBtn).toBeVisible();
+    test('shows master volume, say-all, and target controls', async () => {
+        await expect(page.locator('#masterVol')).toBeVisible();
+        await expect(page.locator('#sayAllText')).toBeVisible();
+        await expect(page.locator('#sayAllBtn')).toBeVisible();
+        await expect(page.locator('#targetSummary')).toContainText('All');
     });
 
-    test('should display system command buttons', async () => {
-        const restartBtn = page.locator('button:has-text("Restart All Services")');
-        await expect(restartBtn).toBeVisible();
-
-        const healthBtn = page.locator('button:has-text("Health Check")');
-        await expect(healthBtn).toBeVisible();
-
-        const rebootBtn = page.locator('button:has-text("Reboot All")');
-        await expect(rebootBtn).toBeVisible();
-
-        const queueBtn = page.locator('button:has-text("Start All Queue Loops")');
-        await expect(queueBtn).toBeVisible();
-    });
-
-    test('should load animatronic status cards after initial fetch', async () => {
+    test('renders node cards after the fleet fetch', async () => {
         tracker.clear();
-
-        // Wait for the status cards to load (spinner disappears or cards appear)
-        await page.waitForTimeout(5000);
-
-        // Should have animatronic cards or a status message
-        const cards = page.locator('#animatronicsStatus .card, #animatronicsStatus .col');
-        const count = await cards.count();
-        console.log(`Found ${count} animatronic status elements`);
-        expect(count).toBeGreaterThanOrEqual(0);
-
+        await page.waitForSelector('.fcc-card', { timeout: 15000 });
+        const count = await page.locator('.fcc-card').count();
+        expect(count).toBeGreaterThan(0);
+        // each card exposes a target checkbox and health line
+        await expect(page.locator('[data-role="target"]').first()).toBeVisible();
         await tracker.logErrors();
     });
 
-    test('should perform health check without errors', async () => {
-        tracker.clear();
+    test('shows the discovery panel and pin form', async () => {
+        await expect(page.locator('#discoveryState')).toContainText('mDNS');
+        await expect(page.locator('#pinForm')).toBeVisible();
+        await expect(page.locator('#pinIp')).toBeVisible();
+    });
 
-        const healthBtn = page.locator('button:has-text("Health Check")');
-        await healthBtn.click();
+    test('shows the goblin row', async () => {
+        await expect(page.locator('#goblinRow')).toBeVisible();
+    });
 
-        // Wait for the health check to complete and log results
-        await page.waitForTimeout(5000);
-
-        // Check command log for health check result
+    test('clears the command log', async () => {
+        await page.locator('#clearLog').click();
         const logText = await page.locator('#commandLog').textContent();
-        console.log('Log after health check:', logText.slice(-200));
+        expect(logText.trim().length).toBeLessThan(5);
+    });
 
+    test('selecting a node updates the target summary', async () => {
+        await page.waitForSelector('[data-role="target"]', { timeout: 15000 });
+        const cb = page.locator('[data-role="target"]').first();
+        await cb.check();
+        await expect(page.locator('#targetSummary')).not.toHaveText('All');
+        await page.locator('#clearTargets').click();
+        await expect(page.locator('#targetSummary')).toHaveText('All');
+    });
+
+    test('has no console/page errors on load', async () => {
+        tracker.clear();
+        await page.waitForTimeout(3000);
         await tracker.assertNoErrors();
     });
 
-    test('should clear command log', async () => {
-        const clearBtn = page.locator('button:has-text("Clear")');
-        await clearBtn.click();
-
-        const logText = await page.locator('#commandLog').textContent();
-        expect(logText).toContain('Log cleared');
-    });
-
-    test('should have broadcast text pre-populated', async () => {
-        const textarea = page.locator('#broadcastText');
-        const value = await textarea.inputValue();
-        expect(value).toContain('Welcome');
-    });
-
-    test('should have webcam control buttons', async () => {
-        const enableWebcams = page.locator('button:has-text("Enable All Webcams")');
-        const disableWebcams = page.locator('button:has-text("Disable All Webcams")');
-        await expect(enableWebcams).toBeVisible();
-        await expect(disableWebcams).toBeVisible();
-    });
-
-    test('should have Goblin Management link in goblin panel', async () => {
-        // Target the link in the goblin panel specifically (not the nav dropdown)
-        const goblinLink = page.locator('.card-header a:has-text("Goblin Management")');
-        await expect(goblinLink).toBeVisible();
-        await expect(goblinLink).toHaveAttribute('href', '/goblin-management');
-    });
-
-    test('should validate all interactive elements exist', async () => {
-        tracker.clear();
-
+    test('exposes interactive elements', async () => {
         const elements = await getAllInteractiveElements(page);
-        console.log(`Found ${elements.length} interactive elements`);
-
         expect(elements.length).toBeGreaterThan(0);
-        await tracker.assertNoErrors();
     });
 });

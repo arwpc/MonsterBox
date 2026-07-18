@@ -10,6 +10,37 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v8.5.0 (July 2026) — Fleet Command Center
+
+The orchestration page is rebuilt into a single-pane **Fleet Command Center** that
+monitors and runs the entire animatronic network from one place — no new frameworks, no
+new dependencies, HTTPS-only inter-node, all existing API contracts preserved.
+
+- **Remote webcams stream again.** The proxy hardcoded the wrong MJPEG boundary
+  (`boundary=frame` vs mjpg-streamer's `boundarydonotcross`), so browsers never rendered a
+  frame. It now forwards the upstream Content-Type and drops the 30s stream timeout that
+  killed healthy feeds. Verified painting live frames in-browser.
+- **Live node wall** — one cockpit card per animatronic: streaming webcam (click to
+  enlarge), source/trust chip, a live health line (version · RSS · uptime · servo latency ·
+  CPU), and per-node Say / Ask-AI / audio play·loop·stop / Auto-AI. Cards patch
+  incrementally, so the 15s refresh never wipes typed input or restarts a webcam.
+- **Sticky command bar** — fleet-health rollup, six superpower masters (Lurk / Jaw / Head /
+  Motion / Idle / Mute) broadcast to the whole fleet or a selected subset, master-volume
+  slider, Start/Stop all queue loops, Say-to-all, and a big red **EMERGENCY STOP** (halts
+  queues + audio + random poses + mute). Destructive actions confirm first.
+- **Real fleet health & meaningful results** — `GET /api/orchestration/fleet-health`
+  aggregates per-node telemetry; broadcasts now report `{successful, total, failed}` instead
+  of a misleading always-`true`.
+- **Discovery panel** — surfaces mDNS availability and the config/discovered/pinned
+  breakdown, with a **pin-a-node form** whose pins now persist across restarts
+  (`data/manual-nodes.json`) for multicast-blocked networks.
+- **Hardening** — inter-node calls go through one audited gateway with abortable timeouts;
+  host validation closes an SSH command-injection vector via spoofed discovery; optional
+  `MB_NODE_TOKEN_ENFORCE` gates control on mDNS trust. ⚠️ Rotate the committed fallback SSH
+  password and set `MONSTERBOX_SSH_PASSWORD` per node (startup now warns).
+- Tests: orchestration system suite (41) and browser suite (13) rewritten; all-pages
+  health green (24/24). See [docs/development/ORCHESTRATION.md](docs/development/ORCHESTRATION.md).
+
 ## What's New — v8.4.1–8.4.3 (July 2026) — Multi-node made easy
 
 ### Zero-config node discovery (mDNS) — v8.4.1

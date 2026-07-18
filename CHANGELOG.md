@@ -2,6 +2,70 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [8.5.0] - 2026-07-17 — Fleet Command Center (orchestration overhaul)
+
+A ground-up modernization of the orchestration subsystem into a single-pane **Fleet
+Command Center** to monitor and run the entire animatronic network from one place. No new
+frameworks, no new npm dependencies, HTTPS-only inter-node, all API contracts preserved
+(additive only). Investigated with a fan-out audit (20 defects, 13 modernization gaps).
+
+### Fixed
+- **Remote webcams now stream** (the headline bug). The orchestration webcam proxy
+  hardcoded `Content-Type: multipart/x-mixed-replace; boundary=frame` while mjpg-streamer
+  emits `boundary=boundarydonotcross`, so the browser could never segment a frame and
+  every remote feed showed "Webcam unavailable". The proxy now forwards the upstream
+  Content-Type verbatim (`routes/api/orchestrationRoutes.js`), mirroring
+  `controllers/webcamController.js`. Verified painting live 640×480 frames in-browser.
+- **Webcam stream no longer dies after 30s** — the streaming request set `timeout:30000`;
+  axios' timer isn't cleared for an endless MJPEG body and aborted healthy feeds. Now
+  `timeout:0`, with client-disconnect cleanup via `req.on('close')`.
+- **Broadcast/status success is meaningful** — `broadcastToAnimatronics/Goblins` and
+  `getAllStatus` returned a hardcoded `success:true` even on total failure. They now
+  return `{success, total, successful, failed, results}` (status adds `online/offline`).
+- **Ask-AI works from the HTTPS page** — the old UI used a mixed-content `ws://<ip>:8795`
+  (silently blocked). The new UI routes Ask-AI through the existing REST proxy.
+- **Goblin cards** read `goblin.id` (were reading the non-existent `goblin.goblinId`).
+- **30s full-innerHTML poll** that wiped operator input and re-pulled every webcam is gone
+  — cards now patch incrementally; webcam `<img>` and focused inputs are never destroyed.
+
+### Added
+- **Fleet Command Center UI** (`views/orchestration/index.ejs`, rebuilt) — sticky command
+  bar (fleet-health rollup pill, six superpower masters, master-volume slider, Start/Stop
+  loops, **EMERGENCY STOP**, Say-to-all, node-subset targeting), a live **node wall** of
+  per-node cockpit cards (streaming webcam, source/trust chip, CPU/RSS/uptime/latency
+  health line, Say/Ask-AI, audio play/loop/stop, Auto-AI), a click-to-expand webcam modal,
+  a goblin row, a rolling command log, and a **Discovery panel** (mDNS state + persistent
+  pin-a-node form). Bootstrap 5 + one inline controller, no page reloads.
+- **New endpoints** (`routes/api/orchestrationRoutes.js`): `GET /fleet-health` (aggregated
+  per-node version/CPU/RSS/uptime/servo-latency), `GET /animatronic/:id/status`,
+  `POST /superpower/:feature` (lurk|jaw|head|motion|mute|idle, fleet or subset),
+  `POST /stop-all-queue-loops`, `POST /emergency-stop`, `PUT /volume` — all with
+  `MB_TEST_MODE` short-circuits for offline testability.
+- **Service gateway + hardening** (`services/orchestrationService.js`): a single
+  `httpNode()` inter-node call helper with an abortable timeout; `getControllableAnimatronics()`
+  with IPv4/hostname validation (closes SSH command-injection via spoofed discovery),
+  optional `MB_NODE_TOKEN_ENFORCE` trust gating, and node-subset targeting; IP validation
+  on all SSH ops; `SSHPASS` env now passed to `deployCode`; a startup security warning when
+  the committed fallback SSH password is in use.
+- **Manual node pins persist** to `data/manual-nodes.json` (write-on-change, gitignored)
+  and survive restarts; discovered/manual nodes default `characterId` to their numeric id.
+
+### Security
+- ⚠️ The committed fallback SSH password (`services/orchestrationService.js`) is a known
+  leaked credential. It is retained only so the fleet keeps working; **rotate it and set
+  `MONSTERBOX_SSH_PASSWORD` in each node's service environment** — a startup warning now
+  flags this. Spoofed-discovery command injection is closed via host validation.
+
+### Tests
+- `tests/system/orchestration.test.js` rewritten (**41 assertions**): status counts, node
+  registry, manual pins, fleet-health, per-node status, broadcast summaries, all six
+  superpowers, transport, emergency-stop, volume, Auto-AI, per-node validation.
+- `tests/browser/orchestration.spec.js` rewritten (**13 tests**) for the new UI incl. a
+  zero-console-error assertion. All-pages health sweep green (24/24). Gate green.
+
+### Docs
+- New `docs/development/ORCHESTRATION.md` (architecture, endpoints, UI, security, testing).
+
 ## [8.4.3] - 2026-07-12 — Fleet discovery matrix
 
 ### Added
