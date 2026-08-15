@@ -103,6 +103,53 @@ and reachable.
   `batchMoveServos` calls `readConfig().selectedCharacter` directly rather than going through
   `resolveCharacter(req)` — a character-independence seam allowlisted for now, not yet
   migrated.
+- 🟢 **Hardware safety limits not enforced through unified calibration.**
+  `services/hardwareService/index.js:1567` — `// TODO: Re-implement safety limits using
+  unified calibration profiles`. The legacy per-part safety-limit clamp was removed and not
+  re-implemented on the unified profiles. Servo `moveToAngle` still mirrors/clamps within
+  calibrated bounds *where a profile exists*, but there is no general safety-limit layer
+  across motor / linear-actuator / stepper. **Directly relevant to Orlok's ch4+ch5 fuse
+  item above** — nothing bounds a stall-inducing command. *Mitigate:* keep per-part
+  `speedPct` caps in calibration profiles and supervise full-range moves until re-implemented.
+- 🟡 **Conversation start/stop does not open/close the ElevenLabs WebSocket.**
+  `routes/conversation.js:668` — the enable/disable endpoint persists `ai_agent_state.json`
+  and returns `{success:true}` but never starts/stops the realtime agent via
+  `elevenLabsWebSocketService`. Toggling conversation in the UI may not actually start or
+  cleanly stop the live agent.
+- 🟡 **Hardware-service webcam + mic paths are simulated.**
+  `services/hardwareService/index.js:969` (`startStream`/`stopStream`) returns a canned
+  `streamUrl` without invoking `camera_stream.py`; `:995` (`microphone.record`) returns
+  success without capturing audio. Distinct from the v8.5.0 Fleet Command Center MJPEG proxy,
+  which is a real path (see Recently Fixed). Any flow relying on the hardware-service
+  stream/record path is a no-op on real hardware.
+- 🟡 **`routes/setup/calibration.js` calibration services are stubs.** `:25` —
+  `standardServoCalibration` and siblings return hard-coded
+  `{pulseCalibrated:true, positionsCalibrated:true}` and suggested positions with no
+  persistence, so calibration *status* shown through this route is not trustworthy. (The real
+  stores — `server/calibration/store.js`, `services/actuatorPositionStore.js` — are separate
+  and do persist; this is specifically the route's stub layer.)
+- ⚪ **AI settings "Test connection" is a no-op.** `routes/aiSettingsRoutes.js:193` —
+  `// TODO: Test actual API connection`; after checking a key is present it returns
+  "connection successful" without making a request, so it can pass against an invalid/expired key.
+- ⚪ **Character-resolution & bias tech-debt is baselined, not fixed.** Full machine-checked
+  lists: `eslint-rules/no-direct-character-resolution.allowlist.json` (~12 files still read
+  character state directly instead of `resolveCharacter(req)` — e.g.
+  `controllers/motionTrackingController.js`, `webcamController.js`, `partsController.js`,
+  `routes/setup/jaw-animation.js`, `head-animation.js`) and
+  `tests/baseline/character-independence-allowlist.json` (72 orlok/char-3/hardcoded-IP
+  entries). `npm run gate` blocks *new* violations; both lists only shrink. The
+  `batchMoveServos` seam above is one such entry.
+
+---
+
+## Test Suite (known-flaky)
+
+Intermittent failures noted in `CLAUDE.md` — they pass on retry and are treated as
+non-blocking. Listed so a genuine regression here isn't dismissed as "the usual flake":
+
+- 🟡 **VU meter** — audio level-meter test intermittently fails.
+- 🟡 **Jaw-animation save-config** — save assertion intermittently fails.
+- 🟡 **Calibration timeout** — calibration test intermittently times out.
 
 ---
 
