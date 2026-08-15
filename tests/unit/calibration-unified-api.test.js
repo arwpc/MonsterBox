@@ -8,6 +8,9 @@ import request from 'supertest';
 import express from 'express';
 import router from '../../server/calibration/router.js';
 import { loadParts } from '../../controllers/partsController.js';
+import { readConfig } from '../../services/configService.js';
+import { getCalibrationStore } from '../../server/calibration/store.js';
+import { isTestSafePart } from '../../services/hardwareService/safetyLimits.js';
 
 describe('Unified Calibration API', function () {
   // Calibration operations include post-movement settle delays for open-loop parts
@@ -15,17 +18,47 @@ describe('Unified Calibration API', function () {
   let app;
   let linearPartId;  // dynamically found linear actuator
   let servoPartId;   // dynamically found absolute servo
+  let characterId;
+  const savedProfiles = new Map();
+
+  // These tests hit the real calibration API, which on a live animatronic node drives
+  // real hardware. Two rules follow from that:
+  //  1. Never select a part the safety config marks unsafe for automated driving —
+  //     picking "the first servo" once meant slamming a 150kg servo on a shared fuse
+  //     to both its extremes on every smoke run.
+  //  2. set-min/set-max REWRITE the part's calibration bounds from wherever the test
+  //     parked it, so the profiles must be saved and restored or the suite silently
+  //     recalibrates the animatronic.
+  async function pickTestSafePart(parts, type) {
+    const candidates = parts.filter(p => p.type === type);
+    for (const part of candidates) {
+      if (await isTestSafePart(characterId, part.id)) return String(part.id);
+    }
+    return null;
+  }
 
   before(async () => {
     app = express();
     app.use('/api/calibration', router);
 
+    const cfg = await readConfig();
+    characterId = cfg && cfg.selectedCharacter;
+
     // Find parts by type to be character-independent
     const parts = await loadParts();
-    const linearPart = parts.find(p => p.type === 'linear_actuator');
-    const servoPart = parts.find(p => p.type === 'servo');
-    linearPartId = linearPart ? String(linearPart.id) : null;
-    servoPartId = servoPart ? String(servoPart.id) : null;
+    linearPartId = await pickTestSafePart(parts, 'linear_actuator');
+    servoPartId = await pickTestSafePart(parts, 'servo');
+
+    // Snapshot the whole calibration file. Restoring via upsert() would re-stamp
+    // lastCalibratedAt, making it look like the operator recalibrated the part, so
+    // the raw file is saved and written back verbatim instead.
+    savedProfiles.set('__file__', await getCalibrationStore().load());
+  });
+
+  after(async () => {
+    // Put the animatronic's calibration back exactly as we found it.
+    const snapshot = savedProfiles.get('__file__');
+    if (snapshot) await getCalibrationStore().save(snapshot);
   });
 
   describe('GET /:partId/position', () => {

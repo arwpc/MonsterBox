@@ -2,7 +2,7 @@ import express from 'express';
 import AbsoluteServoAdapter from './adapters/AbsoluteServoAdapter.js';
 import OpenLoopLinearAdapter from './adapters/OpenLoopLinearAdapter.js';
 import ContinuousServoAdapter from './adapters/ContinuousServoAdapter.js';
-import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
+import { clampAngle, clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
 import { getCalibrationStore } from './store.js';
 import { loadParts } from '../../controllers/partsController.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
@@ -213,6 +213,10 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
 
       if (isAbsoluteServo(profile)) {
         const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
+        // Deliberately NOT clamped to profile.bounds: nudge is the operator's
+        // supervised tool for discovering limits at the calibration screen, and
+        // set-min/set-max record wherever it lands. Clamping here would make an
+        // existing window impossible to widen. The runtime path (goto) is clamped.
         const newAngle = Math.max(0, Math.min(180, currentAngle + delta));
         await adapter.gotoAngle(newAngle, { speedPct, durationMs });
         positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle), lastUpdated: new Date().toISOString() });
@@ -316,9 +320,15 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (typeof angle !== 'number' || angle < 0 || angle > 180) {
         return res.status(400).json({ success: false, error: 'Invalid angle - must be number between 0 and 180', received: { angle, type: typeof angle } });
       }
-      await adapter.gotoAngle(angle, { speedPct });
-      positionState.set(partId, { currentAngle: angle, currentP: angleToP(angle), lastUpdated: new Date().toISOString() });
-      res.json({ success: true, message: `Moved to ${angle}°`, targetAngle: angle, targetP: angleToP(angle) });
+      // Respect the part's calibrated window, not just 0-180 — driving a
+      // calibrated servo past its bounds holds it against a mechanical stop.
+      const targetAngle = clampAngle(angle, profile.bounds);
+      if (targetAngle !== angle) {
+        console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
+      }
+      await adapter.gotoAngle(targetAngle, { speedPct });
+      positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle), lastUpdated: new Date().toISOString() });
+      res.json({ success: true, message: `Moved to ${targetAngle}°`, targetAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {
       const { p, speedPct } = req.body;
       if (typeof p !== 'number' || p < 0 || p > 1) {

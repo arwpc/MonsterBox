@@ -12,6 +12,10 @@
     "  minAngle/maxAngle  additional angle window, intersected with calibrated bounds.",
     "  noRetractBelowMin  hard-block retract/reverse (protects a part already at its",
     "                     mechanical minimum; also blocks bounds-bypassing jog-raw).",
+    "  blockAllMotion     refuse every command (use when a command's physical effect",
+    "                     cannot be trusted, e.g. unverified wiring). blockReason says why.",
+    "  excludeFromAutomatedTests  automated suites must not physically drive this part",
+    "                     (tests run on real nodes; see isTestSafePart).",
     "  powerGroup         name of a shared power rail (see powerGroups).",
     "",
     "powerGroups: parts in a serialized group are never energized concurrently, and",
@@ -22,10 +26,12 @@
       "_comment": "Orlok",
       "parts": {
         "3": {
+          "blockAllMotion": true,
+          "blockReason": "Ambiguous BTS7960 wiring — parts.json declares rpwmPin 19 / lpwmPin 21, but the part description says GPIO 21=RPWM, 19=LPWM. linear_actuator_control_v2.py drives rpwmPin for 'extend', so if the description is right, 'extend' physically RETRACTS this actuator, which is already at its mechanical minimum. Trace the wires, make parts.json and the description agree, then drop blockAllMotion and keep noRetractBelowMin.",
           "noRetractBelowMin": true,
           "maxSpeedPct": 80,
           "maxDurationMs": 4000,
-          "notes": "Bow At The Waist (BTS7960, GPIO 21/19/5/22). Sitting at its safe mechanical minimum — extension only. Retraction risks bending the linkage."
+          "notes": "Bow At The Waist (BTS7960, GPIO 21/19/5/22). Sitting at its safe mechanical minimum — extension only, once the wiring is confirmed. Retraction risks bending the linkage."
         },
         "4": {
           "powerGroup": "arm-fused-rail",
@@ -40,6 +46,10 @@
           "maxSpeedPct": 40,
           "maxDurationMs": 3000,
           "notes": "Forearm Rotation, PCA9685 ch5. DS3240MG 40kg 6.0-7.4V. Shares the fused rail with part 4. No calibrated bounds yet — add minAngle/maxAngle once measured on hardware."
+        },
+        "10": {
+          "excludeFromAutomatedTests": true,
+          "notes": "Jaw of Orlok, PCA9685 ch3. jaw_servo_daemon.py holds this channel continuously and will fight an external command, so automated suites must not drive it."
         }
       },
       "powerGroups": {

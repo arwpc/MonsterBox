@@ -92,8 +92,12 @@ export async function getPartSafety(characterId, partId, profile = null) {
         // Tightest angle window wins (highest floor, lowest ceiling).
         minAngle: maxDefined(fromFile.minAngle, fromProfile.minAngle),
         maxAngle: minDefined(fromFile.maxAngle, fromProfile.maxAngle),
-        // Either source may forbid retraction; neither may permit it.
+        // Either source may forbid motion; neither may permit what the other forbids.
         noRetractBelowMin: !!(fromFile.noRetractBelowMin || fromProfile.noRetractBelowMin),
+        blockAllMotion: !!(fromFile.blockAllMotion || fromProfile.blockAllMotion),
+        blockReason: fromFile.blockReason || fromProfile.blockReason || null,
+        // Parts an automated suite must not drive on a real node (see isTestSafePart).
+        excludeFromAutomatedTests: !!(fromFile.excludeFromAutomatedTests || fromProfile.excludeFromAutomatedTests),
         powerGroup: fromProfile.powerGroup || fromFile.powerGroup || null,
         notes: fromFile.notes || fromProfile.notes || null
     };
@@ -103,6 +107,21 @@ export async function getPartSafety(characterId, partId, profile = null) {
         merged.powerGroupConfig = groups[merged.powerGroup] || { serialize: true, cooldownMs: 0 };
     }
     return merged;
+}
+
+/**
+ * May an automated test suite physically drive this part?
+ *
+ * Unit tests run on real nodes, so a suite that picks "the first servo" can end up
+ * repeatedly slamming a high-torque servo on a shared fuse — which is exactly what
+ * was happening to one node's elbow on every `npm run test:smoke`. Tests should
+ * select parts through this helper instead of taking the first of a type.
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function isTestSafePart(characterId, partId, profile = null) {
+    const safety = await getPartSafety(characterId, partId, profile);
+    return !safety.excludeFromAutomatedTests && !safety.blockAllMotion && !safety.powerGroup;
 }
 
 const RETRACT_DIRECTIONS = new Set(['retract', 'reverse', 'down', 'in']);
@@ -131,6 +150,17 @@ export function applySafetyLimits({ type, action, params, profile, safety, partI
     let blocked = null;
 
     if (!safety) return { params: out, adjustments, blocked };
+
+    // --- Hard block: part quarantined entirely ---
+    // Used when we cannot trust what a command will do physically — e.g. an actuator
+    // whose wiring is ambiguous, so "extend" might actually retract. A direction-string
+    // guard is worthless there, because the string and the physical effect disagree.
+    // Refusing every move is the only safe stance until a human traces the wiring.
+    if (safety.blockAllMotion) {
+        blocked = `Part ${partId} is quarantined by hardware safety limits` +
+                  (safety.blockReason ? `: ${safety.blockReason}` : '');
+        return { params: out, adjustments, blocked };
+    }
 
     // --- Hard block: retraction of a part sitting at its mechanical minimum ---
     // `jog-raw` deliberately bypasses bounds, so this is the only thing standing
@@ -253,6 +283,7 @@ export function resetPowerGroups() {
 
 export default {
     getPartSafety,
+    isTestSafePart,
     applySafetyLimits,
     runInPowerGroup,
     invalidateSafetyConfigCache,

@@ -76,6 +76,37 @@ describe('Hardware safety limits', function () {
     });
   });
 
+  describe('full quarantine', function () {
+    it('blocks every direction when a part is quarantined', function () {
+      // A direction-string guard cannot protect a part whose wiring is ambiguous,
+      // because the string and the physical effect disagree.
+      for (const direction of ['extend', 'retract', 'forward', 'reverse']) {
+        const result = applySafetyLimits({
+          type: 'linear_actuator',
+          action: 'controlActuator',
+          params: { direction, speed: 50 },
+          profile: null,
+          safety: { blockAllMotion: true, blockReason: 'wiring unverified' },
+          partId: 3
+        });
+        expect(result.blocked, `direction ${direction}`).to.be.a('string');
+        expect(result.blocked).to.contain('wiring unverified');
+      }
+    });
+
+    it('blocks angle moves on a quarantined part too', function () {
+      const result = applySafetyLimits({
+        type: 'servo',
+        action: 'moveToAngle',
+        params: { angleDeg: 90 },
+        profile: null,
+        safety: { blockAllMotion: true },
+        partId: 3
+      });
+      expect(result.blocked).to.be.a('string');
+    });
+  });
+
   describe('retraction block', function () {
     it('blocks retraction of a part pinned at its mechanical minimum', function () {
       const result = applySafetyLimits({

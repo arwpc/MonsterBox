@@ -12,6 +12,22 @@ export function clampP(p, bounds) {
   return v;
 }
 
+/**
+ * Clamp an absolute-servo angle to its calibrated window.
+ *
+ * The angle paths used to clamp only to 0-180, so a calibrated part could be
+ * driven well past the limits calibration had established for it — which for a
+ * high-torque servo means holding against a mechanical stop and drawing stall
+ * current. Bounds are honoured independently, so a profile that defines only one
+ * side still constrains that side.
+ */
+export function clampAngle(angle, bounds) {
+  let v = Math.max(0, Math.min(180, angle));
+  if (bounds && typeof bounds.minAngle === 'number') v = Math.max(bounds.minAngle, v);
+  if (bounds && typeof bounds.maxAngle === 'number') v = Math.min(bounds.maxAngle, v);
+  return v;
+}
+
 export function planDirectMap(motionModel, fromP, toP) {
   const clampedToP = clampP(toP);
   const usMin = motionModel.usMin || 1000;
