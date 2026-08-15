@@ -136,17 +136,25 @@ export async function setSelected(req, res) {
 
     var inTest = (process && process.env && (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true'));
     if (inTest) {
-      // Fast path: update in-memory immediately and respond; persist to disk in background
+      // In-memory only. This used to also persist to disk fire-and-forget, which
+      // defeated the whole point: hardware command paths read selectedCharacter
+      // straight off disk, so a test run would silently repoint the LIVE node at
+      // another character. Part IDs are only unique within a character, so the same
+      // "part 4" command then lands on a different physical PCA9685 channel.
       if (req.app && req.app.locals) {
         var nextCfg = Object.assign({}, req.app.locals.config || {}, { selectedCharacter: id, dataPath: `data/character-${id}` });
         req.app.locals.config = nextCfg;
       }
       res.json({ success: true, selectedCharacter: id });
-      // Fire-and-forget disk persistence to avoid blocking tests
-      try { updateSelectedCharacter(id).catch(function () { /* ignore */ }); } catch (_) { /* no-op */ }
       return;
     }
-    // Production path: persist to disk always
+    // Test-port (3100) requests must not repoint the running node either — and that
+    // means not writing the value hardware paths read.
+    if (!isProductionPort) {
+      res.json({ success: true, selectedCharacter: id });
+      return;
+    }
+    // Production path: persist to disk
     var cfg = await updateSelectedCharacter(id);
     // Only update in-memory config for production-port requests.
     // Test-port (3100) requests write to disk but do NOT change the running server's character.

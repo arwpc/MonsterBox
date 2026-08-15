@@ -321,7 +321,10 @@ async function transitionServos(characterId, parts, options = {}) {
             angleDeg: p.value ?? (p.target && p.target.angleDeg) ?? p.angleDeg
         })).filter(c => c.angleDeg != null);
         try {
-            const batchResult = await hwService.batchMoveServos(commands);
+            // Pass the character explicitly: part IDs are only unique within a
+            // character, and resolving against the mutable selectedCharacter on disk
+            // can land a command on a different physical channel.
+            const batchResult = await hwService.batchMoveServos(commands, { characterId });
             const elapsed = Date.now() - startTime;
             // record(characterId, servoPartId, metric, value) — was called with the
             // wrong shape, corrupting telemetry (characterId='cycle_time_ms', etc.).

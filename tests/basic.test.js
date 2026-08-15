@@ -66,9 +66,19 @@ describe('MonsterBox Basic Tests', () => {
         });
 
         it('should create pose from template', async () => {
+            // Read the option name from the live template rather than hardcoding one.
+            // Template presets legitimately change when a part's safe range is
+            // revised, and a hardcoded name turns that into a false failure.
+            const templates = await request(BASE_URL).get('/poses/templates').expect(200);
+            const names = Object.keys(templates.body.templates || {});
+            expect(names, 'no pose templates defined').to.not.be.empty;
+            const templateName = names[0];
+            const options = templates.body.templates[templateName].options || [];
+            expect(options, `template ${templateName} has no options`).to.not.be.empty;
+
             const poseData = {
-                templateName: 'elbow',
-                option: 'Half Bend',
+                templateName: templateName,
+                option: options[0].name,
                 partId: '30'
             };
 

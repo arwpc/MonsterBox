@@ -46,10 +46,10 @@ export async function executePose({ characterId, poseId, pose: providedPose, opt
 
         // Execute servo batch + other parts concurrently
         const batchPromise = servoParts.length > 0
-            ? batchMoveServos(servoParts.map(p => ({ partId: p.partId, angleDeg: p.target.angleDeg })))
+            ? batchMoveServos(servoParts.map(p => ({ partId: p.partId, angleDeg: p.target.angleDeg })), { characterId })
             : Promise.resolve({ success: true, results: [] });
 
-        const otherPromises = otherParts.map(part => executePosePart(part, options));
+        const otherPromises = otherParts.map(part => executePosePart(part, options, characterId));
 
         const [batchResult, ...otherSettled] = await Promise.all([
             batchPromise,
@@ -93,8 +93,11 @@ export async function executePose({ characterId, poseId, pose: providedPose, opt
  * @param {Object} options - Execution options
  * @returns {Promise<Object>} - Execution result
  */
-async function executePosePart(part, options) {
+async function executePosePart(part, options, characterId) {
     const { partId, type, target } = part;
+    // Part IDs are only unique within a character, so every hardware call must
+    // carry the character it was resolved against.
+    const hw = { characterId };
     const normalizedType = (type || '').replace(/_/g, '-');
 
     try {
@@ -104,7 +107,7 @@ async function executePosePart(part, options) {
                     const result = await controlPart(String(partId), 'moveToAngle', {
                         angleDeg: target.angleDeg,
                         duration: target.durationMs || 1000
-                    });
+                    }, hw);
                     return { success: result.success !== false, partId, ...result };
                 }
                 if (target.continuous) {
@@ -113,7 +116,7 @@ async function executePosePart(part, options) {
                         direction: direction || 'stop',
                         speed: speedPct,
                         duration: durationMs || 1000
-                    });
+                    }, hw);
                     return { success: result.success !== false, partId, ...result };
                 }
                 throw new Error(`Invalid servo target for part ${partId}`);
@@ -126,7 +129,7 @@ async function executePosePart(part, options) {
                     direction,
                     speed: Math.max(1, Math.min(100, speed)),
                     duration: target.durationMs || 2000
-                });
+                }, hw);
                 return { success: result.success !== false, partId, ...result };
             }
 
@@ -136,7 +139,7 @@ async function executePosePart(part, options) {
                     direction,
                     speed: Math.max(0, Math.min(100, speed)),
                     duration
-                });
+                }, hw);
                 return { success: result.success !== false, partId, ...result };
             }
 
@@ -146,7 +149,7 @@ async function executePosePart(part, options) {
                 const result = await controlPart(String(partId), action, {
                     brightness: target.brightness || 100,
                     duration: target.duration || 1000
-                });
+                }, hw);
                 return { success: result.success !== false, partId, ...result };
             }
 

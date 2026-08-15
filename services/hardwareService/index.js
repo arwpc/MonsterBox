@@ -1532,12 +1532,19 @@ const HARDWARE_CONTROLLERS = {
  * @param {Object} params - Action parameters
  * @returns {Promise<Object>} - Control result
  */
-export async function controlPart(partId, action, params = {}) {
+export async function controlPart(partId, action, params = {}, options = {}) {
     try {
-        // Load part configuration using selectedCharacter from config
+        // Prefer the caller's character. Falling back to selectedCharacter on disk is
+        // genuinely dangerous: that value is global mutable state other processes
+        // rewrite mid-session, and part IDs are only unique WITHIN a character. A
+        // "part 4" command resolved against the wrong character has been observed
+        // driving a completely different PCA9685 channel on the physical board.
+        // Callers that know their character must pass options.characterId.
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '../..');
-        const characterId = cfg && cfg.selectedCharacter;
+        const characterId = options.characterId != null
+            ? options.characterId
+            : (cfg && cfg.selectedCharacter);
 
         let parts = [];
         let part = null;
@@ -1792,12 +1799,16 @@ export async function setPower(state) {
  * @param {Array<{partId: string|number, angleDeg: number}>} commands
  * @returns {Promise<{success: boolean, results: Array}>}
  */
-export async function batchMoveServos(commands) {
+export async function batchMoveServos(commands, options = {}) {
     if (!commands || commands.length === 0) return { success: true, results: [] };
 
+    // Same rule as controlPart: the caller's character wins over the mutable
+    // selectedCharacter on disk, because part IDs are only unique within a character.
     const cfg = await readConfig();
     const appRoot = path.resolve(__dirname, '../..');
-    const characterId = cfg && cfg.selectedCharacter;
+    const characterId = options.characterId != null
+        ? options.characterId
+        : (cfg && cfg.selectedCharacter);
 
     // Load parts once
     let parts = [];
