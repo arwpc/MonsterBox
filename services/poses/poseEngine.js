@@ -106,7 +106,7 @@ async function executePosePart(part, options, characterId) {
                 if (target.angleDeg != null) {
                     const result = await controlPart(String(partId), 'moveToAngle', {
                         angleDeg: target.angleDeg,
-                        duration: target.durationMs || 1000
+                        duration: target.durationMs ?? target.duration ?? 1000
                     }, hw);
                     return { success: result.success !== false, partId, ...result };
                 }
@@ -125,10 +125,13 @@ async function executePosePart(part, options, characterId) {
             case 'linear-actuator': {
                 const { distance, speed = 50 } = target;
                 const direction = target.direction || (distance > 0 ? 'extend' : 'retract');
+                // The pose editor writes `duration`; this engine originally read only
+                // `durationMs`, so any actuator pose authored in the UI silently ran for
+                // the 2000ms default — a long time on a 500ms-class part. Accept both.
                 const result = await controlPart(String(partId), 'control', {
                     direction,
                     speed: Math.max(1, Math.min(100, speed)),
-                    duration: target.durationMs || 2000
+                    duration: target.durationMs ?? target.duration ?? 2000
                 }, hw);
                 return { success: result.success !== false, partId, ...result };
             }
@@ -145,10 +148,11 @@ async function executePosePart(part, options, characterId) {
 
             case 'light':
             case 'led': {
-                const action = target.action || 'toggle';
+                // Editor writes `state`, engine originally read only `action`.
+                const action = target.action || target.state || 'toggle';
                 const result = await controlPart(String(partId), action, {
                     brightness: target.brightness || 100,
-                    duration: target.duration || 1000
+                    duration: target.durationMs ?? target.duration ?? 1000
                 }, hw);
                 return { success: result.success !== false, partId, ...result };
             }

@@ -116,9 +116,21 @@ async function loopIteration() {
         return;
     }
 
-    // Claim servos at IDLE priority — only move the ones we can claim
+    // A pose part is servo-like only if it carries an angle. transitionServos drops
+    // everything else, so lights and actuators in an idle pose used to be silently
+    // discarded — an idle pose that turned a lamp on never lit anything.
+    const hasAngle = (part) => (part.value ?? (part.target && part.target.angleDeg) ?? part.angleDeg) != null;
+
+    // Claim servos at IDLE priority — only move the ones we can claim. Only actual
+    // servos are claimed; the priority manager arbitrates servo motion, and claiming
+    // a light or actuator id there just blocks it for no reason.
     const claimedParts = [];
+    const otherParts = [];
     for (const part of pose.parts) {
+        if (!hasAngle(part)) {
+            otherParts.push(part);
+            continue;
+        }
         const partId = String(part.partId);
         const result = claimServo(partId, OWNER, PRIORITY.IDLE);
         if (result.granted) {
@@ -126,7 +138,7 @@ async function loopIteration() {
         }
     }
 
-    if (claimedParts.length === 0) {
+    if (claimedParts.length === 0 && otherParts.length === 0) {
         // All servos preempted — pause and retry later (don't spin)
         console.log('[IdleLoop] All servos preempted by higher priority, pausing...');
         scheduleNext(idleConfig.maxHoldMs);
@@ -138,7 +150,7 @@ async function loopIteration() {
     if (!isTestMode) {
         try {
             const engine = await getTransitionEngine();
-            if (engine && typeof engine.transitionServos === 'function') {
+            if (claimedParts.length > 0 && engine && typeof engine.transitionServos === 'function') {
                 // Make the transition cancellable so stop() can abort it instead of
                 // letting servos keep driving toward the target after the loop stops.
                 currentAbort = new AbortController();
@@ -147,8 +159,23 @@ async function loopIteration() {
                     easing: pose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out',
                     signal: currentAbort.signal
                 });
-            } else {
+            } else if (claimedParts.length > 0) {
                 console.log('[IdleLoop] No transitionEngine available, skipping hardware transition');
+            }
+
+            // Non-servo parts (lights, actuators) go through the pose engine, which
+            // knows how to drive them. Failures here must not stop the idle loop.
+            if (otherParts.length > 0) {
+                try {
+                    const { executePose } = await import('../poses/poseEngine.js');
+                    await executePose({
+                        characterId,
+                        poseId: pose.id,
+                        pose: Object.assign({}, pose, { parts: otherParts })
+                    });
+                } catch (err) {
+                    console.warn('[IdleLoop] Non-servo pose parts failed, continuing:', err.message);
+                }
             }
         } catch (err) {
             console.warn('[IdleLoop] Hardware transition failed, continuing:', err.message);
