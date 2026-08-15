@@ -106,6 +106,11 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Part not found' });
         }
 
+        // The part was resolved against a specific character, so the hardware call
+        // must be too — part IDs are only unique within a character.
+        const ctx = await resolveCharacter(req);
+        const hw = { characterId: ctx && ctx.id };
+
         res.json({ success: true, part });
     } catch (error) {
         console.error('Error reading part:', error);
@@ -171,7 +176,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
             }
         } else if (partType === 'servo') {
             const { position = 50, duration = 1000 } = req.body;
-            const result = await controlPart(part.id, 'moveToAngle', { angleDeg: parseInt(position) });
+            const result = await controlPart(part.id, 'moveToAngle', { angleDeg: parseInt(position) }, hw);
             return res.json({
                 success: result.success !== false,
                 message: `Part ${part.name} tested at position ${position}`,
@@ -182,7 +187,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
             // Map short actions to controller method names
             const lightActionMap = { on: 'turnOn', off: 'turnOff', toggle: 'toggle', turnOn: 'turnOn', turnOff: 'turnOff' };
             const lightAction = lightActionMap[rawAction] || rawAction;
-            const result = await controlPart(part.id, lightAction, params);
+            const result = await controlPart(part.id, lightAction, params, hw);
             return res.json({
                 success: result.success !== false,
                 message: result.message || `Light ${part.name} ${lightAction}`,
@@ -226,7 +231,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 console.warn(`[PartsAPI] Could not enforce bounds for actuator part ${part.id}:`, e.message);
             }
 
-            const result = await controlPart(part.id, direction, { duration, speed });
+            const result = await controlPart(part.id, direction, { duration, speed }, hw);
 
             // Persist updated position estimate
             if (projectedP != null) {
@@ -277,7 +282,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 console.warn(`[PartsAPI] Could not enforce bounds for motor part ${part.id}:`, e.message);
             }
 
-            const result = await controlPart(part.id, 'control', { direction, speed, duration });
+            const result = await controlPart(part.id, 'control', { direction, speed, duration }, hw);
 
             // Persist updated position estimate
             if (projectedP != null) {
@@ -292,7 +297,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
         } else {
             // Generic fallback — attempt controlPart
             try {
-                const result = await controlPart(part.id, action || 'test', params);
+                const result = await controlPart(part.id, action || 'test', params, hw);
                 return res.json({
                     success: result.success !== false,
                     message: result.message || `Part ${part.name} tested`,
