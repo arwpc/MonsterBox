@@ -21,10 +21,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 
-// The committed dev SSH password. Kept ONLY as a last-resort fallback so existing
-// fleets keep working; it is a known-leaked credential and must be rotated.
-const LEGACY_SSH_PASSWORD = 'klrklr89!';
-
 // Accept only bare IPv4 / hostname characters. Node IPs can originate from mDNS
 // discovery (untrusted), and several control paths interpolate the host into a
 // shell string for SSH — validate before any such use to close command injection.
@@ -40,15 +36,16 @@ class OrchestrationService {
         this.goblins = config.goblins;
 
         this.sshUser = 'remote';
-        // Inter-node control credential. Prefer setting MONSTERBOX_SSH_PASSWORD in
-        // each node's service environment (and rotating this value — it was committed
-        // to git). The literal remains only as a fallback so existing deployments keep
-        // working; when it is in use we warn loudly at startup.
-        this.sshPassword = process.env.MONSTERBOX_SSH_PASSWORD || LEGACY_SSH_PASSWORD;
-        if (this.sshPassword === LEGACY_SSH_PASSWORD) {
-            console.warn('🔓 SECURITY: orchestration is using the committed fallback SSH password. '
-                + 'Set MONSTERBOX_SSH_PASSWORD in the service environment on every node and rotate the leaked value. '
-                + 'SSH fleet control (reboot/restart/deploy) works either way.');
+        // Inter-node control credential. The ONLY source is MONSTERBOX_SSH_PASSWORD in
+        // each node's service environment; there is deliberately no in-repo fallback
+        // (the previous literal was committed to git and is treated as compromised).
+        // Missing config is a startup warning, not an import-time throw — the HTTP/mDNS
+        // side of orchestration must still boot — but every SSH op fails loudly.
+        this.sshPassword = process.env.MONSTERBOX_SSH_PASSWORD || null;
+        if (!this.sshPassword) {
+            console.warn('🔓 SECURITY: MONSTERBOX_SSH_PASSWORD is not set. SSH fleet control '
+                + '(reboot / service restart / config push / deploy) is DISABLED until it is set in '
+                + 'the service environment on this node. HTTPS orchestration is unaffected.');
         }
 
         // Opt-in trust enforcement: when MB_NODE_TOKEN_ENFORCE is on, nodes whose
@@ -57,6 +54,22 @@ class OrchestrationService {
         // drop real nodes.
         this.enforceTrust = process.env.MB_NODE_TOKEN_ENFORCE === '1'
             || process.env.MB_NODE_TOKEN_ENFORCE === 'true';
+    }
+
+    /**
+     * The inter-node SSH credential, or a loud failure. Called by every SSH-backed
+     * operation so an unconfigured node reports a clear, actionable error instead of
+     * silently authenticating with a leaked default (or silently no-op'ing).
+     * @returns {string}
+     * @throws {Error} when MONSTERBOX_SSH_PASSWORD is not set
+     */
+    requireSshPassword() {
+        if (!this.sshPassword) {
+            throw new Error('MONSTERBOX_SSH_PASSWORD is not set on this node — SSH fleet control is '
+                + 'disabled. Set it in the monsterbox.service environment (systemctl edit monsterbox.service) '
+                + 'and restart the service.');
+        }
+        return this.sshPassword;
     }
 
     /**
@@ -227,12 +240,13 @@ class OrchestrationService {
      */
     async rebootDevice(ip) {
         if (!isValidHost(ip)) throw new Error(`Reboot failed: invalid host ${ip}`);
+        const sshPassword = this.requireSshPassword();
         try {
             // `sshpass -e` reads the SSH password from the SSHPASS env var instead
             // of argv, keeping it out of the process table. (The remote `sudo -S`
             // still echoes it; a NOPASSWD sudoers entry for reboot would remove that.)
-            const sshCmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} 'echo ${this.sshPassword} | sudo -S reboot'`;
-            await execAsync(sshCmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
+            const sshCmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} 'echo ${sshPassword} | sudo -S reboot'`;
+            await execAsync(sshCmd, { env: { ...process.env, SSHPASS: sshPassword } });
             return { success: true, message: 'Reboot command sent' };
         } catch (error) {
             throw new Error(`Reboot failed: ${error.message}`);
@@ -244,9 +258,10 @@ class OrchestrationService {
      */
     async restartService(ip) {
         if (!isValidHost(ip)) throw new Error(`Service restart failed: invalid host ${ip}`);
+        const sshPassword = this.requireSshPassword();
         try {
             const cmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "sudo systemctl restart monsterbox || (pkill -f 'node.*server.js' || true; cd ~/MonsterBox && nohup npm start > /tmp/monsterbox.log 2>&1 &)"`;
-            await execAsync(cmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
+            await execAsync(cmd, { env: { ...process.env, SSHPASS: sshPassword } });
             return { success: true, message: 'Service restart initiated' };
         } catch (error) {
             throw new Error(`Service restart failed: ${error.message}`);
@@ -346,10 +361,11 @@ class OrchestrationService {
      */
     async updateConfig(ip, config) {
         if (!isValidHost(ip)) throw new Error(`Config update failed: invalid host ${ip}`);
+        const sshPassword = this.requireSshPassword();
         try {
             const configJson = JSON.stringify(config, null, 2).replace(/'/g, "'\\''");
             const cmd = `sshpass -e ssh -o StrictHostKeyChecking=no ${this.sshUser}@${ip} "printf '%s' '${configJson}' | sudo tee ~/MonsterBox/config/app-config.json >/dev/null"`;
-            await execAsync(cmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
+            await execAsync(cmd, { env: { ...process.env, SSHPASS: sshPassword } });
             return { success: true, message: 'Config updated' };
         } catch (error) {
             throw new Error(`Config update failed: ${error.message}`);
@@ -361,11 +377,12 @@ class OrchestrationService {
      */
     async deployCode(ip) {
         if (!isValidHost(ip)) throw new Error(`Code deployment failed: invalid host ${ip}`);
+        const sshPassword = this.requireSshPassword();
         try {
             const cmd = `./scripts/deploy-to-animatronic.sh ${ip}`;
             // The deploy script shells out via sshpass -e like the other SSH ops, so it
             // needs SSHPASS in its environment (previously omitted here).
-            const { stdout, stderr } = await execAsync(cmd, { env: { ...process.env, SSHPASS: this.sshPassword } });
+            const { stdout, stderr } = await execAsync(cmd, { env: { ...process.env, SSHPASS: sshPassword } });
             return {
                 success: true,
                 message: 'Code deployed',

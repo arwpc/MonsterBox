@@ -70,7 +70,7 @@ All scripts and documentation have been created for a fresh installation of Mons
 
 1. **Connect to GroundBreaker**
    - Connect keyboard and monitor
-   - Login: `remote` / `klrklr89!`
+   - Login: `remote` / `<set MONSTERBOX_SSH_PASSWORD>`
 
 2. **Enable SSH Access** (Optional but recommended)
    ```bash

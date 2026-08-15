@@ -8,6 +8,9 @@ LOG_FILE="/home/remote/goblin/logs/usb-copy.log"
 USB_MOUNT="/mnt/usb"
 VIDEO_DIR="/home/remote/goblin/media/video"
 
+# SSH/sudo credential comes from the environment only - no in-repo default.
+export SSHPASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
@@ -20,7 +23,7 @@ deploy_to_goblin() {
     log "Deploying USB copy daemon to $name ($ip)..."
     
     # Create the script on the Goblin
-    sshpass -p 'klrklr89!' ssh -o StrictHostKeyChecking=no remote@$ip 'cat > /tmp/usb-copy-local.sh' << 'REMOTE_SCRIPT'
+    sshpass -e ssh -o StrictHostKeyChecking=no remote@$ip 'cat > /tmp/usb-copy-local.sh' << 'REMOTE_SCRIPT'
 #!/bin/bash
 LOG_FILE="/home/remote/goblin/logs/usb-copy.log"
 USB_MOUNT="/mnt/usb"
@@ -34,7 +37,7 @@ log() {
 # Create directories
 mkdir -p /home/remote/goblin/logs
 mkdir -p "$VIDEO_DIR"
-echo "klrklr89!" | sudo -S mkdir -p "$USB_MOUNT"
+echo "$SUDO_PW" | sudo -S mkdir -p "$USB_MOUNT"
 
 log "🎃 USB Video Copy Daemon Started"
 
@@ -50,7 +53,7 @@ log "✅ Found USB drive: $USB_PARTITION"
 
 # Mount USB drive
 log "Mounting USB drive..."
-echo "klrklr89!" | sudo -S mount "$USB_PARTITION" "$USB_MOUNT" 2>&1 | tee -a "$LOG_FILE"
+echo "$SUDO_PW" | sudo -S mount "$USB_PARTITION" "$USB_MOUNT" 2>&1 | tee -a "$LOG_FILE"
 
 if [ ! -d "$USB_MOUNT" ] || [ -z "$(ls -A $USB_MOUNT 2>/dev/null)" ]; then
     log "❌ Failed to mount USB drive"
@@ -111,13 +114,13 @@ log "📊 Processing complete: $PROCESSED converted, $SKIPPED skipped, $FAILED f
 
 # Unmount USB
 log "Unmounting USB drive..."
-echo "klrklr89!" | sudo -S umount "$USB_MOUNT"
+echo "$SUDO_PW" | sudo -S umount "$USB_MOUNT"
 
 log "🎃 USB Video Copy Daemon Finished"
 REMOTE_SCRIPT
 
     # Make it executable and run it
-    sshpass -p 'klrklr89!' ssh -o StrictHostKeyChecking=no remote@$ip 'chmod +x /tmp/usb-copy-local.sh && nohup /tmp/usb-copy-local.sh > /dev/null 2>&1 &'
+    sshpass -e ssh -o StrictHostKeyChecking=no remote@$ip "chmod +x /tmp/usb-copy-local.sh && SUDO_PW='$SSHPASS' nohup /tmp/usb-copy-local.sh > /dev/null 2>&1 &"
     
     log "✅ Daemon started on $name"
 }

@@ -15,7 +15,7 @@ TARGETS=(
   "192.168.8.14:goblin-three"
 )
 
-PASS="klrklr89!"
+PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 MONSTERBOX_URL="http://192.168.8.140:3000"
 
 # Hardened markers

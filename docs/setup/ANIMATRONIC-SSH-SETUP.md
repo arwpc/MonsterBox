@@ -37,17 +37,17 @@ The SSH credentials are configured with individual credentials per animatronic i
 # NOT used for runtime MonsterBox application functionality
 
 ORLOK_SSH_USER="remote"
-ORLOK_SSH_PASSWORD="klrklr89!"
+ORLOK_SSH_PASSWORD="<set MONSTERBOX_SSH_PASSWORD>"
 
 PUMPKINHEAD_SSH_USER="remote"
-PUMPKINHEAD_SSH_PASSWORD="klrklr89!"
+PUMPKINHEAD_SSH_PASSWORD="<set MONSTERBOX_SSH_PASSWORD>"
 
 MINA_SSH_USER="remote"
-MINA_SSH_PASSWORD="klrklr89!"
+MINA_SSH_PASSWORD="<set MONSTERBOX_SSH_PASSWORD>"
 
 # Legacy fallback credentials (for backward compatibility)
 RPI_SSH_USER="remote"
-RPI_SSH_PASSWORD="klrklr89!"
+RPI_SSH_PASSWORD="<set MONSTERBOX_SSH_PASSWORD>"
 ```
 
 ### Step 2: Test Current Configuration
@@ -73,7 +73,7 @@ For each RPI that fails the connectivity test, follow these steps:
    ```bash
    sudo useradd -m -s /bin/bash remote
    sudo passwd remote
-   # Enter password: klrklr89!
+   # Enter password: <set MONSTERBOX_SSH_PASSWORD>
    ```
 
 2. **Add user to sudo group:**

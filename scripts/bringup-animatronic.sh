@@ -10,7 +10,7 @@
 #   XI_API_KEY="sk_..." ./scripts/bringup-animatronic.sh mina 2
 #
 # Notes:
-# - Requires sshpass locally; remote credentials are remote/klrklr89!
+# - Requires sshpass locally; remote password comes from $MONSTERBOX_SSH_PASSWORD
 # - Non-destructive to data/character-*; rsync excludes those files by default
 
 set -e
@@ -25,7 +25,7 @@ CHAR_ID="$2"
 DRY_RUN=0
 if [ "$3" = "--dry-run" ] || [ "$4" = "--dry-run" ]; then DRY_RUN=1; fi
 
-PASS="klrklr89!"
+PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 USER="remote"
 REMOTE="${USER}@${HOST}"
 REMOTE_DIR="/home/${USER}/MonsterBox"

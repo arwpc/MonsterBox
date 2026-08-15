@@ -6,8 +6,7 @@
 
 GOBLIN2_IP="192.168.8.106"
 GOBLIN3_IP="192.168.8.14"
-SSH_PASS="klrklr89!"
-
+SSH_PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 LOG_FILE="/home/remote/MonsterBox/logs/goblin-reboot-setup.log"
 mkdir -p "$(dirname "$LOG_FILE")"
 
@@ -49,26 +48,26 @@ spawn ssh -o StrictHostKeyChecking=no remote@$ip
 
 expect {
     "password:" {
-        send "klrklr89!\r"
+        send "$env(MONSTERBOX_SSH_PASSWORD)\r"
         exp_continue
     }
     "$ " {
         send "cd /home/remote/goblin\r"
         expect "$ "
         
-        send "echo 'klrklr89!' | sudo -S systemctl daemon-reload\r"
+        send "echo '$env(MONSTERBOX_SSH_PASSWORD)' | sudo -S systemctl daemon-reload\r"
         expect "$ "
         
-        send "echo 'klrklr89!' | sudo -S systemctl enable monsterbox-goblin\r"
+        send "echo '$env(MONSTERBOX_SSH_PASSWORD)' | sudo -S systemctl enable monsterbox-goblin\r"
         expect "$ "
         
-        send "echo 'klrklr89!' | sudo -S systemctl start monsterbox-goblin\r"
+        send "echo '$env(MONSTERBOX_SSH_PASSWORD)' | sudo -S systemctl start monsterbox-goblin\r"
         expect "$ "
         
         send "sleep 3\r"
         expect "$ "
         
-        send "echo 'klrklr89!' | sudo -S systemctl status monsterbox-goblin --no-pager | head -10\r"
+        send "echo '$env(MONSTERBOX_SSH_PASSWORD)' | sudo -S systemctl status monsterbox-goblin --no-pager | head -10\r"
         expect "$ "
         
         send "exit\r"
@@ -106,7 +105,7 @@ spawn scp -o StrictHostKeyChecking=no /home/remote/MonsterBox/data/goblin-videos
 
 expect {
     "password:" {
-        send "klrklr89!\r"
+        send "$env(MONSTERBOX_SSH_PASSWORD)\r"
         exp_continue
     }
     eof

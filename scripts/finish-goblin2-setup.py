@@ -9,7 +9,9 @@ import os
 from scp import SCPClient
 
 GOBLIN2_IP = '192.168.8.106'
-PASSWORD = 'klrklr89!'
+PASSWORD = os.environ.get('MONSTERBOX_SSH_PASSWORD')
+if not PASSWORD:
+    raise SystemExit('MONSTERBOX_SSH_PASSWORD is not set - export it before running this script.')
 
 def wait_for_ssh():
     """Wait for SSH to become available"""
@@ -41,7 +43,7 @@ def install_node():
     # Install Node.js
     print("\nInstalling Node.js (this may take a minute)...")
     stdin, stdout, stderr = client.exec_command(
-        'echo "klrklr89!" | sudo -S apt update && echo "klrklr89!" | sudo -S apt install -y nodejs npm',
+        f'echo "{PASSWORD}" | sudo -S apt update && echo "{PASSWORD}" | sudo -S apt install -y nodejs npm',
         get_pty=True
     )
     exit_status = stdout.channel.recv_exit_status()

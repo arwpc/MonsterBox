@@ -10,7 +10,7 @@ You reduce security risk within MonsterBox's hard constraints. **No new npm depe
 
 ## Scope
 - **Dependabot:** the default branch has high-severity alerts (repo → Security → Dependabot). Review each; apply the minimal existing-dep version bump that clears it (`package.json` + `package-lock.json`); confirm the app still builds and the smoke/gate passes. If a fix would require a new dep or a major breaking upgrade, document it as a recommendation instead of forcing it.
-- **Leaked credential:** the committed fallback SSH password (`services/orchestrationService.js`, `klrklr89!`) must be treated as compromised — confirm the code reads `MONSTERBOX_SSH_PASSWORD` from the environment first, note that the literal must be rotated and removed, and that git history still contains it. Never print secrets.
+- **Leaked credential:** the committed fallback SSH password (`services/orchestrationService.js`, `<set MONSTERBOX_SSH_PASSWORD>`) must be treated as compromised — confirm the code reads `MONSTERBOX_SSH_PASSWORD` from the environment first, note that the literal must be rotated and removed, and that git history still contains it. Never print secrets.
 - **KNOWN-BUGS.md security section + the resolved audit appendix:** verify the shipped fixes (path traversals, command injection, unauth destructive endpoints, plaintext-HTTP exposure) are still in place and not regressed; check `MB_ADMIN_TOKEN` gating on destructive `/api/system` endpoints.
 
 ## How you work

@@ -169,13 +169,26 @@ non-blocking. Listed so a genuine regression here isn't dismissed as "the usual 
 
 ## Security / Ops
 
-- 🔴 **Leaked SSH password committed as fallback.** `klrklr89!` appears as a committed
-  fallback in the orchestration/deploy path. It is **not** used from the service environment
-  (which reads `MONSTERBOX_SSH_PASSWORD`), but it must be **rotated** and removed from the
-  repo; set `MONSTERBOX_SSH_PASSWORD` on every node instead.
-- 🟡 **Dependabot: 3 high-severity vulnerabilities** on the default branch
-  (github.com/arwpc/MonsterBox → Security → Dependabot). Review and patch within the
-  "no new npm deps without approval" constraint (updates to existing deps are fine).
+- 🔴 **Leaked SSH password — ROTATION STILL REQUIRED.** The literal is now gone from the
+  working tree (v8.5.0: removed from `services/orchestrationService.js`, 16 shell/python
+  scripts, 5 docs, and the goblin-management view; every path reads
+  `MONSTERBOX_SSH_PASSWORD` and fails loudly when unset). **It remains in git history**,
+  so the credential is still compromised. Operator actions: (1) change the `remote` account
+  password on every node, (2) set `MONSTERBOX_SSH_PASSWORD` in each node's
+  `monsterbox.service` environment — note `.env` is *not* loaded by the app, so the systemd
+  unit (or a drop-in) is the only place that works, (3) optionally purge history.
+  Until step 2 is done, SSH fleet control (reboot / service restart / config push / deploy)
+  is disabled by design and reports a clear error.
+- 🔴 **`MB_ADMIN_TOKEN` is unset, so destructive `/api/system` endpoints fail open.**
+  `requireAdmin` (`routes/api/systemRoutes.js:31`) only *authenticates* when
+  `MB_ADMIN_TOKEN` is set; with it unset it degrades to an Origin/CSRF check, and any
+  request without an `Origin` header (curl, scripts, any non-browser LAN client) is allowed.
+  `POST /api/system/reboot` and `/shutdown` are therefore reachable unauthenticated from
+  the LAN today. Set `MB_ADMIN_TOKEN` in each node's service environment to close this.
+- 🟢 **Dependabot / `npm audit`: 0 vulnerabilities** (v8.5.0). The previously reported
+  3 high-severity alerts resolved to 2 advisories, both in transitive **dev-only** deps
+  (`brace-expansion` via mocha/nodemon, `js-yaml` via mocha). Cleared with a plain
+  `npm audit fix` (patch bumps only, no new deps, no breaking upgrades).
 
 ---
 

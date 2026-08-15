@@ -335,9 +335,25 @@ async function generateSSHKey(type, comment) {
     }
 }
 
+// SSH key names arrive from request params/body and are joined onto ~/.ssh. Reject
+// anything that is not a bare filename so a name like '../../data/characters.json'
+// cannot escape the directory (arbitrary read/unlink). Rejects rather than rewrites,
+// matching safeBasename() in services/characterImageService.js.
+function safeKeyName(name) {
+    var str = String(name == null ? '' : name);
+    if (!str || !/^[A-Za-z0-9._-]+$/.test(str) || str === '.' || str === '..' || str.startsWith('.')) {
+        return null;
+    }
+    return str;
+}
+
 async function deployKeyToHost(host, keyName) {
     var sshDir = path.join(os.homedir(), '.ssh');
-    var pubPath = path.join(sshDir, keyName + '.pub');
+    var safeName = safeKeyName(keyName);
+    if (!safeName) {
+        return { success: false, error: 'Invalid key name' };
+    }
+    var pubPath = path.join(sshDir, safeName + '.pub');
 
     try {
         await fs.access(pubPath);
@@ -362,8 +378,16 @@ async function deployKeyToHost(host, keyName) {
 
 async function deleteSSHKey(name) {
     var sshDir = path.join(os.homedir(), '.ssh');
-    var privatePath = path.join(sshDir, name);
-    var publicPath = path.join(sshDir, name + '.pub');
+    var safeName = safeKeyName(name);
+    if (!safeName) {
+        return { success: false, error: 'Invalid key name' };
+    }
+    // Never let a caller unlink authorized_keys / known_hosts / config out from under SSH.
+    if (['authorized_keys', 'known_hosts', 'config'].indexOf(safeName) !== -1) {
+        return { success: false, error: 'Refusing to delete a reserved SSH file' };
+    }
+    var privatePath = path.join(sshDir, safeName);
+    var publicPath = path.join(sshDir, safeName + '.pub');
 
     try {
         try { await fs.unlink(privatePath); } catch (_) { /* may not exist */ }

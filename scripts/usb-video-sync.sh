@@ -7,7 +7,7 @@
 
 GOBLIN1_IP="192.168.8.40"
 GOBLIN2_IP="192.168.8.161"
-SSH_PASS="klrklr89!"
+SSH_PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 SSH_USER="remote"
 
 LOG_FILE="/home/remote/MonsterBox/logs/usb-video-sync.log"

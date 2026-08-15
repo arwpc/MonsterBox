@@ -48,11 +48,22 @@ NC='\033[0m'
 
 # SSH options for non-interactive deploys
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=8"
-PASS="${SSH_PASS:-klrklr89!}"
+# Deploy credential. No in-repo fallback: the old committed default is compromised.
+# MONSTERBOX_SSH_PASSWORD is canonical; SSH_PASS is kept for the existing callers that
+# already set it. Exported as SSHPASS so sshpass reads it with -e (env) instead of
+# -p (argv), keeping it out of the local process table.
+PASS="${MONSTERBOX_SSH_PASSWORD:-${SSH_PASS:-}}"
+if [ -z "$PASS" ]; then
+    echo "✗ MONSTERBOX_SSH_PASSWORD is not set — refusing to deploy."
+    echo "  Export it (or SSH_PASS) in the environment and re-run:"
+    echo "    export MONSTERBOX_SSH_PASSWORD='<deploy password>'"
+    exit 1
+fi
+export SSHPASS="$PASS"
 
 # Test SSH connection (password auth by default)
 echo "Testing SSH connection..."
-if sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "echo 'Connected'" > /dev/null 2>&1; then
+if sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "echo 'Connected'" > /dev/null 2>&1; then
     echo -e "${GREEN}✓${NC} SSH connection successful"
 else
     echo "✗ SSH connection failed"
@@ -63,12 +74,12 @@ echo ""
 
 # Sync code (excluding node_modules, data, logs)
 # Pre-clean heavy artifacts on remote to free space
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "rm -rf ${REMOTE_PATH}/playwright-report ${REMOTE_PATH}/test-results ${REMOTE_PATH}/playwright-diagnostics || true"
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "rm -rf ${REMOTE_PATH}/playwright-report ${REMOTE_PATH}/test-results ${REMOTE_PATH}/playwright-diagnostics || true"
 
 echo "Syncing code to ${IP_ADDRESS}..."
 RSYNC_DRY=""
 if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
-sshpass -p "$PASS" rsync -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
+sshpass -e rsync -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'node_modules' \
     --exclude 'data/character-*/parts.json' \
     --exclude 'data/character-*/poses.json' \
@@ -95,11 +106,11 @@ echo ""
 # Ensure ElevenLabs key file exists or set from env
 if [ -n "${XI_API_KEY:-}" ]; then
   echo "Installing ElevenLabs key from XI_API_KEY..."
-  sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo mkdir -p /etc/monsterbox && echo '${XI_API_KEY}' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key && echo '✓ Key installed'" || true
+  sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo mkdir -p /etc/monsterbox && echo '${XI_API_KEY}' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key && echo '✓ Key installed'" || true
 fi
 
 echo "Checking ElevenLabs API key..."
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     if [ ! -f /etc/monsterbox/elevenlabs.key ]; then
         echo '⚠ ElevenLabs key file not found on remote'
         echo '  Create it with: echo \"sk_YOUR_KEY_HERE\" | sudo tee /etc/monsterbox/elevenlabs.key'
@@ -118,7 +129,7 @@ echo ""
 
 # Install dependencies if needed
 echo "Checking dependencies..."
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     cd ${REMOTE_PATH}
     if [ ! -d node_modules ]; then
         echo 'Installing npm dependencies (ci)...'
@@ -130,7 +141,7 @@ sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
 echo ""
 
 # Ensure systemd service is installed and running
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     SERVICE_FILE=/etc/systemd/system/monsterbox.service
     if [ ! -f \"$SERVICE_FILE\" ]; then
       echo 'Installing systemd service...'
@@ -166,7 +177,7 @@ EOF
 "
 
 # Install/enable boot-init service to set random poses on boot (best-effort)
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     mkdir -p ${REMOTE_PATH}/scripts
     cp ${REMOTE_PATH}/scripts/boot-init.sh ${REMOTE_PATH}/scripts/boot-init.sh 2>/dev/null || true
     sudo bash -c 'cat > /etc/systemd/system/monsterbox-init.service' <<'EOF'
@@ -192,7 +203,7 @@ EOF
 echo ""
 
 # Optional: ensure mjpg-streamer is present and running
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     if ! systemctl list-unit-files | grep -q '^mjpg-streamer'; then
       echo 'Installing mjpg-streamer integration (best-effort)...'
       sudo bash /home/remote/MonsterBox/scripts/install-mjpg-streamer-integration.sh || true
@@ -206,7 +217,7 @@ sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
 # can't write /etc/avahi/services itself, so we place the file here at deploy time.
 # See docs/development/NODE-DISCOVERY.md.
 echo "Setting up mDNS node discovery..."
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     command -v avahi-browse >/dev/null 2>&1 || sudo apt-get install -y avahi-daemon avahi-utils >/dev/null 2>&1 || true
     sudo systemctl enable --now avahi-daemon >/dev/null 2>&1 || true
     cd ${REMOTE_PATH} && sudo MB_ADVERTISE_ID=${CHARACTER_ID} MB_SERVICE_FILE=/etc/avahi/services/monsterbox.service node scripts/advertise-node.mjs 2>/dev/null || echo '  (mDNS advertise skipped — check avahi is installed)'
@@ -215,7 +226,7 @@ echo ""
 
 # Check service status and select character
 echo "Checking service status..."
-sshpass -p "$PASS" ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+sshpass -e ssh ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     for i in 1 2 3 4 5 6 7 8 9 10; do
       if curl -sf http://127.0.0.1:3000/health > /dev/null 2>&1; then
         echo '✓ MonsterBox API is responding'

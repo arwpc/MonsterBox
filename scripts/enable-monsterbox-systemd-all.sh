@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PASS='klrklr89!'
+PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 SSH_OPTS='-o StrictHostKeyChecking=no'
 SERVICE_CONTENT='[Unit]\nDescription=MonsterBox Service\nAfter=network.target\n\n[Service]\nUser=remote\nWorkingDirectory=/home/remote/MonsterBox\nEnvironment=NODE_ENV=production\n# Lower default mic gain; can be overridden by env or UI later\nEnvironment=GAIN=130\n# CRITICAL: Required for TTS audio to work (mpg123 needs PulseAudio access)\nEnvironment=XDG_RUNTIME_DIR=/run/user/1000\nExecStart=/usr/bin/npm start\nRestart=always\nRestartSec=3\nStandardOutput=append:/var/log/monsterbox.log\nStandardError=append:/var/log/monsterbox.err\n\n[Install]\nWantedBy=multi-user.target\n'
 

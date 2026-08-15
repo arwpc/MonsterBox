@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PASS='klrklr89!'
+PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 SSH_OPTS='-o StrictHostKeyChecking=no'
 
 SERVICE_PATH='/etc/systemd/system/monsterbox-init.service'

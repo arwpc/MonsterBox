@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 SSH_USER="remote"
-SSH_PASS="klrklr89!"
+SSH_PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 GOBLIN_IPS=("192.168.8.40" "192.168.8.106" "192.168.8.14")
 GOBLIN_NAMES=("Goblin One" "Goblin Two" "Goblin Three")
 

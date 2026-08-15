@@ -2,7 +2,7 @@
 # Deploy motion detection functionality to all animatronics
 
 REMOTE_USER="remote"
-REMOTE_PASS="klrklr89!"
+REMOTE_PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 REMOTE_DIR="/home/remote/MonsterBox"
 
 # Animatronic IPs

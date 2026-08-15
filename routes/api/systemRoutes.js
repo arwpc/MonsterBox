@@ -283,7 +283,7 @@ router.get('/ssh/keys', async (req, res) => {
 /**
  * POST /api/system/ssh/keys/generate - Generate new keypair
  */
-router.post('/ssh/keys/generate', express.json(), async (req, res) => {
+router.post('/ssh/keys/generate', requireAdmin, express.json(), async (req, res) => {
     try {
         var type = req.body.type || 'ed25519';
         var comment = req.body.comment || '';
@@ -298,7 +298,7 @@ router.post('/ssh/keys/generate', express.json(), async (req, res) => {
 /**
  * POST /api/system/ssh/keys/deploy - Deploy key to host
  */
-router.post('/ssh/keys/deploy', express.json(), async (req, res) => {
+router.post('/ssh/keys/deploy', requireAdmin, express.json(), async (req, res) => {
     try {
         var host = req.body.host;
         var keyName = req.body.keyName;
@@ -316,7 +316,7 @@ router.post('/ssh/keys/deploy', express.json(), async (req, res) => {
 /**
  * DELETE /api/system/ssh/keys/:name - Delete SSH key
  */
-router.delete('/ssh/keys/:name', async (req, res) => {
+router.delete('/ssh/keys/:name', requireAdmin, async (req, res) => {
     try {
         var result = await systemService.deleteSSHKey(req.params.name);
         res.json(result);

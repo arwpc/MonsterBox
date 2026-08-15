@@ -39,7 +39,7 @@ fi
 
 # Remote install helper
 HOSTS=("sirdragomir" "mina" "pumpkinhead" "orlok")
-PASS="klrklr89!"
+PASS="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 SSH_OPTS="-o StrictHostKeyChecking=no"
 
 for h in "${HOSTS[@]}"; do

@@ -1,8 +1,7 @@
 #!/bin/bash
 # Start all animatronic loop scenes
 
-PASSWORD='klrklr89!'
-
+PASSWORD="${MONSTERBOX_SSH_PASSWORD:?MONSTERBOX_SSH_PASSWORD must be set (export it; see docs/setup/ANIMATRONIC-SSH-SETUP.md)}"
 echo "Starting all animatronic loops..."
 
 # Sir Dragomir - Story Loop (Scene 9)

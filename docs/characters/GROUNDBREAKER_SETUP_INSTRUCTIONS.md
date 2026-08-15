@@ -10,7 +10,7 @@ GroundBreaker (192.168.8.200) currently has MonsterBox 5.5 running but needs a f
 1. Connect keyboard and monitor to GroundBreaker
 2. Login with:
    - Username: `remote`
-   - Password: `klrklr89!`
+   - Password: `<set MONSTERBOX_SSH_PASSWORD>`
 
 ### Step 2: Enable SSH Access (Optional but Recommended)
 ```bash
@@ -296,6 +296,6 @@ If you encounter issues:
 - **Webcam Stream**: http://192.168.8.200:8090/?action=stream
 - **Character ID**: 5
 - **AI Agent**: agent_4201k6s9y384f9v9hqmg67ygc645
-- **SSH**: `ssh remote@192.168.8.200` (password: klrklr89!)
+- **SSH**: `ssh remote@192.168.8.200` (password: <set MONSTERBOX_SSH_PASSWORD>)
 - **Logs**: `/tmp/monsterbox.log`
 
