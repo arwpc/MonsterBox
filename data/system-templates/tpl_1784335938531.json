@@ -1,0 +1,27 @@
+{
+  "id": "tpl_1784335938531",
+  "name": "Post Fable IUpdate",
+  "description": "",
+  "created": "2026-07-18T00:52:18.531Z",
+  "settings": {
+    "cpu": {
+      "governor": "ondemand",
+      "availableGovernors": [
+        "conservative",
+        "ondemand",
+        "userspace",
+        "powersave",
+        "performance",
+        "schedutil"
+      ]
+    },
+    "gpu": {
+      "memory": "256M"
+    },
+    "memory": {
+      "swapTotalMB": 511,
+      "swapUsedMB": 0
+    },
+    "startup": []
+  }
+}
