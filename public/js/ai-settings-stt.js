@@ -1266,7 +1266,7 @@ STTManager.prototype.runTwoSecondTest = function () {
     if (!devId) { self.showAlert('Select a Microphone Part first', 'warning'); return; }
     var body = {
         deviceId: devId,
-        model: (document.getElementById('sttModel') || {}).value || 'eleven_multilingual_v2',
+        model: (document.getElementById('sttModel') || {}).value || 'scribe_v2',
         language: (document.getElementById('sttLanguage') || {}).value || 'auto'
     };
     var btn = document.getElementById('sttTwoSecTest');

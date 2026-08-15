@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { readConfig } from '../services/configService.js';
 import { resolveCharacter } from '../services/characterContext.js';
 import elevenLabsConfigService from '../services/elevenLabsConfigService.js';
+import elevenLabsTTSService from '../services/elevenLabsTTSService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,10 +191,20 @@ router.post('/test-connection', async (req, res) => {
             });
         }
 
-        // TODO: Test actual API connection
+        // Actually exercise the credential. GET /v1/voices is a free read, so this
+        // costs no characters while proving the key is accepted by ElevenLabs.
+        const result = await elevenLabsTTSService.getVoices();
+        if (!result || !result.success) {
+            return res.status(502).json({
+                success: false,
+                error: (result && result.error) || 'ElevenLabs API connection failed'
+            });
+        }
+
         res.json({
             success: true,
-            message: 'ElevenLabs API connection successful'
+            message: `ElevenLabs API connection successful (${result.voices.length} voices available)`,
+            voiceCount: result.voices.length
         });
     } catch (error) {
         console.error('API connection test failed:', error);

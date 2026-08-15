@@ -109,15 +109,28 @@ async function resolveCharactersPath() {
 }
 
 async function getAgentIdForCharacter(characterId) {
-    try {
-        const file = await resolveCharactersPath();
-        const content = await fs.readFile(file, 'utf8');
-        const list = JSON.parse(content);
-        if (Array.isArray(list)) {
+    // The agent registry is fleet-wide, but resolveCharactersPath() joins
+    // cfg.dataPath, which points at the SELECTED character's directory. On a node
+    // whose dataPath holds a stale per-character copy (e.g. a test fixture), that
+    // copy shadowed the real registry and agent resolution always returned null.
+    // Check the dataPath copy first (so a deliberate override still wins), then
+    // fall back to the canonical fleet registry at data/characters.json.
+    const appRoot = path.resolve(__dirname, '..');
+    const candidates = [];
+    try { candidates.push(await resolveCharactersPath()); } catch (_) { /* noop */ }
+    const rootRegistry = path.resolve(appRoot, 'data', 'characters.json');
+    if (!candidates.includes(rootRegistry)) candidates.push(rootRegistry);
+
+    for (const file of candidates) {
+        try {
+            const content = await fs.readFile(file, 'utf8');
+            const parsed = JSON.parse(content);
+            const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.characters) ? parsed.characters : null);
+            if (!list) continue;
             const c = list.find(ch => Number(ch.id) === Number(characterId));
             if (c && c.elevenLabsAgentId) return String(c.elevenLabsAgentId);
-        }
-    } catch (_) { /* noop */ }
+        } catch (_) { /* try next candidate */ }
+    }
     return null;
 }
 
@@ -148,6 +161,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
         // time and crash the whole server via `export default new ...`.
         this._config = null;
         this.activeConnections = new Map(); // sessionId -> connection info
+        // characterId -> sessionId for headless (server-initiated) agent sessions.
+        // Headless sessions have no browser client; they are started by the
+        // /conversation/api/ai-on toggle and keep the agent live on the node.
+        this.headlessSessions = new Map();
         this.wsServer = null;
         this.port = 8795; // Dedicated port for AI chat WebSocket
 
@@ -174,6 +191,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
         for (const [sessionId, connection] of this.activeConnections.entries()) {
             const age = now - connection.startTime.getTime();
 
+            // Headless sessions are owned by an explicit on/off toggle, not by a
+            // browser lifetime. Reaping a live one on age would silently switch the
+            // agent off; they are torn down deterministically by
+            // setAgentEnabledForCharacter(id, false) instead.
+            if (connection.headless && connection.isActive) continue;
+
             // Remove sessions older than timeout OR inactive for 5 minutes
             const inactive = !connection.isActive && age > 300000;
             const expired = age > this.sessionTimeoutMs;
@@ -198,16 +221,27 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     console.warn(`⚠️ Error closing ElevenLabs WS for ${sessionId}:`, e.message);
                 }
 
-                // Stop server mic loop
-                if (connection.serverMicActive) {
-                    connection.serverMicActive = false;
+                // Stop server mic loop (clear the timer too, or it fires once more)
+                connection.serverMicActive = false;
+                if (connection.serverMicTimer) {
+                    try { clearTimeout(connection.serverMicTimer); } catch (_) { /* noop */ }
+                    connection.serverMicTimer = null;
                 }
+
+                // Stop any Scribe realtime session, else its keepalive interval leaks
+                try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
 
                 toDelete.push(sessionId);
             }
         }
 
-        toDelete.forEach(id => this.activeConnections.delete(id));
+        toDelete.forEach(id => {
+            this.activeConnections.delete(id);
+            // Drop any headless mapping pointing at a reaped session
+            for (const [charKey, sid] of this.headlessSessions.entries()) {
+                if (sid === id) this.headlessSessions.delete(charKey);
+            }
+        });
 
         if (toDelete.length > 0) {
             console.log(`🧹 Cleaned up ${toDelete.length} old WebSocket sessions`);
@@ -283,41 +317,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const sessionId = this.generateSessionId();
         console.log(`🔌 New chat client connected: ${sessionId}`);
 
-        const connection = {
-            sessionId,
-            clientWs: ws,
-            elevenLabsWs: null,
-            agentId: null,
-            isActive: false,
-            startTime: new Date(),
-            // New runtime fields for output/mic routing
-            characterId: null,
-            outputMode: 'server',    // 'server' | 'local'
-            micSource: 'server',     // 'server' | 'browser'
-            transcriptionOnly: false, // true = STT only, false = full conversation
-            serverMicTimer: null,
-            serverMicActive: false,
-            sttLastAt: 0,
-            sttPcm: Buffer.alloc(0), // rolling PCM buffer for partial STT
-            _dbgLastTs: 0,           // throttle for client debug breadcrumbs
-            sttLanguage: null,       // per-connection STT language override
-            suppressMicUntilMs: 0,   // suppress server mic during server playback
-            // Duration-based echo suppression (tracks actual audio playback time)
-            aiSpeaking: false,          // true while AI is generating audio
-            speechStartedAt: 0,         // Date.now() when first audio chunk of current utterance arrives
-            accumulatedAudioMs: 0,      // total audio duration accumulated from PCM chunk sizes
-            audioBuffer: [],         // base64 MP3 frames from ElevenLabs
-            audioPlaying: false,     // audio playback loop active flag
-            // Scribe v2 Realtime STT session (replaces batch STT polling)
-            realtimeSTTSession: null,
-            useRealtimeSTT: true,    // prefer Scribe v2 Realtime over batch STT
-            // Hardening: Error tracking
-            consecutiveErrors: 0,
-            maxConsecutiveErrors: 10,
-            lastError: null,
-            transcriptCount: 0,
-            audioChunkCount: 0
-        };
+        const connection = this._createConnectionRecord(sessionId, ws);
 
         this.activeConnections.set(sessionId, connection);
 
@@ -951,6 +951,187 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
+     * Build a connection record. Shared by browser clients and headless
+     * (server-initiated) agent sessions so the two can never drift apart.
+     * @param {string} sessionId
+     * @param {object|null} clientWs - null for headless sessions
+     */
+    _createConnectionRecord(sessionId, clientWs) {
+        return {
+            sessionId,
+            clientWs: clientWs || null,
+            elevenLabsWs: null,
+            agentId: null,
+            isActive: false,
+            startTime: new Date(),
+            characterId: null,
+            outputMode: 'server',
+            micSource: 'server',
+            transcriptionOnly: false,
+            serverMicTimer: null,
+            serverMicActive: false,
+            sttLastAt: 0,
+            sttPcm: Buffer.alloc(0),
+            _dbgLastTs: 0,
+            sttLanguage: null,
+            suppressMicUntilMs: 0,
+            aiSpeaking: false,
+            speechStartedAt: 0,
+            accumulatedAudioMs: 0,
+            audioBuffer: [],
+            audioPlaying: false,
+            realtimeSTTSession: null,
+            useRealtimeSTT: true,
+            headless: false,
+            consecutiveErrors: 0,
+            maxConsecutiveErrors: 10,
+            lastError: null,
+            transcriptCount: 0,
+            audioChunkCount: 0
+        };
+    }
+
+    /**
+     * Wait until a connection's agent socket reports ready, so callers get a
+     * real result instead of an optimistic one. Resolves false on timeout.
+     */
+    async _waitForAgentReady(sessionId, timeoutMs = 15000) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            const c = this.activeConnections.get(sessionId);
+            if (!c) return false;
+            if (c.isActive && c.elevenLabsWs && c.elevenLabsWs.readyState === WebSocket.OPEN) return true;
+            await new Promise(r => setTimeout(r, 100));
+        }
+        return false;
+    }
+
+    /**
+     * Start or stop a headless (no browser client) conversational agent session
+     * for a character. This is what makes the /conversation/api/ai-on toggle real.
+     *
+     * Enable is idempotent: a second enable while a live session exists is a
+     * no-op rather than a second agent socket + second mic loop.
+     *
+     * @param {number|string} characterId
+     * @param {boolean} enabled
+     * @returns {Promise<{success:boolean, enabled:boolean, sessionId?:string, agentId?:string, error?:string}>}
+     */
+    async setAgentEnabledForCharacter(characterId, enabled) {
+        if (characterId == null) {
+            return { success: false, enabled: false, error: 'No character selected' };
+        }
+        const key = String(characterId);
+
+        // ---- DISABLE ----------------------------------------------------
+        if (!enabled) {
+            const sessionId = this.headlessSessions.get(key);
+            if (!sessionId) {
+                return { success: true, enabled: false, alreadyStopped: true };
+            }
+            // Remove the mapping first so a concurrent toggle cannot re-enter.
+            this.headlessSessions.delete(key);
+            await this._teardownHeadlessSession(sessionId);
+            console.log(`🛑 Headless agent session stopped for character ${key} (${sessionId})`);
+            return { success: true, enabled: false, sessionId };
+        }
+
+        // ---- ENABLE -----------------------------------------------------
+        const existingId = this.headlessSessions.get(key);
+        if (existingId) {
+            const existing = this.activeConnections.get(existingId);
+            if (existing && existing.isActive) {
+                console.log(`ℹ️ Headless agent already running for character ${key} (${existingId})`);
+                return { success: true, enabled: true, sessionId: existingId, agentId: existing.agentId, alreadyRunning: true };
+            }
+            // Stale mapping (session died) — clean it up before starting fresh.
+            this.headlessSessions.delete(key);
+            await this._teardownHeadlessSession(existingId);
+        }
+
+        let agentId = null;
+        try {
+            agentId = await getAgentIdForCharacter(characterId);
+        } catch (_) { /* handled below */ }
+        if (!agentId) {
+            return { success: false, enabled: false, error: `No ElevenLabs agent configured for character ${key}` };
+        }
+
+        const sessionId = this.generateSessionId();
+        const connection = this._createConnectionRecord(sessionId, null);
+        connection.characterId = Number(characterId);
+        connection.headless = true;
+        // The agent performs its own ASR; a parallel Scribe/batch STT stream would
+        // only feed a browser client that does not exist here.
+        connection.useRealtimeSTT = false;
+        this.activeConnections.set(sessionId, connection);
+        this.headlessSessions.set(key, sessionId);
+
+        try {
+            await this.startConversation(sessionId, agentId);
+            const ready = await this._waitForAgentReady(sessionId);
+            if (!ready) {
+                this.headlessSessions.delete(key);
+                await this._teardownHeadlessSession(sessionId);
+                return { success: false, enabled: false, error: 'Timed out connecting to ElevenLabs agent' };
+            }
+            await this._startServerMicLoop(sessionId);
+            console.log(`✅ Headless agent session started for character ${key} (${sessionId}, agent ${agentId})`);
+            return { success: true, enabled: true, sessionId, agentId };
+        } catch (e) {
+            this.headlessSessions.delete(key);
+            await this._teardownHeadlessSession(sessionId);
+            return { success: false, enabled: false, error: e && e.message ? e.message : 'Failed to start agent' };
+        }
+    }
+
+    /**
+     * Fully tear down a headless session: mic loop, STT session, agent socket,
+     * timers and the activeConnections entry. Safe to call repeatedly.
+     */
+    async _teardownHeadlessSession(sessionId) {
+        try { this._stopServerMicLoop(sessionId, true); } catch (_) { /* noop */ }
+        try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
+        try { await this.endConversation(sessionId); } catch (_) { /* noop */ }
+
+        const connection = this.activeConnections.get(sessionId);
+        if (connection) {
+            connection.isActive = false;
+            connection.serverMicActive = false;
+            if (connection.serverMicTimer) {
+                try { clearTimeout(connection.serverMicTimer); } catch (_) { /* noop */ }
+                connection.serverMicTimer = null;
+            }
+            // Drop buffered audio so the playback loop exits promptly.
+            connection.audioBuffer = [];
+            if (connection.elevenLabsWs) {
+                try {
+                    if (connection.elevenLabsWs.readyState === WebSocket.OPEN ||
+                        connection.elevenLabsWs.readyState === WebSocket.CONNECTING) {
+                        connection.elevenLabsWs.close();
+                    }
+                } catch (_) { /* noop */ }
+                connection.elevenLabsWs = null;
+            }
+            if (connection.characterId != null) {
+                try { await serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+            }
+        }
+        this.activeConnections.delete(sessionId);
+    }
+
+    /**
+     * True if a headless agent session is currently live for a character.
+     */
+    isAgentEnabledForCharacter(characterId) {
+        if (characterId == null) return false;
+        const sessionId = this.headlessSessions.get(String(characterId));
+        if (!sessionId) return false;
+        const c = this.activeConnections.get(sessionId);
+        return !!(c && c.isActive);
+    }
+
+    /**
      * Start a Scribe v2 Realtime STT session for a connection.
      * Streams partial/committed transcripts to the browser client.
      */
@@ -1194,8 +1375,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         // Send raw PCM directly to Scribe v2 Realtime — no batch polling needed!
                         connection.realtimeSTTSession.sendPCMBuffer(raw);
                     }
-                    // 2b) Fallback: Batch STT if Scribe v2 Realtime is not available
-                    else if (!suppressed && !realtimeReady && (!connection.sttLastAt || (now - connection.sttLastAt) >= 2500)) {
+                    // 2b) Fallback: Batch STT if Scribe v2 Realtime is not available.
+                    //     Skipped for headless sessions: the agent does its own ASR and
+                    //     there is no browser client to receive transcripts, so this would
+                    //     burn STT credits every 2.5s for nothing.
+                    else if (!suppressed && !realtimeReady && !connection.headless && (!connection.sttLastAt || (now - connection.sttLastAt) >= 2500)) {
                         // Accumulate PCM for batch STT fallback
                         try {
                             if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);
@@ -1245,7 +1429,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 this.sendToClient(sessionId, { type: 'stt_error', message: String(msg).slice(0, 200) });
                             } catch (_) { /* noop */ }
                         }
-                    } else if (!suppressed && !realtimeReady) {
+                    } else if (!suppressed && !realtimeReady && !connection.headless) {
                         // Still accumulate PCM for batch fallback between throttle windows
                         try {
                             if (!connection.sttPcm) connection.sttPcm = Buffer.alloc(0);

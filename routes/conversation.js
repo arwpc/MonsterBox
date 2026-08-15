@@ -660,15 +660,25 @@ router.post('/api/ai-on', express.json(), async (req, res) => {
     const dataDir = getDataDir(characterId);
     const aiStateFile = path.resolve(dataDir, 'ai_agent_state.json');
 
-    // Store AI agent state
-    const state = { characterId, enabled, timestamp: Date.now() };
+    // Actually start/stop the ElevenLabs Conversational AI agent. Persist only
+    // what really happened, so ai_agent_state.json and ai-status cannot claim
+    // the agent is on while no socket is open.
+    const result = await elevenLabsWebSocketService.setAgentEnabledForCharacter(characterId, enabled);
+    const effectiveEnabled = !!(result && result.success && result.enabled);
+
+    const state = { characterId, enabled: effectiveEnabled, timestamp: Date.now() };
     await fs.mkdir(path.dirname(aiStateFile), { recursive: true });
     await fs.writeFile(aiStateFile, JSON.stringify(state, null, 2), 'utf8');
 
-    // TODO: Actually start/stop ElevenLabs Conversational AI WebSocket connection
-    // This would integrate with elevenLabsWebSocketService
+    if (!result || !result.success) {
+      return res.status(502).json({
+        success: false,
+        enabled: effectiveEnabled,
+        error: (result && result.error) || 'Failed to change agent state'
+      });
+    }
 
-    res.json({ success: true, enabled });
+    res.json({ success: true, enabled: effectiveEnabled });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -690,10 +700,15 @@ router.get('/api/ai-status', async (req, res) => {
       // File doesn't exist or is invalid, return default state
     }
 
+    // The live agent session is the source of truth; the file is only a hint
+    // that survives restarts. Reporting the file alone let status claim "on"
+    // when no agent socket existed.
+    const live = elevenLabsWebSocketService.isAgentEnabledForCharacter(characterId);
+
     res.json({
       success: true,
-      enabled: !!state.enabled,
-      characterId: state.characterId || null,
+      enabled: live,
+      characterId: state.characterId || characterId || null,
       timestamp: state.timestamp || null
     });
   } catch (e) {
