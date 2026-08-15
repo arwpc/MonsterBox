@@ -315,9 +315,22 @@ When you learn something new about the codebase that will be useful across sessi
 ## Session Startup Checklist
 1. Read this CLAUDE.md
 2. Consult shared memory (`MEMORY.md` is auto-loaded; read topic files as needed)
-3. Run `git status` to check for uncommitted work
-4. Run `git log --oneline -10` for recent history
-5. For deep onboarding, use `/learn-monsterbox` skill
+3. Check `docs/development/OPEN-ISSUES-2026-08.md` for the current known-issue queue
+4. Run `git status` to check for uncommitted work
+5. Run `git log --oneline -10` for recent history
+6. For deep onboarding, use `/learn-monsterbox` skill
+
+## Known Issues
+Verified open defects and doc drift are tracked in
+`docs/development/OPEN-ISSUES-2026-08.md`, ordered by severity with `file:line` evidence,
+repro steps, and suggested fixes. Read it before touching orchestration, the gate/test
+harness, or any hardware pin/channel documentation. Two traps worth knowing up front:
+- `npm run test:unit` currently rewrites `config/app-config.json` to character 1 (issue #2).
+  A spurious diff on that file after a test or push is test pollution, not your change —
+  revert it, don't commit it.
+- `docs/hardware/gpio_assignments.md` and
+  `docs/integration/Hardware-Integration-Layer-Interfaces.md` are both stale (issues #4, #5).
+  Trust `data/character-{id}/parts.json` and `services/hardwareService/index.js` over either.
 
 ## Session Cleanup Checklist
 1. Run full test suite — all tests must pass
