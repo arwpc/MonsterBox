@@ -2,6 +2,158 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [9.0.0] - 2026-08-15 — Hardware safety, real hardware paths, live conversation
+
+**In progress — more may land under this version.** A safety-and-honesty pass on the
+hardware layer: a real per-part safety-limit layer, removal of two code paths that reported
+`success:true` without touching hardware, a test suite that had been physically stressing
+Orlok's fused rail, and a conversation toggle that was purely decorative. Plus the leaked
+SSH credential out of the working tree. No new frameworks, no new npm dependencies, all API
+contracts preserved.
+
+### Added
+- **Hardware safety-limit layer** (`services/hardwareService/safetyLimits.js`) — restores
+  what was dropped when calibration moved to unified profiles (the TODO at
+  `services/hardwareService/index.js:1567`). Clamps angle to the intersection of calibrated
+  bounds and configured limits, caps speed and duration, hard-blocks retraction of a part
+  pinned at its mechanical minimum (including the bounds-bypassing jog-raw path), and
+  serializes parts sharing a power rail with a cooldown so their inrush currents cannot
+  stack. Parts with no configured limits are pass-through, so existing behavior is unchanged.
+- **`config/hardware-safety.json`** — per-part limits committed with the code, so they
+  deploy with it and survive a calibration reset (`data/calibration_profiles.json` is
+  node-local). A profile's own `safety` block may only *tighten* them; the more restrictive
+  value always wins. Keys: `maxSpeedPct`, `maxDurationMs`, `minAngle`/`maxAngle`,
+  `noRetractBelowMin`, `blockAllMotion`, `excludeFromAutomatedTests`, `powerGroup`.
+- **`safetyLimits.isTestSafePart()`** — a part is drivable by an automated suite only if it
+  is not power-grouped, not quarantined, and not explicitly excluded.
+
+### Fixed
+- **Conversation enable/disable actually starts and stops the live agent.** The endpoint
+  persisted `ai_agent_state.json` and returned success but never opened or closed the
+  ElevenLabs realtime agent, so the UI toggle was decorative.
+  `setAgentEnabledForCharacter()` now creates a headless session (no browser client) and
+  starts the agent socket plus the server mic loop; `_waitForAgentReady()` polls until the
+  socket is genuinely OPEN so the route reports what really happened; teardown stops the mic
+  loop, STT session, socket, timers and playback and is idempotent. The connection shape is
+  built by one helper shared with the browser path so the two cannot drift. Verified live on
+  hardware: enable is idempotent, three on/off cycles left 0 lingering connections with 7
+  starts paired to 7 stops.
+- **`getAgentIdForCharacter` returned null for EVERY character** — it resolved the
+  fleet-wide registry through `cfg.dataPath` and so read a per-character copy (a stale
+  fixture here) instead of `data/characters.json`. The conversation feature could not have
+  worked for any character until this was fixed.
+- **Headless sessions skip the batch-STT fallback** — the agent does its own ASR and there
+  is no client to receive transcripts, so that branch would have burned STT credits every
+  2.5 s for nothing. `_cleanupOldSessions` also leaked the mic timer and the Scribe
+  keepalive; live headless sessions are now exempt from the reaper, which would otherwise
+  silently switch the agent off after an hour.
+- **AI settings "Test connection" makes a real API call** (`getVoices()`) instead of
+  reporting success whenever a key string exists, so it can no longer pass against an
+  invalid or expired key. The STT fallback model was a TTS model
+  (`eleven_multilingual_v2`), which the STT endpoint rejects — now `scribe_v2`. Model IDs
+  were audited against the live API and are already current (`eleven_v3`, `scribe_v2` /
+  `scribe_v2_realtime`); nothing there needed changing.
+- **Webcam `startStream`/`stopStream` are no longer simulated** — they probe the real
+  mjpg-streamer service that `webcamController` proxies and the Fleet Command Center
+  consumes, return the real proxy/snapshot URLs (no more fabricated
+  `http://localhost:8080`), and try to start the service once before reporting an honest
+  failure. `stopStream` detaches instead of killing a service shared by every other consumer.
+- **`microphone.record` is no longer simulated** — it delegates to
+  `serverSTTListener.captureChunkWav` (the one canonical capture path), writes the WAV out
+  and reports real byte counts. An empty capture is now a failure instead of a success.
+  Verified on Orlok's USB mic: 32044 bytes for 1 s @ 16 kHz mono, peak 2096 / RMS 931.
+- **Motor stop actually stops the motor** — it sent direction `'stop'`, which
+  `motor_control.py` rejects, so stopping always errored and never stopped. Speed 0 now
+  drives PWM low and releases the pins.
+- **`batchMoveServos` no longer batches power-grouped servos** — one `batch_pca` call moves
+  every listed channel simultaneously, which is exactly the concurrent energizing that blows
+  a shared fuse. Power-grouped servos are issued serially.
+- **`/api/calibration/:partId/goto` clamps to the calibrated angle window** instead of only
+  0–180, closing a bypass around the safety layer. `/nudge` is deliberately left unclamped —
+  it is the operator's supervised tool for discovering limits, and clamping it would make a
+  window impossible to widen.
+- **`python_wrappers` resource leaks** — `servo_cli.py` leaked a gpiochip handle when a move
+  failed mid-flight (accumulating, since `test_servo` moves 4× per process);
+  `linear_actuator_control_v2.py` exited a bad pin config with the chip open and the BTS7960
+  R_EN/L_EN still driven HIGH; `motor_cli.py` had no subprocess timeout, so a wedged
+  `motor_control.py` hung forever **with the motor energized** (now bounded to duration +
+  10 s); `speaker_cli.py` never unlinked its `NamedTemporaryFile(delete=False)`;
+  `microphone_cli.py` silent exit-1 paths now report a reason on stderr, leaving stdout as
+  pure WAV bytes. All 18 wrappers `py_compile` clean, no stray control bytes.
+
+### Security
+- **Leaked SSH credential removed from the working tree.** The committed fallback password
+  is gone from `services/orchestrationService.js`; `sshPassword` now comes only from
+  `MONSTERBOX_SSH_PASSWORD`, and a new `requireSshPassword()` makes every SSH op
+  (reboot / restart / config push / deploy) fail with a clear, actionable error when unset
+  rather than silently authenticating with a leaked default. Import still succeeds so HTTPS
+  orchestration boots normally. The literal was scrubbed from 16 shell/python scripts, 5
+  docs and the goblin-management view; shell scripts read
+  `${MONSTERBOX_SSH_PASSWORD:?...}`, expect scripts read `$env(MONSTERBOX_SSH_PASSWORD)`.
+  `deploy-to-animatronic.sh` and `usb-video-copy-daemon.sh` moved from `sshpass -p` (argv,
+  visible in the process table) to `sshpass -e` (env).
+  ⚠️ **The credential remains in git history and must still be rotated on every node**, and
+  `MONSTERBOX_SSH_PASSWORD` must be set in each node's `monsterbox.service` environment —
+  the app does not load `.env`, so a `.env` file will not work.
+- **Unauthenticated arbitrary file deletion closed.** `DELETE /api/system/ssh/keys/:name`
+  passed the raw route param to `fs.unlink`, allowing deletion of any file via `../`
+  traversal. `safeKeyName()` now rejects (rather than rewrites) bad names in both
+  `deleteSSHKey` and `deployKeyToHost`, with a reserved-name guard, and the three
+  `/ssh/keys` routes are gated by `requireAdmin` like the other destructive endpoints.
+  ⚠️ `requireAdmin` only authenticates when `MB_ADMIN_TOKEN` is set; it is set nowhere on
+  this node today. Set it in the service environment.
+- **Dependencies patched** — `npm audit fix` (no `--force`): `brace-expansion`
+  1.1.13→1.1.18 / 2.0.3→2.1.4, `js-yaml` 4.3.0→4.3.1. Both transitive and dev-only
+  (mocha/nodemon). Local `npm audit`: **2 high → 0**. GitHub Dependabot still reported 3
+  high on the last push and those alerts have not been reconciled — `gh` is not
+  authenticated on this node.
+
+### Tests
+- **The unit suite was physically stressing Orlok's fused rail.**
+  `tests/unit/calibration-unified-api.test.js` selected `parts.find(type === 'servo')`,
+  which on this fleet's primary node is the 150 kg elbow on the shared elbow/forearm fuse.
+  Every `npm run test:smoke` drove it to 45° **and** 135° — both extremes — then called
+  set-min/set-max, which rewrite the profile from wherever the test parked it. The test now
+  selects through `isTestSafePart()` (picking the arm actuator and the head servo here) and
+  snapshots the whole calibration file and restores it verbatim — verified byte-identical,
+  so a run leaves zero drift. (Restoring via `upsert()` would have re-stamped
+  `lastCalibratedAt` and looked like an operator recalibration.)
+- `tests/unit/hardware-safety-limits.test.js` — 19 tests covering clamping, blocking,
+  speed/duration caps, power-rail serialization, cooldown, deadlock-on-throw and rail
+  independence, plus coverage for `isTestSafePart`.
+
+### Known issues (NOT fixed by this release)
+- **Orlok part 2 (Left Arm) is dead.** PWM verified present on GPIO 13 with the same toggle
+  pattern as the working GPIO 12, but zero motion at 50% and 95%. Fault is downstream —
+  MDD10A channel, harness, motor power or the actuator.
+- **Orlok part 3 (Bow) is quarantined, not fixed.** `parts.json` declares
+  `rpwmPin:19, lpwmPin:21` while the part description says the opposite, and
+  `linear_actuator_control_v2.py` drives `rpwmPin` for "extend" — so "extend" may physically
+  retract a part already at its mechanical minimum. A direction-string guard cannot help
+  when the string and the physical effect disagree, so it is blocked via `blockAllMotion`
+  until a human traces the wires.
+- **The ch4/ch5 fuse issue is mitigated in software only — the root cause is electrical.**
+  Part 4 (RDS51150SG) needs 9–12.6 V with a 7.4–8.3 A stall; part 5 (DS3240MG) needs
+  4.8–7.4 V. On one shared rail those voltage domains are mutually exclusive: either part 5
+  is over-volted or part 4 is starved into stalling. The real fix is separate rails and
+  fuses, or a per-servo regulator.
+- **Orlok part 4's 45–135 bounds are test residue, not a calibration** — it needs a genuine
+  supervised calibration pass. It is also a 270° servo driven through a 0–180 mapping
+  (`pca9685_set_angle` maps 0–180 → 500–2400 µs) while its profile declares `usMin/usMax`
+  500–2500 that `gotoAngle()` never reads.
+- **The Python wrappers bypass the safety layer entirely** — e.g.
+  `python3 servo_cli.py move_to_pca 4 …` skips every limit, including `blockAllMotion`.
+  Needs a guard at the wrapper boundary.
+- **PCA channel 15 is driven at ~1923.8 µs with no part configured on it**; cause not yet
+  identified.
+- **Orlok part 8 (Hand of Azura) light is unproven** — GPIO 16 verified toggling, but no
+  optical change was detectable (the lamp is likely outside the camera's field of view).
+- **`orchestrationService.deployCode()` is broken independently** — it calls
+  `./scripts/deploy-to-animatronic.sh ${ip}` with one argument while the script requires
+  `<character_id> <ip_address>`, so UI-triggered deploy exits 1 on its usage check.
+
+Full detail and per-node status: `docs/troubleshooting/KNOWN-BUGS.md`.
+
 ## [8.5.0] - 2026-07-17 — Fleet Command Center (orchestration overhaul)
 
 A ground-up modernization of the orchestration subsystem into a single-pane **Fleet

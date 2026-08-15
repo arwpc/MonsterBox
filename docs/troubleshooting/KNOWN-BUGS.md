@@ -4,10 +4,12 @@
 > Organized by animatronic (for one-node-at-a-time work) plus cross-cutting software,
 > data-hygiene, and security items.
 >
-> **Last hardware verification:** 2026-04-18 (v8.1.6 session). Software items updated
-> through v8.5.0. Hardware status may have changed since — re-verify on each node before
-> relying on it. Update this file as issues are fixed (strike them through and note the
-> version).
+> **Last hardware verification:** 2026-08-15 (v9.0.0 session) — **Orlok only**, and only
+> partially: see the per-part notes below for exactly what was proven and what remains
+> unproven. All other nodes were last verified 2026-04-18 (v8.1.6 session). Software items
+> updated through v9.0.0. Hardware status may have changed since — re-verify on each node
+> before relying on it. Update this file as issues are fixed (strike them through and note
+> the version).
 
 Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitigated, long-term fix pending · ⚪ constraint / gotcha (not a defect)
 
@@ -16,26 +18,64 @@ Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitiga
 ## Per-Animatronic Hardware
 
 ### Orlok — char 3 · `192.168.8.120` (primary dev box)
-Fully operational (all servos + actuators move) with two standing items:
+**No longer "fully operational."** The v9.0.0 hardware pass (2026-08-15) found one dead
+actuator, one part quarantined for unsafe wiring, and one part whose "calibration" turned
+out to be test residue. Software safety limits now live in `config/hardware-safety.json`
+(enforced by `services/hardwareService/safetyLimits.js`).
 
-- 🟡 **Elbow (ch4) + Forearm (ch5) shared fuse keeps blowing.** Mixed-voltage servos on
-  one fused rail: Elbow `servo_rds51150sg_150kg` (9–12.6 V, 150 kg stall) and Forearm
-  `servo_hooyij_ds3240mg` (6.0–7.4 V, 40 kg). Fuse was replaced 2026-04-18; both work, but
-  recurrence is an open reliability concern. **Root cause not yet diagnosed.**
-  Candidates: (a) stall current from mechanical bind, (b) undersized fuse rating for peak
-  draw, (c) simultaneous inrush when ch4+ch5 are commanded together (pose/scene), (d)
-  undervoltage sag, (e) harness short.
-  - *Need to diagnose:* fuse amp rating, and whether it blows during scene playback,
-    calibration, idle, or a specific movement.
-  - *Software mitigations (if electrical is borderline, not shorted):* per-part `speedPct`
-    cap in the calibration profile; serialize ch4+ch5 dispatch in the pose/scene executor
-    (no concurrent commands on this pair); stall-detection watchdog via movement telemetry.
+- 🔴 **Part 2 (Left Arm) does not move.** PWM was **verified present on GPIO 13** — the
+  toggle pattern is identical to the working GPIO 12 — but there is **zero motion at both
+  50% and 95% duty**. The fault is therefore downstream of the Pi: the MDD10A channel, the
+  harness, motor power, or the actuator itself.
+  - *Next diagnostic:* move part 2 onto part 1's known-good MDD10A channel. If it moves →
+    the driver channel is dead; if it still doesn't → harness/motor/actuator.
+- 🔴 **Part 3 (Bow at the Waist) — contradictory wiring, software-quarantined.**
+  `parts.json` declares `rpwmPin:19, lpwmPin:21`, while the part *description* says
+  "GPIO 21=RPWM, 19=LPWM — CORRECTED WIRING". `linear_actuator_control_v2.py` drives
+  `rpwmPin` for `"extend"`, so **if the description is correct, `"extend"` physically
+  retracts** a part that is already sitting at its mechanical minimum. A direction-string
+  guard cannot help when the string and the physical effect disagree, so part 3 is blocked
+  outright via `blockAllMotion` in `config/hardware-safety.json` (v9.0.0).
+  - *To clear:* a human traces the wires, makes `parts.json` and the description agree,
+    then drops `blockAllMotion` and keeps `noRetractBelowMin`.
+- 🔴 **Part 4 (Elbow) bounds are test residue, not a calibration.** Its 45–135 window was
+  written by `tests/unit/calibration-unified-api.test.js`, which parked the servo at an
+  extreme and then called set-min/set-max on every `npm run test:smoke` (the test was fixed
+  in v9.0.0 — see Test Suite below). **Part 4 needs a genuine, supervised calibration pass.**
+  Until then the 45–135 numbers in the profile and in `hardware-safety.json` mean nothing
+  physical.
+- 🟡 **Part 4 is a 270° servo driven through a 0–180 mapping.** `pca9685_set_angle` maps
+  0–180 → 500–2400 µs, while the part's profile declares `usMin/usMax` 500–2500 that
+  `gotoAngle()` never reads. Two mappings that disagree: a commanded angle does not
+  correspond to a real-world angle on this part. Reconcile before trusting any pose value
+  for part 4.
+- 🟡 **Elbow (ch4) + Forearm (ch5) shared fuse — root cause is ELECTRICAL, not software.**
+  Diagnosed v9.0.0. The two servos have **mutually exclusive voltage domains on one shared
+  rail**: part 4 `servo_rds51150sg_150kg` needs 9–12.6 V with a 7.4–8.3 A stall draw, part 5
+  `servo_hooyij_ds3240mg` needs 4.8–7.4 V. Whatever single voltage that rail carries, either
+  part 5 is over-volted or part 4 is starved into stalling — and a stalling 150 kg servo is
+  exactly what pops the fuse.
+  - *Real fix (hardware, not yet done):* separate rails and separate fuses, or a per-servo
+    regulator so each servo sees its own voltage domain.
+  - *Shipped in v9.0.0 as MITIGATIONS ONLY — this issue is NOT resolved:* speed caps
+    (`maxSpeedPct: 40`), duration caps, angle clamps, and a serialized `arm-fused-rail`
+    power group with a 400 ms cooldown so ch4 and ch5 are never energized concurrently
+    (`batchMoveServos` now issues power-grouped servos serially instead of in one
+    `batch_pca` call).
   - *Do NOT* run full-range sweeps on ch4/ch5 without supervision.
-- ⚪ **Bow-at-Waist actuator (part 3, BTS7960 on GPIO 21/19/5/22) — do NOT retract past
-  current min.** It is at its safe mechanical limit. Profile was cleared/reset with
-  `bounds.minP = 0`, `currentP = 0`. Extension is safe; retraction below current-min risks
-  damage. Do not issue `jog-raw` `direction:"retract"` on part 3 (it bypasses bounds).
-  Confirm mechanical clearance before any "find full range" procedure.
+- 🟡 **PCA9685 channel 15 is being driven with no part configured on it.** Observed holding
+  ~1923.8 µs. **Cause not identified.** If a servo is physically attached to ch15 it is
+  being held under load indefinitely. Check the channel physically and trace what is writing
+  to it.
+- 🟡 **Python wrappers bypass the safety layer entirely.** `safetyLimits` is enforced in the
+  Node hardware service, so a direct call such as
+  `python3 servo_cli.py move_to_pca 4 …` skips every clamp, block and power-group
+  serialization — including part 3's `blockAllMotion`. Needs a guard at the wrapper
+  boundary before the safety layer can be considered complete.
+- 🟡 **Part 8 (Hand of Azura) light is UNPROVEN.** GPIO 16 was verified driving
+  `ip → op`, `HIGH → lo`, but **no optical change was detectable** — the lamp is most likely
+  outside the webcam's field of view. This is not "working" and not "broken"; it needs a
+  human to look at the lamp while the pin is toggled.
 
 ### Mina — char 2 · `192.168.8.140`
 🔴 **Blocked on hardware.** PCA9685 chip is healthy (I2C 0x40, MODE1 normal, PRE_SCALE 0x79/50 Hz)
@@ -74,15 +114,18 @@ and reachable.
 
 ## Cross-Cutting Software Bugs
 
-- 🟢 **Calibration profile part-ID collision.** `data/calibration_profiles.json` keys by part
-  ID globally, but part IDs are only unique **within** a character (Orlok part 1 =
-  linear_actuator, Mina part 1 = servo, Dragomir part 1 = continuous-servo all collide on
-  key `"1"`). *Mitigated v8.1.4:* file is gitignored/untracked so each node keeps its own,
-  and `getOrAutoCreateProfile()` rebuilds correct per-type profiles when missing. **Before
-  v8.1.4 this silently broke Mina and Dragomir** — a `git pull` propagated Orlok's
-  open-loop-linear profile for part 1, causing `"Action 'jog' not supported for part type:
-  servo"`. *Long-term fix still needed:* re-key by `{characterId}.{partId}` so profiles are
-  safe to sync. Recovery today: delete the file → restart service → profiles auto-rebuild.
+- ~~**Calibration profile part-ID collision.**~~ **FIXED — the long-term fix is done**
+  (corrected 2026-08-15; this entry previously claimed it was only mitigated).
+  `server/calibration/store.js` keys every profile by `` `${characterId}:${partId}` ``
+  (`scopedKey()`), resolving the character through `selectedCharacterId()` when the caller
+  doesn't pass one, with a bare-key fallback so pre-existing legacy profiles still load.
+  `tests/unit/calibration-character-scope.test.js` covers the scoping. Profiles are now safe
+  to sync across nodes. *Historical context:* part IDs are only unique within a character
+  (Orlok part 1 = linear_actuator, Mina part 1 = servo, Dragomir part 1 = continuous-servo
+  all collided on key `"1"`), and before v8.1.4 a `git pull` propagated Orlok's
+  open-loop-linear profile, causing `"Action 'jog' not supported for part type: servo"` on
+  Mina and Dragomir. Recovery if a legacy file misbehaves: delete it → restart service →
+  profiles auto-rebuild.
 - ⚪ **`goto` / calibration API false-positive.** `POST /api/calibration/:partId/goto` (and
   siblings) return `success:true` whenever the I2C write succeeds — there is **no** encoder
   feedback, so it does **not** prove physical movement. Never trust API success alone for
@@ -103,34 +146,23 @@ and reachable.
   `batchMoveServos` calls `readConfig().selectedCharacter` directly rather than going through
   `resolveCharacter(req)` — a character-independence seam allowlisted for now, not yet
   migrated.
-- 🟢 **Hardware safety limits not enforced through unified calibration.**
-  `services/hardwareService/index.js:1567` — `// TODO: Re-implement safety limits using
-  unified calibration profiles`. The legacy per-part safety-limit clamp was removed and not
-  re-implemented on the unified profiles. Servo `moveToAngle` still mirrors/clamps within
-  calibrated bounds *where a profile exists*, but there is no general safety-limit layer
-  across motor / linear-actuator / stepper. **Directly relevant to Orlok's ch4+ch5 fuse
-  item above** — nothing bounds a stall-inducing command. *Mitigate:* keep per-part
-  `speedPct` caps in calibration profiles and supervise full-range moves until re-implemented.
-- 🟡 **Conversation start/stop does not open/close the ElevenLabs WebSocket.**
-  `routes/conversation.js:668` — the enable/disable endpoint persists `ai_agent_state.json`
-  and returns `{success:true}` but never starts/stops the realtime agent via
-  `elevenLabsWebSocketService`. Toggling conversation in the UI may not actually start or
-  cleanly stop the live agent.
-- 🟡 **Hardware-service webcam + mic paths are simulated.**
-  `services/hardwareService/index.js:969` (`startStream`/`stopStream`) returns a canned
-  `streamUrl` without invoking `camera_stream.py`; `:995` (`microphone.record`) returns
-  success without capturing audio. Distinct from the v8.5.0 Fleet Command Center MJPEG proxy,
-  which is a real path (see Recently Fixed). Any flow relying on the hardware-service
-  stream/record path is a no-op on real hardware.
+- 🔴 **`orchestrationService.deployCode()` is broken (independent of the SSH credential).**
+  `services/orchestrationService.js:382` builds
+  `` `./scripts/deploy-to-animatronic.sh ${ip}` `` — a single argument — but the script's
+  usage is `<character_id> <ip_address> [--dry-run]` and it exits 1 on its own usage check.
+  Any UI-triggered deploy therefore fails before it does anything. `npm run deploy:all` from
+  the CLI is unaffected.
+- ⚪ **`.env` is never loaded — put env vars in the systemd unit.** The app does not use
+  `dotenv` anywhere, so a `.env` file has **no effect** on the running service. Both
+  `MONSTERBOX_SSH_PASSWORD` and `MB_ADMIN_TOKEN` must be set in `monsterbox.service` (or a
+  systemd drop-in). This is a live trap: putting them in `.env` looks correct, changes
+  nothing, and leaves SSH fleet control disabled and the admin endpoints open.
 - 🟡 **`routes/setup/calibration.js` calibration services are stubs.** `:25` —
   `standardServoCalibration` and siblings return hard-coded
   `{pulseCalibrated:true, positionsCalibrated:true}` and suggested positions with no
   persistence, so calibration *status* shown through this route is not trustworthy. (The real
   stores — `server/calibration/store.js`, `services/actuatorPositionStore.js` — are separate
   and do persist; this is specifically the route's stub layer.)
-- ⚪ **AI settings "Test connection" is a no-op.** `routes/aiSettingsRoutes.js:193` —
-  `// TODO: Test actual API connection`; after checking a key is present it returns
-  "connection successful" without making a request, so it can pass against an invalid/expired key.
 - ⚪ **Character-resolution & bias tech-debt is baselined, not fixed.** Full machine-checked
   lists: `eslint-rules/no-direct-character-resolution.allowlist.json` (~12 files still read
   character state directly instead of `resolveCharacter(req)` — e.g.
@@ -151,6 +183,18 @@ non-blocking. Listed so a genuine regression here isn't dismissed as "the usual 
 - 🟡 **Jaw-animation save-config** — save assertion intermittently fails.
 - 🟡 **Calibration timeout** — calibration test intermittently times out.
 
+Plus one that was not flake at all:
+
+- ~~**The unit suite was physically stressing Orlok's fused rail.**~~ — fixed **v9.0.0**.
+  `tests/unit/calibration-unified-api.test.js` selected `parts.find(type === 'servo')`,
+  which on this node is the 150 kg elbow (part 4) on the shared elbow/forearm fuse. Every
+  `npm run test:smoke` drove it to **both** extremes and then called set-min/set-max, which
+  rewrite the profile from wherever the test parked it. The test now selects through
+  `safetyLimits.isTestSafePart()` (skipping power-grouped, quarantined and excluded parts)
+  and snapshots/restores the whole calibration file verbatim, so a run leaves zero drift.
+  **Open consequence:** part 4's 45–135 bounds are that test's residue and still need a real
+  calibration pass — see the Orlok section above.
+
 ---
 
 ## Data Hygiene
@@ -170,9 +214,11 @@ non-blocking. Listed so a genuine regression here isn't dismissed as "the usual 
 ## Security / Ops
 
 - 🔴 **Leaked SSH password — ROTATION STILL REQUIRED.** The literal is now gone from the
-  working tree (v8.5.0: removed from `services/orchestrationService.js`, 16 shell/python
+  working tree (v9.0.0: removed from `services/orchestrationService.js`, 16 shell/python
   scripts, 5 docs, and the goblin-management view; every path reads
-  `MONSTERBOX_SSH_PASSWORD` and fails loudly when unset). **It remains in git history**,
+  `MONSTERBOX_SSH_PASSWORD` via `requireSshPassword()` and fails loudly when unset;
+  `sshpass -p` → `sshpass -e` so it no longer appears in the process table).
+  **It remains in git history**,
   so the credential is still compromised. Operator actions: (1) change the `remote` account
   password on every node, (2) set `MONSTERBOX_SSH_PASSWORD` in each node's
   `monsterbox.service` environment — note `.env` is *not* loaded by the app, so the systemd
@@ -185,15 +231,78 @@ non-blocking. Listed so a genuine regression here isn't dismissed as "the usual 
   request without an `Origin` header (curl, scripts, any non-browser LAN client) is allowed.
   `POST /api/system/reboot` and `/shutdown` are therefore reachable unauthenticated from
   the LAN today. Set `MB_ADMIN_TOKEN` in each node's service environment to close this.
-- 🟢 **Dependabot / `npm audit`: 0 vulnerabilities** (v8.5.0). The previously reported
-  3 high-severity alerts resolved to 2 advisories, both in transitive **dev-only** deps
-  (`brace-expansion` via mocha/nodemon, `js-yaml` via mocha). Cleared with a plain
-  `npm audit fix` (patch bumps only, no new deps, no breaking upgrades).
+- 🟡 **`npm audit` is clean, but GitHub Dependabot still reports 3 high — discrepancy
+  unresolved.** Locally (v9.0.0) `npm audit` went **2 high → 0**: `brace-expansion`
+  1.1.13→1.1.18 / 2.0.3→2.1.4 and `js-yaml` 4.3.0→4.3.1, both transitive and
+  **devDependency-only** (mocha/nodemon). Cleared with a plain `npm audit fix` — patch bumps
+  only, no new deps, no breaking upgrades. **However, GitHub's Dependabot reported 3 high on
+  the last push and those alerts have not been read**, so we cannot say which package the
+  third one is or whether the two overlap. `gh` is not authenticated on this node, which is
+  why the alerts couldn't be pulled directly. *To close:* authenticate `gh` (or open the
+  repo's Security tab) and reconcile the three alerts against the local tree — do not treat
+  the clean local audit as proof the Dependabot alerts are gone.
 
 ---
 
 ## Recently Fixed (for reference)
 
+- ~~Hardware safety limits not enforced through unified calibration~~ — fixed **v9.0.0**.
+  The `// TODO: Re-implement safety limits using unified calibration profiles` at
+  `services/hardwareService/index.js:1567` is gone; `services/hardwareService/safetyLimits.js`
+  clamps angle to the intersection of calibrated bounds and configured limits, caps
+  speed/duration, hard-blocks retraction of a part pinned at its mechanical minimum
+  (including the bounds-bypassing jog-raw path), and serializes parts sharing a power rail
+  with a cooldown. Limits are committed in `config/hardware-safety.json` so they deploy with
+  the code and survive a calibration reset; a profile's own `safety` block may only tighten
+  them. Parts with no configured limits are pass-through. 19 unit tests.
+  **Caveats:** the Python wrappers bypass this layer entirely, and the ch4/ch5 fuse problem
+  is only *mitigated* by it — both still open above.
+- ~~`/api/calibration/:partId/goto` clamped only to 0–180~~ — fixed **v9.0.0** (now clamps
+  to the profile's calibrated angle window, closing a bypass around the safety layer).
+  `/nudge` is deliberately left unclamped — it is the operator's supervised tool for
+  discovering limits, and clamping it would make a window impossible to widen.
+- ~~Hardware-service webcam + mic paths are simulated~~ — fixed **v9.0.0**.
+  `startStream`/`stopStream` now probe the real mjpg-streamer service that
+  `webcamController` proxies, return the real proxy/snapshot URLs (no more fabricated
+  `http://localhost:8080`), try to start the service once, and report an honest failure
+  otherwise; `stopStream` detaches rather than killing a service shared by other consumers.
+  `microphone.record` delegates to `serverSTTListener.captureChunkWav` (the one canonical
+  capture path) and reports real byte counts — an empty capture is now a failure, not a
+  success. Verified on Orlok's USB mic: 32044 bytes for 1 s @ 16 kHz mono, peak 2096 /
+  RMS 931 (non-silent).
+- ~~Motor `stop` never stopped the motor~~ — fixed **v9.0.0** (it sent direction `'stop'`,
+  which `motor_control.py` rejects; now drives PWM low at speed 0 and releases the pins).
+- ~~Conversation start/stop does not open/close the ElevenLabs WebSocket~~ — fixed
+  **v9.0.0**. `setAgentEnabledForCharacter()` creates a headless session and starts the
+  agent socket plus the server mic loop; `_waitForAgentReady()` polls until the socket is
+  genuinely OPEN so the route reports what actually happened; teardown is idempotent.
+  Also fixed underneath it: `getAgentIdForCharacter` returned null for **every** character
+  (it resolved the fleet registry through `cfg.dataPath` and so read a per-character copy
+  instead of `data/characters.json`) — the feature could not have worked for anyone.
+  Verified live on hardware: three on/off cycles, 7 starts paired to 7 stops, 0 lingering
+  connections.
+- ~~AI settings "Test connection" is a no-op~~ — fixed **v9.0.0** (`routes/aiSettingsRoutes.js`
+  now makes a real `getVoices()` call instead of reporting success whenever a key string
+  exists, so it can no longer pass against an invalid/expired key). Related: the STT
+  fallback model was a TTS model (`eleven_multilingual_v2`) that the STT endpoint rejects —
+  now `scribe_v2`.
+- ~~Leaked SSH credential present in the working tree~~ — removed **v9.0.0** from
+  `services/orchestrationService.js`, 16 shell/python scripts, 5 docs and the
+  goblin-management view. **This is a working-tree fix ONLY. The credential is still in git
+  history and MUST still be rotated on every node** — see the open 🔴 item under Security.
+- ~~Unauthenticated arbitrary file deletion via SSH-key endpoint~~ — fixed **v9.0.0**.
+  `DELETE /api/system/ssh/keys/:name` passed the raw route param to `fs.unlink`, allowing
+  `../` traversal; `safeKeyName()` now rejects (rather than rewrites) bad names in both
+  `deleteSSHKey` and `deployKeyToHost`, with a reserved-name guard, and all three
+  `/ssh/keys` routes are gated by `requireAdmin`. *Note `requireAdmin` itself still fails
+  open until `MB_ADMIN_TOKEN` is set — see Security.*
+- ~~Python wrapper resource leaks~~ — fixed **v9.0.0**: `servo_cli.py` leaked a gpiochip
+  handle when a move failed mid-flight (accumulating, since `test_servo` moves 4× per
+  process); `linear_actuator_control_v2.py` exited a bad pin config with the chip open and
+  the BTS7960 R_EN/L_EN still driven HIGH; `motor_cli.py` had no subprocess timeout, so a
+  wedged `motor_control.py` hung forever **with the motor energized** (now bounded to
+  duration + 10 s); `speaker_cli.py` never unlinked its temp file; `microphone_cli.py`
+  silent exit-1 paths now report a reason on stderr. All 18 wrappers `py_compile` clean.
 - ~~Remote webcams never streamed / stream died after 30 s~~ — fixed **v8.5.0** (proxy now
   forwards the upstream MJPEG boundary; `timeout:0` for endless bodies).
 - ~~Orchestration broadcast/status reported `success:true` on total failure~~ — fixed
