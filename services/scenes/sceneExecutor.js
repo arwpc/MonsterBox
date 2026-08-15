@@ -865,6 +865,17 @@ export async function executeStep(step, characterId, emit, options) {
  * - Steps without concurrent flag execute sequentially (await)
  * - After all steps processed, await all background promises for cleanup
  */
+// A dead lamp should not end the show. Hardware actuation steps are recorded as
+// failed and the scene carries on — the same non-throwing model the concurrent
+// path already uses, and the same treatment jaw-animation and head-tracking
+// already get. Control-flow steps (sensor gates, waits) stay fatal on purpose:
+// they exist to hold a scene back, so swallowing their failure would fire a scene
+// without the trigger that was supposed to gate it.
+const NON_FATAL_STEP_TYPES = new Set([
+  'servo', 'motor', 'linear-actuator', 'light', 'led',
+  'pose', 'hardware', 'jaw-animation', 'head-tracking', 'goblin-video'
+]);
+
 async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
   const results = [];
   const backgroundPromises = [];
@@ -891,8 +902,15 @@ async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
       stepsExecuted++;
     } else {
       // Sequential — await normally
-      const r = await executeStep(step, characterId, emit, opts);
-      results.push(r);
+      try {
+        const r = await executeStep(step, characterId, emit, opts);
+        results.push(r);
+      } catch (err) {
+        if (!NON_FATAL_STEP_TYPES.has(step.type)) throw err;
+        console.error(`Step ${i} (${step.type}) failed, continuing scene:`, err.message);
+        emit && emit({ type: 'step-failed', index: i, stepType: step.type, error: err.message });
+        results.push({ success: false, error: err.message, index: i, stepType: step.type });
+      }
       stepsExecuted++;
     }
   }
@@ -920,8 +938,10 @@ export async function executeScene(scene, characterId, emit, options) {
     results.push(...execResult.results);
     stepsExecuted = execResult.stepsExecuted;
 
-    // Surface any concurrent (fire-and-forget) step failures instead of always
-    // reporting success. Sequential-step failures throw and are handled below.
+    // Surface step failures instead of always reporting success: concurrent steps
+    // are fire-and-forget, and sequential hardware steps are recorded and skipped so
+    // one dead part cannot end the show. Fatal sequential steps still throw and are
+    // handled below.
     const stepErrors = results
       .filter(r => r && r.success === false)
       .map(r => ({ message: r.error, stepType: r.stepType, index: r.index }));
