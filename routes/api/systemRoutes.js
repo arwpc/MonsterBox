@@ -23,11 +23,24 @@ const execAsync = promisify(exec);
  * protection at all.
  *
  * - If MB_ADMIN_TOKEN is set, require a matching `x-mb-admin-token` header.
- * - Otherwise (default), still reject cross-origin browser requests so a
- *   malicious page the operator visits cannot CSRF a reboot. Same-origin UI
- *   calls and non-browser callers (curl/scripts send no Origin) are unaffected,
- *   so this adds protection without breaking the existing operator UI.
+ * - Otherwise, reject cross-origin browser requests so a malicious page the
+ *   operator visits cannot CSRF a reboot, AND reject non-browser callers that
+ *   are not on this machine.
+ *
+ * That last rule matters: browsers send Origin on any non-GET request, so a
+ * request with no Origin is a script or a curl. Allowing those unconditionally
+ * meant anyone on the LAN could reboot or shut down a running animatronic. Local
+ * scripts and the operator UI are unaffected; a remote caller now has to
+ * configure MB_ADMIN_TOKEN, which is the supported way to do this.
+ *
+ * Fleet orchestration is unaffected — it drives reboot/restart over SSH, not
+ * through these HTTP endpoints.
  */
+function isLoopbackRequest(req) {
+    const addr = (req.socket && req.socket.remoteAddress) || req.ip || '';
+    return addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
+}
+
 function requireAdmin(req, res, next) {
     const expected = process.env.MB_ADMIN_TOKEN;
     if (expected) {
@@ -43,8 +56,13 @@ function requireAdmin(req, res, next) {
         } catch (_) {
             return res.status(403).json({ success: false, error: 'Invalid origin' });
         }
+        return next();
     }
-    return next();
+    if (isLoopbackRequest(req)) return next();
+    return res.status(403).json({
+        success: false,
+        error: 'Remote administrative requests require MB_ADMIN_TOKEN. Set it in the monsterbox.service environment and send it as the x-mb-admin-token header.'
+    });
 }
 
 /**
