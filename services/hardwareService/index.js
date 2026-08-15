@@ -3,7 +3,9 @@
  * Unified interface for all 11 Part types with PipeWire integration
  */
 
+import { spawn } from 'child_process';
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
@@ -18,6 +20,10 @@ import { getPartSafety, applySafetyLimits, runInPowerGroup } from './safetyLimit
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// mjpg-streamer owns webcam streaming (same endpoints webcamController proxies).
+const MJPG_STREAMER_URL = 'http://127.0.0.1:8090';
+const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 
 function parsePythonJSON(out) {
     if (!out) return null;
@@ -143,7 +149,10 @@ const HARDWARE_CONTROLLERS = {
                     if (lenPin != null) cfg.lenPin = Number(lenPin);
                     out = await runWrapper('linear_actuator_control_v2.py', [JSON.stringify(cfg)]);
                 } else {
-                    out = await runWrapper('motor_cli.py', ['stop', '0', '100', String(directionPin), String(pwmPin)]);
+                    // 'stop' is not a direction motor_control.py accepts (forward|backward|
+                    // reverse only), so this always errored out and never stopped anything.
+                    // Speed 0 drives the PWM pin LOW and releases the pins — a real stop.
+                    out = await runWrapper('motor_cli.py', ['forward', '0', '100', String(directionPin), String(pwmPin)]);
                 }
                 const parsed = parsePythonJSON(out);
                 const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
@@ -966,43 +975,151 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async startStream({ deviceId = 0, resolution = '640x480' }) {
-            // TODO: wire to camera_stream.py via an HTTP endpoint; keep simulated for now
-            console.log('📹 Webcam Stream Start - Device ' + deviceId + ': ' + resolution);
+        // Streaming is owned by the mjpg-streamer systemd service on :8090, which the
+        // app proxies (webcamController.streamMJPEG) and the Fleet Command Center
+        // consumes. This reports that service's REAL state rather than fabricating a
+        // stream URL — a caller that gets success:true here can actually pull frames.
+        async startStream({ deviceId = 0, resolution = '640x480', partId } = {}) {
+            const probe = async () => {
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 3000);
+                    try {
+                        const res = await fetch(`${MJPG_STREAMER_URL}/?action=snapshot`, { signal: controller.signal });
+                        return res.ok;
+                    } finally {
+                        clearTimeout(timer);
+                    }
+                } catch (_) {
+                    return false;
+                }
+            };
+
+            let live = await probe();
+            if (!live) {
+                // The service may simply not be started yet; try once, then re-probe.
+                try {
+                    await new Promise((resolve) => {
+                        const proc = spawn('systemctl', ['start', 'mjpg-streamer'], { stdio: 'ignore' });
+                        proc.on('exit', resolve);
+                        proc.on('error', resolve);
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 1200));
+                    live = await probe();
+                } catch (_) { /* fall through to the honest failure below */ }
+            }
+
+            if (!live) {
+                return {
+                    success: false,
+                    partType: 'webcam',
+                    deviceId: deviceId,
+                    error: 'mjpg-streamer is not serving frames on ' + MJPG_STREAMER_URL +
+                           '. Start the service (systemctl start mjpg-streamer) or apply a device via /setup/calibration.'
+                };
+            }
+
+            const proxyPath = partId != null
+                ? `/setup/calibration/api/webcam/parts/${partId}/stream`
+                : null;
+            console.log('📹 Webcam stream available for device ' + deviceId);
             return {
                 success: true,
                 partType: 'webcam',
                 deviceId: deviceId,
                 resolution: resolution,
-                streamUrl: 'http://localhost:8080/stream/' + deviceId,
-                message: 'Webcam ' + deviceId + ' streaming at ' + resolution
+                streamUrl: proxyPath,
+                directStreamUrl: MJPG_STREAM_ENDPOINT,
+                snapshotUrl: `${MJPG_STREAMER_URL}/?action=snapshot`,
+                serviceManaged: true,
+                message: 'mjpg-streamer is serving frames; stream is available through the app proxy'
             };
         },
 
-        async stopStream({ deviceId = 0 }) {
-            console.log('📹 Webcam Stream Stop - Device ' + deviceId);
+        // mjpg-streamer is a single shared service feeding the dashboard, the pose
+        // editor and the fleet proxy. Stopping it for one caller would black out every
+        // other consumer, so this detaches rather than killing the service, and says so.
+        async stopStream({ deviceId = 0 } = {}) {
+            console.log('📹 Webcam stream released - Device ' + deviceId);
             return {
                 success: true,
                 partType: 'webcam',
                 deviceId: deviceId,
-                message: 'Webcam ' + deviceId + ' stream stopped'
+                serviceManaged: true,
+                message: 'Released this consumer. mjpg-streamer stays running for other consumers; ' +
+                         'stop it explicitly with systemctl if the camera must be freed.'
             };
         }
     },
 
     // 🎤 Microphone - audio input devices
     microphone: {
-        async record({ deviceId = 0, duration = 5000, format = 'wav' }) {
-            // TODO: wire real recording path; keep simulated for now
+        // Real capture. Delegates to serverSTTListener.captureChunkWav — the one
+        // canonical mic path (PipeWire source resolution + microphone_cli.py
+        // record_wav) — instead of keeping a second, simulated implementation.
+        async record({ deviceId = 'default', duration = 5000, format = 'wav' } = {}) {
+            const durationSec = Math.max(0.1, Number(duration) / 1000);
             console.log(`🎤 Microphone Record - Device ${deviceId}: ${duration}ms as ${format}`);
+
+            if (String(format).toLowerCase() !== 'wav') {
+                return {
+                    success: false,
+                    partType: 'microphone',
+                    deviceId: deviceId,
+                    error: `Unsupported format '${format}'. The capture path produces WAV (PCM 16 kHz mono).`
+                };
+            }
+
+            let buffer;
+            try {
+                const { default: serverSTTListener } = await import('../serverSTTListener.js');
+                buffer = await serverSTTListener.captureChunkWav(deviceId, durationSec);
+            } catch (err) {
+                return {
+                    success: false,
+                    partType: 'microphone',
+                    deviceId: deviceId,
+                    error: `Capture failed: ${err.message}`
+                };
+            }
+
+            // An empty buffer means the device produced nothing — report the failure
+            // instead of the old unconditional success.
+            if (!buffer || buffer.length === 0) {
+                return {
+                    success: false,
+                    partType: 'microphone',
+                    deviceId: deviceId,
+                    duration: duration,
+                    format: format,
+                    bytes: 0,
+                    error: 'No audio captured — check the microphone is connected and the PipeWire source is correct.'
+                };
+            }
+
+            const filename = `recording_${Date.now()}.wav`;
+            const filePath = path.join(os.tmpdir(), filename);
+            try {
+                await fs.writeFile(filePath, buffer);
+            } catch (err) {
+                return {
+                    success: false,
+                    partType: 'microphone',
+                    deviceId: deviceId,
+                    error: `Captured ${buffer.length} bytes but could not write ${filePath}: ${err.message}`
+                };
+            }
+
             return {
                 success: true,
                 partType: 'microphone',
                 deviceId: deviceId,
                 duration: duration,
-                format: format,
-                filename: `recording_${Date.now()}.${format}`,
-                message: `Microphone ${deviceId} recorded ${duration}ms of audio`
+                format: 'wav',
+                filename: filename,
+                filePath: filePath,
+                bytes: buffer.length,
+                message: `Captured ${buffer.length} bytes of audio from ${deviceId}`
             };
         },
 

@@ -90,13 +90,23 @@ def _record_wav(device_id, sample_rate, channels, duration):
     Uses small buffers (~20-40ms) for responsiveness.
     Returns exit code (0 success).
     """
+    # stdout carries raw WAV bytes here, so every failure reason goes to stderr —
+    # otherwise the caller only sees a bare non-zero exit with no diagnosis.
+    def _err(msg):
+        try:
+            sys.stderr.write("record_wav: %s\n" % msg)
+        except Exception:
+            pass
+
     if pyaudio is None:
+        _err("PyAudio not available")
         return 1
     pa = pyaudio.PyAudio()
     stream = None
     try:
         idx = _get_default_input_device(pa)
         if idx is None:
+            _err("no input device found")
             return 1
         # Validate channels
         try:
@@ -105,6 +115,7 @@ def _record_wav(device_id, sample_rate, channels, duration):
         except Exception:
             max_in = 0
         if max_in < 1:
+            _err("device index %s has no input channels" % idx)
             return 1
         if channels > max_in:
             channels = max_in
@@ -114,7 +125,8 @@ def _record_wav(device_id, sample_rate, channels, duration):
             test_stream = pa.open(format=fmt, channels=channels, rate=sample_rate, input=True,
                                   input_device_index=idx, frames_per_buffer=128)
             test_stream.close()
-        except Exception:
+        except Exception as e:
+            _err("cannot open input device %s at %sHz/%sch: %s" % (idx, sample_rate, channels, e))
             return 1
         # Choose small buffer (approx 20ms @ 16kHz mono => 320 frames)
         frames_per_buffer = max(128, int(sample_rate * 0.02))
@@ -152,7 +164,10 @@ def _record_wav(device_id, sample_rate, channels, duration):
             buf.flush()
         except Exception:
             pass
-        return 0 if total_bytes > 0 else 1
+        if total_bytes <= 0:
+            _err("captured 0 bytes from device index %s" % idx)
+            return 1
+        return 0
     finally:
         try:
             if stream is not None:

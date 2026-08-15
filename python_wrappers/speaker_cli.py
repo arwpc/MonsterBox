@@ -190,28 +190,37 @@ if __name__ == '__main__':
                             amp = 0.4
                             frames = int(sr * dur)
                             tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
-                            with wave.open(tmp.name, 'w') as wf:
-                                wf.setnchannels(1)
-                                wf.setsampwidth(2)
-                                wf.setframerate(sr)
-                                for i in range(frames):
-                                    val = int(amp * 32767.0 * math.sin(2 * math.pi * freq * (i / sr)))
-                                    wf.writeframes(struct.pack('<h', val))
-                            # Play the synthesized tone
-                            if tools['pw-play']:
-                                cmdv = ['pw-play']
-                                if device_id and device_id not in ('default', 'pulse'):
-                                    cmdv.extend(['--target', device_id])
-                                cmdv.append(tmp.name)
-                            elif tools['paplay']:
-                                cmdv = ['paplay']
-                                if device_id and device_id not in ('default', 'pulse'):
-                                    cmdv.extend(['--device', device_id])
-                                cmdv.append(tmp.name)
-                            else:
-                                fail("No suitable audio player found (need pw-play or paplay)")
-                            proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                            proc.wait()  # Wait for playback to complete
+                            try:
+                                with wave.open(tmp.name, 'w') as wf:
+                                    wf.setnchannels(1)
+                                    wf.setsampwidth(2)
+                                    wf.setframerate(sr)
+                                    for i in range(frames):
+                                        val = int(amp * 32767.0 * math.sin(2 * math.pi * freq * (i / sr)))
+                                        wf.writeframes(struct.pack('<h', val))
+                                # Play the synthesized tone
+                                if tools['pw-play']:
+                                    cmdv = ['pw-play']
+                                    if device_id and device_id not in ('default', 'pulse'):
+                                        cmdv.extend(['--target', device_id])
+                                    cmdv.append(tmp.name)
+                                elif tools['paplay']:
+                                    cmdv = ['paplay']
+                                    if device_id and device_id not in ('default', 'pulse'):
+                                        cmdv.extend(['--device', device_id])
+                                    cmdv.append(tmp.name)
+                                else:
+                                    fail("No suitable audio player found (need pw-play or paplay)")
+                                proc = subprocess.Popen(cmdv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                proc.wait()  # Wait for playback to complete
+                            finally:
+                                # Delete the synthesized tone — delete=False means
+                                # nothing else removes it, and these accumulated in
+                                # /tmp on the SD card on every fallback playback.
+                                try:
+                                    os.unlink(tmp.name)
+                                except Exception:
+                                    pass
                         except Exception as ee:
                             fail(f"mpg123 not available and fallback failed: {ee}")
                     else:

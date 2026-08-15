@@ -52,19 +52,26 @@ def move_to(channel, pulse_us, duration_ms=1000):
             print(json.dumps({"status": "error", "message": "lgpio not available for GPIO servo control"}))
             return "error"
 
-        # Use lgpio for direct GPIO servo control
+        # Use lgpio for direct GPIO servo control.
+        # The handle is closed in finally so an mid-move error can't leak it —
+        # test_servo() calls move_to() four times in one process.
         h = lgpio.gpiochip_open(0)
-        lgpio.gpio_claim_output(h, channel)
+        try:
+            lgpio.gpio_claim_output(h, channel)
 
-        # Use lgpio's servo function
-        lgpio.tx_servo(h, channel, pulse_us, 50, 0, 0)
+            # Use lgpio's servo function
+            lgpio.tx_servo(h, channel, pulse_us, 50, 0, 0)
 
-        # Allow time for servo to move
-        time.sleep(duration_ms / 1000.0)
+            # Allow time for servo to move
+            time.sleep(duration_ms / 1000.0)
 
-        # Stop servo
-        lgpio.tx_servo(h, channel, 0)
-        lgpio.gpiochip_close(h)
+            # Stop servo
+            lgpio.tx_servo(h, channel, 0)
+        finally:
+            try:
+                lgpio.gpiochip_close(h)
+            except Exception:
+                pass
 
         print(json.dumps({"status": "success", "message": f"GPIO servo on pin {channel} set to {pulse_us}µs"}))
         return "success"
@@ -99,15 +106,20 @@ def rotate_continuous(channel, direction, speed, duration_ms):
         pulse_clamped = max(500, min(2400, pulse_us))
 
         h = lgpio.gpiochip_open(0)
-        lgpio.gpio_claim_output(h, channel)
-        lgpio.tx_servo(h, channel, pulse_clamped, 50, 0, 0)
+        try:
+            lgpio.gpio_claim_output(h, channel)
+            lgpio.tx_servo(h, channel, pulse_clamped, 50, 0, 0)
 
-        # Hold for requested duration
-        time.sleep(min(duration_ms / 1000.0, 5.0))
+            # Hold for requested duration
+            time.sleep(min(duration_ms / 1000.0, 5.0))
 
-        # Stop servo
-        lgpio.tx_servo(h, channel, 0)
-        lgpio.gpiochip_close(h)
+            # Stop servo — always attempted, even if the hold above raised
+            lgpio.tx_servo(h, channel, 0)
+        finally:
+            try:
+                lgpio.gpiochip_close(h)
+            except Exception:
+                pass
 
         print(json.dumps({"status": "success", "message": f"GPIO continuous servo on pin {channel} rotated {direction} at speed {speed}"}))
         return "success"

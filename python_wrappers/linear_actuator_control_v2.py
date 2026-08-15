@@ -244,34 +244,38 @@ def main():
             print(json.dumps({"success": False, "error": "GPIO initialization failed"}))
             sys.exit(1)
         
-        # Setup pins based on board type
-        if board_type in [BOARD_MDD10A, BOARD_CYTRON]:
-            dir_pin = int(config.get('directionPin'))
-            pwm_pin = int(config.get('pwmPin'))
-            if not controller.setup_mdd10a_pins(dir_pin, pwm_pin):
-                print(json.dumps({"success": False, "error": "Pin setup failed"}))
-                sys.exit(1)
-            success = controller.control_mdd10a(direction, speed, duration, pwm_hz)
+        # Setup pins based on board type.
+        # Everything after setup_gpio() runs under try/finally so the motor pins
+        # are always driven LOW and the gpiochip handle released — a bad pin
+        # config used to sys.exit() with enable pins already HIGH.
+        try:
+            if board_type in [BOARD_MDD10A, BOARD_CYTRON]:
+                dir_pin = int(config.get('directionPin'))
+                pwm_pin = int(config.get('pwmPin'))
+                if not controller.setup_mdd10a_pins(dir_pin, pwm_pin):
+                    print(json.dumps({"success": False, "error": "Pin setup failed"}))
+                    sys.exit(1)
+                success = controller.control_mdd10a(direction, speed, duration, pwm_hz)
 
-        elif board_type == BOARD_BTS7960:
-            rpwm_pin = int(config.get('rpwmPin'))
-            lpwm_pin = int(config.get('lpwmPin'))
-            ren_pin = config.get('renPin')
-            len_pin = config.get('lenPin')
-            if ren_pin: ren_pin = int(ren_pin)
-            if len_pin: len_pin = int(len_pin)
+            elif board_type == BOARD_BTS7960:
+                rpwm_pin = int(config.get('rpwmPin'))
+                lpwm_pin = int(config.get('lpwmPin'))
+                ren_pin = config.get('renPin')
+                len_pin = config.get('lenPin')
+                if ren_pin: ren_pin = int(ren_pin)
+                if len_pin: len_pin = int(len_pin)
 
-            if not controller.setup_bts7960_pins(rpwm_pin, lpwm_pin, ren_pin, len_pin):
-                print(json.dumps({"success": False, "error": "Pin setup failed"}))
+                if not controller.setup_bts7960_pins(rpwm_pin, lpwm_pin, ren_pin, len_pin):
+                    print(json.dumps({"success": False, "error": "Pin setup failed"}))
+                    sys.exit(1)
+                success = controller.control_bts7960(direction, speed, duration, pwm_hz)
+            else:
+                log_error(f"Unsupported board type: {board_type}")
+                print(json.dumps({"success": False, "error": f"Unsupported board type: {board_type}"}))
                 sys.exit(1)
-            success = controller.control_bts7960(direction, speed, duration, pwm_hz)
-        else:
-            log_error(f"Unsupported board type: {board_type}")
-            print(json.dumps({"success": False, "error": f"Unsupported board type: {board_type}"}))
-            sys.exit(1)
-        
-        controller.cleanup()
-        
+        finally:
+            controller.cleanup()
+
         if success:
             print(json.dumps({"success": True}))
             sys.exit(0)
