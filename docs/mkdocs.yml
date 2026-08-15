@@ -123,6 +123,7 @@ nav:
       - Test Reports: testing/reports.md
 
   - Troubleshooting:
+      - Known Bugs & Open Issues: troubleshooting/KNOWN-BUGS.md
       - Head Tracking: troubleshooting/head-tracking-troubleshooting.md
 
   - Animatronics Workshop:
