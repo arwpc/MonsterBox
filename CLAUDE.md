@@ -285,9 +285,11 @@ Custom slash commands are available in `.claude/commands/` and `.claude/skills/`
 - `/add-part` — Scaffold a new hardware part entry, validate against schema, run pact for the target character.
 - `/add-character` — Bootstrap a new character: creates `data/character-<N>/` with valid files, updates `data/characters.json` and `config/animatronics.json`, runs pact.
 - `/pre-deploy-gate` — User-invoked only. Runs `npm run gate` and classifies failures with `file:line` and suggested fixes.
+- `/build-v9-orlok` — Autonomous v9.0 Orlok build. Familiarizes, then executes `docs/development/V9-ORLOK-MISSION.md` end-to-end using the expert-agent team. Orlok node only; run in a bypass-permissions/auto-accept session for true hands-off operation.
 
 ### Subagents (`.claude/agents/`)
 - `character-auditor` — Read-only; runs `validate:schemas`, `audit:resolver`, `audit:independence`, and `test:pact`; returns a structured report. Use proactively before cross-character work.
+- **v9.0 Orlok expert team** (orchestrator–worker pattern; see `docs/development/V9-ORLOK-MISSION.md`): `hardware-diagnostician` (read-only; proves parts move, isolates dead channels/fuse), `python-wrapper-specialist` (`python_wrappers/*.py` correctness + `py_compile`), `elevenlabs-ai-specialist` (verifies current ElevenLabs offerings, upgrades canonical TTS/STT in place, tests live), `pose-author` (builds/validates `poses.json` within bounds), `test-runner` (runs suites, triages real vs flaky vs environmental), `security-triager` (Dependabot + leaked-cred, existing-dep fixes only), `docs-scribe` (keeps `KNOWN-BUGS.md`/`CHANGELOG.md`/`README.md`/docs + version record truthful). A lead session decomposes work, fans these out in parallel, adversarially self-verifies, and synthesizes.
 
 ### MCP Servers
 - **@playwright/mcp** — Configured in `.mcp.json`, provides `browser_*` tools for interactive browser testing and debugging from within Claude Code sessions.
