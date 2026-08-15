@@ -228,7 +228,7 @@ class OrchestrationService {
                 return await this.updateConfig(ip, params.config);
 
             case 'deploy-code':
-                return await this.deployCode(ip);
+                return await this.deployCode(ip, params.characterId);
 
             default:
                 throw new Error(`Unknown command: ${command}`);
@@ -375,11 +375,30 @@ class OrchestrationService {
     /**
      * Deploy code to a device via rsync
      */
-    async deployCode(ip) {
+    async deployCode(ip, characterId) {
         if (!isValidHost(ip)) throw new Error(`Code deployment failed: invalid host ${ip}`);
         const sshPassword = this.requireSshPassword();
+
+        // The script signature is `<character_id> <ip_address>`, but this passed only
+        // the IP — so the IP landed in $1 as the character id and the script exited on
+        // its own usage check. UI-triggered deploy has never worked. Resolve the
+        // character from the node registry when the caller does not supply one.
+        let charId = characterId;
+        if (charId == null) {
+            const node = (this.animatronics || []).find(a => a && a.ip === ip);
+            charId = node && node.characterId;
+        }
+        if (charId == null) {
+            throw new Error(`Code deployment failed: no characterId for ${ip}. Pass characterId, or add the node to config/animatronics.json.`);
+        }
+        // This is interpolated into a shell command, so it must be a plain integer.
+        charId = parseInt(charId, 10);
+        if (!Number.isInteger(charId) || charId < 0) {
+            throw new Error(`Code deployment failed: invalid characterId for ${ip}`);
+        }
+
         try {
-            const cmd = `./scripts/deploy-to-animatronic.sh ${ip}`;
+            const cmd = `./scripts/deploy-to-animatronic.sh ${charId} ${ip}`;
             // The deploy script shells out via sshpass -e like the other SSH ops, so it
             // needs SSHPASS in its environment (previously omitted here).
             const { stdout, stderr } = await execAsync(cmd, { env: { ...process.env, SSHPASS: sshPassword } });
