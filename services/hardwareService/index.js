@@ -10,10 +10,11 @@ import { readConfig } from '../configService.js';
 import pipewireService from '../pipewireService.js';
 import streamRoutingService from '../streamRoutingService.js';
 import actuatorService from './actuator.js';
-import { runWrapper } from './exec.js';
+import { runPy, runWrapper } from './exec.js';
 import servoService from './servo.js';
 import stepperService from './stepper.js';
 import { getCalibrationStore } from '../../server/calibration/store.js';
+import { getPartSafety, applySafetyLimits, runInPowerGroup } from './safetyLimits.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1564,26 +1565,46 @@ export async function controlPart(partId, action, params = {}) {
             }
         }
 
-        // TODO: Re-implement safety limits using unified calibration profiles
-        // Legacy simple calibration safety limits removed - needs migration to unified calibration
+        // Safety limits: clamp the command to what this part can physically survive
+        // before it ever reaches the controller. The calibration profile is loaded
+        // once here and reused by the invert step below.
+        let calProfile = null;
+        try {
+            calProfile = await getCalibrationStore().get(partId, characterId);
+        } catch (_) { /* uncalibrated part — configured safety limits still apply */ }
+
+        const safety = await getPartSafety(characterId, partId, calProfile);
+        const limited = applySafetyLimits({ type, action, params: actionParams, profile: calProfile, safety, partId });
+        if (limited.blocked) {
+            console.warn(`🛑 Safety limit blocked ${action} on part ${partId} (${part.name}): ${limited.blocked}`);
+            return {
+                success: false,
+                partId,
+                partName: part.name,
+                action,
+                error: limited.blocked,
+                blockedBySafetyLimit: true
+            };
+        }
+        if (limited.adjustments.length > 0) {
+            console.warn(`🛡️  Safety limits applied to part ${partId} (${part.name}): ${limited.adjustments.join('; ')}`);
+        }
+        Object.assign(actionParams, limited.params);
 
         // System-wide servo invert: mirror angle within calibrated bounds
         // Uses (minAngle + maxAngle - angle) so the servo stays within its calibrated range.
         // Without bounds, falls back to (0 + 180 - angle) = legacy 180-angle behavior.
         if (type === 'servo' && action === 'moveToAngle' && actionParams.angleDeg != null) {
-            try {
-                const calStore = getCalibrationStore();
-                const calProfile = await calStore.get(partId);
-                if (calProfile && calProfile.capability && calProfile.capability.invert) {
-                    const minA = calProfile.bounds?.minAngle ?? 0;
-                    const maxA = calProfile.bounds?.maxAngle ?? 180;
-                    actionParams.angleDeg = minA + maxA - actionParams.angleDeg;
-                }
-            } catch (_) { /* proceed with original angle if calibration unavailable */ }
+            if (calProfile && calProfile.capability && calProfile.capability.invert) {
+                const minA = calProfile.bounds?.minAngle ?? 0;
+                const maxA = calProfile.bounds?.maxAngle ?? 180;
+                actionParams.angleDeg = minA + maxA - actionParams.angleDeg;
+            }
         }
 
         console.log(`🔧 Calling ${action} on ${type} controller with params:`, { speed: actionParams.speed, duration: actionParams.duration, direction: actionParams.direction });
-        const result = await actionFunction.call(controller, actionParams);
+        // Parts sharing a fused rail are serialized so they are never energized together.
+        const result = await runInPowerGroup(characterId, safety, () => actionFunction.call(controller, actionParams));
         console.log(`🔧 Controller ${action} completed`);
 
         return {
@@ -1637,7 +1658,10 @@ streamRoutingService.startPeriodicCleanup(30000); // Clean up dead streams every
 export async function setPower(state) {
     try {
         const scriptPath = path.resolve(__dirname, '../../scripts/set_power.py');
-        await runWrapper('python3', [scriptPath, state ? 'on' : 'off']);
+        // runPy, not runWrapper: runWrapper resolves its first argument against
+        // python_wrappers/, so passing 'python3' invoked the interpreter on a
+        // non-existent python_wrappers/python3 and set_power.py never ran.
+        await runPy([scriptPath, state ? 'on' : 'off']);
         return { success: true, state };
     } catch(err) {
         console.error("Set Power Error", err);
@@ -1673,9 +1697,14 @@ export async function batchMoveServos(commands) {
     // Load calibration once
     const calStore = getCalibrationStore();
 
-    // Build batch pairs for PCA9685 servos, fall back to individual for others
+    // Build batch pairs for PCA9685 servos, fall back to individual for others.
+    // Parts on a shared power rail are pulled OUT of the batch: a single batch_pca
+    // call moves every listed channel at once, which is exactly the simultaneous
+    // inrush that pops a shared fuse. They are issued serially instead.
     const pcaPairs = [];
     const fallbackCmds = [];
+    const serializedCmds = [];
+    const blockedResults = [];
 
     // Part types that support moveToAngle
     const servoTypes = new Set(['servo', 'continuous_servo', 'continuous-servo']);
@@ -1692,24 +1721,43 @@ export async function batchMoveServos(commands) {
         const isPCA = partCfg.controllerType === 'pca9685' || part.usePCA9685 === true ||
                        part.controllerType === 'pca9685' || partCfg.address != null || partCfg.channel != null;
 
+        let profile = null;
+        try {
+            profile = await calStore.get(cmd.partId, characterId);
+        } catch (_) { /* uncalibrated — configured safety limits still apply */ }
+
+        // Same safety envelope the single-part path enforces.
+        const safety = await getPartSafety(characterId, cmd.partId, profile);
+        const limited = applySafetyLimits({
+            type: partType, action: 'moveToAngle',
+            params: { angleDeg: cmd.angleDeg }, profile, safety, partId: cmd.partId
+        });
+        if (limited.blocked) {
+            console.warn(`🛑 Safety limit blocked batch move on part ${cmd.partId} (${part.name}): ${limited.blocked}`);
+            blockedResults.push({ success: false, partId: cmd.partId, error: limited.blocked, blockedBySafetyLimit: true });
+            continue;
+        }
+        if (limited.adjustments.length > 0) {
+            console.warn(`🛡️  Safety limits applied to part ${cmd.partId} (${part.name}): ${limited.adjustments.join('; ')}`);
+        }
+
         if (isPCA && partCfg.channel != null) {
-            let angle = cmd.angleDeg;
+            let angle = limited.params.angleDeg;
             // Apply invert if needed
-            try {
-                const profile = await calStore.get(cmd.partId);
-                if (profile && profile.capability && profile.capability.invert) {
-                    const minA = profile.bounds?.minAngle ?? 0;
-                    const maxA = profile.bounds?.maxAngle ?? 180;
-                    angle = minA + maxA - angle;
-                }
-            } catch (_) {}
-            pcaPairs.push({ channel: partCfg.channel, angle, partId: cmd.partId });
+            if (profile && profile.capability && profile.capability.invert) {
+                const minA = profile.bounds?.minAngle ?? 0;
+                const maxA = profile.bounds?.maxAngle ?? 180;
+                angle = minA + maxA - angle;
+            }
+            const pair = { channel: partCfg.channel, angle, partId: cmd.partId, safety };
+            if (safety.powerGroup) serializedCmds.push(pair);
+            else pcaPairs.push(pair);
         } else {
-            fallbackCmds.push(cmd);
+            fallbackCmds.push(Object.assign({}, cmd, { angleDeg: limited.params.angleDeg }));
         }
     }
 
-    const results = [];
+    const results = [...blockedResults];
 
     // Batch PCA9685 command
     if (pcaPairs.length > 0) {
@@ -1724,6 +1772,19 @@ export async function batchMoveServos(commands) {
             for (const p of pcaPairs) {
                 results.push({ success: false, partId: p.partId, error: e.message });
             }
+        }
+    }
+
+    // Power-grouped servos: one at a time, with the group's cooldown between them,
+    // so a pose that touches both ends of a fused rail can never energize them together.
+    for (const p of serializedCmds) {
+        try {
+            const out = await runInPowerGroup(characterId, p.safety,
+                () => runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]));
+            const success = typeof out === 'string' && out.includes('success');
+            results.push({ success, partId: p.partId, angleDeg: p.angle, serialized: true });
+        } catch (e) {
+            results.push({ success: false, partId: p.partId, error: e.message, serialized: true });
         }
     }
 

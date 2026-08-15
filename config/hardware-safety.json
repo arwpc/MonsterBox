@@ -1,0 +1,54 @@
+{
+  "_readme": [
+    "Per-part hardware safety limits, enforced by services/hardwareService/safetyLimits.js.",
+    "Committed so limits deploy with the code and survive a calibration reset (the node-local",
+    "data/calibration_profiles.json is gitignored). A calibration profile may add its own",
+    "`safety` block to TIGHTEN these further; the more restrictive value always wins.",
+    "",
+    "Per-part keys:",
+    "  maxSpeedPct        cap on speed/speedPct (0-100); also becomes the default speed",
+    "                     for motor/linear_actuator moves that omit one.",
+    "  maxDurationMs      cap on how long a part may be energized in one command.",
+    "  minAngle/maxAngle  additional angle window, intersected with calibrated bounds.",
+    "  noRetractBelowMin  hard-block retract/reverse (protects a part already at its",
+    "                     mechanical minimum; also blocks bounds-bypassing jog-raw).",
+    "  powerGroup         name of a shared power rail (see powerGroups).",
+    "",
+    "powerGroups: parts in a serialized group are never energized concurrently, and",
+    "cooldownMs enforces a gap between commands so inrush currents cannot stack."
+  ],
+  "characters": {
+    "3": {
+      "_comment": "Orlok",
+      "parts": {
+        "3": {
+          "noRetractBelowMin": true,
+          "maxSpeedPct": 80,
+          "maxDurationMs": 4000,
+          "notes": "Bow At The Waist (BTS7960, GPIO 21/19/5/22). Sitting at its safe mechanical minimum — extension only. Retraction risks bending the linkage."
+        },
+        "4": {
+          "powerGroup": "arm-fused-rail",
+          "maxSpeedPct": 40,
+          "maxDurationMs": 3000,
+          "minAngle": 45,
+          "maxAngle": 135,
+          "notes": "Elbow, PCA9685 ch4. RDS51150SG 150kg 9-12.6V. Shares a fuse with part 5 (ch5) which runs at 6.0-7.4V; the fuse has blown before. Angle window matches calibrated bounds."
+        },
+        "5": {
+          "powerGroup": "arm-fused-rail",
+          "maxSpeedPct": 40,
+          "maxDurationMs": 3000,
+          "notes": "Forearm Rotation, PCA9685 ch5. DS3240MG 40kg 6.0-7.4V. Shares the fused rail with part 4. No calibrated bounds yet — add minAngle/maxAngle once measured on hardware."
+        }
+      },
+      "powerGroups": {
+        "arm-fused-rail": {
+          "serialize": true,
+          "cooldownMs": 400,
+          "notes": "Elbow (ch4) + Forearm (ch5) share one fuse across mismatched servo voltages. Serialized so they are never commanded together, with a gap between commands to keep inrush currents from stacking."
+        }
+      }
+    }
+  }
+}
