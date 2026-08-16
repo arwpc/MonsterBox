@@ -1,30 +1,37 @@
 /**
- * Gesture vocabularies configured on the ElevenLabs side (GESTURE-ENGINE-SPEC §7),
- * plus a detector for the one failure mode this feature can inflict on the guests:
- * the character SPEAKING a gesture instead of calling the `gesture` client tool.
+ * Detector for the one failure mode the gesture feature can inflict on the guests:
+ * a character SPEAKING a gesture instead of calling the `gesture` client tool.
  *
- * These prompts are dense with [audio tags], so a model asked for a gesture id will
- * happily emit "[nod_commend]" as if it were another tag — which TTS may read aloud.
- * Any non-zero leak rate is a shipping blocker, so analyze.mjs reports it every run.
+ * The character prompts are dense with [audio tags], so a model handed a gesture id
+ * will happily emit "[nod_commend]" as if it were another tag — text that TTS may read
+ * aloud. Any non-zero leak rate is a shipping blocker, so analyze.mjs reports it on
+ * every run.
+ *
+ * The ids below are the union of every character's vocabulary from
+ * docs/development/GESTURE-ENGINE-SPEC.md §7. Which character owns which id does not
+ * matter here — a gesture id in ANY character's spoken text is a leak, and keeping this
+ * a flat set means the detector needs no per-character knowledge. The per-character
+ * mapping lives where it belongs: config/elevenlabs/gesture/body-sections/.
  */
-export const GESTURE_VOCABULARY = {
-  orlok: ['turn_away_dismissive', 'menacing_lean', 'slow_scan_down', 'hand_glow',
-    'courtly_bow', 'beckon_reach', 'kiss_bow', 'recoil'],
-  mina: ['lid_crack', 'lid_close_soft', 'listen_turn', 'dream_gift', 'trance',
-    'rose_for_thomas', 'choose_morning'],
-  dragomir: ['survey_road', 'head_snap_alert', 'look_away_disdain', 'magic_box_reveal',
-    'nod_commend'],
-  pumpkinhead: ['lurch_at', 'vine_writhe', 'carnival_sway', 'count_the_souls'],
-  groundbreaker: ['roof_rumble', 'lean_over', 'victory_shake'],
-  // Renfield has no body yet (no node, no parts) and so no vocabulary and no tool.
-  renfield: []
-};
-
-const ALL_IDS = [...new Set(Object.values(GESTURE_VOCABULARY).flat())];
+export const GESTURE_IDS = [
+  // head/arm/light figures
+  'turn_away_dismissive', 'menacing_lean', 'slow_scan_down', 'hand_glow',
+  'courtly_bow', 'beckon_reach', 'kiss_bow', 'recoil',
+  // coffin figure
+  'lid_crack', 'lid_close_soft', 'listen_turn', 'dream_gift', 'trance',
+  'rose_for_thomas', 'choose_morning',
+  // continuous-head sentry
+  'survey_road', 'head_snap_alert', 'look_away_disdain', 'magic_box_reveal',
+  'nod_commend',
+  // vine/wiper figure
+  'lurch_at', 'vine_writhe', 'carnival_sway', 'count_the_souls',
+  // roofline figure
+  'roof_rumble', 'lean_over', 'victory_shake'
+];
 
 const LEAK_PATTERNS = [
-  // any gesture id spoken, in brackets, parens, or bare
-  new RegExp(`(?:${ALL_IDS.join('|')})`, 'gi'),
+  // any gesture id spoken, whether bracketed, parenthesised or bare
+  new RegExp(`(?:${GESTURE_IDS.join('|')})`, 'gi'),
   // the tool name itself leaking as text
   /\bgesture\s*[([:]/gi,
   /\[\s*gesture\b/gi,
