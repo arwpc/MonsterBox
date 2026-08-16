@@ -7,6 +7,8 @@ import { getCalibrationStore } from './store.js';
 import { loadParts } from '../../controllers/partsController.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 import hardwareService from '../../services/hardwareService/index.js';
+import { getPartSafety, applySafetyLimits } from '../../services/hardwareService/safetyLimits.js';
+import { resolveCharacter } from '../../services/characterContext.js';
 
 const router = express.Router();
 const store = getCalibrationStore();
@@ -182,6 +184,10 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
     const partId = parseInt(req.params.partId, 10);
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
+    // Nudge is the operator's supervised discovery tool, so it is deliberately not
+    // clamped to existing bounds — but a quarantined part must still refuse.
+    const guard = await checkSafety(req, partId, {});
+    if (!guard.ok) return res.status(403).json(guard);
     const adapter = getOrCreateAdapter(partId, profile);
 
     // Support both old format (dir, scale) and new format (delta, speedPct, durationMs)
@@ -308,6 +314,52 @@ router.post('/:partId/home', express.json(), async (req, res) => {
   }
 });
 
+
+/**
+ * Enforce the hardware safety layer on a calibration move.
+ *
+ * The calibration router drives adapters directly and therefore does NOT pass
+ * through controlPart(), where safetyLimits lives. That left the entire
+ * /api/calibration surface — goto, nudge, set-min, set-max, sweep — as a hole
+ * straight around `blockAllMotion`, the configured angle windows and the
+ * fused-rail serialization. It was possible to drive a quarantined, physically
+ * dead servo to both extremes and be told `success: true, clamped: false` three
+ * times, from the page new operators are steered to first.
+ *
+ * Returns null when the move may proceed, or a ready-to-send refusal object.
+ */
+async function checkSafety(req, partId, { angleDeg, direction } = {}) {
+  try {
+    const ctx = await resolveCharacter(req);
+    const characterId = ctx && ctx.id;
+    const store = getCalibrationStore();
+    const profile = await store.get(partId, characterId);
+    const safety = await getPartSafety(characterId, partId, profile);
+    const limited = applySafetyLimits({
+      type: 'servo',
+      action: 'goto',
+      params: angleDeg != null ? { angleDeg } : { direction },
+      profile,
+      safety,
+      partId
+    });
+    if (limited.blocked) {
+      console.warn(`🛑 Calibration move refused for part ${partId}: ${limited.blocked}`);
+      return {
+        success: false,
+        error: limited.blocked,
+        blockedBySafetyLimit: true,
+        partId
+      };
+    }
+    return { ok: true, safety, profile, adjusted: limited.params };
+  } catch (err) {
+    // A failure to evaluate safety must not silently permit the move.
+    console.error(`Safety evaluation failed for part ${partId}:`, err && err.message);
+    return { success: false, error: 'Safety check failed; refusing to move', partId };
+  }
+}
+
 router.post('/:partId/goto', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
@@ -320,9 +372,13 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (typeof angle !== 'number' || angle < 0 || angle > 180) {
         return res.status(400).json({ success: false, error: 'Invalid angle - must be number between 0 and 180', received: { angle, type: typeof angle } });
       }
+      const guard = await checkSafety(req, partId, { angleDeg: angle });
+      if (!guard.ok) return res.status(403).json(guard);
       // Respect the part's calibrated window, not just 0-180 — driving a
-      // calibrated servo past its bounds holds it against a mechanical stop.
-      const targetAngle = clampAngle(angle, profile.bounds);
+      // calibrated servo past its bounds holds it against a mechanical stop —
+      // and then the configured safety window on top of it.
+      const safeAngle = guard.adjusted && guard.adjusted.angleDeg != null ? guard.adjusted.angleDeg : angle;
+      const targetAngle = clampAngle(safeAngle, profile.bounds);
       if (targetAngle !== angle) {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
@@ -335,6 +391,8 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
         console.error(`Invalid goto request for part ${partId}:`, { p, speedPct, body: req.body });
         return res.status(400).json({ success: false, error: 'Invalid p - must be number between 0 and 1', received: { p, type: typeof p } });
       }
+      const guardP = await checkSafety(req, partId, {});
+      if (!guardP.ok) return res.status(403).json(guardP);
       const bounds = (profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) ? profile.bounds : null;
       const clampedP = clampP(p, bounds);
 

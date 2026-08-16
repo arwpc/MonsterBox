@@ -192,7 +192,15 @@ async function runLoop(characterId) {
       }
       q.skipRequested = false;
       if (!next) break;
-      await runSceneWithLifecycle(q, characterId, next);
+      // A scene that throws must not end the night. Without this, one failed
+      // step escaped runSceneWithLifecycle (which has try/finally but no catch),
+      // unwound runLoop, and left running=false — the prop stood still until
+      // someone noticed, with a single console.error as the only trace.
+      try {
+        await runSceneWithLifecycle(q, characterId, next);
+      } catch (err) {
+        console.error(`Scene ${next && next.id} failed for character ${characterId}, continuing queue:`, err && err.message);
+      }
     }
   } finally {
     q.running = false;
@@ -203,8 +211,22 @@ async function runLoop(characterId) {
   }
 }
 
-export async function start(characterId) {
+/**
+ * Start the queue.
+ *
+ * @param {number|string} characterId
+ * @param {{mode?: 'sequential'|'loop_queue'}} [options]
+ *
+ * `mode` was previously never settable here, so a queue started through this path
+ * always kept ensureQueue's 'sequential' default and ran through exactly once —
+ * which meant the fleet-wide "Start Loops" control played one pass per prop and
+ * then went quiet. Callers that pass nothing still get the old behaviour.
+ */
+export async function start(characterId, options = {}) {
   const q = ensureQueue(characterId);
+  if (options && options.mode) {
+    q.mode = options.mode === 'loop_queue' ? 'loop_queue' : 'sequential';
+  }
   if (!q.originalItems || q.originalItems.length === 0) q.originalItems = q.items.slice();
   // Start loop in background - don't await
   runLoop(characterId).catch(err => {

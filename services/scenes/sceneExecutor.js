@@ -873,7 +873,12 @@ export async function executeStep(step, characterId, emit, options) {
 // without the trigger that was supposed to gate it.
 const NON_FATAL_STEP_TYPES = new Set([
   'servo', 'motor', 'linear-actuator', 'light', 'led',
-  'pose', 'hardware', 'jaw-animation', 'head-tracking', 'goblin-video'
+  'pose', 'hardware', 'jaw-animation', 'head-tracking', 'goblin-video',
+  // Output steps are device- and network-fragile: audio depends on the sound
+  // stack, and sayThis/askAI on a live ElevenLabs round trip. One hiccup should
+  // cost a line of dialogue, not the rest of the performance. Note the shape this
+  // used to have: a dead servo was survivable while a stuttering network was not.
+  'audio', 'sayThis', 'askAI'
 ]);
 
 async function executeStepsWithConcurrency(steps, characterId, emit, opts) {

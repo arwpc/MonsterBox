@@ -122,8 +122,19 @@ describe('Parts API', function () {
         });
 
         it('should dispatch servo parts without testResult wrapper', async function () {
+            // Pick a servo the safety config says is safe to drive on a real node.
+            // Taking "the first servo" meant this suite physically commanded a
+            // quarantined servo on a shared fuse rail every run.
+            var safety = await import('../../services/hardwareService/safetyLimits.js');
+            var cfg = await import('../../services/configService.js');
+            var characterId = (await cfg.readConfig()).selectedCharacter;
+
             var listRes = await apiGet('/api/parts');
-            var servo = listRes.body.parts.find(function (p) { return p.type === 'servo'; });
+            var servos = listRes.body.parts.filter(function (p) { return p.type === 'servo'; });
+            var servo = null;
+            for (var i = 0; i < servos.length; i++) {
+                if (await safety.isTestSafePart(characterId, servos[i].id)) { servo = servos[i]; break; }
+            }
             if (!servo) { this.skip(); return; }
 
             var res = await apiPost('/api/parts/' + servo.id + '/test', { position: 50, duration: 100 });
@@ -131,6 +142,30 @@ describe('Parts API', function () {
             expect(res.body).to.have.property('success');
             expect(res.body).to.have.property('part');
             expect(res.body.part.type).to.equal('servo');
+        });
+
+        it('refuses a quarantined part and says why', async function () {
+            // The safety layer is only real if it holds at the HTTP boundary. A
+            // quarantined part previously returned 200 with a message that read
+            // like success while discarding the reason.
+            var safety = await import('../../services/hardwareService/safetyLimits.js');
+            var cfg = await import('../../services/configService.js');
+            var characterId = (await cfg.readConfig()).selectedCharacter;
+
+            var listRes = await apiGet('/api/parts');
+            var blocked = null;
+            for (var i = 0; i < listRes.body.parts.length; i++) {
+                var p = listRes.body.parts[i];
+                var s = await safety.getPartSafety(characterId, p.id);
+                if (s.blockAllMotion) { blocked = p; break; }
+            }
+            if (!blocked) { this.skip(); return; }
+
+            var res = await apiPost('/api/parts/' + blocked.id + '/test', {});
+            expect(res.status, 'a refusal must not be a 200').to.equal(409);
+            expect(res.body).to.have.property('success', false);
+            expect(res.body).to.have.property('blockedBySafetyLimit', true);
+            expect(res.body.error, 'the operator must be told why').to.be.a('string').and.not.be.empty;
         });
     });
 });

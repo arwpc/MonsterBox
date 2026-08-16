@@ -681,7 +681,11 @@ class OrchestrationService {
                 return { animatronic: node.name, id: node.id, success: false, error: error.message };
             }
         }));
-        return { success: true, feature, enabled: !!enabled, ...this._summarize(results) };
+        // Report what actually happened. This was hardcoded true, so an emergency
+        // stop that reached nothing still rendered as "0/5 ok" in green, and the
+        // superpower buttons latched on for a fleet state nothing had accepted.
+        const summary = this._summarize(results);
+        return { success: summary.successful > 0, feature, enabled: !!enabled, ...summary };
     }
 
     /**
@@ -697,7 +701,8 @@ class OrchestrationService {
                 return { animatronic: node.name, id: node.id, success: false, error: error.message };
             }
         }));
-        return { success: true, ...this._summarize(results) };
+        const summary = this._summarize(results);
+        return { success: summary.successful > 0, ...summary };
     }
 
     /**
@@ -707,11 +712,21 @@ class OrchestrationService {
      */
     async emergencyStop(ids = null) {
         const targets = this.getControllableAnimatronics(ids);
+        // Stopping playback is not enough. Lurk, motion-sensor and head-tracking are
+        // AUTONOMOUS triggers: leave them armed and the frightened guest backing away
+        // trips the motion sensor and fires the scare again, seconds after the
+        // operator hit stop. Everything that can start motion on its own must be
+        // disarmed here, not just everything currently playing.
+        const disarm = OrchestrationService.SUPERPOWER_ENDPOINTS;
         const actions = [
             { method: 'post', path: '/scenes/api/queue/emergency-stop' },
             { method: 'post', path: '/api/audio/stop-all' },
             { method: 'post', path: '/api/random-poses/disable' },
-            { method: 'post', path: '/conversation/api/speaker-mute', body: { muted: true } },
+            disarm.lurk(false),
+            disarm.motion(false),
+            disarm.head(false),
+            disarm.idle(false),
+            disarm.mute(true),
         ];
         const results = await Promise.allSettled(targets.map(async (node) => {
             const outcomes = await Promise.allSettled(
@@ -726,7 +741,8 @@ class OrchestrationService {
                 actionsTotal: actions.length,
             };
         }));
-        return { success: true, ...this._summarize(results) };
+        const summary = this._summarize(results);
+        return { success: summary.successful > 0, ...summary };
     }
 
     /**
@@ -744,7 +760,8 @@ class OrchestrationService {
                 return { animatronic: node.name, id: node.id, success: false, error: error.message };
             }
         }));
-        return { success: true, volume: vol, ...this._summarize(results) };
+        const summary = this._summarize(results);
+        return { success: summary.successful > 0, volume: vol, ...summary };
     }
 
     /**

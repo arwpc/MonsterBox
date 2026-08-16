@@ -7,6 +7,13 @@
    at runtime (e.g., .step-color-<type>, .lib-item, .palette-part).
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Visibility
+   The studio's show()/hide() helpers toggle this class instead of writing an
+   inline style, so nothing in this page escapes the token system.
+   -------------------------------------------------------------------------- */
+.studio-hidden { display: none !important; }
+
 .studio-toolbar {
   background: var(--mb-bg-1);
   border-bottom: 1px solid var(--mb-border-default);
@@ -261,7 +268,192 @@
 /* ---- Search input (compact) ---- */
 .search-input {
   font-size: var(--mb-text-sm);
+  min-height: 36px;
   padding: var(--mb-space-1) var(--mb-space-2);
+}
+
+/* --------------------------------------------------------------------------
+   Design-system adaptations
+   The studio is the densest page in the app: three panels of controls side by
+   side. These rules keep .mb-btn / .mb-input / .mb-badge honest at that density
+   without forking the components themselves.
+   -------------------------------------------------------------------------- */
+
+/* A button group asked to fill its column stops being inline. */
+.mb-btn-group-fill {
+  display: flex;
+  width: 100%;
+}
+.mb-btn-group-fill .mb-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-left: var(--mb-space-2);
+  padding-right: var(--mb-space-2);
+  font-size: var(--mb-text-sm);
+}
+
+/* Library rows: the per-item actions are icon buttons in a 32px strip. */
+.lib-item .lib-actions .mb-btn,
+.step-actions .mb-btn {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  font-size: var(--mb-text-xs);
+}
+.lib-item .mb-badge { flex-shrink: 0; }
+.lib-item-icon { color: var(--mb-step-pose); }
+
+/* Scene name + step count + row actions */
+.studio-scene-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  flex-wrap: wrap;
+}
+.studio-scene-bar #sceneNameInput {
+  flex: 1 1 200px;
+  max-width: 300px;
+  min-height: 36px;
+}
+
+.add-step-zone > .bi { font-size: var(--mb-text-2xl); }
+
+/* Queue list — was a Bootstrap .list-group; now a token-backed stack. */
+.studio-queue-list {
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.queue-item {
+  padding: var(--mb-space-1) var(--mb-space-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-sm);
+  background: var(--mb-bg-2);
+  color: var(--mb-fg-primary);
+}
+.queue-item .mb-btn {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Palette icon colour is a ROLE, read from the step-type tokens, never a hex
+   written into the markup. Keyed off the data-step-type the drag source
+   already carries, so the script stays untouched.
+   -------------------------------------------------------------------------- */
+.palette-part[data-step-type="servo"] .part-icon           { color: var(--mb-step-servo); }
+.palette-part[data-step-type="motor"] .part-icon           { color: var(--mb-step-motor); }
+.palette-part[data-step-type="linear-actuator"] .part-icon { color: var(--mb-step-linear-actuator); }
+.palette-part[data-step-type="light"] .part-icon           { color: var(--mb-step-light); }
+.palette-part[data-step-type="sensor"] .part-icon          { color: var(--mb-step-sensor); }
+
+.palette-action[data-step-type="audio"] .part-icon         { color: var(--mb-step-audio); }
+.palette-action[data-step-type="sayThis"] .part-icon       { color: var(--mb-step-speech); }
+.palette-action[data-step-type="askAI"] .part-icon         { color: var(--mb-step-askAI); }
+.palette-action[data-step-type="wait"] .part-icon          { color: var(--mb-step-wait); }
+.palette-action[data-step-type="pose"] .part-icon          { color: var(--mb-step-pose); }
+.palette-action[data-step-type="goblin-video"] .part-icon  { color: var(--mb-step-goblin-video); }
+.palette-action[data-step-type="jaw-animation"] .part-icon { color: var(--mb-step-jaw); }
+.palette-action[data-step-type="head-tracking"] .part-icon { color: var(--mb-step-head-tracking); }
+
+.palette-action .part-icon {
+  width: 24px;
+  text-align: center;
+  margin-right: var(--mb-space-1);
+  flex-shrink: 0;
+}
+
+/* Step edit forms sit inside a step block — compact but still tappable. */
+.step-edit-form .mb-input,
+.step-edit-form .mb-select,
+.step-edit-form .mb-textarea {
+  min-height: 38px;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  font-size: var(--mb-text-sm);
+}
+.step-edit-form .mb-textarea { min-height: 64px; }
+.step-edit-form .mb-select { padding-right: var(--mb-space-6); }
+.step-edit-form .mb-field-label {
+  font-size: var(--mb-text-xs);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Confirm dialog: narrower than the default modal — it asks one question. */
+.studio-confirm-dialog { max-width: 460px; }
+
+/* --------------------------------------------------------------------------
+   Responsive — the three-panel layout on a phone
+   --------------------------------------------------------------------------
+   .studio-panels pins itself to the viewport height and hides its overflow so
+   each panel scrolls independently. That is right on a desktop and wrong on a
+   phone: below lg the Bootstrap columns stack, so the centre and right panels
+   fall outside the clipped box and become unreachable. Below 992px the page
+   itself scrolls and each panel takes its natural height instead.
+   -------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  .studio-panels {
+    height: auto;
+    overflow: visible;
+  }
+  .studio-panel {
+    height: auto;
+    overflow-y: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--mb-border-subtle);
+  }
+  /* Timeline steps are the working surface — give them the top of the page. */
+  #centerPanel { order: -1; }
+}
+
+@media (max-width: 768px) {
+  /* The toolbar wraps rather than pushing a horizontal scrollbar onto the page. */
+  .studio-toolbar {
+    padding: var(--mb-space-2);
+  }
+  .studio-toolbar .vr { display: none; }
+  #studioStatus { margin-left: 0 !important; width: 100%; }
+
+  /* Row actions are permanently visible: there is no hover on a touch screen,
+     so an opacity-0-until-hover control is simply an unreachable control. */
+  .lib-item .lib-actions { opacity: 1; }
+
+  /* 44px is the smallest reliable touch target for anything that moves metal. */
+  .lib-item .lib-actions .mb-btn,
+  .step-actions .mb-btn,
+  .queue-item .mb-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+  .lib-item,
+  .palette-part,
+  .palette-action {
+    min-height: 40px;
+    padding-top: var(--mb-space-2);
+    padding-bottom: var(--mb-space-2);
+  }
+
+  /* The step header must not force the block wider than the viewport. */
+  .step-block-header { flex-wrap: wrap; }
+  .step-info { flex: 1 1 100%; white-space: normal; }
+  .step-actions { margin-left: auto; }
+
+  .studio-scene-bar #sceneNameInput { max-width: none; flex: 1 1 100%; }
+
+  /* The concurrent marker hangs 12px outside the block on desktop, where the
+     centre panel has gutters. On a phone the block is flush to the viewport,
+     so pull the marker inside rather than let it clip against the edge. */
+  .concurrent-link {
+    right: var(--mb-space-2);
+    top: var(--mb-space-2);
+    transform: none;
+  }
 }
 
 /* ---- Scrollbar styling inside studio panels ---- */

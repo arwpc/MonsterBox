@@ -38,27 +38,23 @@
   </div>
 
   <div class="mb-control-bar-actions">
-    <label class="mb-field mb-hide-sm" style="margin:0;">
+    <label class="mb-field mb-control-bar-volume" style="margin:0;">
       <span class="mb-field-label mb-text-xs" for="mbControlBarVolume">Volume</span>
       <input type="range" class="mb-range" id="mbControlBarVolume"
              min="0" max="100" step="5" value="90"
              title="Master speaker volume" aria-label="Master speaker volume">
     </label>
 
-    <a class="mb-btn mb-btn-ghost mb-btn-sm mb-btn-icon mb-only-sm"
-       href="/setup/system" title="System settings" aria-label="System settings">
-      <i class="bi bi-sliders"></i>
-    </a>
-
     <!-- Hold to fire: instant to reach, impossible to trigger by accident. -->
     <button type="button"
             class="mb-btn mb-btn-danger mb-hold"
             id="mbStopEverything"
             data-hold-ms="600"
-            title="Hold to stop everything — scenes, audio, idle, head, jaw, AI">
+            aria-label="Stop everything"
+            title="Stop everything — scenes, audio, idle, head tracking, jaw, lurk and AI. Fires immediately.">
       <span class="mb-hold-label">
         <i class="bi bi-exclamation-octagon-fill"></i>
-        <span class="mb-hide-sm">Hold to Stop</span>
+        <span class="mb-hide-sm">STOP</span>
       </span>
     </button>
   </div>

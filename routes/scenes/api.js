@@ -56,10 +56,13 @@ router.post('/queue/enqueue', express.json(), async (req, res) => {
   }
 });
 
-router.post('/queue/start', async (req, res) => {
+router.post('/queue/start', express.json(), async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
-    const status = await sceneQueue.start(characterId);
+    // The body was previously not parsed at all, so a caller asking for
+    // { mode: 'loop_queue' } silently got a single sequential pass.
+    const mode = req.body && req.body.mode;
+    const status = await sceneQueue.start(characterId, mode ? { mode } : {});
     res.json({ success: true, status });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

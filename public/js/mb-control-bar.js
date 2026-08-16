@@ -120,80 +120,92 @@
     slider.addEventListener('change', commit);
   }
 
-  // --------------------------------------------------------- hold-to-confirm
+  // ------------------------------------------------------------------- panic
   /**
-   * Turn an element into a hold-to-fire control. The visual fill is driven by
-   * --mb-hold-progress so CSS owns the appearance and this owns only the timing.
+   * Fire the stop the instant the control is pressed.
+   *
+   * This was a 600ms hold, on the reasoning that holding is "instant to reach but
+   * impossible to hit by accident". Half of that was right. Testing what a person
+   * actually does when a child starts crying — five fast jabs at the red button —
+   * fired NOTHING: under adrenaline people tap harder and faster, not longer and
+   * steadier, so a hold is exactly the gesture that stress removes. The asymmetry
+   * settles it: an accidental stop costs a few seconds of embarrassment; a missed
+   * stop costs a frightened child, or a hand in a linear actuator.
    */
-  function wireHold(el, onFire) {
+  function wirePanic(el, onFire) {
     if (!el) return;
-    var holdMs = parseInt(el.getAttribute('data-hold-ms'), 10) || 600;
-    var raf = null;
-    var startedAt = 0;
+    var firing = false;
 
-    function reset() {
-      if (raf) { cancelAnimationFrame(raf); raf = null; }
-      el.style.setProperty('--mb-hold-progress', '0');
-      el.removeAttribute('data-holding');
+    function fire(evt) {
+      if (evt && evt.type === 'mousedown' && evt.button !== 0) return;
+      if (evt) evt.preventDefault();
+      if (firing) return;              // ignore repeat jabs while one is in flight
+      firing = true;
+      el.setAttribute('data-fired', 'true');
+      onFire();
+      setTimeout(function () { firing = false; }, 1200);
     }
 
-    function tick() {
-      var progress = (Date.now() - startedAt) / holdMs;
-      if (progress >= 1) {
-        reset();
-        onFire();
-        return;
-      }
-      el.style.setProperty('--mb-hold-progress', String(progress));
-      raf = requestAnimationFrame(tick);
+    // pointerdown covers mouse, touch and pen in one event, and fires before any
+    // scroll or gesture recognition can swallow it.
+    if (window.PointerEvent) {
+      el.addEventListener('pointerdown', fire);
+    } else {
+      el.addEventListener('mousedown', fire);
+      el.addEventListener('touchstart', fire, { passive: false });
     }
-
-    function begin(evt) {
-      // Ignore secondary mouse buttons; a right-click should never arm this.
-      if (evt.type === 'mousedown' && evt.button !== 0) return;
-      evt.preventDefault();
-      startedAt = Date.now();
-      el.setAttribute('data-holding', 'true');
-      raf = requestAnimationFrame(tick);
-    }
-
-    el.addEventListener('mousedown', begin);
-    el.addEventListener('touchstart', begin, { passive: false });
-    ['mouseup', 'mouseleave', 'touchend', 'touchcancel', 'blur'].forEach(function (evtName) {
-      el.addEventListener(evtName, reset);
-    });
-
-    // Keyboard equivalent: hold Enter/Space. Without this the control is
-    // unreachable for anyone not using a pointer.
     el.addEventListener('keydown', function (evt) {
-      if ((evt.key === 'Enter' || evt.key === ' ') && !raf) {
-        evt.preventDefault();
-        startedAt = Date.now();
-        el.setAttribute('data-holding', 'true');
-        raf = requestAnimationFrame(tick);
-      }
+      if (evt.key === 'Enter' || evt.key === ' ') fire(evt);
     });
-    el.addEventListener('keyup', reset);
   }
 
   function stopEverything() {
-    // Fire every stop we have and do not wait on any of them — this runs when
-    // something is already going wrong, so a hung endpoint must not block the
-    // others. Each is independently safe to call when nothing is running.
-    // Verified to exist — '/api/orchestration/stop-all' does NOT, and returns 404.
-    var endpoints = [
-      '/api/orchestration/emergency-stop',
-      '/api/orchestration/stop-all-queue-loops',
-      '/api/audio/stop-all',
-      '/scenes/api/queue/stop'
-    ];
-    for (var i = 0; i < endpoints.length; i++) {
-      fetch(endpoints[i], { method: 'POST' }).catch(function () { /* best effort */ });
-    }
-    announce('Stop sent to all subsystems');
+    // ONE request. Browsers cap HTTP/1.1 at six connections per origin, the
+    // dashboard holds one open forever for the MJPEG stream and several pollers
+    // take more — so on degrading wifi a multi-call panic can sit in the queue and
+    // never leave the handset while the UI claims success. keepalive lets it
+    // survive even if the page is navigated away mid-flight.
+    setStopped('Stopping…');
+    fetch('/api/panic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fleet: true }),
+      keepalive: true
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data) throw new Error('no response');
+        var localOk = (data.local && data.local.succeeded) || 0;
+        var fleetOk = (data.fleet && data.fleet.successful) || 0;
+        setStopped('STOPPED — ' + localOk + ' local, ' + fleetOk + ' fleet');
+      })
+      .catch(function () {
+        // Never claim success we did not observe. This previously announced
+        // "Stop sent to all subsystems" unconditionally, before any request
+        // had resolved — so every failure mode still looked reassuring.
+        setStopped('STOP FAILED — check the animatronic', true);
+      });
   }
 
-  function announce(message) {
+  /**
+   * Make the stopped state unmissable. In a dark garage at arm's length, a small
+   * text toast is not feedback.
+   */
+  function setStopped(message, failed) {
+    var btn = $('mbStopEverything');
+    if (btn) {
+      var label = btn.querySelector('.mb-hold-label');
+      if (label) label.textContent = message;
+    }
+    announce(message, failed ? 'danger' : 'warning');
+    if (navigator.vibrate) {
+      // You cannot hear a confirmation over a fog machine and can barely see the
+      // screen; touch is the only channel left.
+      try { navigator.vibrate(failed ? [80, 60, 80] : 200); } catch (_) { /* unsupported */ }
+    }
+  }
+
+  function announce(message, severity) {
     var region = document.querySelector('.mb-toast-region');
     if (!region) {
       region = document.createElement('div');
@@ -203,7 +215,7 @@
       document.body.appendChild(region);
     }
     var toast = document.createElement('div');
-    toast.className = 'mb-toast mb-toast-warning';
+    toast.className = 'mb-toast mb-toast-' + (severity || 'warning');
     toast.textContent = message;
     region.appendChild(toast);
     setTimeout(function () {
@@ -212,11 +224,13 @@
   }
 
   // -------------------------------------------------------------------- init
+  // The layout reservation class is server-rendered onto <body> so it survives a
+  // JS failure; this is only a belt-and-braces top-up for any page that missed it.
   document.body.classList.add('mb-has-control-bar');
   paintIdentity();
   probeHealth();
   wireVolume();
-  wireHold($('mbStopEverything'), stopEverything);
+  wirePanic($('mbStopEverything'), stopEverything);
 
   // Re-probe periodically. 30s is frequent enough to notice a dead server
   // during a show without adding meaningful load on an RPi.

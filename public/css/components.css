@@ -886,11 +886,18 @@ body.mb-has-control-bar {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* The character name is the first thing to go — the avatar still identifies
-     it, and the controls matter more than the label. */
-  .mb-control-bar-name,
-  .mb-control-bar-status {
+  /* The character NAME can go — the avatar still identifies it. The health
+     status must NOT: it is the only live server probe in the product, and hiding
+     it under 768px meant it was visible only on the desktop the operator is not
+     holding. On show night the phone IS the operator's instrument panel. */
+  .mb-control-bar-name {
     display: none;
+  }
+
+  .mb-control-bar-status {
+    /* Keep it, just compact. */
+    font-size: var(--mb-text-xs);
+    gap: var(--mb-space-1);
   }
 
   .mb-control-bar-actions {

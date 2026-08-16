@@ -8,6 +8,7 @@ import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import { getCalibrationStore, isPlaceholderProfile } from '../server/calibration/store.js';
 import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
+import speechExpression from './speechExpressionService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -213,7 +214,8 @@ async function writeJawConfig(characterId, jawConfig) {
         const tuningKeys = [
           'sensitivity', 'smoothing', 'volumeThreshold', 'attackTime', 'releaseTime',
           'useBandpassFilter', 'useAGC', 'quantizationLevels', 'preset',
-          'audioLeadTimeMs', 'testText'
+          'audioLeadTimeMs', 'testText',
+          'amplitudeMapping', 'dynamicRangeDb', 'mappingGamma'
         ];
         for (const key of tuningKeys) {
           if (jawConfig[key] !== undefined) {
@@ -401,7 +403,10 @@ function getDefaultJawConfig() {
     minAngle: null,   // Will be populated from servo calibration
     maxAngle: null,   // Will be populated from servo calibration
     useBandpassFilter: true,   // 500-2500Hz speech formant filter
-    useAGC: true,              // automatic gain control
+    useAGC: true,              // perceptual loudness normalisation (see normalizeSpeechFrames)
+    amplitudeMapping: 'perceptual', // 'perceptual' | 'linear' (legacy absolute-RMS mapping)
+    dynamicRangeDb: 20,        // dB below the loud reference that maps to fully closed
+    mappingGamma: 0.75,        // <1 expands mid-level speech toward the open end
     quantizationLevels: 10,    // discrete jaw positions (5-20)
     preset: 'speech',          // 'speech' | 'music' | 'custom'
     audioLeadTimeMs: 0,        // ms offset: positive = delay jaw (audio leads), negative = advance jaw
@@ -573,6 +578,145 @@ async function loadCalibrationGuardrails(servoPartId, characterId) {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Perceptual loudness mapping
+ *
+ * Raw RMS is a terrible drive signal for a jaw. Two reasons:
+ *
+ *  1. It is linear in pressure while hearing (and our sense of "how wide is
+ *     that mouth open") is roughly logarithmic. A linear map spends most of
+ *     the servo's travel on the top 6dB that speech almost never reaches.
+ *  2. Its absolute scale is set by the voice, the TTS model and the network
+ *     stream, not by the character. Conversational speech from the agent sits
+ *     around RMS 0.05-0.25, so `amplitude * sensitivity` with sensitivity=1
+ *     mapped onto a 63-131deg jaw produced a measured maximum of 77.5deg —
+ *     21.8% of the calibrated travel. The mouth barely parted.
+ *
+ * The fix is to stop treating RMS as an absolute and normalise it against how
+ * loud THIS speaker is being right now: convert to dBFS, track a rolling high
+ * percentile of recent voiced frames as the "shouting" reference, place the
+ * floor a fixed dynamic range below it, and map that span across the whole
+ * calibrated travel with a gentle expansion curve.
+ *
+ * The reference is asymmetric on purpose — it rises quickly so a sudden loud
+ * line does not clip for a second, and falls slowly so the quiet tail of a
+ * sentence does not get amplified into a gaping mouth.
+ *
+ * Character-independent: every parameter comes from the character's own jaw
+ * config, and all state is keyed by characterId.
+ * ------------------------------------------------------------------------- */
+
+const LOUDNESS_WINDOW_FRAMES = 80;   // 4s at 50ms — spans a sentence, not a whole turn
+const LOUDNESS_PERCENTILE = 0.90;    // "loud for this utterance", robust to one plosive
+const SILENCE_DB = -60;              // below this a frame is silence, not quiet speech
+const REF_RISE = 0.35;               // EMA weight when the reference must climb
+const REF_FALL = 0.03;               // ...and when it decays
+const UTTERANCE_GAP_MS = 700;        // silence longer than this starts a new utterance
+const DEFAULT_DYNAMIC_RANGE_DB = 20; // speech span below the loud reference
+const DEFAULT_MAPPING_GAMMA = 0.75;  // <1 expands mid-level speech toward open
+
+const loudnessState = new Map();
+
+function _percentile(sortedValues, p) {
+  if (sortedValues.length === 0) return null;
+  const idx = Math.min(sortedValues.length - 1,
+    Math.max(0, Math.round((sortedValues.length - 1) * p)));
+  return sortedValues[idx];
+}
+
+/**
+ * Shared dB -> 0..1 mapping used by both the streaming and offline paths so the
+ * jaw behaves identically whether it is driven by the realtime agent or by a
+ * pre-rendered TTS file.
+ */
+function _shapeFromDb(db, refDb, rangeDb, gamma) {
+  const floorDb = refDb - rangeDb;
+  if (refDb <= floorDb) return 0;
+  const norm = (db - floorDb) / (refDb - floorDb);
+  if (norm <= 0) return 0;
+  if (norm >= 1) return 1;
+  return Math.pow(norm, gamma);
+}
+
+/**
+ * Causal, per-character normalisation of one RMS frame.
+ * Returns a 0..1 "openness" that already accounts for how loud this speaker has
+ * been over the last few seconds. Call this on the RAW frame RMS, before
+ * smoothing — smoothing a normalised signal is correct, normalising a smoothed
+ * one bakes in the lag.
+ */
+function normalizeSpeechAmplitude(characterId, rms, config = {}) {
+  // Escape hatch: preserve the old absolute mapping for anyone who tuned to it.
+  if (config.amplitudeMapping === 'linear') return rms;
+
+  const cid = String(characterId);
+  const now = Date.now();
+  let st = loudnessState.get(cid);
+  if (!st) {
+    st = { window: [], refDb: null, lastVoiceMs: 0 };
+    loudnessState.set(cid, st);
+  }
+
+  const db = 20 * Math.log10(Math.max(rms, 1e-6));
+
+  if (db < SILENCE_DB) {
+    // Silence tells us nothing about how loud the voice is — never let it drag
+    // the reference down, or the first word after a pause blows the jaw open.
+    return 0;
+  }
+
+  // A long gap means a new utterance: drop the sample window so the new line is
+  // normalised on its own terms, but keep refDb as the prior so the opening
+  // syllable is already in the right ballpark instead of guessing from one frame.
+  if (st.lastVoiceMs && (now - st.lastVoiceMs) > UTTERANCE_GAP_MS) {
+    st.window.length = 0;
+  }
+  st.lastVoiceMs = now;
+
+  st.window.push(db);
+  if (st.window.length > LOUDNESS_WINDOW_FRAMES) st.window.shift();
+
+  const target = _percentile([...st.window].sort((a, b) => a - b), LOUDNESS_PERCENTILE);
+  if (st.refDb === null) st.refDb = target;
+  else {
+    const alpha = target > st.refDb ? REF_RISE : REF_FALL;
+    st.refDb = st.refDb + alpha * (target - st.refDb);
+  }
+
+  const rangeDb = config.dynamicRangeDb || DEFAULT_DYNAMIC_RANGE_DB;
+  const gamma = config.mappingGamma || DEFAULT_MAPPING_GAMMA;
+  return _shapeFromDb(db, st.refDb, rangeDb, gamma);
+}
+
+/**
+ * Batch variant for the offline pre-analysis path, where the whole utterance is
+ * already in hand. Uses the exact percentile of the file rather than a causal
+ * estimate, which is strictly better when it is available.
+ */
+function normalizeSpeechFrames(rmsFrames, config = {}) {
+  if (config.amplitudeMapping === 'linear') return rmsFrames.slice();
+
+  const voiced = [];
+  const dbFrames = new Array(rmsFrames.length);
+  for (let i = 0; i < rmsFrames.length; i++) {
+    const db = 20 * Math.log10(Math.max(rmsFrames[i], 1e-6));
+    dbFrames[i] = db;
+    if (db >= SILENCE_DB) voiced.push(db);
+  }
+  if (voiced.length === 0) return rmsFrames.map(() => 0);
+
+  const refDb = _percentile(voiced.sort((a, b) => a - b), LOUDNESS_PERCENTILE);
+  const rangeDb = config.dynamicRangeDb || DEFAULT_DYNAMIC_RANGE_DB;
+  const gamma = config.mappingGamma || DEFAULT_MAPPING_GAMMA;
+
+  return dbFrames.map(db => (db < SILENCE_DB ? 0 : _shapeFromDb(db, refDb, rangeDb, gamma)));
+}
+
+/** Drop per-character loudness state (session teardown). */
+function resetLoudnessState(characterId) {
+  loudnessState.delete(String(characterId));
+}
+
 /**
  * Calculate jaw angle based on audio amplitude with calibration guardrails.
  * Applies attack/release envelope when attackTime or releaseTime are configured.
@@ -661,8 +805,12 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     // Load calibration guardrails (Min/Max markers)
     const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
 
+    // Normalise the raw level before smoothing, so this single-frame API opens
+    // the jaw over the same travel as the streaming and file paths.
+    const level = normalizeSpeechAmplitude(characterId, amplitude, config);
+
     // Apply smoothing
-    const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
+    const smoothedAmplitude = applySmoothingToAmplitude(characterId, level, config);
 
     // Calculate target angle with guardrails and attack/release envelope
     const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
@@ -1074,11 +1222,17 @@ async function preAnalyzeAudio(audioBuffer, contentType, config, guardrails) {
         rmsFrames.push(rms);
       }
 
-      // AGC: normalize so peak = 0.8
       let peakRms = 0;
       for (const r of rmsFrames) { if (r > peakRms) peakRms = r; }
 
-      const agcGain = (useAGC && peakRms > 0.001) ? (0.8 / peakRms) : 1.0;
+      // Perceptual normalisation, same math the streaming path uses, but with
+      // the whole utterance in hand so the reference is an exact percentile.
+      // This replaces the old peak-AGC: dividing by the single loudest frame let
+      // one plosive squash the entire rest of the line, and it stayed linear in
+      // pressure, so normal speech still only parted the jaw.
+      const levels_ = (useAGC === false)
+        ? rmsFrames.slice()
+        : normalizeSpeechFrames(rmsFrames, config);
 
       // Build timeline with angle mapping, envelope, and quantization
       const frames = [];
@@ -1087,7 +1241,7 @@ async function preAnalyzeAudio(audioBuffer, contentType, config, guardrails) {
 
       for (let i = 0; i < rmsFrames.length; i++) {
         const time = i * FRAME_DURATION_MS;
-        const rawAmp = Math.min(1.0, rmsFrames[i] * agcGain);
+        const rawAmp = levels_[i];
 
         // Volume threshold
         let amplitude;
@@ -1420,6 +1574,10 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
         frames.push(rms);
       }
 
+      // Same perceptual mapping as every other drive path — the whole buffer is
+      // known here, so use the exact-percentile variant.
+      const levels = normalizeSpeechFrames(frames, config);
+
       const totalDuration = frames.length * FRAME_DURATION_MS;
       let frameIndex = 0;
 
@@ -1440,7 +1598,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
           return;
         }
 
-        const amplitude = frames[frameIndex];
+        const amplitude = levels[frameIndex];
 
         // --- Synchronous angle computation (ChatterPi-style) ---
         // Apply smoothing, threshold, sensitivity, and envelope —
@@ -1532,7 +1690,13 @@ async function driveJawFromPcmStream(characterId, pcmChunk) {
       sum += s * s;
     }
     const rms = sampleCount > 0 ? Math.sqrt(sum / sampleCount) / 32768 : 0;
-    if (stream.queue.length < PCM_JAW_MAX_QUEUE) stream.queue.push(rms);
+    // Normalise here, at frame-production time, not at drain time. Chunks arrive
+    // faster than realtime, so normalising on the way in makes the rolling
+    // reference advance along the AUDIO timeline rather than the network's —
+    // frame i is always normalised against frames 0..i of the speech itself,
+    // which makes the result independent of arrival jitter.
+    const level = normalizeSpeechAmplitude(cid, rms, stream.config);
+    if (stream.queue.length < PCM_JAW_MAX_QUEUE) stream.queue.push(level);
     else stream.dropped++;
   }
   stream.residual = buf.subarray(offset);
@@ -1556,9 +1720,14 @@ function _startPcmJawTimer(cid) {
       const ms = audioMonitoringState.get(cid);
       if (ms) { ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
       s.timer = null;
+      // End of an utterance: let the head ease home and idle liveliness resume.
+      try { speechExpression.stopSpeaking(cid); } catch (_) { /* decorative only */ }
       return;
     }
     const amplitude = s.queue.shift();
+    // Same normalised level drives the head, so mouth and head emphasis come
+    // from one signal instead of two that merely overlap in time.
+    try { speechExpression.noteLevel(cid, amplitude); } catch (_) { /* decorative only */ }
     const smoothed = applySmoothingToAmplitude(cid, amplitude, s.config);
     const angle = calculateJawAngle(smoothed, s.config, s.guardrails, cid);
     sendJawAngleCmd(s.jawServo, angle);
@@ -1566,6 +1735,10 @@ function _startPcmJawTimer(cid) {
     if (ms) { ms.lastAmplitude = amplitude; ms.smoothedAmplitude = smoothed; }
     s.timer = setTimeout(step, PCM_JAW_FRAME_MS);
   };
+
+  // A new drain run is a new spoken utterance — start head co-expression with it.
+  // Failures here must never affect speech, so this is fire-and-forget.
+  speechExpression.startSpeaking(cid).catch(() => {});
 
   stream.timer = setTimeout(step, 0);
 }
@@ -1582,6 +1755,13 @@ function stopPcmJawStream(characterId) {
   const closed = stream.guardrails.minAngle ?? stream.config.minAngle ?? 0;
   try { sendJawAngleCmd(stream.jawServo, closed); } catch (_) { /* non-fatal */ }
   pcmJawStreams.delete(cid);
+  // The loudness reference belongs to the session that built it — carrying it
+  // into the next conversation would normalise the first line against a voice
+  // that is no longer speaking.
+  resetLoudnessState(cid);
+  // Session teardown must leave nothing ticking: this drops every co-expression
+  // and idle timer and releases the head claim.
+  try { speechExpression.stopAll(cid); } catch (_) { /* non-fatal */ }
   const ms = audioMonitoringState.get(cid);
   if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
   return { success: true, dropped: stream.dropped };
@@ -1747,6 +1927,9 @@ export {
   initializeForCharacter,
   calculateJawAngle,
   applySmoothingToAmplitude,
+  normalizeSpeechAmplitude,
+  normalizeSpeechFrames,
+  resetLoudnessState,
   testServoPosition,
   testJawWithAudio,
   driveFromText,

@@ -120,6 +120,35 @@ router.get('/:id', async (req, res) => {
  * For motion_sensor: {} (read) or { action: 'detectMotion', params: { duration: 10 } }
  * For lights: { action: 'on'|'off' }
  */
+
+/**
+ * Build a truthful response for a part-test result.
+ *
+ * The handlers used to compose an optimistic message unconditionally — a blocked
+ * part came back HTTP 200 with `success:false` alongside "Part Elbow tested at
+ * position 50", which reads like a success report and throws away the reason the
+ * hardware refused. The refusal text in config/hardware-safety.json is written for
+ * operators and explains the blown fuse and the ambiguous wiring in plain English;
+ * it should reach them, not be discarded one layer short of the screen.
+ */
+function testResponse(res, result, part, okMessage) {
+    const ok = result && result.success !== false;
+    if (ok) {
+        return res.json({ success: true, message: okMessage, part });
+    }
+    const reason = (result && (result.error || result.message)) || 'Hardware refused the command';
+    // 409 for a deliberate safety refusal, 502 for a genuine hardware failure —
+    // both are failures, but only one means "this is working as designed".
+    const status = result && result.blockedBySafetyLimit ? 409 : 502;
+    return res.status(status).json({
+        success: false,
+        blockedBySafetyLimit: !!(result && result.blockedBySafetyLimit),
+        error: reason,
+        message: reason,
+        part
+    });
+}
+
 router.post('/:id/test', express.json(), async (req, res) => {
     try {
         const parts = await loadParts(req);
@@ -177,22 +206,14 @@ router.post('/:id/test', express.json(), async (req, res) => {
         } else if (partType === 'servo') {
             const { position = 50, duration = 1000 } = req.body;
             const result = await controlPart(part.id, 'moveToAngle', { angleDeg: parseInt(position) }, hw);
-            return res.json({
-                success: result.success !== false,
-                message: `Part ${part.name} tested at position ${position}`,
-                part
-            });
+            return testResponse(res, result, part, `Part ${part.name} tested at position ${position}`);
         } else if (partType === 'light' || partType === 'led') {
             const rawAction = action || 'on';
             // Map short actions to controller method names
             const lightActionMap = { on: 'turnOn', off: 'turnOff', toggle: 'toggle', turnOn: 'turnOn', turnOff: 'turnOff' };
             const lightAction = lightActionMap[rawAction] || rawAction;
             const result = await controlPart(part.id, lightAction, params, hw);
-            return res.json({
-                success: result.success !== false,
-                message: result.message || `Light ${part.name} ${lightAction}`,
-                part
-            });
+            return testResponse(res, result, part, `Light ${part.name} ${lightAction}`);
         } else if (partType === 'linear_actuator') {
             const direction = (params && params.direction) || 'extend';
             let duration = Math.min((params && params.duration) || 1000, 2000);
@@ -238,11 +259,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
             }
 
-            return res.json({
-                success: result.success !== false,
-                message: result.message || `Actuator ${part.name} ${direction}`,
-                part
-            });
+            return testResponse(res, result, part, `Actuator ${part.name} ${direction}`);
         } else if (partType === 'motor') {
             const direction = (params && params.direction) || 'forward';
             let duration = Math.min((params && params.duration) || 1000, 2000);
@@ -289,20 +306,12 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
             }
 
-            return res.json({
-                success: result.success !== false,
-                message: result.message || `Motor ${part.name} ${direction}`,
-                part
-            });
+            return testResponse(res, result, part, `Motor ${part.name} ${direction}`);
         } else {
             // Generic fallback — attempt controlPart
             try {
                 const result = await controlPart(part.id, action || 'test', params, hw);
-                return res.json({
-                    success: result.success !== false,
-                    message: result.message || `Part ${part.name} tested`,
-                    part
-                });
+                return testResponse(res, result, part, `Part ${part.name} tested`);
             } catch (e) {
                 return res.status(400).json({
                     error: `No test handler for part type: ${partType}`,

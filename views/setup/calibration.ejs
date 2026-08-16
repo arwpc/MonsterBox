@@ -1,37 +1,290 @@
 <script>
   try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
   try { if (window.MB_TEST_MODE) document.documentElement.classList.add('mb-test-mode'); } catch (e) { }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Design-system feedback primitives.
+  //
+  // Defined before every other script on the page so that any handler can
+  // reach them. They replace the native browser dialogs this page used to
+  // rely on: a native dialog cannot be themed, is unusable on a phone, and —
+  // the reason that matters most here — cannot show the operator WHICH part
+  // is about to be erased.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Transient status message. `type` is one of error|success|warning|info. */
+  window.showToast = function (message, type) {
+    var region = document.getElementById('toast-container');
+    if (!region) {
+      region = document.createElement('div');
+      region.id = 'toast-container';
+      region.className = 'mb-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    var kind = type === 'error' ? 'danger'
+      : (type === 'success' || type === 'warning' || type === 'info') ? type
+        : 'info';
+    var toast = document.createElement('div');
+    toast.className = 'mb-toast mb-toast-' + kind;
+    toast.setAttribute('data-mb-toast', kind);
+    toast.textContent = message == null ? '' : String(message);
+    region.appendChild(toast);
+    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
+    return toast;
+  };
+
+  /**
+   * Promise<boolean> confirmation dialog built from the design system.
+   * opts: { title, message, target, details[], confirmLabel, cancelLabel, danger }
+   * `target` is rendered on its own line so the operator can read the name of
+   * the thing they are about to destroy before they agree to destroy it.
+   */
+  window.mbConfirm = function (opts) {
+    var o = opts || {};
+    return new Promise(function (resolve) {
+      var host = document.createElement('div');
+      host.setAttribute('data-mb-confirm', '');
+
+      var backdrop = document.createElement('div');
+      backdrop.className = 'mb-modal-backdrop';
+
+      var modal = document.createElement('div');
+      modal.className = 'mb-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+
+      var dialog = document.createElement('div');
+      dialog.className = 'mb-modal-dialog';
+
+      var header = document.createElement('div');
+      header.className = 'mb-modal-header';
+      var titleEl = document.createElement('h3');
+      titleEl.className = 'mb-modal-title';
+      titleEl.textContent = o.title || 'Are you sure?';
+      header.appendChild(titleEl);
+
+      var body = document.createElement('div');
+      body.className = 'mb-modal-body';
+      if (o.message) {
+        var msg = document.createElement('p');
+        msg.className = 'mb-text-secondary';
+        msg.style.margin = '0';
+        msg.textContent = o.message;
+        body.appendChild(msg);
+      }
+      if (o.target) {
+        var target = document.createElement('p');
+        target.className = o.danger === false ? 'mb-text-primary' : 'mb-text-danger';
+        target.setAttribute('data-mb-confirm-target', '');
+        target.style.margin = 'var(--mb-space-3) 0';
+        target.style.fontWeight = 'var(--mb-weight-bold)';
+        target.textContent = o.target;
+        body.appendChild(target);
+      }
+      if (o.details && o.details.length) {
+        var list = document.createElement('ul');
+        list.className = 'mb-text-sm mb-text-muted';
+        list.style.margin = 'var(--mb-space-2) 0 0';
+        list.style.paddingLeft = 'var(--mb-space-5)';
+        o.details.forEach(function (d) {
+          var li = document.createElement('li');
+          li.textContent = d;
+          list.appendChild(li);
+        });
+        body.appendChild(list);
+      }
+
+      var footer = document.createElement('div');
+      footer.className = 'mb-modal-footer';
+      var cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'mb-btn mb-btn-secondary';
+      cancel.setAttribute('data-mb-confirm-cancel', '');
+      cancel.textContent = o.cancelLabel || 'Cancel';
+      var ok = document.createElement('button');
+      ok.type = 'button';
+      ok.className = 'mb-btn ' + (o.danger === false ? 'mb-btn-primary' : 'mb-btn-danger');
+      ok.setAttribute('data-mb-confirm-ok', '');
+      ok.textContent = o.confirmLabel || 'Confirm';
+      footer.appendChild(cancel);
+      footer.appendChild(ok);
+
+      dialog.appendChild(header);
+      dialog.appendChild(body);
+      dialog.appendChild(footer);
+      modal.appendChild(dialog);
+      host.appendChild(backdrop);
+      host.appendChild(modal);
+      document.body.appendChild(host);
+
+      var previouslyFocused = document.activeElement;
+      var settled = false;
+      function close(result) {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('keydown', onKey, true);
+        if (host.parentNode) host.parentNode.removeChild(host);
+        try { if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus(); } catch (e) { }
+        resolve(result);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') { e.preventDefault(); close(false); }
+      }
+      document.addEventListener('keydown', onKey, true);
+      backdrop.addEventListener('click', function () { close(false); });
+      modal.addEventListener('click', function (e) { if (e.target === modal) close(false); });
+      cancel.addEventListener('click', function () { close(false); });
+      ok.addEventListener('click', function () { close(true); });
+
+      // Focus the safe choice, not the destructive one.
+      setTimeout(function () { try { cancel.focus(); } catch (e) { } }, 0);
+    });
+  };
 </script>
 <style>
+  /* ======================================================================
+     Calibration page — rules that are genuinely specific to this screen.
+     Everything here is token-backed so all three themes reach it; the
+     shared vocabulary (buttons, inputs, badges, toasts, modals) comes from
+     components.css and is not re-stated.
+     ====================================================================== */
+
   #deviceList .list-group-item { scroll-margin-top: 80px; }
   #deviceList { min-height: 48px; }
-  #toast-container, #toast-container .alert { pointer-events: none; }
+  #toast-container, #toast-container .mb-toast { pointer-events: none; }
   .device-list { max-height: calc(100vh - 140px); overflow: auto; }
   .marker-chip { cursor: pointer; }
   .ghost-tick { position: absolute; height: 6px; width: 2px; background: var(--mb-primary); top: -2px; }
 
+  /* The CALIBRATE / OPERATE pair is a radio group wearing button clothes, so
+     the checked state has to be painted here — .mb-btn has no :checked. */
+  .btn-check:checked + .mb-btn {
+    background: var(--mb-primary);
+    border-color: var(--mb-primary);
+    color: var(--mb-fg-on-accent);
+  }
+
+  /* Search box in the Devices header. */
+  .cal-search { width: 200px; max-width: 100%; }
+
+  /* Read-only JSON dumps (model defaults / effective config). */
+  .cal-json {
+    min-height: 100px;
+    margin: 0;
+    padding: var(--mb-space-2);
+    background: var(--mb-bg-0);
+    color: var(--mb-fg-primary);
+    border: 1px solid var(--mb-border-subtle);
+    border-radius: var(--mb-radius-md);
+    font-family: var(--mb-font-mono);
+    font-size: var(--mb-text-sm);
+    overflow: auto;
+  }
+
+  /* Inline numeric / select fields inside a live-control row. One width for
+     every numeric field reads as deliberate; five near-identical widths did not. */
+  .cal-num { width: 7.5rem; flex: 0 0 auto; }
+  .cal-select-inline { width: 9rem; flex: 0 0 auto; }
+  .cal-angle-group { width: 9.5rem; flex: 0 0 auto; }
+  .cal-range-wide { width: 320px; max-width: 100%; }
+
+  /* Live camera / motion surfaces. */
+  .cal-stream {
+    position: relative;
+    background: var(--mb-bg-0);
+    width: 100%;
+    min-height: 200px;
+    overflow: hidden;
+  }
+  .cal-cam-frame {
+    width: 100%;
+    max-width: 420px;
+    height: 320px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mb-bg-0);
+    border: 1px solid var(--mb-border-default);
+    border-radius: var(--mb-radius-md);
+  }
+  .cal-scroll { max-height: 400px; overflow-y: auto; }
+
+  /* A switch that reads as its own control rather than a line of text. */
+  .cal-switch-tile {
+    padding: var(--mb-space-2) var(--mb-space-3);
+    background: var(--mb-bg-2);
+    border: 1px solid var(--mb-border-subtle);
+    border-radius: var(--mb-radius-md);
+  }
+
+  .cal-meter-cell { min-width: 200px; text-align: right; }
+  .cal-note {
+    background: var(--mb-bg-2);
+    border: 1px solid var(--mb-border-subtle);
+    border-radius: var(--mb-radius-md);
+  }
+
+  /* Motion-sensor state lamp. State lives in a class, not in a hex the
+     theme cannot reach. */
+  .cal-motion-indicator {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--mb-fg-muted);
+    border: 4px solid var(--mb-border-strong);
+    transition: background var(--mb-dur-base) var(--mb-ease-out),
+                border-color var(--mb-dur-base) var(--mb-ease-out),
+                box-shadow var(--mb-dur-base) var(--mb-ease-out);
+  }
+  .cal-motion-indicator.is-clear {
+    background: var(--mb-success);
+    border-color: var(--mb-success);
+  }
+  .cal-motion-indicator.is-motion {
+    background: var(--mb-danger);
+    border-color: var(--mb-danger);
+    box-shadow: var(--mb-glow-blood);
+    animation: sensorPulse 1s infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cal-motion-indicator.is-motion { animation: none; }
+  }
+
   /* ==================== VU Meter (shared with Audio Config page) ==================== */
-  .vu-meter-container { display: flex; align-items: center; gap: 8px; }
-  .vu-meter { width: 100%; height: 12px; background: var(--bs-dark, #222); border: 1px solid var(--bs-border-color, #444); border-radius: 3px; overflow: hidden; }
+  .vu-meter-container { display: flex; align-items: center; gap: var(--mb-space-2); padding: var(--mb-space-1) var(--mb-space-2); }
+  .vu-meter {
+    width: 100%; height: 12px;
+    background: var(--mb-bg-0);
+    border: 1px solid var(--mb-border-default);
+    border-radius: var(--mb-radius-pill);
+    overflow: hidden;
+  }
   .vu-meter .vu-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 50%, var(--mb-danger) 100%); transition: width 0.1s linear; }
   .vu-label { min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
 
-  /* ==================== PCA9685 Board Visual ==================== */
+  /* ==================== PCA9685 Board Visual ====================
+     A diagram of a physical board. It keeps its board-like shape, but every
+     colour is a role from tokens.css: signal = warning, V+ = danger,
+     selected = info, in use = success, conflict = danger. */
   .pca-board {
-    background: linear-gradient(135deg, #1a5276 0%, #154360 100%);
-    border-radius: 8px; border: 2px solid #0e3d5c;
-    padding: 12px; font-family: 'Courier New', monospace;
-    max-width: 520px; margin: 8px 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, var(--mb-bg-3) 0%, var(--mb-bg-1) 100%);
+    border-radius: var(--mb-radius-md);
+    border: 2px solid var(--mb-border-strong);
+    padding: var(--mb-space-3);
+    font-family: var(--mb-font-mono);
+    max-width: 520px;
+    margin: var(--mb-space-2) 0;
+    box-shadow: var(--mb-shadow-panel);
   }
-  .pca-board .pca-hdr {
-    text-align: center; margin-bottom: 10px;
-  }
+  .pca-board .pca-hdr { text-align: center; margin-bottom: 10px; }
   .pca-board .pca-hdr .t1 {
-    color: #fff; font-size: 11px; font-weight: bold; letter-spacing: 2px;
+    color: var(--mb-fg-primary); font-size: 11px; font-weight: var(--mb-weight-bold); letter-spacing: var(--mb-tracking-wider);
   }
   .pca-board .pca-hdr .t2 {
-    color: rgba(255,255,255,0.4); font-size: 8px; letter-spacing: 1px;
+    color: var(--mb-fg-muted); font-size: 8px; letter-spacing: var(--mb-tracking-wide);
   }
   /* Board details row */
   .pca-board .pca-details {
@@ -39,87 +292,106 @@
     margin-bottom: 10px; padding: 0 4px;
   }
   .pca-board .pca-ic {
-    width: 50px; height: 30px; background: #111; border: 1px solid #444;
-    border-radius: 2px; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    width: 50px; height: 30px; background: var(--mb-bg-0); border: 1px solid var(--mb-border-default);
+    border-radius: var(--mb-radius-xs); display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--mb-shadow-inset);
   }
-  .pca-board .pca-ic span { color: #999; font-size: 6px; text-align: center; line-height: 1.2; }
+  .pca-board .pca-ic span { color: var(--mb-fg-muted); font-size: 6px; text-align: center; line-height: 1.2; }
   .pca-board .pca-led-dot {
-    width: 6px; height: 6px; background: #0c0; border-radius: 50%;
-    box-shadow: 0 0 6px #0c0;
+    width: 6px; height: 6px; background: var(--mb-success); border-radius: 50%;
+    box-shadow: var(--mb-glow-poison);
   }
   .pca-board .pca-vplus {
-    background: #2a8c2a; border: 1px solid #1a6c1a; border-radius: 2px;
-    padding: 2px 6px; color: #fff; font-size: 7px;
+    background: color-mix(in srgb, var(--mb-success) 22%, transparent);
+    border: 1px solid var(--mb-success); border-radius: var(--mb-radius-xs);
+    padding: 2px 6px; color: var(--mb-success); font-size: 7px;
   }
   /* Channel grid — 4 banks of 4, matching physical PCA9685 layout */
   .pca-board .pca-grid {
-    display: flex; gap: 12px; justify-content: center;
-    padding: 8px 4px; background: rgba(0,0,0,0.15); border-radius: 4px;
+    display: flex; gap: var(--mb-space-3); justify-content: center;
+    padding: var(--mb-space-2) var(--mb-space-1);
+    background: color-mix(in srgb, var(--mb-bg-0) 55%, transparent);
+    border-radius: var(--mb-radius-sm);
   }
   .pca-board .pca-bank {
     display: flex; gap: 2px;
-    padding: 4px 3px; background: rgba(0,0,0,0.12); border-radius: 3px;
-    border: 1px solid rgba(255,255,255,0.06);
+    padding: 4px 3px;
+    background: color-mix(in srgb, var(--mb-bg-0) 45%, transparent);
+    border-radius: var(--mb-radius-xs);
+    border: 1px solid var(--mb-border-subtle);
   }
   .pca-board .pca-bank-lbl {
-    font-size: 7px; color: rgba(255,255,255,0.3); text-align: center;
+    font-size: 7px; color: var(--mb-fg-muted); text-align: center;
     margin-top: 2px; letter-spacing: 0.5px;
   }
   .pca-board .pca-bank-wrap { display: flex; flex-direction: column; align-items: center; }
   .pca-board .pca-ch {
     width: 28px; display: flex; flex-direction: column; align-items: center;
-    cursor: pointer; position: relative; padding: 3px 0; border-radius: 3px;
-    transition: transform 0.15s, background 0.15s;
+    cursor: pointer; position: relative; padding: 3px 0; border-radius: var(--mb-radius-xs);
+    transition: transform var(--mb-dur-fast) var(--mb-ease-out), background var(--mb-dur-fast) var(--mb-ease-out);
   }
-  .pca-board .pca-ch:hover { transform: scale(1.15); z-index: 10; background: rgba(255,255,255,0.08); }
-  .pca-board .pca-ch .num { font-size: 8px; color: rgba(255,255,255,0.7); font-weight: bold; margin-bottom: 2px; }
+  .pca-board .pca-ch:hover { transform: scale(1.15); z-index: 10; background: var(--mb-bg-hover); }
+  .pca-board .pca-ch .num { font-size: 8px; color: var(--mb-fg-secondary); font-weight: var(--mb-weight-bold); margin-bottom: 2px; }
   .pca-board .pca-ch .pins { display: flex; flex-direction: column; gap: 1px; align-items: center; }
   .pca-board .pca-ch .pin { width: 6px; height: 10px; border-radius: 1px; }
-  .pca-board .pca-ch .ps { background: #e8a830; } /* signal - orange */
-  .pca-board .pca-ch .pv { background: #cc3333; } /* V+ - red */
-  .pca-board .pca-ch .pg { background: #222; border: 1px solid #444; } /* GND */
+  .pca-board .pca-ch .ps { background: var(--mb-warning); }                                   /* signal */
+  .pca-board .pca-ch .pv { background: var(--mb-danger); }                                    /* V+ */
+  .pca-board .pca-ch .pg { background: var(--mb-bg-0); border: 1px solid var(--mb-border-default); } /* GND */
   /* Tooltip on hover */
   .pca-board .pca-ch .tip {
     display: none; position: absolute; bottom: calc(100% + 4px); left: 50%;
-    transform: translateX(-50%); background: #111; color: #fff;
-    padding: 4px 8px; border-radius: 4px; font-size: 10px; white-space: nowrap;
-    z-index: 100; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    border: 1px solid #444;
+    transform: translateX(-50%);
+    background: var(--mb-bg-3); color: var(--mb-fg-primary);
+    padding: var(--mb-space-1) var(--mb-space-2); border-radius: var(--mb-radius-sm);
+    font-size: var(--mb-text-xs); white-space: nowrap;
+    z-index: var(--mb-z-tooltip); pointer-events: none; box-shadow: var(--mb-shadow-panel);
+    border: 1px solid var(--mb-border-default);
   }
   .pca-board .pca-ch:hover .tip { display: block; }
   /* States */
-  .pca-board .pca-ch.sel .ps { background: #3399ff; box-shadow: 0 0 8px rgba(51,153,255,0.8); }
-  .pca-board .pca-ch.sel { background: rgba(51,153,255,0.15); transform: scale(1.15); }
-  .pca-board .pca-ch.used .ps { background: #00cc66; box-shadow: 0 0 6px rgba(0,204,102,0.5); }
-  .pca-board .pca-ch.dup .ps { background: #ff4444; box-shadow: 0 0 6px rgba(255,68,68,0.6); }
+  .pca-board .pca-ch.sel .ps { background: var(--mb-info); box-shadow: var(--mb-glow-cyan); }
+  .pca-board .pca-ch.sel { background: color-mix(in srgb, var(--mb-info) 18%, transparent); transform: scale(1.15); }
+  .pca-board .pca-ch.used .ps { background: var(--mb-success); box-shadow: var(--mb-glow-poison); }
+  .pca-board .pca-ch.dup .ps { background: var(--mb-danger); box-shadow: var(--mb-glow-blood); }
   /* Legend */
   .pca-legend {
-    display: flex; gap: 12px; justify-content: center; font-size: 10px;
-    color: var(--bs-secondary-color, #888); margin-top: 6px; flex-wrap: wrap;
+    display: flex; gap: var(--mb-space-3); justify-content: center; font-size: var(--mb-text-xs);
+    color: var(--mb-fg-muted); margin-top: 6px; flex-wrap: wrap;
   }
   .pca-legend .li { display: flex; align-items: center; gap: 4px; }
-  .pca-legend .ld { width: 8px; height: 8px; border-radius: 2px; }
-  .pca-legend .ld-free { background: #e8a830; }
-  .pca-legend .ld-sel { background: #3399ff; }
-  .pca-legend .ld-used { background: #00cc66; }
-  .pca-legend .ld-dup { background: #ff4444; }
+  .pca-legend .ld { width: 8px; height: 8px; border-radius: var(--mb-radius-xs); }
+  .pca-legend .ld-free { background: var(--mb-warning); }
+  .pca-legend .ld-sel { background: var(--mb-info); }
+  .pca-legend .ld-used { background: var(--mb-success); }
+  .pca-legend .ld-dup { background: var(--mb-danger); }
+
+  /* ==================== Small screens ====================
+     The mode/actions toolbar was the one row that forced the page wider than
+     the viewport on a phone; let it wrap instead. */
+  @media (max-width: 768px) {
+    .cal-toolbar { flex-wrap: wrap; gap: var(--mb-space-2); }
+    .cal-toolbar > * { min-width: 0; }
+    .cal-search { width: 100%; }
+    .device-list { max-height: 50vh; }
+    .cal-range-wide { width: 100%; }
+    .cal-num, .cal-select-inline, .cal-angle-group { width: 100%; }
+  }
 </style>
 
   <!-- Mode Toggle and Add Part Button -->
-  <div class="mb-3 d-flex justify-content-between align-items-center">
-    <div class="d-flex gap-2">
-      <div class="btn-group" role="group">
+  <div class="mb-3 d-flex justify-content-between align-items-center cal-toolbar">
+    <div class="d-flex gap-2 cal-toolbar">
+      <div class="mb-btn-group" role="group">
         <input type="radio" class="btn-check" name="mode" id="modeCal" autocomplete="off" title="Switch to calibrate mode" checked>
-        <label class="btn btn-outline-warning" for="modeCal" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure part bounds, presets, and calibration profiles">CALIBRATE</label>
+        <label class="mb-btn mb-btn-secondary" for="modeCal" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure part bounds, presets, and calibration profiles">CALIBRATE</label>
         <input type="radio" class="btn-check" name="mode" id="modeOperate" autocomplete="off" title="Switch to operate mode">
-        <label class="btn btn-outline-info" for="modeOperate" data-bs-toggle="tooltip" data-bs-placement="top" title="Test and operate parts with live controls">OPERATE</label>
+        <label class="mb-btn mb-btn-secondary" for="modeOperate" data-bs-toggle="tooltip" data-bs-placement="top" title="Test and operate parts with live controls">OPERATE</label>
       </div>
-      <button class="btn btn-outline-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove all calibration profiles (bounds, presets) for every part on the current character">
+      <button class="mb-btn mb-btn-danger" id="clearAllCalibrationsBtn" onclick="clearAllCalibrations()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove all calibration profiles (bounds, presets) for every part on the current character">
         <i class="bi bi-eraser"></i> Clear All Calibrations
       </button>
     </div>
-    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal" title="Create a new hardware part (servo, motor, LED, sensor, etc.) for the current character">
+    <button class="mb-btn mb-btn-danger" data-bs-toggle="modal" data-bs-target="#addPartModal" title="Create a new hardware part (servo, motor, LED, sensor, etc.) for the current character">
       <i class="bi bi-plus-circle"></i> Add Part
     </button>
   </div>
@@ -132,18 +404,18 @@
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>Devices</span>
-          <div class="input-group input-group-sm" style="width: 200px;">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input id="searchDevices" type="text" class="form-control" placeholder="Search" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter parts by name or type">
+          <div class="mb-input-group cal-search">
+            <span class="mb-input-addon"><i class="bi bi-search"></i></span>
+            <input id="searchDevices" type="text" class="mb-input" placeholder="Search" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter parts by name or type">
           </div>
         </div>
         <div class="card-body p-0">
           <div class="p-2 d-flex align-items-center justify-content-between gap-2 border-bottom">
-            <div class="form-check m-0">
-              <input class="form-check-input" type="checkbox" id="selectAllParts" data-bs-toggle="tooltip" data-bs-placement="top" title="Select or deselect all visible parts for bulk operations">
-              <label class="form-check-label small" for="selectAllParts">Select All</label>
-            </div>
-            <button class="btn btn-outline-danger btn-sm" id="deleteSelectedBtn" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete all checked parts and their calibration data">
+            <label class="mb-check m-0">
+              <input type="checkbox" id="selectAllParts" data-bs-toggle="tooltip" data-bs-placement="top" title="Select or deselect all visible parts for bulk operations">
+              <span class="mb-text-sm">Select All</span>
+            </label>
+            <button class="mb-btn mb-btn-danger mb-btn-sm" id="deleteSelectedBtn" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete all checked parts and their calibration data">
               <i class="bi bi-trash"></i> Delete Selected
             </button>
           </div>
@@ -176,8 +448,14 @@
                     const p = (window.allParts || []).find(pp => String(pp.id) === String(id));
                     return p ? p.name : id;
                   });
-                  const confirmMessage = `Are you sure you want to delete ${ids.length} selected part(s)?\n\nThis will permanently remove the parts and all associated records including:\n• Calibration data\n• Saved positions\n• Markers\n• Configuration settings\n\nParts:\n- ${names.join('\n- ')}\n\nThis action cannot be undone.`;
-                  if (!confirm(confirmMessage)) return;
+                  const okToDelete = await window.mbConfirm({
+                    title: `Delete ${ids.length} part${ids.length === 1 ? '' : 's'}?`,
+                    message: 'This permanently removes the parts below and every record kept against them. It cannot be undone.',
+                    target: names.join(', '),
+                    details: ['Calibration data', 'Saved positions', 'Markers', 'Configuration settings'],
+                    confirmLabel: `Delete ${ids.length} part${ids.length === 1 ? '' : 's'}`
+                  });
+                  if (!okToDelete) return;
                   let successCount = 0, failCount = 0;
                   for (const id of ids) {
                     try {
@@ -217,11 +495,12 @@
             <small class="text-muted" id="devMeta"></small>
           </div>
           <div class="text-end">
-            <span class="badge text-bg-dark" id="modelBadge">Model: —</span>
-            <div class="form-check form-switch ms-2 d-inline-block">
-              <input class="form-check-input" type="checkbox" id="invertDir" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the direction of movement for this part">
-              <label class="form-check-label" for="invertDir">Invert</label>
-            </div>
+            <span class="mb-badge" id="modelBadge">Model: —</span>
+            <label class="mb-switch ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the direction of movement for this part">
+              <input type="checkbox" id="invertDir">
+              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+              <span>Invert</span>
+            </label>
           </div>
         </div>
         <div class="card-body">
@@ -248,17 +527,18 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Name</label>
-                  <input id="editName" class="form-control" title="Edit the part name" placeholder="Part name">
+                  <input id="editName" class="mb-input" title="Edit the part name" placeholder="Part name">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Type</label>
-                  <input id="editType" class="form-control" title="Part type (read only)" readonly>
+                  <input id="editType" class="mb-input" title="Part type (read only)" readonly>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="editEnabled" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable or disable this part. Disabled parts are skipped during scene execution.">
-                    <label class="form-check-label" for="editEnabled">Enabled</label>
-                  </div>
+                  <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable or disable this part. Disabled parts are skipped during scene execution.">
+                    <input type="checkbox" id="editEnabled">
+                    <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                    <span>Enabled</span>
+                  </label>
                 </div>
 
                 <!-- Dynamic configuration area for type-specific settings -->
@@ -268,21 +548,21 @@
 
                 <div class="col-12">
                   <label class="form-label">Description</label>
-                  <input id="editDescription" class="form-control" title="Edit the part description" placeholder="Describe this part">
+                  <input id="editDescription" class="mb-input" title="Edit the part description" placeholder="Describe this part">
                 </div>
 
                 <!-- Advanced JSON Config (collapsible) -->
                 <div class="col-12">
                   <div class="card">
                     <div class="card-header">
-                      <button class="btn btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse"
+                      <button class="mb-btn mb-btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse"
                         data-bs-target="#advancedConfigCollapse" title="Edit the raw JSON configuration directly — use with caution">
                         <i class="bi bi-chevron-down"></i> Advanced Configuration (JSON)
                       </button>
                     </div>
                     <div class="collapse" id="advancedConfigCollapse">
                       <div class="card-body">
-                        <textarea id="editConfig" class="form-control" title="Edit raw JSON configuration" rows="6" placeholder="{}"></textarea>
+                        <textarea id="editConfig" class="mb-textarea mb-input-mono" title="Edit raw JSON configuration" rows="6" placeholder="{}"></textarea>
                         <div class="form-text">Direct JSON configuration - use with caution</div>
                       </div>
                     </div>
@@ -296,17 +576,17 @@
                     <div class="card-body">
                       <div class="row g-3 align-items-center">
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the minimum travel limit">Set
+                          <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="window.sc_set('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the minimum travel limit">Set
                             Minimum</button>
                           <div class="small text-muted mt-1">Min: <span id="scMinVal">Not Set</span></div>
                         </div>
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-outline-primary w-100" onclick="window.sc_set('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the maximum travel limit">Set
+                          <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="window.sc_set('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Capture the current position as the maximum travel limit">Set
                             Maximum</button>
                           <div class="small text-muted mt-1">Max: <span id="scMaxVal">Not Set</span></div>
                         </div>
                         <div class="col-md-4">
-                          <button type="button" class="btn btn-success w-100" onclick="window.sc_add()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position with a custom name for quick recall"><i
+                          <button type="button" class="mb-btn mb-btn-primary w-100" onclick="window.sc_add()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position with a custom name for quick recall"><i
                               class="bi bi-plus-circle"></i> Add Named Position</button>
                         </div>
                       </div>
@@ -318,13 +598,13 @@
                 </div>
 
                 <div class="col-12 d-flex justify-content-between">
-                  <button id="deletePartBtn" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete this part and all its calibration data"><i class="bi bi-trash"></i> Delete Part</button>
+                  <button id="deletePartBtn" class="mb-btn mb-btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Permanently delete this part and all its calibration data"><i class="bi bi-trash"></i> Delete Part</button>
                   <div>
-                    <button id="applyMjpgBtn" class="btn btn-outline-info me-2" style="display:none;"
+                    <button id="applyMjpgBtn" class="mb-btn mb-btn-secondary me-2" style="display:none;"
                       onclick="applyWebcamToMjpg()" data-bs-toggle="tooltip" data-bs-placement="top" title="Push webcam settings to the running mjpg-streamer process">
                       <i class="bi bi-camera-video"></i> Apply to mjpg-streamer
                     </button>
-                    <button id="saveEditBtn" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Save all changes to part name, pins, configuration, and calibration"><i class="bi bi-save"></i> Save
+                    <button id="saveEditBtn" class="mb-btn mb-btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Save all changes to part name, pins, configuration, and calibration"><i class="bi bi-save"></i> Save
                       Changes</button>
                   </div>
                 </div>
@@ -338,16 +618,16 @@
                   <div class="card border-secondary">
                     <div class="card-header d-flex justify-content-between align-items-center">
                       <span><i class="bi bi-cpu"></i> Model Assignment</span>
-                      <a href="/setup/models" class="btn btn-outline-secondary btn-sm" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="Open the Models page to create or edit shared hardware model definitions">
+                      <a href="/setup/models" class="mb-btn mb-btn-secondary mb-btn-sm" target="_blank" data-bs-toggle="tooltip" data-bs-placement="top" title="Open the Models page to create or edit shared hardware model definitions">
                         <i class="bi bi-gear"></i> Manage Models
                       </a>
                     </div>
                     <div class="card-body">
-                      <div class="input-group">
-                        <select id="modelSelect" class="form-select" title="Select a hardware model to assign">
+                      <div class="mb-input-group">
+                        <select id="modelSelect" class="mb-select" title="Select a hardware model to assign">
                           <option value="">Select model...</option>
                         </select>
-                        <button id="assignModelBtn" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Link the selected model to this part, applying its default settings"><i class="bi bi-link"></i> Assign</button>
+                        <button id="assignModelBtn" class="mb-btn mb-btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Link the selected model to this part, applying its default settings"><i class="bi bi-link"></i> Assign</button>
                       </div>
                       <div class="form-text">Models are shared across all characters. Select a model to see its defaults below.</div>
                     </div>
@@ -368,14 +648,14 @@
                           <i class="bi bi-code-slash"></i> Raw JSON
                         </a>
                         <div class="collapse" id="rawOverridesCollapse">
-                          <textarea id="overridesEditor" class="form-control mt-1 font-monospace" title="Edit part overrides as raw JSON" rows="5"
+                          <textarea id="overridesEditor" class="mb-textarea mb-input-mono mt-1" title="Edit part overrides as raw JSON" rows="5"
                             placeholder='{}'></textarea>
                         </div>
                       </div>
                       <div class="d-flex justify-content-end gap-2">
-                        <button id="revertOverridesBtn" class="btn btn-outline-warning btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear all part-specific overrides and revert to the model defaults"><i
+                        <button id="revertOverridesBtn" class="mb-btn mb-btn-secondary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear all part-specific overrides and revert to the model defaults"><i
                             class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
-                        <button id="saveOverridesBtn" class="btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Save part-specific overrides (these take priority over model defaults)"><i class="bi bi-save"></i> Save
+                        <button id="saveOverridesBtn" class="mb-btn mb-btn-primary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Save part-specific overrides (these take priority over model defaults)"><i class="bi bi-save"></i> Save
                           Overrides</button>
                       </div>
                     </div>
@@ -385,11 +665,11 @@
                 <!-- Effective Config -->
                 <div class="col-md-6">
                   <label class="form-label">Model Defaults</label>
-                  <pre id="modelDefaultsJson" class="bg-dark text-light p-2 small rounded" style="min-height:100px">{}</pre>
+                  <pre id="modelDefaultsJson" class="cal-json">{}</pre>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Effective (merged)</label>
-                  <pre id="effectiveJson" class="bg-dark text-light p-2 small rounded" style="min-height:100px">{}</pre>
+                  <pre id="effectiveJson" class="cal-json">{}</pre>
                 </div>
               </div>
             </div>
@@ -398,11 +678,11 @@
               <div class="row g-2">
                 <div class="col-6">
                   <label class="form-label">Current limit (A)</label>
-                  <input id="safetyCurrent" type="number" class="form-control" placeholder="e.g., 8" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum current draw in amps before the part is shut off. Typical: 2A for servos, 8A for linear actuators.">
+                  <input id="safetyCurrent" type="number" class="mb-input" placeholder="e.g., 8" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum current draw in amps before the part is shut off. Typical: 2A for servos, 8A for linear actuators.">
                 </div>
                 <div class="col-6">
                   <label class="form-label">Timeout (ms)</label>
-                  <input id="safetyTimeout" type="number" class="form-control" placeholder="e.g., 1500" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum run time in milliseconds before automatic stop. Prevents stalled parts from overheating.">
+                  <input id="safetyTimeout" type="number" class="mb-input" placeholder="e.g., 1500" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum run time in milliseconds before automatic stop. Prevents stalled parts from overheating.">
                 </div>
               </div>
             </div>
@@ -417,7 +697,7 @@
                     <div class="card h-100">
                       <div class="card-header py-1"><i class="bi bi-broadcast"></i> Live Stream</div>
                       <div class="card-body p-1">
-                        <div id="advStreamContainer" style="position:relative;background:#000;width:100%;min-height:200px;overflow:hidden;">
+                        <div id="advStreamContainer" class="cal-stream">
                           <img id="advStreamImg" alt="Stream" style="width:100%;display:none;">
                           <canvas id="motionOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:none;"></canvas>
                           <div id="advNoStream" class="text-secondary text-center py-4">Enable motion tracking to start stream</div>
@@ -438,28 +718,27 @@
                     <div class="card mb-2">
                       <div class="card-header py-1"><i class="bi bi-eye"></i> Motion Tracking</div>
                       <div class="card-body py-2">
-                        <div class="form-check mb-2">
-                          <input class="form-check-input" type="checkbox" id="calEnableMotionTracking" data-bs-toggle="tooltip" data-bs-placement="top" title="Start the camera motion detection process to identify moving targets">
-                          <label class="form-check-label" for="calEnableMotionTracking">
-                            <strong>Enable Motion Tracking</strong>
-                          </label>
-                        </div>
+                        <label class="mb-switch mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Start the camera motion detection process to identify moving targets">
+                          <input type="checkbox" id="calEnableMotionTracking">
+                          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                          <span><strong>Enable Motion Tracking</strong></span>
+                        </label>
                         <div id="calMotionTrackingParams" style="display:none;">
                           <div class="mb-1">
                             <label class="form-label small mb-0">Threshold <span class="text-muted" id="calMotionThresholdValue">25</span></label>
-                            <input type="range" class="form-range" id="calMotionThreshold" min="10" max="100" value="25" data-bs-toggle="tooltip" data-bs-placement="top" title="Pixel change threshold to count as motion. Higher = less sensitive. Recommended: 20-40.">
+                            <input type="range" class="mb-range" id="calMotionThreshold" min="10" max="100" value="25" data-bs-toggle="tooltip" data-bs-placement="top" title="Pixel change threshold to count as motion. Higher = less sensitive. Recommended: 20-40.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Min Object <span class="text-muted" id="calMinContourAreaValue">500</span>px</label>
-                            <input type="range" class="form-range" id="calMinContourArea" min="100" max="2000" value="500" step="100" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimum motion blob size in pixels. Increase to ignore small movements like pets or shadows. Recommended: 300-800.">
+                            <input type="range" class="mb-range" id="calMinContourArea" min="100" max="2000" value="500" step="100" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimum motion blob size in pixels. Increase to ignore small movements like pets or shadows. Recommended: 300-800.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Smoothing <span class="text-muted" id="calTrackingSmoothingValue">0.3</span></label>
-                            <input type="range" class="form-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually tracking follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.2-0.5.">
+                            <input type="range" class="mb-range" id="calTrackingSmoothing" min="0.1" max="0.9" value="0.3" step="0.1" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually tracking follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.2-0.5.">
                           </div>
                           <div class="mb-1">
                             <label class="form-label small mb-0">Deadzone <span class="text-muted" id="calTrackingDeadzoneValue">5</span>%</label>
-                            <input type="range" class="form-range" id="calTrackingDeadzone" min="1" max="20" value="5" data-bs-toggle="tooltip" data-bs-placement="top" title="Center region where no servo movement occurs, as percent of frame. Prevents jitter when target is near center. Recommended: 3-8%.">
+                            <input type="range" class="mb-range" id="calTrackingDeadzone" min="1" max="20" value="5" data-bs-toggle="tooltip" data-bs-placement="top" title="Center region where no servo movement occurs, as percent of frame. Prevents jitter when target is near center. Recommended: 3-8%.">
                           </div>
                         </div>
                       </div>
@@ -469,29 +748,29 @@
                       <div class="card-body py-2">
                         <div class="mb-2">
                           <label class="form-label small mb-0">Pan Servo</label>
-                          <select id="calPanServoSelect" class="form-select form-select-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose which servo controls horizontal panning to follow detected motion">
+                          <select id="calPanServoSelect" class="mb-select" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose which servo controls horizontal panning to follow detected motion">
                             <option value="">Select servo...</option>
                           </select>
                         </div>
                         <div class="row mb-2 gx-2">
                           <div class="col-6">
                             <label class="form-label small mb-0">Range +/-<span id="calHeadTrackingRangeValue">60</span>&deg;</label>
-                            <input type="range" class="form-range" id="calHeadTrackingRange" min="30" max="120" value="60" data-bs-toggle="tooltip" data-bs-placement="top" title="Total degrees the servo can sweep for tracking. Larger = wider tracking range. Recommended: 45-90.">
+                            <input type="range" class="mb-range" id="calHeadTrackingRange" min="30" max="120" value="60" data-bs-toggle="tooltip" data-bs-placement="top" title="Total degrees the servo can sweep for tracking. Larger = wider tracking range. Recommended: 45-90.">
                           </div>
                           <div class="col-6">
                             <label class="form-label small mb-0">Smooth <span id="calHeadTrackingSmoothingValue">0.35</span></label>
-                            <input type="range" class="form-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually the servo follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.25-0.5.">
+                            <input type="range" class="mb-range" id="calHeadTrackingSmoothing" min="0.1" max="0.8" value="0.35" step="0.05" data-bs-toggle="tooltip" data-bs-placement="top" title="How gradually the servo follows the target. Higher = smoother but slower. Lower = faster but may jitter. Recommended: 0.25-0.5.">
                           </div>
                         </div>
-                        <button id="calEnableHeadTracking" class="btn btn-outline-warning btn-sm w-100" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Start servo-based head tracking to follow detected motion. Requires a pan servo to be selected.">
+                        <button id="calEnableHeadTracking" class="mb-btn mb-btn-secondary mb-btn-sm w-100" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Start servo-based head tracking to follow detected motion. Requires a pan servo to be selected.">
                           <i class="bi bi-magic"></i> Enable Head Tracking
                         </button>
                       </div>
                     </div>
-                    <button id="calSaveAdvancedBtn" class="btn btn-success w-100 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Persist motion tracking and head tracking settings to the webcam part configuration">
+                    <button id="calSaveAdvancedBtn" class="mb-btn mb-btn-primary w-100 mb-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Persist motion tracking and head tracking settings to the webcam part configuration">
                       <i class="bi bi-save"></i> Save Tracking Settings
                     </button>
-                    <button id="calEmergencyStopBtn" class="btn btn-danger w-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Immediately stop all continuous servos and linear actuators">
+                    <button id="calEmergencyStopBtn" class="mb-btn mb-btn-danger w-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Immediately stop all continuous servos and linear actuators">
                       <i class="bi bi-stop-circle-fill"></i> EMERGENCY STOP ALL SERVOS
                     </button>
                   </div>
@@ -503,7 +782,7 @@
         <div class="card-footer d-flex justify-content-between">
           <div class="text-muted small" id="devNotes">Notes: —</div>
           <div class="d-flex gap-2">
-            <button class="btn btn-outline-danger btn-sm" id="btnRemove" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Delete the selected part and all its associated data"><i class="bi bi-trash"></i>
+            <button class="mb-btn mb-btn-danger mb-btn-sm" id="btnRemove" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Delete the selected part and all its associated data"><i class="bi bi-trash"></i>
               Remove</button>
           </div>
         </div>
@@ -522,16 +801,16 @@
           <div class="mb-3">
             <label class="form-label small fw-bold">Current Position</label>
             <div class="text-center">
-              <span id="calPositionDisplay" class="badge bg-primary fs-5">—</span>
+              <span id="calPositionDisplay" class="mb-badge mb-badge-primary cal-position-badge">—</span>
               <div class="mt-1">
-                <span id="calConfidenceBadge" class="badge bg-secondary" style="display: none;">Unknown</span>
+                <span id="calConfidenceBadge" class="mb-badge" style="display: none;">Unknown</span>
               </div>
             </div>
           </div>
 
           <!-- Home Button (open-loop parts only) -->
           <div id="calHomeSection" class="mb-3" style="display: none;">
-            <button type="button" class="btn btn-sm btn-outline-warning w-100" id="calHomeBtn" onclick="homePart()" data-bs-toggle="tooltip" data-bs-placement="top" title="Retract the part to its physical endstop to establish a known home position">
+            <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary w-100" id="calHomeBtn" onclick="homePart()" data-bs-toggle="tooltip" data-bs-placement="top" title="Retract the part to its physical endstop to establish a known home position">
               <i class="bi bi-house-door"></i> Home (Retract to Endstop)
             </button>
           </div>
@@ -547,21 +826,24 @@
                 <small class="text-muted">Max: <span id="calMaxDisplay">—</span></small>
               </div>
             </div>
-            <div class="btn-group w-100 mb-2">
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the minimum bound at the current position">Set
+            <div class="mb-btn-group w-100 mb-2">
+              <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" onclick="setCalibrationBound('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the minimum bound at the current position">Set
                 Min</button>
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="setCalibrationBound('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the maximum bound at the current position">Set
+              <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" onclick="setCalibrationBound('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Set the maximum bound at the current position">Set
                 Max</button>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="clearCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove min/max bounds and all presets for this part">
+            <button type="button" class="mb-btn mb-btn-sm mb-btn-danger w-100" onclick="clearCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove min/max bounds and all presets for this part">
               <i class="bi bi-eraser"></i> Clear
             </button>
-            <button type="button" class="btn btn-sm btn-outline-info w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()" data-bs-toggle="tooltip" data-bs-placement="top" title="Move 3 times between min and max bounds at full speed to verify range of motion">
+            <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()" data-bs-toggle="tooltip" data-bs-placement="top" title="Move 3 times between min and max bounds at full speed to verify range of motion">
               <i class="bi bi-arrows"></i> Sweep Test
             </button>
-            <div class="form-check form-switch mt-2" id="invertToggleContainer" style="display: none;">
-              <input class="form-check-input" type="checkbox" id="invertToggle" onchange="toggleInvert(this.checked)" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the servo direction if it moves opposite to expected">
-              <label class="form-check-label small" for="invertToggle">Invert Servo Direction</label>
+            <div class="mt-2" id="invertToggleContainer" style="display: none;">
+              <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the servo direction if it moves opposite to expected">
+                <input type="checkbox" id="invertToggle" onchange="toggleInvert(this.checked)">
+                <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                <span class="mb-text-sm">Invert Servo Direction</span>
+              </label>
             </div>
           </div>
 
@@ -569,9 +851,9 @@
           <hr>
           <div class="mb-3">
             <label class="form-label small fw-bold">Position Presets</label>
-            <div class="input-group input-group-sm mb-2">
-              <input type="text" class="form-control" id="presetNameInput" placeholder="Preset name..." data-bs-toggle="tooltip" data-bs-placement="top" title="Enter a name for this preset (e.g., 'open', 'closed', 'half')">
-              <button type="button" class="btn btn-success" onclick="addPreset()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position as a named preset for quick recall">Set Here</button>
+            <div class="mb-input-group mb-2">
+              <input type="text" class="mb-input" id="presetNameInput" placeholder="Preset name..." data-bs-toggle="tooltip" data-bs-placement="top" title="Enter a name for this preset (e.g., 'open', 'closed', 'half')">
+              <button type="button" class="mb-btn mb-btn-primary" onclick="addPreset()" data-bs-toggle="tooltip" data-bs-placement="top" title="Save the current position as a named preset for quick recall">Set Here</button>
             </div>
             <div id="presetsContainer" class="d-flex flex-column gap-1">
               <small class="text-muted">No presets yet</small>
@@ -583,18 +865,18 @@
           <div id="gotoSection" class="mb-3" style="display: none;">
             <label class="form-label small fw-bold">Goto</label>
             <div class="d-flex gap-1 mb-2">
-              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated minimum position">
+              <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary flex-fill" onclick="gotoPosition('min')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated minimum position">
                 <i class="bi bi-arrow-down-circle"></i> Min
               </button>
-              <button type="button" class="btn btn-sm btn-outline-warning flex-fill" onclick="gotoPosition('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated maximum position">
+              <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary flex-fill" onclick="gotoPosition('max')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the calibrated maximum position">
                 <i class="bi bi-arrow-up-circle"></i> Max
               </button>
             </div>
-            <div class="input-group input-group-sm">
-              <select class="form-select" id="gotoPresetSelect" title="Select a preset to move to">
+            <div class="mb-input-group">
+              <select class="mb-select" id="gotoPresetSelect" title="Select a preset to move to">
                 <option value="">— Select preset —</option>
               </select>
-              <button type="button" class="btn btn-outline-warning" onclick="gotoPosition('preset')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the selected preset position">Go</button>
+              <button type="button" class="mb-btn mb-btn-secondary" onclick="gotoPosition('preset')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the selected preset position">Go</button>
             </div>
           </div>
 
@@ -605,11 +887,11 @@
               <label class="form-label small fw-bold">Learn Movement</label>
               <small class="text-muted d-block mb-2">Probe linear actuator speed</small>
               <div class="d-grid gap-1">
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(30)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 30% power — slowest, most precise">Run 30%
+                <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" onclick="runLearnMovement(30)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 30% power — slowest, most precise">Run 30%
                   PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(50)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 50% power — balanced speed and precision">Run 50%
+                <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" onclick="runLearnMovement(50)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 50% power — balanced speed and precision">Run 50%
                   PWM</button>
-                <button type="button" class="btn btn-sm btn-outline-info" onclick="runLearnMovement(70)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 70% power — faster, good for full-range movement">Run 70%
+                <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" onclick="runLearnMovement(70)" data-bs-toggle="tooltip" data-bs-placement="top" title="Probe speed at 70% power — faster, good for full-range movement">Run 70%
                   PWM</button>
               </div>
             </div>
@@ -727,11 +1009,11 @@
         a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
         a.setAttribute('data-pid', p.id);
         var badges = '';
-        if (p.needsModel) badges += '<span class="badge text-bg-warning me-1">Needs Model</span>';
-        if (p.needsCalibration) badges += '<span class="badge text-bg-info me-1">Needs Cal</span>';
-        if (p.gpioConflict) badges += '<span class="badge text-bg-danger">GPIO</span>';
+        if (p.needsModel) badges += '<span class="mb-badge mb-badge-warning me-1">Needs Model</span>';
+        if (p.needsCalibration) badges += '<span class="mb-badge mb-badge-info me-1">Needs Cal</span>';
+        if (p.gpioConflict) badges += '<span class="mb-badge mb-badge-danger">GPIO</span>';
         const checked = selectedIdsMulti.has(String(p.id)) ? 'checked' : '';
-        a.innerHTML = `<div class="d-flex align-items-center"><input type="checkbox" class="form-check-input me-2 part-select" title="Select this part for bulk actions" data-pid="${p.id}" ${checked}><div><div class=\"fw-semibold\">${p.name}</div><small class=\"text-muted\">${p.type}</small></div></div>` +
+        a.innerHTML = `<div class="d-flex align-items-center"><span class="mb-check me-2"><input type="checkbox" class="part-select" title="Select this part for bulk actions" data-pid="${p.id}" ${checked}></span><div><div class=\"fw-semibold\">${p.name}</div><small class=\"text-muted\">${p.type}</small></div></div>` +
           `<div>${badges}</div>`;
         a.addEventListener('click', () => selectPart(p.id));
         elList.appendChild(a);
@@ -923,11 +1205,11 @@
           });
           const data = await res.json();
           if (!data.success) {
-            alert('Stop failed: ' + (data.error || 'Unknown error'));
+            showToast('Stop failed: ' + (data.error || 'Unknown error'), 'error');
           }
         } catch (err) {
           console.error('Stop error:', err);
-          alert('Stop error: ' + err.message);
+          showToast('Stop error: ' + err.message, 'error');
         }
         return;
       } else {
@@ -946,7 +1228,7 @@
         });
         const data = await res.json();
         if (!data.success) {
-          alert('Jog failed: ' + (data.error || 'Unknown error'));
+          showToast('Jog failed: ' + (data.error || 'Unknown error'), 'error');
         } else {
           // Update current position display — prefer angle for absolute servos
           if (currentPartIsAbsoluteServo && typeof data.currentAngle === 'number') {
@@ -957,7 +1239,7 @@
         }
       } catch (err) {
         console.error('Jog error:', err);
-        alert('Jog error: ' + err.message);
+        showToast('Jog error: ' + err.message, 'error');
       }
     }
 
@@ -989,13 +1271,13 @@
       }
       badge.style.display = 'inline-block';
       if (confidence === 'homed') {
-        badge.className = 'badge bg-success';
+        badge.className = 'mb-badge mb-badge-success';
         badge.textContent = 'Homed';
       } else if (confidence === 'tracked' && positionKnown !== false) {
-        badge.className = 'badge bg-warning text-dark';
+        badge.className = 'mb-badge mb-badge-warning';
         badge.textContent = 'Tracked';
       } else {
-        badge.className = 'badge bg-danger';
+        badge.className = 'mb-badge mb-badge-danger';
         badge.textContent = 'Unknown - Home Required';
       }
     }
@@ -1042,11 +1324,11 @@
           // Sync LA slider if present
           if (window._syncLASlider) window._syncLASlider(data.currentP);
         } else {
-          alert('Home failed: ' + (data.error || 'Unknown error'));
+          showToast('Home failed: ' + (data.error || 'Unknown error'), 'error');
         }
       } catch (err) {
         console.error('Home error:', err);
-        alert('Home error: ' + err.message);
+        showToast('Home error: ' + err.message, 'error');
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -1061,8 +1343,6 @@
       const partId = window.selectedPartId;
       if (!partId) return;
 
-      if (!confirm(`Set ${boundType.toUpperCase()} bound at current position?`)) return;
-
       try {
         const res = await fetch(`/api/calibration/${partId}/set-${boundType}`, {
           method: 'POST',
@@ -1070,14 +1350,17 @@
         });
         const data = await res.json();
         if (!data.success) {
-          alert(`Set ${boundType} failed: ` + (data.error || 'Unknown error'));
+          showToast(`Set ${boundType} failed: ` + (data.error || 'Unknown error'), 'error');
         } else {
           // Reload profile to update UI
           await loadUnifiedCalibration(partId, window.selectedPart);
+          // Setting a bound is instantly repeatable, so it no longer asks first —
+          // it just says what it did.
+          showToast(`${boundType === 'min' ? 'Minimum' : 'Maximum'} bound set at the current position`, 'success');
         }
       } catch (err) {
         console.error(`Set ${boundType} error:`, err);
-        alert(`Set ${boundType} error: ` + err.message);
+        showToast(`Set ${boundType} error: ` + err.message, 'error');
       }
     }
 
@@ -1095,7 +1378,7 @@
         });
         var data = await res.json();
         if (!data.success) {
-          alert('Set invert failed: ' + (data.error || 'Unknown error'));
+          showToast('Set invert failed: ' + (data.error || 'Unknown error'), 'error');
           document.getElementById('invertToggle').checked = !checked;
         } else {
           await loadUnifiedCalibration(partId, window.selectedPart);
@@ -1113,9 +1396,9 @@
     // accumulated positional drift.
     async function runSweepTest() {
       var partId = window.selectedPartId;
-      if (!partId) { alert('No part selected'); return; }
+      if (!partId) { showToast('No part selected', 'warning'); return; }
       if (!currentCalProfile || !currentCalProfile.bounds) {
-        alert('Set Min and Max bounds first before running sweep test.');
+        showToast('Set Min and Max bounds first before running sweep test.', 'warning');
         return;
       }
       var bounds = currentCalProfile.bounds;
@@ -1129,19 +1412,19 @@
         sweepMin = bounds.minAngle;
         sweepMax = bounds.maxAngle;
         if (sweepMin == null || sweepMax == null) {
-          alert('Both Min and Max angle bounds must be set for sweep test.');
+          showToast('Both Min and Max angle bounds must be set for sweep test.', 'warning');
           return;
         }
       } else {
         sweepMin = bounds.minP;
         sweepMax = bounds.maxP;
         if (sweepMin == null || sweepMax == null) {
-          alert('Both Min and Max bounds must be set for sweep test.');
+          showToast('Both Min and Max bounds must be set for sweep test.', 'warning');
           return;
         }
       }
       if (sweepMin >= sweepMax) {
-        alert('Min must be less than Max to sweep.');
+        showToast('Min must be less than Max to sweep.', 'warning');
         return;
       }
 
@@ -1206,7 +1489,7 @@
         updateCurrentPositionDisplay(d3.targetP, d3.targetAngle);
       } catch (err) {
         console.error('Sweep test error:', err);
-        alert('Sweep test failed: ' + err.message);
+        showToast('Sweep test failed: ' + err.message, 'error');
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -1228,10 +1511,10 @@
 
       container.innerHTML = presets.map(p => `
         <div class="d-flex align-items-center gap-2 mb-2">
-          <button class="btn btn-sm btn-outline-primary flex-fill" onclick="gotoPreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the '${p.name}' position">
+          <button class="mb-btn mb-btn-sm mb-btn-secondary flex-fill" onclick="gotoPreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Move to the '${p.name}' position">
             ${p.name}
           </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deletePreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete this preset position">
+          <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="deletePreset('${p.name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete this preset position">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -1247,7 +1530,7 @@
       const nameInput = document.getElementById('presetNameInput');
       const name = nameInput ? nameInput.value.trim() : '';
       if (!name) {
-        alert('Enter a preset name');
+        showToast('Enter a preset name', 'warning');
         return;
       }
 
@@ -1256,7 +1539,7 @@
         const posRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/position');
         const posData = await posRes.json();
         if (!posData.success || posData.currentP == null) {
-          alert('Cannot capture position — move the part first, then try again.');
+          showToast('Cannot capture position — move the part first, then try again.', 'warning');
           return;
         }
 
@@ -1286,14 +1569,14 @@
 
         const updateData = await updateRes.json();
         if (!updateData.success) {
-          alert('Failed to save preset: ' + (updateData.error || 'Unknown error'));
+          showToast('Failed to save preset: ' + (updateData.error || 'Unknown error'), 'error');
         } else {
           nameInput.value = '';
           await loadUnifiedCalibration(partId, window.selectedPart);
         }
       } catch (err) {
         console.error('Add preset error:', err);
-        alert('Add preset error: ' + err.message);
+        showToast('Add preset error: ' + err.message, 'error');
       }
     }
 
@@ -1301,7 +1584,13 @@
       const partId = window.selectedPartId;
       if (!partId || !currentCalProfile) return;
 
-      if (!confirm(`Delete preset "${name}"?`)) return;
+      const okToDeletePreset = await window.mbConfirm({
+        title: 'Delete preset?',
+        message: 'This named position is removed from the calibration profile for this part.',
+        target: name,
+        confirmLabel: 'Delete preset'
+      });
+      if (!okToDeletePreset) return;
 
       try {
         const updatedPresets = (currentCalProfile.presets || []).filter(p => p.name !== name);
@@ -1316,13 +1605,13 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Failed to delete preset: ' + (data.error || 'Unknown error'));
+          showToast('Failed to delete preset: ' + (data.error || 'Unknown error'), 'error');
         } else {
           await loadUnifiedCalibration(partId, window.selectedPart);
         }
       } catch (err) {
         console.error('Delete preset error:', err);
-        alert('Delete preset error: ' + err.message);
+        showToast('Delete preset error: ' + err.message, 'error');
       }
     }
 
@@ -1332,7 +1621,7 @@
 
       const preset = currentCalProfile.presets.find(p => p.name === name);
       if (!preset) {
-        alert('Preset not found: ' + name);
+        showToast('Preset not found: ' + name, 'error');
         return;
       }
 
@@ -1350,7 +1639,7 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Goto preset failed: ' + (data.error || 'Unknown error'));
+          showToast('Goto preset failed: ' + (data.error || 'Unknown error'), 'error');
         } else {
           // Sync position display
           if (data.targetP != null) {
@@ -1363,7 +1652,7 @@
         }
       } catch (err) {
         console.error('Goto preset error:', err);
-        alert('Goto preset error: ' + err.message);
+        showToast('Goto preset error: ' + err.message, 'error');
       }
     }
 
@@ -1377,26 +1666,26 @@
 
       if (target === 'min') {
         if (currentPartIsAbsoluteServo) {
-          if (bounds.minAngle == null) { alert('Min bound not set. Set Min first.'); return; }
+          if (bounds.minAngle == null) { showToast('Min bound not set. Set Min first.', 'warning'); return; }
           body = { angle: bounds.minAngle };
         } else {
-          if (bounds.minP == null) { alert('Min bound not set. Set Min first.'); return; }
+          if (bounds.minP == null) { showToast('Min bound not set. Set Min first.', 'warning'); return; }
           body = { p: bounds.minP };
         }
       } else if (target === 'max') {
         if (currentPartIsAbsoluteServo) {
-          if (bounds.maxAngle == null) { alert('Max bound not set. Set Max first.'); return; }
+          if (bounds.maxAngle == null) { showToast('Max bound not set. Set Max first.', 'warning'); return; }
           body = { angle: bounds.maxAngle };
         } else {
-          if (bounds.maxP == null) { alert('Max bound not set. Set Max first.'); return; }
+          if (bounds.maxP == null) { showToast('Max bound not set. Set Max first.', 'warning'); return; }
           body = { p: bounds.maxP };
         }
       } else if (target === 'preset') {
         var select = document.getElementById('gotoPresetSelect');
         var presetName = select ? select.value : '';
-        if (!presetName) { alert('Select a preset first.'); return; }
+        if (!presetName) { showToast('Select a preset first.', 'warning'); return; }
         var preset = (currentCalProfile.presets || []).find(function(p) { return p.name === presetName; });
-        if (!preset) { alert('Preset not found: ' + presetName); return; }
+        if (!preset) { showToast('Preset not found: ' + presetName, 'error'); return; }
         body = (currentPartIsAbsoluteServo && preset.angle != null)
           ? { angle: preset.angle }
           : { p: preset.position };
@@ -1413,7 +1702,7 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Goto failed: ' + (data.error || 'Unknown error'));
+          showToast('Goto failed: ' + (data.error || 'Unknown error'), 'error');
         } else {
           if (data.targetP != null) {
             updateCurrentPositionDisplay(data.targetP, data.targetAngle);
@@ -1424,7 +1713,7 @@
         }
       } catch (err) {
         console.error('Goto error:', err);
-        alert('Goto error: ' + err.message);
+        showToast('Goto error: ' + err.message, 'error');
       }
     }
     window.gotoPosition = gotoPosition;
@@ -1434,7 +1723,15 @@
       const partId = window.selectedPartId;
       if (!partId) return;
 
-      if (!confirm(`Run learn-openloop at ${pwmPercent}% PWM? This will move the part to learn speed/distance.`)) return;
+      const partLabel = window.selectedPart ? window.selectedPart.name : `Part ${partId}`;
+      const okToLearn = await window.mbConfirm({
+        title: 'Move the part to learn its speed?',
+        message: `This drives the actuator at ${pwmPercent}% PWM and times how far it travels. Make sure the path is clear.`,
+        target: partLabel,
+        danger: false,
+        confirmLabel: `Run at ${pwmPercent}% PWM`
+      });
+      if (!okToLearn) return;
 
       try {
         const res = await fetch(`/api/calibration/${partId}/learn-openloop`, {
@@ -1445,15 +1742,15 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Learn movement failed: ' + (data.error || 'Unknown error'));
+          showToast('Learn movement failed: ' + (data.error || 'Unknown error'), 'error');
         } else {
-          alert(`Learn complete!\nDistance: ${data.distanceMoved}\nTime: ${data.elapsedMs}ms`);
+          showToast(`Learn complete!\nDistance: ${data.distanceMoved}\nTime: ${data.elapsedMs}ms`, 'success');
           // Reload profile to get updated speed calibration
           await loadUnifiedCalibration(partId, window.selectedPart);
         }
       } catch (err) {
         console.error('Learn movement error:', err);
-        alert('Learn movement error: ' + err.message);
+        showToast('Learn movement error: ' + err.message, 'error');
       }
     }
 
@@ -1467,12 +1764,19 @@
     async function clearCalibration() {
       const partId = window.selectedPartId;
       if (!partId) {
-        alert('No part selected');
+        showToast('No part selected', 'warning');
         return;
       }
 
       const partName = window.selectedPart ? window.selectedPart.name : `Part ${partId}`;
-      if (!confirm(`Clear calibration data for "${partName}"?\n\nThis will remove:\n• Min/Max bounds\n• Position presets\n• Calibration settings\n\nThis action cannot be undone.`)) {
+      const okToClear = await window.mbConfirm({
+        title: 'Clear calibration?',
+        message: 'Everything this part has been taught about its own travel is discarded. It cannot be undone.',
+        target: partName,
+        details: ['Min / Max bounds', 'Position presets', 'Calibration settings'],
+        confirmLabel: 'Clear calibration'
+      });
+      if (!okToClear) {
         return;
       }
 
@@ -1484,19 +1788,19 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Failed to clear calibration: ' + (data.error || 'Unknown error'));
+          showToast('Failed to clear calibration: ' + (data.error || 'Unknown error'), 'error');
         } else {
           // Reload calibration UI to reflect cleared state
           await loadUnifiedCalibration(partId, window.selectedPart);
           if (window.showToast) {
             window.showToast(`Calibration cleared for ${partName}`, 'success');
           } else {
-            alert(`Calibration cleared for ${partName}`);
+            showToast(`Calibration cleared for ${partName}`, 'success');
           }
         }
       } catch (err) {
         console.error('Clear calibration error:', err);
-        alert('Clear calibration error: ' + err.message);
+        showToast('Clear calibration error: ' + err.message, 'error');
       }
     }
 
@@ -1518,7 +1822,7 @@
         }
 
         if (!characterId) {
-          alert('No character selected');
+          showToast('No character selected', 'warning');
           return;
         }
 
@@ -1526,7 +1830,7 @@
         const partsRes = await fetch(`/setup/calibration/api/parts?characterId=${characterId}`);
         const partsData = await partsRes.json();
         if (!partsData.success) {
-          alert('Failed to load parts');
+          showToast('Failed to load parts', 'error');
           return;
         }
 
@@ -1536,12 +1840,17 @@
         );
 
         if (calibratableParts.length === 0) {
-          alert('No calibratable parts found for current character');
+          showToast('No calibratable parts found for current character', 'warning');
           return;
         }
 
-        const partNames = calibratableParts.map(p => p.name).join('\n• ');
-        if (!confirm(`Clear ALL calibrations for current character?\n\nThis will clear calibration data for ${calibratableParts.length} part(s):\n• ${partNames}\n\nThis action cannot be undone.`)) {
+        const okToClearAll = await window.mbConfirm({
+          title: `Clear calibration on ${calibratableParts.length} part${calibratableParts.length === 1 ? '' : 's'}?`,
+          message: 'Every bound and preset below is discarded and each part has to be re-taught by hand. It cannot be undone.',
+          target: calibratableParts.map(function (p) { return p.name; }).join(', '),
+          confirmLabel: 'Clear all calibrations'
+        });
+        if (!okToClearAll) {
           return;
         }
 
@@ -1554,7 +1863,7 @@
 
         const data = await res.json();
         if (!data.success) {
-          alert('Failed to clear calibrations: ' + (data.error || 'Unknown error'));
+          showToast('Failed to clear calibrations: ' + (data.error || 'Unknown error'), 'error');
         } else {
           // Reload current part calibration if one is selected
           if (window.selectedPartId && window.selectedPart) {
@@ -1567,12 +1876,12 @@
           if (window.showToast) {
             window.showToast(`Cleared ${data.cleared} calibration profile(s)`, 'success');
           } else {
-            alert(`Cleared ${data.cleared} calibration profile(s)`);
+            showToast(`Cleared ${data.cleared} calibration profile(s)`, 'success');
           }
         }
       } catch (err) {
         console.error('Clear all calibrations error:', err);
-        alert('Clear all calibrations error: ' + err.message);
+        showToast('Clear all calibrations error: ' + err.message, 'error');
       }
     }
 
@@ -1682,13 +1991,13 @@
         const isOverridden = cfg[f.key] !== undefined && cfg[f.key] !== '';
         const cls = isOverridden ? 'border-info' : '';
         if (f.type === 'select') {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><select class="form-select form-select-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part"><option value="">${placeholder ? '(model: ' + placeholder + ')' : '— default —'}</option>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><select class="mb-select override-field ${cls}" data-key="${f.key}" title="Override this setting for this part"><option value="">${placeholder ? '(model: ' + placeholder + ')' : '— default —'}</option>`;
           (f.options || []).forEach(o => { html += `<option value="${o}" ${String(val) === o ? 'selected' : ''}>${o}</option>`; });
           html += `</select></div>`;
         } else if (f.type === 'number') {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="number" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}" ${f.step ? 'step="' + f.step + '"' : ''}></div>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="number" class="mb-input override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}" ${f.step ? 'step="' + f.step + '"' : ''}></div>`;
         } else {
-          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="text" class="form-control form-control-sm override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}"></div>`;
+          html += `<div class="col-md-4 col-sm-6"><label class="form-label small">${f.label}</label><input type="text" class="mb-input override-field ${cls}" data-key="${f.key}" title="Override this setting for this part" value="${val}" placeholder="${placeholder}"></div>`;
         }
       });
       area.innerHTML = html;
@@ -1730,7 +2039,7 @@
     document.getElementById('assignModelBtn').addEventListener('click', async () => {
       if (!selected) return;
       const val = modelSelect.value;
-      if (!val) { alert('Select a model'); return; }
+      if (!val) { showToast('Select a model', 'warning'); return; }
       const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/model`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modelId: val })
       });
@@ -1741,7 +2050,7 @@
         loadParts();
         // Stay on Model/Overrides tab to show the new model's defaults
         refreshEffective(selected.id);
-      } else alert(j.error || 'Failed to assign model');
+      } else showToast(j.error || 'Failed to assign model', 'error');
     });
 
     document.getElementById('saveOverridesBtn').addEventListener('click', async () => {
@@ -1753,7 +2062,7 @@
         try {
           const rawObj = JSON.parse(overridesEditor.value || '{}');
           obj = Object.assign({}, obj, rawObj);
-        } catch (e) { alert('Invalid JSON in raw editor'); return; }
+        } catch (e) { showToast('Invalid JSON in raw editor', 'error'); return; }
       }
       // Preserve keys from config that aren't in the override schema (e.g., modelId, audioDeviceId)
       if (selected.config) {
@@ -1780,7 +2089,7 @@
 
       if (j.success) {
         selected.config = j.config;
-        alert('Overrides saved');
+        showToast('Overrides saved', 'success');
         refreshEffective(selected.id);
         // In test mode, prefer leaving the Effective panel visible briefly for tests, then return to Controls tab
         try {
@@ -1792,7 +2101,7 @@
           }
         } catch (_) { }
       } else {
-        alert(j.error || 'Failed to save overrides');
+        showToast(j.error || 'Failed to save overrides', 'error');
         // Still attempt to refresh effective to converge view
         refreshEffective(selected.id);
       }
@@ -1864,8 +2173,8 @@
       calMotionTrackingActive = false;
       calHeadTrackingEnabled = false;
       if (headBtn) {
-        headBtn.classList.remove('btn-success', 'btn-danger');
-        headBtn.classList.add('btn-outline-warning');
+        headBtn.classList.remove('mb-btn-primary', 'mb-btn-danger');
+        headBtn.classList.add('mb-btn-secondary');
         headBtn.textContent = 'Enable Head Tracking';
         headBtn.disabled = true;
       }
@@ -2083,7 +2392,7 @@
       var y = (bbox.y / 100) * canvas.height;
       var w = (bbox.w / 100) * canvas.width;
       var h = (bbox.h / 100) * canvas.height;
-      ctx.strokeStyle = '#00ff00';
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--mb-success').trim() || 'lime';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
       var cx = x + w / 2;
@@ -2199,12 +2508,12 @@
       calHeadTrackingEnabled = !!enabled;
       var btn = document.getElementById('calEnableHeadTracking');
       if (!btn) return;
-      btn.classList.remove('btn-outline-warning', 'btn-success', 'btn-danger');
+      btn.classList.remove('mb-btn-secondary', 'mb-btn-primary', 'mb-btn-danger');
       if (calHeadTrackingEnabled) {
-        btn.classList.add('btn-danger');
+        btn.classList.add('mb-btn-danger');
         btn.textContent = 'Disable Head Tracking';
       } else {
-        btn.classList.add('btn-outline-warning');
+        btn.classList.add('mb-btn-secondary');
         btn.textContent = 'Enable Head Tracking';
       }
       btn.disabled = false;
@@ -2215,7 +2524,7 @@
 
       if (!calHeadTrackingEnabled) {
         var panId = document.getElementById('calPanServoSelect').value;
-        if (!panId) { alert('Please select a servo for head tracking'); return; }
+        if (!panId) { showToast('Please select a servo for head tracking', 'warning'); return; }
         var rangeDeg = parseInt(document.getElementById('calHeadTrackingRange').value);
         var smoothing = parseFloat(document.getElementById('calHeadTrackingSmoothing').value);
 
@@ -2232,10 +2541,10 @@
             if (data && data.success) {
               calSetHeadTrackingUI(true);
             } else {
-              alert('Failed: ' + (data.error || 'Unknown'));
+              showToast('Failed: ' + (data.error || 'Unknown'), 'error');
             }
           })
-          .catch(function (err) { alert('Error: ' + err.message); });
+          .catch(function (err) { showToast('Error: ' + err.message, 'error'); });
       } else {
         fetch('/setup/calibration/api/webcam/motion-tracking/head-tracking/disable', {
           method: 'POST',
@@ -2269,8 +2578,8 @@
             });
           return Promise.all(stops);
         })
-        .then(function () { alert('Emergency stop executed.'); })
-        .catch(function (e) { alert('Emergency stop failed: ' + e.message); });
+        .then(function () { showToast('Emergency stop executed.', 'success'); })
+        .catch(function (e) { showToast('Emergency stop failed: ' + e.message, 'error'); });
     }
 
     function renderControls(part) {
@@ -2296,11 +2605,11 @@
         const isCont = String(part.config?.servoType || 'standard') === 'continuous';
         if (isCont) {
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<button class="btn btn-primary btn-lg" data-dir="ccw" title="Rotate servo counter-clockwise"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
-            '<button class="btn btn-danger btn-lg" data-dir="stop" title="Stop servo movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
-            '<button class="btn btn-primary btn-lg" data-dir="cw" title="Rotate servo clockwise">CW <i class="bi bi-arrow-clockwise"></i></button>' +
-            '<input type="number" id="spd" class="form-control form-control-lg" title="Servo speed percent" value="90" style="width:110px">% ' +
-            '<input type="number" id="dur" class="form-control form-control-lg" title="Movement duration in milliseconds" value="1500" style="width:140px"> ms' +
+            '<button class="mb-btn mb-btn-primary mb-btn-lg" data-dir="ccw" title="Rotate servo counter-clockwise"><i class="bi bi-arrow-counterclockwise"></i> CCW</button>' +
+            '<button class="mb-btn mb-btn-danger mb-btn-lg" data-dir="stop" title="Stop servo movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
+            '<button class="mb-btn mb-btn-primary mb-btn-lg" data-dir="cw" title="Rotate servo clockwise">CW <i class="bi bi-arrow-clockwise"></i></button>' +
+            '<input type="number" id="spd" class="mb-input cal-num" title="Servo speed percent" value="90">% ' +
+            '<input type="number" id="dur" class="mb-input cal-num" title="Movement duration in milliseconds" value="1500"> ms' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           el.querySelectorAll('button[data-dir]').forEach(b => b.addEventListener('click', async () => {
@@ -2342,10 +2651,10 @@
         } else {
           // Absolute servo: use angle (0-180°) controls
           el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-            '<input id="ang" type="range" title="Drag to set servo angle" min="0" max="180" value="90" class="form-range" style="width:320px">' +
-            '<div class="input-group" style="width:150px"><input id="angNum" type="number" title="Enter servo angle in degrees" class="form-control form-control-lg" value="90" step="1" min="0" max="180">' +
-            '<span class="input-group-text">\u00B0</span></div>' +
-            '<button id="goAng" class="btn btn-success btn-lg" title="Move servo to the set angle"><i class="bi bi-cursor"></i> Move</button>' +
+            '<input id="ang" type="range" title="Drag to set servo angle" min="0" max="180" value="90" class="mb-range cal-range-wide">' +
+            '<div class="mb-input-group cal-angle-group"><input id="angNum" type="number" title="Enter servo angle in degrees" class="mb-input" value="90" step="1" min="0" max="180">' +
+            '<span class="mb-input-addon">\u00B0</span></div>' +
+            '<button id="goAng" class="mb-btn mb-btn-primary mb-btn-lg" title="Move servo to the set angle"><i class="bi bi-cursor"></i> Move</button>' +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
           var s = el.querySelector('#ang');
@@ -2354,7 +2663,7 @@
           n.addEventListener('input', function() { s.value = n.value; });
           el.querySelector('#goAng').addEventListener('click', async function() {
             var angle = parseFloat(n.value || '90');
-            if (isNaN(angle) || angle < 0 || angle > 180) { alert('Angle must be between 0 and 180'); return; }
+            if (isNaN(angle) || angle < 0 || angle > 180) { showToast('Angle must be between 0 and 180', 'warning'); return; }
             var st = document.getElementById('ctrlStatus');
             if (st) st.textContent = 'Moving ' + part.name + ' to ' + angle + '\u00B0\u2026';
             console.log('Moving servo: ' + part.name + ' (ID: ' + part.id + ') to angle: ' + angle + '\u00B0');
@@ -2401,17 +2710,17 @@
           '<label class="form-label fw-bold">Position Slider</label>' +
           '<div class="d-flex align-items-center gap-2">' +
           '<span class="text-muted small">0</span>' +
-          '<input type="range" id="laPosSlider" class="form-range flex-fill" title="Drag to set actuator position" min="0" max="1" step="0.01" value="0.5">' +
+          '<input type="range" id="laPosSlider" class="mb-range flex-fill" title="Drag to set actuator position" min="0" max="1" step="0.01" value="0.5">' +
           '<span class="text-muted small">1</span>' +
-          '<input type="number" id="laPosNum" class="form-control" title="Enter actuator position 0 to 1" min="0" max="1" step="0.01" value="0.50" style="width:90px">' +
-          '<button class="btn btn-success" id="laPosGoBtn" title="Move actuator to the set position">Go</button>' +
+          '<input type="number" id="laPosNum" class="mb-input cal-num" title="Enter actuator position 0 to 1" min="0" max="1" step="0.01" value="0.50">' +
+          '<button class="mb-btn mb-btn-primary" id="laPosGoBtn" title="Move actuator to the set position">Go</button>' +
           '</div></div>' +
           '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button class="btn btn-primary btn-lg" id="extendBtn" title="Extend the linear actuator"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
-          '<button class="btn btn-danger btn-lg" id="stopBtn" title="Stop actuator movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
-          '<button class="btn btn-primary btn-lg" id="retractBtn" title="Retract the linear actuator"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
-          '<input type="number" id="laSpd" class="form-control form-control-lg" title="Actuator speed percent" value="90" style="width:110px">%' +
-          '<input type="number" id="laDur" class="form-control form-control-lg" title="Movement duration in milliseconds" value="1500" style="width:140px"> ms' +
+          '<button class="mb-btn mb-btn-primary mb-btn-lg" id="extendBtn" title="Extend the linear actuator"><i class="bi bi-caret-up-fill"></i> Extend</button>' +
+          '<button class="mb-btn mb-btn-danger mb-btn-lg" id="stopBtn" title="Stop actuator movement"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<button class="mb-btn mb-btn-primary mb-btn-lg" id="retractBtn" title="Retract the linear actuator"><i class="bi bi-caret-down-fill"></i> Retract</button>' +
+          '<input type="number" id="laSpd" class="mb-input cal-num" title="Actuator speed percent" value="90">%' +
+          '<input type="number" id="laDur" class="mb-input cal-num" title="Movement duration in milliseconds" value="1500"> ms' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
 
@@ -2524,11 +2833,11 @@
         });
       } else if (part.type === 'motor') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<select id="motDir" class="form-select form-select-lg" title="Select motor direction" style="width:140px"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
-          '<input type="number" id="motSpd" class="form-control form-control-lg" title="Motor speed percent" value="90" style="width:110px">%' +
-          '<input type="number" id="motDur" class="form-control form-control-lg" title="Run duration in milliseconds" value="15000" style="width:140px"> ms' +
-          '<button id="motRun" class="btn btn-success btn-lg" title="Run the motor"><i class="bi bi-play-fill"></i> Run</button>' +
-          '<button id="motStop" class="btn btn-danger btn-lg" title="Stop the motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<select id="motDir" class="mb-select cal-select-inline" title="Select motor direction"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
+          '<input type="number" id="motSpd" class="mb-input cal-num" title="Motor speed percent" value="90">%' +
+          '<input type="number" id="motDur" class="mb-input cal-num" title="Run duration in milliseconds" value="15000"> ms' +
+          '<button id="motRun" class="mb-btn mb-btn-primary mb-btn-lg" title="Run the motor"><i class="bi bi-play-fill"></i> Run</button>' +
+          '<button id="motStop" class="mb-btn mb-btn-danger mb-btn-lg" title="Stop the motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#motRun').addEventListener('click', function () {
           var dir = document.getElementById('motDir').value;
@@ -2557,11 +2866,11 @@
         });
       } else if (part.type === 'stepper') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<select id="stDir" class="form-select form-select-lg" title="Select stepper direction" style="width:140px"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
-          '<input type="number" id="stSteps" class="form-control form-control-lg" title="Number of steps to move" value="200" style="width:120px"> steps' +
-          '<input type="number" id="stDelay" class="form-control form-control-lg" title="Delay between steps in microseconds" value="800" style="width:160px"> us/step' +
-          '<button id="stRun" class="btn btn-success btn-lg" title="Move the stepper motor"><i class="bi bi-play-fill"></i> Move</button>' +
-          '<button id="stStop" class="btn btn-danger btn-lg" title="Stop the stepper motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
+          '<select id="stDir" class="mb-select cal-select-inline" title="Select stepper direction"><option value="cw">CW</option><option value="ccw">CCW</option></select>' +
+          '<input type="number" id="stSteps" class="mb-input cal-num" title="Number of steps to move" value="200"> steps' +
+          '<input type="number" id="stDelay" class="mb-input cal-num" title="Delay between steps in microseconds" value="800"> us/step' +
+          '<button id="stRun" class="mb-btn mb-btn-primary mb-btn-lg" title="Move the stepper motor"><i class="bi bi-play-fill"></i> Move</button>' +
+          '<button id="stStop" class="mb-btn mb-btn-danger mb-btn-lg" title="Stop the stepper motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         const runBtn = el.querySelector('#stRun');
         if (runBtn) runBtn.addEventListener('click', function () {
@@ -2587,7 +2896,7 @@
 
       } else if (part.type === 'light') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="lightToggle" class="btn btn-primary btn-lg" title="Toggle the light on or off"><i class="bi bi-lightbulb"></i> Toggle</button>' +
+          '<button id="lightToggle" class="mb-btn mb-btn-primary mb-btn-lg" title="Toggle the light on or off"><i class="bi bi-lightbulb"></i> Toggle</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#lightToggle').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
@@ -2598,8 +2907,8 @@
         });
       } else if (part.type === 'led') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<input type="range" id="ledBri" title="Adjust LED brightness" min="0" max="100" value="50" class="form-range" style="width:320px">' +
-          '<button id="ledSet" class="btn btn-success btn-lg" title="Set LED brightness"><i class="bi bi-brightness-high"></i> Set</button>' +
+          '<input type="range" id="ledBri" title="Adjust LED brightness" min="0" max="100" value="50" class="mb-range cal-range-wide">' +
+          '<button id="ledSet" class="mb-btn mb-btn-primary mb-btn-lg" title="Set LED brightness"><i class="bi bi-brightness-high"></i> Set</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#ledSet').addEventListener('click', function () {
           var bri = parseInt(document.getElementById('ledBri').value || '50', 10);
@@ -2611,7 +2920,7 @@
         });
       } else if (part.type === 'speaker') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="spkPlay" class="btn btn-success btn-lg" title="Play a speaker preview"><i class="bi bi-megaphone"></i> Play Preview</button>' +
+          '<button id="spkPlay" class="mb-btn mb-btn-primary mb-btn-lg" title="Play a speaker preview"><i class="bi bi-megaphone"></i> Play Preview</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#spkPlay').addEventListener('click', function () {
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Playing…';
@@ -2638,48 +2947,48 @@
         el.innerHTML = '<div class="mb-2">' +
           '<div class="d-flex justify-content-between align-items-center mb-2">' +
           '<div><strong>' + (part.name || 'Microphone') + '</strong><br><small class="text-muted">Device: ' + micDevId + ' | Part ID: ' + part.id + '</small></div>' +
-          '<div class="text-end" style="min-width:200px">' +
-          '<div class="vu-meter-container" style="padding:4px 8px">' +
+          '<div class="cal-meter-cell">' +
+          '<div class="vu-meter-container">' +
           '<div class="vu-meter" id="calMicVu-' + part.id + '"><div class="vu-bar" style="width:0%"></div></div>' +
           '<div class="vu-label"><span id="calMicVu-' + part.id + '-level-text">0%</span></div>' +
           '</div></div></div>' +
           '<div class="row g-3">' +
           '<div class="col-md-6">' +
-          '<label class="form-label small">Sensitivity <span class="badge bg-secondary" id="calMicSens-' + part.id + '-val">' + micSens + '</span></label>' +
-          '<input type="range" min="0.1" max="3.0" step="0.1" class="form-range" title="Adjust microphone sensitivity" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
+          '<label class="form-label small">Sensitivity <span class="mb-badge" id="calMicSens-' + part.id + '-val">' + micSens + '</span></label>' +
+          '<input type="range" min="0.1" max="3.0" step="0.1" class="mb-range" title="Adjust microphone sensitivity" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
           '</div>' +
           '<div class="col-md-6">' +
-          '<label class="form-label small">Input Gain <span class="badge bg-secondary" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
-          '<input type="range" min="0" max="200" step="1" class="form-range" title="Adjust microphone input gain" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
+          '<label class="form-label small">Input Gain <span class="mb-badge" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
+          '<input type="range" min="0" max="200" step="1" class="mb-range" title="Adjust microphone input gain" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
           '</div></div>' +
           '<hr class="my-3">' +
           '<div class="mb-2"><strong><i class="bi bi-mic"></i> Speech Detection Test</strong></div>' +
           '<div class="row g-3 align-items-end">' +
           '<div class="col-md-5">' +
           '<label class="form-label small">Test Phrase (speak this aloud):</label>' +
-          '<input type="text" class="form-control form-control-sm" title="Phrase to speak during the test" id="calMicPhrase-' + part.id + '" value="Hey Monster, how are you?">' +
+          '<input type="text" class="mb-input" title="Phrase to speak during the test" id="calMicPhrase-' + part.id + '" value="Hey Monster, how are you?">' +
           '</div>' +
           '<div class="col-md-2">' +
           '<label class="form-label small">Duration:</label>' +
-          '<select class="form-select form-select-sm" title="Recording duration for the test" id="calMicDuration-' + part.id + '">' +
+          '<select class="mb-select" title="Recording duration for the test" id="calMicDuration-' + part.id + '">' +
           '<option value="2">2s</option><option value="3" selected>3s</option><option value="4">4s</option><option value="5">5s</option>' +
           '</select>' +
           '</div>' +
           '<div class="col-md-2">' +
-          '<button class="btn btn-warning btn-sm w-100" title="Record audio and test speech detection" id="calMicTest-' + part.id + '" onclick="testMicSTT(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<button class="mb-btn mb-btn-secondary mb-btn-sm w-100" title="Record audio and test speech detection" id="calMicTest-' + part.id + '" onclick="testMicSTT(\'' + part.id + '\', \'' + micDevId + '\')">' +
           '<i class="bi bi-record-circle"></i> Record & Test</button>' +
           '</div>' +
           '<div class="col-md-3">' +
-          '<button class="btn btn-info btn-sm w-100" title="Auto-tune the microphone gain" id="calMicAutoTune-' + part.id + '" onclick="autoTuneMic(\'' + part.id + '\', \'' + micDevId + '\')">' +
+          '<button class="mb-btn mb-btn-secondary mb-btn-sm w-100" title="Auto-tune the microphone gain" id="calMicAutoTune-' + part.id + '" onclick="autoTuneMic(\'' + part.id + '\', \'' + micDevId + '\')">' +
           '<i class="bi bi-magic"></i> Auto-Tune Gain</button>' +
           '</div></div>' +
-          '<div id="calMicResult-' + part.id + '" class="mt-2 p-2 border rounded bg-dark small" style="display:none">' +
+          '<div id="calMicResult-' + part.id + '" class="mt-2 p-2 small cal-note" style="display:none">' +
           '<div class="d-flex justify-content-between"><span id="calMicResultLabel-' + part.id + '">Result:</span>' +
           '<span class="badge" id="calMicResultBadge-' + part.id + '"></span></div>' +
           '<div id="calMicResultText-' + part.id + '" class="mt-1 font-monospace"></div></div>' +
-          '<div class="mt-2 p-2 border rounded small" style="background:rgba(255,255,255,0.03)">' +
+          '<div class="mt-2 p-2 small cal-note">' +
           '<strong><i class="bi bi-lightbulb"></i> Outdoor Speech Tips:</strong>' +
-          '<ul class="mb-0 mt-1 ps-3" style="font-size:0.85em">' +
+          '<ul class="mb-0 mt-1 ps-3 mb-text-xs">' +
           '<li>Set gain to <strong>130-180%</strong> for outdoor use (wind/ambient noise)</li>' +
           '<li>Aim the microphone toward the speaker path, away from fans/motors</li>' +
           '<li>Use a <strong>windscreen/foam cover</strong> on the mic to cut wind noise</li>' +
@@ -2777,32 +3086,35 @@
         el.innerHTML = '' +
           '<div class="row g-3 align-items-start">' +
           '<div class="col-md-6">' +
-          '<div class="border bg-black d-flex justify-content-center align-items-center" style="width:100%;max-width:420px;height:320px;overflow:hidden">' +
+          '<div class="cal-cam-frame">' +
           '<img id="camPreview" src="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" style="max-width:none;transform-origin:center center;transform:scale(1)">' +
           '</div>' +
           '<div class="mt-2">' +
           '<label class="form-label small">Digital zoom: <span id="zoomVal">100%</span></label>' +
-          '<input type="range" class="form-range" id="camZoom" title="Adjust digital zoom" min="100" max="300" step="5" value="100">' +
+          '<input type="range" class="mb-range" id="camZoom" title="Adjust digital zoom" min="100" max="300" step="5" value="100">' +
           '</div>' +
           '<div class="mt-2 d-flex flex-wrap gap-2">' +
-          '<a class="btn btn-outline-primary" title="Open the camera stream in a new tab" href="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
-          '<button id="camSnap" class="btn btn-outline-secondary" title="Capture a still image"><i class="bi bi-camera"></i> Capture</button>' +
+          '<a class="mb-btn mb-btn-secondary" title="Open the camera stream in a new tab" href="/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/stream" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Stream</a>' +
+          '<button id="camSnap" class="mb-btn mb-btn-secondary" title="Capture a still image"><i class="bi bi-camera"></i> Capture</button>' +
           '</div>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>' +
           '<div class="col-md-6">' +
-          '<div class="form-check form-switch mb-3 p-2 border rounded bg-body-secondary">' +
-          '<input class="form-check-input ms-0 me-2" type="checkbox" id="ctrl_nightMode" title="Toggle IR night mode" style="font-size:1.3em">' +
-          '<label class="form-check-label fw-bold" for="ctrl_nightMode"><i class="bi bi-moon-stars"></i> Night Mode (IR Optimized)</label>' +
+          '<div class="cal-switch-tile mb-3">' +
+          '<label class="mb-switch" title="Toggle IR night mode">' +
+          '<input type="checkbox" id="ctrl_nightMode">' +
+          '<span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>' +
+          '<span class="fw-bold"><i class="bi bi-moon-stars"></i> Night Mode (IR Optimized)</span>' +
+          '</label>' +
           '</div>' +
           '<div class="d-flex justify-content-between align-items-center mb-2">' +
           '<h6 class="mb-0"><i class="bi bi-sliders"></i> Controls</h6>' +
           '<div class="d-flex gap-2">' +
-          '<button id="loadCamCtrls" class="btn btn-sm btn-outline-info" title="Reload controls from the camera"><i class="bi bi-arrow-repeat"></i> Refresh</button>' +
-          '<button id="applyCamCtrls" class="btn btn-sm btn-success" title="Apply and save camera controls"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
+          '<button id="loadCamCtrls" class="mb-btn mb-btn-sm mb-btn-secondary" title="Reload controls from the camera"><i class="bi bi-arrow-repeat"></i> Refresh</button>' +
+          '<button id="applyCamCtrls" class="mb-btn mb-btn-sm mb-btn-primary" title="Apply and save camera controls"><i class="bi bi-check2-circle"></i> Apply & Save</button>' +
           '</div>' +
           '</div>' +
-          '<div id="dynamicControls" style="max-height:400px;overflow-y:auto">' +
+          '<div id="dynamicControls" class="cal-scroll">' +
           '<div class="text-muted small">Loading controls from device...</div>' +
           '</div>' +
           '</div>' +
@@ -2844,14 +3156,17 @@
             var label = formatCtrlName(name);
             if (c.inactive) continue; // skip inactive controls
             if (c.type === 'bool') {
-              html += '<div class="form-check form-switch mb-2">' +
-                '<input class="form-check-input" type="checkbox" title="Toggle this camera control" id="ctrl_' + name + '"' + (val ? ' checked' : '') + '>' +
-                '<label class="form-check-label" for="ctrl_' + name + '">' + label + '</label>' +
+              html += '<div class="mb-2">' +
+                '<label class="mb-switch" title="Toggle this camera control">' +
+                '<input type="checkbox" id="ctrl_' + name + '"' + (val ? ' checked' : '') + '>' +
+                '<span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>' +
+                '<span>' + label + '</span>' +
+                '</label>' +
                 '</div>';
             } else if (c.type === 'menu') {
               html += '<div class="mb-2">' +
                 '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
-                '<select id="ctrl_' + name + '" class="form-select form-select-sm" title="Select a value for this camera control">';
+                '<select id="ctrl_' + name + '" class="mb-select" title="Select a value for this camera control">';
               var lo = (c.min != null) ? c.min : 0;
               var hi = (c.max != null) ? c.max : lo;
               for (var m = lo; m <= hi; m++) {
@@ -2865,7 +3180,7 @@
               var stp = (c.step != null) ? c.step : 1;
               html += '<div class="mb-2">' +
                 '<label class="form-label">' + label + ' <span id="lbl_' + name + '" class="text-muted">(' + val + ')</span></label>' +
-                '<input id="ctrl_' + name + '" type="range" class="form-range" title="Adjust this camera control" min="' + mn + '" max="' + mx + '" step="' + stp + '" value="' + val + '">' +
+                '<input id="ctrl_' + name + '" type="range" class="mb-range" title="Adjust this camera control" min="' + mn + '" max="' + mx + '" step="' + stp + '" value="' + val + '">' +
                 '</div>';
             }
           }
@@ -3062,7 +3377,7 @@
         });
       } else if (part.type === 'head_tracking') {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="htGet" class="btn btn-primary btn-lg" title="Read current head position"><i class="bi bi-bullseye"></i> Get Position</button>' +
+          '<button id="htGet" class="mb-btn mb-btn-primary mb-btn-lg" title="Read current head position"><i class="bi bi-bullseye"></i> Get Position</button>' +
           '<pre id="htOut" class="ms-2 small"></pre>' +
           '</div>';
         el.querySelector('#htGet').addEventListener('click', function () {
@@ -3079,17 +3394,17 @@
             '@keyframes sensorPulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }' +
           '</style>' +
           '<div class="text-center">' +
-            '<div id="motionIndicator" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;background-color:#6c757d;border:4px solid #dee2e6;transition:background-color 0.2s;"></div>' +
+            '<div id="motionIndicator" class="cal-motion-indicator mx-auto mb-3"></div>' +
             '<div id="motionStatus" class="fs-5 fw-bold text-muted mb-1">Monitoring Off</div>' +
             '<div id="motionDetails" class="small text-muted mb-3">GPIO ' + part.pin + '</div>' +
           '</div>' +
           '<div class="d-grid gap-2 mb-3">' +
-            '<button id="toggleMonitoring" class="btn btn-success btn-lg" title="Start or stop motion monitoring"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
+            '<button id="toggleMonitoring" class="mb-btn mb-btn-primary mb-btn-lg" title="Start or stop motion monitoring"><i class="bi bi-play-circle me-2"></i>Enable Monitoring</button>' +
           '</div>' +
           '<div id="motionLog" class="border rounded p-2" style="max-height:200px;overflow-y:auto;display:none;">' +
             '<div class="d-flex justify-content-between align-items-center mb-2">' +
               '<small class="fw-semibold text-muted">Event Log</small>' +
-              '<button id="clearLog" class="btn btn-link btn-sm p-0 text-muted" title="Clear the event log">Clear</button>' +
+              '<button id="clearLog" class="mb-btn mb-btn-link mb-btn-sm p-0 text-muted" title="Clear the event log">Clear</button>' +
             '</div>' +
             '<div id="logEntries"></div>' +
           '</div>' +
@@ -3121,10 +3436,10 @@
           var indicator = document.getElementById('motionIndicator');
           var status = document.getElementById('motionStatus');
           var details = document.getElementById('motionDetails');
-          if (indicator) { indicator.style.backgroundColor = '#6c757d'; indicator.style.borderColor = '#dee2e6'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
+          if (indicator) indicator.className = 'cal-motion-indicator mx-auto mb-3';
           if (status) { status.textContent = 'Monitoring Off'; status.className = 'fs-5 fw-bold text-muted mb-1'; }
           if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' total detection' + (sensorDetectionCount !== 1 ? 's' : '') : 'GPIO ' + part.pin;
-          toggleBtn.className = 'btn btn-success btn-lg';
+          toggleBtn.className = 'mb-btn mb-btn-primary mb-btn-lg';
           toggleBtn.innerHTML = '<i class="bi bi-play-circle me-2"></i>Enable Monitoring';
           addLogEntry('Monitoring stopped', 'info');
         }
@@ -3140,10 +3455,10 @@
           var details = document.getElementById('motionDetails');
           var st = document.getElementById('ctrlStatus');
 
-          toggleBtn.className = 'btn btn-danger btn-lg';
+          toggleBtn.className = 'mb-btn mb-btn-danger mb-btn-lg';
           toggleBtn.innerHTML = '<i class="bi bi-stop-circle me-2"></i>Disable Monitoring';
 
-          if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
+          if (indicator) indicator.className = 'cal-motion-indicator is-clear mx-auto mb-3';
           if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
           if (details) details.textContent = 'Listening on GPIO ' + part.pin + '...';
           addLogEntry('Monitoring started on GPIO ' + part.pin, 'info');
@@ -3165,7 +3480,7 @@
                     motionStartTime = Date.now();
                     addLogEntry('Motion detected (#' + sensorDetectionCount + ')', 'motion');
                   }
-                  if (indicator) { indicator.style.backgroundColor = '#dc3545'; indicator.style.borderColor = '#dc3545'; indicator.style.boxShadow = '0 0 15px rgba(220,53,69,0.6)'; indicator.style.animation = 'sensorPulse 1s infinite'; }
+                  if (indicator) indicator.className = 'cal-motion-indicator is-motion mx-auto mb-3';
                   var dur = motionStartTime ? Math.round((Date.now() - motionStartTime) / 1000) : 0;
                   if (status) { status.textContent = 'MOTION \u2022 ' + dur + 's'; status.className = 'fs-5 fw-bold text-danger mb-1'; }
                   if (details) details.textContent = sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') + ' \u2022 sensor hold time ~30-40s \u2022 stay still to reset';
@@ -3176,7 +3491,7 @@
                     motionStartTime = null;
                   }
                   sensorHighReadCount = 0;
-                  if (indicator) { indicator.style.backgroundColor = '#198754'; indicator.style.borderColor = '#198754'; indicator.style.boxShadow = 'none'; indicator.style.animation = 'none'; }
+                  if (indicator) indicator.className = 'cal-motion-indicator is-clear mx-auto mb-3';
                   if (status) { status.textContent = 'No Motion'; status.className = 'fs-5 fw-bold text-success mb-1'; }
                   if (details) details.textContent = sensorDetectionCount > 0 ? sensorDetectionCount + ' detection' + (sensorDetectionCount !== 1 ? 's' : '') : 'Listening...';
                 }
@@ -3204,7 +3519,7 @@
         });
       } else {
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="quickTest" class="btn btn-outline-secondary btn-lg" title="Run a quick hardware test"><i class="bi bi-gear"></i> Quick Test</button>' +
+          '<button id="quickTest" class="mb-btn mb-btn-secondary mb-btn-lg" title="Run a quick hardware test"><i class="bi bi-gear"></i> Quick Test</button>' +
           '<div id="ctrlStatus" class="mt-2 small text-info"></div>' +
           '</div>';
         el.querySelector('#quickTest').addEventListener('click', function () {
@@ -3222,7 +3537,7 @@
         var html = '';
         function field(id, label, type, placeholder) {
           return '<div class="col-md-3"><label class="form-label">' + label + '</label>' +
-            '<input id="' + id + '" class="form-control" title="Enter GPIO pin number" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
+            '<input id="' + id + '" class="mb-input" title="Enter GPIO pin number" ' + (type === 'number' ? 'type="number"' : '') + ' placeholder="' + (placeholder || '') + '"></div>';
         }
         if (part.type === 'motor' || part.type === 'linear_actuator') {
           html += '<div class="row g-3">';
@@ -3281,7 +3596,7 @@
       bottomRail.innerHTML = '';
       items.forEach(p => {
         const chip = document.createElement('span');
-        chip.className = 'badge rounded-pill text-bg-dark marker-chip';
+        chip.className = 'mb-chip marker-chip';
         chip.textContent = `${p.name} · Min/Mid/Max`;
         bottomRail.appendChild(chip);
       });
@@ -3429,9 +3744,15 @@
       removeBtn.addEventListener('click', async () => {
         if (!selected) return;
 
-        const confirmMessage = `Are you sure you want to delete "${selected.name}"?\n\nThis will permanently remove the part and all associated records including:\n• Calibration data\n• Saved positions\n• Markers\n• Configuration settings\n\nThis action cannot be undone.`;
+        const okToRemove = await window.mbConfirm({
+          title: 'Delete this part?',
+          message: 'The part and every record kept against it are removed permanently. It cannot be undone.',
+          target: selected.name,
+          details: ['Calibration data', 'Saved positions', 'Markers', 'Configuration settings'],
+          confirmLabel: 'Delete part'
+        });
 
-        if (confirm(confirmMessage)) {
+        if (okToRemove) {
           try {
             const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
               method: 'DELETE'
@@ -3483,7 +3804,7 @@
       // Add custom markers (excluding Min, Mid, Max which are handled separately)
       markers.filter(m => !['Min', 'Mid', 'Max'].includes(m.name)).forEach(marker => {
         const chip = document.createElement('span');
-        chip.className = 'badge rounded-pill text-bg-secondary me-1 mb-1';
+        chip.className = 'mb-chip me-1 mb-1';
         chip.innerHTML = `${marker.name}: ${marker.value}${marker.unit || ''} <button type="button" class="btn-close btn-close-white ms-1" title="Delete this marker" onclick="deleteMarker('${marker.name}')"></button>`;
         customMarkersEl.appendChild(chip);
       });
@@ -3566,8 +3887,8 @@
               var left = document.createElement('div');
               var strong = document.createElement('strong'); strong.textContent = p.name; left.appendChild(strong);
               var sub = document.createElement('div'); sub.className = 'small text-muted'; sub.textContent = String(p.value); left.appendChild(sub);
-              var btns = document.createElement('div'); btns.className = 'btn-group btn-group-sm';
-              var del = document.createElement('button'); del.className = 'btn btn-outline-danger'; del.innerHTML = '<i class="bi bi-trash"></i>';
+              var btns = document.createElement('div'); btns.className = 'mb-btn-group';
+              var del = document.createElement('button'); del.className = 'mb-btn mb-btn-danger mb-btn-sm'; del.innerHTML = '<i class="bi bi-trash"></i>';
               del.addEventListener('click', function () { window.sc_del(p.name); });
               btns.appendChild(del);
               li.appendChild(left); li.appendChild(btns);
@@ -3578,29 +3899,35 @@
       }
       async function sc_set(which) {
         try {
-          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+          var pid = window.selectedPartId; if (!pid) return showToast('Select a part first', 'warning');
           var val = sc_currentValue();
           const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/set-safe`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: which, value: val }) });
-          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+          const j = await r.json(); if (!j.success) { showToast(j.error || 'Failed', 'error'); return; }
           sc_refresh();
-        } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+        } catch (e) { showToast('Error: ' + (e && e.message ? e.message : e), 'error'); }
       }
       async function sc_add() {
         try {
-          var pid = window.selectedPartId; if (!pid) return alert('Select a part first');
+          var pid = window.selectedPartId; if (!pid) return showToast('Select a part first', 'warning');
           var name = prompt('Position name'); if (!name) return;
           var val = sc_currentValue();
           const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, value: val }) });
-          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+          const j = await r.json(); if (!j.success) { showToast(j.error || 'Failed', 'error'); return; }
           sc_refresh();
-        } catch (e) { alert('Error: ' + (e && e.message ? e.message : e)); }
+        } catch (e) { showToast('Error: ' + (e && e.message ? e.message : e), 'error'); }
       }
       async function sc_del(name) {
         try {
           var pid = window.selectedPartId; if (!pid) return;
-          if (!confirm('Delete "' + name + '"?')) return;
+          var okToDeletePoint = await window.mbConfirm({
+            title: 'Delete saved position?',
+            message: 'This named position is removed from the simple calibration for this part.',
+            target: name,
+            confirmLabel: 'Delete position'
+          });
+          if (!okToDeletePoint) return;
           const r = await fetch(`/setup/calibration/api/simple/${encodeURIComponent(pid)}/points/${encodeURIComponent(name)}`, { method: 'DELETE' });
-          const j = await r.json(); if (!j.success) { alert(j.error || 'Failed'); return; }
+          const j = await r.json(); if (!j.success) { showToast(j.error || 'Failed', 'error'); return; }
           sc_refresh();
         } catch (e) { }
       }
@@ -3704,7 +4031,7 @@
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addGpioPin" class="form-label">GPIO Pin</label>
-                    <input type="number" class="form-control" id="addGpioPin" name="pin" min="1" max="40" required title="GPIO pin number for this part">
+                    <input type="number" class="mb-input" id="addGpioPin" name="pin" min="1" max="40" required title="GPIO pin number for this part">
                   </div>
                 </div>
               </div>
@@ -3743,7 +4070,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addServoType" class="form-label">Servo Type</label>
-                  <select class="form-select" id="addServoType" name="servoType" title="Select servo type">
+                  <select class="mb-select" id="addServoType" name="servoType" title="Select servo type">
                     <option value="standard">STANDARD - 0-180° positioning</option>
                     <option value="continuous">CONTINUOUS - continuous rotation</option>
                     <option value="feedback">FEEDBACK - position feedback servo</option>
@@ -3753,7 +4080,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addControllerType" class="form-label">Controller Type</label>
-                  <select class="form-select" id="addControllerType" name="controllerType" title="Select PWM controller type" onchange="onAddControllerTypeChange()">
+                  <select class="mb-select" id="addControllerType" name="controllerType" title="Select PWM controller type" onchange="onAddControllerTypeChange()">
                     <option value="gpio">Direct GPIO PWM</option>
                     <option value="pca9685">PCA9685 PWM Driver</option>
                   </select>
@@ -3762,19 +4089,19 @@
             </div>
             <div id="addPca9685Group" style="display: none;">
               <div class="card border-primary mb-3">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                   <i class="bi bi-cpu"></i> PCA9685 Configuration
                 </div>
                 <div class="card-body">
                   <div class="row mb-3">
                     <div class="col-md-6">
                       <label for="addPca9685Address" class="form-label">I2C Address</label>
-                      <input type="text" class="form-control" id="addPca9685Address" name="pca9685Address" title="PCA9685 I2C address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
+                      <input type="text" class="mb-input" id="addPca9685Address" name="pca9685Address" title="PCA9685 I2C address" value="0x40" pattern="0x[0-9A-Fa-f]{2}">
                       <div class="form-text">Default: 0x40</div>
                     </div>
                     <div class="col-md-6">
                       <label for="addPca9685Frequency" class="form-label">PWM Frequency (Hz)</label>
-                      <input type="number" class="form-control" id="addPca9685Frequency" name="pca9685Frequency" title="PWM frequency in hertz" value="50" min="40" max="1000">
+                      <input type="number" class="mb-input" id="addPca9685Frequency" name="pca9685Frequency" title="PWM frequency in hertz" value="50" min="40" max="1000">
                       <div class="form-text">Servo standard: 50Hz</div>
                     </div>
                   </div>
@@ -3798,7 +4125,7 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addControlBoard" class="form-label">Control Board</label>
-                  <select class="form-select" id="addControlBoard" name="controlBoard" title="Select the motor driver board" onchange="(function(){
+                  <select class="mb-select" id="addControlBoard" name="controlBoard" title="Select the motor driver board" onchange="(function(){
                     var v=document.getElementById('addControlBoard').value;
                     document.getElementById('addMddGroup').style.display = (v==='MDD10A')?'block':'none';
                     document.getElementById('addBtsGroup').style.display = (v==='BTS7960')?'block':'none';
@@ -3810,19 +4137,19 @@
               </div>
             </div>
 
-            <div id="addMddGroup" style="">
+            <div id="addMddGroup">
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addDirectionPin" class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="addDirectionPin" name="directionPin" title="GPIO pin for direction control" min="1" max="40" value="18">
+                    <input type="number" class="mb-input" id="addDirectionPin" name="directionPin" title="GPIO pin for direction control" min="1" max="40" value="18">
                     <div class="form-text">GPIO pin for direction control</div>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label for="addPwmPin" class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="addPwmPin" name="pwmPin" title="GPIO pin for PWM speed control" min="1" max="40" value="13">
+                    <input type="number" class="mb-input" id="addPwmPin" name="pwmPin" title="GPIO pin for PWM speed control" min="1" max="40" value="13">
                     <div class="form-text">GPIO pin for PWM speed control (12,13,18,19 recommended)</div>
                   </div>
                 </div>
@@ -3834,28 +4161,28 @@
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addRpwmPin" class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="addRpwmPin" name="rpwmPin" title="GPIO pin for right PWM" min="1" max="40" value="19">
+                    <input type="number" class="mb-input" id="addRpwmPin" name="rpwmPin" title="GPIO pin for right PWM" min="1" max="40" value="19">
                     <div class="form-text">Right PWM (e.g., GPIO 19)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addLpwmPin" class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="addLpwmPin" name="lpwmPin" title="GPIO pin for left PWM" min="1" max="40" value="21">
+                    <input type="number" class="mb-input" id="addLpwmPin" name="lpwmPin" title="GPIO pin for left PWM" min="1" max="40" value="21">
                     <div class="form-text">Left PWM (e.g., GPIO 21)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addRenPin" class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="addRenPin" name="renPin" title="GPIO pin for right enable" min="1" max="40" value="5">
+                    <input type="number" class="mb-input" id="addRenPin" name="renPin" title="GPIO pin for right enable" min="1" max="40" value="5">
                     <div class="form-text">Right Enable (e.g., GPIO 5)</div>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="mb-3">
                     <label for="addLenPin" class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="addLenPin" name="lenPin" title="GPIO pin for left enable" min="1" max="40" value="22">
+                    <input type="number" class="mb-input" id="addLenPin" name="lenPin" title="GPIO pin for left enable" min="1" max="40" value="22">
                     <div class="form-text">Left Enable (e.g., GPIO 22)</div>
                   </div>
                 </div>
@@ -3866,14 +4193,14 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addMaxExtension" class="form-label">Max Extension (ms)</label>
-                  <input type="number" class="form-control" id="addMaxExtension" name="maxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
+                  <input type="number" class="mb-input" id="addMaxExtension" name="maxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
                   <div class="form-text">Maximum extension time to prevent damage</div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="addMaxRetraction" class="form-label">Max Retraction (ms)</label>
-                  <input type="number" class="form-control" id="addMaxRetraction" name="maxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
+                  <input type="number" class="mb-input" id="addMaxRetraction" name="maxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
                   <div class="form-text">Maximum retraction time to prevent damage</div>
                 </div>
               </div>
@@ -3888,14 +4215,14 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addWebcamDevice" class="form-label">Webcam Device</label>
-                  <select class="form-select" id="addWebcamDevice" title="Select a detected webcam">
+                  <select class="mb-select" id="addWebcamDevice" title="Select a detected webcam">
                     <option value="">Select a detected webcam...</option>
                   </select>
                   <div class="form-text">Assign a /dev/video device to this Webcam part.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanWebcamsForAdd()" title="Scan for connected webcams">Scan Devices</button>
+                <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanWebcamsForAdd()" title="Scan for connected webcams">Scan Devices</button>
               </div>
             </div >
           `;
@@ -3907,14 +4234,14 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioInput" class="form-label">Audio Input</label>
-                  <select class="form-select" id="addAudioInput" title="Select an audio input source">
+                  <select class="mb-select" id="addAudioInput" title="Select an audio input source">
                     <option value="">Select an audio input...</option>
                   </select>
                   <div class="form-text">Select a PipeWire input source for this Microphone.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioInputsForAdd()" title="Scan for audio inputs">Scan Inputs</button>
+                <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanAudioInputsForAdd()" title="Scan for audio inputs">Scan Inputs</button>
               </div>
             </div >
           `;
@@ -3926,33 +4253,33 @@
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioOutput" class="form-label">Audio Output</label>
-                  <select class="form-select" id="addAudioOutput" title="Select an audio output sink">
+                  <select class="mb-select" id="addAudioOutput" title="Select an audio output sink">
                     <option value="">Select an audio output...</option>
                   </select>
                   <div class="form-text">Route this Speaker to a specific PipeWire sink.</div>
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanAudioOutputsForAdd()" title="Scan for audio outputs">Scan Outputs</button>
+                <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanAudioOutputsForAdd()" title="Scan for audio outputs">Scan Outputs</button>
               </div>
             </div >
           <div class="row">
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerVolume" class="form-label">Volume (0-100)</label>
-                <input type="number" class="form-control" id="addSpeakerVolume" title="Speaker volume 0 to 100" min="0" max="100" value="50">
+                <input type="number" class="mb-input" id="addSpeakerVolume" title="Speaker volume 0 to 100" min="0" max="100" value="50">
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerBass" class="form-label">Bass (dB)</label>
-                <input type="number" class="form-control" id="addSpeakerBass" title="Bass level in decibels" min="-10" max="10" value="0">
+                <input type="number" class="mb-input" id="addSpeakerBass" title="Bass level in decibels" min="-10" max="10" value="0">
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-3">
                 <label for="addSpeakerTreble" class="form-label">Treble (dB)</label>
-                <input type="number" class="form-control" id="addSpeakerTreble" title="Treble level in decibels" min="-10" max="10" value="0">
+                <input type="number" class="mb-input" id="addSpeakerTreble" title="Treble level in decibels" min="-10" max="10" value="0">
               </div>
             </div>
           </div>
@@ -4070,19 +4397,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label for="addStepPin" class="form-label">Step Pin</label>
-                    <input type="number" class="form-control" id="addStepPin" name="stepPin" title="GPIO pin for step pulses" min="1" max="40" value="17" required>
+                    <input type="number" class="mb-input" id="addStepPin" name="stepPin" title="GPIO pin for step pulses" min="1" max="40" value="17" required>
                   </div>
                   <div class="col-md-3">
                     <label for="addDirPin" class="form-label">Dir Pin</label>
-                    <input type="number" class="form-control" id="addDirPin" name="dirPin" title="GPIO pin for direction" min="1" max="40" value="27" required>
+                    <input type="number" class="mb-input" id="addDirPin" name="dirPin" title="GPIO pin for direction" min="1" max="40" value="27" required>
                   </div>
                   <div class="col-md-3">
                     <label for="addEnablePin" class="form-label">Enable Pin (optional)</label>
-                    <input type="number" class="form-control" id="addEnablePin" name="enablePin" title="Optional GPIO pin for driver enable" min="1" max="40" placeholder="">
+                    <input type="number" class="mb-input" id="addEnablePin" name="enablePin" title="Optional GPIO pin for driver enable" min="1" max="40" placeholder="">
                   </div>
                   <div class="col-md-3">
                     <label for="addMicrostepping" class="form-label">Microstepping</label>
-                    <select class="form-select" id="addMicrostepping" title="Microstepping divisor">
+                    <select class="mb-select" id="addMicrostepping" title="Microstepping divisor">
                       <option value="1">1</option>
                       <option value="2">2</option>
                       <option value="4">4</option>
@@ -4094,7 +4421,7 @@
                 <div class="row g-3 mt-1">
                   <div class="col-md-3">
                     <label for="addStepsPerRev" class="form-label">Steps/Rev</label>
-                    <input type="number" class="form-control" id="addStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
+                    <input type="number" class="mb-input" id="addStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
                   </div>
                 </div>
               </div>
@@ -4173,7 +4500,7 @@
 
       const type = formData.get('type');
       if (!type) {
-        alert('Please select a part type');
+        showToast('Please select a part type', 'warning');
         return;
       }
 
@@ -4334,14 +4661,14 @@
             loadParts();
 
             // Show success message
-            alert(`${data.message || 'Part created successfully'} `);
+            showToast(`${data.message || 'Part created successfully'} `, 'success');
           } else {
-            alert(`Failed to create part: ${data.error || 'Unknown error'} `);
+            showToast(`Failed to create part: ${data.error || 'Unknown error'} `, 'error');
           }
         })
         .catch(error => {
           console.error('Error creating part:', error);
-          alert('Error creating part');
+          showToast('Error creating part', 'error');
         });
     };
 
@@ -4463,13 +4790,19 @@
     };
 
     // Delete part function
-    function deleteSelectedPart() {
+    async function deleteSelectedPart() {
       if (!selected) {
-        alert('No part selected');
+        showToast('No part selected', 'warning');
         return;
       }
 
-      if (!confirm(`Are you sure you want to delete "${selected.name}" ? This action cannot be undone.`)) {
+      const okToDeletePart = await window.mbConfirm({
+        title: 'Delete this part?',
+        message: 'The part and its calibration data are removed permanently. It cannot be undone.',
+        target: selected.name,
+        confirmLabel: 'Delete part'
+      });
+      if (!okToDeletePart) {
         return;
       }
 
@@ -4479,7 +4812,7 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            alert('Part deleted successfully');
+            showToast('Part deleted successfully', 'success');
             selected = null;
             loadParts(); // Refresh the parts list
 
@@ -4492,30 +4825,30 @@
             const ctrlTabBtn = document.querySelector('button[data-bs-target="#tabControls"]');
             if (ctrlTabBtn) ctrlTabBtn.click();
           } else {
-            alert(`Failed to delete part: ${data.error || 'Unknown error'} `);
+            showToast(`Failed to delete part: ${data.error || 'Unknown error'} `, 'error');
           }
         })
         .catch(error => {
           console.error('Error deleting part:', error);
-          alert('Error deleting part');
+          showToast('Error deleting part', 'error');
         });
     }
 
     // Apply webcam to mjpg-streamer function
     function applyWebcamToMjpg() {
       if (!selected) {
-        alert('No webcam part selected');
+        showToast('No webcam part selected', 'warning');
         return;
       }
 
       if (selected.type !== 'webcam') {
-        alert('Selected part is not a webcam');
+        showToast('Selected part is not a webcam', 'warning');
         return;
       }
 
       const devicePath = selected.config?.devicePath;
       if (!devicePath) {
-        alert('Webcam device path not configured. Please save the webcam configuration first.');
+        showToast('Webcam device path not configured. Please save the webcam configuration first.', 'warning');
         return;
       }
 
@@ -4527,16 +4860,16 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            alert(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`);
+            showToast(`Applied to mjpg-streamer: ${data.devicePath || devicePath}`, 'success');
           } else {
             let msg = data.error || data.message || 'Failed to apply to mjpg-streamer';
             if (data.needsSudo) msg += ' (needs sudo)';
-            alert(msg);
+            showToast(msg, 'error');
           }
         })
         .catch(error => {
           console.error('Error applying to mjpg-streamer:', error);
-          alert('Error applying to mjpg-streamer');
+          showToast('Error applying to mjpg-streamer', 'error');
         });
     }
 
@@ -4576,25 +4909,8 @@
 
   })();
 
-  // Global functions that need to be accessible from event handlers
-  // Ensure toast notifications are available globally for handlers defined below
-  if (!window.showToast) {
-    window.showToast = function (message, type = 'info') {
-      let toastContainer = document.getElementById('toast-container');
-      if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
-        document.body.appendChild(toastContainer);
-      }
-      const toast = document.createElement('div');
-      toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
-      toast.style.cssText = 'margin-bottom: 10px; min-width: 300px;';
-      toast.innerHTML = `${message}\n<button type="button" class="btn-close" title="Dismiss this notification" data-bs-dismiss="alert"></button>`;
-      toastContainer.appendChild(toast);
-      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
-    }
-  }
+  // Global functions that need to be accessible from event handlers.
+  // showToast() and mbConfirm() are defined in the first <script> on the page.
 
   // Save part changes function - moved to global scope
   async function savePartChanges() {
@@ -4999,26 +5315,26 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editServoPin" title="GPIO pin for the servo" min="1" max="40">
+                  <input type="number" class="mb-input" id="editServoPin" title="GPIO pin for the servo" min="1" max="40">
                   <div class="form-text">Not used with PCA9685</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Servo Type</label>
-                  <select class="form-select" id="editServoType" title="Select servo type">
+                  <select class="mb-select" id="editServoType" title="Select servo type">
                     <option value="standard">Standard (0-180°)</option>
                     <option value="continuous">Continuous Rotation</option>
                   </select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Controller Type</label>
-                  <select class="form-select" id="editControllerType" title="Select PWM controller type">
+                  <select class="mb-select" id="editControllerType" title="Select PWM controller type">
                     <option value="gpio">Direct GPIO</option>
                     <option value="pca9685">PCA9685 PWM Board</option>
                   </select>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Invert Direction</label>
-                  <select class="form-select" id="editInvertDirection" title="Invert servo direction">
+                  <select class="mb-select" id="editInvertDirection" title="Invert servo direction">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                   </select>
@@ -5028,7 +5344,7 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-4">
                   <label class="form-label">Model</label>
-                  <select class="form-select" id="editServoModel" title="Assign a servo model">
+                  <select class="mb-select" id="editServoModel" title="Assign a servo model">
                     <option value="">Select model...</option>
                   </select>
                 </div>
@@ -5041,12 +5357,12 @@
                     <div class="row g-3">
                       <div class="col-md-3">
                         <label class="form-label">I2C Address</label>
-                        <input type="text" class="form-control" id="editPca9685Address" title="PCA9685 I2C address" placeholder="0x40">
+                        <input type="text" class="mb-input" id="editPca9685Address" title="PCA9685 I2C address" placeholder="0x40">
                         <div class="form-text">Hex format (e.g., 0x40)</div>
                       </div>
                       <div class="col-md-3">
                         <label class="form-label">PWM Frequency</label>
-                        <input type="number" class="form-control" id="editPca9685Frequency" title="PWM frequency in hertz" min="40" max="1000" value="50">
+                        <input type="number" class="mb-input" id="editPca9685Frequency" title="PWM frequency in hertz" min="40" max="1000" value="50">
                         <div class="form-text">Hz (typically 50)</div>
                       </div>
                     </div>
@@ -5074,7 +5390,7 @@
               <div class="row g-3 mb-2">
                 <div class="col-md-4">
                   <label class="form-label">Control Board</label>
-                  <select class="form-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
+                  <select class="mb-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
                     <option value="MDD10A">MDD10A / Cytron (DIR + PWM)</option>
                     <option value="BTS7960">BTS7960 (RPWM/LPWM + R_EN/L_EN)</option>
                   </select>
@@ -5085,12 +5401,12 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
+                    <input type="number" class="mb-input" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
                     <div class="form-text">GPIO pin for direction control</div>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
+                    <input type="number" class="mb-input" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
                     <div class="form-text">GPIO pin for speed control</div>
                   </div>
                 </div>
@@ -5100,19 +5416,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
+                    <input type="number" class="mb-input" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
+                    <input type="number" class="mb-input" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
+                    <input type="number" class="mb-input" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
+                    <input type="number" class="mb-input" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
                   </div>
                 </div>
               </div>
@@ -5120,7 +5436,7 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-4">
                   <label class="form-label">Max Duration (ms)</label>
-                  <input type="number" class="form-control" id="editMaxDuration" title="Safety timeout in milliseconds" min="100" max="10000" value="5000">
+                  <input type="number" class="mb-input" id="editMaxDuration" title="Safety timeout in milliseconds" min="100" max="10000" value="5000">
                   <div class="form-text">Safety timeout</div>
                 </div>
               </div>
@@ -5137,7 +5453,7 @@
               <div class="row g-3 mb-2">
                 <div class="col-md-4">
                   <label class="form-label">Control Board</label>
-                  <select class="form-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
+                  <select class="mb-select" id="editControlBoard" name="controlBoard" title="Select the motor driver board">
                     <option value="MDD10A">MDD10A / Cytron (DIR + PWM)</option>
                     <option value="BTS7960">BTS7960 (RPWM/LPWM + R_EN/L_EN)</option>
                   </select>
@@ -5148,12 +5464,12 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">Direction Pin</label>
-                    <input type="number" class="form-control" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
+                    <input type="number" class="mb-input" id="editDirectionPin" title="GPIO pin for direction control" min="1" max="40">
                     <div class="form-text">GPIO pin for direction</div>
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">PWM Pin</label>
-                    <input type="number" class="form-control" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
+                    <input type="number" class="mb-input" id="editPwmPin" title="GPIO pin for speed control" min="1" max="40">
                     <div class="form-text">GPIO pin for speed</div>
                   </div>
                 </div>
@@ -5163,19 +5479,19 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">RPWM Pin</label>
-                    <input type="number" class="form-control" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
+                    <input type="number" class="mb-input" id="editRpwmPin" title="GPIO pin for right PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">LPWM Pin</label>
-                    <input type="number" class="form-control" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
+                    <input type="number" class="mb-input" id="editLpwmPin" title="GPIO pin for left PWM" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">R_EN Pin</label>
-                    <input type="number" class="form-control" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
+                    <input type="number" class="mb-input" id="editRenPin" title="GPIO pin for right enable" min="1" max="40">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">L_EN Pin</label>
-                    <input type="number" class="form-control" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
+                    <input type="number" class="mb-input" id="editLenPin" title="GPIO pin for left enable" min="1" max="40">
                   </div>
                 </div>
               </div>
@@ -5183,11 +5499,11 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-3">
                   <label class="form-label">Max Extension (ms)</label>
-                  <input type="number" class="form-control" id="editMaxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
+                  <input type="number" class="mb-input" id="editMaxExtension" title="Maximum extension time in milliseconds" min="1000" max="30000" value="15000">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Max Retraction (ms)</label>
-                  <input type="number" class="form-control" id="editMaxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
+                  <input type="number" class="mb-input" id="editMaxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
                 </div>
               </div>
             </div>
@@ -5203,12 +5519,12 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editLightPin" title="GPIO pin for the light" min="1" max="40">
+                  <input type="number" class="mb-input" id="editLightPin" title="GPIO pin for the light" min="1" max="40">
                   <div class="form-text">GPIO pin for control</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Brightness (%)</label>
-                  <input type="number" class="form-control" id="editBrightness" title="Default brightness percent" min="0" max="100" value="100">
+                  <input type="number" class="mb-input" id="editBrightness" title="Default brightness percent" min="0" max="100" value="100">
                   <div class="form-text">Default brightness level</div>
                 </div>
               </div>
@@ -5226,19 +5542,19 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="form-control" id="editSensorPin" title="GPIO pin for sensor input" min="1" max="40">
+                  <input type="number" class="mb-input" id="editSensorPin" title="GPIO pin for sensor input" min="1" max="40">
                   <div class="form-text">GPIO pin for sensor input</div>
                 </div>
                 ${isMotion ? `
                 <div class="col-md-4">
                   <label class="form-label">Sensitivity</label>
-                  <input type="number" class="form-control" id="editSensitivity" title="Detection sensitivity 1 to 10" min="1" max="10" value="5">
+                  <input type="number" class="mb-input" id="editSensitivity" title="Detection sensitivity 1 to 10" min="1" max="10" value="5">
                   <div class="form-text">Detection sensitivity (1-10)</div>
 
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Window (ms)</label>
-                  <input type="number" class="form-control" id="editWindowMs" title="Detection window in milliseconds" min="50" max="1000" value="100">
+                  <input type="number" class="mb-input" id="editWindowMs" title="Detection window in milliseconds" min="50" max="1000" value="100">
                   <div class="form-text">Detection window</div>
                 </div>
                 ` : ''}
@@ -5256,25 +5572,25 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Device Path</label>
-                  <input type="text" class="form-control" id="editDevicePath" title="Video device path" placeholder="/dev/video0">
+                  <input type="text" class="mb-input" id="editDevicePath" title="Video device path" placeholder="/dev/video0">
                   <div class="form-text">Video device path</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Device ID</label>
-                  <input type="number" class="form-control" id="editDeviceId" title="Camera device number" min="0" max="10" value="0">
+                  <input type="number" class="mb-input" id="editDeviceId" title="Camera device number" min="0" max="10" value="0">
                   <div class="form-text">Camera device number</div>
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">Width</label>
-                  <input type="number" class="form-control" id="editWidth" title="Capture width in pixels" value="1280">
+                  <input type="number" class="mb-input" id="editWidth" title="Capture width in pixels" value="1280">
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">Height</label>
-                  <input type="number" class="form-control" id="editHeight" title="Capture height in pixels" value="720">
+                  <input type="number" class="mb-input" id="editHeight" title="Capture height in pixels" value="720">
                 </div>
                 <div class="col-md-2">
                   <label class="form-label">FPS</label>
-                  <input type="number" class="form-control" id="editFps" title="Frames per second" min="1" max="60" value="30">
+                  <input type="number" class="mb-input" id="editFps" title="Frames per second" min="1" max="60" value="30">
                 </div>
               </div>
             </div>
@@ -5291,17 +5607,17 @@
 
                 <div class="col-md-4">
                   <label class="form-label">Device Name</label>
-                  <input type="text" class="form-control" id="editMicDevice" title="Audio input device name" placeholder="default">
+                  <input type="text" class="mb-input" id="editMicDevice" title="Audio input device name" placeholder="default">
                   <div class="form-text">Audio input device</div>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Sample Rate</label>
-                  <input type="number" class="form-control" id="editSampleRate" title="Audio sample rate in hertz" value="44100">
+                  <input type="number" class="mb-input" id="editSampleRate" title="Audio sample rate in hertz" value="44100">
                   <div class="form-text">Audio sample rate (Hz)</div>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Gain</label>
-                  <input type="number" class="form-control" id="editGain" title="Input gain percent" min="0" max="100" value="50">
+                  <input type="number" class="mb-input" id="editGain" title="Input gain percent" min="0" max="100" value="50">
                   <div class="form-text">Input gain (%)</div>
                 </div>
               </div>
@@ -5318,22 +5634,22 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Device Name</label>
-                  <input type="text" class="form-control" id="editSpeakerDevice" title="Audio output device name" placeholder="default">
+                  <input type="text" class="mb-input" id="editSpeakerDevice" title="Audio output device name" placeholder="default">
                   <div class="form-text">Audio output device</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Volume (%)</label>
-                  <input type="number" class="form-control" id="editVolume" title="Default volume percent" min="0" max="100" value="80">
+                  <input type="number" class="mb-input" id="editVolume" title="Default volume percent" min="0" max="100" value="80">
                   <div class="form-text">Default volume level</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Bass</label>
-                  <input type="number" class="form-control" id="editBass" title="Bass adjustment in decibels" min="-10" max="10" value="0">
+                  <input type="number" class="mb-input" id="editBass" title="Bass adjustment in decibels" min="-10" max="10" value="0">
                   <div class="form-text">Bass adjustment</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Treble</label>
-                  <input type="number" class="form-control" id="editTreble" title="Treble adjustment in decibels" min="-10" max="10" value="0">
+                  <input type="number" class="mb-input" id="editTreble" title="Treble adjustment in decibels" min="-10" max="10" value="0">
                   <div class="form-text">Treble adjustment</div>
                 </div>
               </div>
@@ -5649,19 +5965,19 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label">Step Pin</label>
-                  <input type="number" class="form-control" id="editStepPin" title="GPIO pin for step pulses" min="1" max="40">
+                  <input type="number" class="mb-input" id="editStepPin" title="GPIO pin for step pulses" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Dir Pin</label>
-                  <input type="number" class="form-control" id="editDirPin" title="GPIO pin for direction" min="1" max="40">
+                  <input type="number" class="mb-input" id="editDirPin" title="GPIO pin for direction" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Enable Pin (optional)</label>
-                  <input type="number" class="form-control" id="editEnablePin" title="Optional GPIO pin for driver enable" min="1" max="40">
+                  <input type="number" class="mb-input" id="editEnablePin" title="Optional GPIO pin for driver enable" min="1" max="40">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Microstepping</label>
-                  <select class="form-select" id="editMicrostepping" title="Microstepping divisor">
+                  <select class="mb-select" id="editMicrostepping" title="Microstepping divisor">
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="4">4</option>
@@ -5673,7 +5989,7 @@
               <div class="row g-3 mt-1">
                 <div class="col-md-3">
                   <label class="form-label">Steps/Rev</label>
-                  <input type="number" class="form-control" id="editStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
+                  <input type="number" class="mb-input" id="editStepsPerRev" title="Full steps per revolution" min="1" max="2000" value="200">
                 </div>
               </div>
             </div>
@@ -5696,7 +6012,7 @@
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Recording...'; }
     if (resultDiv) { resultDiv.style.display = 'block'; }
     if (resultLabel) { resultLabel.textContent = 'Recording ' + duration + 's...'; }
-    if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'badge'; }
+    if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'mb-badge'; }
     if (resultText) { resultText.textContent = ''; }
 
     fetch('/api/elevenlabs/stt/testSample?duration=' + duration, {
@@ -5709,14 +6025,14 @@
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-record-circle"></i> Record & Test'; }
       if (!data.success) {
         if (resultLabel) resultLabel.textContent = 'Error:';
-        if (resultBadge) { resultBadge.textContent = 'FAILED'; resultBadge.className = 'badge bg-danger'; }
+        if (resultBadge) { resultBadge.textContent = 'FAILED'; resultBadge.className = 'mb-badge mb-badge-danger'; }
         if (resultText) resultText.textContent = data.error || 'No audio captured';
         return { success: false };
       }
       var text = (data.text || '').trim();
       if (!text) {
         if (resultLabel) resultLabel.textContent = 'No speech detected';
-        if (resultBadge) { resultBadge.textContent = 'SILENCE'; resultBadge.className = 'badge bg-secondary'; }
+        if (resultBadge) { resultBadge.textContent = 'SILENCE'; resultBadge.className = 'mb-badge'; }
         if (resultText) resultText.textContent = 'The microphone captured audio but no words were recognized. Try increasing gain or speaking louder.';
         return { success: true, detected: false, text: '' };
       }
@@ -5732,20 +6048,20 @@
       if (resultLabel) resultLabel.textContent = 'Recognized:';
       if (resultText) resultText.textContent = '"' + text + '"';
       if (matchPct >= 70) {
-        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-success'; }
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'mb-badge mb-badge-success'; }
       } else if (matchPct >= 40) {
-        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-warning text-dark'; }
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'mb-badge mb-badge-warning'; }
       } else if (phrase) {
-        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-danger'; }
+        if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'mb-badge mb-badge-danger'; }
       } else {
-        if (resultBadge) { resultBadge.textContent = 'DETECTED'; resultBadge.className = 'badge bg-success'; }
+        if (resultBadge) { resultBadge.textContent = 'DETECTED'; resultBadge.className = 'mb-badge mb-badge-success'; }
       }
       return { success: true, detected: true, text: text, matchPct: matchPct };
     })
     .catch(function (e) {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-record-circle"></i> Record & Test'; }
       if (resultLabel) resultLabel.textContent = 'Error:';
-      if (resultBadge) { resultBadge.textContent = 'ERROR'; resultBadge.className = 'badge bg-danger'; }
+      if (resultBadge) { resultBadge.textContent = 'ERROR'; resultBadge.className = 'mb-badge mb-badge-danger'; }
       if (resultText) resultText.textContent = e.message || 'Request failed';
       return { success: false };
     });
@@ -5766,7 +6082,7 @@
     var phrase = phraseEl ? phraseEl.value.trim() : '';
 
     if (!phrase) {
-      alert('Enter a test phrase first, then speak it during each recording round.');
+      showToast('Enter a test phrase first, then speak it during each recording round.', 'warning');
       return;
     }
 
@@ -5784,13 +6100,13 @@
       if (currentGain > maxGain || round > maxRounds) {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic"></i> Auto-Tune Gain'; }
         if (resultLabel) resultLabel.textContent = 'Auto-tune complete:';
-        if (resultBadge) { resultBadge.textContent = 'MAX REACHED'; resultBadge.className = 'badge bg-warning text-dark'; }
+        if (resultBadge) { resultBadge.textContent = 'MAX REACHED'; resultBadge.className = 'mb-badge mb-badge-warning'; }
         if (resultText) resultText.textContent = 'Reached gain ' + currentGain + '% without reliable detection. Try a different mic position or add a windscreen.';
         return;
       }
 
       if (resultLabel) resultLabel.textContent = 'Round ' + round + ': Setting gain to ' + currentGain + '%, speak now...';
-      if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'badge'; }
+      if (resultBadge) { resultBadge.textContent = ''; resultBadge.className = 'mb-badge'; }
 
       // Set the gain
       fetch('/setup/audio/api/set-input-gain', {
@@ -5834,7 +6150,7 @@
           // Success! Save the gain to part config
           if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic"></i> Auto-Tune Gain'; }
           if (resultLabel) resultLabel.textContent = 'Auto-tune success at ' + currentGain + '% gain:';
-          if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'badge bg-success'; }
+          if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'mb-badge mb-badge-success'; }
           if (resultText) resultText.textContent = 'Detected: "' + text + '"\nGain saved to ' + currentGain + '%.';
 
           // Persist gain to part config
@@ -5879,13 +6195,13 @@
             <div class="col-md-6">
               <div class="mb-3">
                 <label for="addPartName" class="form-label">Part Name</label>
-                <input type="text" class="form-control" id="addPartName" name="name" required data-bs-toggle="tooltip" data-bs-placement="top" title="A descriptive name for this part (e.g., 'Head Pan Servo', 'Left Eye LED')">
+                <input type="text" class="mb-input" id="addPartName" name="name" required data-bs-toggle="tooltip" data-bs-placement="top" title="A descriptive name for this part (e.g., 'Head Pan Servo', 'Left Eye LED')">
               </div>
             </div>
             <div class="col-md-6">
               <div class="mb-3">
                 <label for="addPartType" class="form-label">Part Type</label>
-                <select class="form-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required data-bs-toggle="tooltip" data-bs-placement="top" title="Hardware type: servo, motor, linear actuator, LED, sensor, webcam, etc.">
+                <select class="mb-select" id="addPartType" name="type" onchange="onAddPartTypeChange()" required data-bs-toggle="tooltip" data-bs-placement="top" title="Hardware type: servo, motor, linear actuator, LED, sensor, webcam, etc.">
                   <option value="">Select Part Type</option>
                 </select>
               </div>
@@ -5897,13 +6213,13 @@
             <div class="col-md-8">
               <div class="mb-3">
                 <label for="addModelSelect" class="form-label">Model</label>
-                <select class="form-select" id="addModelSelect" data-bs-toggle="tooltip" data-bs-placement="top" title="Optionally assign a hardware model to pre-fill default settings (pulse widths, speed limits, etc.)">
+                <select class="mb-select" id="addModelSelect" data-bs-toggle="tooltip" data-bs-placement="top" title="Optionally assign a hardware model to pre-fill default settings (pulse widths, speed limits, etc.)">
                   <option value="">Select Model (optional)</option>
                 </select>
               </div>
             </div>
             <div class="col-md-4 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-secondary w-100" id="addModelBtn" title="Open the Models page to add a model"
+              <button type="button" class="mb-btn mb-btn-secondary w-100" id="addModelBtn" title="Open the Models page to add a model"
                 onclick="window.open('/setup/models', '_blank')">
                 <i class="bi bi-plus-circle"></i> Add Model
               </button>
@@ -5918,15 +6234,15 @@
             <div class="col-12">
               <div class="mb-3">
                 <label for="addPartDescription" class="form-label">Description</label>
-                <input type="text" class="form-control" id="addPartDescription" name="description" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional description of this part's purpose or location on the character">
+                <input type="text" class="mb-input" id="addPartDescription" name="description" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional description of this part's purpose or location on the character">
               </div>
             </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Close without creating a part">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="createPartFromCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Create the new hardware part and add it to the current character">Add Part</button>
+        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Close without creating a part">Cancel</button>
+        <button type="button" class="mb-btn mb-btn-primary" onclick="createPartFromCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Create the new hardware part and add it to the current character">Add Part</button>
       </div>
     </div>
   </div>

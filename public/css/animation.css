@@ -276,3 +276,89 @@
   .mb-page-header-title { font-size: var(--mb-text-xl); }
   .mb-part-grid { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   Design-system adoption helpers (Phase 4b)
+   --------------------------------------------------------------------------
+   These replace inline style="" attributes that were previously scattered
+   through scenes.ejs and scene-editor.ejs. Every value is a token, so the
+   three themes can finally reach this cluster.
+   ========================================================================== */
+
+/* Visibility as a class, so JS toggling stays inside the token system. */
+.mb-is-hidden { display: none !important; }
+
+.mb-stack-gap      { margin-bottom: var(--mb-space-4); }
+.mb-editor-status:not(:empty) { margin-bottom: var(--mb-space-3); }
+.mb-queue-status:not(:empty)  { margin-bottom: var(--mb-space-3); }
+.mb-editor-actions { margin-top: var(--mb-space-4); }
+.mb-eyebrow-spaced { margin-bottom: var(--mb-space-3); }
+.mb-step-action-grid { margin-bottom: var(--mb-space-5); }
+.mb-loading-cell   { text-align: center; padding: var(--mb-space-4); }
+
+.sortable-steps    { min-height: 100px; }
+
+/* A sticky side panel that keeps the queue on screen while the list scrolls. */
+.mb-panel-sticky {
+  position: sticky;
+  top: var(--mb-space-4);
+  align-self: start;
+}
+
+/* A button group asked to fill its container stops being inline. */
+.mb-cluster-animation .mb-btn-group-fill,
+.mb-btn-group-fill {
+  display: flex;
+  width: 100%;
+}
+.mb-btn-group-fill > .mb-btn { flex: 1 1 0; min-width: 0; }
+
+.mb-queue-controls { margin-bottom: var(--mb-space-3); }
+.mb-queue-story    { margin-bottom: var(--mb-space-3); }
+
+/* Big "pick a step type" tiles in the Add Step modal. */
+.mb-step-action-btn {
+  flex-direction: column;
+  padding: var(--mb-space-5);
+  gap: var(--mb-space-2);
+}
+
+/* Rows: were Bootstrap .list-group-item, now token-backed. */
+.mb-cluster-animation .mb-scene-row,
+.mb-cluster-animation .mb-queue-row {
+  padding: var(--mb-space-3);
+  margin-bottom: var(--mb-space-2);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  color: var(--mb-fg-primary);
+}
+.mb-cluster-animation .mb-scene-row:hover,
+.mb-cluster-animation .mb-queue-row:hover { background: var(--mb-bg-hover); }
+.mb-queue-list { min-height: 200px; }
+
+/* Drop indicator during queue reordering — a role colour, not a literal. */
+.mb-drop-before { border-top: 2px solid var(--mb-primary) !important; }
+.mb-drop-after  { border-bottom: 2px solid var(--mb-primary) !important; }
+
+/* A confirm dialog asks one question; it does not need the full modal width. */
+.mb-confirm-dialog { max-width: 460px; }
+
+/* Icon-only row actions stay compact on desktop. */
+.mb-cluster-animation .mb-scene-row .mb-btn-icon.mb-btn-sm,
+.mb-cluster-animation .mb-queue-row .mb-btn-icon.mb-btn-sm { width: 34px; height: 34px; min-height: 34px; }
+
+@media (max-width: 768px) {
+  /* Stop the sticky queue panel from eating the viewport on a phone. */
+  .mb-panel-sticky { position: static; }
+
+  /* Four labelled transport buttons will not fit across 390px — wrap to 2x2. */
+  .mb-btn-group-fill { flex-wrap: wrap; }
+  .mb-btn-group-fill > .mb-btn { flex: 1 1 45%; }
+
+  .mb-step-action-btn { padding: var(--mb-space-4); }
+
+  /* Row actions must clear 40px to be hit reliably while hardware is moving. */
+  .mb-cluster-animation .mb-scene-row .mb-btn-icon.mb-btn-sm,
+  .mb-cluster-animation .mb-queue-row .mb-btn-icon.mb-btn-sm { width: 40px; height: 40px; min-height: 40px; }
+}
