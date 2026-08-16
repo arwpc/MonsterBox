@@ -15,8 +15,9 @@ import actuatorService from './actuator.js';
 import { runPy, runWrapper } from './exec.js';
 import servoService from './servo.js';
 import stepperService from './stepper.js';
-import { getCalibrationStore } from '../../server/calibration/store.js';
+import { getCalibrationStore, isPlaceholderProfile } from '../../server/calibration/store.js';
 import { getPartSafety, applySafetyLimits, runInPowerGroup } from './safetyLimits.js';
+import servoDaemonClient from './servoDaemonClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -636,6 +637,32 @@ const HARDWARE_CONTROLLERS = {
 
                     // Helpful debug
                     console.log(`🦷 Servo route: type=${servoType} (norm=${normType}), ctl=pca9685, ch=${channel}, addr=${address != null ? address : '0x40'}, angle=${angleDeg}`);
+
+                    // Standard positioning goes through the shared servo daemon when it
+                    // is up. This is the path the idle loop and head tracking hammer, and
+                    // it was spawning a process per command — each of which re-initialised
+                    // the PCA9685 and blanked every other channel. angleDeg has already
+                    // been through applySafetyLimits() in controlPart(); the daemon only
+                    // re-clamps to 0-180 on top.
+                    if (normType !== 'continuous' && normType !== 'feedback') {
+                        try {
+                            await servoDaemonClient.ensureDaemon();
+                            await servoDaemonClient.moveOne(channel, angleDeg, { address });
+                            return {
+                                success: true,
+                                partType: 'servo',
+                                channel,
+                                angleDeg,
+                                servoType: normType,
+                                controllerType: 'pca9685',
+                                viaDaemon: true,
+                                message: `PCA9685 ch${channel} ${commandType} to ${angleDeg}°`
+                            };
+                        } catch (daemonErr) {
+                            console.warn(`⚙️  Servo daemon unavailable for ch${channel} (${daemonErr.message}) — falling back to servo_cli.py`);
+                        }
+                    }
+
                     console.log(`🧭 Python call => servo_cli.py ${args.join(' ')}`);
 
                     const result = await runWrapper('servo_cli.py', args);
@@ -1909,7 +1936,24 @@ export async function batchMoveServos(commands, options = {}) {
                 const maxA = profile.bounds?.maxAngle ?? 180;
                 angle = minA + maxA - angle;
             }
-            const pair = { channel: partCfg.channel, angle, partId: cmd.partId, safety };
+            // Carry the effective window down to the daemon as a backstop. This
+            // is the SAME window applySafetyLimits just enforced (configured
+            // limits intersected with real, non-placeholder calibration), so it
+            // can only re-clamp — never widen — what was already decided above.
+            const boundsMin = isPlaceholderProfile(profile) ? null : profile?.bounds?.minAngle;
+            const boundsMax = isPlaceholderProfile(profile) ? null : profile?.bounds?.maxAngle;
+            const windowMin = [safety.minAngle, boundsMin].filter(v => v != null).reduce((a, b) => Math.max(a, b), -Infinity);
+            const windowMax = [safety.maxAngle, boundsMax].filter(v => v != null).reduce((a, b) => Math.min(a, b), Infinity);
+
+            const pair = {
+                channel: partCfg.channel,
+                angle,
+                partId: cmd.partId,
+                safety,
+                address: partCfg.address,
+                min: Number.isFinite(windowMin) ? windowMin : null,
+                max: Number.isFinite(windowMax) ? windowMax : null
+            };
             if (safety.powerGroup) serializedCmds.push(pair);
             else pcaPairs.push(pair);
         } else {
@@ -1919,29 +1963,77 @@ export async function batchMoveServos(commands, options = {}) {
 
     const results = [...blockedResults];
 
-    // Batch PCA9685 command
+    // Batch PCA9685 command.
+    //
+    // Preferred path is the shared servo daemon: one long-lived process owns the
+    // I2C bus, so the chip is never re-initialised and every channel in this
+    // batch is written back-to-back under one lock (~0.3ms apart) instead of
+    // being blanked by the next command's chip reset. Spawning servo_cli.py per
+    // batch is kept as the fallback for when the daemon is not up.
     if (pcaPairs.length > 0) {
+        const daemonMoves = pcaPairs.map(p => ({
+            channel: p.channel, angle: p.angle, min: p.min, max: p.max
+        }));
+        let dispatched = false;
+
         try {
-            const args = pcaPairs.map(p => `${p.channel}:${p.angle}`);
-            const out = await runWrapper('servo_cli.py', ['batch_pca', ...args]);
-            const success = wrapperSucceeded(out, null);
-            for (const p of pcaPairs) {
-                results.push({ success, partId: p.partId, angleDeg: p.angle, batch: true });
+            await servoDaemonClient.ensureDaemon();
+            const daemonResults = await servoDaemonClient.moveMany(daemonMoves, {
+                address: pcaPairs[0].address
+            });
+            dispatched = true;
+            for (let i = 0; i < pcaPairs.length; i++) {
+                const p = pcaPairs[i];
+                const r = daemonResults[i];
+                results.push({
+                    success: !r || r.status === 'success',
+                    partId: p.partId,
+                    angleDeg: r && r.angle != null ? r.angle : p.angle,
+                    batch: true,
+                    viaDaemon: true,
+                    ...(r && r.status === 'error' ? { error: r.error } : {})
+                });
             }
-        } catch (e) {
-            for (const p of pcaPairs) {
-                results.push({ success: false, partId: p.partId, error: e.message });
+        } catch (daemonErr) {
+            console.warn(`⚙️  Servo daemon unavailable for batch (${daemonErr.message}) — falling back to servo_cli.py`);
+        }
+
+        if (!dispatched) {
+            try {
+                const args = pcaPairs.map(p => `${p.channel}:${p.angle}`);
+                const out = await runWrapper('servo_cli.py', ['batch_pca', ...args]);
+                const success = wrapperSucceeded(out, null);
+                for (const p of pcaPairs) {
+                    results.push({ success, partId: p.partId, angleDeg: p.angle, batch: true });
+                }
+            } catch (e) {
+                for (const p of pcaPairs) {
+                    results.push({ success: false, partId: p.partId, error: e.message });
+                }
             }
         }
     }
 
     // Power-grouped servos: one at a time, with the group's cooldown between them,
     // so a pose that touches both ends of a fused rail can never energize them together.
+    // These deliberately do NOT join the batch above — the whole point of the group
+    // is that its members are never commanded in the same breath.
     for (const p of serializedCmds) {
         try {
-            const out = await runInPowerGroup(characterId, p.safety,
-                () => runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]));
-            const success = wrapperSucceeded(out, null);
+            const out = await runInPowerGroup(characterId, p.safety, async () => {
+                try {
+                    await servoDaemonClient.ensureDaemon();
+                    await servoDaemonClient.moveMany(
+                        [{ channel: p.channel, angle: p.angle, min: p.min, max: p.max }],
+                        { address: p.address }
+                    );
+                    return 'daemon:ok';
+                } catch (daemonErr) {
+                    console.warn(`⚙️  Servo daemon unavailable for part ${p.partId} (${daemonErr.message}) — falling back to servo_cli.py`);
+                    return runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]);
+                }
+            });
+            const success = out === 'daemon:ok' || wrapperSucceeded(out, null);
             results.push({ success, partId: p.partId, angleDeg: p.angle, serialized: true });
         } catch (e) {
             results.push({ success: false, partId: p.partId, error: e.message, serialized: true });
