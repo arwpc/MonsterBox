@@ -2,6 +2,372 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [9.2.0] - 2026-08-16 — The right voice, a body that moves together, and a show that reaches the yard
+
+*Includes **9.1.0**, which was opened during the same overnight session and superseded before
+it shipped; it has no separate entry. Halloween-night release.*
+
+For the operator, three things changed. **Your characters now speak in their own voices** —
+four of the six were speaking in someone else's on the say/scene path, and the fleet had no
+way to notice because a character speaking clearly in a stranger's voice passes every
+level-and-transcript check ever run against it. **The body now moves as one figure instead of
+one joint at a time** — servos can finally move together, and a new gesture engine drives
+them from the conversation. **And the show was proven to reach the yard**, by recording each
+animatronic with its own microphone while it performed and reading the words back.
+
+> ⚠️ **Three of six nodes were offline for this entire session and are unverified.**
+> PumpkinHead (char 1) and Groundbreaker (char 5) never answered; Renfield (char 6) has never
+> been on the network at all. Nothing in this release has been exercised on their hardware.
+>
+> ⚠️ **This release only takes effect on nodes that receive the deploy.** At the close of the
+> session **Orlok, Mina and Sir Dragomir all report 9.2.0** and serve HTTPS 200; the other
+> three are unreachable and have received nothing. The voice fix was confirmed end to end
+> exactly this way: the ear-check caught Sir Dragomir still speaking in his **retired** voice
+> (`SOYHLrjzK2X1ezoPC6cr`) because the fix had not yet reached his Pi; after deploying, he came
+> back **AUDIBLE in his canonical voice** (`wXvR48IpOq9HACltTmt7`), checked against the
+> committed agent snapshot.
+>
+> ⚠️ **The speaker rigs are not level-matched, and a daylight balancing pass is outstanding.**
+> Sir Dragomir carries across a room at sink volume **0.30**; Mina and Orlok (both Unitek
+> Y-247A adapters) are inaudible below **~0.5**. Mina scored `GARBLED` at her 0.65 default and
+> only became `AUDIBLE` at 0.90. `wpctl` volume is node-local and is not deployed.
+>
+> Unless stated otherwise, "measured" below means measured on the Orlok node.
+
+### Fixed — voice and audio
+
+- **Four of six characters spoke in the wrong voice** on the say/scene path (v9.1.0).
+  `services/aiConfigStore.js` carried a hardcoded per-character voice map that never tracked
+  the agent-side voice changes: **PumpkinHead spoke in Sir Dragomir's voice**, Sir Dragomir in
+  a voice retired from his agent, and **Renfield and Groundbreaker both spoke as Orlok** (no
+  map entry → global fallback; Groundbreaker also registered under characterId 7 against a map
+  keyed 5). Only Mina and Orlok were correct. An earlier fix had written camelCase `voiceId`
+  into the character configs while every reader uses snake_case `voice_id`, so it was dead on
+  arrival and the wrong voices shipped anyway. Voice identity is **now data**: each
+  character's voice, speed, stability and similarity are synced into
+  `data/character-{id}/ai-config/tts-config.json` from the committed agent snapshots in
+  `config/elevenlabs/agents/`, and the map is gone. A character with no configured voice now
+  warns once instead of silently impersonating someone else.
+- **Saving anything on the AI settings page deleted the selected character's voice.**
+  `saveTTSConfig` wrote the request body straight over the config file, and that page exposes
+  only model/stability/similarity — so every save dropped `voice_id` and `speed`, the two
+  fields that are the character's *identity* rather than tunables, and the character carried on
+  in the shared fallback voice with nothing logged. Caught live when a browser-test pass
+  stripped a character's voice mid-run. **Saves now merge** — only fields the caller actually
+  sent are changed. The same partial-save bug was silently dropping `microphonePartId` on the
+  STT side.
+- **Every audio step in every Yard Theater moment was a guaranteed no-op.**
+  `POST /api/orchestration/animatronic/:id/play-audio` requires an `audioId` and 400s without
+  one; `perform.mjs` only ever sent `filename`. Both Thomas moments are audio-only, so **the
+  Thomas moment would have been silent on Halloween.** Filenames now resolve to that node's own
+  `audioId` (ids are per-node), and a file missing from a node's library is skipped with a
+  warning instead of failing the show.
+- **`thomas-whisper.mp3` was in no node's audio library at all** — the file sat in
+  `data/audio-library/` but never in `files/` and was absent from `library.json`, so every
+  play-audio call for it resolved to nothing. Now registered with real probed metadata and
+  confirmed present in a node's library. (`dusk-theme.mp3` is still missing **on purpose** —
+  the moment documents it as an optional music bed that skips gracefully.)
+
+### Added — the ear-check: proof that a speaker was actually heard
+
+- **`scripts/fleet-audio/earcheck.mjs`** — the instrumented cast test. It records each node's
+  **own** microphones with the yard quiet to establish that mic's noise floor, casts a known
+  in-character phrase through the real say/TTS path, measures the speech envelope against that
+  floor, transcribes with ElevenLabs Scribe, and scores word recall. A node passes only if it
+  rose above its own floor **and** the words came back.
+  - **Result, with all three live nodes on 9.2.0: Orlok, Mina and Sir Dragomir all AUDIBLE** —
+    Orlok 20.1 dB rise / 100% word recall, Sir Dragomir 33.3 dB / 69% with his **canonical
+    voice confirmed**, Mina 12.4 dB / 80% with **canonical voice confirmed**. PumpkinHead,
+    Groundbreaker and Renfield were **untestable** (`OFFLINE`), not passing.
+  - **The default capture window was widened 9 s → 13 s.** A slow-speaking character's line
+    runs past 11 s, and a short window clipped the tail and scored a perfectly good node
+    `GARBLED` — measured on one node, same configuration: **53% word recall at 9 s vs 80% at
+    15 s.**
+  - **Mina was `GARBLED` purely because her speaker was too quiet** (10.2 dB rise, 47% recall at
+    sink 0.65) and became `AUDIBLE` at 0.90 — the rigs are not matched, and a single fleet-wide
+    volume does not mean the same thing on each node.
+  - It records **every** microphone, because one node's USB adapter jack is empty and returns a
+    dead-flat floor — which reads as a silent speaker when it is really an unplugged mic.
+  - It now also checks **which voice was actually used** against the canonical voice in the
+    committed agent snapshots, and fails the run on a mismatch (`WRONG-VOICE`). Audible was
+    never the same as right; that gap is exactly why four wrong voices went unnoticed.
+- **`scripts/yard-theater/verify-moment.mjs`** — the same two gates applied to a whole show
+  instead of one phrase. `perform.mjs` returning 200 only ever proved the orchestration API
+  accepted the call. **The Dusk Ceremony now verified end to end on real speakers** at reduced
+  volume, each node confirmed by its own microphone and Scribe: Mina 6.5 dB / 100% recall,
+  Orlok 11.3 dB / 100%, Sir Dragomir 13.0 dB / 92% — all `HEARD`.
+  `--volume` records each node's sink volume, sets a rehearsal level and restores it in a
+  `finally`, so a ceremony can be rehearsed at 3am without waking the street.
+- **The level gate was window-length dependent** and is fixed: one 8 s line inside a 96 s
+  capture is ~8% of frames, so a p90 landed in the silence and a node Scribe read back at 100%
+  recall still scored `SILENT`. Scoring the **loudest ~4 s** means the same thing at any window
+  length. `--volume-map` sets a per-node rehearsal level, because the rigs are not matched —
+  Sir Dragomir carries across the room at sink 0.30 while Mina and Orlok (both Unitek Y-247A
+  adapters) are inaudible below ~0.5.
+
+### Fixed — servos could not move together (the headline)
+
+- **Root-caused: every servo command re-initialised the PCA9685 and blanked all sixteen
+  channels.** Each command was a new process, every new process called `pca9685_init`, and
+  init unconditionally ran reset/SLEEP/prescale/wake. Writing the prescaler **requires MODE1
+  SLEEP, which stops the oscillator** — so every single servo move dropped PWM on every other
+  channel for the length of that write. This is the long-documented "head twitches to 60° and
+  120°".
+  - **Measured, 24 one-shot commands aimed at an unconnected channel while sampling the head
+    channel: before 11 MODE1 SLEEP events and 53 no-pulse reads → after 0 and 0** (with the
+    daemon down, i.e. the direct path alone).
+  - `pca9685_init` is now **non-destructive**: the chip is probed and adopted as-is if it is
+    already awake at the right prescale, so the full sequence runs once per power cycle instead
+    of once per command.
+  - Channel writes are now **one atomic 4-byte block write**. Four separate byte writes let a
+    concurrent writer interleave, producing a pulse width nobody asked for — and two concurrent
+    `servo_cli.py` processes on one channel was an observed configuration, not a theory.
+- **Added: a persistent servo daemon that owns the I²C bus** —
+  `python_wrappers/servo_daemon.py` plus `services/hardwareService/servoDaemonClient.js`. It
+  generalises the jaw daemon (the one servo path that never glitched the others, precisely
+  because it was persistent) into a single long-lived owner of the bus, serving both a Unix
+  socket (`$MB_SERVO_SOCKET`, default `/tmp/monsterbox-servo.sock`) and the original
+  stdin/stdout jaw protocol byte-for-byte, so `services/jawServoDaemon.js` needs no change.
+  `batchMoveServos` and single-part PCA `moveToAngle` route through it, each keeping the
+  `servo_cli.py` spawn as a fallback — **a missing daemon degrades to the old behaviour rather
+  than dropping the command.**
+  - **Measured: two servos written <1 ms apart** (all 8 stepped transitions on both channels
+    landed inside one sampler iteration), a two-channel 50 Hz ramp **sustained 49.9 Hz**, and a
+    **p50 round trip of 3.37 ms against 200–580 ms per process spawn** before.
+  - **Safety is unchanged and still decided in Node before dispatch.** `applySafetyLimits()`
+    runs first exactly as before; the resulting window is passed down so the daemon can only
+    **narrow**, never widen; power-grouped parts still do **not** join a batch — Orlok's elbow
+    and forearm share a fuse that has blown before and stay serialized with their cooldown.
+    Shutdown deliberately leaves servos holding position; releasing everything would drop the
+    head under gravity.
+  - The socket file is now removed on clean shutdown (it is a daemon thread, so the process
+    could exit first and leave callers paying a refused connection before falling back).
+- **Added: `--mode1` and `--keep-invalid` to the read-only I²C sampler**, which is what made the
+  glitch visible at all — the LED registers keep their values through a re-init, so only
+  counting MODE1 SLEEP entries is register-level evidence of a cross-channel drop. Measured
+  against the live service before the fix: **5 SLEEP entries and 26 no-pulse reads on the head
+  channel in 3 seconds of ordinary idle-loop motion.**
+
+### Added — conversation-driven gesture engine (v9.1.0)
+
+Implements `docs/development/GESTURE-ENGINE-SPEC.md`: a thin coordination layer over the
+existing motion stack — **no new motion primitives, no new hardware, no new dependencies**.
+`services/gestureEngineService.js`, recipes as data in `data/character-{id}/gestures.json`,
+API at `routes/api/gestures.js` (`GET /api/gestures`, `POST /api/gestures/:gestureId/perform`,
+`POST /api/gestures/conversation/:action`). Execution goes through `priorityManager` for
+arbitration and `transitionEngine` for easing, with three new priority layers (AMBIENT 40,
+GESTURE_STATE 85, GESTURE_SEMANTIC 90).
+
+- **Concurrency is the point.** Steps run concurrently, offset by `delayMs`, so the head leads
+  and the body follows. The loader **refuses any recipe with fewer than two moving parts** —
+  sequential single-part motion is impossible to express by accident.
+- **Safety is enforced at load time, loudly**, not silently reinterpreted at run time. The
+  loader rejects targets outside a part's calibrated window, any part marked `blockAllMotion`,
+  and **two parts on one shared power rail whose step windows overlap** — while accepting the
+  same pair correctly staggered. The hardware layer would serialize a shared rail anyway, but
+  doing so at run time would destroy the timing the author intended, so the recipe is refused.
+- **The conversation is bulletproof against the body.** Motion is fire-and-forget: unknown
+  gestures, missing files, malformed JSON, denied claims and dead servos all resolve to a quiet
+  "did not perform", and the handler answers the agent immediately without ever awaiting a
+  servo.
+- **Verified on real hardware** by sampling the PCA9685 registers while firing a gesture:
+  **head 98.8° → 119.6° and forearm 103.9° → 109.9° within one gesture**, 478 samples per
+  channel, **0 rejected reads and 0 MODE1 SLEEP events** — two servos moving together with no
+  chip re-initialisation, which is what the daemon work was for.
+- **Fixed during that verification: light steps never fired.** `setLight` called a
+  `controlLight()`/`setLight()` pair that does not exist on the hardware service; light parts
+  take `turnOn`/`turnOff` through `controlPart`. Since most recipes pair a servo with a light,
+  every gesture was quietly reduced to the single-part motion the design exists to refuse. A
+  gesture now reports 3/3 steps where it reported 2/3.
+- **Only one character ships a vocabulary, by design rather than oversight.** The engine
+  refuses raw angle targets for parts with **no calibrated bounds**, and the other characters
+  have not yet had the pose/calibration pass the spec's §9.1 describes — so they have no
+  `gestures.json`, which is a silent no-op. The shipped set is authored against the parts that
+  actually work on that node: the bow-at-waist and elbow are safety-blocked, so its bow gestures
+  are expressed as head bows. 20 unit tests (`tests/unit/gesture-engine.test.js`), four of which
+  assert the **shipped** recipes pass every safety rule against real config.
+
+### Security and safety
+
+- **A browser test fired a REAL fleet emergency stop, twice.** A stale route interceptor sent a
+  genuine `POST /api/panic {fleet:true}` during a suite run, which **disarmed superpowers
+  across every reachable node**; Sir Dragomir's jaw animation was found switched off afterwards
+  and was restored. Nothing in the run reported it — it surfaced only by diffing the nodes.
+  Route-level `MB_TEST_MODE` guards existed but had **missed `/api/panic` entirely**, and
+  `orchestrationService` had none at all. The guard now sits on
+  **`orchestrationService.httpNode`, the single egress point every inter-node call passes
+  through**, so no route, script or future test can go around it. **Reads are still allowed**
+  deliberately (blocking them would push tests toward mocking the code under test); **writes
+  are refused and reported as refused.**
+- **Character-independence bug: `sceneExecutor` looked up calibration profiles without a
+  `characterId`.** Part IDs are unique only *within* a character, so the lookup fell back to
+  whichever character the **node** has selected — **clamping one character's motor step from
+  2000 ms to 0 ms using another character's calibration.** Previewing any character's scenes on
+  a shared node was affected. `characterId` is now threaded through all four lookups and the
+  three preset resolvers.
+- **The night-memory PHI scrubber was rebuilt as an allow-list.** The registry is built from
+  real conversations with real children, and the old scrubber was a deny-list — it removed the
+  shapes someone had thought of. **An adversarial corpus of 36 cases broke it 23 times**, worst
+  of all structurally: "collapse a capitalized pair unless *either* word is canon" left
+  **"Emily Rodriguez" completely intact**, because Emily is a canon name. It had also never
+  seen O'Brien, McDonald, hyphenated or three-part names, ALLCAPS, lowercase transcripts, ages,
+  schools, handles, links, dates, or an unnumbered street. Now: **any** run of two or more
+  consecutive capitalized tokens collapses to its first token unless the whole run is an
+  explicit canon phrase — so surnames nobody has ever seen are removed too. A token-wise canon
+  rule was tried first and **rejected on real data**: a live transcript summary carried "Aaron
+  Warner" straight through it. `isClean()` is a final guard — a registry line still carrying a
+  digit, an `@` or a URL is dropped whole rather than published. **51/51 adversarial cases
+  pass**, and the canon cases assert what must *survive*, so the suite cannot pass by deleting
+  everything. The 2am cron harvest now **runs `scrub-test.mjs` first and only harvests if it
+  passes.**
+
+### Fixed — the Halloween cron schedule would never have run
+
+- **`/home/remote/yard-theater-logs/` did not exist.** Every scheduled line redirects into it,
+  so **all three would have failed at the redirect and never run at all.** Created, and the
+  crontab now says so up front. Verified against real cron with a temporary entry, not by
+  reading it: the `cd /home/remote/MonsterBox &&` prefix is load-bearing (cron runs with
+  `cwd=$HOME`; a negative control without it died with `MODULE_NOT_FOUND`), `/usr/bin/node` is
+  on cron's PATH, `harvest.mjs` resolves its key from `/etc/monsterbox/elevenlabs.key` with no
+  interactive environment, and Node's timezone is `America/Chicago` so the 18:30 / 20:47 / 02:00
+  slots mean what the comments say.
+- `perform.mjs` now **preflights `GET /api/orchestration/status`**, so steps for nodes that are
+  missing from config or unpowered are skipped instantly instead of stalling the show ~20 s each
+  on a socket timeout; `"all"` fans out to configured+answering nodes instead of a hardcoded
+  `[1..5]`; `say-all` asks for the endpoint's maximum timeouts (its 5 s default is shorter than
+  TTS takes, and misreported a working voice as a failure); plus `--dry-run`, local-time log
+  stamps and an ok/skipped tally for the cron log. `--hours 0` was silently rewritten to 26.
+
+### Changed — ElevenLabs
+
+- **Judge panel re-run against the shipping configuration: 150 conversations (6 agents × 5
+  personas × 5 runs), 0 errors. Every character at or above baseline.**
+
+  | Agent | baseline | this run | delta |
+  |---|---|---|---|
+  | Orlok | 80% | 96% | +16 |
+  | Sir Dragomir | 89% | 96% | +7 |
+  | PumpkinHead | 91% | 100% | +9 |
+  | Groundbreaker | 77% | 80% | +3 |
+  | Mina | 93% | 92% | −1 (one conversation; noise) |
+  | Renfield | 100% | 92% | see below |
+
+  `baselines.json` now records these as data and `analyze.mjs` prints a pass/fail gate against
+  them, so the next session compares to numbers rather than to a prose table. **Confound
+  recorded honestly:** a parallel session attached a new knowledge-base doc to all six agents
+  about two minutes into the 13.6-minute run, so part of the run saw it and part did not.
+- **Renfield's baseline is corrected from 100% to 93% — this is a BETTER ESTIMATE, not a
+  regression.** The original reading was n=25; re-measured at n=100 with the config unchanged
+  between the two measurements it settled at 93%. 25/25 carries a 95% interval of
+  **[87%, 100%]** against **[86%, 97%]** for 93/100 — the same measurement, taken properly the
+  second time. He remains joint-highest in the fleet.
+- **Mina was the one agent the fleet LLM migration had missed** — still on
+  `gemini-3.1-flash-lite` with `reasoning_effort=minimal`, measured at **~860 ms LLM
+  time-to-first-byte against ~160 ms** for `gpt-oss-120b` on the other five, i.e. roughly 5×
+  slower per turn on the fleet's highest-delight character. Migrated live, and the judge run
+  confirms she held her score.
+- **Fleet turn-taking retuned for a yard rather than a phone assistant**, per character rather
+  than uniformly. `turn_eagerness`: Orlok patient → normal (patience belongs in the voice, not
+  in the silence); Sir Dragomir, Groundbreaker and Renfield → eager; **Mina and PumpkinHead
+  stay normal deliberately** — both do close work with small children, who hesitate
+  mid-sentence. `turn_timeout`: Orlok 12 → 8 s, Mina 7 → 6 s, the rest 7 → 5 s.
+  **`soft_timeout_config` is now enabled fleet-wide** at 1.5–2.5 s per character — it was
+  `-1`/disabled, so the in-character filler lines, which had been written and shipped in
+  8.5.1-ai, had never once played. `disable_until_first_user_message` is set so a filler can
+  never be the first thing a guest hears.
+- **Orlok's vocal profile moved toward the 2024 Nosferatu performance** on owner-supplied
+  research: stability 0.35 → 0.30, and an ELONGATION rule that stretches the vowel in one or
+  two weighted words per reply. The word-count law is untouched. `style` exaggeration was **not**
+  set — verified against the live API schema, `style` is absent from `TTSConversationalConfig`
+  and cannot be set on `eleven_v3_conversational`.
+- **Measured and worth recording: `eleven_v3` ignores `voice_settings.speed` entirely** —
+  identical output duration across the whole 0.7–1.2 range, where `eleven_multilingual_v2` goes
+  **~10.7 s to ~6.0 s on the same text**. Per-character tuned speeds are therefore only sent on
+  the conversational agent path, and deliberately not to v3 where they would look configured
+  and do nothing. This retires the "Orlok speed 0.75 may want 0.8" question for the say/scene
+  path rather than answering it.
+- The judge harness now **detects spoken-gesture leakage** on every run, and the judge
+  personalization criterion no longer fails a conversation just because the visitor never gave
+  a name — it judges the character on what the character did.
+
+### Withheld — the gesture client tool is staged but NOT live for Halloween
+
+The ElevenLabs half of the gesture spec (one `gesture` client tool, one `# Body` prompt section
+per character) is **created in the workspace, attached to no agent**, with the prompt sections,
+tool definition, evidence and an apply procedure staged in `config/elevenlabs/gesture/`.
+
+- The spec assumed these calls would be harmless no-ops. They are not: the character prompts are
+  dense with `[audio tags]`, so a model handed gesture ids **emits them as more audio tags
+  inside the spoken text** — a guest hears the character say "hand glow".
+- Once the handler shipped mid-session, the leak was re-measured **on the live path**, where a
+  tool call is actually possible: real Agents WebSocket conversations, tool declared and
+  answerable. Orlok — the only character with a shipped `gestures.json`, and so the only one
+  with anything to gain — over 5 probes and 30 replies: **0 correct tool calls and 9 replies
+  (30%) speaking `[hand_glow]` aloud.** The other four agents were quiet; Mina made the fleet's
+  single correct call.
+- His prompt is the most bracket-primed in the fleet, which points at priming rather than at the
+  ids being inherently unsafe. The fix worth trying next — per-character tools with `gesture_id`
+  as an enum and a `# Body` that names intents but no ids — departs from spec §5.2 and needs a
+  clean 30-reply probe before it ships. Recorded in `config/elevenlabs/gesture/README.md`.
+- Zero spoken-gesture leakage across all 150 judge conversations with the config withdrawn, as
+  expected. Live agents were restored byte-identical to the committed snapshots.
+
+### Characters and fleet
+
+- **Renfield (character 6) completed** — but **his Pi has still never been on the network**, so
+  none of it is hardware-verified.
+  - **Shake-motor pins fixed:** `parts.json` declared **the same GPIO (17) for both BTS7960
+    enable lines** (inherited from the Groundbreaker part it was copied from). The setup claims
+    each enable line separately, and claiming the same line twice returns `GPIO_BUSY (-79)` —
+    so **every shake command would have failed at pin setup, before the motor ever turned.**
+    L_EN moved to GPIO 23, wiring spelled out in the description including the "do not jumper
+    the enables together" constraint. Also added the top-level `maxDuration` the part normalizer
+    actually reads, so the 5000 ms cap stops being dropped.
+  - **Placeholder image** at `data/character-6/images/` (a monogram card that says
+    "PLACEHOLDER IMAGE / not a photograph of the prop" on its face) — `characters.json` already
+    pointed at a file that did not exist, and that path is plain `express.static` with no
+    fallback, so every Renfield avatar was a broken image.
+  - **Fleet entry with a deliberately null IP.** Being absent was not neutral —
+    `getHostnameCharacterId()` maps hostname → characterId from `config/animatronics.json`, so
+    without an entry his Pi would boot as whatever character `app-config.json` held and
+    advertise *that* identity over mDNS. `ip: null` is not a guess and is the fastest possible
+    failure: measured on this node, **null fails in ~126 ms (`ENOTFOUND`, and it never passes
+    `isValidHost` so it is never dialled), a guessed `192.168.8.170` takes ~3100 ms
+    (`EHOSTUNREACH`, and could belong to a stranger's device), and `renfield.local` takes a full
+    ~5000 ms timeout.** He is correctly excluded from fleet fan-outs and reports himself
+    offline.
+- **`views/components/control-bar.ejs` pointed its avatar at a `placeholder.png` that had never
+  existed**, so **every page in the app fired a 404** and leaned on the `onerror` handler to
+  hide it. Added; the Fleet Command Center now loads with 0 failed requests and 0 console errors
+  (both were non-zero).
+- **mDNS discovery was dead on this node** — `avahi-utils` had never been installed — and
+  `avahi-daemon` was not running on one other node. Both fixed: **all three live nodes now
+  advertise `_monsterbox._tcp` and discover each other**, which is what lets a node auto-appear
+  when it boots. The three offline nodes are, of course, undiscoverable until they are powered.
+- **The fleet status contract now allows `ip: null`**, and a node with no address must report
+  itself offline.
+- `scripts/deploy-to-animatronic.sh` **no longer refuses to run when only key auth is
+  configured.** It demanded an exported `PASSWORD` even on a fleet where SSH keys already work —
+  punishing the more secure configuration. It now prefers keys, falls back to the password, and
+  reports which mode it used.
+
+### Known issues and things deliberately not done
+
+- **Three nodes unverified.** PumpkinHead, Groundbreaker and Renfield were offline or
+  non-existent for the entire session. Every hardware claim here is Orlok, plus the remote
+  audio/ceremony checks on Mina and Sir Dragomir.
+- **A daylight speaker level-balancing pass in the yard is still outstanding.** The levels
+  above are indoor/night rehearsal levels on badly mismatched rigs.
+- **`scripts/deploy-to-animatronic.sh` can abort on rsync exit 23** from root-owned files it
+  cannot replace (`certs/`, and a stray root-owned `data/ai-config/`). Because of `set -e` the
+  abort happens **before the service restart**, so the code lands and the node keeps running the
+  old build — a deploy that looks like it did nothing. See
+  `docs/deployment/README.md` → Troubleshooting.
+- **The gesture engine is verified on one node with one character's recipes.** No other
+  character has a `gestures.json`.
+- The ch4/ch5 fuse problem, the dead elbow and the quarantined bow are all **unchanged and still
+  open** — see `docs/troubleshooting/KNOWN-BUGS.md`.
+
 ## [9.0.0] - 2026-08-15 — Hardware safety, real hardware paths, live conversation
 
 A safety-and-honesty pass on the hardware layer, plus the first release in which the
