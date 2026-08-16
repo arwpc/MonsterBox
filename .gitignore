@@ -102,3 +102,6 @@ tmp-*.cjs
 tmp-*.js
 mb-shot.mjs
 .scratch/
+
+# Agent preview scratch (served from public/, never shipped)
+public/__preview_*.html
