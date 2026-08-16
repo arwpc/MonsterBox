@@ -48,6 +48,24 @@ socket held in the Node process.
   parsed into the registry. Re-run on an interval; combine with a health-ping so a dropped
   multicast packet doesn't evict a live node.
 
+> ⚠️ **`avahi-daemon` and `avahi-utils` are two different packages, and you need both.**
+> The daemon *advertises*; `avahi-browse` (from **`avahi-utils`**) is how a node *discovers*.
+> A node with only the daemon is visible to everyone else and blind itself — which is exactly
+> what was found on this node in v9.2.0, where `avahi-utils` had never been installed, plus one
+> other node where `avahi-daemon` was not running at all. Both fixed; **all three live nodes now
+> advertise `_monsterbox._tcp` and discover each other**, which is what lets a newly-booted node
+> auto-appear in the registry. Per node:
+>
+> ```bash
+> sudo apt-get install -y avahi-daemon avahi-utils
+> sudo systemctl enable --now avahi-daemon
+> avahi-browse -rpt _monsterbox._tcp          # should list every powered-on node
+> npm run check:discovery                     # fleet who-sees-whom matrix
+> ```
+>
+> A node that is powered off is simply undiscoverable — three of six nodes were offline for the
+> whole v9.2.0 session and none of this is verified for them.
+
 ### Service record
 
 - **Service type:** `_monsterbox._tcp`
@@ -59,6 +77,10 @@ collide). The name is display-only.
 
 ### Advertisement service-file template
 
+The `id`, `character` and `ver` values are filled in at write time from
+`config.selectedCharacter` and `package.json` — the file below is what one node's *generated*
+result looks like, not a literal to copy.
+
 ```xml
 <?xml version="1.0" standalone='no'?>
 <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
@@ -69,7 +91,7 @@ collide). The name is display-only.
     <port>3000</port>
     <txt-record>id=3</txt-record>
     <txt-record>character=Orlok</txt-record>
-    <txt-record>ver=8.4.1</txt-record>
+    <txt-record>ver=VERSION_FROM_PACKAGE_JSON</txt-record>
   </service>
 </service-group>
 ```

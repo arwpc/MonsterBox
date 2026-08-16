@@ -12,13 +12,26 @@ MonsterBox runs on **MonsterNet**, a dedicated private WiFi network for animatro
 
 ## Animatronic Hosts
 
-| Character | IP Address | Status |
-|-----------|------------|--------|
-| PumpkinHead (ID 1) | 192.168.8.150 | Active |
-| Mina (ID 2) | 192.168.8.140 | Active |
-| Orlok (ID 3) | 192.168.8.120 | Primary dev |
-| Sir Dragomir (ID 4) | 192.168.8.130 | Offline |
-| Groundbreaker (ID 5) | 192.168.8.200 | Active |
+Addresses here are a **fallback**; nodes discover each other's live addresses over mDNS
+(`_monsterbox._tcp`) — see [Node Discovery](development/NODE-DISCOVERY.md). Status and version
+as observed **2026-08-16** (v9.2.0 session); re-check with `npm run check:discovery` and
+`curl -sk https://<node>:3000/health`.
+
+| Character | IP Address | Status | Version |
+|-----------|------------|--------|---------|
+| PumpkinHead (ID 1) | 192.168.8.150 | 🔴 Offline all session — **unverified** | unknown |
+| Mina (ID 2) | 192.168.8.140 | 🟢 Online | 9.2.0 |
+| Orlok (ID 3) | 192.168.8.120 | 🟢 Primary dev | 9.2.0 |
+| Sir Dragomir (ID 4) | 192.168.8.130 | 🟢 Online | 9.2.0 |
+| Groundbreaker (ID 5) | 192.168.8.200 | 🔴 Offline all session — **unverified** | unknown |
+| Renfield (ID 6) | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
+
+⚠️ **Three of six nodes were offline for the whole v9.2.0 session**, so nothing in that release
+is verified on their hardware. Renfield's `ip` is deliberately `null` so calls to him fail in
+~126 ms instead of dialling a guessed address that could belong to someone else's device.
+
+mDNS requires **both `avahi-daemon` and `avahi-utils`** on every node — the daemon advertises,
+`avahi-browse` discovers. All three live nodes advertise and see each other as of 2026-08-16.
 
 ## Goblin Video Displays
 

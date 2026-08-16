@@ -6,8 +6,14 @@ checklist. Budget ~15 minutes.
 
 ## Prerequisites (per node)
 
-- [ ] Raspberry Pi OS with **avahi-daemon** installed and running
-      (`systemctl is-active avahi-daemon`). The deploy installs it if missing.
+- [ ] Raspberry Pi OS with **both `avahi-daemon` AND `avahi-utils`** installed, and the daemon
+      running (`systemctl is-active avahi-daemon`; `command -v avahi-browse`).
+      **These are two different packages and you need both** — the daemon *advertises*,
+      `avahi-browse` (in `avahi-utils`) is how the node *discovers*. A node with only the daemon
+      is visible to everyone else and blind itself. Both gaps were found live in v9.2.0
+      (`avahi-utils` never installed on one node, `avahi-daemon` not running on another); after
+      fixing, all three live nodes advertise and see each other.
+      Fix: `sudo apt-get install -y avahi-daemon avahi-utils && sudo systemctl enable --now avahi-daemon`
 - [ ] All nodes on the **same L2 subnet / WiFi SSID** (mDNS is link-local multicast; it
       does not cross routed VLANs or guest-network isolation).
 - [ ] MonsterBox **8.4.1+** deployed (`curl -sk https://localhost:3000/health`).
@@ -73,7 +79,12 @@ curl -sk https://localhost:3000/api/orchestration/nodes | jq '.nodes[] | {name,i
 ## If discovery is empty or partial
 
 - **`avahiAvailable:false`** → avahi-daemon isn't running on that node
-  (`sudo systemctl enable --now avahi-daemon`).
+  (`sudo systemctl enable --now avahi-daemon`), **or `avahi-utils` is not installed** so
+  `avahi-browse` does not exist (`sudo apt-get install -y avahi-utils`). The second case is the
+  easy one to miss: the node still advertises itself perfectly and simply cannot see anyone.
+- **A node is missing and it is simply powered off** → discovery cannot help. Three of six nodes
+  were offline for the whole v9.2.0 session; an absent row is an unpowered node, not a
+  discovery fault.
 - **Some nodes missing** → almost always the network blocking multicast (guest WiFi, VLAN
   isolation, AP client-isolation, or a managed switch dropping mDNS). Two fixes:
   1. Put all nodes on the same un-isolated SSID/subnet, **or**
@@ -88,6 +99,8 @@ curl -sk https://localhost:3000/api/orchestration/nodes | jq '.nodes[] | {name,i
 
 ## Optional: lock it down
 
-Set the same `MB_NODE_TOKEN` in every node's `.env` and redeploy. After that, only nodes
+Set the same `MB_NODE_TOKEN` in every node's **`monsterbox.service` environment** (or a systemd
+drop-in) and redeploy. ⚠️ **Not `.env` — the app never loads it**, so a token put there silently
+does nothing. After that, only nodes
 advertising the matching token hash are trusted — a stray device advertising
 `_monsterbox._tcp` won't be auto-added. See [../development/NODE-DISCOVERY.md](../development/NODE-DISCOVERY.md).

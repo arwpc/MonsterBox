@@ -22,11 +22,27 @@ This directory contains deployment guides, status reports, and procedures for Mo
 MonsterBox supports deployment to multiple animatronic characters across a network.
 
 ### Supported Characters
-1. **PumpkinHead** (Character 1) - 192.168.8.150 ✅
-2. **Mina** (Character 2) - 192.168.8.140 ✅ (Controller)
-3. **Orlok** (Character 3) - 192.168.8.120 ✅
-4. **Sir Dragomir** (Character 4) - 192.168.8.130 ⚠️ Currently offline
-5. **Groundbreaker** (Character 5) - 192.168.8.200 ✅
+
+Status and version as observed at the end of the v9.2.0 session (**2026-08-16 10:22**, via
+`curl -sk https://<node>:3000/health`). The static IPs are a fallback — nodes discover each
+other's live addresses over mDNS.
+
+| # | Character | Address | Status | Version |
+|---|---|---|---|---|
+| 1 | PumpkinHead | 192.168.8.150 | 🔴 Offline all session — **unverified** | unknown |
+| 2 | Mina | 192.168.8.140 | 🟢 Online | 9.2.0 |
+| 3 | Orlok | 192.168.8.120 | 🟢 Online (primary dev node) | 9.2.0 |
+| 4 | Sir Dragomir | 192.168.8.130 | 🟢 Online | 9.2.0 |
+| 5 | Groundbreaker | 192.168.8.200 | 🔴 Offline all session — **unverified** | unknown |
+| 6 | Renfield | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
+
+⚠️ **A fix only exists on a node that received the deploy.** In v9.2.0 the fleet ear-check
+caught Sir Dragomir still speaking in his retired voice purely because the deploy had not
+reached his Pi yet. **Always confirm the version after deploying**, do not assume:
+
+```bash
+curl -sk https://<node>:3000/health     # {"status":"OK","version":"…"}
+```
 
 ---
 
@@ -137,18 +153,51 @@ Example:
 - **8090** - MJPG-Streamer (webcam)
 - **8795** - ElevenLabs WebSocket
 
-### Character IP Addresses
+### Character IP Addresses (fallback values — mDNS supplies the live address)
 ```
-192.168.8.150 - PumpkinHead (Character 1)
-192.168.8.140 - Mina (Character 2, Controller)
-192.168.8.120 - Orlok (Character 3)
-192.168.8.130 - Sir Dragomir (Character 4) - Currently offline
+192.168.8.150 - PumpkinHead   (Character 1)
+192.168.8.140 - Mina          (Character 2, Controller)
+192.168.8.120 - Orlok         (Character 3)
+192.168.8.130 - Sir Dragomir  (Character 4)
 192.168.8.200 - Groundbreaker (Character 5)
+(none)        - Renfield      (Character 6) — ip is deliberately null until his Pi exists
 ```
+See the status table above for who was actually reachable and on which version.
 
 ---
 
 ## Troubleshooting
+
+### Deploy "succeeded" but the node is still running the old build
+
+**Symptom:** `deploy-to-animatronic.sh` prints rsync errors near the end, and afterwards
+`curl -sk https://<node>:3000/health` still reports the **previous** version.
+
+**Cause:** rsync exits **23** ("partial transfer due to error") when it hits files it cannot
+replace — in practice **root-owned** paths on the node: `certs/`, and a stray root-owned
+`data/ai-config/` directory (a known context-fallback artifact, see
+[KNOWN-BUGS](../troubleshooting/KNOWN-BUGS.md)). The script runs under `set -e`, so it aborts
+**before the `systemctl restart`**. The code lands on disk and the service keeps serving the old
+build — a deploy that looks like it did nothing.
+
+This is not hypothetical: it is why Sir Dragomir kept speaking in his retired voice after the
+wrong-voice fix was "deployed" to him in v9.2.0.
+
+```bash
+# On the node — remove the stray root-owned AI config dir (safe: regenerates per character)
+ssh remote@<node-ip> 'sudo rm -rf /home/remote/MonsterBox/data/ai-config'
+
+# Re-deploy, then ALWAYS confirm the version actually changed
+./scripts/deploy-to-animatronic.sh <character_id> <node-ip>
+curl -sk https://<node-ip>:3000/health
+
+# If the version is still old, the restart was skipped — do it by hand
+ssh remote@<node-ip> 'sudo systemctl restart monsterbox.service'
+```
+
+`certs/` is expected to be root-owned and should not be deleted — it is excluded from the fix
+above on purpose. The real fix (excluding root-owned paths from the rsync set, and not letting
+a non-fatal rsync status skip the restart) is **not done**.
 
 ### Server Won't Start
 ```bash
@@ -243,6 +292,6 @@ arecord -D hw:3,0 -f S16_LE -r 16000 -c 1 -d 3 /tmp/test.wav
 
 ---
 
-**Last Updated:** March 2026
+**Last Updated:** 2026-08-16 (v9.2.0 session)
 **Current Version:** See package.json (avoid hardcoding)
 

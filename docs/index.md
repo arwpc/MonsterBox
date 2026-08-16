@@ -26,13 +26,21 @@ MonsterBox is a single-node animatronic control platform that drives Halloween c
 
 ## Characters
 
-| ID | Name | IP Address | Status |
-|----|------|------------|--------|
-| 1 | PumpkinHead | 192.168.8.150 | Offline (long-term), hardware unverified |
-| 2 | Mina | 192.168.8.140 | Online — neck (ch8) and eye (ch11) servos do not move |
-| 3 | Orlok | 192.168.8.120 | Primary dev — **partially operational**, see known bugs |
-| 4 | Sir Dragomir | 192.168.8.130 | Last verified fully operational 2026-04-18 |
-| 5 | Groundbreaker | 192.168.8.200 | Offline (long-term); character-ID mismatch to reconcile |
+Status as observed 2026-08-16 (v9.2.0 session). IPs are a fallback — nodes discover each
+other's live addresses over mDNS.
+
+| ID | Name | IP Address | Status | Version |
+|----|------|------------|--------|---------|
+| 1 | PumpkinHead | 192.168.8.150 | 🔴 Offline all session — **unverified** | unknown |
+| 2 | Mina | 192.168.8.140 | 🟢 Online, AUDIBLE by ear (canonical voice) — neck (ch8) and eye (ch11) servos do not move | 9.2.0 |
+| 3 | Orlok | 192.168.8.120 | 🟢 Primary dev — **partially operational**, see known bugs; AUDIBLE by ear | 9.2.0 |
+| 4 | Sir Dragomir | 192.168.8.130 | 🟢 Online, AUDIBLE by ear (canonical voice confirmed) | 9.2.0 |
+| 5 | Groundbreaker | 192.168.8.200 | 🔴 Offline all session — **unverified**; character-ID mismatch to reconcile | unknown |
+| 6 | Renfield | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
+
+⚠️ **Three of six nodes were offline for the entire v9.2.0 session and nothing in that release
+has been exercised on their hardware.** A fix only exists on a node that received the deploy —
+the three live nodes are all on 9.2.0; the rest have received nothing.
 
 Per-part status, open faults and next diagnostics:
 [Known Bugs & Open Issues](troubleshooting/KNOWN-BUGS.md). Hardware state changes — re-verify
