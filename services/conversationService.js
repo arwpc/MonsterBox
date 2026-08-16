@@ -32,7 +32,9 @@ class ConversationService {
       // Graceful fallback – echo-style friendly reply
       const fallback = `Spooky echo: ${userText}`;
       const ttsCfg = await getTTSConfigForCharacter(characterId);
-      const voiceId = ttsCfg.voice_id || 'Tj9l48J9AJbry5yCP5eW'; // default: Matthew Schmitz - Nosferatu Ancient Vampire Lord
+      // No literal fallback: this id was one specific character's voice, so every
+      // character missing a config spoke as him. resolveVoiceId() throws instead.
+      const voiceId = ttsCfg.voice_id;
       const tts = await elevenLabsTTSService.generateSpeech(fallback, voiceId, ttsCfg);
       if (!tts.success) return { success: false, stage: 'tts', error: tts.error };
       return { success: true, agentUsed: false, replyText: fallback, audioBuffer: tts.audioBuffer, contentType: tts.contentType };
@@ -53,7 +55,7 @@ class ConversationService {
 
     // 4) TTS the reply (always try to return audio)
     const ttsCfg = await getTTSConfigForCharacter(characterId);
-    const voiceId = ttsCfg.voice_id || 'Tj9l48J9AJbry5yCP5eW';
+    const voiceId = ttsCfg.voice_id;
     const tts = await elevenLabsTTSService.generateSpeech(replyText, voiceId, ttsCfg);
     if (!tts.success) return { success: false, stage: 'tts', error: tts.error };
 

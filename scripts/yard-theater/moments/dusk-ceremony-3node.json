@@ -1,0 +1,16 @@
+{
+  "name": "The Dusk Ceremony — the yard wakes (three-node cast)",
+  "description": "The Dusk Ceremony adapted to the cast that is physically in the yard: Sir Dragomir, Mina and Orlok. PumpkinHead, Groundbreaker and Renfield are in storage, and in the full ceremony their three speeches fall consecutively — perform.mjs skips an absent node cleanly, but the waits AFTER those speeches still run, leaving a 15-second silent hole in the middle of the ceremony. This variant removes those three speeches and their trailing waits, so the pacing holds with the cast actually present. Nothing else is changed: every remaining line, volume and wait is verbatim from dusk-ceremony.json. Use the full ceremony whenever all six are erected. Music steps still expect data/audio-library/dusk-theme.mp3 and skip gracefully while it is absent.",
+  "nodes": [2, 3, 4],
+  "steps": [
+    { "audio": { "node": 3, "filename": "dusk-theme.mp3", "volume": 35, "loop": true } },
+    { "wait": 4000 },
+    { "say": { "node": 4, "text": "The sun stands down. [Romanian accent] The watch stands UP. Hear me, Warner Castle — the night shift begins. [shouts] LA ARME!" } },
+    { "wait": 5000 },
+    { "say": { "node": 2, "text": "[whispers] ...the light is going. I can feel it through the wood. Come near, whoever you are... the castle is waking, and I am listening." } },
+    { "wait": 6000 },
+    { "say": { "node": 3, "text": "[breathes] Night. [Romanian accent] My jurisdiction. [slow] Warner Castle... receives you. Come closer." } },
+    { "wait": 8000 },
+    { "audio": { "node": 3, "filename": "dusk-theme.mp3", "volume": 20, "loop": true } }
+  ]
+}
