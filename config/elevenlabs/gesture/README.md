@@ -24,7 +24,7 @@ are dense with `[audio tags]`, so a model handed a list of gesture ids emits the
 they were more audio tags** — `[nod_commend]`, `[hand_glow]` — inside the text that goes
 to TTS. A guest can hear the character say "hand glow".
 
-Judge-panel smoke runs, 25 conversations across the five body-having agents:
+Judge-panel smoke runs first, 25 conversations across the five body-having agents:
 
 | Config | Conversations leaking a spoken gesture | Leaked mentions |
 |---|---|---|
@@ -33,14 +33,59 @@ Judge-panel smoke runs, 25 conversations across the five body-having agents:
 
 Renfield, the control with no `# Body`, leaked 0/5 in both runs.
 
-The hardened wording cuts leakage ~85% but not to zero, and the residual 12% of
-conversations is a real cost on the night with **zero benefit**, because no handler
-exists to act on a correctly-made tool call. So it waits.
+The hardened wording cuts leakage ~85% but not to zero.
 
-Caveat worth stating: the judge harness uses the simulate-conversation API, where no
-client exists to execute a client tool. That very likely inflates the leak rate versus a
-live voice conversation, where the tool-call channel the model wants is actually
-available. The withdrawal is a deadline decision, not a verdict that the design is wrong.
+### Then measured on the live path, which settles it
+
+The obvious objection to the numbers above is that `simulate-conversation` has no client
+to execute a client tool, so a model told to call `gesture` *cannot*, and writing it into
+speech is the only move left. That would inflate the leak rate by construction.
+
+So `scripts/halloween-judges/gesture-live-probe.mjs` was built to ask the question
+properly: real Agents WebSocket conversations, the tool declared in
+`conversation_initiation_client_data`, counting `client_tool_call` events against gesture
+ids appearing in `agent_response`. The tool-call channel is fully available.
+
+The objection does not save the feature. Six agents, one probe each (6 replies apiece),
+then four further probes on Orlok — the only character with a shipped `gestures.json`,
+and therefore the only one with anything to gain today:
+
+| Agent | replies | correct tool calls | replies leaking a spoken gesture |
+|---|---|---|---|
+| **Orlok** (5 probes) | **30** | **0** | **9 (30%)** |
+| Mina | 6 | 1 (`lid_crack`) | 0 |
+| Dragomir | 6 | 0 | 0 |
+| PumpkinHead | 6 | 0 | 0 |
+| Groundbreaker | 6 | 0 | 0 |
+| Renfield (control, no `# Body`) | 6 | 0 | 0 |
+
+Orlok leaked `[hand_glow]` in 2 of 6 replies on **four consecutive runs**, and called the
+tool **zero** times in thirty replies. He does not use the feature; he converts its entire
+vocabulary into audio tags and speaks them.
+
+This is not a simulation artifact and not a deadline call — it is the measured behaviour
+of the path that ships, on the one character who would benefit.
+
+### Why Orlok specifically
+
+His prompt is the most bracket-primed in the fleet: a standing rule to *begin every
+sentence* with `[Romanian accent]`, plus a ten-entry `AUDIO TAGS` list. A `# Body` section
+handing him more bracketed identifiers reads, to the model, as more audio tags. The
+quieter characters leak far less — which is consistent with priming, not with the ids
+themselves being the problem.
+
+### The fix worth trying next (not attempted here — needs test time this session lacked)
+
+Take the ids out of the prompt entirely, so there is no id text to echo:
+
+- one client tool **per character**, with `gesture_id` typed as an **enum** of that
+  character's ids, so the ids exist only in the tool schema;
+- a `# Body` section that describes *intents* in prose and names no ids at all.
+
+A model cannot speak an identifier it was never shown. This departs from spec §5.2, which
+puts the ids in the prompt — the spec should be amended if the approach measures clean.
+Re-run `gesture-live-probe.mjs` and require zero leaks over at least 30 Orlok replies
+before shipping.
 
 `scripts/halloween-judges/gestures.mjs` now measures this on every run, and
 `analyze.mjs` prints a "Spoken-gesture leakage" section. **Ship gate: that section must
