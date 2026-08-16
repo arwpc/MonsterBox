@@ -38,7 +38,18 @@ export default defineConfig({
 
   // Run dev server before tests on HTTP port 3200 (avoids conflict with production on 3000/3100)
   // TEST_PORT tells server.js to open an extra HTTP listener on 3200 for Playwright
-  webServer: {
+  // Set MB_USE_RUNNING_SERVER=1 to test against a server that is ALREADY up
+  // (e.g. the systemd service, via its always-on listener on :3100) instead of
+  // spawning one.
+  //
+  // Without this, running a single spec on a live node is impossible:
+  // services/resource/singleInstance.js refuses a second server, so the spawn
+  // dies with "MonsterBox already running" and Playwright reports it as a config
+  // failure rather than the port conflict it is. The alternative — stopping the
+  // service to run one test — takes the whole animatronic offline.
+  //
+  //   MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 npx playwright test <spec>
+  webServer: process.env.MB_USE_RUNNING_SERVER === '1' ? undefined : {
     command: 'MB_TEST_MODE=1 TEST_PORT=3200 npm start',
     url: 'http://localhost:3200',
     reuseExistingServer: !process.env.CI,

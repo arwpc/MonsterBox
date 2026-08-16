@@ -109,29 +109,52 @@ test.describe('Control bar behaviour', () => {
     await expect(dot).not.toHaveClass(/mb-dot-idle/, { timeout: 15000 });
   });
 
-  test('stop requires a deliberate hold, not a click', async ({ page }) => {
+  test('stop fires instantly on press, and once per press', async ({ page }) => {
+    // This test previously asserted the OPPOSITE — that stop required a
+    // deliberate hold — and it intercepted /api/orchestration/stop-all, a route
+    // that does not exist. The interceptor therefore never matched, so the
+    // "a quick click must not fire the stop" assertion passed vacuously and the
+    // suite reported a safety guarantee it had never actually checked.
+    //
+    // The real design, and the one worth protecting: STOP fires on pointerdown
+    // with no hold delay, because on show night the operator is stabbing at a
+    // handset in the dark and a stop that can be swallowed by scroll or gesture
+    // recognition is worse than useless. The repeat-jab guard is what stops a
+    // panicking hand sending a dozen fleet-wide requests.
     const fired = [];
-    await page.route('**/api/orchestration/stop-all', (route) => {
-      fired.push('stop-all');
-      route.fulfill({ status: 200, body: '{}' });
+    await page.route('**/api/panic', (route) => {
+      fired.push(route.request().postDataJSON());
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"success":true}' });
     });
 
     await page.goto('/scenes');
     await ready(page);
     const stop = page.locator('#mbStopEverything');
+    await expect(stop).toBeVisible();
 
-    // A brush against the control must do nothing.
-    await stop.click({ delay: 30 });
+    // A press must reach the fleet immediately — no hold, no delay.
+    await stop.click();
+    await expect.poll(() => fired.length, {
+      message: 'stop must fire on press, without a hold',
+      timeout: 3000
+    }).toBeGreaterThan(0);
+    expect(fired[0], 'stop must ask for the whole fleet').toMatchObject({ fleet: true });
+
+    // Repeat jabs inside the guard window must not multiply the request.
+    // Dispatched synchronously in the page rather than with three Playwright
+    // clicks: on a Raspberry Pi each click action costs hundreds of
+    // milliseconds, so three of them overrun the 1200ms guard window and the
+    // test measures Playwright's speed instead of the product's behaviour.
+    const before = fired.length;
+    await page.evaluate(() => {
+      const el = document.querySelector('#mbStopEverything');
+      for (let i = 0; i < 3; i++) {
+        el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }));
+      }
+    });
     await page.waitForTimeout(400);
-    expect(fired, 'a quick click must not fire the stop').toHaveLength(0);
-
-    // A deliberate hold must fire it.
-    const box = await stop.boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(1000);
-    await page.mouse.up();
-    expect(fired.length, 'a hold should fire the stop').toBeGreaterThan(0);
+    expect(fired.length, 'a burst of jabs inside the guard window must send at most one more request')
+      .toBeLessThanOrEqual(before + 1);
   });
 });
 
