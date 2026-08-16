@@ -42,18 +42,33 @@ describe('Destructive system endpoint guard', function () {
   describe('with MB_ADMIN_TOKEN set', function () {
     beforeEach(() => { process.env.MB_ADMIN_TOKEN = 'test-token-value'; });
 
-    it('rejects a request with no token', async () => {
+    // The three checks LAYER. Configuring a token adds a way in for remote
+    // callers; it must not remove the ways in that already worked, or the
+    // operator's own dashboard starts 401ing the moment a token is set.
+    it('still allows a local caller with no token (supertest is loopback)', async () => {
       const res = await request(app).post(GUARDED_PATH).send({});
-      expect(res.status).to.equal(401);
-      expect(res.body).to.have.property('success', false);
+      expect(res.status).to.not.equal(401);
+      expect(res.status).to.not.equal(403);
     });
 
-    it('rejects a request with the wrong token', async () => {
+    it('still allows a same-origin browser request with no token', async () => {
       const res = await request(app)
         .post(GUARDED_PATH)
+        .set('Host', '127.0.0.1:3000')
+        .set('Origin', 'http://127.0.0.1:3000')
+        .send({});
+      expect(res.status).to.not.equal(401);
+      expect(res.status).to.not.equal(403);
+    });
+
+    it('rejects a cross-origin request even though a token is configured', async () => {
+      // A wrong token must not be upgraded by the browser path.
+      const res = await request(app)
+        .post(GUARDED_PATH)
+        .set('Origin', 'http://evil.example.com')
         .set('x-mb-admin-token', 'wrong')
         .send({});
-      expect(res.status).to.equal(401);
+      expect(res.status).to.equal(403);
     });
 
     it('lets the correct token past the guard', async () => {
