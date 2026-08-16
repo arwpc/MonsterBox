@@ -104,6 +104,7 @@ nav:
       - Node Discovery (mDNS): development/NODE-DISCOVERY.md
       - AI Integration Guide: development/ai-integration-guide.md
       - AI Management Feature: development/AI-Management-Feature.md
+      - Microphone & AEC Refactor: development/MICROPHONE-AEC-REFACTOR.md
       - Goblin Management: development/goblin-management.md
       - Middleware Audit: development/middleware-audit-report.md
 
