@@ -39,7 +39,8 @@ router.get('/', (req, res) => {
     res.renderWithLayout('audio-library/index', {
         title: 'Audio Library - MonsterBox',
         page: 'audio-library',
-        pageTitle: 'Audio Library'
+        pageTitle: 'Audio Library',
+        styles: ['/css/mb-audio-library.css']
     });
 });
 

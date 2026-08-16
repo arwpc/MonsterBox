@@ -178,7 +178,7 @@ class VideoLibrary {
             <div class="col-12 mb-2">
                 <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
                     ${this.bulkSelectMode ? `
-                        <div class="position-absolute top-0 start-0 p-2" style="z-index: 20;">
+                        <div class="position-absolute top-0 start-0 p-2 vid-bulk-overlay">
                             <input type="checkbox" class="video-select-checkbox" 
                                    data-video-id="${video.id}" onclick="event.stopPropagation(); videoLibrary.toggleVideoSelection('${video.id}')" 
                                    ${this.selectedVideoIds.has(video.id) ? 'checked' : ''}>
@@ -745,7 +745,7 @@ class VideoLibrary {
                     '<i class="bi bi-heart' + (video.favorite ? '-fill' : '') + '"></i>' +
                 '</button></td>' +
                 '<td class="title-cell" title="' + self.escapeAttr(video.title) + '">' + self.escapeHtml(video.title) + '</td>' +
-                '<td><span class="badge bg-info" style="font-size:0.65rem;">' + (video.format || 'vid').toUpperCase() + '</span></td>' +
+                '<td><span class="mb-badge mb-badge-info vid-fmt-badge">' + (video.format || 'vid').toUpperCase() + '</span></td>' +
                 '<td>' + self.formatDuration(video.duration || 0) + '</td>' +
                 '<td>' + self.formatFileSize(video.fileSize || 0) + '</td>' +
                 '<td>' +

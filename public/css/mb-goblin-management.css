@@ -122,3 +122,31 @@
 .gob-modal-wide {
   max-width: min(95vw, 1200px);
 }
+
+/* Video thumbnail placeholder in the queue manager. Was four hardcoded greys
+   in an inline style, invisible to the theme system. */
+.gob-video-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 90px;
+  border-radius: var(--mb-radius-md);
+  border: 1px solid var(--mb-border-default);
+  background: linear-gradient(135deg, var(--mb-bg-0) 0%, var(--mb-bg-2) 100%);
+  color: var(--mb-fg-muted);
+  font-size: var(--mb-text-2xl);
+}
+
+/* Resource usage bars on a goblin card. The width stays inline — it is a live
+   measurement — but the colour is a token, not var(--bs-*). */
+.gob-usage-ok      { background: var(--mb-success); }
+.gob-usage-warning { background: var(--mb-warning); }
+.gob-usage-danger  { background: var(--mb-danger); }
+.gob-usage-info    { background: var(--mb-info); }
+
+/* The whole goblin card is a double-click target for the queue manager. */
+.mb-device-card { cursor: pointer; }
+
+.gob-meter-thin { height: 8px; }
+.gob-title-clamp { max-width: 400px; }

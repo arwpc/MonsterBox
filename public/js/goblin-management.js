@@ -121,7 +121,7 @@ class GoblinManager {
 
             return `
                 <div class="col-lg-6 col-xl-4">
-                    <div class="card mb-device-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')" style="cursor: pointer;">
+                    <div class="card mb-device-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
                             <div>
                                 <h6 class="mb-0 d-flex align-items-center">
@@ -181,7 +181,7 @@ class GoblinManager {
                                         <small>${goblin.resources.cpu}%</small>
                                     </div>
                                     <div class="mb-usage-bar">
-                                        <div style="width: ${goblin.resources.cpu}%; background: var(--bs-${goblin.resources.cpu > 80 ? 'danger' : goblin.resources.cpu > 50 ? 'warning' : 'success'});"></div>
+                                        <div class="gob-usage-${goblin.resources.cpu > 80 ? 'danger' : goblin.resources.cpu > 50 ? 'warning' : 'ok'}" style="width: ${goblin.resources.cpu}%;"></div>
                                     </div>
 
                                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -189,7 +189,7 @@ class GoblinManager {
                                         <small>${goblin.resources.memory}%</small>
                                     </div>
                                     <div class="mb-usage-bar">
-                                        <div style="width: ${goblin.resources.memory}%; background: var(--bs-info);"></div>
+                                        <div class="gob-usage-info" style="width: ${goblin.resources.memory}%;"></div>
                                     </div>
                                 </div>
                             ` : ''}
@@ -1153,7 +1153,7 @@ class GoblinManager {
             header.className = 'card-header bg-secondary text-white';
             content.innerHTML = `
                 <div class="text-center text-muted py-3">
-                    <i class="bi bi-pause-circle" style="font-size: 3rem;"></i>
+                    <i class="bi bi-pause-circle mb-empty-icon"></i>
                     <p class="mb-0 mt-2">No video playing</p>
                     <small>Click the Play button on any video to start playback</small>
                 </div>
@@ -1197,8 +1197,8 @@ class GoblinManager {
                         <span>CPU:</span>
                         <span class="badge bg-${cpuClass}">${cpu.toFixed(1)}%</span>
                     </div>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-${cpuClass}" style="width: ${cpu}%"></div>
+                    <div class="mb-meter gob-meter-thin">
+                        <div class="mb-meter-fill gob-usage-${cpuClass === 'danger' ? 'danger' : cpuClass === 'warning' ? 'warning' : 'ok'}" style="width: ${cpu}%"></div>
                     </div>
                 </div>
                 <div class="col-6">
@@ -1206,8 +1206,8 @@ class GoblinManager {
                         <span>Memory:</span>
                         <span class="badge bg-${memClass}">${memory.toFixed(1)}%</span>
                     </div>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-${memClass}" style="width: ${memory}%"></div>
+                    <div class="mb-meter gob-meter-thin">
+                        <div class="mb-meter-fill gob-usage-${memClass === 'danger' ? 'danger' : memClass === 'warning' ? 'warning' : 'ok'}" style="width: ${memory}%"></div>
                     </div>
                 </div>
                 <div class="col-6">
@@ -1215,8 +1215,8 @@ class GoblinManager {
                         <span>Temp:</span>
                         <span class="badge bg-${tempClass}">${temp.toFixed(1)}°C</span>
                     </div>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-${tempClass}" style="width: ${Math.min(temp, 100)}%"></div>
+                    <div class="mb-meter gob-meter-thin">
+                        <div class="mb-meter-fill gob-usage-${tempClass === 'danger' ? 'danger' : tempClass === 'warning' ? 'warning' : 'ok'}" style="width: ${Math.min(temp, 100)}%"></div>
                     </div>
                 </div>
                 <div class="col-6">
@@ -1321,15 +1321,14 @@ class GoblinManager {
                 <div class="list-group-item p-2">
                     <div class="d-flex align-items-start">
                         <!-- Thumbnail -->
-                        <div class="flex-shrink-0 me-3 d-flex align-items-center justify-content-center rounded"
-                             style="width: 120px; height: 90px; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #444;">
-                            <i class="bi bi-film" style="font-size: 2.5rem; color: #666;"></i>
+                        <div class="flex-shrink-0 me-3 gob-video-thumb">
+                            <i class="bi bi-film"></i>
                         </div>
 
                         <!-- Video Info -->
                         <div class="flex-grow-1 min-width-0">
                             <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div class="text-truncate me-2" style="max-width: 400px;">
+                                <div class="text-truncate me-2 gob-title-clamp">
                                     <strong>${filename}</strong>
                                 </div>
                                 <div class="flex-shrink-0 btn-group">

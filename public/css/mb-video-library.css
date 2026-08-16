@@ -125,3 +125,7 @@
   height: 18px;
   cursor: pointer;
 }
+
+/* Bulk-select checkbox floats over the card thumbnail. */
+.vid-bulk-overlay { z-index: 20; }
+.vid-fmt-badge { font-size: 0.65rem; }
