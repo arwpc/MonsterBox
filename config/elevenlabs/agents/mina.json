@@ -30,7 +30,7 @@
                 ]
             },
             "turn": {
-                "turn_timeout": 7,
+                "turn_timeout": 6.0,
                 "initial_wait_time": null,
                 "silence_end_call_timeout": -1,
                 "mode": "turn",
@@ -44,14 +44,14 @@
                 "merge_with_default_ignore_terms": false,
                 "transcribe_on_disabled_interruptions": false,
                 "soft_timeout_config": {
-                    "timeout_seconds": -1,
+                    "timeout_seconds": 2.5,
                     "message": "Forgive me\u2026 the dark makes me slow tonight\u2026",
                     "additional_soft_timeout_messages": [],
                     "use_llm_generated_message": false,
                     "randomize_fillers": false,
                     "max_soft_timeouts_per_generation": 1,
                     "llm_generated_message_prompt_override": null,
-                    "disable_until_first_user_message": false
+                    "disable_until_first_user_message": true
                 }
             },
             "tts": {
