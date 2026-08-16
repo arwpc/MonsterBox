@@ -20,3 +20,8 @@ PURPOSE header — no per-agent prompt changes needed.
 
 Caveat: judge-panel simulations also appear as conversations — only run the
 harvest after real show nights, or the castle will remember imaginary guests.
+
+Privacy: the registry stores FIRST NAMES ONLY. A scrubber strips surnames
+(canon-protected names like Sir Dragomir / Warner Castle survive), emails,
+phone-like number runs, street addresses, and long digit sequences from all
+summaries before anything is written. No PHI reaches the knowledge base.

@@ -42,7 +42,30 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-// Pull names guests actually gave: "my name is X", "i'm X", "call me X", "it's X"
+// PRIVACY: first names ONLY — single tokens, never surname pairs, and every
+// summary passes through scrub() below. No contact details, no numbers, no
+// addresses ever reach the registry.
+// Character names load dynamically from the registry (character-independent);
+// the static tail is non-character canon vocabulary (places, titles, lore figures).
+const characterNames = JSON.parse(readFileSync(join(HERE, '../../data/characters.json'), 'utf8'))
+  .flatMap(c => String(c.name).split(/\s+/));
+const CANON = new Set([...characterNames,
+  'Warner','Castle','Thomas','Vlad','Michelle','Aaron','Heather','Emily','Isaac','Calvin',
+  'Ben','Iowa','Rubin','Sir','Count','Lady','Lord','Master','Queen','Princess','Herr','Knock']);
+
+function scrub(text) {
+  let s = text
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '')                               // emails
+    .replace(/\+?\d[\d\s().-]{6,}\d/g, '')                                 // phone-like number runs
+    .replace(/\b\d{1,5}\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Court|Ct|Boulevard|Blvd|Way|Circle|Cir)\b\.?/g, '') // street addresses
+    .replace(/\b\d{4,}\b/g, '');                                            // long digit runs (zips, years OK to lose)
+  // Collapse "First Last" pairs to the first name unless both words are castle canon
+  s = s.replace(/\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/g, (m, a, b) =>
+    (CANON.has(a) || CANON.has(b)) ? m : a);
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+
+// Pull FIRST names guests actually gave: "my name is X", "i'm X", "call me X"
 function extractNames(userText) {
   const names = new Set();
   const re = /\b(?:my name is|my name's|i am|i'm|call me|it's|this is)\s+([A-Z][a-z]{2,15})\b/gi;
@@ -69,7 +92,7 @@ for (const agent of agents) {
       const userText = (d.transcript || []).filter(t => t.role === 'user')
         .map(t => t.message || '').join(' ');
       const names = extractNames(userText);
-      const summary = (d.analysis?.transcript_summary || '').replace(/\s+/g, ' ').trim();
+      const summary = scrub((d.analysis?.transcript_summary || '').replace(/\s+/g, ' ').trim());
       if (names.length || summary) {
         lines.push(`- ${names.length ? `Guests: ${names.join(', ')}. ` : ''}${summary.slice(0, 300)}`);
       }
@@ -87,7 +110,7 @@ const date = process.argv.includes('--date')
 
 const doc = `YARD REGISTRY — WHAT THE CASTLE REMEMBERS (through ${date})
 
-PURPOSE: The fleet's shared memory of previous nights. When a visitor gives a name
+PRIVACY: first names only — no surnames, no contact details, no addresses.\nPURPOSE: The fleet's shared memory of previous nights. When a visitor gives a name
 that appears here, the character MAY recognize them as a returning guest — warmly,
 in their own voice, referencing what is recorded, never reciting this document.
 "You came before. The castle remembers." If nothing matches, say nothing of this.
