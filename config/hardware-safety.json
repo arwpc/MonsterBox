@@ -68,6 +68,27 @@
           "notes": "Elbow (ch4) + Forearm (ch5) share one fuse across mismatched servo voltages. Serialized so they are never commanded together, with a gap between commands to keep inrush currents from stacking."
         }
       }
+    },
+    "2": {
+      "_comment": "Mina — entries seeded from docs/troubleshooting/KNOWN-BUGS.md, NOT from measurement on this node. No angle windows are set here on purpose: inventing bounds for hardware nobody has measured is exactly the mistake that made Orlok part 4 look calibrated when it never was.",
+      "parts": {
+        "1": {
+          "excludeFromAutomatedTests": true,
+          "notes": "Jaw (PCA9685 ch4). Confirmed working 2026-04-18, but its calibration profile is a tiny auto-generated {minAngle:85, maxAngle:95} — a 10 degree window that is a placeholder, not a measurement. Needs a real calibration pass on /setup/calibration. Excluded from automated driving until then so a suite does not treat that window as ground truth."
+        },
+        "2": {
+          "excludeFromAutomatedTests": true,
+          "notes": "Neck (PCA9685 ch8). DOES NOT MOVE as of 2026-04-18 despite valid PWM at the register and a command path identical to the working jaw. Narrowed to a dead servo, a broken signal lead, a loose header pin, or a burned PCA9685 output. Next diagnostic is the wire swap: move the known-good jaw servo to ch8 and cycle it. Excluded from automated driving so suites stop hammering a dead channel; deliberately NOT quarantined, because the operator must be able to test it while diagnosing."
+        },
+        "3": {
+          "excludeFromAutomatedTests": true,
+          "notes": "Eye (PCA9685 ch11). Same symptom and same diagnostic as the neck above. Note that the eye lights being on does NOT prove V+ is alive — the laser is a 3V relay driven by the signal pin, not by V+."
+        }
+      }
+    },
+    "4": {
+      "_comment": "Sir Dragomir — recorded fully operational 2026-04-18 (jaw ch0, magic box ch8, head ch4 continuous). That predates v9.0 and has NOT been re-verified, so no limits are asserted here yet. Add measured windows during the v9.1 hardware pass.",
+      "parts": {}
     }
   }
 }
