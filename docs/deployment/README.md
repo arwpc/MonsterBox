@@ -176,12 +176,18 @@ See the status table above for who was actually reachable and on which version.
 **Cause:** rsync exits **23** ("partial transfer due to error") when it hits files it cannot
 replace — in practice **root-owned** paths on the node: `certs/`, and a stray root-owned
 `data/ai-config/` directory (a known context-fallback artifact, see
-[KNOWN-BUGS](../troubleshooting/KNOWN-BUGS.md)). The script runs under `set -e`, so it aborts
-**before the `systemctl restart`**. The code lands on disk and the service keeps serving the old
+[KNOWN-BUGS](../troubleshooting/KNOWN-BUGS.md)). The script ran under `set -e`, so it aborted
+**before the `systemctl restart`**. The code landed on disk and the service kept serving the old
 build — a deploy that looks like it did nothing.
 
 This is not hypothetical: it is why Sir Dragomir kept speaking in his retired voice after the
-wrong-voice fix was "deployed" to him in v9.2.0.
+wrong-voice fix had already reached his disk in v9.2.0.
+
+✅ **Fixed in v9.2.0** — rsync status is now checked explicitly: **23 and 24 warn and continue
+to the restart**, while any other non-zero status refuses to restart on a partial deploy.
+⚠️ **A node that has not been redeployed since that fix still carries the old script**, so the
+recovery below is still worth knowing — and confirming the version after a deploy is the rule
+either way.
 
 ```bash
 # On the node — remove the stray root-owned AI config dir (safe: regenerates per character)
@@ -195,9 +201,8 @@ curl -sk https://<node-ip>:3000/health
 ssh remote@<node-ip> 'sudo systemctl restart monsterbox.service'
 ```
 
-`certs/` is expected to be root-owned and should not be deleted — it is excluded from the fix
-above on purpose. The real fix (excluding root-owned paths from the rsync set, and not letting
-a non-fatal rsync status skip the restart) is **not done**.
+`certs/` is expected to be root-owned and should not be deleted — it is excluded from the
+cleanup above on purpose.
 
 ### Server Won't Start
 ```bash

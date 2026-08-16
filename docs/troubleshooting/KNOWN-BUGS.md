@@ -313,20 +313,21 @@ exist yet.
   cannot replace it and **`scripts/deploy-to-animatronic.sh` aborts on exit code 23 before it
   restarts the service** — see the deploy entry below. It was removed from the one node
   deployed to this session; it is presumably still present on the others.
-- 🔴 **`deploy-to-animatronic.sh` can abort on rsync exit 23 and leave the node running the OLD
-  build.** Root-owned files that rsync cannot replace — `certs/`, and the stray
-  `data/ai-config/` above — make rsync exit 23, and because the script runs under `set -e` the
-  abort happens **before the `systemctl restart`**. The code lands on disk, the service keeps
-  serving the previous build, and the deploy *looks* like it did nothing. **This is what made
-  Sir Dragomir keep speaking in his retired voice after the fix was "deployed".**
-  - *Symptom:* `GET /health` on the node still reports the old version after a deploy that
-    printed errors near the end.
-  - *Workaround until the script is fixed:* on the node,
-    `sudo rm -rf /home/remote/MonsterBox/data/ai-config` (safe — it regenerates per-character),
-    re-run the deploy, then **confirm the version**:
-    `curl -sk https://<node>:3000/health`. Restart manually if needed.
-  - *Real fix (not done):* exclude `certs/` and root-owned strays from the rsync set, and do not
-    let a non-fatal rsync status skip the restart.
+- ~~**`deploy-to-animatronic.sh` aborts on rsync exit 23 and leaves the node running the OLD
+  build.**~~ — **fixed v9.2.0.** Root-owned files that rsync cannot replace — `certs/`, and the
+  stray `data/ai-config/` above — make rsync exit 23, and because the script ran under `set -e`
+  the abort happened **before the `systemctl restart`**. The code landed on disk, the service
+  kept serving the previous build, and the deploy *looked* like it did nothing — which is
+  exactly how a fleet ends up silently running mixed versions. **This is what made Sir Dragomir
+  keep speaking in his retired voice after the fix had already reached his disk.** rsync status
+  is now checked explicitly: **23 and 24 warn and continue to the restart; any other non-zero
+  status refuses to restart on a partial deploy.**
+  - ⚪ **Still true and still the rule: confirm the version after every deploy** —
+    `curl -sk https://<node>:3000/health`. A node that has not been redeployed since this fix
+    still carries the old script.
+  - The stray `data/ai-config/` is safe to remove on any node
+    (`sudo rm -rf /home/remote/MonsterBox/data/ai-config`); `certs/` is expected to be
+    root-owned and must be left alone.
 - ⚪ **`controlPart` / `batchMoveServos` still fall back to `selectedCharacter`.** Both now
   accept an explicit `options.characterId` (v9.0.0 — the pose engine, transition engine and
   `/api/parts/:id/test` pass it), but callers that omit it still land on
