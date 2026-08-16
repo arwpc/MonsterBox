@@ -12,7 +12,7 @@
  *
  * Usage:
  *   node scripts/halloween-judges/simulate.mjs [--count 25] [--concurrency 6]
- *     [--agents orlok,mina] [--personas mom,boy14] [--turns 14]
+ *     [--agents <keys-from-agents.json>] [--personas mom,boy14] [--turns 14]
  *     [--out scripts/halloween-judges/results/sim.jsonl]
  */
 import { readFileSync, mkdirSync, appendFileSync, existsSync } from 'node:fs';
