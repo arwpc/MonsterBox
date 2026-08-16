@@ -24,6 +24,17 @@ to run against live hardware while a show or conversation is in progress.
 Usage:
   python3 i2c_servo_sampler.py --channels 3 --duration 30 --rate 200
   python3 i2c_servo_sampler.py --channels 0,3 --duration 60 --out /tmp/s.json
+  python3 i2c_servo_sampler.py --channels 0 --mode1 --keep-invalid --duration 10
+
+--mode1 also samples the MODE1 register (0x00). That is how a re-init glitch is
+caught in the act: pca9685_init drives MODE1 to 0x10 (SLEEP), which stops the
+oscillator and kills the PWM output on ALL sixteen channels for the duration of
+the prescale write. Nothing in the LED registers records that, so counting
+SLEEP entries is the only register-level evidence of the cross-channel glitch.
+
+--keep-invalid records the values that fail the plausibility gate instead of only
+counting them, so torn writes (a low byte from one command paired with a high
+byte from another) can be read back rather than inferred.
 """
 
 import argparse
@@ -32,6 +43,8 @@ import sys
 import time
 
 PCA9685_LED0_ON_L = 0x06
+PCA9685_MODE1 = 0x00
+MODE1_SLEEP = 0x10
 DEFAULT_ADDRESS = 0x40
 
 # Standard-servo pulse window used by python_wrappers/pca9685_control.py and
@@ -60,6 +73,10 @@ def main():
     ap.add_argument('--rate', type=float, default=200.0, help='samples per second per channel')
     ap.add_argument('--out', default=None, help='write full JSON sample log here')
     ap.add_argument('--quiet', action='store_true')
+    ap.add_argument('--mode1', action='store_true',
+                    help='also sample MODE1 and report SLEEP (re-init glitch) events')
+    ap.add_argument('--keep-invalid', action='store_true',
+                    help='record the values rejected by the plausibility gate, not just the count')
     args = ap.parse_args()
 
     try:
@@ -83,9 +100,29 @@ def main():
 
     samples = {ch: [] for ch in channels}
     rejected = {ch: 0 for ch in channels}
+    invalid = {ch: [] for ch in channels}
+
+    # MODE1 tracking: a SLEEP entry means the oscillator stopped and every
+    # channel lost its PWM output, however briefly.
+    read_byte = None
+    if args.mode1:
+        read_byte = lambda reg: bus.read_byte_data(args.address, reg)
+    mode1_samples = []
+    mode1_sleep_events = 0
+    mode1_prev = None
 
     while time.time() < deadline:
         loop_t = time.time()
+        if read_byte is not None:
+            try:
+                m1 = read_byte(PCA9685_MODE1)
+                if mode1_prev is None or m1 != mode1_prev:
+                    mode1_samples.append((round((loop_t - t_start) * 1000.0, 1), m1))
+                    if mode1_prev is not None and (m1 & MODE1_SLEEP) and not (mode1_prev & MODE1_SLEEP):
+                        mode1_sleep_events += 1
+                    mode1_prev = m1
+            except OSError:
+                pass
         for ch in channels:
             reg = PCA9685_LED0_ON_L + 4 * ch
             try:
@@ -99,6 +136,8 @@ def main():
             # Plausibility gate — see module docstring.
             if on != 0 or off < OFF_MIN or off > OFF_MAX:
                 rejected[ch] += 1
+                if args.keep_invalid:
+                    invalid[ch].append((round((loop_t - t_start) * 1000.0, 1), on, off))
                 continue
             samples[ch].append((round((loop_t - t_start) * 1000.0, 1), off))
         slept = time.time() - loop_t
@@ -127,11 +166,25 @@ def main():
             'p50_angle': round(sorted(angles)[int(len(angles) * 0.50)], 2) if angles else None,
             'p95_angle': round(sorted(angles)[int(len(angles) * 0.95)], 2) if angles else None,
         }
+        if args.keep_invalid:
+            report['channels'][str(ch)]['invalid_values'] = [
+                {'t_ms': t, 'on': on, 'off': off} for t, on, off in invalid[ch][:50]
+            ]
+
+    if args.mode1:
+        report['mode1'] = {
+            'sleep_events': mode1_sleep_events,
+            'distinct_values': sorted(set(v for _, v in mode1_samples)),
+            'changes': len(mode1_samples),
+            'timeline': [{'t_ms': t, 'mode1': v} for t, v in mode1_samples[:100]],
+        }
 
     if args.out:
         with open(args.out, 'w') as fh:
             json.dump({'report': report,
-                       'samples': {str(c): samples[c] for c in channels}}, fh)
+                       'samples': {str(c): samples[c] for c in channels},
+                       'invalid': {str(c): invalid[c] for c in channels},
+                       'mode1': mode1_samples}, fh)
 
     if not args.quiet:
         print(json.dumps(report, indent=1))
