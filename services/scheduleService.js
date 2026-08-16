@@ -78,6 +78,19 @@ export async function readCrontabText() {
     } catch (error) {
         // `crontab -l` exits 1 with "no crontab for <user>" when none exists.
         if (/no crontab for/i.test(error.stderr || '')) return '';
+
+        // The common deployment failure, and one nobody would guess from the
+        // raw message: /usr/bin/crontab is setgid 'crontab', and the systemd
+        // unit sets NoNewPrivileges=true, which blocks setgid. Say so.
+        if (/permission denied/i.test(error.stderr || '')) {
+            throw new Error(
+                'MonsterBox is not allowed to read this user\'s crontab. The service runs with '
+                + 'NoNewPrivileges=true, which blocks /usr/bin/crontab\'s setgid bit. Grant the group '
+                + 'directly instead of weakening that: add "SupplementaryGroups=crontab" under [Service] '
+                + 'in /etc/systemd/system/monsterbox.service (or a drop-in), then '
+                + '`sudo systemctl daemon-reload && sudo systemctl restart monsterbox.service`.'
+            );
+        }
         throw new Error(`Could not read crontab: ${(error.stderr || error.message || '').trim()}`);
     }
 }
@@ -185,8 +198,14 @@ export function buildCommand(action = {}) {
     const type = action.type || 'raw';
 
     if (type === 'moment') {
-        const file = String(action.moment || '').replace(/[^\w.-]/g, '');
+        // Reject rather than scrub. Scrubbing "../../etc/passwd" to a harmless
+        // string quietly runs something the operator did not ask for; refusing
+        // says what happened.
+        const file = String(action.moment || '').trim();
         if (!file) throw new Error('No moment file selected');
+        if (!/^[\w-]+\.json$/.test(file)) {
+            throw new Error(`"${file}" is not a valid moment file name`);
+        }
         const flags = action.dryRun ? ' --dry-run' : '';
         const log = action.dryRun ? logPathFor('theater-rehearsal') : DEFAULT_LOG;
         return `cd ${REPO_ROOT} && (node scripts/yard-theater/perform.mjs moments/${file}${flags})`

@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import scheduleService from '../services/scheduleService.js';
+import orchestrationService from '../services/orchestrationService.js';
 import { resolveCharacter } from '../services/characterContext.js';
 
 export const pageRouter = express.Router();
@@ -43,11 +44,29 @@ function fail(res, error, status = 400) {
     res.status(status).json({ success: false, error: error.message });
 }
 
+/**
+ * Every animatronic in the registry, by id. Deliberately NOT the fleet-health
+ * list: that one filters out nodes with no usable address, which is exactly the
+ * node (Renfield) most worth naming in an "offline targets" warning. Health
+ * says who is reachable; this says who exists.
+ */
+function nodeNameMap() {
+    const names = {};
+    try {
+        orchestrationService.getAnimatronics().forEach((node) => {
+            names[String(node.id)] = node.name;
+        });
+    } catch (error) {
+        console.error('[schedule] Could not read the node registry:', error.message);
+    }
+    return names;
+}
+
 /** List every managed event with its computed next-fire time. */
 apiRouter.get('/', async (req, res) => {
     try {
         const result = await scheduleService.listEvents();
-        res.json({ success: true, ...result, now: new Date().toISOString() });
+        res.json({ success: true, ...result, nodeNames: nodeNameMap(), now: new Date().toISOString() });
     } catch (error) {
         fail(res, error, 500);
     }

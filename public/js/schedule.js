@@ -21,6 +21,7 @@
     events: [],
     moments: [],
     scenes: [],
+    nodeNames: {},
     character: null,
     fleet: null,          // { nodesById: {}, checked: bool }
     editingId: null,
@@ -121,6 +122,9 @@
   }
 
   function nodeName(id) {
+    // Registry first: fleet-health omits nodes with no usable address, and an
+    // unaddressable node is precisely the one worth naming in a warning.
+    if (state.nodeNames && state.nodeNames[String(id)]) return state.nodeNames[String(id)];
     var node = state.fleet && state.fleet.nodesById[String(id)];
     return (node && node.name) || ('Node ' + id);
   }
@@ -294,6 +298,7 @@
   function loadEvents() {
     return request('GET', '/api/schedule').then(function (data) {
       state.events = data.events || [];
+      state.nodeNames = data.nodeNames || {};
       showError('');
       if (data.adoptedNow) {
         toast('Adopted ' + state.events.length + ' existing crontab entries into the managed block.', 'info');
@@ -571,8 +576,10 @@
     openConfirmDialog({
       title: 'Run "' + event.name + '" right now?',
       body: 'This fires immediately, for real. Hardware will move and audio will play '
-        + 'at current volume, wherever these animatronics are standing. It is not a rehearsal '
-        + (event.dryRun ? '(though this entry carries --dry-run, so it will make no sound).' : '.'),
+        + 'at current volume, wherever these animatronics are standing.'
+        + (event.dryRun
+          ? ' This entry carries --dry-run, so it will make no sound and no calls.'
+          : ' It is not a rehearsal.'),
       command: event.command,
       warning: down.length
         ? ('Offline right now: ' + down.map(nodeName).join(', ') + '. Their parts will be skipped.')
