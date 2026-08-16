@@ -1,5 +1,17 @@
 # Finish AI Voices — v9.1 integration & test
 
+**Phase 0 — get oriented first.** Run the `/learn-monsterbox` onboarding (or follow
+its steps manually): read `CLAUDE.md` end to end, the shared memory files
+(`MEMORY.md` and the `elevenlabs-agent-fleet-tuning` memory), and
+`git log --oneline -40` — the v9.0.0 refactor landed alongside this milestone, so
+absorb both streams before touching anything. Also review the current Claude Code
+setup: `.claude/commands/` and `.claude/skills/` (available slash commands),
+`.claude/agents/` (the expert subagent team — use `character-auditor` before any
+cross-character change, `hardware-diagnostician` for the audio work,
+`test-runner` for suites), and `.mcp.json` (Playwright MCP; the ElevenLabs MCP
+connector must be authenticated to the MonsterBox workspace — verify with an
+agents list before trusting it). Only then begin.
+
 Fully integrate and verify the AI-voices milestone (`git tag ai-voices-2026-08-16`)
 against the current codebase for the v9.1 build. The newest ElevenLabs techniques
 and agent shapes are already in this repo: agent config snapshots in
