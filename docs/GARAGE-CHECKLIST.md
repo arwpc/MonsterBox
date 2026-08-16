@@ -201,6 +201,33 @@ powered and on the network.
 
 ---
 
+## Rough edges you may hit — found in the pre-flight hardware pass
+
+None of these stop you working. Listed so a known wart doesn't read as a new fault.
+
+- [ ] **A clamped move reports the number you asked for.** Request 175° on Orlok's head
+      and the response says "tested at position 175" with `success: true`. It actually
+      went to 120 — correctly. The wrapper produces a proper `clamps` array; the API
+      response throws it away.
+- [ ] **Test on webcam, speaker and microphone returns a red 502** — "Action 'test' not
+      supported for part type". Pre-existing since v9.0.0. Those three parts all work;
+      only the Test button is unsupported for them.
+- [ ] **The first pose after a service restart snaps instead of easing.** With no tracked
+      position the engine can't build a ramp, so it jumps. On a head servo that's a
+      visible jerk. Every pose after that eases normally.
+- [ ] **Head tracking still offers the dead elbow (part 4) as a pan servo**, listed as
+      calibrated 45–135 — those are the test-residue bounds. Don't pick it.
+- [ ] **Pose 29 "Lamp Accent Flash" reports `state: on` but leaves the lamp off.** Likely
+      intended as a flash; the reported state is wrong either way.
+- [ ] **`/api/elevenlabs/generate-and-play` takes 4–15 s** because it blocks until
+      playback finishes. Scene 104 took 57 s wall — most of that is the `askAI` round
+      trip, not playback. Worth knowing before you time a show.
+- [ ] **Orlok's head was found parked at 60°** (the bottom edge of its window), an
+      artefact of testing rather than a rest pose. The intended neutral is pose 35 at
+      ~99°. Run it before the show if you want him sitting straight.
+
+---
+
 ## Calibration — every part, once and for all
 
 **Do this on `/setup/calibration`.** That page writes `data/calibration_profiles.json`,
@@ -284,8 +311,17 @@ on both is uncalibrated. That is the bulk of the work.
 - [ ] **Drop a music track at `data/audio-library/dusk-theme.mp3`.** It does not exist, so
       both music steps in the Dusk Ceremony are silent no-ops right now. Only you can
       choose this.
-- [ ] **Re-check every node's volume after any reboot.** `wpctl` volume is node-local
-      runtime state — it is not in git, not deployed, and does not survive a reboot.
-      Canonical values are in `scripts/yard-theater/speaker-volumes.json`.
+- [ ] **Re-apply speaker volumes after any reboot or deploy — one command:**
+      ```
+      node scripts/fleet-audio/apply-volumes.mjs          # set them
+      node scripts/fleet-audio/apply-volumes.mjs --check  # just report drift
+      ```
+      This is not theoretical: a redeploy reset **Mina and Sir Dragomir to 0.65**, which
+      measured Mina *SILENT* and Dragomir *FAINT* — while Orlok held 1.30. Applying the
+      map put all three back to AUDIBLE. `wpctl` volume is node-local runtime state: not
+      in git, not deployed, and it does not survive a reboot. The canonical values live
+      in `scripts/yard-theater/speaker-volumes.json`; the command above is what applies
+      them. It must use `wpctl`, because the tuned levels are above 1.00 and both volume
+      APIs clamp at 100.
 - [ ] **Scheduled events fire on 31 October.** Confirm on `/schedule` — it will tell you
       how many days away that is.
