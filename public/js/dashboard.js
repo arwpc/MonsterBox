@@ -2271,7 +2271,10 @@
 
     // Best-effort: also hit the orchestration stop endpoint if available.
     try {
-      fetch('/api/orchestration/stop-all', { method: 'POST' }).catch(function () {});
+      // '/api/orchestration/stop-all' does not exist and returned 404 — the panic
+      // button has been silently failing to reach the fleet. These two are real.
+      fetch('/api/orchestration/emergency-stop', { method: 'POST' }).catch(function () {});
+      fetch('/api/orchestration/stop-all-queue-loops', { method: 'POST' }).catch(function () {});
     } catch (_) {}
   }
 

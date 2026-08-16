@@ -34,6 +34,8 @@
           "notes": "Bow At The Waist (BTS7960, GPIO 21/19/5/22). Sitting at its safe mechanical minimum — extension only, once the wiring is confirmed. Retraction risks bending the linkage."
         },
         "4": {
+          "blockAllMotion": true,
+          "blockReason": "Elbow servo is physically failed (operator-confirmed 2026-08-15). It sits on a rail whose fuse has blown before, so commanding a dead servo risks taking the rail with it. TO RE-ENABLE once the servo and power are sorted: delete this blockAllMotion and blockReason pair — the speed cap, angle window and fused-rail serialization below stay in force.",
           "powerGroup": "arm-fused-rail",
           "maxSpeedPct": 40,
           "maxDurationMs": 3000,

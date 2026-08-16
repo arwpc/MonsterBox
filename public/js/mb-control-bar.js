@@ -42,15 +42,16 @@
       return;
     }
 
-    fetch('/api/characters', { headers: { Accept: 'application/json' } })
+    // The fleet character list lives under the setup router, not /api/characters
+    // (which does not exist and returns the 404 page).
+    fetch('/setup/characters/api/characters', { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
         if (!data || !nameEl) return;
-        var list = data.characters || data;
-        if (!list || !list.length) return;
+        var list = data.characters || [];
         for (var i = 0; i < list.length; i++) {
           if (String(list[i].id) === String(charId)) {
-            nameEl.textContent = list[i].char_name || list[i].name || ('Character ' + charId);
+            nameEl.textContent = list[i].name || list[i].char_name || ('Character ' + charId);
             return;
           }
         }
@@ -98,7 +99,11 @@
     fetch('/api/system/volume', { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (data && data.volume != null) slider.value = data.volume;
+        if (!data || data.volume == null) return;
+        // GET /api/system/volume returns a 0.0-1.0 fraction; PUT takes 0-100.
+        // Normalise here so the slider is not pinned to zero at 65% volume.
+        var pct = data.volume <= 1 ? Math.round(data.volume * 100) : Math.round(data.volume);
+        slider.value = String(pct);
       })
       .catch(function () { /* leave the default — not worth an error here */ });
 
@@ -175,8 +180,10 @@
     // Fire every stop we have and do not wait on any of them — this runs when
     // something is already going wrong, so a hung endpoint must not block the
     // others. Each is independently safe to call when nothing is running.
+    // Verified to exist — '/api/orchestration/stop-all' does NOT, and returns 404.
     var endpoints = [
-      '/api/orchestration/stop-all',
+      '/api/orchestration/emergency-stop',
+      '/api/orchestration/stop-all-queue-loops',
       '/api/audio/stop-all',
       '/scenes/api/queue/stop'
     ];

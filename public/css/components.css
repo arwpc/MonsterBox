@@ -899,3 +899,106 @@ body.mb-has-control-bar {
     justify-content: flex-end;
   }
 }
+
+/* ==========================================================================
+   Busy state
+   --------------------------------------------------------------------------
+   The interaction state that is usually missing and matters most here: a servo
+   command takes 500ms+, an unacknowledged tap gets tapped again, and a
+   double-tap double-fires a motor. Any control that dispatches hardware should
+   carry data-busy="true" until it settles.
+
+   Set it alongside `disabled` for real inertness; this rule only supplies the
+   appearance and the pointer semantics.
+   ========================================================================== */
+.mb-btn[data-busy="true"],
+[data-busy="true"].mb-btn {
+  pointer-events: none;
+  cursor: progress;
+  position: relative;
+  color: transparent !important;
+}
+
+.mb-btn[data-busy="true"] > * {
+  visibility: hidden;
+}
+
+.mb-btn[data-busy="true"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1em;
+  height: 1em;
+  margin: -0.5em 0 0 -0.5em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--mb-radius-full, 999px);
+  color: var(--mb-fg-primary);
+  animation: mb-busy-spin 700ms linear infinite;
+}
+
+@keyframes mb-busy-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-btn[data-busy="true"]::after {
+    animation: none;
+    border-top-color: currentColor;
+    opacity: 0.6;
+  }
+}
+
+/* ==========================================================================
+   Nav tile
+   --------------------------------------------------------------------------
+   The repeated "big icon + title + one-line description" card used on hub pages
+   (Setup, and anywhere else offering a grid of destinations). This markup was
+   duplicated ten times per page as inline styles, which put it outside the token
+   system entirely — themes could not reach it and every copy could drift.
+   ========================================================================== */
+.mb-tile {
+  display: block;
+  text-align: center;
+  padding: var(--mb-space-3);
+  text-decoration: none;
+  color: inherit;
+}
+
+.mb-tile:hover,
+.mb-tile:focus-visible {
+  text-decoration: none;
+  color: inherit;
+}
+
+.mb-tile-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  color: var(--mb-fg-secondary);
+  transition: transform var(--mb-motion-fast, 120ms) ease, color var(--mb-motion-fast, 120ms) ease;
+}
+
+/* Only on devices that can hover — a touch device would keep the lifted state
+   after a tap, making every visited tile look permanently active. */
+@media (hover: hover) {
+  .mb-card-interactive:hover .mb-tile-icon {
+    transform: translateY(-2px) scale(1.06);
+  }
+}
+
+.mb-tile-title {
+  margin: var(--mb-space-3) 0 var(--mb-space-1);
+}
+
+.mb-tile-desc {
+  margin: 0;
+}
+
+/* Accent variants so a tile's colour is a token choice, not an inline hex. */
+.mb-tile-icon-primary { color: var(--mb-primary); }
+.mb-tile-icon-success { color: var(--mb-success); }
+.mb-tile-icon-warning { color: var(--mb-warning); }
+.mb-tile-icon-danger  { color: var(--mb-danger); }
+.mb-tile-icon-info    { color: var(--mb-info); }
+.mb-tile-icon-ai      { color: var(--mb-ai); }
