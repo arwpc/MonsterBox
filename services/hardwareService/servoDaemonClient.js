@@ -8,10 +8,10 @@
  * before v9.2.0, re-initialised the PCA9685 on every single command. Re-init
  * has to put the chip to sleep to write the prescaler, and sleeping stops the
  * oscillator, so every servo command blanked the PWM on all sixteen channels.
- * Measured on Orlok: 24 one-shot commands aimed at an unconnected channel
- * produced 11 chip-wide SLEEP events and 53 no-pulse reads on the head channel
- * in 8 seconds. That is the head twitch, and it is why concurrent motion was
- * impossible.
+ * Measured on a reference node: 24 one-shot commands aimed at an unconnected
+ * channel produced 11 chip-wide SLEEP events and 53 no-pulse reads on the head
+ * servo's channel in 8 seconds. That is the head twitch, and it is why
+ * concurrent motion was impossible.
  *
  * SAFETY CONTRACT: this module is a transport. It does not know about
  * calibration profiles or config/hardware-safety.json, and it must never be the

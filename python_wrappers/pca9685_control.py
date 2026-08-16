@@ -13,7 +13,7 @@ Two ways to reach the chip, in strict order of preference:
 
   2. Direct I2C from this process, used only when the daemon is unreachable.
 
-Why the daemon matters (measured on Orlok, v9.2.0):
+Why the daemon matters (measured on a reference node, v9.2.0):
   pca9685_init has to drive MODE1 to 0x10 (SLEEP) to change the prescaler, and
   SLEEP stops the oscillator, which kills the PWM output on ALL SIXTEEN channels
   for the length of that write. Since every servo command used to be a brand new

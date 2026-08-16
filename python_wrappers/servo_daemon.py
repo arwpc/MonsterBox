@@ -12,9 +12,10 @@ The PCA9685 prescaler can only be written while the chip is asleep, and sleeping
 stops the oscillator, which drops the PWM output on all sixteen channels at once.
 MonsterBox used to spawn a fresh Python process for every servo command, and each
 of those processes re-initialised the chip, so every servo move blanked every
-other servo. Measured on Orlok: 24 one-shot commands aimed at an unconnected
-channel produced 11 SLEEP entries and 53 no-pulse reads on the head channel in
-8 seconds. That is the head twitch, and it makes concurrent motion impossible.
+other servo. Measured on a reference node: 24 one-shot commands aimed at an
+unconnected channel produced 11 SLEEP entries and 53 no-pulse reads on the head
+servo's channel in 8 seconds. That is the head twitch, and it makes concurrent
+motion impossible.
 
 With a single owner the chip is configured once, and two channels written
 back-to-back under one lock land ~0.3ms apart, which reads as simultaneous.
