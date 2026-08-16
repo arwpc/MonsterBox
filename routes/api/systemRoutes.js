@@ -42,11 +42,16 @@ function isLoopbackRequest(req) {
 }
 
 function requireAdmin(req, res, next) {
+    // A correct token always wins — this is how a REMOTE operator or script
+    // authenticates, and it is the only way in from off this machine.
     const expected = process.env.MB_ADMIN_TOKEN;
-    if (expected) {
-        if (req.get('x-mb-admin-token') === expected) return next();
-        return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
+    if (expected && req.get('x-mb-admin-token') === expected) return next();
+
+    // Setting a token must NOT lock the operator out of their own dashboard. The
+    // browser cannot send a header on a plain form post and we are not shipping the
+    // token into every rendered page — putting it in the HTML would hand it to
+    // exactly the LAN population this guards against. So a same-origin browser
+    // request still passes on its own merits, as it did before a token existed.
     const origin = req.get('origin');
     if (origin) {
         try {
@@ -59,9 +64,11 @@ function requireAdmin(req, res, next) {
         return next();
     }
     if (isLoopbackRequest(req)) return next();
-    return res.status(403).json({
+    return res.status(expected ? 401 : 403).json({
         success: false,
-        error: 'Remote administrative requests require MB_ADMIN_TOKEN. Set it in the monsterbox.service environment and send it as the x-mb-admin-token header.'
+        error: expected
+            ? 'Unauthorized — send the x-mb-admin-token header, or make this request from the MonsterBox UI.'
+            : 'Remote administrative requests require MB_ADMIN_TOKEN. Set it in /etc/monsterbox/env (read by the monsterbox.service EnvironmentFile) and send it as the x-mb-admin-token header.'
     });
 }
 
