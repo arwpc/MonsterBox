@@ -9,11 +9,12 @@
     "rpwmPin": 27,
     "lpwmPin": 22,
     "renPin": 17,
-    "lenPin": 17,
+    "lenPin": 23,
     "enableMode": "dual",
     "minSpeed": 0,
     "maxSpeed": 100,
-    "description": "12V motor that shakes Renfield up and down \u2014 'the signature'. Pins are placeholders until hardware install.",
+    "maxDuration": 5000,
+    "description": "12V shake motor \u2014 'the signature', Renfield's tremble. BTS7960 H-bridge on BCM GPIO: RPWM=27, LPWM=22, R_EN=17, L_EN=23. WIRING: run R_EN and L_EN to SEPARATE GPIO lines as listed \u2014 do NOT jumper them onto one pin. linear_actuator_control_v2.py claims each enable line independently with lgpio.gpio_claim_output, so a shared pin raises GPIO_BUSY (-79) on the second claim and every motor command fails at setup. All four lines are free on a bare node (no I2C 2/3, UART 14/15 or SPI 7-11 conflict), leaving the PCA9685 bus open for later parts. Common ground between the Pi and the BTS7960 logic side is required; the 12V motor supply must NOT share the Pi's 5V rail. Shake is a short burst: scenes run 900-2000ms at 50-80% and maxDuration caps any single energization at 5000ms.",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
@@ -21,7 +22,7 @@
       "controlBoard": "BTS7960"
     },
     "controlBoard": "BTS7960",
-    "updated": "2025-10-17T19:23:33.217Z",
+    "updated": "2026-08-16T00:00:00.000Z",
     "modelId": "motor_jeep_wagoneer_wiper"
   },
   {
