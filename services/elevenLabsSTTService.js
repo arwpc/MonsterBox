@@ -63,10 +63,6 @@ class ElevenLabsSTTService {
         try {
             const formData = new FormData();
 
-            // Create a proper stream from the buffer for FormData
-            const { Readable } = await import('stream');
-            const audioStream = Readable.from(audioBuffer);
-
             const mimeType = options.mimeType || 'audio/wav';
             const filename = mimeType === 'audio/webm' ? 'audio.webm' :
                 mimeType === 'audio/mpeg' ? 'audio.mp3' :
@@ -74,12 +70,17 @@ class ElevenLabsSTTService {
                         mimeType === 'audio/flac' ? 'audio.flac' :
                             mimeType === 'audio/m4a' ? 'audio.m4a' : 'audio.wav';
 
-            audioStream.path = filename; // Set filename for FormData
-
-            // ElevenLabs STT expects 'file' form field
-            formData.append('file', audioStream, {
+            // Append the raw Buffer, never a Readable wrapper. form-data derives the
+            // part length from a Buffer directly; a stream carrying a `.path` makes it
+            // fs.stat() that path to find the length, which fails for a synthetic name
+            // like "audio.wav" and leaves the request body unfinished — the POST then
+            // hangs forever, and axios `timeout` never fires because it only guards the
+            // wait for a RESPONSE, not a request body that is never completed.
+            const fileBuffer = Buffer.isBuffer(audioBuffer) ? audioBuffer : Buffer.from(audioBuffer);
+            formData.append('file', fileBuffer, {
                 filename,
-                contentType: mimeType
+                contentType: mimeType,
+                knownLength: fileBuffer.length
             });
 
             // Use scribe_v2 as default
