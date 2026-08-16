@@ -32,7 +32,7 @@
             "turn": {
                 "turn_timeout": 8.0,
                 "initial_wait_time": null,
-                "silence_end_call_timeout": -1,
+                "silence_end_call_timeout": -1.0,
                 "mode": "turn",
                 "turn_eagerness": "normal",
                 "spelling_patience": "auto",
@@ -250,6 +250,12 @@
                             "name": "KB_Orlok_Conversational_Tactics.txt",
                             "id": "oGphQIyTztQKRqYo0m3b",
                             "usage_mode": "auto"
+                        },
+                        {
+                            "type": "text",
+                            "name": "KB_Yard_Registry_2026-08-16.txt",
+                            "id": "tCuSy6KKA1VtewM8FOaJ",
+                            "usage_mode": "auto"
                         }
                     ],
                     "custom_llm": null,
@@ -271,14 +277,14 @@
                     "backup_llm_config": {
                         "preference": "default"
                     },
-                    "cascade_timeout_seconds": 8,
+                    "cascade_timeout_seconds": 8.0,
                     "tools": []
                 }
             }
         },
         "metadata": {
             "created_at_unix_secs": 1756072702,
-            "updated_at_unix_secs": 1786860669
+            "updated_at_unix_secs": 1786871605
         },
         "platform_settings": {
             "evaluation": {
@@ -635,8 +641,8 @@
                 "start_node": {
                     "type": "start",
                     "position": {
-                        "x": 0,
-                        "y": 0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "edge_order": []
                 }
@@ -652,7 +658,7 @@
             "access_source": "creator"
         },
         "tags": [],
-        "version_id": "agtvrsn_3901m04k428we33s1jakw9xv3xq6",
+        "version_id": "agtvrsn_7101m04xhtn7fmc8spa9jyrd0yfp",
         "branch_id": "agtbrch_5401khmhte8aenh8vk0n0hn6vxxp",
         "main_branch_id": "agtbrch_5401khmhte8aenh8vk0n0hn6vxxp",
         "procedures": {},

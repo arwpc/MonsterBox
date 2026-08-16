@@ -32,7 +32,7 @@
             "turn": {
                 "turn_timeout": 6.0,
                 "initial_wait_time": null,
-                "silence_end_call_timeout": -1,
+                "silence_end_call_timeout": -1.0,
                 "mode": "turn",
                 "turn_eagerness": "normal",
                 "spelling_patience": "auto",
@@ -147,7 +147,7 @@
                     "opener": null,
                     "thinking_budget": null,
                     "enable_reasoning_summary": false,
-                    "temperature": 1,
+                    "temperature": 1.0,
                     "max_tokens": -1,
                     "tool_ids": [],
                     "built_in_tools": {
@@ -205,6 +205,12 @@
                             "name": "KB_Mina_Songs.txt",
                             "id": "xlHMQoRSAqWRe71tqKEh",
                             "usage_mode": "auto"
+                        },
+                        {
+                            "type": "text",
+                            "name": "KB_Yard_Registry_2026-08-16.txt",
+                            "id": "tCuSy6KKA1VtewM8FOaJ",
+                            "usage_mode": "auto"
                         }
                     ],
                     "custom_llm": null,
@@ -226,14 +232,14 @@
                     "backup_llm_config": {
                         "preference": "default"
                     },
-                    "cascade_timeout_seconds": 8,
+                    "cascade_timeout_seconds": 8.0,
                     "tools": []
                 }
             }
         },
         "metadata": {
             "created_at_unix_secs": 1756072703,
-            "updated_at_unix_secs": 1786860666
+            "updated_at_unix_secs": 1786871608
         },
         "platform_settings": {
             "evaluation": {
@@ -590,8 +596,8 @@
                 "start_node": {
                     "type": "start",
                     "position": {
-                        "x": 0,
-                        "y": 0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "edge_order": []
                 }
@@ -607,7 +613,7 @@
             "access_source": "creator"
         },
         "tags": [],
-        "version_id": "agtvrsn_8301m04k3zthearrgkgagfhr84fk",
+        "version_id": "agtvrsn_8501m04xhwzgec4sqpevjyk2m9s7",
         "branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
         "main_branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
         "procedures": {},

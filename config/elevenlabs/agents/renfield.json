@@ -35,7 +35,7 @@
             "turn": {
                 "turn_timeout": 5.0,
                 "initial_wait_time": null,
-                "silence_end_call_timeout": -1,
+                "silence_end_call_timeout": -1.0,
                 "mode": "turn",
                 "turn_eagerness": "eager",
                 "spelling_patience": "auto",
@@ -198,6 +198,12 @@
                             "name": "KB_Renfield_Songs.txt",
                             "id": "EClwOe6AHEaN3d0q6Mu1",
                             "usage_mode": "auto"
+                        },
+                        {
+                            "type": "text",
+                            "name": "KB_Yard_Registry_2026-08-16.txt",
+                            "id": "tCuSy6KKA1VtewM8FOaJ",
+                            "usage_mode": "auto"
                         }
                     ],
                     "custom_llm": null,
@@ -219,14 +225,14 @@
                     "backup_llm_config": {
                         "preference": "default"
                     },
-                    "cascade_timeout_seconds": 4,
+                    "cascade_timeout_seconds": 4.0,
                     "tools": []
                 }
             }
         },
         "metadata": {
             "created_at_unix_secs": 1786861362,
-            "updated_at_unix_secs": 1786862496
+            "updated_at_unix_secs": 1786869915
         },
         "platform_settings": {
             "evaluation": {
@@ -537,8 +543,8 @@
                 "start_node": {
                     "type": "start",
                     "position": {
-                        "x": 0,
-                        "y": 0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "edge_order": []
                 }
@@ -554,7 +560,7 @@
             "access_source": "creator"
         },
         "tags": [],
-        "version_id": "agtvrsn_9701m04mvtnjen3avyz6qchyhtwg",
+        "version_id": "agtvrsn_2201m04vy7zmf37v4gfmx6zw1kr6",
         "branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
         "main_branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
         "procedures": {},

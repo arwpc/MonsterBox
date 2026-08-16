@@ -32,7 +32,7 @@
             "turn": {
                 "turn_timeout": 5.0,
                 "initial_wait_time": null,
-                "silence_end_call_timeout": -1,
+                "silence_end_call_timeout": -1.0,
                 "mode": "turn",
                 "turn_eagerness": "eager",
                 "spelling_patience": "auto",
@@ -150,7 +150,7 @@
                     "opener": null,
                     "thinking_budget": null,
                     "enable_reasoning_summary": false,
-                    "temperature": 1,
+                    "temperature": 1.0,
                     "max_tokens": -1,
                     "tool_ids": [],
                     "built_in_tools": {
@@ -190,6 +190,12 @@
                             "name": "KB_Groundbreaker_Rock_War.txt",
                             "id": "GGY8fq3qaCkUCYeByx9j",
                             "usage_mode": "auto"
+                        },
+                        {
+                            "type": "text",
+                            "name": "KB_Yard_Registry_2026-08-16.txt",
+                            "id": "tCuSy6KKA1VtewM8FOaJ",
+                            "usage_mode": "auto"
                         }
                     ],
                     "custom_llm": null,
@@ -211,14 +217,14 @@
                     "backup_llm_config": {
                         "preference": "default"
                     },
-                    "cascade_timeout_seconds": 8,
+                    "cascade_timeout_seconds": 8.0,
                     "tools": []
                 }
             }
         },
         "metadata": {
             "created_at_unix_secs": 1759638392,
-            "updated_at_unix_secs": 1786865067
+            "updated_at_unix_secs": 1786871614
         },
         "platform_settings": {
             "evaluation": {
@@ -575,8 +581,8 @@
                 "start_node": {
                     "type": "start",
                     "position": {
-                        "x": 0,
-                        "y": 0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "edge_order": []
                 }
@@ -592,7 +598,7 @@
             "access_source": "creator"
         },
         "tags": [],
-        "version_id": "agtvrsn_6701m04qaa0wfqtvcc7j53j1rk5a",
+        "version_id": "agtvrsn_8301m04xj375f1t93tb9aawze07j",
         "branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
         "main_branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
         "procedures": {},

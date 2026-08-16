@@ -32,7 +32,7 @@
             "turn": {
                 "turn_timeout": 5.0,
                 "initial_wait_time": null,
-                "silence_end_call_timeout": -1,
+                "silence_end_call_timeout": -1.0,
                 "mode": "turn",
                 "turn_eagerness": "normal",
                 "spelling_patience": "auto",
@@ -66,7 +66,7 @@
                 "agent_output_audio_format": "pcm_16000",
                 "optimize_streaming_latency": 3,
                 "stability": 0.35,
-                "speed": 1,
+                "speed": 1.0,
                 "similarity_boost": 0.65,
                 "text_normalisation_type": "system_prompt",
                 "pronunciation_dictionary_locators": [
@@ -130,7 +130,7 @@
                     "opener": null,
                     "thinking_budget": null,
                     "enable_reasoning_summary": false,
-                    "temperature": 1,
+                    "temperature": 1.0,
                     "max_tokens": -1,
                     "tool_ids": [],
                     "built_in_tools": {
@@ -186,6 +186,12 @@
                             "name": "KB_Pumpkinhead_Known_Guests.txt",
                             "id": "a5wEWGdg6tG0EM86k21k",
                             "usage_mode": "auto"
+                        },
+                        {
+                            "type": "text",
+                            "name": "KB_Yard_Registry_2026-08-16.txt",
+                            "id": "tCuSy6KKA1VtewM8FOaJ",
+                            "usage_mode": "auto"
                         }
                     ],
                     "custom_llm": null,
@@ -207,7 +213,7 @@
                     "backup_llm_config": {
                         "preference": "default"
                     },
-                    "cascade_timeout_seconds": 8,
+                    "cascade_timeout_seconds": 8.0,
                     "tools": [
                         {
                             "type": "system",
@@ -232,7 +238,7 @@
         },
         "metadata": {
             "created_at_unix_secs": 1756072704,
-            "updated_at_unix_secs": 1786858427
+            "updated_at_unix_secs": 1786871612
         },
         "platform_settings": {
             "evaluation": {
@@ -589,8 +595,8 @@
                 "start_node": {
                     "type": "start",
                     "position": {
-                        "x": 0,
-                        "y": 0
+                        "x": 0.0,
+                        "y": 0.0
                     },
                     "edge_order": []
                 }
@@ -606,7 +612,7 @@
             "access_source": "creator"
         },
         "tags": [],
-        "version_id": "agtvrsn_9001m04gzncdfs9sk5eaawjxf5x7",
+        "version_id": "agtvrsn_5601m04xj17ye6dvyzpxchcdewhq",
         "branch_id": "agtbrch_1301ks2b8m5zfnqsxasgy37wav2t",
         "main_branch_id": "agtbrch_1301ks2b8m5zfnqsxasgy37wav2t",
         "procedures": {},

@@ -11,7 +11,11 @@ Halloween**. Everything needed to apply it is here.
 | `gesture` client tool (workspace) | **created and live** — `tool_6601m04v5wr6ft9sa1p88wmkxg67`, attached to no agent |
 | `tool_ids` on the five agents | **empty** (withdrawn) |
 | `# Body` prompt sections | **withdrawn** from the live prompts; text preserved in `body-sections/` |
-| `services/gestureEngineService.js` handler | not shipped at time of writing |
+| `services/gestureEngineService.js` handler | **shipped** (v9.1.0) — the MonsterBox side is ready and waiting |
+| `data/character-*/gestures.json` recipes | character-3 only |
+
+The handler being ready is why the withdrawal below rests on live-path measurement rather
+than on "there is nothing to call yet".
 
 Renfield has no entry: he has no node and no parts yet, so §7 gives him no vocabulary
 and he gets neither the tool nor a `# Body` section.
