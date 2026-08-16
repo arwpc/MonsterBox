@@ -354,3 +354,46 @@
   20%  { opacity: 0.55; }
   100% { opacity: 0; }
 }
+
+/* ==========================================================================
+   Scene row actions
+   --------------------------------------------------------------------------
+   Play and delete were both 24x23px and 8px apart. On show night that is a cold
+   thumb, in the dark, one-handed, with a group walking up — and the predicted
+   failure was deleting a scene while trying to play it. Play is now the large,
+   filled, obvious target; delete is smaller, quiet, and pushed away from it.
+   Nobody deletes scenes during a show; everybody plays them.
+   ========================================================================== */
+.mb-scene-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-4);      /* real separation, not 8px */
+  margin-left: var(--mb-space-3);
+  flex-shrink: 0;
+}
+
+.mb-scene-row-actions .scene-play-btn {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  font-size: var(--mb-text-lg);
+}
+
+.mb-scene-row-actions .scene-del-btn {
+  color: var(--mb-fg-muted);
+  opacity: 0.55;
+}
+
+/* Only reveal delete's danger colouring on deliberate hover/focus — it should
+   never compete for attention with play. */
+.mb-scene-row-actions .scene-del-btn:hover,
+.mb-scene-row-actions .scene-del-btn:focus-visible {
+  color: var(--mb-danger);
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  /* Touch: both need to be tappable, but keep them far apart. */
+  .mb-scene-row-actions { gap: var(--mb-space-6); }
+  .mb-scene-row-actions .scene-del-btn { width: 44px; height: 44px; min-height: 44px; }
+}

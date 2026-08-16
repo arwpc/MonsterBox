@@ -21,9 +21,10 @@
  *     drops the clamp; this service never does that.
  *   - Servo ownership goes through priorityManager, so a scene (100) or active
  *     head tracking (80) always wins and this backs off instead of arguing.
- *   - Motion is rate-limited per tick, so no reachable code path can produce a
- *     snap. Subtlety is the whole point: the line between "alive" and "twitchy"
- *     is amplitude and slew rate, not complexity.
+ *   - Motion is rate-limited in degrees per second against measured elapsed
+ *     time, so no reachable code path can produce a snap. Subtlety is the whole
+ *     point: the line between "alive" and "twitchy" is amplitude and slew rate,
+ *     not complexity.
  *   - Character-independent: the pan servo comes from the character's own
  *     headTracking config, amplitudes from its own movement-config.json.
  *
@@ -64,7 +65,7 @@ const WANDER_A_MS = 3700;
 const WANDER_B_MS = 6100;
 
 const DEFAULT_SPEECH_AMPLITUDE_DEG = 7;
-const DEFAULT_SLEW_DEG_PER_TICK = 1.6;
+const DEFAULT_SLEW_DEG_PER_SEC = 16;
 const DEFAULT_IDLE_BREATH_DEG = 1.5;
 const DEFAULT_IDLE_BREATH_MS = 5000;
 const DEFAULT_IDLE_DRIFT_DEG = 0.5;
@@ -151,16 +152,27 @@ async function resolveHead(characterId) {
 
   // Where the head actually is right now, so the first move is rate-limited
   // against reality rather than against an assumption.
+  //
+  // If we cannot get a trustworthy reading we do NOT fall back to assuming the
+  // centre and moving anyway — that assumption is what produced the snap this
+  // read exists to prevent. Decorative motion is skipped for now and retried on
+  // the next utterance. Speech itself is unaffected either way.
   const measured = await readCurrentAngle(cfg.channel, address);
-  const startAngle = (typeof measured === 'number' && measured >= safeLo - 5 && measured <= safeHi + 5)
-    ? clamp(measured, safeLo, safeHi)
-    : center;
+  if (measured === null) {
+    console.warn(`[speech-expression] could not read a stable position for pan servo ${panServoId} — skipping co-expression this turn`);
+    return null;
+  }
+  if (measured < safeLo - 5 || measured > safeHi + 5) {
+    console.warn(`[speech-expression] pan servo ${panServoId} is at ${measured.toFixed(1)}deg, outside its ${safeLo}-${safeHi} window — refusing to drive it`);
+    return null;
+  }
 
   return {
     partId: String(panServoId),
     channel: cfg.channel,
     address,
-    safeLo, safeHi, center, startAngle
+    safeLo, safeHi, center,
+    startAngle: clamp(measured, safeLo, safeHi)
   };
 }
 
@@ -178,20 +190,34 @@ async function resolveHead(characterId) {
  * configured centre if the read fails, which restores the old (worse but not
  * dangerous) behaviour rather than refusing to move.
  */
-function readCurrentAngle(channel, address) {
+function readAngleOnce(channel, address) {
   return new Promise((resolve) => {
     const script = path.resolve(__dirname, '../python_wrappers/i2c_servo_sampler.py');
     execFile('python3', [script, '--channels', String(channel), '--address', String(address),
-      '--duration', '0.06', '--rate', '200'], { timeout: 4000 }, (err, stdout) => {
+      '--duration', '0.15', '--rate', '200'], { timeout: 5000 }, (err, stdout) => {
       if (err) return resolve(null);
       try {
         const ch = JSON.parse(stdout).channels[String(channel)];
-        resolve(typeof ch.mean_angle === 'number' ? ch.mean_angle : null);
+        if (!ch || typeof ch.p50_angle !== 'number' || ch.samples < 8) return resolve(null);
+        // A servo holding position must read the SAME count every time. Spread
+        // across the window means the bus was contended and at least one sample
+        // is fiction — observed in practice as a plausible-looking but wrong
+        // angle that would have been trusted by a plain average.
+        if ((ch.max_angle - ch.min_angle) > 2) return resolve(null);
+        resolve(ch.p50_angle);
       } catch (_) {
         resolve(null);
       }
     });
   });
+}
+
+async function readCurrentAngle(channel, address) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const v = await readAngleOnce(channel, address);
+    if (v !== null) return v;
+  }
+  return null;
 }
 
 function getSession(characterId) {
@@ -225,11 +251,23 @@ function ensureSession(characterId, head) {
 /**
  * Move the head one step toward a target, rate-limited and clamped.
  * Returns the angle actually commanded, or null if nothing was sent.
+ *
+ * The limit is degrees per SECOND, applied against measured elapsed time — not
+ * degrees per tick. setInterval does not guarantee even spacing: after the event
+ * loop blocks (a GC pause, or the position read at session start) Node fires the
+ * backed-up ticks back to back, and a per-tick limit lets three of them land as
+ * one burst. That was measured as a 5.09deg first step against a nominal
+ * 1.6deg/tick limit. dt is capped so a long stall cannot bank a large move.
  */
-function stepHead(s, target, slewDeg) {
+function stepHead(s, target, slewDegPerSec) {
   const h = s.head;
+  const now = Date.now();
+  const dt = Math.min(250, Math.max(1, now - (s.lastStepMs || now)));
+  s.lastStepMs = now;
+
+  const maxDelta = slewDegPerSec * (dt / 1000);
   const wanted = clamp(target, h.safeLo, h.safeHi);
-  const delta = clamp(wanted - s.lastAngle, -slewDeg, slewDeg);
+  const delta = clamp(wanted - s.lastAngle, -maxDelta, maxDelta);
   const next = clamp(s.lastAngle + delta, h.safeLo, h.safeHi);
 
   // Sub-quarter-degree moves are below the servo's resolution and just add I2C
@@ -271,8 +309,10 @@ async function startSpeaking(characterId, options = {}) {
     s.head = head;
     s.amplitude = typeof co.headAmplitudeDeg === 'number'
       ? co.headAmplitudeDeg : DEFAULT_SPEECH_AMPLITUDE_DEG;
-    s.slew = typeof co.maxSlewDegPerTick === 'number'
-      ? co.maxSlewDegPerTick : DEFAULT_SLEW_DEG_PER_TICK;
+    // Accept the older per-tick key by converting it at the 10Hz it assumed.
+    s.slew = typeof co.maxSlewDegPerSec === 'number' ? co.maxSlewDegPerSec
+      : (typeof co.maxSlewDegPerTick === 'number' ? co.maxSlewDegPerTick * (1000 / SPEECH_TICK_MS)
+        : DEFAULT_SLEW_DEG_PER_SEC);
 
     // Never fight a scene or live head tracking.
     if (!isAvailable(head.partId, CO_EXPRESSION_PRIORITY)) {
@@ -444,7 +484,7 @@ function _idleTick(cid) {
     Math.sin((2 * Math.PI * t) / s.driftMs + 0.7) * s.driftDeg;
   // Idle motion is slow by construction; a tight slew keeps it from ever
   // reading as a twitch even if the config is set aggressively.
-  stepHead(s, s.head.center + offset, 0.6);
+  stepHead(s, s.head.center + offset, 3);
 }
 
 function stopIdleLiveliness(characterId) {

@@ -223,6 +223,35 @@
     }, 4000);
   }
 
+  // --------------------------------------------------------------- wake lock
+  /**
+   * Keep the screen awake while the operator is running a show.
+   *
+   * Measured on a phone: the screen sleeps between every group of trick-or-treaters,
+   * and each interaction then costs an unlock plus a probable page reload — which
+   * is also when the panic button is briefly unwired. Holding a wake lock removes
+   * that tax from every task. Only requested on the show-facing pages, so ordinary
+   * configuration browsing does not hold the screen on.
+   */
+  function keepAwake() {
+    if (!navigator.wakeLock || !navigator.wakeLock.request) return;
+    var showPages = ['/live', '/'];
+    if (showPages.indexOf(window.location.pathname) === -1) return;
+
+    var lock = null;
+    function acquire() {
+      navigator.wakeLock.request('screen').then(function (l) {
+        lock = l;
+        l.addEventListener('release', function () { lock = null; });
+      }).catch(function () { /* denied or unsupported — not worth surfacing */ });
+    }
+    acquire();
+    // A wake lock is dropped whenever the page is hidden, so re-take it on return.
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && !lock) acquire();
+    });
+  }
+
   // -------------------------------------------------------------------- init
   // The layout reservation class is server-rendered onto <body> so it survives a
   // JS failure; this is only a belt-and-braces top-up for any page that missed it.
@@ -231,6 +260,7 @@
   probeHealth();
   wireVolume();
   wirePanic($('mbStopEverything'), stopEverything);
+  keepAwake();
 
   // Re-probe periodically. 30s is frequent enough to notice a dead server
   // during a show without adding meaningful load on an RPi.

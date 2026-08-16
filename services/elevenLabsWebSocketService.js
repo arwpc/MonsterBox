@@ -22,6 +22,31 @@ import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 
+// RMS above which a mic frame counts as the guest actually speaking, for turn
+// latency accounting only — this does not gate what is sent to the agent.
+const VOICE_ACTIVITY_RMS = 0.02;
+
+/**
+ * Log the breakdown of one turn: how long each hop took between the guest
+ * falling silent and the character's first sound.
+ *
+ * A single end-to-end number ("about 12 seconds") is not actionable — it does
+ * not say whether to tune end-of-turn detection, the LLM, or TTS. These four
+ * deltas do.
+ */
+function logTurnLatency(connection, sessionId) {
+    const t = connection && connection._turn;
+    if (!t || !t.firstAudioAtMs || t._logged) return;
+    t._logged = true;
+    const parts = [];
+    const from = t.speechEndMs || t.transcriptAtMs;
+    if (t.speechEndMs && t.transcriptAtMs) parts.push(`speech-end→transcript ${t.transcriptAtMs - t.speechEndMs}ms`);
+    if (t.transcriptAtMs && t.responseAtMs) parts.push(`transcript→LLM ${t.responseAtMs - t.transcriptAtMs}ms`);
+    if (t.responseAtMs && t.firstAudioAtMs) parts.push(`LLM→first-audio ${t.firstAudioAtMs - t.responseAtMs}ms`);
+    if (from) parts.push(`TOTAL ${t.firstAudioAtMs - from}ms`);
+    console.log(`⏱️  [turn-latency] session=${sessionId} ${parts.join('  |  ')}`);
+}
+
 // Minimal WAV encoder for PCM16LE mono (16kHz)
 function encodeWavPCM16LE(rawPcm, sampleRate = 16000, channels = 1) {
     try {
@@ -736,6 +761,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // Audio for one utterance arrives back-to-back, so a gap
                             // means a new utterance.
                             const nowMs = Date.now();
+                            // Only the first chunk of a NEW utterance closes the turn
+                            // clock. Audio still draining from the previous reply would
+                            // otherwise land microseconds after the transcript and
+                            // report an absurd sub-100ms turn.
+                            if (c._turn && !c._turn.firstAudioAtMs && c._turn.responseAtMs
+                                && (!c.lastAudioChunkAt || (nowMs - c.lastAudioChunkAt) > 1200)) {
+                                c._turn.firstAudioAtMs = nowMs;
+                                logTurnLatency(c, sessionId);
+                            }
                             const UTTERANCE_GAP_MS = 1200;
                             if (!c.aiSpeaking || (c.lastAudioChunkAt && (nowMs - c.lastAudioChunkAt) > UTTERANCE_GAP_MS)) {
                                 // First chunk of a new utterance
@@ -853,6 +887,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             connection.consecutiveErrors = 0; // Reset error counter on success
                             console.log(`✅ Session ${sessionId}: Transcribed "${userText}" (count=${connection.transcriptCount})`);
 
+                            // Start the turn clock at the guest's last voiced frame.
+                            connection._turn = {
+                                speechEndMs: connection._lastVoiceAtMs || null,
+                                transcriptAtMs: Date.now(),
+                                responseAtMs: null,
+                                firstAudioAtMs: null,
+                                text: userText
+                            };
+
                             // Send user transcript event to client (single event, no duplicates)
                             this.sendToClient(sessionId, {
                                 type: 'user_transcript',
@@ -875,7 +918,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         message.message ||
                         '';
 
-
+                    if (connection._turn && !connection._turn.responseAtMs) {
+                        connection._turn.responseAtMs = Date.now();
+                    }
 
                     if (responseText) {
                         this.sendToClient(sessionId, {
@@ -1474,6 +1519,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         rmsLevel = Math.sqrt(sumSq / (sampleCount || 1)) / 32768;
                         rmsLevel = Math.min(1, rmsLevel);
                     } catch (_) { rmsLevel = 0; }
+
+                    // Timestamp the last frame that actually contained the guest's
+                    // voice. Everything downstream measures "how long after the guest
+                    // stopped talking did the character answer", and that clock has to
+                    // start at real speech — not at transcript arrival, which is
+                    // already several hundred ms late. Frames suppressed as our own
+                    // echo are deliberately excluded.
+                    if (!suppressed && rmsLevel > VOICE_ACTIVITY_RMS) {
+                        connection._lastVoiceAtMs = now;
+                    }
 
                     // Send audio level to browser every ~500ms (every other tick at 250ms)
                     if (!connection._vuLastTs || (now - connection._vuLastTs) >= 500) {

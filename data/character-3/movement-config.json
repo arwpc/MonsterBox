@@ -8,7 +8,7 @@
     "defaultEasing": "ease_in_out"
   },
   "microMovement": {
-    "enabled": false,
+    "enabled": true,
     "breathingAmplitudeDeg": 1.5,
     "breathingPeriodMs": 5000,
     "driftAmplitudeDeg": 0.5,
@@ -16,5 +16,10 @@
     "jitterAmplitudeDeg": 0,
     "jitterIntervalMs": 0
   },
-  "servoTransitions": {}
+  "servoTransitions": {},
+  "speechCoExpression": {
+    "enabled": true,
+    "headAmplitudeDeg": 7,
+    "maxSlewDegPerTick": 1.6
+  }
 }

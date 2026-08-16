@@ -14,6 +14,67 @@
         image swap-in.
    ========================================================================== */
 
+/* -- Shared toast + destructive-confirm helpers ---------------------------
+   Native alert()/confirm() cannot be styled, are unusable one-handed on a phone,
+   and — the part that matters for a destructive action — cannot show WHAT is
+   about to be destroyed. On show night a modal you must read and dismiss also
+   arrives at exactly the wrong moment, so plain feedback goes to a toast and only
+   genuinely destructive actions get a dialog, which names its target.
+   ------------------------------------------------------------------------- */
+  function mbToast(message, severity) {
+    var region = document.querySelector('.mb-toast-region');
+    if (!region) {
+      region = document.createElement('div');
+      region.className = 'mb-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    var t = document.createElement('div');
+    t.className = 'mb-toast mb-toast-' + (severity || 'info');
+    t.textContent = message;
+    region.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 4500);
+  }
+
+  function mbConfirm(opts) {
+    return new Promise(function (resolve) {
+      var backdrop = document.createElement('div');
+      backdrop.className = 'mb-modal-backdrop';
+      backdrop.innerHTML =
+        '<div class="mb-modal" role="dialog" aria-modal="true">' +
+          '<div class="mb-modal-dialog">' +
+            '<div class="mb-modal-header"><h3 class="mb-modal-title"></h3></div>' +
+            '<div class="mb-modal-body"><p class="mb-modal-detail"></p></div>' +
+            '<div class="mb-modal-footer">' +
+              '<button type="button" class="mb-btn mb-btn-secondary" data-act="cancel">Cancel</button>' +
+              '<button type="button" class="mb-btn mb-btn-danger" data-act="ok"></button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      backdrop.querySelector('.mb-modal-title').textContent = opts.title;
+      backdrop.querySelector('.mb-modal-detail').textContent = opts.detail || '';
+      backdrop.querySelector('[data-act="ok"]').textContent = opts.confirmLabel || 'Delete';
+
+      function close(result) {
+        document.removeEventListener('keydown', onKey);
+        if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+        resolve(result);
+      }
+      function onKey(e) { if (e.key === 'Escape') close(false); }
+
+      backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) { close(false); return; }
+        var act = e.target.closest && e.target.closest('[data-act]');
+        if (act) close(act.getAttribute('data-act') === 'ok');
+      });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(backdrop);
+      var ok = backdrop.querySelector('[data-act="ok"]');
+      if (ok && ok.focus) ok.focus();
+    });
+  }
+
 /* -- SECTION 1: main dashboard FSM ---------------------------------------- */
   (function () {
     const ui = {
@@ -1579,9 +1640,9 @@
             <strong class="small">${scene.name || 'Scene ' + scene.id}</strong>
             <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">${(scene.steps && scene.steps.length) || 0}</span>
           </div>
-          <div class="d-flex gap-1 ms-2 flex-shrink-0">
-            <button class="btn btn-sm btn-outline-success p-0 px-1 scene-play-btn" data-id="${scene.id}" title="Play"><i class="bi bi-play-fill"></i></button>
-            <button class="btn btn-sm btn-outline-danger p-0 px-1 scene-del-btn" data-id="${scene.id}" title="Delete"><i class="bi bi-trash"></i></button>
+          <div class="mb-scene-row-actions">
+            <button class="mb-btn mb-btn-primary mb-btn-icon scene-play-btn" data-id="${scene.id}" title="Play this scene" aria-label="Play ${scene.name || 'scene ' + scene.id}"><i class="bi bi-play-fill"></i></button>
+            <button class="mb-btn mb-btn-ghost mb-btn-icon mb-btn-sm scene-del-btn" data-id="${scene.id}" title="Delete this scene" aria-label="Delete ${scene.name || 'scene ' + scene.id}"><i class="bi bi-trash"></i></button>
           </div>
         </div>
       `).join('');
@@ -1636,10 +1697,10 @@
         const r = await fetch('/scenes/api/' + sceneId + '/play', { method: 'POST' });
         const j = await r.json();
         if (!(j && j.success)) {
-          alert('Failed to play scene');
+          mbToast('Failed to play scene', 'danger');
         }
       } catch (e) {
-        alert('Error playing scene: ' + e.message);
+        mbToast('Error playing scene: ' + e.message, 'danger');
       } finally {
         // Always restore the icon — a thrown fetch/json used to leave the button
         // stuck on the spinner (btn was also unreachable from the catch).
@@ -1650,7 +1711,7 @@
     async function deleteScene(sceneId) {
       const scene = dashboardScenes.find(s => s.id === sceneId);
       const name = scene ? scene.name : 'Scene ' + sceneId;
-      if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+      if (!(await mbConfirm({ title: 'Delete this scene?', detail: '"' + name + '" will be removed permanently. This cannot be undone.', confirmLabel: 'Delete scene' }))) return;
       try {
         const r = await fetch('/scenes/api/' + sceneId, { method: 'DELETE' });
         const j = await r.json();
@@ -1659,10 +1720,10 @@
           renderScenesList();
           initSceneSortable();
         } else {
-          alert('Failed to delete scene');
+          mbToast('Failed to delete scene', 'danger');
         }
       } catch (e) {
-        alert('Error deleting scene: ' + e.message);
+        mbToast('Error deleting scene: ' + e.message, 'danger');
       }
     }
 
@@ -1679,7 +1740,7 @@
         sceneLoopActive = true;
         updateLoopUI();
       } catch (e) {
-        alert('Error starting loop: ' + e.message);
+        mbToast('Error starting loop: ' + e.message, 'danger');
       }
     }
 
@@ -1689,7 +1750,7 @@
         sceneLoopActive = false;
         updateLoopUI();
       } catch (e) {
-        alert('Error stopping loop: ' + e.message);
+        mbToast('Error stopping loop: ' + e.message, 'danger');
       }
     }
 
@@ -1802,7 +1863,7 @@
     async function deletePose(poseId) {
       var pose = dashboardPoses.find(function(p) { return p.id === poseId; });
       var name = pose ? pose.name : 'Pose ' + poseId;
-      if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+      if (!(await mbConfirm({ title: 'Delete this pose?', detail: '"' + name + '" will be removed permanently. This cannot be undone.', confirmLabel: 'Delete pose' }))) return;
       try {
         var r = await fetch('/poses/' + poseId, { method: 'DELETE' });
         var j = await r.json();
@@ -1810,10 +1871,10 @@
           dashboardPoses = dashboardPoses.filter(function(p) { return p.id !== poseId; });
           renderPosesList();
         } else {
-          alert('Failed to delete pose');
+          mbToast('Failed to delete pose', 'danger');
         }
       } catch (e) {
-        alert('Error deleting pose: ' + (e && e.message ? e.message : e));
+        mbToast('Error deleting pose: ' + (e && e.message ? e.message : e), 'danger');
       }
     }
 

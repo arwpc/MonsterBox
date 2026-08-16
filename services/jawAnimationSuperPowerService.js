@@ -805,12 +805,15 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     // Load calibration guardrails (Min/Max markers)
     const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
 
-    // Normalise the raw level before smoothing, so this single-frame API opens
-    // the jaw over the same travel as the streaming and file paths.
-    const level = normalizeSpeechAmplitude(characterId, amplitude, config);
+    // NOTE: deliberately NOT perceptually normalised. Every caller of this
+    // primitive passes a commanded openness (a slider, a test level, an explicit
+    // 0 to close), not a measured RMS — normalising intent would turn "open the
+    // jaw halfway" into "open it fully". The paths that hold real audio energy
+    // (driveJawFromPcmStream, preAnalyzeAudio, driveJawFromAudioBuffer) normalise
+    // before they get here.
 
     // Apply smoothing
-    const smoothedAmplitude = applySmoothingToAmplitude(characterId, level, config);
+    const smoothedAmplitude = applySmoothingToAmplitude(characterId, amplitude, config);
 
     // Calculate target angle with guardrails and attack/release envelope
     const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
