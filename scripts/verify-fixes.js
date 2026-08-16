@@ -1,8 +1,9 @@
 
-import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { controlPart } from '../services/hardwareService/index.js';
+import { resolveCharacterTarget, loadParts } from './lib/character-target.mjs';
+import { isTestSafePart } from '../services/hardwareService/safetyLimits.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,22 +13,27 @@ async function main() {
     console.log("🦾 MonsterBox Hardware Verification Script");
     console.log("==========================================");
 
-    // 1. Load Parts for Orlok
-    const partsPath = path.join(APP_ROOT, 'data/character-3/parts.json');
+    // 1. Load parts for whichever character this node is running
+    const target = await resolveCharacterTarget();
+    const partsPath = path.join(APP_ROOT, `data/character-${target.characterId}/parts.json`);
+    console.log(`🎭 Character: ${target.name} (id ${target.characterId}, resolved from ${target.source})`);
     console.log(`📂 Loading parts from: ${partsPath}`);
-    
-    let parts;
-    try {
-        const data = await fs.readFile(partsPath, 'utf8');
-        parts = JSON.parse(data);
-        console.log(`✅ Loaded ${parts.length} parts.`);
-    } catch (e) {
-        console.error("❌ Failed to load parts:", e.message);
+
+    const parts = await loadParts(target.characterId);
+    if (parts.length === 0) {
+        console.error(`❌ Failed to load parts for ${target.name} (id ${target.characterId})`);
         process.exit(1);
     }
+    console.log(`✅ Loaded ${parts.length} parts.`);
 
     // 2. Iterate and Test
     for (const part of parts) {
+        // Never drive a part the safety layer has quarantined (dead channel, shared fuse).
+        if (['linear_actuator', 'servo', 'motor'].includes(part.type)
+            && !(await isTestSafePart(target.characterId, part.id))) {
+            console.log(`\n⛔ Skipping ${part.name} (id ${part.id}) — marked unsafe for automated testing`);
+            continue;
+        }
         console.log(`\n---------------------------------------------------`);
         console.log(`🔩 Testing Part [ID: ${part.id}]: ${part.name} (${part.type})`);
 

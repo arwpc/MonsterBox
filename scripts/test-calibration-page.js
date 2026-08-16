@@ -7,10 +7,12 @@
  */
 
 import { firefox } from 'playwright';
+import { resolveBaseUrl } from './lib/character-target.mjs';
 
 async function testCalibrationPage() {
+  const baseUrl = await resolveBaseUrl();
   console.log('🧪 Testing Calibration Page...\n');
-  
+
   const browser = await firefox.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -38,8 +40,8 @@ async function testCalibrationPage() {
   });
   
   try {
-    console.log('📍 Navigating to http://192.168.8.120:3000/setup/calibration\n');
-    await page.goto('http://192.168.8.120:3000/setup/calibration', {
+    console.log(`📍 Navigating to ${baseUrl}/setup/calibration\n`);
+    await page.goto(`${baseUrl}/setup/calibration`, {
       waitUntil: 'domcontentloaded',
       timeout: 30000
     });

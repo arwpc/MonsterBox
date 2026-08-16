@@ -1,32 +1,46 @@
+#!/usr/bin/env node
+/**
+ * Disaster recovery: re-import a character's parts from its per-character parts
+ * file into the legacy global data/parts.json, skipping anything already present.
+ *
+ * Usage:
+ *   node scripts/restore_parts.js                  # this node's character
+ *   node scripts/restore_parts.js --character 2    # any character in the registry
+ */
 
 import fs from 'fs/promises';
 import path from 'path';
+import { REPO_ROOT, resolveCharacterTarget } from './lib/character-target.mjs';
 
-const DATA_DIR = '/home/remote/MonsterBox/data';
+const DATA_DIR = path.join(REPO_ROOT, 'data');
 const PARTS_FILE = path.join(DATA_DIR, 'parts.json');
-const ORLOK_PARTS_FILE = path.join(DATA_DIR, 'character-3/parts.json');
 
 async function restoreParts() {
     try {
+        const target = await resolveCharacterTarget();
+        const characterId = target.characterId;
+        const sourceFile = path.join(DATA_DIR, `character-${characterId}`, 'parts.json');
+
+        console.log(`Restoring parts for ${target.name} (id ${characterId}, resolved from ${target.source})`);
         console.log('Reading files...');
         const partsRaw = await fs.readFile(PARTS_FILE, 'utf8');
-        const orlokRaw = await fs.readFile(ORLOK_PARTS_FILE, 'utf8');
+        const sourceRaw = await fs.readFile(sourceFile, 'utf8');
 
         let currentParts = JSON.parse(partsRaw);
-        const orlokParts = JSON.parse(orlokRaw);
+        const sourceParts = JSON.parse(sourceRaw);
 
         console.log(`Current parts count: ${currentParts.length}`);
-        console.log(`Orlok parts found: ${orlokParts.length}`);
+        console.log(`${target.name} parts found: ${sourceParts.length}`);
 
         // Find max ID
         let maxId = currentParts.reduce((max, p) => Math.max(max, parseInt(p.id) || 0), 0);
         console.log(`Max ID: ${maxId}`);
 
-        // Process Orlok parts
+        // Process the character's parts
         let addedCount = 0;
-        for (const part of orlokParts) {
+        for (const part of sourceParts) {
             // Check if part already exists (by name and characterId) - preventing dupes
-            const exists = currentParts.find(p => p.characterId === 3 && p.name === part.name);
+            const exists = currentParts.find(p => String(p.characterId) === String(characterId) && p.name === part.name);
             if (exists) {
                 console.log(`Skipping ${part.name} (already exists)`);
                 continue;
@@ -36,9 +50,9 @@ async function restoreParts() {
             const newPart = {
                 ...part,
                 id: String(maxId),
-                characterId: 3
+                characterId
             };
-            
+
             // Fix config type mismatches if any
             if (newPart.type === 'linear_actuator') {
                  // Ensure maxRetraction is safe

@@ -1,6 +1,13 @@
 // Test jaw-audio synchronization after ChatterPi-style fix
-const BASE = 'http://localhost:3000/setup/jaw-animation';
-const CID = 3;
+import { resolveCharacterTarget, resolveBaseUrl } from './lib/character-target.mjs';
+
+const target = await resolveCharacterTarget();
+const CID = target.characterId;
+const BASE = `${await resolveBaseUrl(process.argv.slice(2), { characterId: CID })}/setup/jaw-animation`;
+
+// The phrase only has to be long enough to produce several seconds of jaw motion;
+// the character's own name keeps it in voice for whichever node this runs on.
+const TEST_PHRASE = `Hello, I am ${target.name}. Welcome to my castle.`;
 
 async function poll() {
   const res = await fetch(`${BASE}/api/jaw-animation/${CID}/audio-levels`);
@@ -8,16 +15,16 @@ async function poll() {
 }
 
 async function main() {
-  console.log('Starting TTS...');
+  console.log(`Starting TTS for ${target.name} (id ${CID}) at ${BASE}...`);
   const t0 = Date.now();
-  
+
   // Fire TTS (don't await the response body)
   const ttsPromise = fetch(`${BASE}/api/jaw-animation/${CID}/test-tts`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: 'Hello, I am Count Orlok. Welcome to my castle.'})
+    body: JSON.stringify({text: TEST_PHRASE})
   });
-  
+
   console.log('TTS request sent at t=0');
   
   // Poll continuously for 12 seconds

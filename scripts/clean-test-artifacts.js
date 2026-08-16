@@ -8,13 +8,21 @@
   - Clears Playwright artifacts (test-results, playwright-report)
 
   Safety:
-  - Only deletes by conservative name patterns used in tests: /^TestChar/, /_Updated$/, 'Groundbreaker', names containing 'Playwright', names starting with 'Test', or 'PW '.
-  - Keeps canonical characters: PumpkinHead, Mina, Orlok, Sir Dragomir (ids typically 1..4)
+  - Only deletes by conservative name patterns used in tests: /^TestChar/, /_Updated$/,
+    names containing 'Playwright', names starting with 'Test', or 'PW '.
+  - Never touches a character that is a real fleet node. The protected set is read
+    from config/animatronics.json rather than hardcoded, because a hardcoded list
+    goes stale the moment a node is commissioned: this script used to carry a
+    literal four-name list plus a /^Groundbreaker$/i DELETE pattern from when
+    "Groundbreaker" was a throwaway test name. Groundbreaker is now a real node
+    (an id in the registry, an address, a deployed agent), so running this would
+    have dropped it from characters.json and rm -rf'd its whole data directory.
 */
 
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadAnimatronics } from './lib/character-target.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,12 +31,19 @@ const repoRoot = path.resolve(__dirname, '..');
 const dataDir = path.resolve(repoRoot, 'data');
 const charactersFile = path.resolve(dataDir, 'characters.json');
 
-const canonicalNames = new Set(['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir']);
 const characterDeleteNamePatterns = [
   /^TestChar/i,
   /_Updated$/i,
-  /^Groundbreaker$/i,
 ];
+
+/** Names and ids of every commissioned fleet node — these are never deletable. */
+async function loadProtectedCharacters() {
+  const nodes = await loadAnimatronics();
+  return {
+    names: new Set(nodes.map((n) => String(n.name || '').toLowerCase()).filter(Boolean)),
+    ids: new Set(nodes.map((n) => String(n.characterId)).filter((id) => id && id !== 'undefined'))
+  };
+}
 const testNamePatterns = [
   /^Test/i,
   /Playwright/i,
@@ -77,11 +92,12 @@ async function fileExists(p) {
 
 async function cleanCharacters() {
   const chars = await readJSON(charactersFile, []);
+  const protectedChars = await loadProtectedCharacters();
   const keep = [];
   const removed = [];
   for (const c of (Array.isArray(chars) ? chars : [])) {
     const name = c && c.name;
-    if (canonicalNames.has(String(name))) {
+    if (protectedChars.names.has(String(name).toLowerCase()) || protectedChars.ids.has(String(c && c.id))) {
       keep.push(c);
       continue;
     }

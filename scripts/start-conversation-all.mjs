@@ -1,17 +1,31 @@
 #!/usr/bin/env node
+/**
+ * Start a conversation on every animatronic in the fleet.
+ *
+ * The fleet address book is config/animatronics.json — never a literal list here,
+ * so adding or re-addressing a node needs no code change. Nodes with no IP yet
+ * (never seen on the network) are skipped rather than dialled at a guessed address.
+ */
 import WebSocket from 'ws';
+import { loadAnimatronics } from './lib/character-target.mjs';
 
-const targets = [
-  { name: 'PumpkinHead', ip: '192.168.8.150', characterId: 1 },
-  { name: 'Mina', ip: '192.168.8.140', characterId: 2 },
-  { name: 'Orlok', ip: '192.168.8.120', characterId: 3 },
-  { name: 'Sir Dragomir', ip: '192.168.8.130', characterId: 4 },
-  { name: 'Groundbreaker', ip: '192.168.8.200', characterId: 5 },
-];
+const ELEVENLABS_WS_PORT = 8795;
+
+const nodes = await loadAnimatronics();
+const targets = nodes
+  .filter((n) => n && n.ip && n.characterId !== undefined && n.characterId !== null)
+  .map((n) => ({ name: n.name, ip: n.ip, characterId: n.characterId }));
+
+const skipped = nodes.filter((n) => !n || !n.ip).map((n) => (n && n.name) || 'unnamed');
+if (skipped.length) console.log(`⏭️  Skipping ${skipped.join(', ')} — no address in config/animatronics.json`);
+if (targets.length === 0) {
+  console.error('❌ No addressable animatronics in config/animatronics.json');
+  process.exit(1);
+}
 
 function startForTarget(t) {
   const id = `${t.name}@${t.ip}`;
-  const url = () => `ws://${t.ip}:8795`;
+  const url = () => `ws://${t.ip}:${ELEVENLABS_WS_PORT}`;
   let ws = null;
   let retryMs = 2000;
 
