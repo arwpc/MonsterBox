@@ -242,6 +242,24 @@ router.post('/:id/test', express.json(), async (req, res) => {
                             const safeDistance = Math.max(0, currentP - profile.bounds.minP);
                             duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
                         }
+                        // Already at the limit in the requested direction: the clamp
+                        // above produced a zero-length move. This used to be issued
+                        // anyway and was a silent no-op; the wrappers now correctly
+                        // refuse a zero duration, which surfaced as a red 502 "genuine
+                        // hardware failure" on a part that is simply parked at its end
+                        // stop. Say that instead of calling the hardware.
+                        if (duration <= 0) {
+                            const atEnd = direction === 'retract' ? 'minimum retraction' : 'maximum extension';
+                            return res.json({
+                                success: true,
+                                partId: part.id,
+                                partType: part.type,
+                                noOp: true,
+                                atLimit: true,
+                                position: currentP,
+                                message: `${part.name} is already at its ${atEnd} — nothing to do.`
+                            });
+                        }
                         const actualDist = rate * (duration / 1000);
                         projectedP = direction === 'retract'
                             ? Math.max(0, currentP - actualDist)

@@ -1440,16 +1440,18 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
     function startAudioPlayback() {
       console.log(`[jaw-sync] audio playback started at T+${Date.now() - syncStartTime}ms`);
       if (serverPlaybackService) {
-        // Use writeMp3Stream directly for minimal latency (stream is pre-warmed)
-        serverPlaybackService.writeMp3Stream(audioBuffer, {
-          characterId
+        // Use the one-shot player, NOT writeMp3Stream. Inside the long-lived service
+        // process the pre-warmed mpg123 stream accepts the bytes and resolves
+        // success while emitting digital silence — measured at -91 dBFS on the sink
+        // monitor while the jaw animated the full 63-131 window and the API reported
+        // success. A scene that mimes perfectly to nothing is the worst possible
+        // failure mode, and because writeMp3Stream RESOLVES rather than rejects, the
+        // fallback below could never fire. playAIOnCharacterSpeaker deliberately
+        // avoids the warm stream and is measured audible from this same process.
+        serverPlaybackService.playAIOnCharacterSpeaker(audioBuffer, {
+          contentType, characterId
         }).catch((err) => {
-          // Fall back to full playback path
-          serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
-            contentType, characterId
-          }).catch((err2) => {
-            console.error('Jaw sync audio playback error:', err2.message);
-          });
+          console.error('Jaw sync audio playback error:', err && err.message);
         });
       }
     }
