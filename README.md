@@ -5,11 +5,98 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
 - Real hardware control for servos, motors, linear actuators, lights, sensors, steppers,
   with per-part safety limits (`config/hardware-safety.json`) enforced on every command
+- A persistent servo daemon (`python_wrappers/servo_daemon.py`) that owns the I²C bus, so
+  multiple servos move **together** instead of glitching each other
+- A conversation-driven gesture engine (`services/gestureEngineService.js`) — composite,
+  concurrent body motion while the character speaks
 - ElevenLabs AI integration for STT, Conversational AI, and TTS
 - Goblin video display subsystem for Pi 3B+/4B signage playback
 - GitHub Actions CI for automated testing on every commit
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
+
+## What's New — v9.2.0 (August 2026) — Right voice, body that moves together, show that reaches the yard
+
+Includes v9.1.0, which was opened and superseded in the same session and never shipped
+separately. No new frameworks, no new npm dependencies, all existing API contracts preserved.
+
+- **Your characters speak in their own voices again.** Four of six were speaking in someone
+  else's on the say/scene path — PumpkinHead in Sir Dragomir's voice, Renfield and
+  Groundbreaker both as Orlok — because a hardcoded voice map in `services/aiConfigStore.js`
+  never tracked the agent-side voice changes. Voice identity is now **data**, synced into each
+  character's `ai-config/tts-config.json` from the committed agent snapshots in
+  `config/elevenlabs/agents/`. Separately: **saving anything on the AI settings page used to
+  delete the selected character's `voice_id` and `speed`** (the save replaced the whole file
+  and that page exposes three fields). Saves now merge.
+- **Servos can finally move together.** Every servo command was a new process, and
+  `pca9685_control.py` re-initialised the chip unconditionally — and writing the prescaler
+  requires MODE1 SLEEP, which stops the oscillator and **drops PWM on all sixteen channels**.
+  Measured before/after on a reference node, 24 commands aimed at an unconnected channel:
+  **11 SLEEP events and 53 no-pulse reads on the head channel → 0 and 0.** Init is now
+  non-destructive and channel writes are atomic. A new persistent daemon
+  (`python_wrappers/servo_daemon.py` + `services/hardwareService/servoDaemonClient.js`) owns
+  the bus: **two servos written <1 ms apart, a two-channel 50 Hz ramp sustained at 49.9 Hz,
+  p50 round trip 3.37 ms against 200–580 ms per process spawn.** Direct I²C remains as a
+  fallback, and safety is still decided in Node before dispatch — the daemon can only narrow a
+  limit, never widen one.
+- **New: a conversation-driven gesture engine.** `services/gestureEngineService.js`, recipes as
+  data in `data/character-{id}/gestures.json`, API at `/api/gestures`. Steps run
+  **concurrently** (the head leads, the body follows), and the loader **refuses** single-part
+  recipes, out-of-bounds targets, safety-blocked parts, and two parts on one power rail whose
+  motion overlaps. Verified on hardware: **head 98.8° → 119.6° and forearm 103.9° → 109.9°
+  within one gesture, 0 SLEEP events, 0 torn reads.** Spec:
+  [docs/development/GESTURE-ENGINE-SPEC.md](docs/development/GESTURE-ENGINE-SPEC.md).
+  ⚠️ The ElevenLabs client tool that would let an agent *call* a gesture is **staged but
+  withheld** — a live probe showed one character speaking gesture ids aloud in 30% of replies
+  instead of calling the tool (`config/elevenlabs/gesture/README.md`).
+- **New: `scripts/fleet-audio/earcheck.mjs` — the instrumented cast test.** It records each
+  node's **own** microphones while that node speaks, measures the speech envelope against that
+  mic's own noise floor, transcribes with ElevenLabs Scribe, and now also checks **which voice
+  was actually used** against the canonical snapshot. Result with all three live nodes on
+  9.2.0: **Orlok AUDIBLE** (20.1 dB rise, 100% word recall), **Sir Dragomir AUDIBLE** (33.3 dB,
+  canonical voice confirmed), **Mina AUDIBLE** (12.4 dB, 80% recall, canonical voice confirmed)
+  — **the three offline nodes untestable, not passing.**
+  `scripts/yard-theater/verify-moment.mjs`
+  applies the same two gates to a whole show — the Dusk Ceremony is now verified end to end on
+  real speakers, each node confirmed by its own microphone.
+- **A test run can no longer reach the real yard.** A browser test fired a genuine fleet
+  emergency stop twice during a suite run and disarmed superpowers on live animatronics.
+  Route-level `MB_TEST_MODE` guards had missed `/api/panic` entirely; the guard now sits on
+  `orchestrationService.httpNode`, the single egress point for every inter-node call. Reads are
+  still allowed, writes are refused.
+- **Halloween show fixes.** Every audio step in every Yard Theater moment was a guaranteed
+  no-op (`play-audio` needs an `audioId`, `perform.mjs` only sent a filename), and
+  `thomas-whisper.mp3` was in no node's audio library at all — the Thomas moment would have
+  been silent. Also: `/home/remote/yard-theater-logs/` did not exist, so **every scheduled cron
+  line would have failed at the redirect and never run.**
+- **The PHI scrubber that protects the Yard Registry was rebuilt as an allow-list** after an
+  adversarial corpus of 36 cases broke the old deny-list 23 times — worst case leaving
+  "Emily Rodriguez" completely intact because Emily is a canon name. Now 51/51, with a real
+  transcript carrying "Aaron Warner" having forced a further tightening. The 2am harvest only
+  runs if that suite passes.
+- **mDNS discovery is working fleet-wide again** — `avahi-utils` had never been installed on
+  this node and `avahi-daemon` was not running on another. All three live nodes now advertise
+  `_monsterbox._tcp` and see each other, which is what lets a node auto-appear when it boots.
+- **Renfield (character 6) completed on paper** — shake-motor enable pins fixed (both BTS7960
+  enable lines were declared on the same GPIO, which would have failed at pin setup so the
+  motor never turned), placeholder image, and a fleet entry with a deliberately **null** IP
+  that fails in ~126 ms instead of dialling a guessed address. **His Pi has never been on the
+  network.**
+
+> ⚠️ **Three of six nodes were offline for this entire session and are unverified on
+> hardware:** PumpkinHead (char 1), Groundbreaker (char 5), and Renfield (char 6), which has
+> never been networked at all. Nothing in this release has run on them.
+>
+> **Orlok, Mina and Sir Dragomir are all deployed and serving 9.2.0**, and all three were
+> confirmed audible by their own microphones. **A fix only exists on a node that received the
+> deploy**, which is not theoretical: the ear-check caught Sir Dragomir still speaking in his
+> **retired** voice because the fix had not yet reached his Pi; after deploying he came back
+> AUDIBLE in his canonical voice, checked against the committed agent snapshot.
+>
+> ⚠️ **The speaker rigs are not level-matched** — one node carries across a room at sink volume
+> 0.30 while two others are inaudible below ~0.5 (Mina was `GARBLED` at her 0.65 default and
+> needed 0.90). **A daylight level-balancing pass in the yard is still outstanding.**
+> Full status: [docs/troubleshooting/KNOWN-BUGS.md](docs/troubleshooting/KNOWN-BUGS.md).
 
 ## What's New — v9.0.0 (August 2026) — Hardware safety, real hardware paths, live conversation
 
@@ -418,7 +505,7 @@ Open: http://localhost:3000/setup/calibration
 Jaw Animation v2 drives a servo to match speech amplitude in real-time, producing lifelike mouth movement during TTS playback. Uses a persistent Python servo daemon (<1ms per command), complete audio pre-analysis with speech bandpass filtering, and synchronized playback scheduling.
 
 **Architecture:**
-1. **Persistent Servo Daemon** (`python_wrappers/jaw_servo_daemon.py`): Long-running Python process initializes PCA9685 I2C bus once, accepts JSON commands via stdin. Managed by `services/jawServoDaemon.js`.
+1. **Persistent Servo Daemon** (`python_wrappers/servo_daemon.py`, entered via `jaw_servo_daemon.py`): Long-running Python process initializes the PCA9685 I2C bus once and accepts JSON commands. Managed by `services/jawServoDaemon.js`. As of v9.2.0 this is the **single owner of the I²C bus for every servo**, not just the jaw — it serves the original stdin/stdout jaw protocol byte-for-byte *and* a Unix socket at `$MB_SERVO_SOCKET` (default `/tmp/monsterbox-servo.sock`) that `batchMoveServos` and PCA `moveToAngle` use. Callers fall back to spawning `servo_cli.py` if the daemon is absent.
 2. **Pre-Analysis Engine**: Before playback, entire audio is decoded and analyzed:
    - ffmpeg bandpass filter isolates 500-2500Hz speech formants
    - 20ms RMS frames (matching PCA9685 50Hz PWM rate)
@@ -473,12 +560,67 @@ curl -X POST http://localhost:3000/setup/jaw-animation/api/jaw-animation/3/test-
 ```
 
 **Key Files:**
-- `python_wrappers/jaw_servo_daemon.py` — Persistent PCA9685 daemon
+- `python_wrappers/servo_daemon.py` — Persistent PCA9685 daemon (all servos)
+- `python_wrappers/jaw_servo_daemon.py` — Thin entry point; its name is load-bearing (spawned by `jawServoDaemon.js`, reaped by `singleInstance.js`)
+- `services/hardwareService/servoDaemonClient.js` — Node client for the daemon socket
 - `services/jawServoDaemon.js` — Daemon lifecycle manager
 - `services/jawAnimationSuperPowerService.js` — Pre-analysis, sync playback, config
 - `routes/setup/jaw-animation.js` — API routes
 - `views/setup/jaw-animation.ejs` — Setup UI with presets and timeline canvas
 - `public/js/jaw-animation.js` — Client-side controls (ES5 IIFE)
+
+## Gesture Engine (v9.1.0+)
+
+A thin coordination layer over the existing motion stack — no new motion primitives, no new
+hardware. Gestures are **composite and concurrent**: steps fire together offset by `delayMs`,
+so the head leads and the body follows. Full design:
+[docs/development/GESTURE-ENGINE-SPEC.md](docs/development/GESTURE-ENGINE-SPEC.md).
+
+**Recipes are data** — `data/character-{N}/gestures.json`. A character with no file is a silent
+no-op, so config can ship before recipes and recipes before hardware. **Only character 3 ships
+recipes today.**
+
+**The loader refuses, at load time and loudly:**
+- any recipe with fewer than two moving parts (a single-part gesture reads as a machine);
+- a target outside the part's calibrated window;
+- any part marked `blockAllMotion` in `config/hardware-safety.json`;
+- two parts on one shared power rail whose step windows overlap.
+
+**API:**
+```bash
+curl -k https://localhost:3000/api/gestures                       # list this character's gestures
+curl -k -X POST https://localhost:3000/api/gestures/<id>/perform  # fire one
+curl -k -X POST https://localhost:3000/api/gestures/conversation/start   # (…/stop)
+```
+
+Motion is fire-and-forget: unknown gestures, missing files, denied priority claims and dead
+servos all resolve to a quiet "did not perform" — a reply never waits on a servo.
+
+⚠️ The ElevenLabs client tool that lets an agent *call* a gesture is **staged, not live** —
+see `config/elevenlabs/gesture/README.md` for the measurements behind that decision.
+
+**Key files:** `services/gestureEngineService.js`, `routes/api/gestures.js`,
+`data/character-{N}/gestures.json`.
+
+## Fleet Audio Ear-Check — proving a speaker was actually heard
+
+A `success: true` from the say/TTS path only means the request was accepted. The ear-check
+listens instead: it records each node's **own** microphones with the yard quiet to establish
+that mic's noise floor, casts a known phrase through the real say path, measures the speech
+envelope against that floor, transcribes with ElevenLabs Scribe, and compares **the voice
+actually used** against the canonical voice in the committed agent snapshots.
+
+```bash
+node scripts/fleet-audio/earcheck.mjs               # every node in config/animatronics.json
+node scripts/fleet-audio/earcheck.mjs --nodes 2,3   # a subset, by animatronic id
+node scripts/yard-theater/verify-moment.mjs --moment dusk-ceremony --volume 0.30
+```
+
+A node passes only if it rose above its own floor **and** the words came back; a mismatched
+voice is a `WRONG-VOICE` failure. It records *every* microphone on a node, because an empty
+adapter jack returns a dead-flat floor that reads as a silent speaker. Requires passwordless
+SSH to each node and an ElevenLabs key. More:
+`scripts/fleet-audio/README.md`, `scripts/yard-theater/README.md`.
 
 ## AI Management (ElevenLabs)
 
@@ -605,12 +747,27 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 See: `goblin/`, `docs/integration/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
+
+Static IPs below are a **fallback**; nodes discover each other's live addresses over mDNS
+(`_monsterbox._tcp`). Status and version as observed at the end of the v9.2.0 session
+(2026-08-16) — re-check with `npm run check:discovery` and
+`curl -sk https://<node>:3000/health`.
+
 **Animatronics:**
-- PumpkinHead (Character 1): 192.168.8.150
-- Mina (Character 2, controller): 192.168.8.140
-- Orlok (Character 3): 192.168.8.120
-- Sir Dragomir (Character 4): 192.168.8.130 - 3 PCA9685 servos (head continuous, jaw, magic box), webcam, mic, speaker
-- Groundbreaker (Character 5): 192.168.8.200
+
+| Character | ID | Address | Status (2026-08-16) | Version |
+|---|---|---|---|---|
+| PumpkinHead | 1 | 192.168.8.150 | 🔴 Offline all session — **unverified** | unknown |
+| Mina | 2 | 192.168.8.140 | 🟢 Online — AUDIBLE by ear (12.4 dB rise, 80% recall, canonical voice) | 9.2.0 |
+| Orlok | 3 | 192.168.8.120 | 🟢 Online, primary dev node — AUDIBLE (20.1 dB, 100% recall) | 9.2.0 |
+| Sir Dragomir | 4 | 192.168.8.130 | 🟢 Online — AUDIBLE (33.3 dB, canonical voice confirmed) | 9.2.0 |
+| Groundbreaker | 5 | 192.168.8.200 | 🔴 Offline all session — **unverified** | unknown |
+| Renfield | 6 | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
+
+Sir Dragomir carries 3 PCA9685 servos (head continuous, jaw, magic box), webcam, mic, speaker.
+Groundbreaker's `characterId` in `config/animatronics.json` is **7**, which does not match
+`data/characters.json` id **5** — reconcile before he comes online
+([KNOWN-BUGS](docs/troubleshooting/KNOWN-BUGS.md)).
 
 **Goblins (Video Display):**
 - Goblin One: 192.168.8.40:3001 ⏳ Pending deployment
