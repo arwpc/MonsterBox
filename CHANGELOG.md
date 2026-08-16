@@ -387,6 +387,36 @@ thing: **the product asserted success it had not established.** Full write-up in
 
 Full detail and per-node status: `docs/troubleshooting/KNOWN-BUGS.md`.
 
+## [8.5.1-ai] - 2026-08-16 — Halloween AI voices: judge-tested personas, new character, fleet tuning
+
+All ElevenLabs-side configuration plus standalone tooling; no application code changed.
+Full record: `docs/development/HALLOWEEN-TUNING-REPORT.md`.
+
+### Added
+- **Renfield** — sixth character (the master's mad British solicitor): agent, five KB
+  docs, `data/character-6/` (schema+pact valid), lurk scenes, G&S law-school songs.
+  Judge battery: **25/25 delight — the fleet's only perfect score.**
+- **Judge panel** (`scripts/halloween-judges/`) — five simulated visitor personas,
+  625-conversation evaluation + validation batteries; criteria data-recalibrated.
+- **Yard Theater** (`scripts/yard-theater/`) — Dusk Ceremony, Thomas's whisper;
+  Halloween cron schedule installed and committed.
+- **Night Memory** (`scripts/night-memory/`) — nightly transcript harvest into a
+  fleet-wide Yard Registry KB doc: characters remember returning guests.
+- 1462 war canon braided across Dragomir (stories/secret/gold box), Groundbreaker
+  (rock war/oath shout), Mina (The Waiting/Romanian songs); Renfield holds the paperwork.
+
+### Changed
+- Fleet LLM → gpt-oss-120b, reasoning off (3,054ms → ~160ms first token); all agents
+  on eleven_v3_conversational + expressive mode; ASR keyword boosting; crowd VAD;
+  in-character soft-timeout fillers; Night Protocol + Beckoning fleet-wide.
+- Reply length recalibrated from data (~40-50 words/turn beats terse or verbose);
+  Orlok delight 57%→80%; kid mode + scare-escalation added to Orlok.
+- Local TTS voice drift fixed (character-4, character-6 synced to agent voices).
+
+### Known
+- Fleet audio unverified by ear: this node's mic chain is disconnected (webcam absent,
+  empty mic jack); speakers report success but remain acoustically unconfirmed.
+
 ## [8.5.0] - 2026-07-17 — Fleet Command Center (orchestration overhaul)
 
 A ground-up modernization of the orchestration subsystem into a single-pane **Fleet
