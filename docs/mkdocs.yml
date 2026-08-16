@@ -101,7 +101,9 @@ nav:
       - v9.0 Retrospective & Roadmap: development/V9-RETROSPECTIVE-AND-ROADMAP.md
       - v9.0 Persona Reviews: development/V9-PERSONA-REVIEWS.md
       - Backend Architecture: development/backend-architecture.md
+      - Gesture Engine Spec: development/GESTURE-ENGINE-SPEC.md
       - Node Discovery (mDNS): development/NODE-DISCOVERY.md
+      - Orchestration: development/ORCHESTRATION.md
       - AI Integration Guide: development/ai-integration-guide.md
       - AI Management Feature: development/AI-Management-Feature.md
       - Goblin Management: development/goblin-management.md

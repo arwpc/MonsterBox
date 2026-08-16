@@ -1,6 +1,32 @@
 # Conversation-Driven Gesture Engine — Specification
 
-**Status:** Proposed (specification only — no implementation in this document's commit)
+**Status:** **IMPLEMENTED — ships in v9.2.0** (the MonsterBox side landed on the v9.1.0 commit
+series, which was never released separately). `services/gestureEngineService.js`, recipes in
+`data/character-{id}/gestures.json`, API in `routes/api/gestures.js`; 20 unit tests in
+`tests/unit/gesture-engine.test.js`, four of which assert the *shipped* recipes pass every
+safety rule against real config.
+
+**Verified on hardware** by sampling the PCA9685 registers while firing a gesture: head
+**98.8° → 119.6°** and forearm **103.9° → 109.9°** inside **one** gesture, **0 MODE1 SLEEP
+events and 0 torn reads**. *(Register-level evidence: it proves clean, concurrent pulse widths
+reached both channels — there is no encoder feedback, so it is not proof a servo physically
+moved.)* One node only; the three offline nodes are entirely unverified.
+
+Two caveats that are part of the status, not footnotes:
+
+1. **Only one character ships a vocabulary.** The others have no `gestures.json` **by design,
+   not by oversight**: the engine refuses raw angle targets for parts with **no calibrated
+   bounds**, and those characters have not yet had the pose/calibration pass described in
+   §9.1. A character with no file is a silent no-op, so config can ship before recipes and
+   recipes before hardware. The shipped set is also authored around *that* node's blocked parts
+   — the bow-at-waist and elbow are safety-blocked, so its bow gestures are expressed as head
+   bows.
+2. **The ElevenLabs `gesture` client tool (§5) is STAGED BUT WITHHELD for Halloween night.** A
+   live-path probe found one character **speaking gesture ids aloud in 30% of replies** instead
+   of calling the tool. The engine itself works and can be driven through the API — it is
+   simply **not LLM-driven tonight**. Evidence and the apply procedure:
+   `config/elevenlabs/gesture/README.md`.
+
 **Scope:** All five characters, strictly limited to hardware each character has TODAY.
 **Coordination:** A concurrent work session is making significant updates to the
 ElevenLabs integration. Section 10 defines the contract boundaries so the two efforts
