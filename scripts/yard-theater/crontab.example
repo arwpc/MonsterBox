@@ -1,0 +1,15 @@
+# MonsterBox Yard Theater — Halloween night schedule (America/Chicago)
+# Install:  crontab -e  and paste the block below (or see README).
+# Any one node can conduct the whole yard via the orchestration API.
+
+# The Dusk Ceremony — the yard wakes (sunset in Coralville Oct 31 is ~6:05pm; dusk ~6:30)
+30 18 31 10 * cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/dusk-ceremony.json >> /home/remote/yard-theater-logs/theater.log 2>&1
+
+# Thomas — once. An odd minute, deep in the evening, when the yard is busy.
+47 20 31 10 * cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/thomas.json >> /home/remote/yard-theater-logs/theater.log 2>&1
+
+# Night Memory — harvest the night's real conversations into the Yard Registry (2am Nov 1)
+0 2 1 11 * cd /home/remote/MonsterBox && node scripts/night-memory/harvest.mjs --hours 12 >> /home/remote/yard-theater-logs/harvest.log 2>&1
+
+# Optional: October weekend rehearsal ceremony (Fri+Sat evenings in October)
+# 30 18 * 10 5,6 cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/dusk-ceremony.json >> /home/remote/yard-theater-logs/theater.log 2>&1
