@@ -138,10 +138,66 @@ yard, and Renfield holding its paperwork.
 
 ## 6. Open items
 
-- Ear-check every voice once fleet audio is repaired (all claims above are
-  transcript/timing-verified, not listened-to). Orlok speed 0.75 may want 0.8.
-- Renfield hardware: node build, animatronics.json entry (deliberately deferred),
-  image at public/images/characters/renfield.jpg, shake-motor pin calibration.
-- Gesture engine implementation per docs/development/GESTURE-ENGINE-SPEC.md.
-- Groundbreaker × 14-year-olds (56%) if that audience matters on the night.
-- Judge harness: personalization criterion should not penalize name-refusing visitors.
+Worked in the v9.2.0 session of 2026-08-16 (the night before Halloween). Status
+below is what was actually verified, not what was attempted.
+
+### Closed
+
+- ~~**Ear-check every voice once fleet audio is repaired.**~~ — **done, and it
+  found something.** A microphone existed by then, so `scripts/fleet-audio/earcheck.mjs`
+  now records each node's own mics while that node speaks an in-character line,
+  measures the speech envelope against the mic's own noise floor, and transcribes
+  the capture with Scribe. Result: **Orlok, Mina and Sir Dragomir all AUDIBLE**
+  (rise 11.4 / 18.8 / 39.5 dB, word recall 82% / 53% / 100%). PumpkinHead and
+  Groundbreaker could not be tested — their Pis were not on the network.
+  Two findings worth keeping:
+  - The check must record EVERY capture device. One node's USB adapter mic jack is
+    empty and returns a dead-flat electrical noise floor, so picking "the" mic by
+    name produced a false SILENT on a node that was working perfectly.
+  - **Audible is not the same as right.** See below.
+- ~~**Judge harness: personalization must not penalize name-refusing visitors.**~~
+  — **fixed.** The criterion now judges only what the character controls: asked
+  once, took the refusal in voice, personalized from whatever else was revealed.
+  Expect personalization scores above the §3 table, which was depressed by this.
+- ~~**Renfield: image, shake-motor pin calibration, animatronics.json entry.**~~ —
+  **done.** He now has a fleet entry with a deliberately null address, which fails
+  fast and safe until his Pi actually boots (mDNS overlays the real IP then).
+- ~~**Gesture engine implementation.**~~ — **shipped.** `services/gestureEngineService.js`
+  with recipes as data, concurrent steps, load-time safety rejection, and a
+  seven-gesture vocabulary for the one character with measured bounds.
+
+### Found while closing them
+
+- **Four of six characters spoke in the wrong voice** on the say/scene path — the
+  local voice map had not tracked the agent-side voice changes made during this
+  session, so PumpkinHead used Sir Dragomir's voice and Renfield and Groundbreaker
+  both spoke as Orlok. Only Mina and Orlok were correct. Fixed by making voice
+  identity data, synced from the agent snapshots.
+- **Saving anything on the AI settings page deleted the selected character's voice**,
+  because the save replaced the config file wholesale and that page only exposes
+  three fields. Caught live when a browser-test pass stripped a character's
+  `voice_id` and `speed` mid-run. Saves now merge.
+- **`eleven_v3` silently ignores `voice_settings.speed`** (measured across the full
+  0.7–1.2 range: identical output duration; `eleven_multilingual_v2` on the same
+  text goes 10.7s → 6.0s). So the tuned per-character speeds — including Orlok's
+  0.75 — apply on the conversational agent path only. **This retires the "Orlok
+  speed 0.75 may want 0.8" question for the say/scene path: there is no speed
+  control there to tune.** Judge it on the agent path or not at all.
+- **Mina was the agent the fleet LLM migration missed** — still on
+  `gemini-3.1-flash-lite` with reasoning `minimal` while the other five moved to
+  gpt-oss-120b, i.e. ~860ms time-to-first-byte against ~160ms, on the fleet's
+  highest-delight character.
+
+### Still open
+
+- **PumpkinHead, Groundbreaker and Renfield were offline all session** (confirmed by
+  a full LAN scan). None of their node-side work could be verified on hardware:
+  no ear-check, no deploy, no gesture recipes. They need a power-on pass before dusk.
+- **Gesture vocabularies for characters other than the one that shipped.** The
+  engine rejects raw angle targets for parts with no calibrated bounds, by design —
+  inventing bounds for unmeasured hardware is how a part ends up looking calibrated
+  when it never was. Those characters need the pose/calibration pass in
+  GESTURE-ENGINE-SPEC.md §9.1 first.
+- **Groundbreaker × 14-year-olds (56%)** — unchanged and deliberately not simulated
+  further. A dare to out-shout a ten-foot lit giant has no text equivalent; the
+  shouting contest ships for the yard and gets a Halloween-night observation note.
