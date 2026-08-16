@@ -68,33 +68,46 @@ export async function saveSTTConfig(cfg) {
   return writeJson('stt-config.json', cfg);
 }
 
-// Per-character default voices — each character has a distinct voice fallback
-// so no character ever accidentally sounds like another
-const CHARACTER_DEFAULT_VOICES = {
-  1: 'wXvR48IpOq9HACltTmt7', // PumpkinHead: Ancient Monster - Evil and Scary
-  2: 'hkk1bPcdsxSQCLzLFMT2', // Mina: The Siren's Voicemail – Scarlett's Seductive Soundscape
-  3: 'Tj9l48J9AJbry5yCP5eW', // Orlok: Count Orlok, Nosferatu
-  4: 'SOYHLrjzK2X1ezoPC6cr', // Sir Dragomir: Harry - Fierce Warrior
-  5: 'vfaqCOvlrKi4Zp7C2IAm', // Groundbreaker: Demon Monster
-};
+// Voice identity is DATA, not code: every character's canonical voice and
+// speaking speed live in data/character-{id}/ai-config/tts-config.json, synced
+// from the committed agent snapshots in config/elevenlabs/agents/.
+//
+// This used to be a hardcoded per-character map, and it silently rotted: the
+// tuning session moved characters to new voices agent-side, the map lagged, and
+// characters ended up speaking in each other's voices on the say/scene path
+// while sounding correct in conversation. A character with no configured voice
+// now gets an obviously-wrong shared fallback and a warning, which surfaces the
+// misconfiguration instead of impersonating whoever the fallback belongs to.
 const GLOBAL_DEFAULT_VOICE = 'Tj9l48J9AJbry5yCP5eW';
 
-function getDefaultVoiceForCharacter(characterId) {
-  return CHARACTER_DEFAULT_VOICES[characterId] || GLOBAL_DEFAULT_VOICE;
+// ElevenLabs accepts 0.7–1.2; anything outside is rejected for the whole request.
+function clampSpeed(value, fallback) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
+  return Math.min(1.2, Math.max(0.7, value));
+}
+
+const warnedMissingVoice = new Set();
+function resolveVoiceId(parsedVoiceId, characterId) {
+  if (parsedVoiceId && String(parsedVoiceId).trim()) return String(parsedVoiceId).trim();
+  // Warn once per character — this is a data bug, not a runtime condition, and
+  // logging it every utterance would hammer the SD card.
+  if (characterId && !warnedMissingVoice.has(characterId)) {
+    warnedMissingVoice.add(characterId);
+    console.warn(
+      `⚠️  Character ${characterId} has no voice_id in ai-config/tts-config.json — ` +
+      `falling back to the shared default voice. It will NOT sound like itself. ` +
+      `Set voice_id from the agent snapshot in config/elevenlabs/agents/.`
+    );
+  }
+  return GLOBAL_DEFAULT_VOICE;
 }
 
 export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
-  // Resolve character-aware default voice
-  let defaultVoice = GLOBAL_DEFAULT_VOICE;
-  try {
-    const cfg = await readConfig();
-    if (cfg && cfg.selectedCharacter) {
-      defaultVoice = getDefaultVoiceForCharacter(cfg.selectedCharacter);
-    }
-  } catch (_) { /* ignore */ }
+  // The global config is the last resort; per-character config is the real
+  // source of voice identity (see getTTSConfigForCharacter).
   const base = {
-    voice_id: defaultVoice,
+    voice_id: GLOBAL_DEFAULT_VOICE,
     model: 'eleven_v3',
     stability: 0.5,
     similarity_boost: 0.5,
@@ -106,6 +119,7 @@ export async function getTTSConfig() {
     model: (d && d.model) || base.model,
     stability: d && typeof d.stability === 'number' ? d.stability : base.stability,
     similarity_boost: d && typeof d.similarity_boost === 'number' ? d.similarity_boost : base.similarity_boost,
+    speed: clampSpeed(d && d.speed, 1.0),
     // style and use_speaker_boost are only used by pre-v3 models
     style: d && typeof d.style === 'number' ? d.style : 0.0,
     use_speaker_boost: d && typeof d.use_speaker_boost === 'boolean' ? d.use_speaker_boost : true,
@@ -138,14 +152,14 @@ export async function getTTSConfigForCharacter(characterId) {
     const parsed = JSON.parse(txt);
 
     // Merge with defaults — use character-specific default voice, never another character's
-    const charDefaultVoice = getDefaultVoiceForCharacter(characterId);
     return {
       // include agent_id if specified for this character
       agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
-      voice_id: parsed.voice_id && String(parsed.voice_id).trim() ? parsed.voice_id : charDefaultVoice,
+      voice_id: resolveVoiceId(parsed.voice_id, characterId),
       model: parsed.model || 'eleven_v3',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,
       similarity_boost: typeof parsed.similarity_boost === 'number' ? parsed.similarity_boost : 0.5,
+      speed: clampSpeed(parsed.speed, 1.0),
       style: typeof parsed.style === 'number' ? parsed.style : 0.0,
       use_speaker_boost: typeof parsed.use_speaker_boost === 'boolean' ? parsed.use_speaker_boost : true,
     };

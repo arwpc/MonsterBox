@@ -8,6 +8,18 @@ import { spawnSync } from 'child_process';
 import FormData from 'form-data';
 import elevenLabsConfigService from './elevenLabsConfigService.js';
 
+// Models that actually apply voice_settings.speed on /v1/text-to-speech.
+// eleven_v3 accepts the field and ignores it (verified by measuring output
+// duration across the full 0.7–1.2 range), so the characters' tuned speeds only
+// take effect on the conversational agent path, which runs
+// eleven_v3_conversational server-side. Keep this list honest — a model that
+// silently drops the parameter is worse than one that never offered it.
+const MODELS_HONORING_SPEED = new Set([
+    'eleven_multilingual_v2',
+    'eleven_flash_v2_5',
+    'eleven_turbo_v2_5'
+]);
+
 class ElevenLabsTTSService {
     constructor() {
         // Resolve config lazily (see getters below). getElevenLabsConfig() throws
@@ -135,6 +147,18 @@ class ElevenLabsTTSService {
                 stability: (options.stability !== undefined ? options.stability : 0.5),
                 similarity_boost: (options.similarity_boost !== undefined ? options.similarity_boost : 0.5),
             };
+            // Speaking speed is part of a character's identity, not a user
+            // preference — the slowest character in the cast is slow because he
+            // is ancient, and at 1.0 he is somebody else. But only some models
+            // honor it — measured 2026-08-16: eleven_multilingual_v2 stretches 0.7 to ~10.7 s
+            // where 1.2 gives ~6.0 s, while eleven_v3 returns ~5.6 s at every
+            // setting. Sending it to v3 anyway would look configured and do
+            // nothing, so we send it only where it bites. Range is 0.7–1.2;
+            // outside that ElevenLabs rejects the entire request.
+            if (typeof options.speed === 'number' && !Number.isNaN(options.speed)
+                && MODELS_HONORING_SPEED.has(modelId)) {
+                voiceSettings.speed = Math.min(1.2, Math.max(0.7, options.speed));
+            }
             if (!isV3) {
                 voiceSettings.style = (options.style !== undefined ? options.style : 0.0);
                 voiceSettings.use_speaker_boost = (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true);

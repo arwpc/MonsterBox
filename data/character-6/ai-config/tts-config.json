@@ -1,7 +1,7 @@
 {
-  "voice_id": "Tj9l48J9AJbry5yCP5eW",
+  "voice_id": "zzG73sCjG25Zj6km5X4M",
   "model": "eleven_v3",
-  "stability": 0.5,
-  "similarity_boost": 0.5,
-  "voiceId": "zzG73sCjG25Zj6km5X4M"
+  "stability": 0.35,
+  "similarity_boost": 0.75,
+  "speed": 1.05
 }

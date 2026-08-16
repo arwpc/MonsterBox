@@ -111,10 +111,10 @@ function reachable(node) {
 
 /**
  * Every ALSA capture device on the node. We deliberately do NOT guess which one
- * is "the" microphone: on Orlok the USB adapter's mic jack is empty and reports
- * a dead-flat electrical noise floor, while the webcam carries the real acoustic
- * signal. Recording all of them and scoring each is the only way to tell an
- * unplugged jack from a silent speaker.
+ * is "the" microphone: on some nodes the USB adapter's mic jack is empty and
+ * reports a dead-flat electrical noise floor, while the webcam carries the real
+ * acoustic signal. Recording all of them and scoring each is the only way to
+ * tell an unplugged jack from a silent speaker.
  */
 function listCaptureDevices(node) {
   const listing = sh('arecord -l 2>/dev/null || true', { node });
