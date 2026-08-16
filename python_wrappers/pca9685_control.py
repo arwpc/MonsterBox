@@ -2,16 +2,39 @@
 
 """
 PCA9685 Control Module for MonsterBox
-Direct hardware control with cached I2C bus to prevent re-initialization storms.
 
-The bus is lazily initialized once per address and reused across calls.
-This prevents the PCA9685 from being reset on every servo command, which
-was causing servo glitches, I2C bus exhaustion, and eventual crashes after
-5-10 minutes of continuous use.
+Two ways to reach the chip, in strict order of preference:
+
+  1. The shared servo daemon (python_wrappers/servo_daemon.py). One long-lived
+     process owns the I2C bus for the whole box. Every command from every other
+     process is forwarded to it over a Unix socket, so the chip is configured
+     exactly once and multiple channels can be driven together without any of
+     them disturbing the others.
+
+  2. Direct I2C from this process, used only when the daemon is unreachable.
+
+Why the daemon matters (measured on Orlok, v9.2.0):
+  pca9685_init has to drive MODE1 to 0x10 (SLEEP) to change the prescaler, and
+  SLEEP stops the oscillator, which kills the PWM output on ALL SIXTEEN channels
+  for the length of that write. Since every servo command used to be a brand new
+  process, and each new process re-initialised the chip, every single servo move
+  blanked every other servo. Sampling the head channel while commanding an
+  unrelated channel showed 53 no-pulse reads and 11 SLEEP entries in 8 seconds.
+  That is the head twitch.
+
+The direct path is fixed too, so the fallback is safe on its own:
+  * init is now NON-DESTRUCTIVE. The chip is probed first, and if it is already
+    running at the right prescale it is adopted as-is — no reset, no SLEEP, no
+    glitch. The full sequence only runs on a genuinely unconfigured chip.
+  * channel writes are a single atomic 4-byte block write. Four separate byte
+    writes let a concurrent writer interleave and let the chip act on a low byte
+    from one command paired with a high byte from another.
 """
 
 import json
 import time
+import os
+import socket
 import sys
 import atexit
 
@@ -21,12 +44,39 @@ PCA9685_MODE1 = 0x00
 PCA9685_PRESCALE = 0xFE
 PCA9685_LED0_ON_L = 0x06
 
+MODE1_RESTART = 0x80
+MODE1_AI = 0x20
+MODE1_SLEEP = 0x10
+
+# 50Hz servo frame: 20ms period across 4096 steps.
+PWM_FREQ_HZ = 50
+PERIOD_US = 20000.0
+PWM_STEPS = 4096.0
+
+# Standard servo pulse window: 0deg = 500us, 180deg = 2400us.
+SERVO_MIN_US = 500.0
+SERVO_MAX_US = 2400.0
+
+# Unix socket the shared servo daemon listens on.
+SERVO_SOCKET_PATH = os.environ.get('MB_SERVO_SOCKET', '/tmp/monsterbox-servo.sock')
+
+# Set by servo_daemon.py in its own process so it never tries to call itself.
+_IS_DAEMON = os.environ.get('MB_SERVO_DAEMON') == '1'
+
 # Cached bus instances keyed by I2C address
 _bus_cache = {}
+
+# Addresses this process has already confirmed configured.
+_configured = set()
+
+# Remembered result of the daemon probe: None = not tried, False = unreachable.
+_daemon_available = None
+
 
 def log_message(msg_dict):
     """Log structured message to stdout"""
     print(json.dumps(msg_dict))
+
 
 def validate_channel(channel):
     """Validate PCA9685 channel (0-15)"""
@@ -34,6 +84,101 @@ def validate_channel(channel):
     if not 0 <= channel <= 15:
         raise ValueError(f"Channel must be 0-15, got {channel}")
     return channel
+
+
+def expected_prescale(freq_hz=PWM_FREQ_HZ):
+    """Prescale register value for the given PWM frequency (25MHz internal osc)."""
+    val = int(round(25000000.0 / (PWM_STEPS * freq_hz)) - 1)
+    return max(3, min(255, val))
+
+
+def angle_to_off(angle_deg):
+    """Standard-servo angle (deg) -> PCA9685 off-count. Always clamped 0-180."""
+    angle_deg = max(0.0, min(180.0, float(angle_deg)))
+    pulse_us = (angle_deg / 180.0) * (SERVO_MAX_US - SERVO_MIN_US) + SERVO_MIN_US
+    return us_to_off(pulse_us)
+
+
+def us_to_off(pulse_us):
+    """Pulse width (us) -> PCA9685 off-count, clamped to the 12-bit range."""
+    off_value = int((float(pulse_us) / PERIOD_US) * PWM_STEPS)
+    return max(0, min(4095, off_value))
+
+
+# ---------------------------------------------------------------------------
+# Low-level bus primitives — shared with servo_daemon.py so there is exactly one
+# implementation of "how MonsterBox talks to a PCA9685".
+# ---------------------------------------------------------------------------
+
+def open_bus(bus_num=1):
+    """Open the I2C bus, preferring smbus2 and falling back to smbus."""
+    try:
+        import smbus2
+        return smbus2.SMBus(bus_num)
+    except ImportError:
+        import smbus
+        return smbus.SMBus(bus_num)
+
+
+def chip_is_configured(bus, i2c_address, freq_hz=PWM_FREQ_HZ):
+    """True if the chip is already awake at the right prescale.
+
+    Read-only. This is what makes init non-destructive: if the answer is yes
+    there is no reason to touch MODE1 or PRESCALE at all, and therefore no
+    reason to glitch the fifteen channels we are not addressing.
+    """
+    try:
+        mode1 = bus.read_byte_data(i2c_address, PCA9685_MODE1)
+        prescale = bus.read_byte_data(i2c_address, PCA9685_PRESCALE)
+    except OSError:
+        return False
+    if mode1 & MODE1_SLEEP:
+        return False
+    return prescale == expected_prescale(freq_hz)
+
+
+def ensure_chip(bus, i2c_address, freq_hz=PWM_FREQ_HZ):
+    """Bring the chip to a known-good state with the least possible disturbance.
+
+    Returns 'adopted' if it was already running (nothing disruptive written) or
+    'initialized' if the full reset/prescale sequence had to run.
+    """
+    if chip_is_configured(bus, i2c_address, freq_hz):
+        # Only ensure auto-increment; setting AI does not stop the oscillator.
+        mode1 = bus.read_byte_data(i2c_address, PCA9685_MODE1)
+        if not mode1 & MODE1_AI:
+            bus.write_byte_data(i2c_address, PCA9685_MODE1,
+                                (mode1 | MODE1_AI) & ~MODE1_RESTART)
+        return 'adopted'
+
+    # Genuinely unconfigured (cold boot, or someone reset it). The SLEEP below
+    # is unavoidable here — the prescaler is only writable while asleep — but it
+    # now happens once per power cycle instead of once per servo command.
+    bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
+    bus.write_byte_data(i2c_address, PCA9685_MODE1, MODE1_SLEEP)
+    bus.write_byte_data(i2c_address, PCA9685_PRESCALE, expected_prescale(freq_hz))
+    bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
+    time.sleep(0.005)  # oscillator restart
+    bus.write_byte_data(i2c_address, PCA9685_MODE1, MODE1_AI)
+    return 'initialized'
+
+
+def write_channel(bus, i2c_address, channel, on, off):
+    """Write one channel's four PWM registers in a single atomic transaction.
+
+    Four separate byte writes are not safe: another writer (or the chip acting
+    on a partially-updated pair) can see a low byte from this command with a
+    high byte from the previous one, which is a pulse width nobody asked for.
+    """
+    reg = PCA9685_LED0_ON_L + 4 * int(channel)
+    payload = [on & 0xFF, (on >> 8) & 0x0F, off & 0xFF, (off >> 8) & 0x0F]
+    try:
+        bus.write_i2c_block_data(i2c_address, reg, payload)
+    except AttributeError:
+        # Very old smbus without block write — degrade rather than fail.
+        for offset, value in enumerate(payload):
+            bus.write_byte_data(i2c_address, reg + offset, value)
+
 
 def _cleanup_buses():
     """Close all cached I2C bus handles on process exit"""
@@ -44,48 +189,32 @@ def _cleanup_buses():
             pass
     _bus_cache.clear()
 
+
 atexit.register(_cleanup_buses)
+
 
 def pca9685_get_bus(i2c_address=PCA9685_DEFAULT_ADDRESS):
     """Get or create a cached I2C bus for the given PCA9685 address.
 
-    Only initializes (resets + sets prescale) on the first call per address.
-    Subsequent calls return the same bus handle, avoiding chip resets that
-    glitch all 16 channels.
+    The chip is probed and only initialized if it is not already running, so
+    calling this never disturbs channels this process is not addressing.
     """
     if i2c_address in _bus_cache:
         return _bus_cache[i2c_address]
 
     try:
-        import smbus
-        bus = smbus.SMBus(1)  # Bus 1 for Raspberry Pi 4B I2C
-
-        # Reset
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
-
-        # Set sleep mode to allow prescale change
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x10)
-
-        # Set prescale for 50Hz PWM frequency
-        # prescale = round(osc_clock / (4096 * freq)) - 1  with osc_clock=25MHz
-        desired_freq_hz = 50
-        prescale_val = int(round(25000000.0 / (4096.0 * desired_freq_hz)) - 1)
-        prescale_val = max(3, min(255, prescale_val))
-        bus.write_byte_data(i2c_address, PCA9685_PRESCALE, prescale_val)
-
-        # Wake up (turn off sleep mode)
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x00)
-        time.sleep(0.005)  # Wait for oscillator
-
-        # Enable auto increment
-        bus.write_byte_data(i2c_address, PCA9685_MODE1, 0x20)
-
+        bus = open_bus(1)  # Bus 1 for Raspberry Pi 4B I2C
+        state = ensure_chip(bus, i2c_address)
         _bus_cache[i2c_address] = bus
+        _configured.add(i2c_address)
 
-        log_message({
-            "status": "success",
-            "message": f"PCA9685 initialized at address 0x{i2c_address:02x}"
-        })
+        if state == 'initialized':
+            # Only worth announcing when the chip was actually reset — an
+            # adopted chip is the normal, quiet path.
+            log_message({
+                "status": "success",
+                "message": f"PCA9685 initialized at address 0x{i2c_address:02x}"
+            })
 
         return bus
 
@@ -102,27 +231,26 @@ def pca9685_get_bus(i2c_address=PCA9685_DEFAULT_ADDRESS):
         })
         raise
 
+
 # Keep backward-compatible alias
 def pca9685_init(i2c_address=PCA9685_DEFAULT_ADDRESS):
     """Initialize PCA9685 device (uses cached bus)"""
     return pca9685_get_bus(i2c_address)
 
+
 def pca9685_set_pwm(bus, i2c_address, channel, on, off):
     """Set PWM for a specific channel on PCA9685"""
     try:
-        reg = PCA9685_LED0_ON_L + 4 * channel
-        bus.write_byte_data(i2c_address, reg, on & 0xFF)
-        bus.write_byte_data(i2c_address, reg+1, on >> 8)
-        bus.write_byte_data(i2c_address, reg+2, off & 0xFF)
-        bus.write_byte_data(i2c_address, reg+3, off >> 8)
+        write_channel(bus, i2c_address, channel, on, off)
     except OSError as e:
-        # I2C bus error — invalidate cache and retry once
+        # I2C bus error — invalidate cache and let the caller decide.
         if i2c_address in _bus_cache:
             try:
                 _bus_cache[i2c_address].close()
             except Exception:
                 pass
             del _bus_cache[i2c_address]
+        _configured.discard(i2c_address)
         log_message({
             "status": "error",
             "message": f"I2C error on set_pwm (ch{channel}), bus cache cleared: {str(e)}"
@@ -134,6 +262,66 @@ def pca9685_set_pwm(bus, i2c_address, channel, on, off):
             "message": f"Failed to set PWM: {str(e)}"
         })
         raise
+
+
+# ---------------------------------------------------------------------------
+# Shared-daemon client
+# ---------------------------------------------------------------------------
+
+def daemon_request(payload, timeout=2.0):
+    """Send one JSON command to the shared servo daemon.
+
+    Returns the decoded reply, or None if the daemon is not reachable — the
+    caller then falls back to driving the bus directly. Never raises for a
+    missing daemon: an absent daemon must degrade, not break a servo.
+    """
+    global _daemon_available
+
+    if _IS_DAEMON or _daemon_available is False:
+        return None
+
+    sock = None
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect(SERVO_SOCKET_PATH)
+        sock.sendall((json.dumps(payload) + '\n').encode('utf-8'))
+
+        chunks = []
+        while True:
+            data = sock.recv(4096)
+            if not data:
+                break
+            chunks.append(data)
+            if b'\n' in data:
+                break
+        raw = b''.join(chunks).split(b'\n')[0].decode('utf-8').strip()
+        if not raw:
+            _daemon_available = False
+            return None
+        _daemon_available = True
+        return json.loads(raw)
+    except (OSError, socket.timeout, ValueError):
+        # No socket, stale socket, daemon mid-restart — all mean "go direct".
+        _daemon_available = False
+        return None
+    finally:
+        if sock is not None:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+
+def daemon_is_available():
+    """Cheap probe used by callers that want to report which path they took."""
+    reply = daemon_request({"cmd": "ping"}, timeout=0.5)
+    return bool(reply and reply.get('status') == 'pong')
+
+
+# ---------------------------------------------------------------------------
+# Public API — unchanged signatures and unchanged stdout contract.
+# ---------------------------------------------------------------------------
 
 def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS, servo_type="standard"):
     """
@@ -150,14 +338,25 @@ def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS, servo
             raise ValueError("Angle must be between 0 and 180 degrees")
 
         channel = validate_channel(channel)
+
+        reply = daemon_request({
+            "cmd": "set_angle",
+            "channel": channel,
+            "angle": float(angle),
+            "address": int(i2c_address),
+            "release": servo_type != "standard"
+        })
+        if reply is not None:
+            if reply.get('status') != 'ok':
+                raise RuntimeError(reply.get('message', 'servo daemon rejected command'))
+            log_message({
+                "status": "success",
+                "message": f"Set servo on channel {channel} to {angle} degrees"
+            })
+            return
+
         bus = pca9685_get_bus(i2c_address)
-
-        # Standard servo: 0deg = 500us, 180deg = 2400us
-        # 4096 steps per 20ms period
-        pulse_width = int((angle / 180.0) * (2400 - 500) + 500)
-        off_value = int((pulse_width / 20000.0) * 4096)
-
-        pca9685_set_pwm(bus, i2c_address, channel, 0, off_value)
+        pca9685_set_pwm(bus, i2c_address, channel, 0, angle_to_off(angle))
 
         # Brief settle time (reduced from 500ms — the old value caused sluggish response)
         time.sleep(0.05)
@@ -178,6 +377,43 @@ def pca9685_set_angle(channel, angle, i2c_address=PCA9685_DEFAULT_ADDRESS, servo
         })
         raise
 
+
+def pca9685_set_angles(pairs, i2c_address=PCA9685_DEFAULT_ADDRESS):
+    """Drive several channels to their angles as one operation.
+
+    pairs: iterable of (channel, angle_deg).
+
+    Through the daemon this is a single request that writes every channel
+    back-to-back while holding the bus lock, which is the closest thing to
+    simultaneous the hardware allows (~0.3ms apart). Without the daemon it
+    degrades to sequential writes on one already-configured bus, which is still
+    far better than one process per channel.
+
+    Returns a list of per-channel result dicts.
+    """
+    pairs = [(validate_channel(ch), max(0.0, min(180.0, float(a)))) for ch, a in pairs]
+
+    reply = daemon_request({
+        "cmd": "set_angles",
+        "address": int(i2c_address),
+        "moves": [{"channel": ch, "angle": a} for ch, a in pairs]
+    })
+    if reply is not None:
+        if reply.get('status') != 'ok':
+            raise RuntimeError(reply.get('message', 'servo daemon rejected batch'))
+        return reply.get('results', [])
+
+    results = []
+    bus = pca9685_get_bus(i2c_address)
+    for ch, angle in pairs:
+        try:
+            pca9685_set_pwm(bus, i2c_address, ch, 0, angle_to_off(angle))
+            results.append({"channel": ch, "angle": angle, "status": "success"})
+        except Exception as e:
+            results.append({"channel": ch, "angle": angle, "status": "error", "error": str(e)})
+    return results
+
+
 def pca9685_set_pulse_width(channel, pulse_us, i2c_address=PCA9685_DEFAULT_ADDRESS, servo_type="standard"):
     """
     Set servo pulse width directly using PCA9685
@@ -190,12 +426,25 @@ def pca9685_set_pulse_width(channel, pulse_us, i2c_address=PCA9685_DEFAULT_ADDRE
     """
     try:
         channel = validate_channel(channel)
+
+        reply = daemon_request({
+            "cmd": "set_pulse",
+            "channel": channel,
+            "pulse_us": float(pulse_us),
+            "address": int(i2c_address),
+            "release": servo_type not in ("standard", "feedback")
+        })
+        if reply is not None:
+            if reply.get('status') != 'ok':
+                raise RuntimeError(reply.get('message', 'servo daemon rejected command'))
+            log_message({
+                "status": "success",
+                "message": f"Set servo on channel {channel} to {pulse_us}us pulse width"
+            })
+            return
+
         bus = pca9685_get_bus(i2c_address)
-
-        off_value = int((pulse_us / 20000.0) * 4096)
-        off_value = max(0, min(4095, off_value))
-
-        pca9685_set_pwm(bus, i2c_address, channel, 0, off_value)
+        pca9685_set_pwm(bus, i2c_address, channel, 0, us_to_off(pulse_us))
 
         # Brief settle time
         time.sleep(0.05)
@@ -215,6 +464,7 @@ def pca9685_set_pulse_width(channel, pulse_us, i2c_address=PCA9685_DEFAULT_ADDRE
         })
         raise
 
+
 def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_address=PCA9685_DEFAULT_ADDRESS):
     """
     Control continuous rotation servo via PCA9685
@@ -225,16 +475,22 @@ def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_addr
         speed: Speed percentage (0-100)
         duration_ms: Duration in milliseconds
         i2c_address: PCA9685 I2C address
+
+    The duration is honoured by THIS process (it sleeps, then releases the
+    channel) whether or not the daemon is in play. The daemon is only asked to
+    perform the two register writes, so a long rotation can never block servo
+    commands for other channels.
     """
+    bus = None
+    safe_channel = None
     try:
         if direction not in ['cw', 'ccw', 'stop']:
             raise ValueError(f"Invalid direction: {direction}")
 
         channel = validate_channel(channel)
+        safe_channel = channel
         speed = max(0, min(100, int(speed)))
         duration_s = max(0.0, int(duration_ms) / 1000.0)
-
-        bus = pca9685_get_bus(i2c_address)
 
         # Standard continuous servo range: 1000-2000us, 1500us neutral
         neutral = 1500
@@ -248,19 +504,34 @@ def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_addr
         else:  # ccw
             pulse_us = int(round(neutral - (neutral - min_pulse) * (speed / 100.0)))
 
-        off_value = int((pulse_us / 20000.0) * 4096)
-        off_value = max(0, min(4095, off_value))
+        off_value = us_to_off(pulse_us)
 
-        pca9685_set_pwm(bus, i2c_address, channel, 0, off_value)
+        def write(off):
+            reply = daemon_request({
+                "cmd": "set_raw",
+                "channel": channel,
+                "off": int(off),
+                "address": int(i2c_address)
+            })
+            if reply is not None:
+                if reply.get('status') != 'ok':
+                    raise RuntimeError(reply.get('message', 'servo daemon rejected command'))
+                return
+            pca9685_set_pwm(pca9685_get_bus(i2c_address), i2c_address, channel, 0, off)
+
+        write(off_value)
 
         # For continuous motion, maintain PWM during duration
         if direction != 'stop' and duration_s > 0:
-            time.sleep(duration_s)
-            # After duration, turn off PWM (don't send neutral to avoid recentring)
-            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)
+            try:
+                time.sleep(duration_s)
+            finally:
+                # Always stop driving, even if the sleep is interrupted — a
+                # continuous servo left energized keeps turning.
+                write(0)
         elif direction == 'stop':
             # For explicit stop, turn off PWM completely
-            pca9685_set_pwm(bus, i2c_address, channel, 0, 0)
+            write(0)
 
         log_message({
             "status": "success",
@@ -268,6 +539,18 @@ def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_addr
         })
 
     except Exception as e:
+        # Fail safe: never leave a continuous servo energized after an error.
+        if safe_channel is not None:
+            try:
+                reply = daemon_request({"cmd": "set_raw", "channel": safe_channel,
+                                        "off": 0, "address": int(i2c_address)}, timeout=1.0)
+                if reply is None:
+                    if bus is None and i2c_address in _bus_cache:
+                        bus = _bus_cache[i2c_address]
+                    if bus is not None:
+                        write_channel(bus, i2c_address, safe_channel, 0, 0)
+            except Exception:
+                pass
         log_message({
             "status": "error",
             "message": str(e)
