@@ -10,6 +10,8 @@ MonsterBox is a single-node animatronic control platform that drives Halloween c
 - **PipeWire + WirePlumber audio** — multiple speakers/microphones, per-stream routing, browser speaker bridge
 - **MJPEG webcam streaming** via mjpg-streamer (port 8090)
 - **Real hardware control** for servos, motors, linear actuators, lights, sensors, and steppers
+- **Per-part safety limits** — angle/speed/duration clamps, part quarantine, and serialized
+  execution for servos sharing a power rail (`config/hardware-safety.json`)
 - **Batch PCA9685 servo commands** — instant multi-servo pose execution via single I2C call
 - **ElevenLabs AI integration** for text-to-speech (v3), speech-to-text, and Conversational AI
 - **Goblin video display subsystem** for Pi 3B+/4B signage playback
@@ -26,11 +28,15 @@ MonsterBox is a single-node animatronic control platform that drives Halloween c
 
 | ID | Name | IP Address | Status |
 |----|------|------------|--------|
-| 1 | PumpkinHead | 192.168.8.150 | Active |
-| 2 | Mina | 192.168.8.140 | Active |
-| 3 | Orlok | 192.168.8.120 | Primary dev |
-| 4 | Sir Dragomir | 192.168.8.130 | Offline |
-| 5 | Groundbreaker | 192.168.8.200 | Active |
+| 1 | PumpkinHead | 192.168.8.150 | Offline (long-term), hardware unverified |
+| 2 | Mina | 192.168.8.140 | Online — neck (ch8) and eye (ch11) servos do not move |
+| 3 | Orlok | 192.168.8.120 | Primary dev — **partially operational**, see known bugs |
+| 4 | Sir Dragomir | 192.168.8.130 | Last verified fully operational 2026-04-18 |
+| 5 | Groundbreaker | 192.168.8.200 | Offline (long-term); character-ID mismatch to reconcile |
+
+Per-part status, open faults and next diagnostics:
+[Known Bugs & Open Issues](troubleshooting/KNOWN-BUGS.md). Hardware state changes — re-verify
+on each node before relying on it.
 
 ## Key URLs
 

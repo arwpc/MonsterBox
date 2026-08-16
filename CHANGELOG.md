@@ -4,12 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [9.0.0] - 2026-08-15 — Hardware safety, real hardware paths, live conversation
 
-**In progress — more may land under this version.** A safety-and-honesty pass on the
-hardware layer: a real per-part safety-limit layer, removal of two code paths that reported
-`success:true` without touching hardware, a test suite that had been physically stressing
-Orlok's fused rail, and a conversation toggle that was purely decorative. Plus the leaked
-SSH credential out of the working tree. No new frameworks, no new npm dependencies, all API
-contracts preserved.
+A safety-and-honesty pass on the hardware layer, plus the first release in which the
+conversational agent actually works end to end. Highlights: a real per-part safety-limit
+layer; removal of code paths that reported `success:true` without touching hardware; a test
+suite that had been physically stressing Orlok's fused rail; hardware commands that had been
+resolving to the *wrong character's* physical channel; a scene engine that no longer dies on
+one broken part; a 34-pose library for Orlok; and a conversation loop that hears complete
+sentences instead of a third of them. Plus the leaked SSH credential out of the working tree
+and an unauthenticated remote reboot/shutdown closed. No new frameworks, no new npm or system
+dependencies, all API contracts preserved.
+
+⚠️ **Not a "fleet is healthy" release.** Only Orlok was on hardware this session, and only
+partially: parts 2 and 3 remain broken/quarantined, the ch4/ch5 fuse problem is **mitigated
+in software only**, and part 4 (Elbow) accepted six commanded moves with **zero acoustic
+signature** — see Known issues and `docs/troubleshooting/KNOWN-BUGS.md`.
 
 ### Added
 - **Hardware safety-limit layer** (`services/hardwareService/safetyLimits.js`) — restores
@@ -26,8 +34,109 @@ contracts preserved.
   `noRetractBelowMin`, `blockAllMotion`, `excludeFromAutomatedTests`, `powerGroup`.
 - **`safetyLimits.isTestSafePart()`** — a part is drivable by an automated suite only if it
   is not power-grouped, not quarantined, and not explicitly excluded.
+- **Continuous microphone capture** (`serverSTTListener.startContinuousCapture()`) — one
+  long-lived process streaming headerless PCM16LE @ 16 kHz mono, tried in order
+  `parec` → `ffmpeg` → `arecord` (all already installed; spawn only, no new dependency and
+  no new transport). A stream that produced audio and then died retries the same method; one
+  that never produced any advances to the next candidate, with exponential backoff capped at
+  8 s so a dead device cannot spin. Measured duty cycle **34.4% → 98.5%**, 217 ms startup lag,
+  50 ms granularity. `captureChunkWav()` is untouched for its batch callers.
+- **Per-frame jaw sync on the agent path** — chunks are sliced into the same 50 ms frames the
+  offline path uses, carrying partial frames across chunk boundaries and draining a
+  per-character queue on one timer. Agent-path jaw transitions went 4 → 29 on the opening
+  line, and 6-over-29 s → 434-over-60 s in conversation.
+- **Orlok pose library: 8 → 34 poses** (`data/character-3/poses.json`), authored inside the
+  verified-safe envelope (head 60–120, elbow 80–110, short actuator moves, lamp). Parts 2
+  (dead), 3 (quarantined), 5 (no bounds) and 10 (daemon-owned) appear nowhere; the elbow is
+  untagged from idle so the loop never drives the fused rail on a pick; actuator net travel
+  across the library is zero so an open-loop part cannot walk to its end stop. Pre-existing
+  poses were sanitized rather than replaced — several held angles outside the safe band.
+  **The poses are statically validated but not yet hardware-confirmed.**
 
 ### Fixed
+- **Hardware commands no longer resolve to the wrong character.** `controlPart()` and
+  `batchMoveServos()` resolved the part by reading `selectedCharacter` off disk on every
+  call, ignoring the caller's context. Part IDs are only unique *within* a character
+  (character-1 part 4 is an "Elbow" on PCA channel 15; character-3 part 4 is an "Elbow" on
+  channel 4), so while that global value was flipped, every "part 4" command drove the wrong
+  physical channel — **this is what was driving PCA9685 channel 15 on this node with no part
+  configured there.** And it was flipped constantly: the test-mode branch of
+  `setSelectedCharacter` persisted to disk fire-and-forget, so any test run repointed the
+  LIVE node at another character (the existing guard only protected `req.app.locals`, which
+  the hardware path never reads). Both functions now take an explicit `options.characterId`,
+  falling back to the old behavior so no caller breaks; `poseEngine` and `transitionEngine`
+  pass the character they already knew, covering pose playback and the idle loop — the two
+  paths that move the fused rail. `setSelectedCharacter` no longer writes to disk from test
+  mode or from the test port: a full gate run now leaves `app-config.json` untouched where it
+  previously rewrote it to character 1 every time.
+- **`/api/parts/:id/test` passes the resolved character to the hardware layer.** The part was
+  loaded with `loadParts(req)` (canonical resolver) but `controlPart()` was called without the
+  character, so the actual command re-resolved against `selectedCharacter` on disk — testing a
+  part with an explicit `?characterId=N` could actuate a *different* character's part of the
+  same id, on a different physical channel.
+- **One dead part no longer ends the show.** Sequential scene steps were awaited with no
+  `try/catch`, so a single failing hardware step aborted the whole scene. Hardware actuation
+  steps (`servo`, `motor`, `linear-actuator`, `light`, `pose`, `hardware`, `jaw-animation`,
+  `head-tracking`, `goblin-video`) are now recorded as failed and the scene plays on — the
+  same non-throwing model the concurrent path already used. Control-flow steps stay fatal on
+  purpose: a `sensor` gate exists to hold a scene back, so swallowing its failure would fire
+  the scene without its trigger. The scene still reports `success:false` with the failing
+  steps listed, so a broken part stays visible rather than hidden.
+- **The idle loop no longer silently drops lights and actuators.** It claimed every pose part
+  as a servo and handed the lot to `transitionServos`, which filters on `angleDeg != null` —
+  so lights and linear actuators in an idle pose were discarded without a word (an idle pose
+  that turns a lamp on has never lit anything). Non-servo parts now go through the pose
+  engine, only real servos are claimed in the priority manager, and failures in the non-servo
+  path are logged without stopping the loop.
+- **Pose duration set in the editor is now honoured.** The pose editor writes `duration` and
+  `state`; the pose engine read only `durationMs` and `action`, so any actuator pose authored
+  in the UI ran for the 2000 ms default no matter what the operator set — most of the travel
+  on a 500 ms-class part. Both spellings are accepted everywhere now, with a unit test that
+  fails if a future duration read honours only one.
+- **Fleet deploy from the UI works.** `orchestrationService.deployCode()` invoked
+  `./scripts/deploy-to-animatronic.sh` with only the IP, while the script's signature is
+  `<character_id> <ip_address>` — the IP landed in `$1` as the character id and the script
+  exited 1 on its own usage check, so UI-triggered deploy has never worked (independently of
+  the credential issues). It now passes the character explicitly, falling back to resolving it
+  from the node registry by IP, and fails with a clear message rather than a broken command
+  when it cannot be determined. The id is parsed as an integer before it reaches a shell.
+- **Canonical STT no longer hangs forever on every transcription.** `transcribeAudio()`
+  wrapped the audio Buffer in `Readable.from()` and set a synthetic `audioStream.path`;
+  `form-data` uses that path to `fs.stat()` the file for the part length, the path does not
+  exist, so the length was never resolved, the multipart body never finished and the POST
+  never completed. The axios `timeout` does not save it — that guards the wait for a
+  *response*, not a request body that is never sent. Measured **>150 s hang → 988 ms**.
+  Appending the Buffer directly with an explicit `knownLength` is what `form-data` wants and
+  needs no new dependency. This is the canonical one-shot STT used everywhere; the browser
+  conversation path awaits it inline inside the mic-loop tick, so a single call wedged that
+  session's loop permanently. Verified end to end on real audio hardware: TTS out of the USB
+  speaker, through the air, into the USB mic, back through this service — two sentences
+  returned word for word.
+- **The conversation loop actually hears you.** The agent could hear roughly a third of what
+  was said, so a six-second spoken question reached it as the single word "Hello." Four
+  causes, all fixed and measured on hardware: (1) mic capture spawned a fresh process per
+  tick that recorded 500 ms and exited — 1452 ms of wall clock per 500 ms of audio, a ~950 ms
+  blind gap after every half second of speech (now one continuous stream, see Added);
+  (2) the agent path took one RMS over each whole network chunk and issued a single jaw angle
+  per chunk, which is a twitch, not lip sync (now per-frame, see Added); (3) the jaw was being
+  driven 0–180 on *every* path including TTS; (4) echo suppression stopped working after the
+  first reply — `aiSpeaking` was cleared only on `conversation_end`, so `speechStartedAt`
+  stayed pinned to the first utterance while accumulated audio kept accruing and the
+  suppression deadline resolved to a time in the past, and the agent then heard its own voice
+  as user speech and conversed with itself. A new utterance is now detected from a gap in
+  audio chunks, and the deadline is monotonic so a new utterance cannot shorten a draining
+  window. Live proof: a spoken exchange now returns complete verbatim user turns and zero echo
+  turns, where the same test previously produced "Or has the -", "Hello." and "Threshold."
+- **A placeholder calibration profile no longer overrides hand-set jaw markers.** The
+  calibration store stamps any uncalibrated absolute-servo with a full-span 0–180 profile and
+  marks it `autoGenerated`; `getCalibrationForPart` treated those numbers as real calibration,
+  so the placeholder silently overrode this character's hand-set markers of 63/131 and the jaw
+  was driven past its stops. A placeholder no longer outranks real markers and is still used
+  as a last resort where no markers exist. Verified by I²C register tracing: 115 changes on
+  the TTS path and 434 across an agent exchange, **zero** samples outside the calibrated
+  window, and the jaw now parks at 62.7° instead of 0. ⚠️ This visibly changes jaw travel —
+  it stays within the calibrated range rather than exceeding it. **Only the jaw path checks
+  `autoGenerated` today** — see Known issues.
 - **Conversation enable/disable actually starts and stops the live agent.** The endpoint
   persisted `ai_agent_state.json` and returned success but never opened or closed the
   ElevenLabs realtime agent, so the UI toggle was decorative.
@@ -82,6 +191,17 @@ contracts preserved.
   pure WAV bytes. All 18 wrappers `py_compile` clean, no stray control bytes.
 
 ### Security
+- **Remote unauthenticated reboot/shutdown closed.** The guard on the destructive
+  `/api/system` endpoints (reboot, shutdown, restart-service, optimize, SSH key management)
+  authenticated only when `MB_ADMIN_TOKEN` was set — it is set nowhere by default — and the
+  fallback let any request *without* an `Origin` header through, which is every curl and
+  script. In practice anyone on the LAN could shut down a running animatronic. Browsers send
+  `Origin` on every non-GET request, so a missing `Origin` identifies a non-browser caller;
+  those are now allowed only from loopback, and a remote script has to configure
+  `MB_ADMIN_TOKEN` (the supported path). Same-origin browser requests still pass, so the
+  operator UI is unchanged, and cross-origin CSRF is still rejected. Fleet orchestration is
+  unaffected — it drives reboot and restart over SSH, and the endpoints it does call over
+  HTTP (`/api/system/info`, `/api/system/volume`) are not behind this guard.
 - **Leaked SSH credential removed from the working tree.** The committed fallback password
   is gone from `services/orchestrationService.js`; `sshPassword` now comes only from
   `MONSTERBOX_SSH_PASSWORD`, and a new `requireSshPassword()` makes every SSH op
@@ -121,6 +241,24 @@ contracts preserved.
 - `tests/unit/hardware-safety-limits.test.js` — 19 tests covering clamping, blocking,
   speed/duration caps, power-rail serialization, cooldown, deadlock-on-throw and rail
   independence, plus coverage for `isTestSafePart`.
+- **Hardware tests no longer leave debris in live show data.** The continuous-servo suite
+  creates a *real* part in the running node's `parts.json`, and its cleanup asserted a 200 —
+  so any failure threw out of the `after` hook and left a phantom servo behind, pointing at a
+  PCA9685 channel and indistinguishable from real hardware. Cleanup now always runs, never
+  throws, and prints a loud notice naming the part to delete if it could not. Existing damage
+  from a historical run was repaired: character-3 part 1's description had been overwritten
+  with "Test updated via comprehensive tests" and its config carried a stray `testFlag`.
+  ⚠️ **The same damage on character 1 part 1 ("Wiper Motor") is NOT repaired** — that node is
+  offline and its hardware unverified, so the correct description cannot be written without
+  guessing. See Known issues.
+- `tests/unit/scene-step-resilience.test.js` — hardware step failures do not abort a scene
+  while control-flow failures still do.
+- `tests/unit/pose-engine-targets.test.js` — both `duration`/`durationMs` and `state`/`action`
+  spellings are honoured; fails if a future duration read honours only one.
+- `tests/unit/system-admin-guard.test.js` — the admin guard rejects remote no-`Origin`
+  callers, allows loopback, and still accepts same-origin browser requests.
+- `tests/basic.test.js` reads the template option from the live template instead of hardcoding
+  a preset name that a safety revision legitimately renamed.
 
 ### Known issues (NOT fixed by this release)
 - **Orlok part 2 (Left Arm) is dead.** PWM verified present on GPIO 13 with the same toggle
@@ -144,13 +282,36 @@ contracts preserved.
 - **The Python wrappers bypass the safety layer entirely** — e.g.
   `python3 servo_cli.py move_to_pca 4 …` skips every limit, including `blockAllMotion`.
   Needs a guard at the wrapper boundary.
-- **PCA channel 15 is driven at ~1923.8 µs with no part configured on it**; cause not yet
-  identified.
+- **Orlok part 4 (Elbow) accepted six commanded moves totalling ~95° with ZERO acoustic
+  signature**, while the much smaller jaw servo and the arm actuator were plainly audible on
+  the same microphone. That strongly suggests the ch4/ch5 rail is unpowered (fuse already
+  blown), the servo is disconnected, or it is dead. **This is the single most important thing
+  for the operator to check with a multimeter** — it also gates establishing part 5's bounds.
 - **Orlok part 8 (Hand of Azura) light is unproven** — GPIO 16 verified toggling, but no
   optical change was detectable (the lamp is likely outside the camera's field of view).
-- **`orchestrationService.deployCode()` is broken independently** — it calls
-  `./scripts/deploy-to-animatronic.sh ${ip}` with one argument while the script requires
-  `<character_id> <ip_address>`, so UI-triggered deploy exits 1 on its usage check.
+- **Agent-path jaw opening is shallow** — it moves correctly and stays inside its calibrated
+  window, but tops out around 77–79° against a 131° ceiling because agent audio RMS is low
+  relative to the character's configured jaw `sensitivity: 1`. That is a tuning value, not a
+  code defect; it needs a pass with the jaw physically watched.
+- **Changing a microphone device now requires restarting the conversation session** — the
+  continuous capture stream binds one device for the life of the session. (The old per-tick
+  loop re-resolved the device every tick, which is part of what made it so expensive.)
+- **Placeholder calibration profiles are a latent bug outside the jaw path.** The store stamps
+  every uncalibrated absolute-servo with a full-span 0–180 `autoGenerated` profile. v9.0.0
+  stops those outranking hand-set markers *in the jaw path only*; any other consumer that
+  reads `bounds` without checking `autoGenerated` (head animation, the hardware service's
+  angle clamps, `safetyLimits`) has the same latent problem. Worth an audit.
+- **Character 1 (PumpkinHead) part 1 "Wiper Motor" has a corrupted description** — it reads
+  "Test updated via comprehensive tests" from a historical test run, the same damage class
+  repaired on character 3 part 1. Not fixed here because that node is offline and its hardware
+  unverified; the description must not be guessed at.
+- **Orlok scene 106 "Full Servo Test - All 4 Servos" references a part 11 that does not
+  exist** in `data/character-3/parts.json` (this character's four servos are 4, 5, 10 and 15).
+  Left as show data rather than guessed at. It no longer aborts the scene, because hardware
+  steps are non-fatal as of this release.
+- **Two pre-existing `test:system` failures in `parts-api`** (including "should dispatch servo
+  parts without testResult wrapper"). Confirmed pre-existing this session — they fail
+  identically with the v9.0.0 changes stashed.
 
 Full detail and per-node status: `docs/troubleshooting/KNOWN-BUGS.md`.
 

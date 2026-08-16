@@ -13,6 +13,20 @@ Echo suppression uses a time-based approach:
 3. **During the window**, all microphone input is discarded (not sent to STT or ConvAI)
 4. **After the window expires**, normal microphone capture resumes
 
+### Multi-turn conversations (fixed in v9.0.0)
+
+Suppression used to break after the *first* agent reply: `aiSpeaking` was cleared only on
+`conversation_end`, so `speechStartedAt` stayed pinned to the first utterance while accumulated
+audio kept growing — the computed deadline then resolved to a time in the past and the mic was
+never actually muted. The agent heard its own voice as user speech and conversed with itself.
+
+Two rules now keep it correct across turns:
+
+- **A new utterance is detected from a gap between audio chunks** (>1200 ms), not from
+  `aiSpeaking`. Audio for a single utterance arrives back to back, so a gap means a new one.
+- **The deadline is monotonic** — a new utterance can only extend the window, never shorten
+  it, so audio still draining out of the speaker cannot be let back in as "user" speech.
+
 ## Suppression Points
 
 Echo suppression is triggered from multiple playback paths:

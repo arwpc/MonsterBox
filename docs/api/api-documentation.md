@@ -246,6 +246,14 @@ Content-Type: application/json
 Moves to an absolute position (0 = min, 0.5 = center, 1 = max). This is a separate
 endpoint from `nudge` (which only accepts `{ dir, scale }` or `{ delta }`).
 
+**Clamping (v9.0.0):** `goto` clamps to the profile's **calibrated angle window**, not just
+0–180 — it previously offered a bypass around the hardware safety layer. `nudge` is
+deliberately left unclamped: it is the operator's supervised tool for *discovering* limits,
+and clamping it would make a window impossible to widen.
+
+> ⚠️ There is no encoder feedback. `success: true` means the I²C/GPIO write succeeded, **not**
+> that anything physically moved. Confirm visually.
+
 ---
 
 ## Audio API

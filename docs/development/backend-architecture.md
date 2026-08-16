@@ -41,13 +41,28 @@ libraries.
   `services/hardwareService/exec.js` (`runPy(args, options)`), which defaults to
   `/usr/bin/python3` and the `python_wrappers/` directory with a 30 s timeout.
 - The `services/hardwareService/` layer (`servo.js`, `motor.js`, `actuator.js`,
-  `stepper.js`, `light.js`, `pca9685.js`, `index.js`) wraps these CLIs into a
-  typed hardware abstraction.
+  `stepper.js`, `light.js`, `pca9685.js`, `safetyLimits.js`, `index.js`) wraps
+  these CLIs into a typed hardware abstraction.
+- `safetyLimits.js` gates every command through this layer: angle clamped to the
+  intersection of calibrated bounds and `config/hardware-safety.json`, speed and
+  duration caps, no-retract-below-min, `blockAllMotion` quarantine, and serialized
+  execution for parts sharing a `powerGroup`. **Direct `python_wrappers/` calls
+  bypass all of it.**
+- `controlPart(partId, action, params, options)` and `batchMoveServos(commands,
+  options)` accept an explicit `options.characterId` (v9.0.0). Part IDs are unique
+  only *within* a character, so callers should pass it; omitting it falls back to
+  the on-disk `selectedCharacter` and can actuate the wrong physical channel.
+- The webcam and microphone paths in this layer drive **real** hardware, not
+  stubs: `startStream`/`stopStream` probe the actual mjpg-streamer service that
+  `controllers/webcamController.js` proxies and return its real proxy/snapshot
+  URLs, and `microphone.record` delegates to
+  `serverSTTListener.captureChunkWav()` — the one canonical capture path — and
+  reports real byte counts (an empty capture is a failure, not a success).
 
 ### Version Management
-The version is the single source of truth in `package.json` (`8.4.0` at time of
-writing) and is read dynamically — `server.js` loads it via `createRequire` and
-exposes it on `/health` and `res.locals.appVersion`. It is never hardcoded.
+The version is the single source of truth in `package.json` and is read
+dynamically — `server.js` loads it via `createRequire` and exposes it on
+`/health` and `res.locals.appVersion`. It is never hardcoded, in code or in docs.
 
 ## Application Structure
 

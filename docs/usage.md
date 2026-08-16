@@ -73,8 +73,17 @@ ElevenLabs-powered real-time voice chat:
 
 - **Conversational AI** runs over WebSocket on port 8795
 - Barge-in support — interrupt the AI while it's speaking
-- Server-side microphone via PipeWire (not browser-based)
+- Server-side microphone via PipeWire (not browser-based), captured as one **continuous
+  stream** for the life of the session — so the agent hears whole sentences
+- Echo suppression mutes the mic while the character is speaking, across every turn, so it
+  does not answer itself
+- Jaw motion is synced per 50 ms audio frame and stays inside the jaw's calibrated range
 - Per-character voice configuration in AI Settings
+
+> ⚠️ Changing a character's microphone takes effect only after the conversation/agent is
+> toggled off and back on — the capture stream binds one device when the session starts.
+> If the agent's mouth barely opens, raise the jaw `sensitivity` on `/setup/jaw-animation`
+> (agent audio is quieter than TTS) — with the jaw physically watched.
 
 ## Goblin Management (`/goblin-management`)
 

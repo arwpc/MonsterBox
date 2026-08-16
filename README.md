@@ -3,12 +3,69 @@
 MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 - PipeWire + WirePlumber audio (multiple speakers/microphones, per-stream routing)
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
-- Real hardware control for servos, motors, linear actuators, lights, sensors, steppers
+- Real hardware control for servos, motors, linear actuators, lights, sensors, steppers,
+  with per-part safety limits (`config/hardware-safety.json`) enforced on every command
 - ElevenLabs AI integration for STT, Conversational AI, and TTS
 - Goblin video display subsystem for Pi 3B+/4B signage playback
 - GitHub Actions CI for automated testing on every commit
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
+
+## What's New — v9.0.0 (August 2026) — Hardware safety, real hardware paths, live conversation
+
+The release that stops the software lying about the hardware. No new frameworks, no new npm
+or system dependencies, all existing API contracts preserved.
+
+- **Per-part hardware safety limits, enforced.** `config/hardware-safety.json` +
+  `services/hardwareService/safetyLimits.js` clamp angle to the intersection of calibrated
+  bounds and configured limits, cap speed and duration, hard-block retraction of a part
+  already sitting at its mechanical minimum, and **serialize servos that share a power rail**
+  so their inrush currents cannot stack and pop a fuse. Parts with no configured limits are
+  pass-through, so nothing else changes. A part can also be quarantined outright
+  (`blockAllMotion`) or excluded from automated tests.
+- **Hardware commands go to the character you asked for.** `controlPart()` and
+  `batchMoveServos()` used to re-resolve the part against whatever `selectedCharacter` was on
+  disk. Part IDs are unique only *within* a character, so a flipped global value meant
+  "move part 4" drove a completely different physical channel — and a test run could flip it
+  on the live node. Fixed, and it explains the long-standing "channel 15 is moving and nothing
+  is configured there" mystery.
+- **The conversation loop actually works.** Continuous microphone capture (one long-lived
+  `parec`/`ffmpeg`/`arecord` stream instead of a fresh process every tick) took the mic duty
+  cycle from **34% to 98.5%**, so the agent hears whole sentences instead of a third of them;
+  jaw motion is driven per 50 ms frame rather than once per network chunk; echo suppression no
+  longer breaks after the first reply, so the animatronic stops conversing with itself; and
+  the canonical STT call, which used to hang **forever** on every transcription, now returns
+  in under a second. Verified live: speaker → air → USB mic → transcript, word for word.
+- **The jaw stays inside its calibrated range.** A placeholder 0–180 calibration profile was
+  silently overriding hand-set Min/Max markers, so the jaw was being driven past its stops on
+  every path including TTS. ⚠️ Jaw travel visibly changes with this release — it is now
+  correct, not reduced.
+- **One dead part no longer ends the show.** A failing hardware step used to abort the entire
+  scene. Hardware steps are now non-fatal: the scene plays through and reports which steps
+  failed. Sensor gates stay fatal on purpose (a trigger that silently "succeeds" would fire
+  the scene at the wrong time).
+- **Orlok pose library: 8 → 34 poses**, authored inside the verified-safe envelope and
+  excluding every broken or quarantined part. Also fixed underneath it: the idle loop was
+  silently discarding lights and linear actuators from idle poses, and pose *duration* set in
+  the editor was ignored by the engine.
+- **Security.** Remote unauthenticated **reboot/shutdown is closed** (any caller without an
+  `Origin` header — every curl and script — used to be allowed; now loopback only, or set
+  `MB_ADMIN_TOKEN`). The leaked SSH password is out of the working tree; unauthenticated
+  arbitrary file deletion via the SSH-key endpoint is closed; dev-only advisories patched.
+  ⚠️ **The SSH credential is still in git history and must be rotated on every node**, and
+  `MONSTERBOX_SSH_PASSWORD` / `MB_ADMIN_TOKEN` must be set in each node's `monsterbox.service`
+  environment — the app does not load `.env`.
+- **UI-triggered fleet deploy works** (it had always passed the wrong arguments to
+  `deploy-to-animatronic.sh`), and hardware tests no longer leave phantom parts behind in live
+  show data.
+
+> ⚠️ **Orlok is NOT fully hardware-verified.** Part 2 (Left Arm) does not move, part 3 (Bow)
+> is software-quarantined for contradictory wiring, and part 4 (Elbow) accepted six commanded
+> moves totalling ~95° with **zero acoustic signature** — strongly suggesting the ch4/ch5 rail
+> is unpowered, disconnected, or the servo is dead. **The ch4/ch5 fuse problem is mitigated in
+> software only; the root cause is electrical and unresolved.** The new pose library is
+> statically validated but not yet watched on hardware. Full per-part status and next
+> diagnostics: [docs/troubleshooting/KNOWN-BUGS.md](docs/troubleshooting/KNOWN-BUGS.md).
 
 ## What's New — v8.5.0 (July 2026) — Fleet Command Center
 

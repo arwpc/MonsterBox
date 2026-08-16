@@ -6,10 +6,28 @@
 |-------|-------|
 | **Character ID** | 3 |
 | **IP Address** | 192.168.8.120 |
-| **Status** | Active — Primary development unit |
+| **Status** | Primary development unit — **partially operational** (see Current Hardware State) |
 | **Data Directory** | `data/character-3/` |
 
 Orlok is the primary animatronic character in the MonsterBox system, inspired by the classic Nosferatu vampire. As the most hardware-rich character, Orlok serves as the main development and testing platform.
+
+### Current Hardware State (verified 2026-08-15, v9.0.0)
+
+Orlok is **not** fully operational. Open faults, in priority order:
+
+| Part | State | Note |
+|------|-------|------|
+| 4 Elbow | 🔴 **unresponsive** | six commanded moves (~95° total) produced **zero acoustic signature** while the jaw servo and arm actuator were plainly audible on the same mic — check the ch4/ch5 rail with a multimeter first |
+| 5 Forearm Rotation | 🔴 no bounds established | blocked behind part 4 — same rail |
+| 2 Left Arm | 🔴 does not move | PWM verified present on GPIO 13; fault is downstream (driver channel, harness, motor or actuator) |
+| 3 Bow at the Waist | 🔴 software-quarantined | `parts.json` pin declaration and the part description contradict each other; `blockAllMotion` set until a human traces the wires |
+| 8 Hand of Azura | 🟡 unproven | GPIO 16 toggles, but no optical change was observable |
+| 10 Jaw, 15 Head | 🟢 working | jaw now driven inside its calibrated 63–131 window (v9.0.0) |
+
+The **ch4/ch5 shared fuse is mitigated in software only** (speed/duration caps, angle clamps,
+serialized power group) — the root cause is electrical and unresolved: the two servos have
+mutually exclusive voltage domains on one rail. Full detail and next diagnostics:
+[Known Bugs & Open Issues](troubleshooting/KNOWN-BUGS.md).
 
 ## Hardware Parts
 

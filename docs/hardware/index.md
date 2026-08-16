@@ -64,6 +64,28 @@ Computer vision-based head tracking for animatronic characters:
 - **Safety Limits**: Hardware protection and limits
 - **Calibration**: Per-device calibration storage
 
+### Safety Limits (enforced)
+Per-part limits live in `config/hardware-safety.json` (committed with the code, so they deploy
+with it and survive a calibration reset) and are enforced by
+`services/hardwareService/safetyLimits.js` on every command through the Node hardware service:
+
+| Key | Effect |
+|-----|--------|
+| `minAngle` / `maxAngle` | angle clamped to the intersection of these and the calibrated bounds |
+| `maxSpeedPct` / `maxDurationMs` | speed and duration caps |
+| `noRetractBelowMin` | hard-blocks retraction of a part pinned at its mechanical minimum (including the bounds-bypassing jog-raw path) |
+| `blockAllMotion` | quarantines a part outright |
+| `powerGroup` | serializes parts on a shared rail with a cooldown, so their inrush currents cannot stack |
+| `excludeFromAutomatedTests` | keeps automated suites off the part (`safetyLimits.isTestSafePart()`) |
+
+A calibration profile's own `safety` block may only **tighten** these; the more restrictive
+value always wins. Parts with no configured limits are pass-through.
+
+> ⚠️ **The Python wrappers bypass this layer.** A direct call such as
+> `python3 servo_cli.py move_to_pca 4 …` skips every clamp, block and power-group
+> serialization, including `blockAllMotion`. Drive hardware through the app, not the wrappers,
+> unless you are deliberately doing supervised diagnostics.
+
 ### Power Management
 - **12V Power Bus**: Linear actuators and large 12V servos are wired into a shared 12V bus
 - **5V Fuse Protection**: The 12V bus is protected by intentionally undersized 5V fuses that blow before harming people or hardware — a safety-first design

@@ -54,6 +54,29 @@ node scripts/test-new-animatronic-services.js
 npm run test:jaw-animation
 ```
 
+## Before You Run These on a Live Node (v9.0.0)
+
+Hardware tests drive **real hardware and real show data** on the node they run on. Two
+protections were added after both bit us:
+
+- **Safe-part selection.** Suites that need "a servo" now select through
+  `safetyLimits.isTestSafePart()`, which skips parts that are power-grouped, quarantined
+  (`blockAllMotion`), or explicitly `excludeFromAutomatedTests`. Before this, the unit suite
+  picked Orlok's 150 kg elbow — on a shared fuse — and drove it to both extremes on every
+  `npm run test:smoke`, then rewrote its calibration from wherever it parked.
+- **Cleanup that cannot leak.** The continuous-servo suite creates a **real** part in the
+  running node's `parts.json`. Its cleanup now always runs, never throws, and prints a loud
+  notice naming the part to delete by hand if it could not — a failed cleanup used to leave a
+  phantom servo pointing at a live PCA9685 channel.
+
+Suites that write calibration snapshot `data/calibration_profiles.json` and restore it
+verbatim (not via `upsert()`, which would re-stamp `lastCalibratedAt` and look like an
+operator recalibration), so a run leaves zero drift.
+
+> ⚠️ Hardware tests are **not** safe to run unattended against an animatronic with known
+> electrical faults. Check `docs/troubleshooting/KNOWN-BUGS.md` for the node's current state
+> first.
+
 ## Hardware Test Environments
 
 ### Development Environment

@@ -595,6 +595,13 @@ Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=GAIN=130
 Environment=XDG_RUNTIME_DIR=/run/user/$(id -u $ACTUAL_USER)
+# Operator secrets — set these here, NOT in a .env file (the app does not load .env).
+# MONSTERBOX_SSH_PASSWORD: required for fleet SSH ops (reboot / restart / config push /
+#   deploy). Without it those operations fail loudly by design.
+# MB_ADMIN_TOKEN: required for REMOTE (non-loopback, non-browser) calls to the destructive
+#   /api/system endpoints. Without it those calls are refused from off-box.
+#Environment=MONSTERBOX_SSH_PASSWORD=change-me
+#Environment=MB_ADMIN_TOKEN=change-me
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=10
@@ -619,6 +626,10 @@ touch /var/log/monsterbox.log /var/log/monsterbox.err
 chown "$ACTUAL_USER":"$ACTUAL_USER" /var/log/monsterbox.log /var/log/monsterbox.err
 
 print_success "MonsterBox systemd service created and enabled"
+print_warning "Optional but recommended: set MONSTERBOX_SSH_PASSWORD (fleet SSH control) and"
+print_warning "MB_ADMIN_TOKEN (remote access to destructive /api/system endpoints) in"
+print_warning "/etc/systemd/system/monsterbox.service — commented placeholders are in place."
+print_warning "A .env file will NOT work: the app does not load dotenv."
 
 # ============================================================
 # 22. Start and Verify MonsterBox Service
