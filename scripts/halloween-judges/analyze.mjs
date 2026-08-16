@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { PERSONAS } from './personas.mjs';
 import { UNIVERSAL_CRITERIA } from './criteria.mjs';
+import { scanGestureLeaks } from './gestures.mjs';
 
 const file = process.argv[2];
 if (!file) { console.error('Usage: analyze.mjs <results.jsonl> [--out report.md]'); process.exit(1); }
@@ -79,6 +80,24 @@ for (const agent of agents) {
   const dn = ar.filter(r => r.evals?.[personaCriteria[r.persona]]?.result === 'success').length;
   const dd = ar.filter(r => r.evals?.[personaCriteria[r.persona]]).length;
   md += `| ${agent} | ${ar.length} | ${cell('in_character')} | ${cell('pacing')} | ${cell('personalization')} | ${cell('return_hook')} | ${pct(dn, dd)} |\n`;
+}
+
+// Spoken-gesture leakage: a gesture must be a tool call, never words the guest hears.
+const leaks = scanGestureLeaks(good);
+md += `\n## Spoken-gesture leakage\n\n`;
+if (leaks.total === 0) {
+  md += `None. No agent spoke a gesture id or the word "gesture" in ${good.length} conversations.\n`;
+} else {
+  md += `**${leaks.total} leaked mention(s)** — a gesture must be a \`gesture\` tool call, never spoken text.\n\n`;
+  md += `| Agent | conversations | leaking | instances |\n|---|---|---|---|\n`;
+  for (const [agent, a] of Object.entries(leaks.byAgent)) {
+    if (!a.instances) continue;
+    md += `| ${agent} | ${a.conversations} | ${a.leakingConversations} | ${a.instances} |\n`;
+  }
+  for (const [agent, a] of Object.entries(leaks.byAgent)) {
+    for (const s of a.samples) md += `\n- [${agent}] ${s}`;
+  }
+  md += `\n`;
 }
 
 if (errored.length) {
