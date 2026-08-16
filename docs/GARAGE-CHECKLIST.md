@@ -201,6 +201,84 @@ powered and on the network.
 
 ---
 
+## Calibration — every part, once and for all
+
+**Do this on `/setup/calibration`.** That page writes `data/calibration_profiles.json`,
+which is the canonical store read by jaw animation, head tracking, gestures, poses,
+scene execution and motion tracking. Calibrating there makes it stick everywhere that
+matters.
+
+*(There is a second, legacy `data/character-N/servo_calibrations.json`. It is only read
+by the direct-GPIO servo path, and all three live characters run their servos through
+the PCA9685 instead — so it does not undermine this. Mina's and Dragomir's legacy files
+are empty anyway. Noted so you don't discover it later and wonder.)*
+
+**Ground rules**
+
+- Calibrate **after** fixing dead hardware, not before. A calibration of a servo that
+  isn't moving records nothing real.
+- **These part types need NO calibration:** lights, speakers, microphones, webcams,
+  motion sensors. Only servos and linear actuators do.
+- **Absolute servos** want min/max angle. **Continuous servos** are different — they have
+  no position, so they calibrate for speed/direction, not angles. Don't try to set angle
+  bounds on one.
+- Set bounds to the **usable safe range**, not the mechanical extreme. Leave margin.
+- The page now tells the truth about what is and isn't calibrated. A part reading
+  "placeholder" has a fake 0–180 guess, not a measurement.
+
+### Current state — measured just now
+
+**Mina and Sir Dragomir have NO calibration profiles at all.** Every servo and actuator
+on both is uncalibrated. That is the bulk of the work.
+
+#### Orlok (char 3)
+
+| Part | Type | Current profile | Action |
+|---|---|---|---|
+| 1 Right Arm | actuator | `minP 0 / maxP 1` | Re-do — that's a normalized default, not measured end positions |
+| 2 Left Arm | actuator | placeholder | **Fix first** — dead |
+| 3 Bow | actuator | placeholder | **Trace wiring first** — quarantined |
+| 4 Elbow | servo | `45–135` | **Test residue, not a calibration.** Only after the rail question |
+| 5 Forearm | servo | placeholder 0–180 | Gated on the rail |
+| 10 Jaw | servo | placeholder 0–180 | ⭐ **Highest value — calibrate this one first** |
+| 15 Head | servo | `60–180` | ⚠️ Re-do — profile says max 180 but safety clamps to 120. Set the real number |
+| 14 PIR sensor | sensor | `12–180` | Spurious — a motion sensor has no angle bounds. Ignore |
+
+#### Mina (char 2) — nothing calibrated
+
+| Part | Type | Action |
+|---|---|---|
+| 1 Jaw | servo | ⭐ Calibrate — currently an auto-default 10° window (85–95) |
+| 2 Neck | servo | **Fix first** — does not move (ch8) |
+| 3 Eye | servo | **Fix first** — does not move (ch11) |
+| 4 Coffin Door | actuator | Calibrate min/max position |
+
+#### Sir Dragomir (char 4) — nothing calibrated
+
+| Part | Type | Action |
+|---|---|---|
+| 1 Head Servo | servo | ⚠️ **Confirm continuous vs absolute first** — recorded elsewhere as continuous (ch4). If continuous, do NOT set angle bounds |
+| 2 Jaw Servo | servo | ⭐ Calibrate |
+| 3 Magic Box Servo | servo | Calibrate |
+
+### Suggested order
+
+1. **Sir Dragomir** — he's healthy, so nothing fights you. Three parts. Gets you a
+   complete, known-good character and teaches you the flow.
+2. **Orlok's jaw (10) and head (15)** — the two parts you'll notice most, both currently
+   wrong.
+3. **Mina's jaw (1) and coffin door (4)** — everything she can do today.
+4. **Everything gated on repairs** — Orlok 1/2/3/4/5, Mina 2/3 — as each repair lands.
+
+### After each part
+
+- [ ] Re-open `/setup/calibration` and confirm it now reads calibrated, not placeholder.
+- [ ] Move the part through a pose or the Test button and watch it respect the new range.
+- [ ] For the jaw specifically: speak a line and watch the travel. Jaw depth is driven off
+      these bounds, so a good calibration is what makes speech look right.
+
+---
+
 ## Before the show
 
 - [ ] **Drop a music track at `data/audio-library/dusk-theme.mp3`.** It does not exist, so

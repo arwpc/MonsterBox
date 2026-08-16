@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "created": "2025-11-01T12:00:00.000Z",
-  "lastModified": "2026-08-16T09:39:50.018Z",
-  "totalFiles": 132,
+  "lastModified": "2026-08-16T18:19:20.495Z",
+  "totalFiles": 133,
   "totalSize": 290540797,
   "categories": [
     "monster-sounds",
@@ -494,8 +494,8 @@
       "lastModified": "2026-02-16T02:45:44.645Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2026-08-16T18:19:20.495Z"
     },
     {
       "id": "11 - Breathing (In Terror)",
@@ -3325,7 +3325,7 @@
     {
       "id": "d6d85602-ddb0-5b06-9049-25c73e01f8db",
       "title": "Thomas Whisper",
-      "description": "Yard Theater \u2014 the Thomas moment. Mina has waited for Thomas since 1462; this is the whisper the yard hears once, deep in the evening.",
+      "description": "Yard Theater — the Thomas moment. Mina has waited for Thomas since 1462; this is the whisper the yard hears once, deep in the evening.",
       "filename": "thomas-whisper.mp3",
       "originalFilename": "thomas-whisper.mp3",
       "format": "mp3",
