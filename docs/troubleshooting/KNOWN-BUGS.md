@@ -258,13 +258,31 @@ non-blocking. Listed so a genuine regression here isn't dismissed as "the usual 
 - 🟡 **Jaw-animation save-config** — save assertion intermittently fails.
 - 🟡 **Calibration timeout** — calibration test intermittently times out.
 
-Plus two hard (not intermittent) failures, confirmed **pre-existing**:
+Plus two hard (not intermittent) `test:system` failures. **An earlier revision of this file
+called both "confirmed pre-existing." That was wrong, and the correction matters more than
+the entry:**
 
-- ⚪ **Two `test:system` failures in `tests/system/parts-api.test.js`**, one of them
-  "should dispatch servo parts without testResult wrapper". Verified 2026-08-15 that they fail
-  **identically with the v9.0.0 changes stashed**, so they are not a v9.0.0 regression — they
-  are an unreconciled expectation about the `/api/parts/:id/test` response shape. Not fixed in
-  this release.
+- ~~**`tests/system/parts-api.test.js` — "should dispatch servo parts without testResult
+  wrapper"**~~ — this was a **real v9.0.0 regression**, not pre-existing, and is fixed.
+  Commit `5db5b823` declared `const hw = {...}` inside the `GET /:id` handler while
+  referencing it from `POST /:id/test`, so every non-`motion_sensor` branch — servo, light,
+  linear actuator, motor, generic — threw a ReferenceError and returned HTTP 500. **The
+  operator "Test" button was dead for nearly every part.** Fixed in `86541e54`. There is also
+  only **one** such test in that file, not two. The "pre-existing" label came from a claim
+  that was relayed rather than reproduced; the release verification run caught it by reading
+  the actual response body (`{"error":"Failed to test part","message":"hw is not defined"}`)
+  instead of trusting the label.
+- ⚪ **`tests/system/orchestration.test.js:97` — "returns status for a known node"** — expects
+  200, gets 404. **Environmental, genuinely pre-existing.** The test hardcodes node id 1
+  (PumpkinHead, `192.168.8.150`), which is physically offline (`EHOSTUNREACH`). v9.0.0 touched
+  neither the route nor the test. Underlying fragility worth fixing: the route maps
+  `success:false → 404` (`routes/api/orchestrationRoutes.js:1171`), conflating "unknown node"
+  with "node unreachable" — those deserve different status codes, and the test should not
+  depend on a specific node being powered on.
+
+**Process note worth keeping:** a "known pre-existing failure" label is a claim like any
+other. Verify it against the current tree before it is allowed to suppress a red test — this
+one hid a dead operator control for several commits.
 
 Plus one that was not flake at all:
 

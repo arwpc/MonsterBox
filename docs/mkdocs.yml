@@ -98,6 +98,7 @@ nav:
 
   - Development:
       - Development Process: development/development-process.md
+      - v9.0 Retrospective & Roadmap: development/V9-RETROSPECTIVE-AND-ROADMAP.md
       - Backend Architecture: development/backend-architecture.md
       - Node Discovery (mDNS): development/NODE-DISCOVERY.md
       - AI Integration Guide: development/ai-integration-guide.md
