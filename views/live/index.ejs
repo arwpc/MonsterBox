@@ -19,7 +19,7 @@
       <div class="card">
         <div class="card-header"><h5 class="mb-0"><i class="bi bi-activity"></i> System</h5></div>
         <div class="card-body">
-          <button class="btn btn-outline-secondary w-100" onclick="location.reload()" title="Reload this page to refresh live status"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          <button class="mb-btn mb-btn-secondary mb-btn-block" onclick="location.reload()" title="Reload this page to refresh live status"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
           <div id="posesStatus" class="mt-2 small"></div>
         </div>
       </div>
@@ -35,24 +35,24 @@
       const container = document.getElementById('posesContainer');
 
       if (!data || !data.success) {
-        container.innerHTML = '<div class="alert alert-warning">No poses available</div>';
+        container.innerHTML = '<div class="mb-alert mb-alert-warning">No poses available</div>';
         document.getElementById('posesStatus').textContent = 'No poses available';
         return;
       }
 
       const poses = (data.poses || []).slice(0, 12);
       if (poses.length === 0) {
-        container.innerHTML = '<div class="alert alert-info">No poses defined. Create some in Setup → Poses.</div>';
+        container.innerHTML = '<div class="mb-alert mb-alert-info">No poses defined. Create some in Setup → Poses.</div>';
         return;
       }
 
+      // Show Mode is used at arm's length, in the dark, one-handed. The whole row is
+      // the play target rather than a small icon button beside the name.
       container.innerHTML = poses.map(p => `
-        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-          <span class="text-truncate me-2">${p.name}</span>
-          <button class="btn btn-sm btn-primary" onclick="execPose(${p.id})" title="Play the &quot;${p.name}&quot; pose on the hardware now">
-            <i class="bi bi-play-fill"></i>
-          </button>
-        </div>
+        <button class="mb-live-pose" onclick="execPose(${p.id}, this)" title="Play the &quot;${p.name}&quot; pose on the hardware now" aria-label="Play ${p.name}">
+          <span class="mb-live-pose-name">${p.name}</span>
+          <span class="mb-live-pose-icon"><i class="bi bi-play-fill"></i></span>
+        </button>
       `).join('');
     } catch (e) {
       // Keep logging gentle to avoid flaking tests
@@ -62,21 +62,29 @@
     }
   });
 
-  async function execPose(id) {
+  async function execPose(id, btn) {
+    const st = document.getElementById('posesStatus');
+    // A servo move takes 500ms+; without a busy state an unacknowledged tap gets
+    // tapped again, and a double tap double-fires the hardware.
+    if (btn) btn.setAttribute('data-busy', 'true');
     try {
       const resp = await fetch(`/poses/${id}/execute`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       const res = await resp.json();
-      const st = document.getElementById('posesStatus');
       if (res.success) {
-        if (st) st.textContent = 'Pose executed successfully';
+        if (st) st.textContent = 'Played.';
       } else {
-        if (st) st.textContent = 'Pose execution failed';
-        console.log('Failed to execute pose:', res.error || 'Unknown');
+        // Say WHICH parts refused and why — a bare "failed" next to a pose that
+        // partly moved tells the operator nothing they can act on.
+        const failed = Array.isArray(res.failedParts) ? res.failedParts : [];
+        const detail = failed.length
+          ? failed.map(f => 'part ' + f.partId + ': ' + (f.error || 'refused')).join(' · ')
+          : (res.error || 'no reason given');
+        if (st) st.textContent = (res.partialFailure ? 'Played, but ' : 'Did not play — ') + detail;
       }
     } catch (e) {
-      const st = document.getElementById('posesStatus');
-      if (st) st.textContent = 'Exec pose error';
-      console.log('Exec pose error:', (e && e.message) || e);
+      if (st) st.textContent = 'Could not reach the animatronic — ' + ((e && e.message) || e);
+    } finally {
+      if (btn) btn.removeAttribute('data-busy');
     }
   }
 </script>

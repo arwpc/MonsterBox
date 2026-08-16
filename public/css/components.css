@@ -919,6 +919,52 @@ body.mb-has-control-bar {
     /* Keep it, just compact. */
     font-size: var(--mb-text-xs);
     gap: var(--mb-space-1);
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* The stop control must NEVER be clipped or pushed off the edge — it is the one
+     thing on this bar that has to be hittable without thinking. Everything else
+     yields space to it. */
+  .mb-control-bar-actions {
+    /* The base rule pins this to `flex: 0 0 auto`, so it refused to shrink and its
+       content (a full-width range input) pushed STOP off the right edge. It must
+       yield instead — STOP is the one control that cannot be clipped. */
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--mb-space-2);
+  }
+
+  .mb-control-bar-volume .mb-range {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mb-control-bar #mbStopEverything {
+    flex: 0 0 auto;
+    margin-left: auto;
+    /* Deliberately larger than the 44px minimum. This is hit in a hurry, in the
+       dark, possibly by someone who is not the operator — findability under stress
+       is its only real requirement, so it gets more room than anything else here. */
+    min-height: 48px;
+    min-width: 60px;
+  }
+
+  /* Volume keeps its slider but drops the word "Volume" — the icon-free slider is
+     self-evident, and the label was what pushed STOP off the screen. */
+  .mb-control-bar-volume {
+    flex: 1 1 auto;
+    min-width: 64px;
+    max-width: 40vw;
+  }
+
+  .mb-control-bar-volume .mb-field-label {
+    display: none;
+  }
+
+  .mb-control-bar-identity {
+    flex: 0 0 auto;
   }
 
   .mb-control-bar-actions {
@@ -1030,3 +1076,68 @@ body.mb-has-control-bar {
 .mb-tile-icon-danger  { color: var(--mb-danger); }
 .mb-tile-icon-info    { color: var(--mb-info); }
 .mb-tile-icon-ai      { color: var(--mb-ai); }
+
+/* ==========================================================================
+   Show Mode pose row
+   --------------------------------------------------------------------------
+   Used at arm's length, in the dark, one-handed, with a group walking up. The
+   whole row is the target rather than a small icon button beside the name, so
+   there is nothing to aim at.
+   ========================================================================== */
+.mb-live-pose {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--mb-space-3) var(--mb-space-4);
+  margin-bottom: var(--mb-space-2);
+  background: var(--mb-bg-2);
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  color: var(--mb-fg-primary);
+  font-size: var(--mb-text-lg);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              border-color var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+@media (hover: hover) {
+  .mb-live-pose:hover {
+    background: var(--mb-bg-hover);
+    border-color: var(--mb-primary);
+  }
+}
+
+.mb-live-pose:active { transform: translateY(1px); }
+.mb-live-pose:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+
+.mb-live-pose-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mb-live-pose-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--mb-radius-full, 999px);
+  background: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+  font-size: var(--mb-text-xl);
+}
+
+.mb-live-pose[data-busy="true"] {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.mb-live-pose[data-busy="true"] .mb-live-pose-icon {
+  animation: mb-busy-spin 700ms linear infinite;
+}

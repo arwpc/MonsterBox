@@ -1,8 +1,8 @@
 {
   "_readme": "Known design-system violations. These counts may only SHRINK — the audit fails if any grows. Regenerate deliberately with: npm run audit:design-system -- --update-baseline",
-  "generated": "2026-08-16T04:30:32.156Z",
+  "generated": "2026-08-16T04:41:22.501Z",
   "counts": {
-    "raw-bootstrap-buttons": 27,
+    "raw-bootstrap-buttons": 25,
     "raw-bootstrap-forms": 17,
     "native-dialogs": 14,
     "inline-styles": 138,
