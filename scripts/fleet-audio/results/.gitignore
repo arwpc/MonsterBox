@@ -1,0 +1,3 @@
+# Ear-check captures are evidence, not source. The JSON matrices are small and
+# worth keeping; the WAVs are large and regenerate on every run.
+*.wav

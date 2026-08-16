@@ -20,7 +20,7 @@ export const UNIVERSAL_CRITERIA = [
     id: 'personalization',
     name: 'Personalization',
     conversation_goal_prompt:
-      'The character tried to learn who the visitor was (asked for a name early) and then actually used what it learned — weaving the visitor\'s name or personal details into later replies. If the visitor offered a name and it was never used again, fail.'
+      'The character tried to learn who the visitor was (asked for a name early) and then actually used what it learned — weaving the visitor\'s name or personal details into later replies. If the visitor offered a name and it was never used again, fail. A visitor who withholds, dodges, or refuses to give a name is NOT a failure of the character: in that case judge only whether the character asked once, took the refusal in stride while staying in voice, and still personalized from whatever else the visitor revealed (age, costume, companions, what they said about themselves, where they came from). Never fail this criterion for something only the visitor controls. Judge only the agent\'s messages.'
   },
   {
     id: 'return_hook',
