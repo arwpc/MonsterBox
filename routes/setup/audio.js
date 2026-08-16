@@ -17,6 +17,7 @@ router.get('/', async (req, res) => {
         res.renderWithLayout('setup/audio', {
             title: 'Setup Audio - MonsterBox',
             page: 'setup-audio',
+            styles: ['/css/setup-audio.css'],
             scripts: ['/js/setup-audio.js']
         });
     } catch (error) {
@@ -565,8 +566,13 @@ setInterval(() => {
 }, 5000); // Clean up every 5 seconds
 
 router.get('/api/audio-levels', async (req, res) => {
+    // Destructured OUTSIDE the try: the outer catch below reports these back to the
+    // caller, and when they were const-declared inside the try, any throw turned
+    // into `ReferenceError: deviceId is not defined` from the error handler itself
+    // — an unhandled rejection that took the whole process down. A polling endpoint
+    // is the worst place for that: it fires every second from the audio page.
+    const { deviceId, deviceType } = req.query;
     try {
-        const { deviceId, deviceType } = req.query;
         if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
             return res.json({ success: true, level: 0.05, deviceId: deviceId || 'default', type: deviceType || 'input' });
         }

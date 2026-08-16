@@ -74,7 +74,7 @@ test.describe('Models Page', () => {
         await expect(fieldsArea).toBeVisible();
 
         // Should have servo-specific fields
-        const fieldLabels = await fieldsArea.locator('.form-label').allTextContents();
+        const fieldLabels = await fieldsArea.locator('.mb-field-label').allTextContents();
         const labels = fieldLabels.join(' ');
         expect(labels).toContain('Min Pulse');
         expect(labels).toContain('Max Pulse');
@@ -84,7 +84,7 @@ test.describe('Models Page', () => {
         await page.selectOption('#typeSelect', 'led');
         await page.waitForTimeout(300);
 
-        const ledLabels = await fieldsArea.locator('.form-label').allTextContents();
+        const ledLabels = await fieldsArea.locator('.mb-field-label').allTextContents();
         const ledText = ledLabels.join(' ');
         expect(ledText).toContain('Brightness');
         expect(ledText).toContain('PWM Frequency');
@@ -139,9 +139,15 @@ test.describe('Models Page', () => {
         await updatedRow.click();
         await page.waitForTimeout(200);
 
-        // Accept the confirm dialog
-        page.once('dialog', dialog => dialog.accept());
+        // Confirm in the design-system modal. This used to be a native
+        // confirm(); the modal replaced it so the operator can read the NAME
+        // of the model before agreeing to erase it.
         await page.click('#btnDeleteModel');
+        const confirmDialog = page.locator('[data-mb-confirm] .mb-modal-dialog');
+        await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+        expect(await confirmDialog.locator('[data-mb-confirm-target]').textContent())
+            .toContain('Playwright Updated LED');
+        await confirmDialog.locator('[data-mb-confirm-ok]').click();
         await page.waitForTimeout(500);
 
         // Should be gone
@@ -152,7 +158,7 @@ test.describe('Models Page', () => {
     });
 
     test('should have Back to Calibration link', async () => {
-        const backLink = page.locator('a.btn[href="/setup/calibration"]');
+        const backLink = page.locator('.mdl-toolbar a[href="/setup/calibration"]');
         await expect(backLink).toBeVisible();
         expect(await backLink.textContent()).toContain('Back to Calibration');
         await tracker.logErrors();
@@ -202,7 +208,7 @@ test.describe('Models Page', () => {
         await page.waitForTimeout(500);
 
         // Check that table rows have badge elements
-        const badges = page.locator('#modelsTable .badge');
+        const badges = page.locator('#modelsTable .mb-badge');
         const badgeCount = await badges.count();
         // Real servo models should have settings badges
         expect(badgeCount).toBeGreaterThan(0);
