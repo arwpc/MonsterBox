@@ -1,0 +1,43 @@
+{
+    "tool_id": "tool_6601m04v5wr6ft9sa1p88wmkxg67",
+    "tool_config": {
+        "type": "client",
+        "name": "gesture",
+        "description": "Perform a physical gesture with your animatronic body. Use at most one per reply, only when the moment calls for it. Never announce or narrate the gesture \u2014 the body speaks, the voice does not describe it.",
+        "response_timeout_secs": 20,
+        "disable_interruptions": false,
+        "interruption_mode": "allow",
+        "force_pre_tool_speech": false,
+        "pre_tool_speech": "off",
+        "assignments": [],
+        "tool_call_sound": null,
+        "tool_call_sound_behavior": "auto",
+        "tool_error_handling_mode": "auto",
+        "parameters": {
+            "description": "The gesture to perform.",
+            "dynamic_variable": "",
+            "is_omitted": false,
+            "type": "object",
+            "required": [
+                "gesture_id"
+            ],
+            "properties": {
+                "gesture_id": {
+                    "type": "string",
+                    "description": "The id of a gesture from this character's own gesture vocabulary, exactly as written in the '# Body' section of your instructions.",
+                    "enum": null,
+                    "is_system_provided": false,
+                    "dynamic_variable": "",
+                    "allowed_values_dynamic_variable": "",
+                    "constant_value": "",
+                    "is_omitted": false
+                }
+            }
+        },
+        "expects_response": false,
+        "dynamic_variables": {
+            "dynamic_variable_placeholders": {}
+        },
+        "execution_mode": "immediate"
+    }
+}
