@@ -82,6 +82,28 @@ for (const agent of agents) {
   md += `| ${agent} | ${ar.length} | ${cell('in_character')} | ${cell('pacing')} | ${cell('personalization')} | ${cell('return_hook')} | ${pct(dn, dd)} |\n`;
 }
 
+// Delight versus the shipped baseline — the regression gate.
+const BASE = JSON.parse(readFileSync(new URL('./baselines.json', import.meta.url), 'utf8'));
+md += `\n## Delight vs baseline (gate)\n\nBaseline: ${BASE.source}\n\n`;
+md += `| Agent | baseline n | baseline | this run n | this run | delta | verdict |\n|---|---|---|---|---|---|---|\n`;
+let gateFailed = [];
+for (const agent of agents) {
+  const b = BASE.agents[agent];
+  if (!b) continue;
+  const ar = good.filter(r => r.agent === agent);
+  const scored = ar.filter(r => r.evals?.[personaCriteria[r.persona]]);
+  const hit = scored.filter(r => r.evals[personaCriteria[r.persona]].result === 'success').length;
+  const now = scored.length ? Math.round((100 * hit) / scored.length) : null;
+  if (now === null) continue;
+  const delta = now - b.delight;
+  const verdict = delta >= 0 ? 'PASS' : 'BELOW BASELINE';
+  if (delta < 0) gateFailed.push(`${agent} ${now}% vs ${b.delight}%`);
+  md += `| ${agent} | ${b.n} | ${b.delight}% | ${scored.length} | ${now}% | ${delta >= 0 ? '+' : ''}${delta} | ${verdict} |\n`;
+}
+md += `\n${gateFailed.length ? `**GATE FAILED:** ${gateFailed.join('; ')}` : '**GATE PASSED** — no character below its baseline.'}\n`;
+for (const n of BASE.notes) md += `\n- ${n}`;
+md += `\n`;
+
 // Spoken-gesture leakage: a gesture must be a tool call, never words the guest hears.
 const leaks = scanGestureLeaks(good);
 md += `\n## Spoken-gesture leakage\n\n`;

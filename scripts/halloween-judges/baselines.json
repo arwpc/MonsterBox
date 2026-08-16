@@ -1,0 +1,20 @@
+{
+  "source": "docs/development/HALLOWEEN-TUNING-REPORT.md §3, main panel, 2026-08-15/16",
+  "gate": "delight must not fall below baseline",
+  "notes": [
+    "Pacing is deliberately absent: the first five agents' pacing percentages in the report were judged under the old sentence-count criterion and do not compare to the current ~50-word criterion.",
+    "Personalization baselines are known-depressed. The criterion used to score a visitor who refuses to give a name as a failure of the character; that was fixed in criteria.mjs, so current runs should read HIGHER than these numbers with no behaviour change behind it.",
+    "Baseline n varies wildly (25 to 125). A 25-conversation re-run carries roughly +/-8 points of sampling noise at these rates, so small moves in either direction are noise, not signal."
+  ],
+  "agents": {
+    "orlok": { "n": 25, "in_character": 100, "personalization": 72, "return_hook": 96, "delight": 80 },
+    "mina": { "n": 125, "in_character": 100, "personalization": 74, "return_hook": 85, "delight": 93 },
+    "dragomir": { "n": 124, "in_character": 100, "personalization": 50, "return_hook": 89, "delight": 89 },
+    "pumpkinhead": { "n": 125, "in_character": 100, "personalization": 47, "return_hook": 98, "delight": 91 },
+    "groundbreaker": { "n": 125, "in_character": 97, "personalization": 76, "return_hook": 100, "delight": 77 },
+    "renfield": { "n": 25, "in_character": 100, "personalization": 48, "return_hook": 100, "delight": 100 }
+  },
+  "fieldOnly": {
+    "groundbreaker_teen": "Groundbreaker vs skeptical 14-year-olds (56%) is UNMEASURABLE in text simulation - a dare to out-shout a ten-foot lit giant has no text equivalent. Do not churn simulations trying to move it; it gets a Halloween-night observation note only."
+  }
+}
