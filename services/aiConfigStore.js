@@ -95,13 +95,31 @@ export async function saveSTTConfig(cfg) {
 // speaking speed live in data/character-{id}/ai-config/tts-config.json, synced
 // from the committed agent snapshots in config/elevenlabs/agents/.
 //
-// This used to be a hardcoded per-character map, and it silently rotted: the
-// tuning session moved characters to new voices agent-side, the map lagged, and
-// characters ended up speaking in each other's voices on the say/scene path
-// while sounding correct in conversation. A character with no configured voice
-// now gets an obviously-wrong shared fallback and a warning, which surfaces the
-// misconfiguration instead of impersonating whoever the fallback belongs to.
-const GLOBAL_DEFAULT_VOICE = 'Tj9l48J9AJbry5yCP5eW';
+// There is deliberately NO default voice constant here any more. There used to
+// be one, described as a neutral shared fallback — but its value was one
+// specific cast member's voice_id. So every character that was missing a
+// voice_id silently spoke AS that character. That is the mechanism behind the
+// wrong-voice bug where several characters all came out sounding like the same
+// one: they had not been given a voice, and the "safe" fallback handed them
+// somebody else's identity, with nothing but a one-line warning to show for it.
+//
+// Silently wrong is the worst possible failure mode for voice identity — it
+// survived undetected across four characters. A missing voice is a data bug, and
+// it now fails loudly instead of impersonating a real cast member.
+
+/** Thrown when a character has been asked to speak but has no configured voice. */
+export class MissingVoiceConfigError extends Error {
+  constructor(characterId) {
+    super(
+      `No voice_id configured for character ${characterId}. Voice identity is data: set voice_id in ` +
+      `data/character-${characterId}/ai-config/tts-config.json from the agent snapshot in ` +
+      `config/elevenlabs/agents/. Refusing to speak in another character's voice.`
+    );
+    this.name = 'MissingVoiceConfigError';
+    this.code = 'NO_VOICE_CONFIGURED';
+    this.characterId = characterId;
+  }
+}
 
 // ElevenLabs accepts 0.7–1.2; anything outside is rejected for the whole request.
 function clampSpeed(value, fallback) {
@@ -109,28 +127,29 @@ function clampSpeed(value, fallback) {
   return Math.min(1.2, Math.max(0.7, value));
 }
 
-const warnedMissingVoice = new Set();
 function resolveVoiceId(parsedVoiceId, characterId) {
   if (parsedVoiceId && String(parsedVoiceId).trim()) return String(parsedVoiceId).trim();
-  // Warn once per character — this is a data bug, not a runtime condition, and
-  // logging it every utterance would hammer the SD card.
-  if (characterId && !warnedMissingVoice.has(characterId)) {
-    warnedMissingVoice.add(characterId);
-    console.warn(
-      `⚠️  Character ${characterId} has no voice_id in ai-config/tts-config.json — ` +
-      `falling back to the shared default voice. It will NOT sound like itself. ` +
-      `Set voice_id from the agent snapshot in config/elevenlabs/agents/.`
-    );
-  }
-  return GLOBAL_DEFAULT_VOICE;
+  throw new MissingVoiceConfigError(characterId);
 }
 
+/**
+ * TTS config for the CURRENTLY SELECTED character.
+ *
+ * Despite the name this is not a neutral global: it reads config.dataPath, which
+ * is data/character-{selected}. It is therefore only safe for callers that mean
+ * "the current character" — never as a fallback for some OTHER named character,
+ * which would hand that character the selected character's voice.
+ *
+ * Deliberately non-throwing: it backs the AI-settings GET endpoint, which must
+ * render even when no voice is chosen yet. When none is configured `voice_id` is
+ * null — explicitly absent rather than quietly borrowed. The retry-fallback
+ * callers already guard on `voice_id` being truthy, so null means "no fallback
+ * available" instead of "retry in somebody else's voice".
+ */
 export async function getTTSConfig() {
   const d = await readJson('tts-config.json');
-  // The global config is the last resort; per-character config is the real
-  // source of voice identity (see getTTSConfigForCharacter).
   const base = {
-    voice_id: GLOBAL_DEFAULT_VOICE,
+    voice_id: null,
     model: 'eleven_v3',
     stability: 0.5,
     similarity_boost: 0.5,
@@ -156,8 +175,15 @@ export async function saveTTSConfig(cfg) {
 }
 
 /**
- * Get TTS config for a specific character
- * Tries data/character-{id}/ai-config/tts-config.json first, falls back to global
+ * Get TTS config for a specific character.
+ *
+ * Reads data/character-{id}/ai-config/tts-config.json. If a character was named
+ * but no voice_id can be resolved for it, this THROWS MissingVoiceConfigError
+ * rather than returning a borrowed voice — see the note above the error class.
+ *
+ * The character-less call (no characterId) is the one explicit exception: it
+ * returns the global config, whose voice_id may be null. That path is for
+ * callers that have no character to impersonate in the first place.
  */
 export async function getTTSConfigForCharacter(characterId) {
   if (!characterId) {
@@ -189,8 +215,19 @@ export async function getTTSConfigForCharacter(characterId) {
       use_speaker_boost: typeof parsed.use_speaker_boost === 'boolean' ? parsed.use_speaker_boost : true,
     };
   } catch (e) {
-    // Fall back to global config if character-specific config doesn't exist
-    return getTTSConfig();
+    // A character with a config file but no voice in it is a data bug, not a
+    // missing-file condition — let it out rather than swallowing it into a
+    // fallback, which is exactly how the wrong-voice bug stayed invisible.
+    if (e instanceof MissingVoiceConfigError) throw e;
+
+    // No per-character config on disk. This used to fall back to getTTSConfig(),
+    // which reads config.dataPath — i.e. the CURRENTLY SELECTED character's
+    // ai-config, not a neutral global one. So a character with no config of its
+    // own spoke in the voice of whichever character happened to be selected on
+    // that node. That is a second, independent impersonation path and it is why
+    // the wrong voice tracked "whoever the fallback belonged to". A named
+    // character's voice now comes from that character's own file or nowhere.
+    throw new MissingVoiceConfigError(characterId);
   }
 }
 

@@ -6,6 +6,46 @@ import { readConfig } from './configService.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const APP_ROOT = path.resolve(__dirname, '..');
+const DATA_ROOT = path.resolve(APP_ROOT, 'data');
+
+/**
+ * Resolve the on-disk data directory for a character id.
+ *
+ * This exists to make `deleteCharacter` safe. It is the ONLY place that turns an
+ * id into a path we are willing to recursively delete, and it refuses anything
+ * that is not literally `<repo>/data/character-<digits>`. A bad id must never be
+ * able to point the removal at `data/`, at the repo root, or at any path outside
+ * `data/` via traversal.
+ *
+ * Throws rather than returning null: a caller that is about to delete a tree
+ * should never get a "close enough" answer.
+ */
+export function resolveCharacterDataDir(id) {
+  if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) {
+    throw new Error(`Refusing to resolve a character data directory for a non-integer id: ${JSON.stringify(id)}`);
+  }
+
+  const dirName = `character-${id}`;
+  // Belt and braces: an integer can't produce a separator or a dot segment, but
+  // assert the shape anyway so a future change to the id type can't sneak one in.
+  if (!/^character-[0-9]+$/.test(dirName)) {
+    throw new Error(`Refusing to resolve an unexpected character directory name: ${dirName}`);
+  }
+
+  const dir = path.resolve(DATA_ROOT, dirName);
+  // After resolution the directory must still be an immediate child of data/
+  // with exactly the name we built. Traversal or absolute-path injection changes
+  // one of these two facts.
+  if (path.dirname(dir) !== DATA_ROOT || path.basename(dir) !== dirName) {
+    throw new Error(`Refusing to touch a path outside data/: ${dir}`);
+  }
+  if (dir === DATA_ROOT || dir === APP_ROOT) {
+    throw new Error(`Refusing to touch ${dir}`);
+  }
+  return dir;
+}
+
 // Helper function to recursively copy directory contents
 async function copyDirectory(src, dest) {
   try {
@@ -117,14 +157,15 @@ export async function createCharacter(data) {
     newChar.elevenLabsAgentId = data.elevenLabsAgentId;
   }
 
-  // Create character data directory
-  const appRoot = path.resolve(__dirname, '..');
-  const characterDataDir = path.resolve(appRoot, 'data', `character-${newChar.id}`);
+  // Create character data directory. Resolved through the same helper that
+  // deleteCharacter uses, so create and delete can never disagree about which
+  // directory belongs to a character.
+  const characterDataDir = resolveCharacterDataDir(newChar.id);
   await fs.mkdir(characterDataDir, { recursive: true });
   await fs.mkdir(path.join(characterDataDir, 'ai-config'), { recursive: true });
 
   // Copy template files
-  const templateDir = path.resolve(appRoot, 'data', 'character-templates', 'default');
+  const templateDir = path.resolve(APP_ROOT, 'data', 'character-templates', 'default');
   await copyDirectory(templateDir, characterDataDir);
 
   // Update character-specific configuration files with correct character ID
@@ -172,6 +213,20 @@ export async function updateCharacter(id, updates) {
   return null;
 }
 
+/**
+ * Move a character's data directory into data/.deleted-characters/ instead of
+ * destroying it. Used when MB_PRESERVE_DELETED_CHARACTER_DATA is set. The rename
+ * stays on the same filesystem, so it costs no SD-card writes beyond the inode.
+ */
+async function archiveCharacterDataDir(dir, characterId) {
+  const archiveRoot = path.resolve(DATA_ROOT, '.deleted-characters');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dest = path.resolve(archiveRoot, `character-${characterId}-${stamp}`);
+  await fs.mkdir(archiveRoot, { recursive: true });
+  await fs.rename(dir, dest);
+  return dest;
+}
+
 export async function deleteCharacter(id) {
   const characters = await loadCharacters();
   var idx = -1;
@@ -179,8 +234,59 @@ export async function deleteCharacter(id) {
     if (characters[i].id === id) { idx = i; break; }
   }
   if (idx === -1) return false;
+
+  const removed = characters[idx];
+
+  // Resolve the directory BEFORE mutating the registry, and derive it from the
+  // REGISTRY entry's id rather than the caller's argument. The argument is
+  // attacker-adjacent (it comes off a route param); the registry id is data we
+  // wrote ourselves. If it does not resolve to a legitimate data/character-N
+  // path we change nothing at all rather than half-applying the delete.
+  let dataDir;
+  try {
+    dataDir = resolveCharacterDataDir(removed && removed.id);
+  } catch (err) {
+    console.error(
+      `❌ deleteCharacter(${JSON.stringify(id)}): ${err.message} — registry entry left in place, nothing deleted.`
+    );
+    return false;
+  }
+
+  // Registry first: characters.json is the source of truth, and an entry that
+  // points at a directory we failed to delete is far less harmful than a
+  // directory we deleted for a character that is still registered.
   characters.splice(idx, 1);
   await saveCharacters(characters);
+
+  // Then the data directory. Leaving it behind is the actual bug being fixed:
+  // the next character created reuses the id, adopts the stale poses/scenes/
+  // parts/ai-config, and looks like a phantom character on disk.
+  const preserve = String(process.env.MB_PRESERVE_DELETED_CHARACTER_DATA || '') === '1';
+  try {
+    if (preserve) {
+      const dest = await archiveCharacterDataDir(dataDir, removed.id);
+      console.warn(
+        `🗄️  deleteCharacter: character ${removed.id} ("${removed.name}") removed from the registry; ` +
+        `its show data was ARCHIVED to ${dest} (MB_PRESERVE_DELETED_CHARACTER_DATA=1).`
+      );
+    } else {
+      await fs.rm(dataDir, { recursive: true, force: true });
+      console.warn(
+        `🗑️  deleteCharacter: character ${removed.id} ("${removed.name}") removed from the registry and its ` +
+        `data directory PERMANENTLY DELETED: ${dataDir} (parts, poses, scenes, ai-config, super-powers). ` +
+        `Set MB_PRESERVE_DELETED_CHARACTER_DATA=1 to archive instead of delete.`
+      );
+    }
+  } catch (err) {
+    // Loud, and explicitly not silent: the registry change already landed, so the
+    // operator needs to know the disk is now out of step with it.
+    console.error(
+      `❌ deleteCharacter: character ${removed.id} ("${removed.name}") was removed from characters.json but its ` +
+      `data directory could NOT be removed: ${dataDir} — ${err.message}. Delete it by hand; otherwise the next ` +
+      `character allocated id ${removed.id} will silently inherit this data.`
+    );
+  }
+
   return true;
 }
 
