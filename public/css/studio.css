@@ -279,14 +279,9 @@
    without forking the components themselves.
    -------------------------------------------------------------------------- */
 
-/* A button group asked to fill its column stops being inline. */
-.mb-btn-group-fill {
-  display: flex;
-  width: 100%;
-}
-.mb-btn-group-fill .mb-btn {
-  flex: 1 1 0;
-  min-width: 0;
+/* .mb-btn-group-fill itself is defined in animation.css (loaded on every page).
+   The studio's left panel is narrow, so its fill groups get tighter padding. */
+.studio-panel .mb-btn-group-fill .mb-btn {
   padding-left: var(--mb-space-2);
   padding-right: var(--mb-space-2);
   font-size: var(--mb-text-sm);

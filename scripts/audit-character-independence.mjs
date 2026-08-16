@@ -45,6 +45,11 @@ const EXCLUDE_DIRS = new Set([
   '.scratch',
 ]);
 
+// Any dot-directory whose name starts with .tmp or .scratch is throwaway. Matching
+// a pattern rather than listing names avoids re-breaking the gate every time a
+// tool invents a new scratch directory.
+const EXCLUDE_DIR_PATTERN = /^\.(tmp|scratch)/;
+
 // Same reasoning for loose scratch files that tools drop in the repo root.
 const EXCLUDE_FILE_PATTERN = /(^|\/)(tmp-|mb-shot)[^/]*\.(mjs|cjs|js)$/;
 const EXCLUDE_FILES = new Set([
@@ -60,7 +65,7 @@ const EXCLUDE_FILES = new Set([
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (!EXCLUDE_DIRS.has(entry.name)) walk(path.join(dir, entry.name), out);
+      if (!EXCLUDE_DIRS.has(entry.name) && !EXCLUDE_DIR_PATTERN.test(entry.name)) walk(path.join(dir, entry.name), out);
       continue;
     }
     const rel = path.relative(REPO_ROOT, path.join(dir, entry.name));

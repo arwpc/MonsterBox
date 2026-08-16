@@ -182,7 +182,22 @@ async function getServiceLogs(service, lines, since) {
 
     try {
         var result = await execFileAsync('journalctl', args, { timeout: 10000, maxBuffer: 1024 * 1024 });
-        return result.stdout || '';
+        var out = result.stdout || '';
+
+        // monsterbox.service redirects StandardOutput/StandardError to
+        // /var/log/monsterbox.{log,err}, so journald holds only systemd lifecycle
+        // lines for it — start, stop, "Consumed 31s CPU time". The application's
+        // own output, including every safety refusal and every hardware error, was
+        // therefore invisible in the in-app log viewer. Merge the real files in.
+        if (svc === 'monsterbox') {
+            var appLog = await getConsoleOutput(n, 'both').catch(function () { return ''; });
+            if (appLog && appLog.trim()) {
+                out = out.trimEnd()
+                    + '\n\n──── application output (/var/log/monsterbox.log, .err) ────\n'
+                    + appLog;
+            }
+        }
+        return out;
     } catch (err) {
         return err.stdout || err.message || 'Failed to retrieve logs';
     }
@@ -486,19 +501,30 @@ async function getConsoleOutput(lines, source) {
     var n = parseInt(lines, 10) || 100;
     if (n > 2000) n = 2000;
 
-    var logFile = (source === 'stderr')
-        ? '/var/log/monsterbox.err'
-        : '/var/log/monsterbox.log';
+    // 'both' previously fell through to stdout only, which quietly hid the entire
+    // error stream — including every hardware safety refusal, which is written with
+    // console.warn and therefore lands in .err. An operator asking "why did nothing
+    // move?" was shown a log that could not contain the answer.
+    var files = (source === 'stderr') ? ['/var/log/monsterbox.err']
+        : (source === 'stdout') ? ['/var/log/monsterbox.log']
+        : ['/var/log/monsterbox.log', '/var/log/monsterbox.err'];
 
-    try {
-        var result = await execAsync(
-            'tail -n ' + n + ' ' + logFile,
-            { timeout: 10000, maxBuffer: 2 * 1024 * 1024 }
-        );
-        return result.stdout || '';
-    } catch (err) {
-        return err.stdout || err.message || 'Failed to read console output';
+    var parts = [];
+    for (var i = 0; i < files.length; i++) {
+        try {
+            // execFile with an argv array — no shell, so the filename cannot be
+            // reinterpreted even though these paths are internal constants.
+            var result = await execFileAsync('tail', ['-n', String(n), files[i]],
+                { timeout: 10000, maxBuffer: 2 * 1024 * 1024 });
+            var text = result.stdout || '';
+            if (text.trim()) {
+                parts.push(files.length > 1 ? ('──── ' + files[i] + ' ────\n' + text) : text);
+            }
+        } catch (err) {
+            parts.push('(could not read ' + files[i] + ': ' + (err.message || 'unknown') + ')');
+        }
     }
+    return parts.join('\n');
 }
 
 // ─── RPi Performance Presets ───────────────────────────────────────────────────

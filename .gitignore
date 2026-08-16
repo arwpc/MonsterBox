@@ -105,3 +105,5 @@ mb-shot.mjs
 
 # Agent preview scratch (served from public/, never shipped)
 public/__preview_*.html
+.tmp*/
+.scratch/

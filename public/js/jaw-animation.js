@@ -518,11 +518,11 @@
     stopPlayback();
     showToast('Emergency stop activated', 'warning');
     if (el.emergencyStopBtn) {
-      el.emergencyStopBtn.classList.add('btn-danger');
-      el.emergencyStopBtn.classList.remove('btn-outline-danger');
+      el.emergencyStopBtn.classList.add('mb-btn-danger');
+      el.emergencyStopBtn.classList.remove('mb-btn-secondary');
       setTimeout(function() {
-        el.emergencyStopBtn.classList.remove('btn-danger');
-        el.emergencyStopBtn.classList.add('btn-outline-danger');
+        el.emergencyStopBtn.classList.remove('mb-btn-danger');
+        el.emergencyStopBtn.classList.add('mb-btn-secondary');
       }, 2000);
     }
   }
@@ -930,25 +930,71 @@
       if (configsList[i].id === selectedId) { selectedName = configsList[i].name; break; }
     }
 
-    if (!confirm('Delete config "' + selectedName + '"? This cannot be undone.')) return;
-
-    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + selectedId, {
-      method: 'DELETE'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        configsList = configsList.filter(function(c) { return c.id !== selectedId; });
-        populateConfigSelector();
-        showToast('Deleted "' + selectedName + '"', 'success');
-      } else {
-        showToast('Delete failed: ' + (data.error || 'Unknown'), 'error');
+    // A native confirm() cannot say WHICH config is about to go, cannot be
+    // styled, and on a phone it lands as an OS sheet with no context at all.
+    confirmDestructive(
+      'Delete config',
+      'Delete "' + selectedName + '"? This cannot be undone.',
+      function () {
+        fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/configs/' + selectedId, {
+          method: 'DELETE'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            configsList = configsList.filter(function(c) { return c.id !== selectedId; });
+            populateConfigSelector();
+            showToast('Deleted "' + selectedName + '"', 'success');
+          } else {
+            showToast('Delete failed: ' + (data.error || 'Unknown'), 'error');
+          }
+        })
+        .catch(function(err) {
+          console.error('Delete error:', err);
+          showToast('Failed to delete config', 'error');
+        });
       }
-    })
-    .catch(function(err) {
-      console.error('Delete error:', err);
-      showToast('Failed to delete config', 'error');
-    });
+    );
+  }
+
+  /**
+   * Named, styled confirmation for a destructive action.
+   * Falls back to the browser's confirm() only if the dialog markup is absent,
+   * so behaviour degrades rather than silently deleting.
+   */
+  function confirmDestructive(title, body, onConfirm) {
+    var modal  = document.getElementById('jawConfirmModal');
+    var okBtn  = document.getElementById('jawConfirmOk');
+    var noBtn  = document.getElementById('jawConfirmCancel');
+    var backdrop = document.getElementById('jawConfirmBackdrop');
+    var titleEl = document.getElementById('jawConfirmTitle');
+    var bodyEl  = document.getElementById('jawConfirmBody');
+
+    if (!modal || !okBtn || !noBtn) {
+      if (window.confirm(body)) onConfirm();
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.textContent = body;
+
+    function close() {
+      modal.classList.add('jaw-hidden');
+      okBtn.removeEventListener('click', accept);
+      noBtn.removeEventListener('click', close);
+      if (backdrop) backdrop.removeEventListener('click', close);
+      document.removeEventListener('keydown', onKey);
+    }
+    function accept() { close(); onConfirm(); }
+    function onKey(evt) { if (evt.key === 'Escape') close(); }
+
+    okBtn.addEventListener('click', accept);
+    noBtn.addEventListener('click', close);
+    if (backdrop) backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+
+    modal.classList.remove('jaw-hidden');
+    okBtn.focus();
   }
 
   // ─── Toast Notifications ──────────────────────────────────────────
