@@ -1,0 +1,30 @@
+/* ==========================================================================
+   Character Images — /setup/characters/images
+   --------------------------------------------------------------------------
+   Page-scoped layout for the image tiles. Colours, spacing and controls all
+   come from the shared design system; only the tile size is specific here.
+   ========================================================================== */
+
+.mb-image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-3);
+}
+
+.mb-image-tile {
+  width: 12rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mb-image-tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mb-image-tile-actions {
+  display: flex;
+  gap: var(--mb-space-2);
+  padding: var(--mb-space-2);
+}

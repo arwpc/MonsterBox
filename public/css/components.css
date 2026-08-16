@@ -144,6 +144,84 @@
 }
 .mb-btn-link:hover { background: transparent; color: var(--mb-fg-primary); }
 
+/* Semantic solids. These exist so a template never has to fall back to
+   `btn btn-info` / `btn btn-warning` to say "this control is informational" or
+   "this one is loud" — the meaning survives a theme change. */
+.mb-btn-success {
+  --_bg: var(--mb-success);
+  --_fg: var(--mb-fg-on-accent);
+  --_border: var(--mb-success);
+  --_hover-bg: color-mix(in srgb, var(--mb-success) 80%, black);
+  --_active-bg: color-mix(in srgb, var(--mb-success) 80%, black);
+}
+.mb-btn-info {
+  --_bg: var(--mb-info);
+  --_fg: var(--mb-fg-on-accent);
+  --_border: var(--mb-info);
+  --_hover-bg: color-mix(in srgb, var(--mb-info) 80%, black);
+  --_active-bg: color-mix(in srgb, var(--mb-info) 80%, black);
+}
+.mb-btn-warning {
+  --_bg: var(--mb-warning);
+  --_fg: var(--mb-fg-on-accent);
+  --_border: var(--mb-warning);
+  --_hover-bg: color-mix(in srgb, var(--mb-warning) 80%, black);
+  --_active-bg: color-mix(in srgb, var(--mb-warning) 80%, black);
+}
+
+/* Outline variants — the replacement for Bootstrap's .btn-outline-*. A tinted
+   fill on hover rather than a solid flip, so a row of them stays readable. */
+.mb-btn-outline-primary {
+  --_bg: transparent;
+  --_fg: var(--mb-primary);
+  --_border: var(--mb-primary);
+  --_hover-bg: color-mix(in srgb, var(--mb-primary) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-primary) 28%, transparent);
+}
+.mb-btn-outline-success {
+  --_bg: transparent;
+  --_fg: var(--mb-success);
+  --_border: var(--mb-success);
+  --_hover-bg: color-mix(in srgb, var(--mb-success) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-success) 28%, transparent);
+}
+.mb-btn-outline-danger {
+  --_bg: transparent;
+  --_fg: var(--mb-danger);
+  --_border: var(--mb-danger);
+  --_hover-bg: color-mix(in srgb, var(--mb-danger) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-danger) 28%, transparent);
+}
+.mb-btn-outline-warning {
+  --_bg: transparent;
+  --_fg: var(--mb-warning);
+  --_border: var(--mb-warning);
+  --_hover-bg: color-mix(in srgb, var(--mb-warning) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-warning) 28%, transparent);
+}
+.mb-btn-outline-info {
+  --_bg: transparent;
+  --_fg: var(--mb-info);
+  --_border: var(--mb-info);
+  --_hover-bg: color-mix(in srgb, var(--mb-info) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-info) 28%, transparent);
+}
+.mb-btn-outline-ai {
+  --_bg: transparent;
+  --_fg: var(--mb-ai);
+  --_border: var(--mb-ai);
+  --_hover-bg: color-mix(in srgb, var(--mb-ai) 18%, transparent);
+  --_active-bg: color-mix(in srgb, var(--mb-ai) 28%, transparent);
+}
+/* Outline buttons keep their accent colour on hover instead of inheriting
+   .mb-btn:hover's neutral border. */
+.mb-btn-outline-primary:hover,
+.mb-btn-outline-success:hover,
+.mb-btn-outline-danger:hover,
+.mb-btn-outline-warning:hover,
+.mb-btn-outline-info:hover,
+.mb-btn-outline-ai:hover { border-color: var(--_border); }
+
 .mb-btn-sm { padding: var(--mb-space-1) var(--mb-space-3); min-height: 32px; font-size: var(--mb-text-sm); }
 .mb-btn-lg { padding: var(--mb-space-3) var(--mb-space-6); min-height: 52px; font-size: var(--mb-text-lg); }
 .mb-btn-block { width: 100%; }
@@ -250,6 +328,20 @@
 
 .mb-input-mono { font-family: var(--mb-font-mono); font-size: var(--mb-text-lg); }
 .mb-textarea { min-height: 96px; resize: vertical; }
+
+/* Compact controls for toolbars and inline filters. Still 32px tall, which is
+   the smallest thing that stays reliably tappable. */
+.mb-input-sm,
+.mb-select-sm,
+.mb-textarea-sm {
+  min-height: 32px;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  font-size: var(--mb-text-sm);
+}
+.mb-select-sm { padding-right: var(--mb-space-7); background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%; }
+/* Inline controls that should size to their content rather than fill the row. */
+.mb-input-auto,
+.mb-select-auto { display: inline-block; width: auto; }
 
 .mb-select {
   appearance: none;
@@ -738,6 +830,9 @@
   overflow: hidden;
 }
 .mb-meter-fill {
+  /* Meters start empty. Without this a fill whose width is only ever set by JS
+     paints full for the first frame, which reads as a pegged VU meter. */
+  width: 0;
   height: 100%;
   background: linear-gradient(90deg, var(--mb-success), var(--mb-warning) 75%, var(--mb-danger));
   border-radius: var(--mb-radius-pill);
@@ -775,6 +870,59 @@
 .mb-row     { display: flex; flex-wrap: wrap; gap: var(--mb-space-3); }
 .mb-row-sm  { display: flex; flex-wrap: wrap; gap: var(--mb-space-2); }
 .mb-row-between { display: flex; justify-content: space-between; align-items: center; gap: var(--mb-space-3); }
+.mb-row-center  { align-items: center; }   /* modifier for .mb-row / .mb-row-sm */
+.mb-row-end     { justify-content: flex-end; }
+.mb-row-wrap    { flex-wrap: wrap; }
+
+/* Grids. The two-column forms collapse on a phone — the operator uses these
+   pages one-handed next to an animatronic, and two 180px columns are unusable. */
+.mb-grid       { display: grid; gap: var(--mb-space-4); }
+.mb-grid-2     { grid-template-columns: 1fr 1fr; }
+.mb-grid-3     { grid-template-columns: repeat(3, 1fr); }
+.mb-grid-auto  { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.mb-grid-auto-sm { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.mb-grid-gap-5 { gap: var(--mb-space-5); }
+@media (max-width: 720px) {
+  .mb-grid-2, .mb-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   Spacing utilities — token-backed
+   --------------------------------------------------------------------------
+   These exist so a template never has to reach for style="margin-top: …".
+   An inline style cannot be re-themed or re-scaled; these follow the space
+   scale in tokens.css, so a density change lands everywhere at once.
+   Named mb-mt-* / mb-mb-* to avoid colliding with Bootstrap's own mt-*/mb-*.
+   ========================================================================== */
+.mb-mt-0 { margin-top: 0; }
+.mb-mt-1 { margin-top: var(--mb-space-1); }
+.mb-mt-2 { margin-top: var(--mb-space-2); }
+.mb-mt-3 { margin-top: var(--mb-space-3); }
+.mb-mt-4 { margin-top: var(--mb-space-4); }
+.mb-mt-5 { margin-top: var(--mb-space-5); }
+.mb-mt-6 { margin-top: var(--mb-space-6); }
+
+.mb-mb-0 { margin-bottom: 0; }
+.mb-mb-1 { margin-bottom: var(--mb-space-1); }
+.mb-mb-2 { margin-bottom: var(--mb-space-2); }
+.mb-mb-3 { margin-bottom: var(--mb-space-3); }
+.mb-mb-4 { margin-bottom: var(--mb-space-4); }
+.mb-mb-5 { margin-bottom: var(--mb-space-5); }
+.mb-mb-6 { margin-bottom: var(--mb-space-6); }
+.mb-mb-7 { margin-bottom: var(--mb-space-7); }
+.mb-mb-8 { margin-bottom: var(--mb-space-8); }
+
+.mb-p-4 { padding: var(--mb-space-4); }
+.mb-p-5 { padding: var(--mb-space-5); }
+.mb-p-6 { padding: var(--mb-space-6); }
+
+.mb-text-center { text-align: center; }
+.mb-text-right  { text-align: right; }
+.mb-w-full   { width: 100%; }
+.mb-flex-1   { flex: 1 1 auto; min-width: 0; }
+.mb-measure  { max-width: 70ch; }
+.mb-center   { margin-left: auto; margin-right: auto; }
+.mb-hidden   { display: none !important; }
 
 /* ==========================================================================
    Responsive tweaks (mobile = phone width is a hard target)

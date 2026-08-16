@@ -960,8 +960,8 @@
 
   /**
    * Named, styled confirmation for a destructive action.
-   * Falls back to the browser's confirm() only if the dialog markup is absent,
-   * so behaviour degrades rather than silently deleting.
+   * Falls back to the browser's native confirm dialog only if the styled
+   * markup is absent, so behaviour degrades rather than silently deleting.
    */
   function confirmDestructive(title, body, onConfirm) {
     var modal  = document.getElementById('jawConfirmModal');

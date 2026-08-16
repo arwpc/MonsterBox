@@ -136,6 +136,10 @@ var __mbShowControlBar = (typeof includeControlBar === 'undefined')
                                     <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 
                                     <!-- Core MonsterBox JS -->
+                                    <!-- Canonical toast + destructive-confirm helpers. Loaded before page
+                                         scripts so any page can call window.mbToast / window.mbConfirm
+                                         instead of a native dialog. -->
+                                    <script src="/js/mb-dialogs.js"></script>
                                     <script src="/js/monsterbox4.js"></script>
                                     <script src="/js/character-menu.js"></script>
                                     <% if (__mbShowControlBar) { %>

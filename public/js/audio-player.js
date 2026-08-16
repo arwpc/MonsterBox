@@ -475,7 +475,7 @@ class AdvancedAudioPlayer {
         const currentTime = this.wavesurfer.getCurrentTime();
         this.trimStart = currentTime;
         this.updateSelectionInfo();
-        alert(`Trim start set to ${this.formatDuration(currentTime)}`);
+        this.notify('Trim start set to ' + this.formatDuration(currentTime), 'info');
     }
 
     setTrimEnd() {
@@ -483,7 +483,7 @@ class AdvancedAudioPlayer {
         const currentTime = this.wavesurfer.getCurrentTime();
         this.trimEnd = currentTime;
         this.updateSelectionInfo();
-        alert(`Trim end set to ${this.formatDuration(currentTime)}`);
+        this.notify('Trim end set to ' + this.formatDuration(currentTime), 'info');
     }
 
     previewTrim() {
@@ -505,11 +505,11 @@ class AdvancedAudioPlayer {
     }
 
     applyFadeIn() {
-        alert('Fade in effect would be applied here (advanced feature)');
+        this.notify('Fade in is not implemented yet.', 'warning');
     }
 
     applyFadeOut() {
-        alert('Fade out effect would be applied here (advanced feature)');
+        this.notify('Fade out is not implemented yet.', 'warning');
     }
 
     updateSelectionInfo() {
@@ -567,12 +567,22 @@ class AdvancedAudioPlayer {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
+    /**
+     * Feedback goes to a toast, not a native dialog: a modal that must be
+     * dismissed is exactly the wrong thing to hand an operator who is mid-edit
+     * on a phone. Falls back to the console if the shared helper is absent.
+     */
+    notify(message, severity) {
+        if (window.mbToast) { window.mbToast(message, severity || 'info'); return; }
+        console.log('[audio-player] ' + (severity || 'info') + ': ' + message);
+    }
+
     showSuccess(message) {
-        alert('✅ ' + message);
+        this.notify(message, 'success');
     }
 
     showError(message) {
-        alert('❌ ' + message);
+        this.notify(message, 'danger');
     }
 
     destroy() {

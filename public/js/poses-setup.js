@@ -360,10 +360,16 @@ class PosesSetup {
         const pose = this.poses.find(p => p.id === poseId);
         if (!pose) return;
 
-        // Use a simple confirm dialog instead of modal to avoid focus issues
-        if (!confirm(`Are you sure you want to test the pose "${pose.name}"? Make sure the animatronic is in a safe position.`)) {
-            return;
-        }
+        // Styled confirmation. This one moves real hardware, so it must name the
+        // pose and it must still be an explicit, deliberate confirmation.
+        const proceed = window.mbConfirm
+            ? await window.mbConfirm({
+                title: 'Test this pose?',
+                detail: 'The animatronic will move to "' + pose.name + '". Make sure it is clear and in a safe position.',
+                confirmLabel: 'Move animatronic'
+            })
+            : window.confirm('Test the pose "' + pose.name + '"? Make sure the animatronic is in a safe position.');
+        if (!proceed) return;
 
         try {
             const poseCard = document.querySelector(`[data-pose-id="${poseId}"]`);

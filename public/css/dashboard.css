@@ -397,3 +397,58 @@
   .mb-scene-row-actions { gap: var(--mb-space-6); }
   .mb-scene-row-actions .scene-del-btn { width: 44px; height: 44px; min-height: 44px; }
 }
+
+/* ==========================================================================
+   Design-system migration (v9.2.0)
+   --------------------------------------------------------------------------
+   Rules lifted out of style="" attributes in views/conversation/index.ejs.
+   An inline style cannot be re-themed and cannot be overridden by a media
+   query, which is how the body map ended up ignoring its own phone breakpoint.
+   Everything below is token-backed.
+   ========================================================================== */
+
+/* Chat panel — speaker picker sits in the panel header, so it has to stay
+   narrow and short without shrinking its hit target below the header height. */
+.mb-chat-speaker-select {
+  max-width: 130px;
+  min-height: 28px;
+  padding: 2px var(--mb-space-2);
+  font-size: var(--mb-text-xs);
+}
+
+/* Ask AI / Say This toggle. Fixed width so the input beside it does not jump
+   when the label changes length. */
+.mb-chat-mode-toggle { min-width: 92px; }
+
+/* Scrolling lists inside the accordion panels. */
+.mb-dash-scroll-scenes { max-height: 350px; overflow-y: auto; }
+.mb-dash-scroll-poses  { max-height: 300px; overflow-y: auto; }
+
+/* Live console. Colours come from the terminal tokens in monsterbox4.css so
+   the console re-themes with everything else. */
+.mb-console-output {
+  height: 250px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--mb-space-2);
+  font-size: var(--mb-text-xs);
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--mb-terminal-bg);
+  color: var(--mb-terminal-text);
+  resize: vertical;
+}
+
+/* Console toolbar — line-count picker sizes to its content. */
+.mb-console-lines { width: auto; }
+
+/* Browser Audio Bridge — a dense two-column panel, so its controls and status
+   pills run a step smaller than the base scale. */
+.mb-bridge-control { font-size: var(--mb-text-xs); }
+.mb-bridge-status  { font-size: 0.6rem; }
+.mb-bridge-status-min { min-width: 28px; }
+.mb-bridge-label { min-width: 28px; }
+.mb-bridge-btn { font-size: 0.7rem; }
+.mb-bridge-warn { font-size: 0.7rem; }
+.mb-bridge-volume { height: 16px; }
+.mb-bridge-meter { height: 8px; }

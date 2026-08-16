@@ -15,7 +15,8 @@
    ========================================================================== */
 
 /* -- Shared toast + destructive-confirm helpers ---------------------------
-   Native alert()/confirm() cannot be styled, are unusable one-handed on a phone,
+   Native alert and confirm dialogs cannot be styled, are unusable one-handed on
+   a phone,
    and — the part that matters for a destructive action — cannot show WHAT is
    about to be destroyed. On show night a modal you must read and dismiss also
    arrives at exactly the wrong moment, so plain feedback goes to a toast and only
@@ -1093,14 +1094,12 @@
       if (meter) {
         meter.style.width = level + '%';
         meter.setAttribute('aria-valuenow', level);
-        if (level > 70) meter.className = 'progress-bar bg-danger';
-        else if (level > 40) meter.className = 'progress-bar bg-warning';
-        else meter.className = 'progress-bar bg-success';
+        meter.className = 'mb-meter-fill';
       }
       if (label) label.textContent = level + '%';
       if (chatVUTimer) clearTimeout(chatVUTimer);
       chatVUTimer = setTimeout(() => {
-        if (meter) { meter.style.width = '0%'; meter.setAttribute('aria-valuenow', 0); meter.className = 'progress-bar bg-success'; }
+        if (meter) { meter.style.width = '0%'; meter.setAttribute('aria-valuenow', 0); meter.className = 'mb-meter-fill'; }
         if (label) label.textContent = '0%';
       }, 800);
     }
@@ -1295,19 +1294,20 @@
     function updateHeadTrackBadge(state) {
       const badge = document.getElementById('headTrackStatusBadge');
       if (!badge) return;
+      // Design-system badge classes, and hiding via d-none only — the template
+      // used to carry an inline display:none that these class changes could
+      // never undo, so the badge was permanently invisible.
       if (!state || !state.enabled) {
-        badge.classList.add('d-none');
         badge.textContent = 'Off';
-        badge.className = 'badge bg-secondary ms-2 d-none';
+        badge.className = 'mb-badge d-none';
         return;
       }
-      badge.classList.remove('d-none');
       if (state.hasTarget) {
         badge.textContent = 'Active';
-        badge.className = 'badge bg-success ms-2';
+        badge.className = 'mb-badge mb-badge-success';
       } else {
         badge.textContent = 'Searching';
-        badge.className = 'badge bg-warning text-dark ms-2';
+        badge.className = 'mb-badge mb-badge-warning';
       }
     }
 
@@ -1754,18 +1754,24 @@
       }
     }
 
+    // Visibility is carried by the .mb-hidden class rather than an inline
+    // display, so the markup stays free of style="" and the opbar mirror below
+    // can observe a class change instead of parsing a style attribute.
     function updateLoopUI() {
-      const loopBtn = $('btnLoopAll');
-      const stopBtn = $('btnStopLoop');
-      const statusBadge = $('scenesQueueStatus');
+      var loopBtn = $('btnLoopAll');
+      var stopBtn = $('btnStopLoop');
+      var statusBadge = $('scenesQueueStatus');
       if (sceneLoopActive) {
-        if (loopBtn) loopBtn.style.display = 'none';
-        if (stopBtn) stopBtn.style.display = '';
-        if (statusBadge) { statusBadge.style.display = ''; statusBadge.textContent = 'Looping'; statusBadge.className = 'badge bg-success small me-1'; }
+        if (loopBtn) loopBtn.classList.add('mb-hidden');
+        if (stopBtn) stopBtn.classList.remove('mb-hidden');
+        if (statusBadge) {
+          statusBadge.textContent = 'Looping';
+          statusBadge.className = 'mb-badge mb-badge-success ms-2';
+        }
       } else {
-        if (loopBtn) loopBtn.style.display = '';
-        if (stopBtn) stopBtn.style.display = 'none';
-        if (statusBadge) statusBadge.style.display = 'none';
+        if (loopBtn) loopBtn.classList.remove('mb-hidden');
+        if (stopBtn) stopBtn.classList.add('mb-hidden');
+        if (statusBadge) statusBadge.className = 'mb-badge ms-2 mb-hidden';
       }
     }
 
@@ -1974,7 +1980,7 @@
     const toggleText = document.getElementById('bridge-listenin-text');
     const btn = document.getElementById('btn-bridge-listenin');
 
-    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'badge bg-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'mb-badge mb-badge-warning mb-bridge-status'; }
     if (toggleText) toggleText.textContent = 'Connecting...';
     if (btn) btn.disabled = true;
 
@@ -1989,15 +1995,15 @@
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'started') {
-          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'badge bg-success'; }
+          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'mb-badge mb-badge-success mb-bridge-status'; }
           if (toggleText) toggleText.textContent = 'Stop';
-          if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
+          if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-outline-danger mb-btn-sm mb-bridge-btn'; }
         } else if (msg.type === 'audio') {
           playListenInChunk(msg.audio);
         } else if (msg.type === 'error') {
           console.error('Listen In error:', msg.error);
           const statusEl = document.getElementById('bridge-listenin-status');
-          if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'badge bg-danger'; }
+          if (statusEl) { statusEl.textContent = 'Error'; statusEl.className = 'mb-badge mb-badge-danger mb-bridge-status'; }
           stopListenIn();
         } else if (msg.type === 'ended') {
           stopListenIn();
@@ -2081,9 +2087,9 @@
     const btn = document.getElementById('btn-bridge-listenin');
     const vuBar = document.getElementById('bridge-listenin-vu');
     const vuLabel = document.getElementById('bridge-listenin-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge mb-bridge-status'; }
     if (toggleText) toggleText.textContent = 'Start';
-    if (btn) { btn.disabled = false; btn.className = 'btn btn-info btn-sm'; btn.style.fontSize = '0.75rem'; }
+    if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-info mb-btn-sm mb-bridge-btn'; }
     if (vuBar) vuBar.style.width = '0%';
     if (vuLabel) vuLabel.textContent = '0%';
   }
@@ -2103,7 +2109,7 @@
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
 
-    if (statusBadge) { statusBadge.textContent = 'Requesting...'; statusBadge.className = 'badge bg-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Requesting...'; statusBadge.className = 'mb-badge mb-badge-warning mb-bridge-status'; }
     if (toggleText) toggleText.textContent = 'Requesting...';
     if (btn) btn.disabled = true;
 
@@ -2153,14 +2159,14 @@
       ttProc.connect(ttCtx.destination);
       ttActive = true;
 
-      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'badge bg-success'; }
+      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'mb-badge mb-badge-success mb-bridge-status'; }
       if (toggleText) toggleText.textContent = 'Stop';
-      if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; btn.style.fontSize = '0.75rem'; }
+      if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-outline-danger mb-btn-sm mb-bridge-btn'; }
     }).catch(err => {
       console.error('Talk Through mic error:', err);
-      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
+      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'mb-badge mb-badge-danger mb-bridge-status'; }
       if (toggleText) toggleText.textContent = 'Start';
-      if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; btn.style.fontSize = '0.75rem'; }
+      if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-warning mb-btn-sm mb-bridge-btn'; }
     });
   }
 
@@ -2179,9 +2185,9 @@
     const btn = document.getElementById('btn-bridge-talkthrough');
     const vuBar = document.getElementById('bridge-talkthrough-vu');
     const vuLabel = document.getElementById('bridge-talkthrough-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge mb-bridge-status'; }
     if (toggleText) toggleText.textContent = 'Start';
-    if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; btn.style.fontSize = '0.75rem'; }
+    if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-warning mb-btn-sm mb-bridge-btn'; }
     if (vuBar) vuBar.style.width = '0%';
     if (vuLabel) vuLabel.textContent = '0%';
   }
@@ -2235,8 +2241,11 @@
   var opbarStop = $('opbarStopLoop');
   if (accordionStop && opbarStop) {
     var sync = function () {
-      var hidden = accordionStop.style.display === 'none' || accordionStop.hasAttribute('hidden');
-      opbarStop.style.display = hidden ? 'none' : '';
+      var hidden = accordionStop.classList.contains('mb-hidden') ||
+                   accordionStop.style.display === 'none' ||
+                   accordionStop.hasAttribute('hidden');
+      if (hidden) opbarStop.classList.add('mb-hidden');
+      else opbarStop.classList.remove('mb-hidden');
     };
     new MutationObserver(sync).observe(accordionStop, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
     sync();
@@ -2328,7 +2337,8 @@
 
     // Stop all audio + scene loop via their existing buttons.
     var stopAudio = $('stopAllAudioBtn'); if (stopAudio) stopAudio.click();
-    var stopLoop  = $('btnStopLoop');     if (stopLoop && stopLoop.style.display !== 'none') stopLoop.click();
+    var stopLoop  = $('btnStopLoop');
+    if (stopLoop && !stopLoop.classList.contains('mb-hidden') && stopLoop.style.display !== 'none') stopLoop.click();
 
     // Best-effort: also hit the orchestration stop endpoint if available.
     try {

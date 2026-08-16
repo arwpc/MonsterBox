@@ -1,0 +1,36 @@
+/* ==========================================================================
+   Style Guide page — /setup/style-guide
+   --------------------------------------------------------------------------
+   Page-scoped rules for the design-system reference page. These are the
+   handful of values that are genuinely specific to this page (the demo meter
+   fills, the skeleton widths, the modal shown inline rather than over a
+   backdrop) and so do not belong in components.css.
+
+   Everything else on the page uses the shared .mb-* components and the
+   token-backed spacing utilities. Nothing here hard-codes a colour — the whole
+   point of the page is that it re-themes with the rest of the app.
+   ========================================================================== */
+
+.sg-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--mb-space-6) var(--mb-space-4);
+}
+
+/* Demo meter fills. Real meters are driven by JS setting the width; these are
+   static samples, so they get classes rather than a value baked into markup. */
+.sg-meter-fill-62 { width: 62%; }
+.sg-meter-fill-34 { width: 34%; }
+
+/* Skeleton samples — a heading-sized bar and two body lines. */
+.sg-skeleton-title { height: 1.5em; width: 40%; }
+.sg-skeleton-line  { height: 1em; width: 75%; }
+.sg-skeleton-line-short { height: 1em; width: 60%; }
+
+/* The delete-scene modal is shown inline in the page flow so it can sit beside
+   the empty state, instead of overlaying everything. */
+.sg-modal-inline {
+  position: static;
+  margin: 0;
+  max-width: none;
+}

@@ -57,7 +57,7 @@
               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Loop through every scene">
         <i class="bi bi-arrow-repeat"></i> <span>Loop</span>
       </button>
-      <button id="opbarStopLoop" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" style="display:none;"
+      <button id="opbarStopLoop" class="mb-btn mb-btn-secondary mb-btn-sm mb-hidden" type="button"
               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Stop the scene loop">
         <i class="bi bi-stop-fill"></i> <span>Stop Loop</span>
       </button>
@@ -80,15 +80,15 @@
     <div class="mb-panel mb-panel-accent" data-panel-id="webcam">
       <div class="mb-panel-header">
         <h2 class="mb-panel-title"><i class="bi bi-camera-video"></i> Live View</h2>
-        <div class="mb-row-sm" style="align-items:center;">
-          <span id="headTrackStatusBadge" class="mb-badge mb-badge-info" style="display:none;">Off</span>
+        <div class="mb-row-sm mb-row-center">
+          <span id="headTrackStatusBadge" class="mb-badge mb-badge-info d-none">Off</span>
           <small class="mb-text-muted mb-mono mb-text-xs" id="webcamHint"></small>
         </div>
       </div>
       <div class="mb-panel-body">
         <div class="mb-webcam-frame">
           <img id="webcamImg" src="" alt="Webcam Stream">
-          <span id="clickTrackCountdown" class="mb-badge mb-badge-info mb-webcam-overlay" style="display:none;"></span>
+          <span id="clickTrackCountdown" class="mb-badge mb-badge-info mb-webcam-overlay d-none"></span>
         </div>
         <div id="webcamStatus" class="mb-webcam-status">Finding webcam…</div>
       </div>
@@ -101,8 +101,8 @@
           <i class="bi bi-chat-dots"></i>
           <span id="chatCharacterName">Loading…</span>
         </h2>
-        <div class="mb-row-sm" style="align-items:center;">
-          <select id="chatSpeakerSelect" class="mb-select" style="max-width: 130px; min-height: 28px; padding: 2px 8px; font-size: var(--mb-text-xs);"
+        <div class="mb-row-sm mb-row-center">
+          <select id="chatSpeakerSelect" class="mb-select mb-chat-speaker-select"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
             <option value="">Auto</option>
           </select>
@@ -115,12 +115,12 @@
       </div>
       <div class="mb-panel-body">
         <div id="chatLog" class="mb-chat-log">
-          <div class="mb-text-muted mb-text-sm" style="text-align:center;">Chat will appear here…</div>
+          <div class="mb-text-muted mb-text-sm mb-text-center">Chat will appear here…</div>
         </div>
         <div class="mb-chat-meter">
           <small class="mb-text-muted"><i class="bi bi-activity"></i></small>
-          <div class="mb-meter" style="flex:1;">
-            <div id="chatVUMeter" class="mb-meter-fill" style="width:0%;"></div>
+          <div class="mb-meter mb-flex-1">
+            <div id="chatVUMeter" class="mb-meter-fill"></div>
           </div>
           <span id="chatVULabel" class="mb-badge">0%</span>
         </div>
@@ -139,10 +139,9 @@
         </div>
         <div class="mb-chat-input">
           <div class="mb-input-group">
-            <button class="mb-btn mb-btn-secondary mb-btn-sm" type="button" id="chatModeToggle"
+            <button class="mb-btn mb-btn-secondary mb-btn-sm mb-chat-mode-toggle" type="button" id="chatModeToggle"
                     data-bs-toggle="tooltip" data-bs-placement="top"
-                    title="Switch between asking the AI and making the character say exact text"
-                    style="min-width: 92px;">
+                    title="Switch between asking the AI and making the character say exact text">
               <i class="bi bi-chat-dots"></i> Ask AI
             </button>
             <input type="text" class="mb-input" id="chatInput" placeholder="Ask the character something…" autocomplete="off" title="Type your message to the character">
@@ -150,7 +149,7 @@
               <i class="bi bi-send"></i>
             </button>
           </div>
-          <div id="sayStatus" class="mb-text-xs mb-text-muted" style="margin-top:4px;"></div>
+          <div id="sayStatus" class="mb-text-xs mb-text-muted mb-mt-1"></div>
         </div>
       </div>
     </div>
@@ -206,19 +205,19 @@
     <div class="accordion-item" data-panel-id="scenes">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScenes" title="Expand or collapse the Scenes panel">
-          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" title="Drag to reorder"></i>
           <i class="bi bi-film me-2"></i> Scenes
-          <span id="scenesQueueStatus" class="badge bg-secondary small ms-2" style="display:none;"></span>
+          <span id="scenesQueueStatus" class="mb-badge ms-2 mb-hidden"></span>
         </button>
       </h2>
       <div id="collapseScenes" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2">
           <div class="d-flex gap-1 mb-2">
-            <button id="btnLoopAll" class="btn btn-sm btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i> Loop All</button>
-            <button id="btnStopLoop" class="btn btn-sm btn-outline-danger" title="Stop loop" style="display:none;"><i class="bi bi-stop-fill"></i> Stop</button>
-            <a href="/scenes" class="btn btn-sm btn-outline-secondary ms-auto" title="Animation Studio"><i class="bi bi-gear"></i> Studio</a>
+            <button id="btnLoopAll" class="mb-btn mb-btn-sm mb-btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i> Loop All</button>
+            <button id="btnStopLoop" class="mb-btn mb-btn-sm mb-btn-outline-danger mb-hidden" title="Stop loop"><i class="bi bi-stop-fill"></i> Stop</button>
+            <a href="/scenes" class="mb-btn mb-btn-sm mb-btn-secondary ms-auto" title="Animation Studio"><i class="bi bi-gear"></i> Studio</a>
           </div>
-          <div id="scenesContainer" style="max-height: 350px; overflow-y: auto;">
+          <div id="scenesContainer" class="mb-dash-scroll-scenes">
             <div class="text-center text-muted py-3">
               <div class="spinner-border spinner-border-sm"></div>
               <p class="mt-2 mb-0 small">Loading scenes...</p>
@@ -232,16 +231,16 @@
     <div class="accordion-item" data-panel-id="poses">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePoses" title="Expand or collapse the Poses panel">
-          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" title="Drag to reorder"></i>
           <i class="bi bi-person-arms-up me-2"></i> Poses
         </button>
       </h2>
       <div id="collapsePoses" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2">
           <div class="d-flex mb-2">
-            <a href="/poses/editor" class="btn btn-sm btn-outline-secondary ms-auto" title="Open the Pose Editor"><i class="bi bi-pencil"></i> Pose Editor</a>
+            <a href="/poses/editor" class="mb-btn mb-btn-sm mb-btn-secondary ms-auto" title="Open the Pose Editor"><i class="bi bi-pencil"></i> Pose Editor</a>
           </div>
-          <div id="posesContainer" style="max-height: 300px; overflow-y: auto;">
+          <div id="posesContainer" class="mb-dash-scroll-poses">
             <div class="text-center text-muted py-3">
               <div class="spinner-border spinner-border-sm"></div>
               <p class="mt-2 mb-0 small">Loading poses...</p>
@@ -255,7 +254,7 @@
     <div class="accordion-item" data-panel-id="manual-controls">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual" title="Expand or collapse Manual Controls">
-          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" title="Drag to reorder"></i>
           <i class="bi bi-joystick me-2"></i> Manual Controls
           <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
         </button>
@@ -265,7 +264,7 @@
           <div id="mcBodyMapWrap">
             <!-- Left: SVG body silhouette + peripherals -->
             <div id="mcBodyMapCol">
-              <svg id="mcBodyMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 340" style="width:200px;height:auto;"></svg>
+              <svg id="mcBodyMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 340"></svg>
               <div id="mcPeripherals"></div>
             </div>
             <!-- Right: control panel + quick actions -->
@@ -282,26 +281,27 @@
     <div class="accordion-item" data-panel-id="console">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole" title="Expand or collapse the Live Console">
-          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" title="Drag to reorder"></i>
           <i class="bi bi-terminal me-2"></i> Live Console
         </button>
       </h2>
       <div id="collapseConsole" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
         <div class="accordion-body py-2">
           <div class="d-flex gap-1 align-items-center mb-2">
-            <select id="consoleLines" class="form-select form-select-sm" style="width: auto; font-size: 0.75rem;" title="Number of console lines to show">
+            <select id="consoleLines" class="mb-select mb-select-sm mb-select-auto mb-console-lines" title="Number of console lines to show">
               <option value="50">50</option>
               <option value="100" selected>100</option>
               <option value="200">200</option>
               <option value="500">500</option>
             </select>
-            <div class="form-check form-switch mb-0 ms-1">
-              <input class="form-check-input" type="checkbox" id="consoleLive" checked title="Toggle live console updates">
-              <label class="form-check-label small" for="consoleLive">Live</label>
-            </div>
-            <button class="btn btn-sm btn-outline-secondary" id="btnConsoleRefresh" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+            <label class="mb-switch ms-1">
+              <input type="checkbox" id="consoleLive" checked title="Toggle live console updates">
+              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+              <span class="mb-text-sm">Live</span>
+            </label>
+            <button class="mb-btn mb-btn-sm mb-btn-secondary" id="btnConsoleRefresh" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
           </div>
-          <pre id="consoleOutput" class="mb-0 p-2" style="height: 250px; overflow-y: auto; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; background: var(--mb-terminal-bg, #0a0a0a); color: var(--mb-terminal-text, #0f0); margin: 0; resize: vertical;">Loading console...</pre>
+          <pre id="consoleOutput" class="mb-console-output">Loading console...</pre>
         </div>
       </div>
     </div>
@@ -310,7 +310,7 @@
     <div class="accordion-item" data-panel-id="audio-bridge">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge" title="Expand or collapse Browser Audio Bridge">
-          <i class="bi bi-grip-vertical me-1 panel-drag-handle" style="cursor:grab;opacity:0.5;" title="Drag to reorder"></i>
+          <i class="bi bi-grip-vertical me-1 panel-drag-handle" title="Drag to reorder"></i>
           <i class="bi bi-headset me-2"></i> Browser Audio Bridge
         </button>
       </h2>
@@ -325,27 +325,27 @@
                 </div>
                 <div class="card-body py-2">
                   <div class="mb-1">
-                    <select id="bridge-listenin-source" class="form-select form-select-sm" style="font-size: 0.75rem;" title="Select audio input source">
+                    <select id="bridge-listenin-source" class="mb-select mb-select-sm mb-bridge-control" title="Select audio input source">
                       <option value="default">System Default Input</option>
                     </select>
                   </div>
                   <div class="mb-1">
                     <div class="d-flex align-items-center gap-1">
-                      <small class="text-muted" style="min-width: 28px;">Vol</small>
-                      <input type="range" id="bridge-listenin-volume" class="form-range form-range-sm" min="0" max="100" value="75" step="5" style="height: 16px;" title="Adjust listen-in volume">
+                      <small class="mb-text-muted mb-bridge-label">Vol</small>
+                      <input type="range" id="bridge-listenin-volume" class="mb-range mb-bridge-volume" min="0" max="100" value="75" step="5" title="Adjust listen-in volume">
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 mb-1">
-                    <div class="progress flex-grow-1" style="height: 8px;">
-                      <div id="bridge-listenin-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                    <div class="mb-meter mb-bridge-meter flex-grow-1">
+                      <div id="bridge-listenin-vu" class="mb-meter-fill"></div>
                     </div>
-                    <span id="bridge-listenin-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
+                    <span id="bridge-listenin-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <button id="btn-bridge-listenin" class="btn btn-info btn-sm" type="button" style="font-size: 0.7rem;" title="Start listening to character audio">
+                    <button id="btn-bridge-listenin" class="mb-btn mb-btn-info mb-btn-sm mb-bridge-btn" type="button" title="Start listening to character audio">
                       <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
                     </button>
-                    <span id="bridge-listenin-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>
+                    <span id="bridge-listenin-status" class="mb-badge mb-bridge-status">Off</span>
                   </div>
                 </div>
               </div>
@@ -358,23 +358,23 @@
                 </div>
                 <div class="card-body py-2">
                   <div class="mb-1">
-                    <select id="bridge-talkthrough-sink" class="form-select form-select-sm" style="font-size: 0.75rem;" title="Select audio output device">
+                    <select id="bridge-talkthrough-sink" class="mb-select mb-select-sm mb-bridge-control" title="Select audio output device">
                       <option value="default">System Default Output</option>
                     </select>
                   </div>
                   <div class="d-flex align-items-center gap-2 mb-1">
-                    <div class="progress flex-grow-1" style="height: 8px;">
-                      <div id="bridge-talkthrough-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                    <div class="mb-meter mb-bridge-meter flex-grow-1">
+                      <div id="bridge-talkthrough-vu" class="mb-meter-fill"></div>
                     </div>
-                    <span id="bridge-talkthrough-vu-label" class="badge bg-secondary" style="font-size: 0.6rem; min-width: 28px;">0%</span>
+                    <span id="bridge-talkthrough-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <button id="btn-bridge-talkthrough" class="btn btn-warning btn-sm" type="button" style="font-size: 0.7rem;" title="Start talking through character speaker">
+                    <button id="btn-bridge-talkthrough" class="mb-btn mb-btn-warning mb-btn-sm mb-bridge-btn" type="button" title="Start talking through character speaker">
                       <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
                     </button>
-                    <span id="bridge-talkthrough-status" class="badge bg-secondary" style="font-size: 0.6rem;">Off</span>
+                    <span id="bridge-talkthrough-status" class="mb-badge mb-bridge-status">Off</span>
                   </div>
-                  <div id="bridge-talkthrough-https-warn" class="alert alert-warning small mt-1 mb-0 py-1 d-none" style="font-size: 0.7rem;">
+                  <div id="bridge-talkthrough-https-warn" class="mb-alert mb-alert-warning small mt-1 mb-0 py-1 d-none mb-bridge-warn">
                     <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.
                   </div>
                 </div>
