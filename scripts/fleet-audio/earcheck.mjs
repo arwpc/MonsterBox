@@ -20,7 +20,7 @@
  *   node scripts/fleet-audio/earcheck.mjs --keep          # keep the WAVs
  *   node scripts/fleet-audio/earcheck.mjs --seconds 12    # longer capture
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -77,6 +77,32 @@ const PHRASES = {
 const { animatronics } = JSON.parse(
   readFileSync(join(ROOT, 'config', 'animatronics.json'), 'utf8')
 );
+
+/**
+ * The voice each character is SUPPOSED to speak in, read from the committed
+ * ElevenLabs agent snapshots — the canonical persona state. Read from the
+ * snapshots rather than restated here so this check can never drift from them,
+ * which is precisely the failure it exists to catch.
+ */
+const CANONICAL_VOICES = (() => {
+  const byCharacter = {};
+  const agentToCharacter = new Map(
+    animatronics.filter(a => a.agentId).map(a => [a.agentId, a.characterId])
+  );
+  let files = [];
+  try { files = readdirSync(join(ROOT, 'config', 'elevenlabs', 'agents')); } catch (_) { return byCharacter; }
+  for (const f of files) {
+    if (!f.endsWith('.json')) continue;
+    try {
+      const snap = JSON.parse(readFileSync(join(ROOT, 'config', 'elevenlabs', 'agents', f), 'utf8'));
+      const agent = snap.agent || snap;
+      const voice = agent?.conversation_config?.tts?.voice_id;
+      const charId = agentToCharacter.get(agent?.agent_id);
+      if (voice && charId != null) byCharacter[charId] = voice;
+    } catch (_) { /* a malformed snapshot just means no expectation for that character */ }
+  }
+  return byCharacter;
+})();
 
 const SELF = hostname();
 let nodes = animatronics.map(a => ({ ...a, local: a.hostname === SELF }));
@@ -302,6 +328,25 @@ async function checkNode(node) {
     row.sayError = `${sayRes.status} ${sayRes.body}`;
     console.log(`   say FAILED: ${row.sayError}`);
   }
+
+  // Audible is not the same as RIGHT. Four of six characters once spoke, clearly
+  // and intelligibly, in somebody else's voice — a check that only measures level
+  // and word recall passes that with full marks. The node reports which voice it
+  // actually used, so compare it against the canonical voice for this character.
+  try {
+    const said = JSON.parse(sayRes.body);
+    row.voiceUsed = said?.data?.voiceId || said?.voiceId || null;
+    row.voiceFallback = said?.data?.voiceFallback === true;
+  } catch (_) { row.voiceUsed = null; }
+  const canonical = CANONICAL_VOICES[node.characterId];
+  if (canonical && row.voiceUsed) {
+    row.voiceCorrect = row.voiceUsed === canonical;
+    if (!row.voiceCorrect) {
+      console.log(`   ⚠️  WRONG VOICE: used ${row.voiceUsed}, canonical is ${canonical}`);
+    } else {
+      console.log(`   voice: ${row.voiceUsed} ✓ canonical`);
+    }
+  }
   const castPaths = await Promise.all(capPromises);
 
   // 3. Score every microphone independently, then judge the node on its best.
@@ -353,6 +398,11 @@ async function checkNode(node) {
   const levelOk = best.riseDb >= 4;
   const wordsOk = best.recall >= 0.5;
   if (!row.sayOk) row.verdict = 'SILENT';
+  // A character speaking clearly in the wrong voice is not a pass. This outranks
+  // the acoustic verdict because it is the more serious failure: a silent node is
+  // obviously broken, whereas a confident stranger's voice sounds fine and is not
+  // noticed until someone who knows the character hears it.
+  else if (row.voiceCorrect === false) row.verdict = 'WRONG-VOICE';
   else if (levelOk && wordsOk) row.verdict = 'AUDIBLE';
   else if (levelOk && !wordsOk) row.verdict = 'GARBLED';
   else if (!levelOk && wordsOk) row.verdict = 'FAINT';
@@ -361,6 +411,10 @@ async function checkNode(node) {
   if (row.verdict !== 'AUDIBLE') {
     const why = [];
     if (!row.sayOk) why.push('the say/TTS call itself failed');
+    else if (row.verdict === 'WRONG-VOICE') why.push(
+      `spoke in ${row.voiceUsed} but this character's canonical voice is ${CANONICAL_VOICES[node.characterId]}` +
+      (row.voiceFallback ? ' (the node reported a voice FALLBACK — the configured voice failed)' : '')
+    );
     else if (row.verdict === 'FAINT') why.push(`words were intelligible but the speaker only rose ${best.riseDb} dB over the mic floor — quiet for a yard`);
     else if (row.verdict === 'GARBLED') why.push('sound present but unintelligible — check clipping, distortion, or mic placement');
     else why.push(`no speech detected on any mic (best rise ${best.riseDb} dB)`);
@@ -383,8 +437,8 @@ for (const node of nodes) rows.push(await checkNode(node));
 
 const pad = (s, n) => String(s).padEnd(n);
 console.log('\n\n=== PER-NODE AUDIBLE/SILENT MATRIX ===\n');
-console.log(`${pad('Node', 16)}${pad('Best mic', 30)}${pad('Floor', 9)}${pad('Cast', 9)}${pad('Rise', 8)}${pad('Recall', 8)}Verdict`);
-console.log('-'.repeat(96));
+console.log(`${pad('Node', 16)}${pad('Best mic', 30)}${pad('Floor', 9)}${pad('Cast', 9)}${pad('Rise', 8)}${pad('Recall', 8)}${pad('Voice', 7)}Verdict`);
+console.log('-'.repeat(103));
 for (const r of rows) {
   console.log(
     pad(r.name, 16) +
@@ -393,11 +447,12 @@ for (const r of rows) {
     pad(r.castDb != null ? `${r.castDb}` : '—', 9) +
     pad(r.riseDb != null ? `${r.riseDb}` : '—', 8) +
     pad(r.recall != null ? `${(r.recall * 100).toFixed(0)}%` : '—', 8) +
+    pad(r.voiceCorrect == null ? '—' : (r.voiceCorrect ? 'ok' : 'WRONG'), 7) +
     r.verdict
   );
 }
 const audible = rows.filter(r => r.verdict === 'AUDIBLE');
-console.log('-'.repeat(96));
+console.log('-'.repeat(103));
 console.log(`${audible.length}/${rows.length} audible`);
 
 const problems = rows.filter(r => r.verdict !== 'AUDIBLE');
@@ -412,4 +467,6 @@ writeFileSync(outFile, JSON.stringify({ ranAt: new Date().toISOString(), conduct
 console.log(`\nMatrix written to ${outFile}`);
 if (KEEP) console.log(`WAVs kept in ${OUTDIR}`);
 
-process.exitCode = problems.some(r => r.verdict === 'SILENT' || r.verdict === 'GARBLED') ? 1 : 0;
+process.exitCode = problems.some(r =>
+  r.verdict === 'SILENT' || r.verdict === 'GARBLED' || r.verdict === 'WRONG-VOICE'
+) ? 1 : 0;

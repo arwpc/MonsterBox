@@ -37,6 +37,27 @@ async function writeJson(file, data) {
   return data;
 }
 
+/**
+ * Merge a partial update over what is already on disk.
+ *
+ * These files hold a character's IDENTITY — which voice it speaks in, how fast —
+ * alongside ordinary tunables. The settings UI only exposes some of those fields,
+ * so a wholesale replace meant saving a slider silently deleted voice_id and
+ * speed and the character started speaking in the shared fallback voice. Observed
+ * for real: a browser-test pass through the AI settings page stripped a
+ * character's voice mid-run.
+ *
+ * A save must only ever change what the caller actually sent.
+ */
+async function mergeJson(file, patch) {
+  const existing = (await readJson(file)) || {};
+  const merged = { ...existing };
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v !== undefined) merged[k] = v;
+  }
+  return writeJson(file, merged);
+}
+
 export async function getSTTConfig() {
   const raw = (await readJson('stt-config.json')) || {};
   return {
@@ -65,7 +86,9 @@ export async function getSTTConfig() {
 }
 
 export async function saveSTTConfig(cfg) {
-  return writeJson('stt-config.json', cfg);
+  // Merge, never replace: a partial save must not silently drop the fields the
+  // caller did not send (e.g. microphonePartId).
+  return mergeJson('stt-config.json', cfg);
 }
 
 // Voice identity is DATA, not code: every character's canonical voice and
@@ -127,7 +150,9 @@ export async function getTTSConfig() {
 }
 
 export async function saveTTSConfig(cfg) {
-  return writeJson('tts-config.json', cfg);
+  // Merge, never replace: see mergeJson. Saving a stability slider must not
+  // delete the character's voice.
+  return mergeJson('tts-config.json', cfg);
 }
 
 /**

@@ -497,15 +497,22 @@
       "pattern": "orlok-reference",
       "file": "scripts/night-memory/scrub-test.mjs",
       "line": 25,
-      "snippet": "{ n: 'plain full name', in: 'The guest, Emily Rodriguez, asked Orlok for a fortune.', no: ['Rodriguez'], yes: ['Emily', 'Orlok'] },",
-      "reason": "PHI scrubber test fixture. Proving the scrubber removes a visitor's SURNAME while leaving first names and canon character names intact requires literal names in the fixture \u2014 parameterizing them would test nothing."
+      "snippet": "{ n: 'plain full name', in: 'The guest, Emily Rodriguez, asked Orlok for a fortune.', ... }",
+      "reason": "PHI scrubber test fixture. Proving the scrubber strips a visitor's SURNAME while leaving first names and canon character names intact requires literal names \u2014 parameterizing them would test nothing."
     },
     {
       "pattern": "orlok-reference",
       "file": "scripts/night-memory/scrub-test.mjs",
-      "line": 72,
-      "snippet": "{ n: 'canon single names survive', in: 'Mina sang for Emily while Orlok watched from the coffin.', no: [], yes: ['Mina', 'Emily', 'Orlok'] },",
-      "reason": "PHI scrubber test fixture. This case exists specifically to prove canon character names are NOT scrubbed; the names are the assertion."
+      "line": 77,
+      "snippet": "{ n: 'canon single names survive', in: 'Mina sang for Emily while Orlok watched from the coffin.', ... }",
+      "reason": "PHI scrubber test fixture. This case exists specifically to prove canon character names are NOT scrubbed; the names ARE the assertion."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/night-memory/scrub.mjs",
+      "line": 57,
+      "snippet": "'warner castle', 'master warner', 'count orlok', 'lady mina', 'herr knock',",
+      "reason": "Canon lore phrases the Yard Registry must preserve. Character NAMES are already derived from data/characters.json on the lines above; this literal list is the lore vocabulary (titles, place names, in-world terms) that has no registry to come from."
     }
   ]
 }
