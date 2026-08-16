@@ -1,0 +1,48 @@
+{
+  "ranAt": "2026-08-16T09:30:39.885Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.50]",
+      "sinkVolume": 0.5,
+      "phrase": "You stand at my door uninvited. Mind your place, little one.",
+      "sayOk": true,
+      "voiceUsed": null,
+      "mics": [
+        {
+          "label": "USB Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -44.1,
+          "castP90Db": -39.6,
+          "castPeakDb": -23.9,
+          "riseDb": 4.6,
+          "floorFlat": false,
+          "transcript": "You stand at my door uninvited. Mind your place, little one",
+          "recall": 1
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -44.6,
+          "castP90Db": -44.3,
+          "castPeakDb": -32.1,
+          "riseDb": 0.4,
+          "floorFlat": true,
+          "transcript": "[background noise]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -44.1,
+      "castDb": -39.6,
+      "riseDb": 4.6,
+      "recall": 1,
+      "transcript": "You stand at my door uninvited. Mind your place, little one",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}
