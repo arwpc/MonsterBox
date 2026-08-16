@@ -569,7 +569,7 @@ curl -X POST http://localhost:3000/setup/jaw-animation/api/jaw-animation/3/test-
 - `views/setup/jaw-animation.ejs` — Setup UI with presets and timeline canvas
 - `public/js/jaw-animation.js` — Client-side controls (ES5 IIFE)
 
-## Gesture Engine (v9.1.0+)
+## Gesture Engine
 
 A thin coordination layer over the existing motion stack — no new motion primitives, no new
 hardware. Gestures are **composite and concurrent**: steps fire together offset by `delayMs`,
