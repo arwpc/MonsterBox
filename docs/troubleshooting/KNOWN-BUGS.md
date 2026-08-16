@@ -117,7 +117,14 @@ test. Software safety limits now live in `config/hardware-safety.json` (enforced
   webcam**, which does not point at the lamp. Worth keeping as a worked example: an
   instrument's blind spot read as a fault, and the honest "unproven" verdict was the correct
   output at the time — the lamp was never actually in doubt, the camera was.
-- 🔴 **Agent-path jaw opening is shallow.** The jaw moves correctly and stays inside its
+- ~~**Agent-path jaw opening is shallow.**~~ — **fixed v9.0.0.** Raw RMS was mapped
+  linearly onto the servo range: linear in pressure, while the sense of "how open is
+  that mouth" is logarithmic, and scaled by the voice rather than the character. It
+  now uses a perceptual mapping (dBFS, rolling p90 of voiced frames as the loud
+  reference, floor 20 dB below, gamma expansion). Measured by I2C register sampling
+  on the agent path: max angle **77.53° → 130.73°** against a 131 ceiling, travel used
+  **21.8% → 100%**, distinct positions **31 → 115**, with no over-travel either way.
+- ⚪ *(superseded)* **Agent-path jaw opening was shallow.** The jaw moves correctly and stays inside its
   calibrated 63–131 window (v9.0.0 stopped the 0–180 over-drive), but opening **tops out
   around 77–79° against a 131° ceiling** because the conversational agent's audio RMS is low
   relative to this character's configured jaw `sensitivity: 1`. **This is a tuning value, not
@@ -282,6 +289,36 @@ and reachable.
   **`npm run test:browser:solo`** (added v9.0.0), which stops the service, runs the suite, and
   restarts it on every exit path including Ctrl-C.
 
+- 🟡 **The head twitches to exactly 60° and 120° whenever a non-daemon servo command
+  runs.** One or two register writes, consistent with the `pca9685_init` re-init
+  glitch the jaw code already warns about: the I2C bus cache in
+  `python_wrappers/pca9685_control.py` is per-process, and every command is a new
+  process, so the chip is fully re-initialised on every servo move — glitching all 16
+  channels. Brief, but very visible, and it reads as a machine. This is the strongest
+  practical argument for generalising the persistent daemon.
+- 🟡 **MJPEG never drops stale frames.** The stream is genuinely realtime for a fast
+  consumer — measured 19.95 fps raw and proxied with zero frame loss and an 81 ms p50
+  capture-to-delivery, the proxy adding ~12 ms. But a *slow* consumer accumulated
+  **+18 s of latency over 20 s** on both the raw and proxied paths, because
+  MJPEG-over-TCP has no frame-dropping: it just queues. Anything that falls behind
+  drifts unboundedly rather than skipping to live.
+- 🟡 **`askAgentQuestion` opens a brand-new agent WebSocket per question.**
+  `services/elevenLabsWebSocketService.js` — signed-URL fetch, handshake and
+  `conversation_initiation` on every turn, with no conversation memory carried
+  across. Measured end-of-speech to reply audio is **10-13 s**, and this is very
+  likely most of it. A persistent headless session already exists
+  (`setAgentEnabledForCharacter`); this path should route into it.
+- ⚪ **Agent turn-taking is tuned for a phone assistant, not an animatronic.**
+  `turn_eagerness: "patient"` directly adds end-of-turn delay, `turn_timeout` is 15 s,
+  and `soft_timeout_config` is disabled **even though the in-character filler line is
+  already written** — so the wait is dead air rather than "Hhmmmm...yeah give me a
+  second...".
+- 🟡 **Echo leakage persists during the agent's own reply.** Suppression was fixed once
+  in v9.0.0 (gap-based utterance detection, monotonic deadline) but a live exchange
+  still logged two spurious "user" turns (`"Yes."`, `"..."`) while the character was
+  speaking. May need real acoustic echo cancellation rather than time-based
+  suppression.
+
 ## Test Suite (known-flaky)
 
 Intermittent failures noted in `CLAUDE.md` — they pass on retry and are treated as
@@ -393,6 +430,17 @@ Plus one that was not flake at all:
 ---
 
 ## Recently Fixed (for reference)
+
+- ~~**Head tracking was configured to sweep -61° to +259°.**~~ — fixed **v9.0.0**.
+  `super-powers.json` had `centerDeg: 99` with `rangeDeg: 160`. It only ever survived
+  because the safety clamp caught it, which means the head would have pinned against
+  a limit for seconds at a time and looked broken. Retuned to 90/28, matching the
+  62-118 that was physically validated, and part 15 now has an explicit 60-120 window
+  in `config/hardware-safety.json`.
+- ~~**`microMovement` was configured on every character and read by nothing.**~~ —
+  fixed **v9.0.0**. The idle liveliness block sat in each `movement-config.json` with
+  no consumer; `services/speechExpressionService.js` now implements it, so the
+  character drifts between turns instead of holding perfectly still.
 
 - ~~**The panic button never reached the fleet.**~~ — fixed **v9.0.0**. `public/js/dashboard.js`
   fired `POST /api/orchestration/stop-all`, which **does not exist and returns 404**. The real
