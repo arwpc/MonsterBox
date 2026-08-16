@@ -1,0 +1,7 @@
+{
+  "name": "Thomas — from the hill",
+  "description": "The whisper from a single distant speaker (default: the hill, far from the coffin).",
+  "steps": [
+    { "audio": { "node": 4, "filename": "thomas-whisper.mp3", "volume": 55, "loop": false } }
+  ]
+}

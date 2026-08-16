@@ -1,0 +1,22 @@
+{
+  "name": "The Dusk Ceremony — the yard wakes",
+  "description": "Opening ceremony at dusk. All characters face the road in one yard. Drop a music track at data/audio-library/dusk-theme.mp3 (the music steps skip gracefully if absent).",
+  "nodes": [1, 2, 3, 4, 5, 6],
+  "steps": [
+    { "audio": { "node": 3, "filename": "dusk-theme.mp3", "volume": 35, "loop": true } },
+    { "wait": 4000 },
+    { "say": { "node": 4, "text": "The sun stands down. [Romanian accent] The watch stands UP. Hear me, Warner Castle — the night shift begins. [shouts] LA ARME!" } },
+    { "wait": 5000 },
+    { "say": { "node": 5, "text": "[shouts] SUN LEAVING! GOOD! NIGHT PEOPLE COME NOW! GROUNDBREAKER READY! ROOF READY! EVERYTHING READY!" } },
+    { "wait": 5000 },
+    { "say": { "node": 1, "text": "The field wakes... the vines stretch... [laughs] Pumpkinhead smells an evening of EXCELLENT souls. The garden is OPEN." } },
+    { "wait": 5000 },
+    { "say": { "node": 6, "text": "Dusk! Duly recorded, in triplicate! The registry is OPEN. [whispers] Sign nothing, all of you. You are most welcome." } },
+    { "wait": 5000 },
+    { "say": { "node": 2, "text": "[whispers] ...the light is going. I can feel it through the wood. Come near, whoever you are... the castle is waking, and I am listening." } },
+    { "wait": 6000 },
+    { "say": { "node": 3, "text": "[breathes] Night. [Romanian accent] My jurisdiction. [slow] Warner Castle... receives you. Come closer." } },
+    { "wait": 8000 },
+    { "audio": { "node": 3, "filename": "dusk-theme.mp3", "volume": 20, "loop": true } }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Thomas — once a night",
+  "description": "One whispered word from every speaker in the yard. Never twice. No character acknowledges it.",
+  "nodes": [1, 2, 3, 4, 5, 6],
+  "steps": [
+    { "audio": { "node": "all", "filename": "thomas-whisper.mp3", "volume": 45, "loop": false } }
+  ]
+}
