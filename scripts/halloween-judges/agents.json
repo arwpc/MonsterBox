@@ -1,0 +1,9 @@
+{
+  "agents": [
+    { "key": "orlok",         "name": "Orlok",         "agentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n" },
+    { "key": "mina",          "name": "Mina",          "agentId": "agent_8401k3f1dx98e05t94yp6kz4vf8n" },
+    { "key": "dragomir",      "name": "Sir Dragomir",  "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6" },
+    { "key": "pumpkinhead",   "name": "PumpkinHead",   "agentId": "agent_0801k3f1dybkecj88sta18gwwrv5" },
+    { "key": "groundbreaker", "name": "Groundbreaker", "agentId": "agent_4201k6s9y384f9v9hqmg67ygc645" }
+  ]
+}
