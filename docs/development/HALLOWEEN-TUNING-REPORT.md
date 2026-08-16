@@ -80,9 +80,11 @@ Notes: Renfield's final battery scored **25/25 delight — perfect across all fi
 judges** — the only perfect delight score in the fleet. His word-cap re-test brought
 replies from 54 avg/113 max words to 47 avg/76 max; residual pacing flags reflect his
 wordy-mania style running slightly over the 50-word line, accepted given the perfect
-delight. Groundbreaker's weak spot is the skeptical 14-year-old (56%) —
-his three-word register wears on that audience; the Rock War story material is the
-lever if it needs raising. Personalization scores are depressed by a judge artifact
+delight. Groundbreaker's weak spot is the skeptical 14-year-old (56%; a
+shouting-contest mechanic re-tested at 3/8) — judged UNMEASURABLE in text simulation:
+a dare to out-shout a ten-foot lit giant has no text equivalent. The contest, the
+escalating personal comebacks, and the war-credential burn are shipped for the real
+yard; observe live on the night rather than in sims. Personalization scores are depressed by a judge artifact
 (visitors who refuse to give a name score as failures) — known harness limitation.
 
 ## 4. What changed, per character (all in `config/elevenlabs/`)
