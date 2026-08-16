@@ -147,13 +147,26 @@ class ServerPlaybackService {
       throw new Error('mpg123_not_available');
     }
     const key = String(opts.characterId || 'default');
+    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
+    // mpg123's -f scale is fixed at spawn time, so a warm stream physically cannot
+    // honour a new volume. Reusing it unconditionally pinned every later playback
+    // to the FIRST volume ever requested for this character: one play from the
+    // audio player's slider (default 80%, draggable to 0) left the whole audio
+    // library attenuated until the service restarted, while TTS — a fresh one-shot
+    // mpg123 per call — stayed at full scale. That is the "library quiet, TTS loud"
+    // report. Measured on Sir Dragomir: play at volume 30 spawned `-f 9830`, and a
+    // following play at volume 100 reused the same process, still at `-f 9830`.
+    const wantScale = this._calcMpg123Scale(volume);
     let rec = this._streams.get(key);
     if (rec && rec.proc && !rec.proc.killed) {
-      return rec;
+      if (rec.scale === wantScale) return rec;
+      try { rec.proc.stdin.end(); } catch (_) { /* already gone */ }
+      try { rec.proc.kill('SIGTERM'); } catch (_) { /* already gone */ }
+      this._streams.delete(key);
+      rec = null;
     }
 
     const deviceId = await this._resolveDeviceId(opts);
-    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
 
     const env = { ...process.env };
     if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
@@ -161,8 +174,7 @@ class ServerPlaybackService {
     const { spawn } = await import('child_process');
 
     // Use mpg123 to play MP3 stream directly (no conversion needed)
-    // Calculate volume scale (0-32768) from percentage (0-100)
-    const scale = Math.max(0, Math.min(32768, Math.floor(32768 * (volume / 100.0))));
+    const scale = wantScale;
     const mpg123Args = ['--quiet', '-o', 'pulse', '-f', String(scale), '-'];
 
     console.log(`🎵 Starting mpg123 audio stream for character ${key}: device=${deviceId}, volume=${volume}`);
@@ -189,7 +201,7 @@ class ServerPlaybackService {
       if (cur && cur.proc === mpg123) this._streams.delete(key);
     });
 
-    rec = { proc: mpg123, deviceId, contentType: 'audio/mpeg', writerBusy: false };
+    rec = { proc: mpg123, deviceId, scale, contentType: 'audio/mpeg', writerBusy: false };
     this._streams.set(key, rec);
     return rec;
   }

@@ -1,0 +1,132 @@
+{
+  "_comment": [
+    "Canonical per-node PipeWire sink volumes for the yard show. Keyed by NODE id",
+    "from config/animatronics.json (NOT characterId) so the values feed straight into",
+    "  node scripts/yard-theater/verify-moment.mjs <moment.json> --volume-map 2=1.50,3=1.30,4=0.55",
+    "",
+    "READ THIS BEFORE TRUSTING THE NUMBERS:",
+    "1. wpctl sink volume is NODE-LOCAL RUNTIME STATE. It is not in git, it is not",
+    "   deployed by npm run deploy:all, and it does NOT survive a reboot or a",
+    "   redeploy. This file is a RECORD, not a mechanism -- something has to apply it.",
+    "   Re-apply per node and re-check with scripts/fleet-audio/earcheck.mjs.",
+    "2. Values above 1.00 are software gain above unity. They CANNOT be set through",
+    "   PUT /api/system/volume or PUT /api/orchestration/volume -- both take an integer",
+    "   percent 0-100 and clamp there. Above 1.00 is wpctl-only. The apiSettable field",
+    "   below is the best each node can do inside that 0-100 clamp.",
+    "3. The wpctl volume curve is approximately CUBIC, measured on these rigs:",
+    "   gain_dB ~= 60 * log10(v2/v1). Orlok 0.65->1.00 predicted +5.6 dB, measured",
+    "   +5.4 dB. Small changes move a lot -- 0.55 vs 0.40 on node 4 is 10.4 dB.",
+    "4. Absolute dBFS is NOT comparable ACROSS nodes: each figure is that node's own",
+    "   microphone, and mic-to-speaker distance differs per rig. Treat the dB as a",
+    "   per-node instrument. The cross-node anchor is the operator's ear.",
+    "5. Run-to-run repeatability is about +/-2 dB. Do not read a 1 dB difference as real.",
+    "6. TUNED ON SPEECH ONLY. Every measurement here is a single TTS line, which peaks",
+    "   around -7.5 dBFS. The audio-library files peak at 0.0 dBFS (median mean -14.3),",
+    "   so on the nodes above unity -- 3 at 1.30 and especially 2 at 1.50 -- a loud",
+    "   music/SFX cue will HARD-CLIP where the spoken line did not. Not measured: no",
+    "   library cue was played at 1.30/1.50. Check that before the show if loud cues",
+    "   run through those two nodes."
+  ],
+  "measuredAt": "2026-08-16T18:03:10Z",
+  "measuredWith": "node scripts/fleet-audio/earcheck.mjs --nodes 2,3,4 --seconds 18",
+  "method": [
+    "Each node speaks its own in-character cast phrase in its own voice while that",
+    "node's own microphones are already open. castDb is the p90 frame envelope of the",
+    "capture in dBFS; riseDb is castDb minus that same mic's median noise floor;",
+    "recall is the fraction of the cast phrase's words ElevenLabs Scribe read back.",
+    "The 18s window (default is 13s) is deliberate: a window that clips the tail of a",
+    "slow line scores as GARBLED on a node whose audio is perfect."
+  ],
+  "nodes": [
+    {
+      "id": 3,
+      "name": "Orlok",
+      "characterId": 3,
+      "ip": "192.168.8.120",
+      "sinkVolume": 1.3,
+      "apiSettable": 1.0,
+      "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
+      "confirmed": { "castDb": -21.2, "riseDb": 24.7, "recall": 1.0, "verdict": "AUDIBLE" },
+      "sweep": [
+        { "volume": 0.65, "castDb": -32.6, "riseDb": 13.8, "recall": 1.0 },
+        { "volume": 0.65, "castDb": -33.1, "riseDb": 14.1, "recall": 1.0 },
+        { "volume": 0.9, "castDb": -28.3, "riseDb": 16.6, "recall": 1.0 },
+        { "volume": 0.95, "castDb": -26.9, "riseDb": 20.1, "recall": 1.0 },
+        { "volume": 1.0, "castDb": -27.5, "riseDb": 19.3, "recall": 1.0 },
+        { "volume": 1.3, "castDb": -19.2, "riseDb": 24.8, "recall": 1.0 },
+        { "volume": 1.3, "castDb": -21.2, "riseDb": 24.7, "recall": 1.0 },
+        { "volume": 1.5, "castDb": -21.5, "riseDb": 23.9, "recall": 1.0 }
+      ],
+      "note": [
+        "1.50 measured no louder than 1.30 (-21.5 vs -19.2/-21.2), but that gap is",
+        "inside the +/-2 dB run-to-run spread, so this is NOT proof of clipping --",
+        "it is only evidence that 1.50 buys nothing measurable. 1.30 is chosen as",
+        "the lower setting that already reaches the plateau. Recall stayed 100% at",
+        "every level, so nothing here is distortion-limited."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Mina",
+      "characterId": 2,
+      "ip": "192.168.8.140",
+      "sinkVolume": 1.5,
+      "apiSettable": 1.0,
+      "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
+      "confirmed": { "castDb": -21.5, "riseDb": 21.9, "recall": 0.8, "verdict": "AUDIBLE" },
+      "sweep": [
+        { "volume": 0.65, "castDb": -38.3, "riseDb": 5.0, "recall": 0.6 },
+        { "volume": 0.65, "castDb": -37.8, "riseDb": 10.2, "recall": 0.47, "verdict": "GARBLED" },
+        { "volume": 0.9, "castDb": -30.6, "riseDb": 14.9, "recall": 0.8 },
+        { "volume": 0.9, "castDb": -31.4, "riseDb": 15.8, "recall": 0.6 },
+        { "volume": 1.0, "castDb": -29.9, "riseDb": 15.8, "recall": 0.8 },
+        { "volume": 1.3, "castDb": -23.1, "riseDb": 22.9, "recall": 0.8 },
+        { "volume": 1.5, "castDb": -20.9, "riseDb": 25.8, "recall": 0.8 },
+        { "volume": 1.5, "castDb": -21.5, "riseDb": 21.9, "recall": 0.8 }
+      ],
+      "note": [
+        "Mina still scaled cleanly at 1.50 (+2.2 dB over 1.30 against a cubic-predicted",
+        "+1.9 dB), so she is given the extra level -- she is the quietest rig and needs it.",
+        "Her recall sits at 80% at EVERY level from 1.00 to 1.50. That ceiling is not a",
+        "volume problem: it does not move when level moves. It is her diction/voice",
+        "against Scribe. The old GARBLED reading at 0.65 was a genuine level failure",
+        "and is gone.",
+        "1.50 is the top of wireplumber's default range on these nodes -- no headroom",
+        "left. If Mina is still weak in the yard on the night, the remaining fix is",
+        "physical (amp/speaker), not a number in this file."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "characterId": 4,
+      "ip": "192.168.8.130",
+      "sinkVolume": 0.55,
+      "apiSettable": 0.55,
+      "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
+      "confirmed": { "castDb": -25.7, "riseDb": 17.7, "recall": 0.94, "verdict": "AUDIBLE" },
+      "sweep": [
+        { "volume": 0.4, "castDb": -34.1, "riseDb": 9.1, "recall": 0.94 },
+        { "volume": 0.55, "castDb": -23.7, "riseDb": 19.7, "recall": 0.94 },
+        { "volume": 0.55, "castDb": -23.6, "riseDb": 19.7, "recall": 0.94 },
+        { "volume": 0.55, "castDb": -25.7, "riseDb": 17.7, "recall": 0.94 },
+        { "volume": 0.85, "castDb": -10.0, "riseDb": 33.5, "recall": 0.94 },
+        { "volume": 1.0, "castDb": -9.6, "riseDb": 33.3, "recall": 0.69 }
+      ],
+      "note": [
+        "He is the outlier rig, and it is NOT the USB adapter -- all three nodes run the",
+        "same Unitek Y-247A, and his ALSA hardware Speaker control is actually 2 dB LOWER",
+        "than the other two (33/37 vs 35/37). The extra loudness is downstream of the Pi.",
+        "0.85 -> 1.00 gained only +0.4 dB against a cubic-predicted +2.1, and recall fell",
+        "94% -> 69%: his amp is compressing/limiting near the top. Do not run him above",
+        "~0.85, and there is no reason to -- 0.55 already matches the fleet.",
+        "0.40 drops him to riseDb 9.1, which is thin for a yard. 0.55 is the floor."
+      ]
+    }
+  ],
+  "offline": {
+    "_comment": "Never measured -- these nodes were powered down for the whole session. No value here is a guess; there simply is no entry.",
+    "nodes": [1, 5, 6],
+    "names": ["PumpkinHead", "Groundbreaker", "Renfield"]
+  }
+}

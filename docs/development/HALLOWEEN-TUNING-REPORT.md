@@ -136,7 +136,108 @@ yard, and Renfield holding its paperwork.
 - Cross-node speech theater needs no code: per-node Say/Ask-AI orchestration endpoints
   already support scripted duets between animatronics.
 
-## 6. Open items
+## 6. Speaker balance — per-node sink volumes (daylight pass, 2026-08-16)
+
+**Canonical machine-readable copy: `scripts/yard-theater/speaker-volumes.json`.** That
+file is the source of truth (it carries the full sweep and feeds `--volume-map`
+directly); this section is the human summary. Keep them in step.
+
+The three live nodes were badly mismatched. Measured with
+`scripts/fleet-audio/earcheck.mjs --nodes 2,3,4 --seconds 18`: each node speaks its
+own cast phrase in its own voice while its own microphones are open; `cast` is the
+p90 frame envelope in dBFS, `rise` is that minus the same mic's noise floor, and
+`recall` is how much of the phrase Scribe read back.
+
+| Node | id | **Sink volume** | cast dBFS | rise dB | recall | verdict |
+|---|---|---|---|---|---|---|
+| Orlok | 3 | **1.30** | −21.2 | 24.7 | 100% | AUDIBLE |
+| Mina | 2 | **1.50** | −21.5 | 21.9 | 80% | AUDIBLE |
+| Sir Dragomir | 4 | **0.55** | −25.7 | 17.7 | 94% | AUDIBLE |
+
+Confirmed in a single simultaneous run at exactly those three values. The fleet now
+sits inside a 4.5 dB spread; before the pass it was ~18 dB (at a common 0.65,
+Dragomir read −18.5 dBFS while Mina read −38.3 and was scored GARBLED).
+
+Apply per node:
+
+```bash
+XDG_RUNTIME_DIR=/run/user/1000 wpctl set-volume @DEFAULT_AUDIO_SINK@ <value>
+```
+
+### Caveats — read before trusting these numbers
+
+- **`wpctl` sink volume is node-local runtime state.** It is not in git, `npm run
+  deploy:all` does not carry it, and it does **not** survive a reboot or a redeploy.
+  The JSON is a record, not a mechanism — something still has to apply it, and it
+  must be re-checked per node after any redeploy.
+- **Anything above 1.00 is wpctl-only.** `PUT /api/system/volume` and
+  `PUT /api/orchestration/volume` both take an integer percent 0–100 and clamp
+  there, so neither can express Orlok's 1.30 or Mina's 1.50. Inside that clamp the
+  best available is 1.00/1.00/0.55 — measured −27.5 / −29.9 / −23.7 dBFS, i.e. ~6 dB
+  quieter on the two Unitek nodes and Dragomir becomes the loudest of the three.
+- **The volume curve is roughly cubic**, measured on these rigs:
+  `gain_dB ≈ 60·log10(v2/v1)`. Orlok 0.65→1.00 predicted +5.6 dB, measured +5.4 dB.
+  Small changes move a lot — 0.55 vs 0.40 on Dragomir is 10.4 dB.
+- **Absolute dBFS is not comparable across nodes.** Each figure comes from that
+  node's own mic and mic-to-speaker distance differs per rig. The dB is a per-node
+  instrument; the cross-node anchor is the operator's ear. Run-to-run repeatability
+  is about ±2 dB, so a 1 dB difference is noise.
+- **Dragomir's loudness is not his USB adapter.** All three nodes run the same
+  Unitek Y-247A and his ALSA hardware `Speaker` control is 2 dB *lower* than the
+  other two (33/37 vs 35/37). It is downstream of the Pi. He also compresses near
+  the top: 0.85→1.00 gained +0.4 dB against a predicted +2.1 while recall fell
+  94%→69%. Do not run him above ~0.85.
+- **Mina's 80% recall is not a level problem** — it is identical at 1.00, 1.30 and
+  1.50. It does not move when level moves. 1.50 is also the top of wireplumber's
+  default range, so she has no headroom left; if she is still weak in the yard the
+  remaining fix is physical, not a number.
+- **PumpkinHead, Groundbreaker and Renfield were offline** and have no measured
+  value. Nothing was guessed for them.
+- **This map was tuned on speech, and speech only.** Every measurement is a single
+  TTS line. TTS peaks around −7.5 dBFS, but the audio-library files peak at
+  **0.0 dBFS** (median mean −14.3), so on the two nodes running above unity —
+  Orlok 1.30 and especially Mina 1.50 — a full-scale music or SFX cue will
+  **hard-clip** where the spoken line did not. This was *not* measured: no library
+  cue was played at 1.30/1.50. If the show runs loud SFX through Mina or Orlok,
+  check that case before the night, and expect to have to either back those nodes
+  toward 1.00 or pad the loud cues down at the file level.
+
+### Audio-library playback was quieter than TTS — root cause
+
+Reported on Sir Dragomir: audio-library files quiet, TTS loud. The cause is a
+**volume-caching bug in the warm mpg123 stream**, and it affects every character,
+not just him.
+
+`mpg123`'s `-f <scale>` amplitude flag is fixed at spawn time. The audio-library
+path (`playBufferOnCharacterSpeaker` → `writeMp3Stream` → `_ensureMp3Stream`) keeps
+one **persistent** mpg123 per character and returned it unconditionally while
+ignoring the newly requested `volume`, so every later playback was pinned to the
+*first* volume ever requested — until the service restarted. TTS
+(`playAIOnCharacterSpeaker`) spawns a **fresh one-shot** mpg123 per call, so it
+always plays at full scale. Hence "library quiet, TTS loud".
+
+Reproduced on Dragomir: a play at `volume: 30` spawned `mpg123 --quiet -o pulse -f
+9830 -`; a following play at `volume: 100` reused the *same process*, still at
+`-f 9830` (−10.5 dB). The everyday trigger is `public/js/audio-player.js:455`, which
+sends the volume slider's value (default 80, draggable to 0).
+
+Fixed in `services/serverPlaybackService.js` `_ensureMp3Stream()`: the stream now
+records the scale it was spawned with and is torn down and respawned when a
+different volume is requested. Verified after the fix — 30 → `-f 9830`, then
+100 → `-f 32768`. `npm run test:smoke` passes (267).
+
+Two things the report's premise got backwards, worth recording:
+
+- **The library files are not mastered quiet.** Across all 132 files: median mean
+  −14.3 dBFS, range −26.6 to −8.2, most peaking at 0.0 dBFS. There is an 18 dB
+  spread between the quietest and loudest file, which is a real (separate) source
+  of inconsistency, but even the quietest is hotter than TTS.
+- **At equal settings, library playback is the *louder* of the two.** Same mic, same
+  sink volume 0.55, same 12 s window on Dragomir: library file mean −17.5 dBFS /
+  peak −0.0, TTS mean −28.0 dBFS / peak −7.5. So once the caching bug is out of the
+  way, the imbalance runs the other way and **TTS** is the quiet path.
+
+## 7. Open items
 
 Worked in the v9.2.0 session of 2026-08-16 (the night before Halloween). Status
 below is what was actually verified, not what was attempted.

@@ -35,7 +35,13 @@ const arg = (n, d) => {
 const flag = n => process.argv.includes(`--${n}`);
 
 const momentArg = process.argv.slice(2).find(a => !a.startsWith('--') && a.endsWith('.json'));
-if (!momentArg) { console.error('Usage: verify-moment.mjs <moment.json> [--volume 0.12] [--base URL] [--keep]'); process.exit(1); }
+if (!momentArg) {
+  console.error('Usage: verify-moment.mjs <moment.json> [--volume 0.12] [--volume-map 2=1.50,3=1.30,4=0.55] [--base URL] [--keep] [--pad 10]');
+  console.error('  --volume      one rehearsal volume for every node');
+  console.error('  --volume-map  per-node override, keyed by NODE id from config/animatronics.json');
+  console.error('                (the rigs are not matched — see scripts/yard-theater/speaker-volumes.json)');
+  process.exit(1);
+}
 const momentPath = isAbsolute(momentArg) ? momentArg : join(HERE, momentArg);
 const moment = JSON.parse(readFileSync(momentPath, 'utf8'));
 
