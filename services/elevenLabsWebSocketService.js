@@ -227,9 +227,19 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     try { clearTimeout(connection.serverMicTimer); } catch (_) { /* noop */ }
                     connection.serverMicTimer = null;
                 }
+                // Kill the long-lived capture process, else it orphans and holds the mic
+                if (connection.micCaptureHandle) {
+                    try { connection.micCaptureHandle.stop(); } catch (_) { /* noop */ }
+                    connection.micCaptureHandle = null;
+                }
 
                 // Stop any Scribe realtime session, else its keepalive interval leaks
                 try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
+
+                // Stop the streaming jaw driver's 50ms timer
+                if (connection.characterId != null) {
+                    try { jawAnimationService.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
+                }
 
                 toDelete.push(sessionId);
             }
@@ -717,12 +727,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             const audioBuffer = Buffer.from(audioData, 'base64');
                             const fmt = c.audioOutputFormat || 'pcm_16000';
 
-                            if (!c.aiSpeaking) {
+                            // Detect the start of a NEW utterance. aiSpeaking is only
+                            // cleared on conversation_end/interruption, so relying on it
+                            // alone pinned speechStartedAt to the very first reply while
+                            // accumulatedAudioMs kept growing across every later turn:
+                            // the deadline below then resolved to a time in the PAST and
+                            // echo suppression silently stopped working after turn one.
+                            // Audio for one utterance arrives back-to-back, so a gap
+                            // means a new utterance.
+                            const nowMs = Date.now();
+                            const UTTERANCE_GAP_MS = 1200;
+                            if (!c.aiSpeaking || (c.lastAudioChunkAt && (nowMs - c.lastAudioChunkAt) > UTTERANCE_GAP_MS)) {
                                 // First chunk of a new utterance
                                 c.aiSpeaking = true;
-                                c.speechStartedAt = Date.now();
+                                c.speechStartedAt = nowMs;
                                 c.accumulatedAudioMs = 0;
                             }
+                            c.lastAudioChunkAt = nowMs;
 
                             // Calculate chunk duration: PCM16LE mono = 2 bytes/sample
                             if (fmt.startsWith('pcm_')) {
@@ -733,9 +754,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 c.accumulatedAudioMs += (audioBuffer.length * 8 / 128);
                             }
 
-                            // Suppress mic for the full estimated playback duration + tail buffer
+                            // Suppress mic for the full estimated playback duration + tail buffer.
+                            // Never move the deadline EARLIER: a new utterance starting while
+                            // the previous one is still draining out of the speaker must not
+                            // shorten the window and let the tail of it back in as "user" speech.
                             const TAIL_BUFFER_MS = 2500; // extra room reverb tolerance
-                            c.suppressMicUntilMs = c.speechStartedAt + c.accumulatedAudioMs + TAIL_BUFFER_MS;
+                            c.suppressMicUntilMs = Math.max(
+                                c.suppressMicUntilMs || 0,
+                                c.speechStartedAt + c.accumulatedAudioMs + TAIL_BUFFER_MS
+                            );
                         }
 
                         // Play AI audio through server speakers if enabled
@@ -769,15 +796,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                         console.error(`❌ AI audio playback ERROR:`, err);
                                     });
 
-                                    // Drive jaw from PCM audio amplitude (if jaw enabled)
+                                    // Drive jaw from PCM audio amplitude (if jaw enabled).
+                                    // Feed the whole chunk to the streaming driver, which slices it
+                                    // into 50ms frames and paces them against playback. Previously
+                                    // this took ONE RMS over the entire chunk and issued a single
+                                    // servo move per network packet — 4-6 moves across a whole reply,
+                                    // which reads as a twitch, not lip sync.
                                     try {
-                                        const samples = new Int16Array(audioBuffer.buffer, audioBuffer.byteOffset, Math.floor(audioBuffer.length / 2));
-                                        let sumSq = 0;
-                                        for (let i = 0; i < samples.length; i++) sumSq += samples[i] * samples[i];
-                                        const rms = Math.sqrt(sumSq / (samples.length || 1)) / 32768;
-                                        if (rms > 0.01) {
-                                            jawAnimationService.driveJawFromAmplitude(c.characterId, Math.min(1, rms * 3)).catch(() => {});
-                                        }
+                                        jawAnimationService.driveJawFromPcmStream(c.characterId, audioBuffer).catch(() => {});
                                     } catch (_) { /* non-fatal */ }
                                 } else {
                                     serverPlaybackService.writeMp3Stream(audioBuffer, {
@@ -1115,6 +1141,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
             }
             if (connection.characterId != null) {
                 try { await serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                // Stop the streaming jaw driver, else its 50ms timer outlives the socket.
+                try { jawAnimationService.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
             }
         }
         this.activeConnections.delete(sessionId);
@@ -1341,24 +1369,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
         if (connection.serverMicActive) return;
         connection.serverMicActive = true;
 
-        const tick = async () => {
+        // Handles ONE frame of microphone PCM16LE. Driven by the continuous capture
+        // stream below rather than by a polling timer, so it now sees every frame
+        // instead of only the ~34% that survived the old spawn-per-tick gaps.
+        const handleFrame = async (raw) => {
             if (!connection.serverMicActive) return;
-            // If real-time agent socket isn't ready, continue with local STT only (skip agent streaming)
-            const agentReady = !!(connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN);
             // Check if Scribe v2 Realtime session is connected
             const realtimeReady = !!(connection.realtimeSTTSession && connection.realtimeSTTSession.isConnected);
             try {
-                let deviceId = 'default';
-                if (connection.characterId != null) {
-                    deviceId = await getMicrophoneDeviceForCharacter(connection.characterId);
-                } else {
-                    try { const cfg = await getSTTConfig(); deviceId = cfg.deviceId || cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
-                }
-                if (deviceId !== connection._lastDevId) { connection._lastDevId = deviceId; try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { } }
-                // Capture ~500ms chunks to reduce process-spawn overhead and improve stability
-                const wav = await serverSTTListener.captureChunkWav(deviceId, 0.5);
-                if (wav && wav.length > 44) {
-                    const raw = wav.subarray(44); // strip 44-byte WAV header -> raw PCM16LE
+                const deviceId = connection._lastDevId || 'default';
+                if (raw && raw.length) {
 
                     // Current time and suppression check (avoid echo during server playback)
                     const now = Date.now();
@@ -1468,14 +1488,40 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
                 }
             } catch (_) { /* ignore per-frame errors */ }
-            finally {
-                if (connection.serverMicActive && connection.isActive) {
-                    connection.serverMicTimer = setTimeout(tick, 250); // ~4 fps -> 250ms for stability
-                }
-            }
         };
 
-        connection.serverMicTimer = setTimeout(tick, 5);
+        // Resolve the capture device once. The stream stays open for the life of
+        // the session, so changing microphones now requires restarting the session
+        // (previously it was re-resolved every tick, which is what made each tick
+        // pay full device-resolution + process-spawn cost).
+        let deviceId = 'default';
+        if (connection.characterId != null) {
+            try { deviceId = await getMicrophoneDeviceForCharacter(connection.characterId); } catch (_) { deviceId = 'default'; }
+        } else {
+            try { const cfg = await getSTTConfig(); deviceId = cfg.deviceId || cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
+        }
+        connection._lastDevId = deviceId;
+        try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { }
+
+        // Re-frame the continuous byte stream into steady 250ms frames (8000 bytes
+        // at 16kHz mono PCM16) so every downstream consumer keeps the cadence it
+        // was written for — only the silence between chunks is gone.
+        const FRAME_BYTES = 8000;
+        let pending = Buffer.alloc(0);
+
+        connection.micCaptureHandle = serverSTTListener.startContinuousCapture(deviceId, (buf) => {
+            if (!connection.serverMicActive || !connection.isActive) return;
+            pending = pending.length ? Buffer.concat([pending, buf]) : buf;
+            while (pending.length >= FRAME_BYTES) {
+                const frame = Buffer.from(pending.subarray(0, FRAME_BYTES));
+                pending = pending.subarray(FRAME_BYTES);
+                handleFrame(frame).catch(() => { });
+            }
+        }, (err) => {
+            console.error(`🎤 Continuous mic capture failed for ${sessionId}: ${err && err.message}`);
+        });
+
+        console.log(`🎤 Continuous mic capture started for ${sessionId} (device=${deviceId})`);
     }
 
     _stopServerMicLoop(sessionId, sendEos) {
@@ -1483,6 +1529,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
         if (!connection) return;
         connection.serverMicActive = false;
         if (connection.serverMicTimer) { try { clearTimeout(connection.serverMicTimer); } catch (_) { } connection.serverMicTimer = null; }
+        // Kill the long-lived capture process, or it keeps holding the microphone
+        // (and streaming into a dead session) after the agent is switched off.
+        if (connection.micCaptureHandle) {
+            try { connection.micCaptureHandle.stop(); } catch (_) { }
+            connection.micCaptureHandle = null;
+        }
         if (sendEos) this._sendEmptyAudioChunkToAgent(sessionId);
     }
 

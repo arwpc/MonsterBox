@@ -517,6 +517,127 @@ class ServerSTTListener {
       return 'default';
     }
   }
+
+  /**
+   * Continuous capture: ONE long-lived process streaming raw PCM16LE @16kHz mono.
+   *
+   * captureChunkWav() spawns a fresh recorder per call, so the ~950ms of process
+   * startup between chunks is audio nobody ever hears. Measured on this node:
+   * 1452ms of wall time per 500ms of audio, a 34% duty cycle, which shredded
+   * words before they reached the conversational agent. This keeps one process
+   * open for the life of the session so the stream has no holes.
+   *
+   * captureChunkWav() is deliberately left untouched — batch/browser callers that
+   * legitimately want a single chunk still use it.
+   *
+   * @param {string} deviceId  microphone device (resolved to a Pulse source)
+   * @param {function(Buffer)} onPcm  called with raw PCM16LE as it arrives
+   * @param {function(Error)=} onError  optional; called on unrecoverable failure
+   * @returns {{stop: function}} handle — stop() kills the process and halts restarts
+   */
+  startContinuousCapture(deviceId, onPcm, onError) {
+    const sr = 16000, ch = 1;
+    const self = this;
+    const handle = { stopped: false, proc: null, restarts: 0, restartTimer: null, stop: null };
+
+    // Ordered candidates, all emitting headerless PCM16LE on stdout.
+    function buildCommand(sourceArg) {
+      return [
+        // --latency-msec keeps parec from handing back 2-second 64KB blocks, which
+        // would put a 2s delay in front of every user turn.
+        { cmd: 'parec', args: ['--device=' + sourceArg, '--rate=' + sr, '--channels=' + ch, '--format=s16le',
+          '--latency-msec=50', '--process-time-msec=20'] },
+        { cmd: 'ffmpeg', args: ['-hide_banner', '-loglevel', 'error', '-f', 'pulse', '-i', sourceArg,
+          '-ac', String(ch), '-ar', String(sr), '-f', 's16le', 'pipe:1'] },
+        { cmd: 'arecord', args: ['-D', 'pulse', '-q', '-r', String(sr), '-f', 'S16_LE', '-c', String(ch), '-t', 'raw', '-'] }
+      ];
+    }
+
+    async function launch(methodIndex) {
+      if (handle.stopped) return;
+      let sourceArg = 'default';
+      try {
+        const cached = self._resolvedSourceCache.get(deviceId);
+        if (cached && (Date.now() - cached.timestamp) < self._sourceCacheTtl) {
+          sourceArg = cached.resolvedId;
+        } else {
+          sourceArg = (await self.resolvePulseSourceId(deviceId)) || 'default';
+          self._resolvedSourceCache.set(deviceId, { resolvedId: sourceArg, timestamp: Date.now() });
+        }
+      } catch (_) { sourceArg = 'default'; }
+      if (handle.stopped) return;
+
+      const candidates = buildCommand(sourceArg);
+      const idx = Math.min(methodIndex, candidates.length - 1);
+      const { cmd, args } = candidates[idx];
+
+      let proc;
+      try {
+        const env = cmd === 'arecord'
+          ? Object.assign({}, process.env, { PULSE_SOURCE: sourceArg })
+          : process.env;
+        proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'], env });
+      } catch (err) {
+        return scheduleRestart(idx + 1, err);
+      }
+      handle.proc = proc;
+      handle.method = cmd;
+
+      const startedAt = Date.now();
+      let gotAudio = false;
+
+      proc.stdout.on('data', (buf) => {
+        if (handle.stopped || !buf || buf.length === 0) return;
+        gotAudio = true;
+        try { onPcm(buf); } catch (_) { /* never let a consumer error kill capture */ }
+      });
+
+      proc.on('error', (err) => {
+        if (handle.stopped) return;
+        scheduleRestart(gotAudio ? idx : idx + 1, err);
+      });
+
+      proc.on('close', () => {
+        if (handle.stopped) return;
+        // A run that produced audio for a while is a transient death: retry the
+        // SAME method. One that never produced audio means this method does not
+        // work here, so advance to the next candidate.
+        const ranLong = (Date.now() - startedAt) > 5000 && gotAudio;
+        if (ranLong) handle.restarts = 0;
+        scheduleRestart(gotAudio ? idx : idx + 1, null);
+      });
+    }
+
+    function scheduleRestart(nextIndex, err) {
+      if (handle.stopped) return;
+      handle.proc = null;
+      if (nextIndex > 2) {
+        // Every capture method failed — report once and stop trying.
+        if (onError) { try { onError(err || new Error('all capture methods failed')); } catch (_) { } }
+        return;
+      }
+      handle.restarts++;
+      // Exponential backoff so a permanently broken device cannot spin the CPU.
+      const delay = Math.min(8000, 500 * Math.pow(2, Math.min(4, handle.restarts - 1)));
+      handle.restartTimer = setTimeout(() => launch(nextIndex), delay);
+    }
+
+    handle.stop = function () {
+      handle.stopped = true;
+      if (handle.restartTimer) { try { clearTimeout(handle.restartTimer); } catch (_) { } handle.restartTimer = null; }
+      const p = handle.proc;
+      handle.proc = null;
+      if (p) {
+        try { p.stdout.removeAllListeners('data'); } catch (_) { }
+        try { p.kill('SIGTERM'); } catch (_) { }
+        // Guarantee no orphan survives a wedged recorder.
+        setTimeout(() => { try { if (!p.killed) p.kill('SIGKILL'); } catch (_) { } }, 1000);
+      }
+    };
+
+    launch(0);
+    return handle;
+  }
 }
 
 export default new ServerSTTListener();
