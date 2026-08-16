@@ -28,6 +28,36 @@ Array** (XMOS XVF3800), one per animatronic node.
 | In the box | Board + case + USB-A→USB-C cable |
 | Weather rating | **None.** Weatherproofing is by installation. |
 
+### Deployment constraints this decision was made under
+
+Recorded because they shaped the choice and are not obvious from the code.
+
+- **Environment:** outdoor haunt display, October in Iowa — rain, drizzle, fog,
+  dew, 30–55 °F, wind. Units sit outside for weeks, largely unattended.
+- **Target:** conversational speech from visitors standing roughly **3–10 ft**
+  away, including children with quiet voices, over crowd noise, a soundtrack,
+  wind and street noise.
+- **Playback per node:** a pair of 3-inch powered satellites plus a powered
+  subwoofer mounted below. Modest SPL — the 120 dB AOP is not a binding
+  constraint here — but the sub is a **structure-borne vibration source**, which
+  is the constraint that matters (see §7).
+- **Power:** USB bus power strongly preferred. 12 V is available but avoided
+  deliberately: a separate rail creates a second ground path, and cheap 12 V
+  supplies were the dominant documented failure mode across the whole
+  security-microphone category (one field test reported "95 % noise" until the
+  supply was properly earthed).
+- **Concealment:** not critical. A small visible black box is acceptable —
+  conversation quality was explicitly prioritised over hiding the hardware. This
+  is what put visible beamforming arrays back in scope after concealable capsules
+  had been the working assumption.
+- **One node is the exception:** it needs a long cable run and picks up sound from
+  below, at ground level. Ground level is the harshest position for water
+  (pooling and splash-back, not just falling rain), and a long run pushes against
+  USB's ~5 m passive limit. That node is the most likely candidate for the
+  fallback chain in §9.
+- Enclosure design, mounting and weatherproofing fabrication are handled outside
+  this document.
+
 ### Why this device
 
 The deciding finding from the research sweep: **a genuinely IP-rated,
