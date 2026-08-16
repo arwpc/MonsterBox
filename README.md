@@ -59,13 +59,40 @@ or system dependencies, all existing API contracts preserved.
   `deploy-to-animatronic.sh`), and hardware tests no longer leave phantom parts behind in live
   show data.
 
-> ⚠️ **Orlok is NOT fully hardware-verified.** Part 2 (Left Arm) does not move, part 3 (Bow)
-> is software-quarantined for contradictory wiring, and part 4 (Elbow) accepted six commanded
-> moves totalling ~95° with **zero acoustic signature** — strongly suggesting the ch4/ch5 rail
-> is unpowered, disconnected, or the servo is dead. **The ch4/ch5 fuse problem is mitigated in
-> software only; the root cause is electrical and unresolved.** The new pose library is
-> statically validated but not yet watched on hardware. Full per-part status and next
-> diagnostics: [docs/troubleshooting/KNOWN-BUGS.md](docs/troubleshooting/KNOWN-BUGS.md).
+### Interface
+
+Four reviewers drove the live UI as different people — a newcomer, the builder, the operator
+on Halloween night, and someone running a multi-prop display. They found the same thing from
+four directions: **the product asserted success it had not established.** Details and the
+full prioritized list: [docs/development/V9-PERSONA-REVIEWS.md](docs/development/V9-PERSONA-REVIEWS.md).
+
+- **A global control bar on every page**, carrying character identity, a live server probe,
+  master volume and stop-everything. Stop **fires on press** — a 600 ms hold was measured
+  firing *nothing* when jabbed five times, which is what a person actually does when a child
+  starts crying. One `POST /api/panic` does the work server-side, because a client-side
+  fan-out can sit in a saturated connection pool and never leave the handset.
+- **Panic now disarms the trigger, not just the playback.** Lurk, the motion sensor, head
+  tracking and the idle loop are all switched off — previously the frightened guest backing
+  away tripped the sensor and fired the scare again.
+- **The calibration API no longer bypasses the safety layer.** It drove adapters directly, so
+  the whole `/api/calibration/*` surface went around `blockAllMotion` and the angle windows.
+- **A responsive layer**: 44 px touch targets, hover scoped to devices that can hover, tables
+  that become labelled cards, full-screen modal sheets, safe-area insets, and a wake lock so
+  the phone stops sleeping between groups.
+- **`npm run audit:design-system`** in the gate — a shrink-only ratchet, like the
+  character-independence audit. **1429 → 211 violations** and it can only go down.
+- **The design system's colours finally apply.** A v6.1 stylesheet was redeclaring the
+  semantic tokens in `:root` and, loading last, silently overrode all three themes app-wide.
+- **`/live` (Show Mode) is reachable**, and the character speaks with its whole jaw:
+  perceptual amplitude mapping took jaw travel from **21.8% to 100%** of its calibrated range.
+
+> ⚠️ **Orlok is NOT fully hardware-verified.** Part 4 (Elbow) is **confirmed physically dead**
+> by the operator and is software-quarantined; part 2 (Left Arm) does not move; part 3 (Bow)
+> is quarantined for contradictory wiring. **The ch4/ch5 fuse problem is mitigated in software
+> only — the root cause is electrical and unresolved**, and the state of that rail is the
+> highest-value physical check outstanding. The pose library is statically validated but only
+> partly watched on hardware. Full per-part status and next diagnostics:
+> [docs/troubleshooting/KNOWN-BUGS.md](docs/troubleshooting/KNOWN-BUGS.md).
 
 ## What's New — v8.5.0 (July 2026) — Fleet Command Center
 
