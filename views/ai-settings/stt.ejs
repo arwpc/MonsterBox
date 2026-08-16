@@ -5,134 +5,119 @@
             <span class="mb-text-secondary">· microphone and recognition model</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm" title="Back to AI Settings">
+            <a href="/ai-settings" class="mb-btn mb-btn-secondary mb-btn-sm" title="Back to AI Settings">
                 <i class="bi bi-arrow-left"></i> AI Settings
             </a>
         </div>
     </header>
 
     <!-- Character Banner -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center mb-0" id="sttCharacterBanner">
-                <i class="bi bi-person-badge me-2"></i>
-                <strong>Currently tuning: </strong>
-                <span id="sttCharacterName" class="ms-1">Loading...</span>
-            </div>
-        </div>
+    <div class="mb-alert mb-alert-info mb-3" id="sttCharacterBanner">
+        <i class="bi bi-person-badge"></i> <strong>Currently tuning:</strong>
+        <span id="sttCharacterName">Loading...</span>
     </div>
 
     <div class="row g-4">
         <!-- Left Column: STT Configuration -->
         <div class="col-lg-8">
 
-    <!-- Real-time Transcription - THE MOST IMPORTANT FEATURE -->
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
+            <!-- Real-time Transcription - THE MOST IMPORTANT FEATURE -->
+            <div class="mb-panel mb-panel-accent mb-4">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-mic-fill"></i> Real-time Transcription
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <div class="row g-3 align-items-center mb-3">
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-success btn-lg" id="startListening" title="Start real-time transcription">
-                                <i class="bi bi-record-circle"></i> Start Listening
-                            </button>
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-danger btn-lg" id="stopListening" title="Stop real-time transcription"
-                                style="opacity: 0.5; cursor: not-allowed;">
-                                <i class="bi bi-stop-circle"></i> Stop Listening
-                            </button>
-                        </div>
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-outline-info" id="sttTwoSecTest" title="Run a 2-second microphone test">
-                                <i class="bi bi-mic-fill"></i> 2s Test
-                            </button>
-                        </div>
+                <div class="mb-panel-body">
+                    <div class="mb-row">
+                        <button type="button" class="mb-btn mb-btn-primary mb-btn-lg" id="startListening" title="Start real-time transcription from the character's microphone">
+                            <i class="bi bi-record-circle"></i> Start Listening
+                        </button>
+                        <!-- Deliberately NOT disabled: ai-settings-stt.js keeps this
+                             clickable so a stuck session can always be torn down, and
+                             only styles it as inert. Same behaviour, no inline style. -->
+                        <button type="button" class="mb-btn mb-btn-danger mb-btn-lg ai-btn-inert" id="stopListening" title="Stop real-time transcription">
+                            <i class="bi bi-stop-circle"></i> Stop Listening
+                        </button>
+                        <button type="button" class="mb-btn mb-btn-secondary mb-btn-lg" id="sttTwoSecTest" title="Run a 2-second microphone test">
+                            <i class="bi bi-mic-fill"></i> 2s Test
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Browser Audio Bridge -->
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card border-secondary">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <!-- Browser Audio Bridge -->
+            <div class="mb-panel mb-4">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-headset"></i> Browser Audio Bridge
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-3">
+                <div class="mb-panel-body">
+                    <p class="mb-text-secondary mb-text-sm">
                         Listen to the character's microphone through your browser speaker, or speak through your browser microphone to the character's speaker.
                     </p>
-                    <div class="row">
+                    <div class="row g-3">
                         <!-- Listen In: Browser Speaker -->
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="card bg-dark border-info">
-                                <div class="card-header bg-dark text-info border-info">
-                                    <h6 class="mb-0"><i class="bi bi-headphones"></i> Listen In (Browser Speaker)</h6>
+                        <div class="col-md-6">
+                            <div class="mb-panel mb-panel-accent">
+                                <div class="mb-panel-header">
+                                    <h3 class="mb-panel-title"><i class="bi bi-headphones"></i> Listen In (Browser Speaker)</h3>
                                 </div>
-                                <div class="card-body">
-                                    <p class="small text-muted mb-2">Hear what the character's microphone picks up through your browser.</p>
-                                    <div class="mb-2">
-                                        <label class="form-label small">Source Microphone</label>
-                                        <select id="stt-listenin-source" class="form-select form-select-sm" title="Source microphone to listen in on">
+                                <div class="mb-panel-body">
+                                    <p class="mb-text-secondary mb-text-sm">Hear what the character's microphone picks up through your browser.</p>
+                                    <div class="ai-field">
+                                        <label for="stt-listenin-source" class="mb-field-label">Source Microphone</label>
+                                        <select id="stt-listenin-source" class="mb-select" title="Source microphone to listen in on">
                                             <option value="default">System Default Input</option>
                                         </select>
                                     </div>
-                                    <div class="mb-2">
-                                        <label class="form-label small">Browser Volume</label>
-                                        <input type="range" id="stt-listenin-volume" class="form-range" min="0" max="100" value="75" step="5" title="Browser playback volume">
+                                    <div class="ai-field">
+                                        <label for="stt-listenin-volume" class="mb-field-label">Browser Volume</label>
+                                        <input type="range" id="stt-listenin-volume" class="mb-range" min="0" max="100" value="75" step="5" title="Browser playback volume">
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <div class="progress flex-grow-1" style="height: 12px;">
-                                            <div id="stt-listenin-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                                    <div class="ai-meter-row mb-2">
+                                        <div class="mb-meter">
+                                            <div id="stt-listenin-vu" class="mb-meter-fill"></div>
                                         </div>
-                                        <span id="stt-listenin-vu-label" class="badge bg-secondary" style="min-width:40px">0%</span>
+                                        <span id="stt-listenin-vu-label" class="mb-badge ai-meter-label">0%</span>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button id="btn-stt-listenin" class="btn btn-info btn-sm" type="button" title="Start listening through browser speaker">
+                                    <div class="mb-row-sm align-items-center">
+                                        <button id="btn-stt-listenin" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Start listening through browser speaker">
                                             <i class="bi bi-headphones"></i> <span id="stt-listenin-text">Start Listening</span>
                                         </button>
-                                        <span id="stt-listenin-status" class="badge bg-secondary">Off</span>
+                                        <span id="stt-listenin-status" class="mb-badge">Off</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <!-- Talk Through: Browser Mic -->
                         <div class="col-md-6">
-                            <div class="card bg-dark border-warning">
-                                <div class="card-header bg-dark text-warning border-warning">
-                                    <h6 class="mb-0"><i class="bi bi-mic-fill"></i> Talk Through (Browser Mic)</h6>
+                            <div class="mb-panel mb-panel-accent-warning">
+                                <div class="mb-panel-header">
+                                    <h3 class="mb-panel-title"><i class="bi bi-mic-fill"></i> Talk Through (Browser Mic)</h3>
                                 </div>
-                                <div class="card-body">
-                                    <p class="small text-muted mb-2">Speak into your browser mic and hear it through the character's speaker.</p>
-                                    <div class="mb-2">
-                                        <label class="form-label small">Target Speaker</label>
-                                        <select id="stt-talkthrough-sink" class="form-select form-select-sm" title="Target speaker for talk-through">
+                                <div class="mb-panel-body">
+                                    <p class="mb-text-secondary mb-text-sm">Speak into your browser mic and hear it through the character's speaker.</p>
+                                    <div class="ai-field">
+                                        <label for="stt-talkthrough-sink" class="mb-field-label">Target Speaker</label>
+                                        <select id="stt-talkthrough-sink" class="mb-select" title="Target speaker for talk-through">
                                             <option value="default">System Default Output</option>
                                         </select>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <div class="progress flex-grow-1" style="height: 12px;">
-                                            <div id="stt-talkthrough-vu" class="progress-bar bg-success" style="width: 0%"></div>
+                                    <div class="ai-meter-row mb-2">
+                                        <div class="mb-meter">
+                                            <div id="stt-talkthrough-vu" class="mb-meter-fill"></div>
                                         </div>
-                                        <span id="stt-talkthrough-vu-label" class="badge bg-secondary" style="min-width:40px">0%</span>
+                                        <span id="stt-talkthrough-vu-label" class="mb-badge ai-meter-label">0%</span>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button id="btn-stt-talkthrough" class="btn btn-warning btn-sm" type="button" title="Talk through the character speaker">
+                                    <div class="mb-row-sm align-items-center">
+                                        <button id="btn-stt-talkthrough" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Talk through the character speaker">
                                             <i class="bi bi-mic-fill"></i> <span id="stt-talkthrough-text">Start Talking</span>
                                         </button>
-                                        <span id="stt-talkthrough-status" class="badge bg-secondary">Off</span>
+                                        <span id="stt-talkthrough-status" class="mb-badge">Off</span>
                                     </div>
-                                    <div id="stt-talkthrough-https-warn" class="alert alert-warning small mt-2 d-none">
+                                    <div id="stt-talkthrough-https-warn" class="mb-alert mb-alert-warning mb-text-sm mt-2 d-none">
                                         <i class="bi bi-shield-lock"></i> Browser microphone requires HTTPS or localhost.
                                     </div>
                                 </div>
@@ -141,48 +126,43 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row g-4">
-        <!-- STT Configuration -->
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <!-- STT Configuration -->
+            <div class="mb-panel">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-gear"></i> STT Configuration
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
+                <div class="mb-panel-body">
                     <!-- Filter Presets -->
-                    <div class="alert alert-info mb-4">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-magic me-2"></i>
-                            <strong>Quick Presets</strong>
-                        </div>
-                        <div class="row g-2" id="filterPresets">
-                            <div class="col-12 text-muted small">Loading presets...</div>
+                    <div class="mb-alert mb-alert-info mb-4">
+                        <div>
+                            <div class="mb-2"><i class="bi bi-magic"></i> <strong>Quick Presets</strong></div>
+                            <div class="row g-2" id="filterPresets">
+                                <div class="col-12 mb-text-muted mb-text-sm">Loading presets...</div>
+                            </div>
                         </div>
                     </div>
 
                     <form id="sttConfigForm">
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="sttModel" class="form-label">STT Model</label>
-                                    <select class="form-select" id="sttModel" name="model" title="Select the speech-to-text model">
+                                <div class="ai-field">
+                                    <label for="sttModel" class="mb-field-label">STT Model</label>
+                                    <select class="mb-select" id="sttModel" name="model" title="Select the speech-to-text model">
                                         <option value="">Loading models...</option>
                                     </select>
-                                    <small class="text-muted">
+                                    <small class="mb-field-hint">
                                         <i class="bi bi-info-circle"></i> <strong>Scribe v2</strong> is recommended for
                                         best accuracy and multilingual support
                                     </small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="sttLanguage" class="form-label">Language</label>
-                                    <select class="form-select" id="sttLanguage" name="language" title="Language for speech recognition">
+                                <div class="ai-field">
+                                    <label for="sttLanguage" class="mb-field-label">Language</label>
+                                    <select class="mb-select" id="sttLanguage" name="language" title="Language for speech recognition">
                                         <option value="en">English (Recommended)</option>
                                         <option value="es">Spanish</option>
                                         <option value="fr">French</option>
@@ -191,7 +171,7 @@
                                         <option value="pt">Portuguese</option>
                                         <option value="auto">Auto-detect (May transcribe in other languages)</option>
                                     </select>
-                                    <small class="text-muted">
+                                    <small class="mb-field-hint">
                                         <i class="bi bi-exclamation-triangle"></i> Auto-detect may transcribe background
                                         noise as foreign languages
                                     </small>
@@ -200,9 +180,9 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="sampleRate" class="form-label">Sample Rate</label>
-                                    <select class="form-select" id="sampleRate" name="sampleRate" title="Audio sample rate">
+                                <div class="ai-field">
+                                    <label for="sampleRate" class="mb-field-label">Sample Rate</label>
+                                    <select class="mb-select" id="sampleRate" name="sampleRate" title="Audio sample rate">
                                         <option value="8000">8 kHz</option>
                                         <option value="16000" selected>16 kHz</option>
                                         <option value="22050">22.05 kHz</option>
@@ -212,301 +192,286 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Voice Activity Detection (VAD)</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="vadEnabled" title="Enable voice activity detection"
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Voice Activity Detection (VAD)</span>
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="vadEnabled" title="Enable voice activity detection"
                                             name="vadEnabled" checked>
-                                        <label class="form-check-label" for="vadEnabled">
-                                            Enable VAD
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">Automatically detect when speech
-                                        starts/stops</small>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Enable VAD</span>
+                                    </label>
+                                    <small class="mb-field-hint">Automatically detect when speech starts/stops</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Microphone Hardware Section -->
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-mic"></i> Microphone Hardware</h6>
+                        <hr class="ai-rule">
+                        <h3 class="ai-subhead"><i class="bi bi-mic"></i> Microphone Hardware</h3>
 
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="microphonePart" class="form-label">Microphone Part</label>
-                                    <select class="form-select" id="microphonePart" title="Select the microphone hardware">
+                                <div class="ai-field">
+                                    <label for="microphonePart" class="mb-field-label">Microphone Part</label>
+                                    <select class="mb-select" id="microphonePart" title="Select the microphone hardware">
                                         <option value="">Loading microphone parts...</option>
                                     </select>
-                                    <small class="text-muted">Select the microphone hardware for this character</small>
+                                    <small class="mb-field-hint">Select the microphone hardware for this character</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">Input Gain <span id="inputGainLabel"
-                                            class="text-muted">100%</span></label>
-                                    <input type="range" class="form-range" id="inputGain" min="0" max="200" step="1" title="Adjust microphone input gain"
+                                <div class="ai-field">
+                                    <label for="inputGain" class="mb-field-label">Input Gain <span id="inputGainLabel" class="mb-badge">100%</span></label>
+                                    <input type="range" class="mb-range" id="inputGain" min="0" max="200" step="1" title="Adjust microphone input gain"
                                         value="100">
-                                    <small class="text-muted">Adjusted via PipeWire/PulseAudio (applies
-                                        immediately)</small>
+                                    <small class="mb-field-hint">Adjusted via PipeWire/PulseAudio (applies immediately)</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-info w-100 mt-4"
-                                        id="testMicrophoneIntegration" title="Test microphone through speech-to-text">
-                                        <i class="bi bi-arrow-repeat"></i> Test Microphone → STT
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Round-trip check</span>
+                                    <button type="button" class="mb-btn mb-btn-secondary mb-btn-block"
+                                        id="testMicrophoneIntegration" title="Record from the character microphone and transcribe it">
+                                        <i class="bi bi-arrow-repeat"></i> Test Microphone &rarr; STT
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- VAD Tuning Section -->
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-activity"></i> Voice Activity Detection (VAD) Tuning</h6>
+                        <hr class="ai-rule">
+                        <h3 class="ai-subhead"><i class="bi bi-activity"></i> Voice Activity Detection (VAD) Tuning</h3>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="vadThreshold" class="form-label">
+                                <div class="ai-field">
+                                    <label for="vadThreshold" class="mb-field-label">
                                         VAD Threshold:
                                         <span id="vadThresholdValue">0.40</span>
-                                        <span id="vadThresholdLabel" class="ms-2 text-muted"
-                                            style="display:none">40%</span>
+                                        <span id="vadThresholdLabel" class="mb-text-muted ai-hidden">40%</span>
                                     </label>
-                                    <input type="range" class="form-range" id="vadThreshold" name="vadThreshold" title="Voice activity detection threshold"
+                                    <input type="range" class="mb-range" id="vadThreshold" name="vadThreshold" title="Voice activity detection threshold"
                                         min="0.05" max="0.95" step="0.05" value="0.40">
-                                    <small class="text-muted">Lower = more sensitive (may pick up noise). Tune while
+                                    <small class="mb-field-hint">Lower = more sensitive (may pick up noise). Tune while
                                         watching VU meter.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="vadSilenceDuration" class="form-label">
+                                <div class="ai-field">
+                                    <label for="vadSilenceDuration" class="mb-field-label">
                                         Silence Duration: <span id="vadSilenceDurationValue">500</span>ms
                                     </label>
-                                    <input type="range" class="form-range" id="vadSilenceDuration" title="Silence duration before ending speech"
+                                    <input type="range" class="mb-range" id="vadSilenceDuration" title="Silence duration before ending speech"
                                         name="vadSilenceDuration" min="100" max="2000" step="100" value="500">
-                                    <small class="text-muted">How long to wait before ending speech</small>
+                                    <small class="mb-field-hint">How long to wait before ending speech</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Buffer Timing Section -->
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-clock-history"></i> Buffer Timing & Capture Settings</h6>
+                        <hr class="ai-rule">
+                        <h3 class="ai-subhead"><i class="bi bi-clock-history"></i> Buffer Timing &amp; Capture Settings</h3>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="captureChunkDuration" class="form-label">
+                                <div class="ai-field">
+                                    <label for="captureChunkDuration" class="mb-field-label">
                                         Capture Chunk Duration: <span id="captureChunkDurationValue">0.5</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="captureChunkDuration" title="Duration of each audio capture chunk"
+                                    <input type="range" class="mb-range" id="captureChunkDuration" title="Duration of each audio capture chunk"
                                         name="captureChunkDuration" min="0.25" max="1.0" step="0.25" value="0.5">
-                                    <small class="text-muted">Duration of each audio capture chunk (0.5s
-                                        recommended)</small>
+                                    <small class="mb-field-hint">Duration of each audio capture chunk (0.5s recommended)</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="sttThrottleInterval" class="form-label">
+                                <div class="ai-field">
+                                    <label for="sttThrottleInterval" class="mb-field-label">
                                         STT Throttle Interval: <span id="sttThrottleIntervalValue">2500</span>ms
                                     </label>
-                                    <input type="range" class="form-range" id="sttThrottleInterval" title="How often audio is sent to STT"
+                                    <input type="range" class="mb-range" id="sttThrottleInterval" title="How often audio is sent to STT"
                                         name="sttThrottleInterval" min="1000" max="5000" step="500" value="2500">
-                                    <small class="text-muted">How often to send audio to STT service</small>
+                                    <small class="mb-field-hint">How often to send audio to STT service</small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="minBufferDuration" class="form-label">
+                                <div class="ai-field">
+                                    <label for="minBufferDuration" class="mb-field-label">
                                         Minimum Buffer Duration: <span id="minBufferDurationValue">2.5</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="minBufferDuration" title="Minimum audio duration before transcription"
+                                    <input type="range" class="mb-range" id="minBufferDuration" title="Minimum audio duration before transcription"
                                         name="minBufferDuration" min="1.0" max="5.0" step="0.5" value="2.5">
-                                    <small class="text-muted">Minimum audio duration before transcription (2.5s captures
+                                    <small class="mb-field-hint">Minimum audio duration before transcription (2.5s captures
                                         full sentences)</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="maxBufferDuration" class="form-label">
+                                <div class="ai-field">
+                                    <label for="maxBufferDuration" class="mb-field-label">
                                         Maximum Buffer Duration: <span id="maxBufferDurationValue">6.0</span>s
                                     </label>
-                                    <input type="range" class="form-range" id="maxBufferDuration" title="Maximum audio buffer size"
+                                    <input type="range" class="mb-range" id="maxBufferDuration" title="Maximum audio buffer size"
                                         name="maxBufferDuration" min="3.0" max="10.0" step="1.0" value="6.0">
-                                    <small class="text-muted">Maximum audio buffer size (6s allows long phrases)</small>
+                                    <small class="mb-field-hint">Maximum audio buffer size (6s allows long phrases)</small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="microphoneInputGain" class="form-label">
+                                <div class="ai-field">
+                                    <label for="microphoneInputGain" class="mb-field-label">
                                         Microphone Input Gain: <span id="microphoneInputGainValue">70</span>%
                                     </label>
-                                    <input type="range" class="form-range" id="microphoneInputGain" title="System microphone input volume"
+                                    <input type="range" class="mb-range" id="microphoneInputGain" title="System microphone input volume"
                                         name="microphoneInputGain" min="25" max="100" step="5" value="70">
-                                    <small class="text-muted">System microphone volume (70% prevents clipping)</small>
+                                    <small class="mb-field-hint">System microphone volume (70% prevents clipping)</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Audio Filtering Section -->
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-soundwave"></i> Audio Filtering</h6>
+                        <hr class="ai-rule">
+                        <h3 class="ai-subhead"><i class="bi bi-soundwave"></i> Audio Filtering</h3>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Audio Preprocessing</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="audioFilterEnabled" title="Enable bandpass and denoise filters"
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Audio Preprocessing</span>
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="audioFilterEnabled" title="Enable bandpass and denoise filters"
                                             name="audioFilterEnabled" checked>
-                                        <label class="form-check-label" for="audioFilterEnabled">
-                                            Enable Bandpass & Denoise Filters
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">Removes background noise and non-speech
-                                        frequencies</small>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Enable Bandpass &amp; Denoise Filters</span>
+                                    </label>
+                                    <small class="mb-field-hint">Removes background noise and non-speech frequencies</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="highpassFreq" class="form-label">
+                                <div class="ai-field">
+                                    <label for="highpassFreq" class="mb-field-label">
                                         Highpass Filter: <span id="highpassFreqValue">180</span>Hz
                                     </label>
-                                    <input type="range" class="form-range" id="highpassFreq" name="highpassFreq" title="Highpass filter cutoff frequency"
+                                    <input type="range" class="mb-range" id="highpassFreq" name="highpassFreq" title="Highpass filter cutoff frequency"
                                         min="50" max="500" step="50" value="180">
-                                    <small class="text-muted">Remove low-frequency rumble</small>
+                                    <small class="mb-field-hint">Remove low-frequency rumble</small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="lowpassFreq" class="form-label">
+                                <div class="ai-field">
+                                    <label for="lowpassFreq" class="mb-field-label">
                                         Lowpass Filter: <span id="lowpassFreqValue">4200</span>Hz
                                     </label>
-                                    <input type="range" class="form-range" id="lowpassFreq" name="lowpassFreq" title="Lowpass filter cutoff frequency"
+                                    <input type="range" class="mb-range" id="lowpassFreq" name="lowpassFreq" title="Lowpass filter cutoff frequency"
                                         min="2000" max="8000" step="200" value="4200">
-                                    <small class="text-muted">Remove high-frequency hiss</small>
+                                    <small class="mb-field-hint">Remove high-frequency hiss</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="denoiseLevel" class="form-label">
+                                <div class="ai-field">
+                                    <label for="denoiseLevel" class="mb-field-label">
                                         Denoise Level: <span id="denoiseLevelValue">-22</span>dB
                                     </label>
-                                    <input type="range" class="form-range" id="denoiseLevel" name="denoiseLevel" title="Noise reduction strength"
+                                    <input type="range" class="mb-range" id="denoiseLevel" name="denoiseLevel" title="Noise reduction strength"
                                         min="-50" max="-10" step="5" value="-22">
-                                    <small class="text-muted">Noise reduction strength</small>
+                                    <small class="mb-field-hint">Noise reduction strength</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Text Filtering Section -->
-                        <hr class="my-4">
-                        <h6 class="mb-3"><i class="bi bi-filter"></i> Text Filtering</h6>
+                        <hr class="ai-rule">
+                        <h3 class="ai-subhead"><i class="bi bi-filter"></i> Text Filtering</h3>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Sound Effects Filtering</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="filterSfx" name="filterSfx" title="Filter bracketed sound effects"
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Sound Effects Filtering</span>
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="filterSfx" name="filterSfx" title="Filter bracketed sound effects"
                                             checked>
-                                        <label class="form-check-label" for="filterSfx">
-                                            Filter Bracketed Sound Effects
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">Remove transcriptions like "(beep)", "(music)",
-                                        etc.</small>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Filter Bracketed Sound Effects</span>
+                                    </label>
+                                    <small class="mb-field-hint">Remove transcriptions like "(beep)", "(music)", etc.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Language Validation</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="validateEnglish" title="Validate transcriptions are English"
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Language Validation</span>
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="validateEnglish" title="Validate transcriptions are English"
                                             name="validateEnglish" checked>
-                                        <label class="form-check-label" for="validateEnglish">
-                                            Validate English Text
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">Reject non-English or gibberish
-                                        transcriptions</small>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Validate English Text</span>
+                                    </label>
+                                    <small class="mb-field-hint">Reject non-English or gibberish transcriptions</small>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="minLetterRatio" class="form-label">
+                                <div class="ai-field">
+                                    <label for="minLetterRatio" class="mb-field-label">
                                         Min Letter Ratio: <span id="minLetterRatioValue">55</span>%
                                     </label>
-                                    <input type="range" class="form-range" id="minLetterRatio" name="minLetterRatio" title="Minimum percentage of letters in text"
+                                    <input type="range" class="mb-range" id="minLetterRatio" name="minLetterRatio" title="Minimum percentage of letters in text"
                                         min="30" max="90" step="5" value="55">
-                                    <small class="text-muted">Minimum percentage of letters in text</small>
+                                    <small class="mb-field-hint">Minimum percentage of letters in text</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Require Vowels</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="requireVowels" title="Require at least one vowel"
+                                <div class="ai-field">
+                                    <span class="mb-field-label">Require Vowels</span>
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="requireVowels" title="Require at least one vowel"
                                             name="requireVowels" checked>
-                                        <label class="form-check-label" for="requireVowels">
-                                            Require At Least One Vowel
-                                        </label>
-                                    </div>
-                                    <small class="text-muted">Reject consonant-only gibberish</small>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Require At Least One Vowel</span>
+                                    </label>
+                                    <small class="mb-field-hint">Reject consonant-only gibberish</small>
                                 </div>
                             </div>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success" title="Save STT configuration">
+                            <button type="submit" class="mb-btn mb-btn-primary" title="Save STT configuration">
                                 <i class="bi bi-check-circle"></i> Save Configuration
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
-    </div>
 
         </div><!-- end col-lg-8 -->
 
         <!-- Right Column: Sticky Transcript + VU Meter -->
         <div class="col-lg-4">
-            <div style="position: sticky; top: 70px;">
-                <div class="card border-primary mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="card-title mb-0">
+            <div class="ai-sticky">
+                <div class="mb-panel mb-panel-accent mb-3">
+                    <div class="mb-panel-header">
+                        <h2 class="mb-panel-title">
                             <i class="bi bi-activity"></i> Live Transcript
-                        </h6>
+                        </h2>
                     </div>
-                    <div class="card-body p-2">
-                        <div class="d-flex align-items-center mb-2">
-                            <small class="text-muted me-2"
+                    <div class="mb-panel-body">
+                        <div class="ai-meter-row mb-2">
+                            <small class="mb-text-muted"
                                 title="Amplified 10x for visibility. Speak to see levels spike.">
                                 <i class="bi bi-activity"></i> Audio Input:
                             </small>
-                            <div class="progress flex-grow-1" style="height: 20px;">
-                                <div id="micVUMeter" class="progress-bar bg-success" role="progressbar"
-                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="mb-meter mb-meter-lg">
+                                <div id="micVUMeter" class="mb-meter-fill" role="progressbar"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            <span id="micVULabel" class="ms-2 badge bg-secondary">0%</span>
+                            <span id="micVULabel" class="mb-badge ai-meter-label">0%</span>
                         </div>
-                        <div id="liveTranscript" class="form-control bg-dark text-light font-monospace"
-                            style="height: 150px; overflow-y: auto; font-size: 0.9rem;"></div>
+                        <div id="liveTranscript" class="ai-transcript"></div>
                     </div>
                 </div>
             </div>

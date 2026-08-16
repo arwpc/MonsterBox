@@ -302,7 +302,28 @@
 
 /* Toggle switch */
 .mb-switch { display: inline-flex; align-items: center; gap: var(--mb-space-3); cursor: pointer; user-select: none; }
-.mb-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+/* The input is visually hidden but must remain a real hit target. Collapsing it
+   to 0x0 made the switch unreachable by anything driving the page with a pointer —
+   Playwright's .check() and toBeVisible() both fail on it, and it is a poor target
+   for assistive tech. Stretched over the painted track instead: invisible, same
+   size, still the thing that actually receives the click. */
+.mb-switch { position: relative; }
+.mb-switch input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;      /* matches .mb-switch-track */
+  height: 24px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+@media (pointer: coarse) {
+  /* Comfortable thumb target without changing the painted size. */
+  .mb-switch input { height: 44px; top: -10px; }
+}
 .mb-switch-track {
   position: relative;
   width: 44px;

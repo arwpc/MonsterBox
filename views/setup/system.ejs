@@ -1,57 +1,90 @@
-<div class="d-flex justify-content-end mb-2 gap-2">
-  <button class="btn btn-outline-warning btn-sm" id="btnOptimize" title="Run animatronic optimization — disables bloat services, tunes performance">
-    <i class="bi bi-lightning-charge"></i> Optimize
-  </button>
-  <button class="btn btn-outline-info btn-sm" id="btnRestartService" title="Restart MonsterBox service without rebooting">
-    <i class="bi bi-arrow-repeat"></i> Restart Service
-  </button>
-  <button class="btn btn-outline-danger btn-sm" id="btnReboot" title="Reboot System">
-    <i class="bi bi-arrow-clockwise"></i> Reboot
-  </button>
-  <button class="btn btn-outline-danger btn-sm" id="btnShutdown" title="Shutdown System">
-    <i class="bi bi-power"></i> Shutdown
-  </button>
+<!--
+  Node actions.
+
+  Reboot and Shutdown used to sit here as two more identical outline buttons
+  next to Optimize and Restart Service: four uniform switches in the top-right
+  of the page an operator opens to read a CPU temperature or change the theme.
+  Two of those four take the machine away, and on a headless Pi sealed inside
+  an animatronic, Shutdown cannot be undone from any screen.
+
+  They are separated and weighted now. Recoverable maintenance on the left;
+  power actions in their own danger-bordered group that names the node it is
+  about to take down and says out loud what undoing it costs.
+-->
+<div class="sys-actions">
+  <div class="sys-actions-maint" role="group" aria-label="Maintenance actions">
+    <button class="mb-btn mb-btn-secondary mb-btn-sm" id="btnOptimize" title="Run animatronic optimization — disables bloat services, tunes performance">
+      <i class="bi bi-lightning-charge"></i> Optimize
+    </button>
+    <button class="mb-btn mb-btn-secondary mb-btn-sm" id="btnRestartService" title="Restart the MonsterBox service without rebooting the node">
+      <i class="bi bi-arrow-repeat"></i> Restart Service
+    </button>
+  </div>
+
+  <div class="sys-power" role="group" aria-labelledby="sysPowerHeading">
+    <div class="sys-power-head" id="sysPowerHeading">
+      <i class="bi bi-exclamation-triangle-fill mb-text-danger" aria-hidden="true"></i>
+      <span>Power &middot; <span id="sysNodeName" class="mb-mono">this node</span></span>
+    </div>
+    <div class="sys-power-actions">
+      <button class="mb-btn mb-btn-danger sys-power-btn" id="btnReboot" title="Reboot this node — it comes back on its own in 30-60 seconds">
+        <i class="bi bi-arrow-clockwise"></i> Reboot this node
+      </button>
+      <button class="mb-btn mb-btn-danger mb-btn-glow sys-power-btn sys-power-btn-off" id="btnShutdown" title="Power this node off — it will NOT come back without physical access">
+        <i class="bi bi-power"></i> Shut down this node
+      </button>
+    </div>
+    <p class="sys-power-note">
+      <i class="bi bi-hand-index-thumb" aria-hidden="true"></i>
+      Shutting down cannot be undone from here. Bringing this node back means reaching
+      the Pi inside the animatronic and power-cycling it by hand.
+    </p>
+  </div>
 </div>
 
-<!-- Tab Navigation -->
-<ul class="nav nav-tabs mb-3" id="systemTabs" role="tablist">
+<!-- Tab Navigation.
+     Bootstrap's tab plugin still drives these (it needs data-bs-toggle and the
+     .nav-link hook for keyboard navigation); .mb-tabs / .mb-tab give them the
+     design system's appearance, and .mb-tab keys its selected state off
+     aria-selected, which Bootstrap already sets. -->
+<ul class="nav nav-tabs mb-tabs mb-3" id="systemTabs" role="tablist">
   <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" title="Show system overview">
+    <button class="nav-link mb-tab active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" title="Show system overview">
       <i class="bi bi-speedometer2"></i> Overview
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab" title="Show performance history">
+    <button class="nav-link mb-tab" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab" title="Show performance history">
       <i class="bi bi-graph-up"></i> Performance
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" title="Show system logs">
+    <button class="nav-link mb-tab" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" title="Show system logs">
       <i class="bi bi-journal-text"></i> Logs
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" title="Show system settings">
+    <button class="nav-link mb-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" title="Show system settings">
       <i class="bi bi-gear"></i> Settings
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="ssh-tab" data-bs-toggle="tab" data-bs-target="#ssh" type="button" role="tab" title="Show SSH keys">
+    <button class="nav-link mb-tab" id="ssh-tab" data-bs-toggle="tab" data-bs-target="#ssh" type="button" role="tab" title="Show SSH keys">
       <i class="bi bi-key"></i> SSH Keys
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" title="Show config templates">
+    <button class="nav-link mb-tab" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" title="Show config templates">
       <i class="bi bi-clipboard-data"></i> Templates
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="resource-tab" data-bs-toggle="tab" data-bs-target="#resource" type="button" role="tab" title="Show resource usage">
+    <button class="nav-link mb-tab" id="resource-tab" data-bs-toggle="tab" data-bs-target="#resource" type="button" role="tab" title="Show resource usage">
       <i class="bi bi-cpu"></i> Resources
     </button>
   </li>
   <li class="nav-item" role="presentation">
-    <button class="nav-link" id="movement-tab" data-bs-toggle="tab" data-bs-target="#movement" type="button" role="tab" title="Show movement telemetry">
+    <button class="nav-link mb-tab" id="movement-tab" data-bs-toggle="tab" data-bs-target="#movement" type="button" role="tab" title="Show movement telemetry">
       <i class="bi bi-activity"></i> Movement
     </button>
   </li>
@@ -65,12 +98,12 @@
     <div class="row g-3">
       <!-- System Info Card -->
       <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-info-circle"></i> System Information</h5></div>
-          <div class="card-body">
+        <div class="mb-panel h-100">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-info-circle"></i> System Information</h5></div>
+          <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">MonsterBox Version</dt>
-              <dd class="col-sm-7"><span class="badge bg-primary" id="infoVersion"><%= typeof appVersion !== 'undefined' ? appVersion : 'loading...' %></span></dd>
+              <dd class="col-sm-7"><span class="mb-badge mb-badge-primary" id="infoVersion"><%= typeof appVersion !== 'undefined' ? appVersion : 'loading...' %></span></dd>
               <dt class="col-sm-5">Hostname</dt>
               <dd class="col-sm-7" id="infoHostname">Loading...</dd>
               <dt class="col-sm-5">Node.js</dt>
@@ -90,39 +123,39 @@
 
       <!-- Live Gauges -->
       <div class="col-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="bi bi-speedometer"></i> Live Performance</h5>
-            <small class="text-muted" id="gaugeTimestamp">--</small>
+        <div class="mb-panel">
+          <div class="mb-panel-header">
+            <h5 class="mb-panel-title"><i class="bi bi-speedometer"></i> Live Performance</h5>
+            <small class="mb-text-muted mb-text-sm" id="gaugeTimestamp">--</small>
           </div>
-          <div class="card-body">
+          <div class="mb-panel-body">
             <div class="row text-center g-3">
               <div class="col-6 col-md-3">
-                <h6>CPU</h6>
-                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                <h6 class="sys-gauge-label">CPU</h6>
+                <div class="sys-gauge">
                   <canvas id="gaugeCpu" width="100" height="100"></canvas>
-                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeCpuText">--%</span>
+                  <span class="sys-gauge-value" id="gaugeCpuText">--%</span>
                 </div>
               </div>
               <div class="col-6 col-md-3">
-                <h6>Memory</h6>
-                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                <h6 class="sys-gauge-label">Memory</h6>
+                <div class="sys-gauge">
                   <canvas id="gaugeMem" width="100" height="100"></canvas>
-                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeMemText">--%</span>
+                  <span class="sys-gauge-value" id="gaugeMemText">--%</span>
                 </div>
               </div>
               <div class="col-6 col-md-3">
-                <h6>Temperature</h6>
-                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                <h6 class="sys-gauge-label">Temperature</h6>
+                <div class="sys-gauge">
                   <canvas id="gaugeTemp" width="100" height="100"></canvas>
-                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeTempText">--&deg;C</span>
+                  <span class="sys-gauge-value" id="gaugeTempText">--&deg;C</span>
                 </div>
               </div>
               <div class="col-6 col-md-3">
-                <h6>Disk</h6>
-                <div class="position-relative d-inline-block" style="width:100px;height:100px;">
+                <h6 class="sys-gauge-label">Disk</h6>
+                <div class="sys-gauge">
                   <canvas id="gaugeDisk" width="100" height="100"></canvas>
-                  <span class="position-absolute top-50 start-50 translate-middle fw-bold" id="gaugeDiskText">--%</span>
+                  <span class="sys-gauge-value" id="gaugeDiskText">--%</span>
                 </div>
               </div>
             </div>
@@ -132,20 +165,20 @@
 
       <!-- Theme Gallery -->
       <div class="col-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="bi bi-palette"></i> Theme Settings</h5>
-            <div>
-              <span class="badge bg-secondary me-2" id="themePreviewLabel">Previewing: --</span>
-              <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btnResetPreview" title="Reset theme preview">
+        <div class="mb-panel">
+          <div class="mb-panel-header">
+            <h5 class="mb-panel-title"><i class="bi bi-palette"></i> Theme Settings</h5>
+            <div class="mb-row-sm sys-theme-actions">
+              <span class="mb-badge" id="themePreviewLabel">Previewing: --</span>
+              <button type="button" class="mb-btn mb-btn-ghost mb-btn-sm" id="btnResetPreview" title="Reset theme preview">
                 <i class="bi bi-arrow-counterclockwise"></i> Reset
               </button>
-              <button type="button" class="btn btn-sm btn-primary" id="btnApplyTheme" title="Apply selected theme">
+              <button type="button" class="mb-btn mb-btn-primary mb-btn-sm" id="btnApplyTheme" title="Apply selected theme">
                 <i class="bi bi-check-circle"></i> Apply Theme
               </button>
             </div>
           </div>
-          <div class="card-body">
+          <div class="mb-panel-body">
             <div id="themeMessage" class="mb-3"></div>
             <div class="row g-3" id="themeGallery"></div>
           </div>
@@ -156,18 +189,18 @@
 
   <!-- ══════════════════ Tab 2: Performance ══════════════════ -->
   <div class="tab-pane fade" id="performance" role="tabpanel">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0"><i class="bi bi-graph-up"></i> Performance History</h5>
-        <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-secondary active" data-period="24h" title="Show last 24 hours">24 Hours</button>
-          <button class="btn btn-outline-secondary" data-period="1w" title="Show last 1 week">1 Week</button>
-          <button class="btn btn-outline-secondary" data-period="1m" title="Show last 1 month">1 Month</button>
+    <div class="mb-panel">
+      <div class="mb-panel-header">
+        <h5 class="mb-panel-title"><i class="bi bi-graph-up"></i> Performance History</h5>
+        <div class="mb-btn-group">
+          <button class="mb-btn mb-btn-secondary mb-btn-sm sys-period-btn active" data-period="24h" title="Show last 24 hours">24 Hours</button>
+          <button class="mb-btn mb-btn-secondary mb-btn-sm sys-period-btn" data-period="1w" title="Show last 1 week">1 Week</button>
+          <button class="mb-btn mb-btn-secondary mb-btn-sm sys-period-btn" data-period="1m" title="Show last 1 month">1 Month</button>
         </div>
       </div>
-      <div class="card-body">
+      <div class="mb-panel-body">
         <div class="mb-3">
-          <canvas id="perfChart" height="280" style="width:100%;"></canvas>
+          <canvas id="perfChart" class="sys-chart" height="280"></canvas>
         </div>
         <div class="row text-center" id="perfSummary">
           <div class="col-4"><strong>Avg CPU:</strong> <span id="perfAvgCpu">--</span>%</div>
@@ -180,45 +213,34 @@
 
   <!-- ══════════════════ Tab 3: Logs ══════════════════ -->
   <div class="tab-pane fade" id="logs" role="tabpanel">
-    <div class="card">
-      <div class="card-header">
-        <div class="row align-items-center g-2">
-          <div class="col-auto">
-            <select class="form-select form-select-sm" id="logSource" title="Select log source">
-              <option value="journal" selected>Journal (systemd)</option>
-              <option value="console">Console Output (stdout)</option>
-              <option value="errors">Error Output (stderr)</option>
-            </select>
-          </div>
-          <div class="col-auto">
-            <select class="form-select form-select-sm" id="logService" title="Select service for logs">
-              <option value="monsterbox">monsterbox</option>
-              <option value="mjpg-streamer">mjpg-streamer</option>
-              <option value="pigpiod">pigpiod</option>
-              <option value="pipewire">pipewire</option>
-            </select>
-          </div>
-          <div class="col-auto">
-            <select class="form-select form-select-sm" id="logLines" title="Select number of log lines">
-              <option value="50">50 lines</option>
-              <option value="100" selected>100 lines</option>
-              <option value="200">200 lines</option>
-              <option value="500">500 lines</option>
-            </select>
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-sm btn-primary" id="btnRefreshLogs" title="Refresh logs"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-          </div>
-          <div class="col-auto">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="logAutoRefresh" title="Toggle log auto-refresh">
-              <label class="form-check-label" for="logAutoRefresh">Auto-refresh</label>
-            </div>
-          </div>
-        </div>
+    <div class="mb-panel">
+      <div class="mb-panel-header sys-log-toolbar">
+        <select class="mb-select mb-select-auto" id="logSource" title="Select log source">
+          <option value="journal" selected>Journal (systemd)</option>
+          <option value="console">Console Output (stdout)</option>
+          <option value="errors">Error Output (stderr)</option>
+        </select>
+        <select class="mb-select mb-select-auto" id="logService" title="Select service for logs">
+          <option value="monsterbox">monsterbox</option>
+          <option value="mjpg-streamer">mjpg-streamer</option>
+          <option value="pigpiod">pigpiod</option>
+          <option value="pipewire">pipewire</option>
+        </select>
+        <select class="mb-select mb-select-auto" id="logLines" title="Select number of log lines">
+          <option value="50">50 lines</option>
+          <option value="100" selected>100 lines</option>
+          <option value="200">200 lines</option>
+          <option value="500">500 lines</option>
+        </select>
+        <button class="mb-btn mb-btn-primary mb-btn-sm" id="btnRefreshLogs" title="Refresh logs"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        <label class="mb-switch" for="logAutoRefresh" title="Toggle log auto-refresh">
+          <input type="checkbox" id="logAutoRefresh">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Auto-refresh</span>
+        </label>
       </div>
-      <div class="card-body p-0">
-        <pre id="logOutput" class="mb-0 p-3" style="max-height:500px;overflow-y:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;">Loading logs...</pre>
+      <div class="mb-panel-body sys-log-body">
+        <pre id="logOutput" class="sys-log-output">Loading logs...</pre>
       </div>
     </div>
   </div>
@@ -231,22 +253,12 @@
         <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#volumeSettings" title="Expand system volume settings"><i class="bi bi-volume-up me-2"></i>System Volume</button></h2>
         <div id="volumeSettings" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
-            <div class="row align-items-center g-3">
-              <div class="col-md-1 text-center">
-                <i class="bi bi-volume-off fs-5"></i>
-              </div>
-              <div class="col-md-7">
-                <input type="range" class="form-range" id="systemVolumeSlider" min="0" max="100" step="1" value="90" title="Adjust system volume">
-              </div>
-              <div class="col-md-1 text-center">
-                <i class="bi bi-volume-up fs-5"></i>
-              </div>
-              <div class="col-md-1">
-                <span class="badge bg-primary fs-6" id="systemVolumeDisplay">90%</span>
-              </div>
-              <div class="col-md-2">
-                <button class="btn btn-primary w-100" id="btnSaveVolume" title="Apply system volume"><i class="bi bi-check-circle"></i> Apply</button>
-              </div>
+            <div class="sys-volume-row">
+              <i class="bi bi-volume-off fs-5" aria-hidden="true"></i>
+              <input type="range" class="mb-range" id="systemVolumeSlider" min="0" max="100" step="1" value="90" title="Adjust system volume">
+              <i class="bi bi-volume-up fs-5" aria-hidden="true"></i>
+              <span class="mb-badge mb-badge-primary sys-volume-value" id="systemVolumeDisplay">90%</span>
+              <button class="mb-btn mb-btn-primary" id="btnSaveVolume" title="Apply system volume"><i class="bi bi-check-circle"></i> Apply</button>
             </div>
             <div id="volumeMessage" class="mt-2"></div>
           </div>
@@ -260,15 +272,15 @@
           <div class="accordion-body">
             <div class="row align-items-end g-3">
               <div class="col-md-6">
-                <label class="form-label">CPU Governor</label>
-                <select class="form-select" id="cpuGovernor" title="Select CPU governor"><option>Loading...</option></select>
+                <label class="mb-field-label" for="cpuGovernor">CPU Governor</label>
+                <select class="mb-select" id="cpuGovernor" title="Select CPU governor"><option>Loading...</option></select>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Current</label>
-                <input type="text" class="form-control" id="cpuGovernorCurrent" readonly title="Current CPU governor">
+                <label class="mb-field-label" for="cpuGovernorCurrent">Current</label>
+                <input type="text" class="mb-input mb-input-mono" id="cpuGovernorCurrent" readonly title="Current CPU governor">
               </div>
               <div class="col-md-3">
-                <button class="btn btn-primary w-100" id="btnSaveCpuGovernor" title="Apply CPU governor"><i class="bi bi-check-circle"></i> Apply</button>
+                <button class="mb-btn mb-btn-primary mb-btn-block" id="btnSaveCpuGovernor" title="Apply CPU governor"><i class="bi bi-check-circle"></i> Apply</button>
               </div>
             </div>
             <div id="cpuMessage" class="mt-2"></div>
@@ -285,7 +297,7 @@
               <dt class="col-sm-4">GPU Memory</dt>
               <dd class="col-sm-8" id="gpuMemory">Loading...</dd>
             </dl>
-            <small class="text-muted">GPU memory allocation is set in /boot/config.txt and requires a reboot to change.</small>
+            <small class="mb-text-muted">GPU memory allocation is set in /boot/config.txt and requires a reboot to change.</small>
           </div>
         </div>
       </div>
@@ -310,7 +322,7 @@
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#startupSettings" title="Expand startup tasks">Startup Tasks</button></h2>
         <div id="startupSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body" id="startupTasksList">
-            <p class="text-muted">Loading startup tasks...</p>
+            <p class="mb-text-muted">Loading startup tasks...</p>
           </div>
         </div>
       </div>
@@ -320,9 +332,9 @@
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#presetSettings" title="Expand performance presets">Performance Presets</button></h2>
         <div id="presetSettings" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
           <div class="accordion-body">
-            <p class="text-muted mb-3">Select a preset optimized for your Raspberry Pi model. CPU governor changes apply immediately. Boot config changes require manual editing of <code>/boot/firmware/config.txt</code> and a reboot.</p>
+            <p class="mb-text-muted mb-3">Select a preset optimized for your Raspberry Pi model. CPU governor changes apply immediately. Boot config changes require manual editing of <code>/boot/firmware/config.txt</code> and a reboot.</p>
             <div id="presetsList" class="row g-2">
-              <p class="text-muted">Loading presets...</p>
+              <p class="mb-text-muted">Loading presets...</p>
             </div>
             <div id="presetMessage" class="mt-3"></div>
           </div>
@@ -335,49 +347,47 @@
   <div class="tab-pane fade" id="ssh" role="tabpanel">
     <div class="row g-3">
       <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-key"></i> SSH Keys</h5></div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-sm" id="sshKeysTable">
-                <thead><tr><th>Name</th><th>Fingerprint</th><th>Created</th><th>Actions</th></tr></thead>
-                <tbody id="sshKeysBody"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
-              </table>
-            </div>
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-key"></i> SSH Keys</h5></div>
+          <div class="mb-panel-body mb-table-scroll">
+            <table class="mb-table mb-table-stack" id="sshKeysTable">
+              <thead><tr><th>Name</th><th>Fingerprint</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="sshKeysBody"><tr><td colspan="4" class="mb-text-muted">Loading...</td></tr></tbody>
+            </table>
           </div>
         </div>
       </div>
       <div class="col-lg-4">
-        <div class="card mb-3">
-          <div class="card-header"><h6 class="card-title mb-0">Generate New Key</h6></div>
-          <div class="card-body">
-            <div class="mb-2">
-              <label class="form-label">Key Type</label>
-              <select class="form-select form-select-sm" id="sshKeyType" title="Select SSH key type">
+        <div class="mb-panel mb-3">
+          <div class="mb-panel-header"><h6 class="mb-panel-title">Generate New Key</h6></div>
+          <div class="mb-panel-body">
+            <div class="mb-field">
+              <label class="mb-field-label" for="sshKeyType">Key Type</label>
+              <select class="mb-select" id="sshKeyType" title="Select SSH key type">
                 <option value="ed25519" selected>Ed25519 (Recommended)</option>
                 <option value="rsa">RSA 4096</option>
               </select>
             </div>
-            <div class="mb-2">
-              <label class="form-label">Comment</label>
-              <input type="text" class="form-control form-control-sm" id="sshKeyComment" placeholder="MonsterBox key" title="SSH key comment">
+            <div class="mb-field">
+              <label class="mb-field-label" for="sshKeyComment">Comment</label>
+              <input type="text" class="mb-input" id="sshKeyComment" placeholder="MonsterBox key" title="SSH key comment">
             </div>
-            <button class="btn btn-sm btn-primary w-100" id="btnGenerateKey" title="Generate new SSH key"><i class="bi bi-plus-circle"></i> Generate</button>
+            <button class="mb-btn mb-btn-primary mb-btn-block" id="btnGenerateKey" title="Generate new SSH key"><i class="bi bi-plus-circle"></i> Generate</button>
             <div id="sshGenMessage" class="mt-2"></div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><h6 class="card-title mb-0">Deploy to Host</h6></div>
-          <div class="card-body">
-            <div class="mb-2">
-              <label class="form-label">Key</label>
-              <select class="form-select form-select-sm" id="deployKeySelect" title="Select key to deploy"><option>-- select key --</option></select>
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h6 class="mb-panel-title">Deploy to Host</h6></div>
+          <div class="mb-panel-body">
+            <div class="mb-field">
+              <label class="mb-field-label" for="deployKeySelect">Key</label>
+              <select class="mb-select" id="deployKeySelect" title="Select key to deploy"><option>-- select key --</option></select>
             </div>
-            <div class="mb-2">
-              <label class="form-label">Host</label>
-              <input type="text" class="form-control form-control-sm" id="deployHost" placeholder="user@host" title="Host to deploy key to">
+            <div class="mb-field">
+              <label class="mb-field-label" for="deployHost">Host</label>
+              <input type="text" class="mb-input" id="deployHost" placeholder="user@host" title="Host to deploy key to">
             </div>
-            <button class="btn btn-sm btn-success w-100" id="btnDeployKey" title="Deploy SSH key to host"><i class="bi bi-send"></i> Deploy</button>
+            <button class="mb-btn mb-btn-primary mb-btn-block" id="btnDeployKey" title="Deploy SSH key to host"><i class="bi bi-send"></i> Deploy</button>
             <div id="sshDeployMessage" class="mt-2"></div>
           </div>
         </div>
@@ -389,34 +399,32 @@
   <div class="tab-pane fade" id="templates" role="tabpanel">
     <div class="row g-3">
       <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="bi bi-clipboard-data"></i> Saved Templates</h5>
-            <button class="btn btn-sm btn-primary" id="btnSaveTemplate" title="Save current config as template"><i class="bi bi-plus-circle"></i> Save Current Config</button>
+        <div class="mb-panel">
+          <div class="mb-panel-header">
+            <h5 class="mb-panel-title"><i class="bi bi-clipboard-data"></i> Saved Templates</h5>
+            <button class="mb-btn mb-btn-primary mb-btn-sm" id="btnSaveTemplate" title="Save current config as template"><i class="bi bi-plus-circle"></i> Save Current Config</button>
           </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead><tr><th>Name</th><th>Description</th><th>Created</th><th>Actions</th></tr></thead>
-                <tbody id="templatesBody"><tr><td colspan="4" class="text-muted">Loading...</td></tr></tbody>
-              </table>
-            </div>
+          <div class="mb-panel-body mb-table-scroll">
+            <table class="mb-table mb-table-stack">
+              <thead><tr><th>Name</th><th>Description</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="templatesBody"><tr><td colspan="4" class="mb-text-muted">Loading...</td></tr></tbody>
+            </table>
           </div>
         </div>
       </div>
       <div class="col-lg-4">
-        <div class="card">
-          <div class="card-header"><h6 class="card-title mb-0">Save New Template</h6></div>
-          <div class="card-body">
-            <div class="mb-2">
-              <label class="form-label">Name</label>
-              <input type="text" class="form-control form-control-sm" id="tplName" placeholder="My Config" title="Template name">
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h6 class="mb-panel-title">Save New Template</h6></div>
+          <div class="mb-panel-body">
+            <div class="mb-field">
+              <label class="mb-field-label" for="tplName">Name</label>
+              <input type="text" class="mb-input" id="tplName" placeholder="My Config" title="Template name">
             </div>
-            <div class="mb-2">
-              <label class="form-label">Description</label>
-              <textarea class="form-control form-control-sm" id="tplDesc" rows="2" placeholder="Description..." title="Template description"></textarea>
+            <div class="mb-field">
+              <label class="mb-field-label" for="tplDesc">Description</label>
+              <textarea class="mb-textarea" id="tplDesc" rows="2" placeholder="Description..." title="Template description"></textarea>
             </div>
-            <button class="btn btn-sm btn-primary w-100" id="btnSaveTemplateForm" title="Save template"><i class="bi bi-save"></i> Save</button>
+            <button class="mb-btn mb-btn-primary mb-btn-block" id="btnSaveTemplateForm" title="Save template"><i class="bi bi-save"></i> Save</button>
             <div id="tplMessage" class="mt-2"></div>
           </div>
         </div>
@@ -428,9 +436,9 @@
   <div class="tab-pane fade" id="resource" role="tabpanel">
     <div class="row g-3">
       <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-cpu"></i> Process Info</h5></div>
-          <div class="card-body">
+        <div class="mb-panel h-100">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-cpu"></i> Process Info</h5></div>
+          <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">PID</dt>
               <dd class="col-sm-7" id="resPid">—</dd>
@@ -439,7 +447,7 @@
               <dt class="col-sm-5">Process Priority</dt>
               <dd class="col-sm-7" id="resPriority">—</dd>
               <dt class="col-sm-5">Environment</dt>
-              <dd class="col-sm-7"><span class="badge bg-info" id="resEnv">—</span></dd>
+              <dd class="col-sm-7"><span class="mb-badge mb-badge-info" id="resEnv">—</span></dd>
               <dt class="col-sm-5">Node.js</dt>
               <dd class="col-sm-7" id="resNodeVer">—</dd>
               <dt class="col-sm-5">Platform</dt>
@@ -449,14 +457,15 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-memory"></i> Memory</h5></div>
-          <div class="card-body">
+        <div class="mb-panel h-100">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-memory"></i> Memory</h5></div>
+          <div class="mb-panel-body">
             <div class="mb-2">
-              <label class="form-label small mb-1">Process RSS</label>
-              <div class="progress" style="height: 20px;">
-                <div class="progress-bar" id="resMemBar" role="progressbar" style="width: 0%">0 MB</div>
+              <span class="mb-field-label">Process RSS</span>
+              <div class="mb-meter mb-meter-lg">
+                <div class="mb-meter-fill" id="resMemBar" role="progressbar"></div>
               </div>
+              <span class="mb-text-sm mb-mono" id="resMemBarText">0 MB</span>
             </div>
             <dl class="row mb-0 mt-3">
               <dt class="col-sm-5">Heap Used</dt>
@@ -466,15 +475,15 @@
               <dt class="col-sm-5">System Total</dt>
               <dd class="col-sm-7" id="resSysTotal">—</dd>
               <dt class="col-sm-5">Status</dt>
-              <dd class="col-sm-7"><span class="badge" id="resMemLevel">—</span></dd>
+              <dd class="col-sm-7"><span class="mb-badge" id="resMemLevel">—</span></dd>
             </dl>
           </div>
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-bar-chart"></i> CPU Load</h5></div>
-          <div class="card-body">
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-bar-chart"></i> CPU Load</h5></div>
+          <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">1-min avg</dt>
               <dd class="col-sm-7" id="resCpu1">—</dd>
@@ -489,10 +498,10 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-heart-pulse"></i> Startup Health</h5></div>
-          <div class="card-body" id="resHealthBody">
-            <p class="text-muted mb-0">Loading...</p>
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-heart-pulse"></i> Startup Health</h5></div>
+          <div class="mb-panel-body" id="resHealthBody">
+            <p class="mb-text-muted mb-0">Loading...</p>
           </div>
         </div>
       </div>
@@ -503,10 +512,10 @@
   <div class="tab-pane fade" id="movement" role="tabpanel">
     <div class="row g-3">
       <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="bi bi-activity"></i> Movement Telemetry</h5>
-            <select class="form-select form-select-sm" id="mvtPeriod" style="width:auto;" title="Select telemetry time period">
+        <div class="mb-panel h-100">
+          <div class="mb-panel-header">
+            <h5 class="mb-panel-title"><i class="bi bi-activity"></i> Movement Telemetry</h5>
+            <select class="mb-select mb-select-auto" id="mvtPeriod" title="Select telemetry time period">
               <option value="3600000">1 Hour</option>
               <option value="21600000">6 Hours</option>
               <option value="86400000">24 Hours</option>
@@ -514,7 +523,7 @@
               <option value="2592000000">30 Days</option>
             </select>
           </div>
-          <div class="card-body">
+          <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-6">Servo Latency (avg)</dt>
               <dd class="col-sm-6" id="mvtLatencyAvg">—</dd>
@@ -529,28 +538,28 @@
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card h-100">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-gear"></i> Servo Health</h5></div>
-          <div class="card-body" id="mvtServoHealth">
-            <p class="text-muted mb-0">No telemetry data yet</p>
+        <div class="mb-panel h-100">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-gear"></i> Servo Health</h5></div>
+          <div class="mb-panel-body" id="mvtServoHealth">
+            <p class="mb-text-muted mb-0">No telemetry data yet</p>
           </div>
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-lock"></i> Active Servo Claims</h5></div>
-          <div class="card-body" id="mvtClaims">
-            <p class="text-muted mb-0">No active claims</p>
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-lock"></i> Active Servo Claims</h5></div>
+          <div class="mb-panel-body" id="mvtClaims">
+            <p class="mb-text-muted mb-0">No active claims</p>
           </div>
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header"><h5 class="card-title mb-0"><i class="bi bi-person-walking"></i> Idle Loop Status</h5></div>
-          <div class="card-body">
+        <div class="mb-panel">
+          <div class="mb-panel-header"><h5 class="mb-panel-title"><i class="bi bi-person-walking"></i> Idle Loop Status</h5></div>
+          <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">Status</dt>
-              <dd class="col-sm-7"><span class="badge" id="mvtIdleStatus">—</span></dd>
+              <dd class="col-sm-7"><span class="mb-badge" id="mvtIdleStatus">—</span></dd>
               <dt class="col-sm-5">Current Pose</dt>
               <dd class="col-sm-7" id="mvtIdlePose">—</dd>
               <dt class="col-sm-5">Character</dt>
@@ -573,12 +582,143 @@
   var $ = function (sel) { return document.querySelector(sel); };
   var $$ = function (sel) { return document.querySelectorAll(sel); };
 
+  /* ─── Feedback primitives ──────────────────────────────────────────────────
+     This page used to reach for the browser's own blocking dialogs. A native
+     dialog cannot be themed, is unusable on a phone, and — the reason that
+     matters most on THIS page — cannot show which node it is about to power
+     off. These are the design system's toast and modal instead.
+     ─────────────────────────────────────────────────────────────────────── */
+
+  /** Inline, panel-scoped status message. `type` is success|warning|danger|info. */
   function showAlert(containerId, type, msg) {
     var el = document.getElementById(containerId);
     if (!el) return;
-    el.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show py-2">' + msg +
-      '<button title="Dismiss this message" type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    var kind = (type === 'success' || type === 'warning' || type === 'danger' || type === 'info') ? type : 'info';
+    el.innerHTML = '<div class="mb-alert mb-alert-' + kind + '" role="status">' + msg + '</div>';
   }
+
+  /** Transient page-level toast — same shape as the one in mb-control-bar.js. */
+  function sysToast(message, severity) {
+    var region = document.querySelector('.mb-toast-region');
+    if (!region) {
+      region = document.createElement('div');
+      region.className = 'mb-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    var toast = document.createElement('div');
+    toast.className = 'mb-toast mb-toast-' + (severity || 'info');
+    toast.setAttribute('data-mb-toast', severity || 'info');
+    toast.textContent = message == null ? '' : String(message);
+    region.appendChild(toast);
+    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
+    return toast;
+  }
+
+  /**
+   * Promise<boolean> confirmation built from the design system.
+   * opts: { title, message, target, details[], confirmLabel, cancelLabel, danger }
+   * `target` is rendered on its own line, so the operator reads the NAME of the
+   * thing they are about to take down before they agree to take it down.
+   */
+  function sysConfirm(opts) {
+    var o = opts || {};
+    return new Promise(function (resolve) {
+      var host = document.createElement('div');
+      host.setAttribute('data-mb-confirm', '');
+
+      var backdrop = document.createElement('div');
+      backdrop.className = 'mb-modal-backdrop';
+
+      var modal = document.createElement('div');
+      modal.className = 'mb-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+
+      var dialog = document.createElement('div');
+      dialog.className = 'mb-modal-dialog';
+
+      var header = document.createElement('div');
+      header.className = 'mb-modal-header';
+      var titleEl = document.createElement('h3');
+      titleEl.className = 'mb-modal-title';
+      titleEl.textContent = o.title || 'Are you sure?';
+      header.appendChild(titleEl);
+
+      var body = document.createElement('div');
+      body.className = 'mb-modal-body';
+      if (o.message) {
+        var msg = document.createElement('p');
+        msg.className = 'mb-text-secondary sys-confirm-message';
+        msg.textContent = o.message;
+        body.appendChild(msg);
+      }
+      if (o.target) {
+        var target = document.createElement('p');
+        target.className = 'sys-confirm-target ' + (o.danger === false ? 'mb-text-primary' : 'mb-text-danger');
+        target.setAttribute('data-mb-confirm-target', '');
+        target.textContent = o.target;
+        body.appendChild(target);
+      }
+      if (o.details && o.details.length) {
+        var list = document.createElement('ul');
+        list.className = 'mb-text-sm mb-text-muted sys-confirm-details';
+        o.details.forEach(function (d) {
+          var li = document.createElement('li');
+          li.textContent = d;
+          list.appendChild(li);
+        });
+        body.appendChild(list);
+      }
+
+      var footer = document.createElement('div');
+      footer.className = 'mb-modal-footer';
+      var cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'mb-btn mb-btn-secondary';
+      cancel.setAttribute('data-mb-confirm-cancel', '');
+      cancel.textContent = o.cancelLabel || 'Cancel';
+      var ok = document.createElement('button');
+      ok.type = 'button';
+      ok.className = 'mb-btn ' + (o.danger === false ? 'mb-btn-primary' : 'mb-btn-danger');
+      ok.setAttribute('data-mb-confirm-ok', '');
+      ok.textContent = o.confirmLabel || 'Confirm';
+      footer.appendChild(cancel);
+      footer.appendChild(ok);
+
+      dialog.appendChild(header);
+      dialog.appendChild(body);
+      dialog.appendChild(footer);
+      modal.appendChild(dialog);
+      host.appendChild(backdrop);
+      host.appendChild(modal);
+      document.body.appendChild(host);
+
+      var previouslyFocused = document.activeElement;
+      var settled = false;
+      function close(result) {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('keydown', onKey, true);
+        if (host.parentNode) host.parentNode.removeChild(host);
+        try { if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus(); } catch (e) { }
+        resolve(result);
+      }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); close(false); } }
+      document.addEventListener('keydown', onKey, true);
+      backdrop.addEventListener('click', function () { close(false); });
+      modal.addEventListener('click', function (e) { if (e.target === modal) close(false); });
+      cancel.addEventListener('click', function () { close(false); });
+      ok.addEventListener('click', function () { close(true); });
+
+      // Focus the safe choice, never the destructive one.
+      setTimeout(function () { try { cancel.focus(); } catch (e) { } }, 0);
+    });
+  }
+
+  /** Name of the node these power controls act on. Filled from /api/system/info. */
+  var nodeName = 'this node';
 
   function formatUptime(seconds) {
     var d = Math.floor(seconds / 86400);
@@ -636,6 +776,26 @@
   }
 
   /* ─── Gauge Drawing ────────────────────────────────────────────────────────── */
+  /**
+   * Canvas cannot reference a CSS variable, so the tokens are resolved to
+   * concrete colours here. They used to be Bootstrap's --bs-* with hard-coded
+   * hex fallbacks, which meant the gauges were the one part of this page the
+   * three MonsterBox themes could not reach.
+   */
+  function token(name) {
+    var cs = getComputedStyle(document.documentElement);
+    var v = (cs.getPropertyValue(name) || '').trim();
+    // Semantic tokens are aliases (--mb-primary: var(--mb-accent-poison)).
+    // Browsers normally substitute these at computed-value time, but follow
+    // the chain by hand rather than hand canvas an unpaintable "var(...)".
+    var guard = 0;
+    while (v.indexOf('var(') === 0 && guard++ < 5) {
+      var inner = v.slice(4, v.indexOf(')')).trim();
+      v = (cs.getPropertyValue(inner) || '').trim();
+    }
+    return v;
+  }
+
   function drawGauge(canvasId, percent, color) {
     var canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -652,8 +812,7 @@
     // Background arc
     ctx.beginPath();
     ctx.arc(cx, cy, r, startAngle, endAngle);
-    var cs = getComputedStyle(document.documentElement);
-    ctx.strokeStyle = cs.getPropertyValue('--bs-border-color').trim() || '#333';
+    ctx.strokeStyle = token('--mb-bg-3');
     ctx.lineWidth = 8;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -662,7 +821,7 @@
     if (pct > 0) {
       ctx.beginPath();
       ctx.arc(cx, cy, r, startAngle, sweepAngle);
-      ctx.strokeStyle = color || (cs.getPropertyValue('--bs-primary').trim() || '#0d6efd');
+      ctx.strokeStyle = color || token('--mb-primary');
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -670,18 +829,16 @@
   }
 
   function gaugeColor(pct) {
-    var cs = getComputedStyle(document.documentElement);
-    if (pct >= 90) return cs.getPropertyValue('--bs-danger').trim() || '#dc3545';
-    if (pct >= 70) return cs.getPropertyValue('--bs-warning').trim() || '#ffc107';
-    return cs.getPropertyValue('--bs-success').trim() || '#198754';
+    if (pct >= 90) return token('--mb-danger');
+    if (pct >= 70) return token('--mb-warning');
+    return token('--mb-success');
   }
 
   function tempColor(temp) {
-    var cs = getComputedStyle(document.documentElement);
     var t = parseFloat(temp);
-    if (t >= 80) return cs.getPropertyValue('--bs-danger').trim() || '#dc3545';
-    if (t >= 65) return cs.getPropertyValue('--bs-warning').trim() || '#ffc107';
-    return cs.getPropertyValue('--bs-success').trim() || '#198754';
+    if (t >= 80) return token('--mb-danger');
+    if (t >= 65) return token('--mb-warning');
+    return token('--mb-success');
   }
 
   /* ─── Tab 1: Overview ──────────────────────────────────────────────────────── */
@@ -690,6 +847,17 @@
       if (err || !data || !data.success) return;
       if (data.version) $('#infoVersion').textContent = 'v' + data.version;
       $('#infoHostname').textContent = data.hostname || 'Unknown';
+      // The power controls must say WHICH machine they take down. Until this
+      // resolves they read "this node", never a name that might be wrong.
+      if (data.hostname) {
+        nodeName = data.hostname;
+        var nodeNameEl = $('#sysNodeName');
+        if (nodeNameEl) nodeNameEl.textContent = data.hostname;
+        var rebootBtn = $('#btnReboot');
+        if (rebootBtn) rebootBtn.title = 'Reboot ' + data.hostname + ' — it comes back on its own in 30-60 seconds';
+        var shutdownBtn = $('#btnShutdown');
+        if (shutdownBtn) shutdownBtn.title = 'Power off ' + data.hostname + ' — it will NOT come back without physical access';
+      }
       $('#infoNode').textContent = data.nodeVersion || 'Unknown';
       $('#infoPlatform').textContent = data.platform || 'Unknown';
       $('#infoUptime').textContent = data.systemUptime ? formatUptime(data.systemUptime) : 'Unknown';
@@ -741,7 +909,7 @@
       if (canvas) {
         var ctx2 = canvas.getContext('2d');
         ctx2.clearRect(0, 0, canvas.width, canvas.height);
-        ctx2.fillStyle = '#666';
+        ctx2.fillStyle = token('--mb-fg-muted');
         ctx2.font = '14px sans-serif';
         ctx2.textAlign = 'center';
         ctx2.fillText('No performance data available for this period.', canvas.width / 2, canvas.height / 2);
@@ -758,13 +926,13 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // Read theme colors
-    var cs = getComputedStyle(document.documentElement);
-    var gridColor = cs.getPropertyValue('--bs-border-color').trim() || '#333';
-    var textColor = cs.getPropertyValue('--bs-secondary-color').trim() || '#999';
-    var primaryC = cs.getPropertyValue('--bs-primary').trim() || '#0d6efd';
-    var successC = cs.getPropertyValue('--bs-success').trim() || '#198754';
-    var dangerC = cs.getPropertyValue('--bs-danger').trim() || '#dc3545';
+    // Read theme colors from the MonsterBox tokens, so the chart follows
+    // whichever of the three themes is active.
+    var gridColor = token('--mb-bg-3');
+    var textColor = token('--mb-fg-secondary');
+    var primaryC = token('--mb-info');
+    var successC = token('--mb-success');
+    var dangerC = token('--mb-danger');
 
     // Grid
     ctx.strokeStyle = gridColor;
@@ -844,7 +1012,7 @@
   }
 
   // Period buttons
-  var periodBtns = $$('#performance .btn-group .btn');
+  var periodBtns = $$('#performance .sys-period-btn');
   for (var pi = 0; pi < periodBtns.length; pi++) {
     periodBtns[pi].addEventListener('click', function () {
       for (var b = 0; b < periodBtns.length; b++) periodBtns[b].classList.remove('active');
@@ -966,12 +1134,13 @@
       var tasks = data.tasks || [];
       var html = '';
       for (var i = 0; i < tasks.length; i++) {
-        html += '<div class="form-check form-switch mb-2">' +
-          '<input title="Enable or disable this service at startup" class="form-check-input startup-toggle" type="checkbox" data-service="' + tasks[i].service + '"' +
+        html += '<label class="mb-switch sys-startup-row" title="Enable or disable this service at startup">' +
+          '<input class="startup-toggle" type="checkbox" data-service="' + tasks[i].service + '"' +
           (tasks[i].enabled ? ' checked' : '') + '>' +
-          '<label class="form-check-label">' + tasks[i].service + '</label></div>';
+          '<span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>' +
+          '<span class="mb-mono">' + tasks[i].service + '</span></label>';
       }
-      $('#startupTasksList').innerHTML = html || '<p class="text-muted">No startup tasks found</p>';
+      $('#startupTasksList').innerHTML = html || '<p class="mb-text-muted">No startup tasks found</p>';
 
       // Bind toggle handlers
       var toggles = $$('.startup-toggle');
@@ -1013,20 +1182,19 @@
         var p = presets[id];
         var s = p.settings || {};
         html += '<div class="col-md-6 col-lg-4">' +
-          '<div class="card h-100">' +
-          '<div class="card-body p-2">' +
-          '<h6 class="card-title mb-1">' + p.label + '</h6>' +
-          '<p class="card-text small text-muted mb-2">' + p.description + '</p>' +
-          '<ul class="list-unstyled small mb-2">' +
+          '<div class="mb-card h-100 sys-preset-card">' +
+          '<h6 class="mb-1">' + p.label + '</h6>' +
+          '<p class="mb-text-sm mb-text-muted mb-2">' + p.description + '</p>' +
+          '<ul class="list-unstyled mb-text-sm mb-2">' +
           '<li>Governor: <strong>' + s.governor + '</strong></li>' +
           '<li>GPU Mem: <strong>' + s.gpu_mem + ' MB</strong></li>' +
           '<li>ARM Freq: <strong>' + s.arm_freq + ' MHz</strong></li>' +
           '<li>I2C: <strong>' + (s.i2c_baudrate / 1000) + ' kHz</strong></li>' +
           '</ul>' +
-          '<button title="Apply this system preset" class="btn btn-sm btn-outline-primary w-100 preset-apply-btn" data-preset="' + id + '">Apply</button>' +
-          '</div></div></div>';
+          '<button title="Apply this system preset" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-block preset-apply-btn" data-preset="' + id + '">Apply</button>' +
+          '</div></div>';
       }
-      $('#presetsList').innerHTML = html || '<p class="text-muted">No presets available</p>';
+      $('#presetsList').innerHTML = html || '<p class="mb-text-muted">No presets available</p>';
 
       var btns = $$('.preset-apply-btn');
       for (var b = 0; b < btns.length; b++) {
@@ -1034,9 +1202,11 @@
           var presetId = this.getAttribute('data-preset');
           var btn = this;
           btn.disabled = true;
+          btn.setAttribute('data-busy', 'true');
           btn.textContent = 'Applying...';
           apiPost('/api/system/presets/apply', { presetId: presetId }, function (err2, res) {
             btn.disabled = false;
+            btn.removeAttribute('data-busy');
             btn.textContent = 'Apply';
             if (err2 || !res || !res.success) {
               showAlert('presetMessage', 'danger', 'Failed: ' + ((res && res.error) || 'Unknown error'));
@@ -1048,9 +1218,9 @@
               if (results[r].key === 'governor' && results[r].success) {
                 msgs.push('CPU governor set to <strong>' + results[r].value + '</strong>');
               } else if (results[r].key === 'boot_config') {
-                msgs.push('<span class="text-warning">' + results[r].message + '</span>');
+                msgs.push('<span class="mb-text-warning">' + results[r].message + '</span>');
               } else if (!results[r].success) {
-                msgs.push('<span class="text-danger">' + results[r].key + ': ' + results[r].error + '</span>');
+                msgs.push('<span class="mb-text-danger">' + results[r].key + ': ' + results[r].error + '</span>');
               }
             }
             showAlert('presetMessage', 'info', 'Preset <strong>' + (res.label || presetId) + '</strong> applied.<br>' + msgs.join('<br>'));
@@ -1070,7 +1240,7 @@
       var deploySelect = $('#deployKeySelect');
 
       if (keys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No SSH keys found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="mb-text-muted">No SSH keys found</td></tr>';
         deploySelect.innerHTML = '<option>-- no keys --</option>';
         return;
       }
@@ -1080,9 +1250,10 @@
       for (var i = 0; i < keys.length; i++) {
         var k = keys[i];
         var created = k.created ? new Date(k.created).toLocaleDateString() : '--';
-        html += '<tr><td>' + k.name + '</td><td><code class="small">' +
-          (k.fingerprint || '--').substring(0, 47) + '</code></td><td>' + created + '</td>' +
-          '<td><button title="Remove this SSH credential" class="btn btn-sm btn-outline-danger ssh-delete-btn" data-name="' + k.name + '"><i class="bi bi-trash"></i></button></td></tr>';
+        html += '<tr><td data-label="Name">' + k.name + '</td>' +
+          '<td data-label="Fingerprint"><code class="mb-text-sm">' + (k.fingerprint || '--').substring(0, 47) + '</code></td>' +
+          '<td data-label="Created">' + created + '</td>' +
+          '<td data-label="Actions"><button title="Remove this SSH credential" aria-label="Delete SSH key ' + k.name + '" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon ssh-delete-btn" data-name="' + k.name + '"><i class="bi bi-trash"></i></button></td></tr>';
         dhtml += '<option value="' + k.name + '">' + k.name + '</option>';
       }
       tbody.innerHTML = html;
@@ -1093,13 +1264,21 @@
       for (var d = 0; d < delBtns.length; d++) {
         delBtns[d].addEventListener('click', function () {
           var name = this.getAttribute('data-name');
-          if (!confirm('Delete SSH key "' + name + '"?')) return;
-          apiDelete('/api/system/ssh/keys/' + encodeURIComponent(name), function (err2, res) {
-            if (err2 || !res || !res.success) {
-              showAlert('systemAlerts', 'danger', 'Failed to delete key');
-            } else {
-              loadSSHKeys();
-            }
+          sysConfirm({
+            title: 'Delete SSH key?',
+            message: 'This removes the key pair from this node. Any host that trusts only this key becomes unreachable from here.',
+            target: name,
+            confirmLabel: 'Delete key'
+          }).then(function (ok) {
+            if (!ok) return;
+            apiDelete('/api/system/ssh/keys/' + encodeURIComponent(name), function (err2, res) {
+              if (err2 || !res || !res.success) {
+                showAlert('systemAlerts', 'danger', 'Failed to delete key');
+              } else {
+                sysToast('SSH key "' + name + '" deleted', 'success');
+                loadSSHKeys();
+              }
+            });
           });
         });
       }
@@ -1143,7 +1322,7 @@
       var tbody = $('#templatesBody');
 
       if (tpls.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No templates saved</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="mb-text-muted">No templates saved</td></tr>';
         return;
       }
 
@@ -1151,11 +1330,13 @@
       for (var i = 0; i < tpls.length; i++) {
         var t = tpls[i];
         var created = t.created ? new Date(t.created).toLocaleDateString() : '--';
-        html += '<tr><td>' + (t.name || 'Untitled') + '</td><td>' + (t.description || '--') + '</td><td>' + created + '</td>' +
-          '<td>' +
-          '<button class="btn btn-sm btn-outline-primary tpl-apply-btn me-1" data-id="' + t.id + '" title="Apply"><i class="bi bi-play-circle"></i></button>' +
-          '<button class="btn btn-sm btn-outline-danger tpl-delete-btn" data-id="' + t.id + '" title="Delete"><i class="bi bi-trash"></i></button>' +
-          '</td></tr>';
+        html += '<tr><td data-label="Name">' + (t.name || 'Untitled') + '</td>' +
+          '<td data-label="Description">' + (t.description || '--') + '</td>' +
+          '<td data-label="Created">' + created + '</td>' +
+          '<td data-label="Actions"><span class="mb-row-sm">' +
+          '<button class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon tpl-apply-btn" data-id="' + t.id + '" title="Apply this template" aria-label="Apply template"><i class="bi bi-play-circle"></i></button>' +
+          '<button class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon tpl-delete-btn" data-id="' + t.id + '" data-name="' + (t.name || 'Untitled') + '" title="Delete this template" aria-label="Delete template"><i class="bi bi-trash"></i></button>' +
+          '</span></td></tr>';
       }
       tbody.innerHTML = html;
 
@@ -1179,13 +1360,22 @@
       for (var dd = 0; dd < delBtns.length; dd++) {
         delBtns[dd].addEventListener('click', function () {
           var id = this.getAttribute('data-id');
-          if (!confirm('Delete this template?')) return;
-          apiDelete('/api/system/templates/' + id, function (err2, res) {
-            if (err2 || !res || !res.success) {
-              showAlert('systemAlerts', 'danger', 'Failed to delete template');
-            } else {
-              loadTemplates();
-            }
+          var tplName = this.getAttribute('data-name') || 'Untitled';
+          sysConfirm({
+            title: 'Delete config template?',
+            message: 'The saved configuration snapshot is removed. Settings already applied to this node are not changed.',
+            target: tplName,
+            confirmLabel: 'Delete template'
+          }).then(function (ok) {
+            if (!ok) return;
+            apiDelete('/api/system/templates/' + id, function (err2, res) {
+              if (err2 || !res || !res.success) {
+                showAlert('systemAlerts', 'danger', 'Failed to delete template');
+              } else {
+                sysToast('Template "' + tplName + '" deleted', 'success');
+                loadTemplates();
+              }
+            });
           });
         });
       }
@@ -1215,10 +1405,14 @@
   // v8.1.1: retired Bootswatch picker. Three curated MonsterBox themes only.
   // Bootswatch files are still on disk for backwards compat — if someone has
   // a legacy theme in config, it still renders — they just can't select it.
+  // A swatch has to show the theme it names, not the theme currently applied,
+  // so these three cannot be --mb-* tokens. The literal colours live in
+  // /css/setup-system.css as .sys-swatch-<theme>-<n> classes — one place, still
+  // outside the markup, and they stay in step with tokens.css by name.
   var THEMES = [
-    { name: 'haunted-console', label: 'Haunted Console', dark: true,  colors: ['#07080a','#39ff6a','#7b3ff2'] },
-    { name: 'cold-crypt',      label: 'Cold Crypt',      dark: true,  colors: ['#070910','#9a6bff','#38e2d4'] },
-    { name: 'bright-ops',      label: 'Bright Ops',      dark: false, colors: ['#f4f5f2','#1f8f3c','#5225b5'] }
+    { name: 'haunted-console', label: 'Haunted Console', dark: true },
+    { name: 'cold-crypt',      label: 'Cold Crypt',      dark: true },
+    { name: 'bright-ops',      label: 'Bright Ops',      dark: false }
   ];
 
   var __rawCurrent = '<%= (typeof config !== "undefined" && config && config.theme) ? config.theme : "haunted-console" %>';
@@ -1241,24 +1435,20 @@
     for (var i = 0; i < THEMES.length; i++) {
       var t = THEMES[i];
       var isActive = (t.name === currentTheme);
-      var borderClass = isActive ? 'border-primary border-2' : '';
       html += '<div class="col-6 col-md-4 col-lg-3">' +
-        '<div class="card theme-card ' + borderClass + '" data-theme="' + t.name + '" ' +
-        'style="cursor:pointer;position:relative;" role="button">' +
-        '<div class="card-body p-2 text-center">' +
-        '<div class="d-flex justify-content-center mb-2">';
-      for (var c = 0; c < t.colors.length; c++) {
-        html += '<div style="width:28px;height:28px;border-radius:50%;background:' + t.colors[c] +
-          ';border:2px solid rgba(128,128,128,0.3);' + (c > 0 ? 'margin-left:-6px;' : '') + '"></div>';
-      }
-      html += '</div>' +
-        '<strong class="d-block small">' + t.label + '</strong>' +
-        '<span class="badge ' + (t.dark ? 'bg-dark' : 'bg-light text-dark') + ' mt-1" style="font-size:0.65rem;">' +
-        (t.dark ? 'Dark' : 'Light') + '</span>';
+        '<div class="mb-card mb-card-interactive theme-card sys-theme-card' + (isActive ? ' sys-theme-card-active' : '') +
+        '" data-theme="' + t.name + '" role="button" tabindex="0" aria-pressed="' + (isActive ? 'true' : 'false') + '">' +
+        '<div class="sys-swatches">' +
+        '<span class="sys-swatch sys-swatch-' + t.name + '-1"></span>' +
+        '<span class="sys-swatch sys-swatch-' + t.name + '-2"></span>' +
+        '<span class="sys-swatch sys-swatch-' + t.name + '-3"></span>' +
+        '</div>' +
+        '<strong class="sys-theme-name">' + t.label + '</strong>' +
+        '<span class="mb-badge sys-theme-kind">' + (t.dark ? 'Dark' : 'Light') + '</span>';
       if (isActive) {
-        html += '<span class="position-absolute top-0 end-0 m-1 badge bg-primary"><i class="bi bi-check-lg"></i></span>';
+        html += '<span class="mb-badge mb-badge-primary sys-theme-check" data-sys-current><i class="bi bi-check-lg"></i></span>';
       }
-      html += '</div></div></div>';
+      html += '</div></div>';
     }
     gallery.innerHTML = html;
 
@@ -1268,6 +1458,12 @@
       cards[j].addEventListener('click', function () {
         var name = this.getAttribute('data-theme');
         doPreviewTheme(name);
+      });
+      // The card is role="button"; a keyboard user must be able to fire it.
+      cards[j].addEventListener('keydown', function (evt) {
+        if (evt.key !== 'Enter' && evt.key !== ' ') return;
+        evt.preventDefault();
+        doPreviewTheme(this.getAttribute('data-theme'));
       });
     }
   }
@@ -1295,16 +1491,15 @@
     var label = document.getElementById('themePreviewLabel');
     if (label) label.textContent = 'Previewing: ' + t.label;
 
-    // Update card borders
+    // Update card selection
     var cards = document.querySelectorAll('.theme-card');
     for (var j = 0; j < cards.length; j++) {
       var cardName = cards[j].getAttribute('data-theme');
-      cards[j].classList.remove('border-primary', 'border-2', 'border-success');
-      if (cardName === name) {
-        cards[j].classList.add('border-primary', 'border-2');
-      }
-      // Re-add checkmark for saved theme
-      var badge = cards[j].querySelector('.badge.bg-primary');
+      var selected = (cardName === name);
+      cards[j].classList.toggle('sys-theme-card-active', selected);
+      cards[j].setAttribute('aria-pressed', selected ? 'true' : 'false');
+      // The check mark marks the SAVED theme, not the previewed one.
+      var badge = cards[j].querySelector('[data-sys-current]');
       if (badge && cardName !== currentTheme) badge.remove();
     }
   }
@@ -1345,57 +1540,119 @@
 
   /* ─── Service Restart / Optimize / Reboot / Shutdown ──────────────────────── */
   $('#btnRestartService').addEventListener('click', function () {
-    if (!confirm('Restart MonsterBox service? The page will reload in ~10 seconds.')) return;
     var btn = $('#btnRestartService');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Restarting...';
-    showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-repeat"></i> Restarting MonsterBox service...');
-    apiPost('/api/system/restart-service', {}, function () {
-      // Wait for service to come back up, then reload page
-      setTimeout(function () {
-        showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Service restarted. Reloading...');
-        setTimeout(function () { window.location.reload(); }, 3000);
-      }, 7000);
+    sysConfirm({
+      title: 'Restart the MonsterBox service?',
+      message: 'The node stays powered on; only the MonsterBox process restarts. Anything currently playing stops, and this page reloads in about ten seconds.',
+      target: nodeName,
+      danger: false,
+      confirmLabel: 'Restart service'
+    }).then(function (ok) {
+      if (!ok) return;
+      btn.disabled = true;
+      btn.setAttribute('data-busy', 'true');
+      btn.innerHTML = '<span>Restarting…</span>';
+      showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-repeat"></i> Restarting MonsterBox service on <strong>' + nodeName + '</strong>…');
+      apiPost('/api/system/restart-service', {}, function () {
+        // Wait for service to come back up, then reload page
+        setTimeout(function () {
+          showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Service restarted. Reloading…');
+          setTimeout(function () { window.location.reload(); }, 3000);
+        }, 7000);
+      });
     });
   });
 
   $('#btnOptimize').addEventListener('click', function () {
-    if (!confirm('Run animatronic optimization?\n\nThis will:\n- Disable unnecessary services (Samba, CUPS, Bluetooth, etc.)\n- Apply performance tuning\n- Configure log limits\n\nA reboot is recommended afterward.')) return;
     var btn = $('#btnOptimize');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Optimizing...';
-    showAlert('systemAlerts', 'info', '<i class="bi bi-lightning-charge"></i> Running optimization... this may take 1-2 minutes.');
-    fetch('/api/system/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
-        if (data.success) {
-          showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Optimization complete! Reboot recommended.');
-          if (confirm('Optimization complete. Reboot now for full effect?')) {
-            apiPost('/api/system/reboot', {}, function () {});
+    sysConfirm({
+      title: 'Run animatronic optimization?',
+      message: 'Tunes this node for animatronic duty. It does not restart or power anything off.',
+      target: nodeName,
+      danger: false,
+      confirmLabel: 'Run optimization',
+      details: [
+        'Disables unnecessary services (Samba, CUPS, Bluetooth, …)',
+        'Applies performance tuning',
+        'Caps log sizes',
+        'A reboot afterwards is recommended, not required'
+      ]
+    }).then(function (ok) {
+      if (!ok) return;
+      btn.disabled = true;
+      btn.setAttribute('data-busy', 'true');
+      btn.innerHTML = '<span>Optimizing…</span>';
+      showAlert('systemAlerts', 'info', '<i class="bi bi-lightning-charge"></i> Running optimization… this may take 1-2 minutes.');
+      fetch('/api/system/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          btn.disabled = false;
+          btn.removeAttribute('data-busy');
+          btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
+          if (data.success) {
+            showAlert('systemAlerts', 'success', '<i class="bi bi-check-circle"></i> Optimization complete. A reboot is recommended.');
+            sysConfirm({
+              title: 'Reboot now?',
+              message: 'Optimization is finished. Some of it only takes effect after a restart. This node goes away for 30-60 seconds and comes back on its own.',
+              target: nodeName,
+              confirmLabel: 'Reboot this node'
+            }).then(function (rebootOk) {
+              if (rebootOk) doReboot();
+            });
+          } else {
+            showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization failed: ' + (data.error || 'Unknown error'));
           }
-        } else {
-          showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization failed: ' + (data.error || 'Unknown error'));
-        }
-      })
-      .catch(function (err) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
-        showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization error: ' + err.message);
-      });
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          btn.removeAttribute('data-busy');
+          btn.innerHTML = '<i class="bi bi-lightning-charge"></i> Optimize';
+          showAlert('systemAlerts', 'danger', '<i class="bi bi-x-circle"></i> Optimization error: ' + err.message);
+        });
+    });
   });
 
+  function doReboot() {
+    showAlert('systemAlerts', 'warning', '<i class="bi bi-arrow-clockwise"></i> Rebooting <strong>' + nodeName + '</strong>… it should answer again in 30-60 seconds.');
+    sysToast('Rebooting ' + nodeName + '…', 'warning');
+    apiPost('/api/system/reboot', {}, function () { });
+  }
+
   $('#btnReboot').addEventListener('click', function () {
-    if (!confirm('Are you sure you want to reboot? All operations will be interrupted.')) return;
-    showAlert('systemAlerts', 'info', '<i class="bi bi-arrow-clockwise"></i> Rebooting... please wait 30-60 seconds.');
-    apiPost('/api/system/reboot', {}, function () {});
+    sysConfirm({
+      title: 'Reboot this node?',
+      message: 'Everything running on this node stops at once — scenes, audio, motion, any hand near a moving part. It powers itself back up without help.',
+      target: nodeName,
+      confirmLabel: 'Reboot ' + nodeName,
+      details: [
+        'Back online on its own in roughly 30-60 seconds',
+        'Any scene or queue currently playing is cut off'
+      ]
+    }).then(function (ok) {
+      if (ok) doReboot();
+    });
   });
 
   $('#btnShutdown').addEventListener('click', function () {
-    if (!confirm('Are you sure you want to SHUT DOWN? The system will power off.')) return;
-    showAlert('systemAlerts', 'warning', '<i class="bi bi-power"></i> Shutting down...');
-    apiPost('/api/system/shutdown', {}, function () {});
+    sysConfirm({
+      title: 'Power off this node?',
+      // The asymmetry that earns this its own warning: a reboot costs a minute
+      // of waiting, a shutdown costs a trip to wherever the animatronic is
+      // standing. Nothing on this screen — or any screen — can undo it.
+      message: 'This is the one action here that no screen can undo. The Pi is headless and inside the animatronic: bringing it back means physically reaching it and cycling its power.',
+      target: nodeName,
+      confirmLabel: 'Power off ' + nodeName,
+      details: [
+        'The web interface, the fleet and SSH all go away with it',
+        'It will NOT come back on its own — someone has to be there',
+        'A reboot does everything a shutdown does, and returns by itself'
+      ]
+    }).then(function (ok) {
+      if (!ok) return;
+      showAlert('systemAlerts', 'danger', '<i class="bi bi-power"></i> Powering off <strong>' + nodeName + '</strong>. It will not return until its power is cycled by hand.');
+      sysToast('Powering off ' + nodeName + ' — physical access required to restart', 'danger');
+      apiPost('/api/system/shutdown', {}, function () { });
+    });
   });
 
   /* ─── Resource Health Tab ──────────────────────────────────────────────────── */
@@ -1426,16 +1683,18 @@
       if (el('resSysFree')) el('resSysFree').textContent = m.systemFreeMB + ' MB';
       if (el('resSysTotal')) el('resSysTotal').textContent = m.systemTotalMB + ' MB';
       var pct = Math.round(m.rssMB / (m.systemTotalMB || 1) * 100);
+      var levelKind = m.level === 'critical' ? 'danger' : m.level === 'warning' ? 'warning' : 'success';
       var bar = el('resMemBar');
       if (bar) {
         bar.style.width = pct + '%';
-        bar.textContent = m.rssMB + ' MB';
-        bar.className = 'progress-bar ' + (m.level === 'critical' ? 'bg-danger' : m.level === 'warning' ? 'bg-warning' : 'bg-success');
+        bar.className = 'mb-meter-fill sys-meter-' + levelKind;
       }
+      var barText = el('resMemBarText');
+      if (barText) barText.textContent = m.rssMB + ' MB';
       var badge = el('resMemLevel');
       if (badge) {
         badge.textContent = m.level;
-        badge.className = 'badge ' + (m.level === 'critical' ? 'bg-danger' : m.level === 'warning' ? 'bg-warning' : 'bg-success');
+        badge.className = 'mb-badge mb-badge-' + levelKind;
       }
     });
 
@@ -1443,12 +1702,12 @@
       var body = document.getElementById('resHealthBody');
       if (!body) return;
       if (!data || !data.success || !data.health) {
-        body.innerHTML = '<p class="text-muted mb-0">No health check data</p>';
+        body.innerHTML = '<p class="mb-text-muted mb-0">No health check data</p>';
         return;
       }
       var h = data.health;
-      var html = '<p class="mb-2"><strong>Overall: </strong><span class="badge ' +
-        (h.overallStatus === 'CRITICAL' ? 'bg-danger' : h.overallStatus === 'WARNING' ? 'bg-warning' : 'bg-success') +
+      var html = '<p class="mb-2"><strong>Overall: </strong><span class="mb-badge mb-badge-' +
+        (h.overallStatus === 'CRITICAL' ? 'danger' : h.overallStatus === 'WARNING' ? 'warning' : 'success') +
         '">' + h.overallStatus + '</span></p><dl class="row mb-0">';
       var checks = h.checks || {};
       for (var key in checks) {
@@ -1456,15 +1715,15 @@
           var c = checks[key];
           var icon = c.status === 'ok' ? '✓' : c.status === 'warning' ? '⚠' : '✗';
           html += '<dt class="col-sm-5">' + icon + ' ' + key + '</dt>';
-          html += '<dd class="col-sm-7"><span class="badge ' +
-            (c.status === 'ok' ? 'bg-success' : c.status === 'warning' ? 'bg-warning' : 'bg-danger') +
+          html += '<dd class="col-sm-7"><span class="mb-badge mb-badge-' +
+            (c.status === 'ok' ? 'success' : c.status === 'warning' ? 'warning' : 'danger') +
             '">' + c.status + '</span>';
-          if (c.error) html += ' <small class="text-muted">' + c.error + '</small>';
+          if (c.error) html += ' <small class="mb-text-muted">' + c.error + '</small>';
           html += '</dd>';
         }
       }
       html += '</dl>';
-      if (h.timestamp) html += '<small class="text-muted">Last check: ' + new Date(h.timestamp).toLocaleString() + '</small>';
+      if (h.timestamp) html += '<small class="mb-text-muted">Last check: ' + new Date(h.timestamp).toLocaleString() + '</small>';
       body.innerHTML = html;
     });
   }
@@ -1498,14 +1757,15 @@
       var el = document.getElementById('mvtClaims');
       if (!el) return;
       if (!data || !data.success || !data.claims || Object.keys(data.claims).length === 0) {
-        el.innerHTML = '<p class="text-muted mb-0">No active claims</p>';
+        el.innerHTML = '<p class="mb-text-muted mb-0">No active claims</p>';
         return;
       }
-      var html = '<table class="table table-sm mb-0"><thead><tr><th>Servo</th><th>Owner</th><th>Priority</th></tr></thead><tbody>';
+      var html = '<table class="mb-table mb-table-stack"><thead><tr><th>Servo</th><th>Owner</th><th>Priority</th></tr></thead><tbody>';
       for (var partId in data.claims) {
         if (data.claims.hasOwnProperty(partId)) {
           var c = data.claims[partId];
-          html += '<tr><td>' + partId + '</td><td>' + (c.owner || '—') + '</td><td>' + (c.priority || '—') + '</td></tr>';
+          html += '<tr><td data-label="Servo">' + partId + '</td><td data-label="Owner">' + (c.owner || '—') +
+            '</td><td data-label="Priority">' + (c.priority || '—') + '</td></tr>';
         }
       }
       html += '</tbody></table>';
@@ -1519,7 +1779,7 @@
       var statusBadge = el('mvtIdleStatus');
       if (statusBadge) {
         statusBadge.textContent = s.running ? 'Running' : 'Stopped';
-        statusBadge.className = 'badge ' + (s.running ? 'bg-success' : 'bg-secondary');
+        statusBadge.className = 'mb-badge' + (s.running ? ' mb-badge-success' : '');
       }
       if (el('mvtIdlePose')) el('mvtIdlePose').textContent = s.currentPoseId || '—';
       if (el('mvtIdleChar')) el('mvtIdleChar').textContent = s.characterId || '—';

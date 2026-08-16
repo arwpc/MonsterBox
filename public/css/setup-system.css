@@ -1,0 +1,370 @@
+/* ==========================================================================
+   /setup/system — page-specific rules
+   --------------------------------------------------------------------------
+   Everything shared (buttons, inputs, panels, badges, tables, toasts, modals)
+   comes from components.css and is NOT restated here. What lives in this file
+   is only what is genuinely specific to the System page: the power controls,
+   the gauge frames, the log console, and the theme swatches.
+
+   Every value is token-backed so all three themes reach it. The one deliberate
+   exception is the theme swatches — see the note at the bottom.
+
+   Loaded via `styles: ['/css/setup-system.css']` from routes/setup/system.js.
+   ========================================================================== */
+
+/* ==========================================================================
+   Node actions — maintenance vs. power
+   --------------------------------------------------------------------------
+   Reboot and Shutdown used to be two of four identical outline buttons in the
+   top-right of this page. An operator opens /setup/system to read a CPU
+   temperature or change the theme; giving "power this machine off" the same
+   weight as "refresh the log view" is what made that dangerous. The power pair
+   now sits in its own bordered group that names its target and carries the
+   consequence in plain text.
+   ========================================================================== */
+.sys-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mb-space-4);
+  margin-bottom: var(--mb-space-4);
+}
+
+.sys-actions-maint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-2);
+  padding-top: var(--mb-space-5);   /* optically align with the power buttons */
+}
+
+.sys-power {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+  max-width: 34rem;
+  padding: var(--mb-space-3) var(--mb-space-4);
+  background: color-mix(in srgb, var(--mb-danger) 8%, var(--mb-bg-1));
+  border: 1px solid var(--mb-danger);
+  border-radius: var(--mb-radius-lg);
+}
+
+.sys-power-head {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-xs);
+  letter-spacing: var(--mb-tracking-wider);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+}
+
+.sys-power-head #sysNodeName {
+  color: var(--mb-fg-primary);
+  text-transform: none;
+  letter-spacing: var(--mb-tracking-normal);
+}
+
+.sys-power-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-2);
+}
+
+.sys-power-btn {
+  flex: 1 1 auto;
+  font-weight: var(--mb-weight-bold);
+}
+
+/* Shutdown is heavier than Reboot on purpose: a reboot costs a minute of
+   waiting, a shutdown costs a walk to wherever the animatronic is standing. */
+.sys-power-btn-off {
+  border-width: 2px;
+  letter-spacing: var(--mb-tracking-wide);
+  text-transform: uppercase;
+}
+
+.sys-power-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mb-space-2);
+  margin: 0;
+  font-size: var(--mb-text-xs);
+  line-height: var(--mb-leading-normal);
+  color: var(--mb-fg-secondary);
+}
+
+/* ==========================================================================
+   Confirmation modal internals
+   ========================================================================== */
+.sys-confirm-message { margin: 0; }
+
+.sys-confirm-target {
+  margin: var(--mb-space-3) 0;
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-lg);
+  font-weight: var(--mb-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.sys-confirm-details {
+  margin: var(--mb-space-2) 0 0;
+  padding-left: var(--mb-space-5);
+}
+
+/* ==========================================================================
+   Tabs
+   --------------------------------------------------------------------------
+   Bootstrap's tab plugin still drives these, so the .nav-link hook stays and
+   .mb-tab is added alongside. But `.nav-tabs .nav-link.active` is a three-class
+   selector and out-specifies `.mb-tab[aria-selected="true"]`, which left the
+   selected tab wearing Bootstrap's boxed-folder look instead of the design
+   system's underline. Scoping by id settles it without touching either
+   shared stylesheet.
+   ========================================================================== */
+#systemTabs.mb-tabs {
+  border-bottom: 1px solid var(--mb-border-default);
+}
+
+#systemTabs .nav-link.mb-tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mb-fg-secondary);
+}
+
+#systemTabs .nav-link.mb-tab:hover {
+  background: transparent;
+  color: var(--mb-fg-primary);
+  border-bottom-color: var(--mb-border-strong);
+}
+
+#systemTabs .nav-link.mb-tab.active,
+#systemTabs .nav-link.mb-tab[aria-selected="true"] {
+  background: transparent;
+  color: var(--mb-primary);
+  border-bottom-color: var(--mb-primary);
+}
+
+#systemTabs .nav-link.mb-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--mb-focus-ring);
+}
+
+/* ==========================================================================
+   Overview — live gauges
+   ========================================================================== */
+.sys-gauge {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+}
+
+.sys-gauge-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mb-font-mono);
+  font-weight: var(--mb-weight-bold);
+  color: var(--mb-fg-primary);
+}
+
+.sys-gauge-label {
+  font-size: var(--mb-text-sm);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-secondary);
+}
+
+/* ==========================================================================
+   Performance history
+   ========================================================================== */
+.sys-chart { width: 100%; }
+
+/* The period selector is a segmented control; .mb-btn has no `.active` state
+   of its own, and the handler toggles that class. */
+.sys-period-btn { background: var(--mb-bg-2); }
+.sys-period-btn:hover { background: var(--mb-bg-hover); }
+.sys-period-btn.active {
+  background: var(--mb-primary);
+  border-color: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+}
+
+/* ==========================================================================
+   Logs
+   ========================================================================== */
+.sys-log-toolbar {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.mb-select-auto {
+  width: auto;
+  min-width: 10rem;
+}
+
+.sys-log-body { padding: 0; }
+
+.sys-log-output {
+  max-height: 500px;
+  margin: 0;
+  padding: var(--mb-space-4);
+  overflow-y: auto;
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  line-height: var(--mb-leading-normal);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ==========================================================================
+   Settings
+   ========================================================================== */
+/* The Settings accordion is still Bootstrap's — its collapse plugin drives the
+   panels and the markup keeps data-bs-toggle. Its open header ships a hardcoded
+   blue that belongs to no MonsterBox theme, so the surface is re-tinted from
+   tokens here rather than the component being replaced. */
+#settingsAccordion {
+  --bs-accordion-bg: var(--mb-bg-1);
+  --bs-accordion-color: var(--mb-fg-primary);
+  --bs-accordion-border-color: var(--mb-border-subtle);
+  --bs-accordion-btn-color: var(--mb-fg-primary);
+  --bs-accordion-btn-bg: var(--mb-bg-2);
+  --bs-accordion-active-color: var(--mb-primary);
+  --bs-accordion-active-bg: var(--mb-bg-3);
+  --bs-accordion-btn-focus-box-shadow: var(--mb-focus-ring);
+  --bs-accordion-btn-icon-transform: rotate(-180deg);
+}
+
+#settingsAccordion .accordion-button {
+  font-family: var(--mb-font-ui);
+  font-weight: var(--mb-weight-medium);
+}
+
+.sys-volume-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-4);
+  flex-wrap: wrap;
+}
+
+.sys-volume-row .mb-range { flex: 1 1 12rem; }
+.sys-volume-value { font-size: var(--mb-text-base); }
+
+.sys-startup-row {
+  display: flex;
+  width: 100%;
+  margin-bottom: var(--mb-space-2);
+}
+
+.sys-preset-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.sys-preset-card .preset-apply-btn { margin-top: auto; }
+
+/* ==========================================================================
+   Resources — memory meter level
+   ========================================================================== */
+.sys-meter-success { background: var(--mb-success); }
+.sys-meter-warning { background: var(--mb-warning); }
+.sys-meter-danger  { background: var(--mb-danger); }
+
+/* ==========================================================================
+   Theme gallery
+   --------------------------------------------------------------------------
+   A swatch has to show the theme it NAMES, not the theme currently applied, so
+   these three palettes are the one place on the page where a token would give
+   the wrong answer — var(--mb-primary) would paint all three cards the same
+   colour. The literals are kept here, next to each other and named for their
+   theme, rather than inline in the markup where nothing could review them.
+   They mirror tokens.css: bg-0, primary, and the secondary accent per theme.
+   ========================================================================== */
+.sys-theme-card {
+  position: relative;
+  cursor: pointer;
+  text-align: center;
+}
+
+.sys-theme-card-active {
+  border-color: var(--mb-primary);
+  box-shadow: var(--mb-focus-ring);
+}
+
+.sys-swatches {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--mb-space-2);
+}
+
+.sys-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--mb-border-strong);
+}
+
+.sys-swatch + .sys-swatch { margin-left: -6px; }
+
+.sys-theme-name {
+  display: block;
+  font-size: var(--mb-text-sm);
+}
+
+.sys-theme-kind { margin-top: var(--mb-space-1); }
+
+.sys-theme-check {
+  position: absolute;
+  top: var(--mb-space-1);
+  right: var(--mb-space-1);
+}
+
+/* haunted-console — bg-0 / poison green / violet */
+.sys-swatch-haunted-console-1 { background: #07080a; }
+.sys-swatch-haunted-console-2 { background: #39ff6a; }
+.sys-swatch-haunted-console-3 { background: #7b3ff2; }
+
+/* cold-crypt — bg-0 / violet / cyan-teal */
+.sys-swatch-cold-crypt-1 { background: #070910; }
+.sys-swatch-cold-crypt-2 { background: #9a6bff; }
+.sys-swatch-cold-crypt-3 { background: #38e2d4; }
+
+/* bright-ops — bg-0 / green / violet */
+.sys-swatch-bright-ops-1 { background: #f4f5f2; }
+.sys-swatch-bright-ops-2 { background: #1f8f3c; }
+.sys-swatch-bright-ops-3 { background: #5225b5; }
+
+/* ==========================================================================
+   Small screens
+   ========================================================================== */
+@media (max-width: 768px) {
+  .sys-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sys-actions-maint {
+    padding-top: 0;
+  }
+
+  .sys-actions-maint .mb-btn { flex: 1 1 0; }
+
+  .sys-power { max-width: none; }
+
+  /* Full-width power buttons on a phone, stacked, so neither is a mis-tap
+     away from the other. */
+  .sys-power-actions { flex-direction: column; }
+
+  .sys-log-toolbar > * { width: 100%; }
+  .mb-select-auto { width: 100%; }
+
+  .sys-volume-row .mb-range { flex-basis: 100%; }
+  .sys-volume-row .mb-btn { width: 100%; }
+}

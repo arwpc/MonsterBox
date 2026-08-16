@@ -9,14 +9,21 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-    /* Brand colors */
-    --mb-primary: #6f42c1;
+    /* Brand colors
+       ------------------------------------------------------------------
+       The semantic tokens (--mb-primary/success/warning/danger/info) are
+       DELIBERATELY not declared here any more. This file loads after
+       tokens.css and its :root block has equal specificity to the theme
+       selectors there, so these declarations silently won — overriding all
+       three curated themes app-wide with a v6.1 palette. That is why the
+       design system's colours never appeared to take effect, and why the app
+       looked inconsistent with its own style guide.
+
+       tokens.css is the source of truth. Only variables it does NOT define
+       belong here.
+       ------------------------------------------------------------------ */
     --mb-primary-dark: #5a359a;
     --mb-secondary: #6c757d;
-    --mb-success: #198754;
-    --mb-warning: #fd7e14;
-    --mb-danger: #dc3545;
-    --mb-info: #0dcaf0;
     --mb-dark: #212529;
     --mb-light: #f8f9fa;
 

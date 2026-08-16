@@ -1,5 +1,5 @@
-<div class="d-flex justify-content-end mb-2">
-  <a class="btn btn-outline-secondary btn-sm" href="/setup/calibration" title="Back to Calibration">
+<div class="mdl-toolbar">
+  <a class="mb-btn mb-btn-secondary mb-btn-sm" href="/setup/calibration" title="Back to Calibration">
     <i class="bi bi-arrow-left"></i> Back to Calibration
   </a>
 </div>
@@ -8,10 +8,10 @@
     <!-- Left Panel: Type + Editor -->
     <div class="col-lg-4">
       <!-- Type Selector -->
-      <div class="card mb-3">
-        <div class="card-header"><i class="bi bi-funnel"></i> Part Type</div>
-        <div class="card-body">
-          <select id="typeSelect" class="form-select" title="Select part type">
+      <div class="mb-panel mb-3">
+        <div class="mb-panel-header"><h2 class="mb-panel-title"><i class="bi bi-funnel"></i> Part Type</h2></div>
+        <div class="mb-panel-body">
+          <select id="typeSelect" class="mb-select" title="Select part type">
             <option value="servo">Servo</option>
             <option value="linear_actuator">Linear Actuator</option>
             <option value="motor">Motor (DC)</option>
@@ -29,42 +29,42 @@
       </div>
 
       <!-- Model Editor -->
-      <div class="card">
-        <div class="card-header" id="editorHeader">
-          <i class="bi bi-pencil-square"></i> <span id="editorTitle">Create New Model</span>
+      <div class="mb-panel">
+        <div class="mb-panel-header" id="editorHeader">
+          <h2 class="mb-panel-title"><i class="bi bi-pencil-square"></i> <span id="editorTitle">Create New Model</span></h2>
         </div>
-        <div class="card-body">
+        <div class="mb-panel-body">
           <input type="hidden" id="modelId" />
-          <div class="mb-2">
-            <label class="form-label">Name <span class="text-danger">*</span></label>
-            <input id="modelName" class="form-control" placeholder="e.g., MG90S Micro Servo" title="Model name" />
+          <div class="mb-field">
+            <label class="mb-field-label" for="modelName">Name <span class="mb-text-danger">*</span></label>
+            <input id="modelName" class="mb-input" placeholder="e.g., MG90S Micro Servo" title="Model name" />
           </div>
-          <div class="mb-2">
-            <label class="form-label">Description</label>
-            <input id="modelDesc" class="form-control" placeholder="Optional description" title="Model description" />
+          <div class="mb-field">
+            <label class="mb-field-label" for="modelDesc">Description</label>
+            <input id="modelDesc" class="mb-input" placeholder="Optional description" title="Model description" />
           </div>
 
           <hr />
-          <h6 class="text-muted"><i class="bi bi-sliders"></i> Default Settings</h6>
+          <h3 class="mb-eyebrow"><i class="bi bi-sliders"></i> Default Settings</h3>
           <div id="defaultsFieldsArea" class="row g-2 mb-3">
             <!-- Dynamic fields rendered by JS -->
           </div>
 
           <div class="mb-2">
-            <a class="small text-decoration-none" data-bs-toggle="collapse" href="#rawDefaultsCollapse" role="button" title="Toggle raw JSON editor">
+            <a class="mb-btn mb-btn-link mb-btn-sm" data-bs-toggle="collapse" href="#rawDefaultsCollapse" role="button" title="Toggle raw JSON editor">
               <i class="bi bi-code-slash"></i> Raw JSON (advanced)
             </a>
             <div class="collapse" id="rawDefaultsCollapse">
-              <textarea id="modelDefaults" rows="5" class="form-control font-monospace mt-1"
+              <textarea id="modelDefaults" rows="5" class="mb-textarea mdl-json mt-1"
                 placeholder='{"key": "value"}' title="Raw JSON defaults"></textarea>
             </div>
           </div>
 
-          <div class="d-grid gap-2 mt-3">
-            <button class="btn btn-success" id="btnSaveModel" title="Save model"><i class="bi bi-save"></i> Save Model</button>
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary flex-fill" id="btnNewModel" title="Create new model"><i class="bi bi-plus"></i> New</button>
-              <button class="btn btn-danger flex-fill" id="btnDeleteModel" disabled title="Delete model"><i class="bi bi-trash"></i> Delete</button>
+          <div class="mb-stack mt-3">
+            <button class="mb-btn mb-btn-primary mb-btn-block" id="btnSaveModel" title="Save model"><i class="bi bi-save"></i> Save Model</button>
+            <div class="mdl-editor-actions">
+              <button class="mb-btn mb-btn-secondary" id="btnNewModel" title="Create new model"><i class="bi bi-plus"></i> New</button>
+              <button class="mb-btn mb-btn-danger" id="btnDeleteModel" disabled title="Delete model"><i class="bi bi-trash"></i> Delete</button>
             </div>
           </div>
         </div>
@@ -73,58 +73,60 @@
 
     <!-- Right Panel: Models List -->
     <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-list-ul"></i> <span id="listTitle">Servo</span> Models</span>
-          <div>
-            <button class="btn btn-sm btn-danger me-2" id="btnDeleteSelected" style="display:none;" title="Delete selected models">
+      <div class="mb-panel">
+        <div class="mb-panel-header">
+          <h2 class="mb-panel-title"><i class="bi bi-list-ul"></i> <span id="listTitle">Servo</span> Models</h2>
+          <div class="mb-row-sm">
+            <!-- Hidden until something is selected. The handler writes
+                 style.display directly, which outranks this class either way. -->
+            <button class="mb-btn mb-btn-danger mb-btn-sm mdl-hidden" id="btnDeleteSelected" title="Delete selected models">
               <i class="bi bi-trash"></i> Delete Selected (<span id="selectedCount">0</span>)
             </button>
-            <button class="btn btn-sm btn-outline-secondary" id="btnRefresh" title="Refresh models list">
+            <button class="mb-btn mb-btn-secondary mb-btn-sm" id="btnRefresh" title="Refresh models list">
               <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
           </div>
         </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0" id="modelsTable">
-              <thead>
-                <tr>
-                  <th style="width:30px"><input type="checkbox" id="selectAll" title="Select All"></th>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Key Settings</th>
-                  <th style="width:80px">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="5" class="text-center text-muted py-3">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="mb-panel-body mdl-table-body mb-table-scroll">
+          <table class="mb-table mb-table-stack" id="modelsTable">
+            <thead>
+              <tr>
+                <th class="mdl-col-check"><label class="mb-check"><input type="checkbox" id="selectAll" title="Select All"><span class="visually-hidden">Select all models</span></label></th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Key Settings</th>
+                <th class="mdl-col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="5" class="text-center mb-text-muted py-3">Loading...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- Apply Model to Parts -->
-      <div class="card mt-3">
-        <div class="card-header"><i class="bi bi-link-45deg"></i> Apply Model to Parts</div>
-        <div class="card-body">
-          <div class="row g-2 align-items-end">
+      <div class="mb-panel mt-3">
+        <div class="mb-panel-header"><h2 class="mb-panel-title"><i class="bi bi-link-45deg"></i> Apply Model to Parts</h2></div>
+        <div class="mb-panel-body">
+          <div class="row g-3 align-items-end">
             <div class="col-md-5">
-              <label class="form-label">Parts of this type</label>
-              <select multiple id="partsSelect" class="form-select" size="5" title="Select parts to apply model"></select>
+              <label class="mb-field-label" for="partsSelect">Parts of this type</label>
+              <select multiple id="partsSelect" class="mb-select mdl-parts-select" size="5" title="Select parts to apply model"></select>
             </div>
             <div class="col-md-4">
-              <label class="form-label">Selected Model</label>
-              <input id="applyModelId" class="form-control" placeholder="Click a model row" readonly title="Selected model to apply" />
+              <label class="mb-field-label" for="applyModelId">Selected Model</label>
+              <input id="applyModelId" class="mb-input mb-input-mono" placeholder="Click a model row" readonly title="Selected model to apply" />
             </div>
-            <div class="col-md-3 d-grid gap-2">
-              <button id="btnApplyModel" class="btn btn-primary" title="Assign model to selected parts"><i class="bi bi-link"></i> Assign Model</button>
-              <button id="btnPushDefaults" class="btn btn-outline-primary"
-                title="Merge model defaults into each part's config"><i class="bi bi-box-arrow-in-down"></i> Push Defaults</button>
+            <div class="col-md-3">
+              <div class="mb-stack-sm">
+                <button id="btnApplyModel" class="mb-btn mb-btn-primary mb-btn-block" title="Assign model to selected parts"><i class="bi bi-link"></i> Assign Model</button>
+                <button id="btnPushDefaults" class="mb-btn mb-btn-secondary mb-btn-block"
+                  title="Merge model defaults into each part's config"><i class="bi bi-box-arrow-in-down"></i> Push Defaults</button>
+              </div>
             </div>
           </div>
-          <div id="applyStatus" class="mt-2 small text-muted"></div>
+          <div id="applyStatus" class="mt-2 mb-text-sm mb-text-muted" role="status" aria-live="polite"></div>
         </div>
       </div>
     </div>
@@ -132,6 +134,131 @@
 
 <script>
 (function () {
+  /* ─── Feedback primitives ────────────────────────────────────────────
+     This page used to report every outcome through the browser's own
+     blocking dialogs — a dozen of them. They cannot be themed, they are
+     miserable on a phone, and for a destructive action they cannot show
+     WHICH model is about to be erased. Replaced with the design system's
+     toast (for outcomes) and modal (for destructive choices).
+     ──────────────────────────────────────────────────────────────────── */
+  function toast(message, severity) {
+    var region = document.querySelector('.mb-toast-region');
+    if (!region) {
+      region = document.createElement('div');
+      region.className = 'mb-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    var el = document.createElement('div');
+    el.className = 'mb-toast mb-toast-' + (severity || 'info');
+    el.setAttribute('data-mb-toast', severity || 'info');
+    el.textContent = message == null ? '' : String(message);
+    region.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 5000);
+    return el;
+  }
+
+  /**
+   * Promise<boolean> confirmation built from the design system.
+   * opts: { title, message, target, details[], confirmLabel, cancelLabel }
+   * `target` names the thing about to be destroyed, on its own line.
+   */
+  function mdlConfirm(opts) {
+    var o = opts || {};
+    return new Promise(function (resolve) {
+      var host = document.createElement('div');
+      host.setAttribute('data-mb-confirm', '');
+
+      var backdrop = document.createElement('div');
+      backdrop.className = 'mb-modal-backdrop';
+
+      var modal = document.createElement('div');
+      modal.className = 'mb-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+
+      var dialog = document.createElement('div');
+      dialog.className = 'mb-modal-dialog';
+
+      var header = document.createElement('div');
+      header.className = 'mb-modal-header';
+      var titleEl = document.createElement('h3');
+      titleEl.className = 'mb-modal-title';
+      titleEl.textContent = o.title || 'Are you sure?';
+      header.appendChild(titleEl);
+
+      var body = document.createElement('div');
+      body.className = 'mb-modal-body';
+      if (o.message) {
+        var msg = document.createElement('p');
+        msg.className = 'mb-text-secondary mdl-confirm-message';
+        msg.textContent = o.message;
+        body.appendChild(msg);
+      }
+      if (o.target) {
+        var target = document.createElement('p');
+        target.className = 'mdl-confirm-target mb-text-danger';
+        target.setAttribute('data-mb-confirm-target', '');
+        target.textContent = o.target;
+        body.appendChild(target);
+      }
+      if (o.details && o.details.length) {
+        var list = document.createElement('ul');
+        list.className = 'mb-text-sm mb-text-muted mdl-confirm-details';
+        o.details.forEach(function (d) {
+          var li = document.createElement('li');
+          li.textContent = d;
+          list.appendChild(li);
+        });
+        body.appendChild(list);
+      }
+
+      var footer = document.createElement('div');
+      footer.className = 'mb-modal-footer';
+      var cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'mb-btn mb-btn-secondary';
+      cancel.setAttribute('data-mb-confirm-cancel', '');
+      cancel.textContent = o.cancelLabel || 'Cancel';
+      var ok = document.createElement('button');
+      ok.type = 'button';
+      ok.className = 'mb-btn mb-btn-danger';
+      ok.setAttribute('data-mb-confirm-ok', '');
+      ok.textContent = o.confirmLabel || 'Delete';
+      footer.appendChild(cancel);
+      footer.appendChild(ok);
+
+      dialog.appendChild(header);
+      dialog.appendChild(body);
+      dialog.appendChild(footer);
+      modal.appendChild(dialog);
+      host.appendChild(backdrop);
+      host.appendChild(modal);
+      document.body.appendChild(host);
+
+      var previouslyFocused = document.activeElement;
+      var settled = false;
+      function close(result) {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('keydown', onKey, true);
+        if (host.parentNode) host.parentNode.removeChild(host);
+        try { if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus(); } catch (e) { }
+        resolve(result);
+      }
+      function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); close(false); } }
+      document.addEventListener('keydown', onKey, true);
+      backdrop.addEventListener('click', function () { close(false); });
+      modal.addEventListener('click', function (e) { if (e.target === modal) close(false); });
+      cancel.addEventListener('click', function () { close(false); });
+      ok.addEventListener('click', function () { close(true); });
+
+      // Focus the safe choice, never the destructive one.
+      setTimeout(function () { try { cancel.focus(); } catch (e) { } }, 0);
+    });
+  }
+
   // ─── Field schemas per model type ────────────────────────────────────
   const MODEL_FIELDS = {
     servo: [
@@ -231,26 +358,27 @@
       var val = vals[f.key] !== undefined ? vals[f.key] : '';
       // Handle arrays (like recommendedDriver)
       if (Array.isArray(val)) val = val.join(', ');
+      var fieldId = 'defaults-field-' + f.key;
       if (f.type === 'select') {
-        html += '<div class="col-md-6"><label class="form-label small">' + f.label + '</label>' +
-          '<select title="Select the default value for this field" class="form-select form-select-sm defaults-field" data-key="' + f.key + '">' +
+        html += '<div class="col-md-6"><label class="mb-field-label" for="' + fieldId + '">' + f.label + '</label>' +
+          '<select id="' + fieldId + '" title="Select the default value for this field" class="mb-select defaults-field" data-key="' + f.key + '">' +
           '<option value="">—</option>';
         (f.options || []).forEach(function (o) {
           html += '<option value="' + o + '"' + (String(val) === o ? ' selected' : '') + '>' + o + '</option>';
         });
         html += '</select></div>';
       } else if (f.type === 'number') {
-        html += '<div class="col-md-6"><label class="form-label small">' + f.label + '</label>' +
-          '<input type="number" class="form-control form-control-sm defaults-field" data-key="' + f.key + '"' +
+        html += '<div class="col-md-6"><label class="mb-field-label" for="' + fieldId + '">' + f.label + '</label>' +
+          '<input id="' + fieldId + '" type="number" class="mb-input defaults-field" data-key="' + f.key + '"' +
           ' value="' + val + '" placeholder="' + (f.placeholder || '') + '"' +
           (f.step ? ' step="' + f.step + '"' : '') + '></div>';
       } else {
-        html += '<div class="col-md-6"><label class="form-label small">' + f.label + '</label>' +
-          '<input type="text" class="form-control form-control-sm defaults-field" data-key="' + f.key + '"' +
+        html += '<div class="col-md-6"><label class="mb-field-label" for="' + fieldId + '">' + f.label + '</label>' +
+          '<input id="' + fieldId + '" type="text" class="mb-input defaults-field" data-key="' + f.key + '"' +
           ' value="' + val + '" placeholder="' + (f.placeholder || '') + '"></div>';
       }
     });
-    if (!html) html = '<div class="text-muted small col-12">No configurable defaults for this type.</div>';
+    if (!html) html = '<div class="mb-text-muted mb-text-sm col-12">No configurable defaults for this type.</div>';
     defaultsFieldsArea.innerHTML = html;
   }
 
@@ -272,17 +400,17 @@
 
   // ─── Summary of key settings for table display ──────────────────────
   function summarizeDefaults(type, defaults) {
-    if (!defaults || Object.keys(defaults).length === 0) return '<span class="text-muted">—</span>';
+    if (!defaults || Object.keys(defaults).length === 0) return '<span class="mb-text-muted">—</span>';
     var fields = MODEL_FIELDS[type] || [];
     var parts = [];
     fields.slice(0, 3).forEach(function (f) {
       if (defaults[f.key] !== undefined) {
         var v = defaults[f.key];
         if (Array.isArray(v)) v = v.join(', ');
-        parts.push('<span class="badge bg-secondary me-1">' + f.label.split('(')[0].trim() + ': ' + v + '</span>');
+        parts.push('<span class="mb-badge mdl-setting-badge">' + f.label.split('(')[0].trim() + ': ' + v + '</span>');
       }
     });
-    return parts.join('') || '<span class="text-muted">—</span>';
+    return parts.join('') || '<span class="mb-text-muted">—</span>';
   }
 
   // ─── Selection management ────────────────────────────────────────────
@@ -333,15 +461,15 @@
         var models = (d && d.models) || [];
         var html = '';
         if (models.length === 0) {
-          html = '<tr><td colspan="5" class="text-center text-muted py-3">No models for this type</td></tr>';
+          html = '<tr><td colspan="5" class="text-center mb-text-muted py-3">No models for this type</td></tr>';
         } else {
           models.forEach(function (m) {
-            html += '<tr class="model-row" data-model-id="' + m.id + '" style="cursor:pointer">' +
-              '<td><input title="Select this model" type="checkbox" class="model-checkbox" data-model-id="' + m.id + '" onclick="event.stopPropagation()"></td>' +
-              '<td class="fw-semibold">' + (m.name || '') + '</td>' +
-              '<td class="small text-muted">' + (m.description || '') + '</td>' +
-              '<td>' + summarizeDefaults(type, m.defaults) + '</td>' +
-              '<td><button title="Apply this model" class="btn btn-sm btn-outline-primary" data-choose-apply="' + m.id + '" onclick="event.stopPropagation()">' +
+            html += '<tr class="model-row" data-model-id="' + m.id + '">' +
+              '<td data-label="Select"><label class="mb-check"><input title="Select this model" type="checkbox" class="model-checkbox" data-model-id="' + m.id + '" onclick="event.stopPropagation()"><span class="visually-hidden">Select ' + (m.name || m.id) + '</span></label></td>' +
+              '<td data-label="Name" class="fw-semibold">' + (m.name || '') + '</td>' +
+              '<td data-label="Description" class="mb-text-sm mb-text-muted">' + (m.description || '') + '</td>' +
+              '<td data-label="Key Settings">' + summarizeDefaults(type, m.defaults) + '</td>' +
+              '<td data-label="Actions"><button title="Choose this model to apply" aria-label="Choose ' + (m.name || m.id) + ' to apply" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon" data-choose-apply="' + m.id + '" onclick="event.stopPropagation()">' +
               '<i class="bi bi-link"></i></button></td>' +
               '</tr>';
           });
@@ -350,7 +478,7 @@
         wireModelRowHandlers();
         loadPartsOfType();
       })
-      .catch(function () { tableBody.innerHTML = '<tr><td colspan="5" class="text-danger py-3">Failed to load</td></tr>'; });
+      .catch(function () { tableBody.innerHTML = '<tr><td colspan="5" class="mb-text-danger py-3">Failed to load</td></tr>'; });
   }
 
   function wireModelRowHandlers() {
@@ -398,9 +526,9 @@
         editorTitle.textContent = 'Edit: ' + (d.model.name || d.model.id);
         renderDefaultFields(type, d.model.defaults || {});
         // Highlight row
-        document.querySelectorAll('.model-row').forEach(function (r) { r.classList.remove('table-active'); });
+        document.querySelectorAll('.model-row').forEach(function (r) { r.classList.remove('mdl-row-active'); });
         var row = document.querySelector('.model-row[data-model-id="' + id + '"]');
-        if (row) row.classList.add('table-active');
+        if (row) row.classList.add('mdl-row-active');
       });
   }
 
@@ -427,7 +555,14 @@
     var id = document.getElementById('modelId').value.trim();
     var name = document.getElementById('modelName').value.trim();
     var description = document.getElementById('modelDesc').value.trim();
-    if (!name) { alert('Name is required'); return; }
+    if (!name) {
+      toast('A model needs a name before it can be saved', 'warning');
+      var nameEl = document.getElementById('modelName');
+      nameEl.setAttribute('aria-invalid', 'true');
+      nameEl.focus();
+      return;
+    }
+    document.getElementById('modelName').removeAttribute('aria-invalid');
 
     // Collect from form fields, then merge any raw JSON overrides
     var defaults = collectDefaultFields();
@@ -438,7 +573,12 @@
         try {
           var rawObj = JSON.parse(rawText);
           defaults = Object.assign({}, defaults, rawObj);
-        } catch (e) { alert('Invalid JSON in raw defaults: ' + e.message); return; }
+        } catch (e) {
+          toast('Invalid JSON in raw defaults: ' + e.message, 'danger');
+          document.getElementById('modelDefaults').setAttribute('aria-invalid', 'true');
+          return;
+        }
+        document.getElementById('modelDefaults').removeAttribute('aria-invalid');
       }
     }
 
@@ -449,10 +589,11 @@
       .then(function (r) { return r.json(); })
       .then(function (resp) {
         if (resp && resp.success) {
+          toast('Saved "' + name + '"', 'success');
           loadModels();
           if (!id) clearForm();
         } else {
-          alert('Error: ' + (resp.error || 'Unknown'));
+          toast('Save failed: ' + ((resp && resp.error) || 'Unknown error'), 'danger');
         }
       });
   };
@@ -461,11 +602,19 @@
   document.getElementById('btnDeleteModel').onclick = function () {
     var type = typeSelect.value;
     var id = document.getElementById('modelId').value.trim();
-    if (!id) { alert('No model selected'); return; }
-    if (!confirm('Delete this model?')) return;
-    fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(id), { method: 'DELETE' })
-      .then(function (r) { return r.json(); })
-      .then(function () { clearForm(); loadModels(); });
+    if (!id) { toast('Pick a model from the list first', 'warning'); return; }
+    var name = document.getElementById('modelName').value.trim() || id;
+    mdlConfirm({
+      title: 'Delete this model?',
+      message: 'The model definition is removed. Parts already assigned to it keep the settings they were given.',
+      target: name,
+      confirmLabel: 'Delete model'
+    }).then(function (ok) {
+      if (!ok) return;
+      fetch('/setup/models/api/' + encodeURIComponent(type) + '/' + encodeURIComponent(id), { method: 'DELETE' })
+        .then(function (r) { return r.json(); })
+        .then(function () { toast('Deleted "' + name + '"', 'success'); clearForm(); loadModels(); });
+    });
   };
 
   document.getElementById('btnNewModel').onclick = clearForm;
@@ -473,27 +622,44 @@
   // ─── Bulk delete ──────────────────────────────────────────────────────
   btnDeleteSelected.onclick = function () {
     if (selectedModels.size === 0) return;
-    if (!confirm('Delete ' + selectedModels.size + ' selected model(s)?')) return;
     var type = typeSelect.value;
-    fetch('/setup/models/api/' + encodeURIComponent(type) + '/bulk-delete', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: Array.from(selectedModels) })
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (resp) {
-        if (resp && resp.success) alert('Deleted ' + resp.deletedCount + ' model(s)');
-        selectedModels.clear();
-        loadModels();
+    // Name every model in the list, not just the count — "Delete 4 models?"
+    // is not enough information to say yes to.
+    var names = [];
+    document.querySelectorAll('.model-checkbox').forEach(function (cb) {
+      if (!cb.checked) return;
+      var row = cb.closest('.model-row');
+      var cell = row && row.querySelector('td[data-label="Name"]');
+      names.push((cell && cell.textContent.trim()) || cb.getAttribute('data-model-id'));
+    });
+    mdlConfirm({
+      title: 'Delete ' + selectedModels.size + ' model' + (selectedModels.size === 1 ? '' : 's') + '?',
+      message: 'These model definitions are removed. Parts already assigned to them keep the settings they were given.',
+      details: names,
+      confirmLabel: 'Delete ' + selectedModels.size + ' model' + (selectedModels.size === 1 ? '' : 's')
+    }).then(function (ok) {
+      if (!ok) return;
+      fetch('/setup/models/api/' + encodeURIComponent(type) + '/bulk-delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedModels) })
       })
-      .catch(function (err) { alert('Error: ' + err.message); loadModels(); });
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+          if (resp && resp.success) toast('Deleted ' + resp.deletedCount + ' model(s)', 'success');
+          else toast('Bulk delete failed', 'danger');
+          selectedModels.clear();
+          loadModels();
+        })
+        .catch(function (err) { toast('Bulk delete failed: ' + err.message, 'danger'); loadModels(); });
+    });
   };
 
   // ─── Apply model to parts ────────────────────────────────────────────
   document.getElementById('btnApplyModel').onclick = function () {
     var id = applyModelId.value.trim();
-    if (!id) { alert('Click the link icon on a model row first'); return; }
+    if (!id) { toast('Pick a model first — use the link button on its row', 'warning'); return; }
     var selected = Array.from(partsSelect.selectedOptions).map(function (o) { return o.value; });
-    if (selected.length === 0) { alert('Select one or more parts'); return; }
+    if (selected.length === 0) { toast('Select one or more parts to apply it to', 'warning'); return; }
     var status = document.getElementById('applyStatus');
     status.textContent = 'Applying model ' + id + '...';
     var ok = 0, fail = 0;
@@ -512,9 +678,9 @@
 
   document.getElementById('btnPushDefaults').onclick = function () {
     var id = applyModelId.value.trim();
-    if (!id) { alert('Click the link icon on a model row first'); return; }
+    if (!id) { toast('Pick a model first — use the link button on its row', 'warning'); return; }
     var selected = Array.from(partsSelect.selectedOptions).map(function (o) { return o.value; });
-    if (selected.length === 0) { alert('Select one or more parts'); return; }
+    if (selected.length === 0) { toast('Select one or more parts to apply it to', 'warning'); return; }
     var status = document.getElementById('applyStatus');
     var type = typeSelect.value;
     status.textContent = 'Pushing defaults...';

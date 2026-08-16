@@ -13,7 +13,7 @@
   // ─────────────────────────────────────────────────────────────────────────
 
   /** Transient status message. `type` is one of error|success|warning|info. */
-  window.showToast = function (message, type) {
+  window.mbCalToast = function (message, type) {
     var region = document.getElementById('toast-container');
     if (!region) {
       region = document.createElement('div');
@@ -34,6 +34,13 @@
     setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
     return toast;
   };
+
+  // monsterbox4.js loads at the end of <body> and installs a Bootstrap-alert
+  // showToast() over the top of ours, so claim the name again once every
+  // synchronous script on the page has run.
+  window.showToast = window.mbCalToast;
+  document.addEventListener('DOMContentLoaded', function () { window.showToast = window.mbCalToast; });
+  window.addEventListener('load', function () { window.showToast = window.mbCalToast; });
 
   /**
    * Promise<boolean> confirmation dialog built from the design system.
@@ -168,6 +175,44 @@
 
   /* Search box in the Devices header. */
   .cal-search { width: 200px; max-width: 100%; }
+
+  /* .mb-btn-secondary is transparent by design, which reads as an empty grey
+     slab once it sits inside the segmented .mb-btn-group. Give it the panel
+     surface so the divider between segments is the only thing showing through. */
+  .mb-btn-group .mb-btn-secondary { background: var(--mb-bg-2); }
+  /* A full-width group is a segmented control: the segments share the width. */
+  .mb-btn-group.w-100 { display: flex; }
+  .mb-btn-group.w-100 .mb-btn { flex: 1 1 0; }
+  .mb-btn-group .mb-btn-secondary:hover { background: var(--mb-bg-hover); }
+
+  /* A button welded to an input should never wrap its own label. */
+  .mb-input-group .mb-btn { white-space: nowrap; }
+
+  /* components.css collapses a switch's real <input> to 0x0 with opacity 0.
+     The painted track then has no hit target of its own, so the control is
+     unreachable to anything driving the page by pointer — automation, and any
+     assistive tech that asks where the control actually is. Keep the input
+     invisible but real: a 44x24 box lying exactly over the track.
+     (This belongs in components.css; it is scoped here because that file is
+     shared and not mine to edit.) */
+  .mb-switch { position: relative; }
+  .mb-switch input {
+    width: 44px;
+    height: 24px;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  /* The one number on this page an operator reads from across the room. */
+  .cal-position-badge {
+    font-family: var(--mb-font-mono);
+    font-size: var(--mb-text-xl);
+    padding: var(--mb-space-1) var(--mb-space-4);
+  }
 
   /* Read-only JSON dumps (model defaults / effective config). */
   .cal-json {
@@ -371,7 +416,11 @@
   @media (max-width: 768px) {
     .cal-toolbar { flex-wrap: wrap; gap: var(--mb-space-2); }
     .cal-toolbar > * { min-width: 0; }
-    .cal-search { width: 100%; }
+    /* The Devices header stacks its title and its search rather than squeezing
+       both onto one line. */
+    .cal-devices-header { flex-wrap: wrap; gap: var(--mb-space-2); }
+    .cal-search { width: 100%; flex-wrap: nowrap; }
+    .cal-search .mb-input-addon { flex: 0 0 auto; }
     .device-list { max-height: 50vh; }
     .cal-range-wide { width: 100%; }
     .cal-num, .cal-select-inline, .cal-angle-group { width: 100%; }
@@ -402,7 +451,7 @@
     <!-- Left Sidebar: Devices -->
     <div class="col-12 col-xl-3">
       <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center cal-devices-header">
           <span>Devices</span>
           <div class="mb-input-group cal-search">
             <span class="mb-input-addon"><i class="bi bi-search"></i></span>

@@ -1,0 +1,158 @@
+/* ==========================================================================
+   /setup/audio — page-specific rules
+   --------------------------------------------------------------------------
+   Shared vocabulary (buttons, inputs, panels, badges, toasts) comes from
+   components.css and is not restated. What lives here is the VU meter, the
+   device-detail blocks, and the two bridge panels.
+
+   These rules were an inline <style> block in the view, where two of the
+   colours were raw hex fallbacks (--bs-dark, --bs-border-color) that no
+   MonsterBox theme could reach. They are tokens now.
+
+   Loaded via `styles: ['/css/setup-audio.css']` from routes/setup/audio.js.
+   ========================================================================== */
+
+/* ==========================================================================
+   VU meters
+   ========================================================================== */
+.vu-meter-container {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+}
+
+.vu-meter {
+  width: 100%;
+  height: 12px;
+  background: var(--mb-bg-3);
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-pill);
+  overflow: hidden;
+}
+
+.vu-meter-grow { flex: 1; }
+
+.vu-meter .vu-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 50%, var(--mb-danger) 100%);
+  transition: width 0.1s linear;
+}
+
+.vu-label {
+  min-width: 40px;
+  text-align: right;
+  font-family: var(--mb-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Toolbar
+   ========================================================================== */
+.aud-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--mb-space-2);
+  margin-bottom: var(--mb-space-3);
+}
+
+/* ==========================================================================
+   Current source / sink detail block
+   ========================================================================== */
+.aud-device-info {
+  padding: var(--mb-space-3);
+  background: var(--mb-bg-0);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  font-size: var(--mb-text-sm);
+}
+
+/* ==========================================================================
+   Browser audio bridge — the two panels are colour-coded by direction
+   (listening in vs. speaking out), so an operator can tell at a glance which
+   way audio is flowing.
+   ========================================================================== */
+.aud-bridge { border-width: 1px; }
+.aud-bridge-listen { border-color: var(--mb-info); }
+.aud-bridge-talk   { border-color: var(--mb-warning); }
+
+/* ==========================================================================
+   Microphone parts list
+   ========================================================================== */
+.aud-mic-meter {
+  min-width: 180px;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  text-align: right;
+}
+
+.aud-slider-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+}
+
+.aud-slider-row .mb-range { flex: 1 1 auto; }
+
+.aud-slider-value {
+  min-width: 3.5rem;
+  text-align: right;
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-secondary);
+}
+
+/* ==========================================================================
+   Active streams
+   ========================================================================== */
+.stream-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3) 0;
+  border-bottom: 1px solid var(--mb-border-subtle);
+}
+
+.stream-item:last-child { border-bottom: none; }
+
+/* ==========================================================================
+   Test results console
+   ========================================================================== */
+.aud-test-results {
+  min-height: 100px;
+  padding: var(--mb-space-3);
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* ==========================================================================
+   Small screens
+   ========================================================================== */
+@media (max-width: 768px) {
+  .aud-toolbar { flex-wrap: wrap; }
+  .aud-toolbar .mb-btn { flex: 1 1 0; }
+
+  /* At 390px the name and the meter cannot share a line without one of them
+     forcing the page sideways. */
+  #mic-parts-list .list-group-item > .d-flex {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: var(--mb-space-2);
+  }
+
+  .aud-mic-meter {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  .stream-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

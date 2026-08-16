@@ -43,11 +43,7 @@ class GoblinManager {
         // Broadcast command selection
         document.getElementById('broadcastCommand').addEventListener('change', (e) => {
             const customGroup = document.getElementById('customCommandGroup');
-            if (e.target.value === 'custom') {
-                customGroup.style.display = 'block';
-            } else {
-                customGroup.style.display = 'none';
-            }
+            customGroup.classList.toggle('gob-hidden', e.target.value !== 'custom');
         });
 
         // Registration form validation
@@ -89,16 +85,16 @@ class GoblinManager {
 
         if (!filteredGoblins.length) {
             grid.innerHTML = '';
-            emptyState.style.display = this.goblins.length === 0 ? 'block' : 'none';
+            emptyState.classList.toggle('gob-hidden', this.goblins.length !== 0);
 
             if (this.goblins.length > 0 && this.statusFilter !== 'all') {
                 // Show filter message instead of empty state
                 grid.innerHTML = `
                     <div class="col-12">
-                        <div class="text-center py-4">
-                            <i class="bi bi-funnel text-muted" style="font-size: 3rem;"></i>
-                            <h5 class="text-muted mt-2">No ${this.statusFilter} Goblins found</h5>
-                            <button class="btn btn-outline-primary" onclick="document.getElementById('statusFilter').value='all'; goblinManager.statusFilter='all'; goblinManager.renderGoblinGrid();">
+                        <div class="mb-empty">
+                            <i class="bi bi-funnel mb-empty-icon"></i>
+                            <h3 class="mb-empty-title">No ${this.statusFilter} Goblins found</h3>
+                            <button class="mb-btn mb-btn-secondary" onclick="document.getElementById('statusFilter').value='all'; goblinManager.statusFilter='all'; goblinManager.renderGoblinGrid();">
                                 Show All Goblins
                             </button>
                         </div>
@@ -108,12 +104,20 @@ class GoblinManager {
             return;
         }
 
-        emptyState.style.display = 'none';
+        emptyState.classList.add('gob-hidden');
 
         grid.innerHTML = filteredGoblins.map(goblin => {
             const lockTimeRemaining = this.getLockTimeRemaining(goblin);
             const heartbeatAge = goblin.lastHeartbeat ?
                 Math.floor((Date.now() - new Date(goblin.lastHeartbeat).getTime()) / 1000) : null;
+
+            // A green pulsing dot is the universal "this machine is alive" signal, so
+            // it has to agree with the OFFLINE badge two inches to its right. The old
+            // test was `heartbeatAge < 60`, and a Goblin that has never checked in has
+            // heartbeatAge === null — `null < 60` is true in JS, so every never-seen
+            // device rendered as beating. Require an actual recent heartbeat AND the
+            // status the rest of the card reports.
+            const alive = goblin.status === 'online' && heartbeatAge !== null && heartbeatAge < 60;
 
             return `
                 <div class="col-lg-6 col-xl-4">
@@ -121,7 +125,7 @@ class GoblinManager {
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
                             <div>
                                 <h6 class="mb-0 d-flex align-items-center">
-                                    <div class="mb-heartbeat ${heartbeatAge < 60 ? 'active' : 'inactive'}"></div>
+                                    <div class="mb-heartbeat ${alive ? 'active' : 'inactive'}" title="${alive ? 'Online — heartbeat within the last minute' : 'No recent heartbeat'}"></div>
                                     ${goblin.name}
                                 </h6>
                                 <small class="text-muted">${goblin.location || goblin.endpoint}</small>
@@ -193,39 +197,39 @@ class GoblinManager {
                         
                         <div class="card-footer py-2">
                             <div class="goblin-controls d-flex flex-wrap justify-content-center">
-                                <button class="btn btn-sm btn-outline-info" onclick="goblinManager.showGoblinDetails('${goblin.id}')" title="View detailed information about this Goblin">
+                                <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.showGoblinDetails('${goblin.id}')" title="View detailed information about this Goblin">
                                     <i class="bi bi-info-circle"></i>
                                 </button>
 
                                 ${goblin.status === 'online' ? `
-                                    <button class="btn btn-sm btn-outline-success" onclick="goblinManager.testConnection('${goblin.id}')" title="Test network connection to this Goblin">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.testConnection('${goblin.id}')" title="Test network connection to this Goblin">
                                         <i class="bi bi-wifi"></i>
                                     </button>
 
                                     ${goblin.locked ? `
-                                        <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.unlockGoblin('${goblin.id}')" title="Unlock this Goblin for other users">
+                                        <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.unlockGoblin('${goblin.id}')" title="Unlock this Goblin for other users">
                                             <i class="bi bi-unlock"></i>
                                         </button>
                                     ` : `
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')" title="Lock this Goblin for exclusive control">
+                                        <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.lockGoblin('${goblin.id}')" title="Lock this Goblin for exclusive control">
                                             <i class="bi bi-lock"></i>
                                         </button>
                                     `}
 
-                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.deployToGoblin('${goblin.id}')" title="Deploy latest code to this Goblin via Facehugger">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.deployToGoblin('${goblin.id}')" title="Deploy latest code to this Goblin via Facehugger">
                                         <i class="bi bi-broadcast"></i>
                                     </button>
 
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')" title="Stop all media playback on this Goblin">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.stopGoblinPlayback('${goblin.id}')" title="Stop all media playback on this Goblin">
                                         <i class="bi bi-stop-fill"></i>
                                     </button>
                                 ` : `
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.testConnection('${goblin.id}')" title="Attempt to reconnect to this Goblin">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.testConnection('${goblin.id}')" title="Attempt to reconnect to this Goblin">
                                         <i class="bi bi-arrow-clockwise"></i> Reconnect
                                     </button>
                                 `}
 
-                                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')" title="Remove this Goblin from the system">
+                                <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="goblinManager.unregisterGoblin('${goblin.id}')" title="Remove this Goblin from the system">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -267,8 +271,8 @@ class GoblinManager {
         };
 
         registerBtn.disabled = true;
-        statusDiv.style.display = 'block';
-        statusDiv.className = 'alert alert-info mt-3';
+        statusDiv.classList.remove('gob-hidden');
+        statusDiv.className = 'mb-alert mb-alert-info mt-3';
 
         try {
             // Check if facehugger mode is enabled
@@ -312,7 +316,7 @@ class GoblinManager {
             const result = await response.json();
 
             if (result.success) {
-                statusDiv.className = 'alert alert-success mt-3';
+                statusDiv.className = 'mb-alert mb-alert-success mt-3';
                 statusMessage.textContent = `Successfully registered ${goblinData.metadata.name}!`;
 
                 // Refresh the Goblin list
@@ -324,13 +328,13 @@ class GoblinManager {
                     this.resetRegistrationForm();
                 }, 2000);
             } else {
-                statusDiv.className = 'alert alert-danger mt-3';
+                statusDiv.className = 'mb-alert mb-alert-danger mt-3';
                 statusMessage.textContent = `Registration failed: ${result.error}`;
             }
 
         } catch (error) {
             console.error('Registration error:', error);
-            statusDiv.className = 'alert alert-danger mt-3';
+            statusDiv.className = 'mb-alert mb-alert-danger mt-3';
 
             if (error.name === 'AbortError' || error.message.includes('timeout')) {
                 statusMessage.textContent = 'Connection test timed out. Check the IP address and port.';
@@ -355,8 +359,8 @@ class GoblinManager {
 
     resetRegistrationForm() {
         document.getElementById('registerGoblinForm').reset();
-        document.getElementById('registrationStatus').style.display = 'none';
-        document.getElementById('facehuggerProgress').style.display = 'none';
+        document.getElementById('registrationStatus').classList.add('gob-hidden');
+        document.getElementById('facehuggerProgress').classList.add('gob-hidden');
         document.getElementById('registerBtn').disabled = true;
     }
 
@@ -368,8 +372,8 @@ class GoblinManager {
         const registerBtn = document.getElementById('registerBtn');
 
         // Hide status, show progress
-        statusDiv.style.display = 'none';
-        progressDiv.style.display = 'block';
+        statusDiv.classList.add('gob-hidden');
+        progressDiv.classList.remove('gob-hidden');
         registerBtn.disabled = true;
 
         try {
@@ -402,15 +406,15 @@ class GoblinManager {
 
                         if (data.progress >= 0) {
                             progressBar.style.width = `${data.progress}%`;
-                            progressBar.textContent = `${data.progress}%`;
+                            progressBar.setAttribute('aria-valuenow', String(data.progress));
                             progressStatus.textContent = data.message;
                         }
 
                         if (data.final) {
                             if (data.success) {
-                                progressDiv.style.display = 'none';
-                                statusDiv.style.display = 'block';
-                                statusDiv.className = 'alert alert-success mt-3';
+                                progressDiv.classList.add('gob-hidden');
+                                statusDiv.classList.remove('gob-hidden');
+                                statusDiv.className = 'mb-alert mb-alert-success mt-3';
                                 document.getElementById('statusMessage').textContent =
                                     `👽 FACEHUGGER SUCCESS! ${goblinData.metadata.name} deployed and registered!`;
 
@@ -431,9 +435,9 @@ class GoblinManager {
 
         } catch (error) {
             console.error('Facehugger deployment error:', error);
-            progressDiv.style.display = 'none';
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'alert alert-danger mt-3';
+            progressDiv.classList.add('gob-hidden');
+            statusDiv.classList.remove('gob-hidden');
+            statusDiv.className = 'mb-alert mb-alert-danger mt-3';
             document.getElementById('statusMessage').textContent =
                 `👽 FACEHUGGER FAILED: ${error.message}`;
         } finally {
@@ -606,9 +610,13 @@ class GoblinManager {
         const goblin = this.goblins.find(g => g.id === goblinId);
         if (!goblin) return;
 
-        if (!confirm(`Are you sure you want to unregister "${goblin.name}"? This action cannot be undone.`)) {
-            return;
-        }
+        const ok = await window.mbConfirm({
+            title: 'Unregister Goblin?',
+            body: 'This removes the device from MonsterBox. It cannot be undone.',
+            target: goblin.name,
+            confirmLabel: 'Unregister'
+        });
+        if (!ok) return;
 
         try {
             const response = await fetch(`/goblin-management/api/goblin/${goblinId}`, {
@@ -728,7 +736,7 @@ class GoblinManager {
 
     broadcastCommand() {
         const modal = new bootstrap.Modal(document.getElementById('broadcastModal'));
-        document.getElementById('broadcastResults').style.display = 'none';
+        document.getElementById('broadcastResults').classList.add('gob-hidden');
         modal.show();
     }
 
@@ -770,7 +778,7 @@ class GoblinManager {
             const result = await response.json();
 
             if (result.success) {
-                resultsDiv.style.display = 'block';
+                resultsDiv.classList.remove('gob-hidden');
 
                 resultsList.innerHTML = result.results.map(r => `
                     <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
@@ -802,17 +810,16 @@ class GoblinManager {
 
     showSystemHealth() {
         const stats = this.getSystemStats();
-        const healthModal = new bootstrap.Modal(document.createElement('div'));
-
-        // Create health modal content
-        alert(`System Health Summary:
-        
-Total Goblins: ${stats.total}
-Online: ${stats.online} (${((stats.online / stats.total) * 100).toFixed(1)}%)
-Offline: ${stats.offline}
-Locked: ${stats.locked}
-Average Response: ${stats.avgResponse}ms
-Success Rate: ${stats.successRate}%`);
+        // Guard the divide: with no Goblins registered this read "NaN%".
+        const pct = stats.total > 0 ? ((stats.online / stats.total) * 100).toFixed(1) + '%' : '—';
+        window.mbShowHealth([
+            ['Total Goblins', String(stats.total)],
+            ['Online', `${stats.online} (${pct})`],
+            ['Offline', String(stats.offline)],
+            ['Locked', String(stats.locked)],
+            ['Average Response', `${stats.avgResponse}ms`],
+            ['Success Rate', `${stats.successRate}%`]
+        ]);
     }
 
     // Utility methods
@@ -1280,7 +1287,7 @@ Success Rate: ${stats.successRate}%`);
                     <span class="badge bg-secondary me-2">${index + 1}</span>
                     <span>${item.filename}</span>
                 </div>
-                <button class="btn btn-sm btn-outline-danger" onclick="goblinManager.removeFromQueue('${item.id}')" title="Remove this video from the queue">
+                <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="goblinManager.removeFromQueue('${item.id}')" title="Remove this video from the queue">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -1326,13 +1333,13 @@ Success Rate: ${stats.successRate}%`);
                                     <strong>${filename}</strong>
                                 </div>
                                 <div class="flex-shrink-0 btn-group">
-                                    <button class="btn btn-sm btn-success" onclick="goblinManager.playNow('${filename.replace(/'/g, "\\'")}')" title="Stop current playback and play this video immediately">
+                                    <button class="mb-btn mb-btn-sm mb-btn-primary" onclick="goblinManager.playNow('${filename.replace(/'/g, "\\'")}')" title="Stop current playback and play this video immediately">
                                         <i class="bi bi-play-fill"></i> Play
                                     </button>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}')" title="Add this video to the end of the queue">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}')" title="Add this video to the end of the queue">
                                         <i class="bi bi-plus"></i> Add
                                     </button>
-                                    <button class="btn btn-sm btn-outline-warning" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}', true)" title="Add this video to priority queue (plays next)">
+                                    <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="goblinManager.addToQueue('${filename.replace(/'/g, "\\'")}', true)" title="Add this video to priority queue (plays next)">
                                         <i class="bi bi-lightning"></i> Priority
                                     </button>
                                 </div>
@@ -1571,7 +1578,13 @@ Success Rate: ${stats.successRate}%`);
     }
 
     async clearQueue() {
-        if (!confirm('Clear all videos from queue?')) return;
+        const ok = await window.mbConfirm({
+            title: 'Clear the video queue?',
+            body: 'Every queued video is removed. Playback stops after the current item.',
+            target: (this.currentQueueGoblin && this.currentQueueGoblin.name) || '',
+            confirmLabel: 'Clear queue'
+        });
+        if (!ok) return;
 
         try {
             const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/clear`, {

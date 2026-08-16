@@ -536,12 +536,13 @@
 
   function setStatus(text) {
     if (!el.ttsStatus) return;
-    var cls = 'bg-secondary';
-    if (text === 'Playing')            cls = 'bg-success';
-    else if (text === 'Generating TTS...') cls = 'bg-info';
-    else if (text === 'Done')          cls = 'bg-primary';
-    else if (text === 'Error')         cls = 'bg-danger';
-    el.ttsStatus.innerHTML = '<span class="' + cls + ' px-2 py-1 rounded">' + text + '</span>';
+    var cls = 'mb-badge';
+    if (text === 'Playing')                cls = 'mb-badge mb-badge-success';
+    else if (text === 'Generating TTS...') cls = 'mb-badge mb-badge-info';
+    else if (text === 'Done')              cls = 'mb-badge mb-badge-primary';
+    else if (text === 'Error')             cls = 'mb-badge mb-badge-danger';
+    el.ttsStatus.innerHTML = '<span class="' + cls + '"></span>';
+    el.ttsStatus.firstChild.textContent = text;
   }
 
   function setLive(active) {
@@ -930,7 +931,7 @@
       if (configsList[i].id === selectedId) { selectedName = configsList[i].name; break; }
     }
 
-    // A native confirm() cannot say WHICH config is about to go, cannot be
+    // A native browser dialog cannot say WHICH config is about to go, cannot be
     // styled, and on a phone it lands as an OS sheet with no context at all.
     confirmDestructive(
       'Delete config',

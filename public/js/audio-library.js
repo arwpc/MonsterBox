@@ -249,37 +249,37 @@
         }
 
         if (!audioFiles || audioFiles.length === 0) {
-            if (table) table.style.display = 'none';
-            if (emptyState) emptyState.style.display = 'block';
+            if (table) table.classList.add('aud-hidden');
+            if (emptyState) emptyState.classList.remove('aud-hidden');
             return;
         }
 
-        if (table) table.style.display = '';
-        if (emptyState) emptyState.style.display = 'none';
+        if (table) table.classList.remove('aud-hidden');
+        if (emptyState) emptyState.classList.add('aud-hidden');
 
         var html = '';
         for (var i = 0; i < audioFiles.length; i++) {
             var audio = audioFiles[i];
             var isPlaying = currentlyPlayingId === audio.id;
-            var rowClass = isPlaying ? 'table-active' : '';
+            var rowClass = isPlaying ? 'is-playing' : '';
             var playIcon = isPlaying ? 'bi-stop-fill' : 'bi-play-fill';
-            var playColor = isPlaying ? 'btn-danger' : 'btn-success';
+            var playColor = isPlaying ? 'mb-btn-danger' : 'mb-btn-primary';
             var favIcon = audio.favorite ? 'bi-heart-fill text-danger' : 'bi-heart';
 
             html += '<tr class="' + rowClass + '" data-audio-id="' + escapeAttr(audio.id) + '">'
-                + '<td><button class="btn ' + playColor + ' btn-sm px-2 py-0 play-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="' + (isPlaying ? 'Stop playback' : 'Play on character speaker') + '"><i class="bi ' + playIcon + '"></i></button></td>'
-                + '<td><i class="bi ' + favIcon + ' fav-btn" role="button" data-audio-id="' + escapeAttr(audio.id) + '" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle favorite"></i></td>'
+                + '<td><button class="mb-btn mb-btn-sm mb-btn-icon ' + playColor + ' play-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="' + (isPlaying ? 'Stop playback' : 'Play on character speaker') + '"><i class="bi ' + playIcon + '"></i></button></td>'
+                + '<td><i class="bi ' + favIcon + ' fav-btn" role="button" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle favorite"></i></td>'
                 + '<td>' + escapeHtml(audio.title || 'Untitled') + '</td>'
-                + '<td><span class="badge bg-secondary">' + escapeHtml(capitalizeFirst(audio.category || 'other')) + '</span></td>'
-                + '<td class="text-muted small">' + formatDuration(audio.duration) + '</td>'
-                + '<td class="text-muted small">' + escapeHtml((audio.format || '').toUpperCase()) + '</td>'
-                + '<td class="text-muted small">' + formatFileSize(audio.fileSize || 0) + '</td>'
+                + '<td><span class="mb-badge">' + escapeHtml(capitalizeFirst(audio.category || 'other')) + '</span></td>'
+                + '<td class="mb-text-muted mb-text-sm">' + formatDuration(audio.duration) + '</td>'
+                + '<td class="mb-text-muted mb-text-sm">' + escapeHtml((audio.format || '').toUpperCase()) + '</td>'
+                + '<td class="mb-text-muted mb-text-sm">' + formatFileSize(audio.fileSize || 0) + '</td>'
                 + '<td>'
-                + '<div class="btn-group btn-group-sm">'
-                + '<button class="btn btn-outline-info btn-sm px-1 py-0 loop-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Loop this track"><i class="bi bi-arrow-repeat"></i></button>'
-                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 edit-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit file details"><i class="bi bi-pencil"></i></button>'
-                + '<button class="btn btn-outline-secondary btn-sm px-1 py-0 download-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Download audio file"><i class="bi bi-download"></i></button>'
-                + '<button class="btn btn-outline-danger btn-sm px-1 py-0 delete-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete audio file"><i class="bi bi-trash"></i></button>'
+                + '<div class="mb-btn-group">'
+                + '<button class="mb-btn mb-btn-sm mb-btn-icon mb-btn-secondary loop-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Loop this track"><i class="bi bi-arrow-repeat"></i></button>'
+                + '<button class="mb-btn mb-btn-sm mb-btn-icon mb-btn-secondary edit-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit file details"><i class="bi bi-pencil"></i></button>'
+                + '<button class="mb-btn mb-btn-sm mb-btn-icon mb-btn-secondary download-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Download audio file"><i class="bi bi-download"></i></button>'
+                + '<button class="mb-btn mb-btn-sm mb-btn-icon mb-btn-ghost delete-btn" data-audio-id="' + escapeAttr(audio.id) + '" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete audio file"><i class="bi bi-trash"></i></button>'
                 + '</div>'
                 + '</td>'
                 + '</tr>';
@@ -525,22 +525,29 @@
     }
 
     function deleteAudio(audioId, title) {
-        if (!confirm('Delete "' + title + '"? This cannot be undone.')) return;
-
-        fetch('/audio-library/api/audio/' + encodeURIComponent(audioId), { method: 'DELETE' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    showSuccess('Deleted "' + title + '"');
-                    loadAudioLibrary();
-                } else {
-                    showError(data.error || 'Failed to delete audio');
-                }
-            })
-            .catch(function(err) {
-                console.error('Delete error:', err);
-                showError('Failed to delete audio');
-            });
+        // Styled dialog that names the track, instead of an unstyleable native popup.
+        window.mbConfirm({
+            title: 'Delete this audio file?',
+            body: 'The file is removed from the library. This cannot be undone.',
+            target: title,
+            confirmLabel: 'Delete'
+        }).then(function(ok) {
+            if (!ok) return;
+            fetch('/audio-library/api/audio/' + encodeURIComponent(audioId), { method: 'DELETE' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        showSuccess('Deleted "' + title + '"');
+                        loadAudioLibrary();
+                    } else {
+                        showError(data.error || 'Failed to delete audio');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Delete error:', err);
+                    showError('Failed to delete audio');
+                });
+        });
     }
 
     // ─── Edit Modal ─────────────────────────────────────────────────
@@ -579,38 +586,38 @@
             + '<div class="modal-dialog">'
             + '<div class="modal-content">'
             + '<div class="modal-header">'
-            + '<h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Audio File</h5>'
+            + '<h2 class="modal-title mb-heading-3"><i class="bi bi-pencil"></i> Edit Audio File</h2>'
             + '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>'
             + '</div>'
             + '<div class="modal-body">'
             + '<form id="editAudioForm">'
-            + '<div class="mb-3">'
-            + '<label class="form-label">Title</label>'
-            + '<input type="text" class="form-control" id="editTitle" required>'
+            + '<div class="mb-field">'
+            + '<label class="mb-field-label" for="editTitle">Title</label>'
+            + '<input type="text" class="mb-input" id="editTitle" required>'
             + '</div>'
-            + '<div class="mb-3">'
-            + '<label class="form-label">Description</label>'
-            + '<textarea class="form-control" id="editDescription" rows="3"></textarea>'
+            + '<div class="mb-field">'
+            + '<label class="mb-field-label" for="editDescription">Description</label>'
+            + '<textarea class="mb-textarea" id="editDescription" rows="3"></textarea>'
             + '</div>'
-            + '<div class="mb-3">'
-            + '<label class="form-label">Category</label>'
-            + '<select class="form-select" id="editCategory"></select>'
+            + '<div class="mb-field">'
+            + '<label class="mb-field-label" for="editCategory">Category</label>'
+            + '<select class="mb-select" id="editCategory"></select>'
             + '</div>'
-            + '<div class="mb-3">'
-            + '<label class="form-label">Tags (comma separated)</label>'
-            + '<input type="text" class="form-control" id="editTags" placeholder="spooky, halloween, monster">'
+            + '<div class="mb-field">'
+            + '<label class="mb-field-label" for="editTags">Tags (comma separated)</label>'
+            + '<input type="text" class="mb-input" id="editTags" placeholder="spooky, halloween, monster">'
             + '</div>'
-            + '<div class="mb-3">'
-            + '<div class="form-check">'
-            + '<input class="form-check-input" type="checkbox" id="editFavorite">'
-            + '<label class="form-check-label" for="editFavorite">Mark as Favorite</label>'
-            + '</div>'
+            + '<div class="mb-field">'
+            + '<label class="mb-check" for="editFavorite">'
+            + '<input type="checkbox" id="editFavorite">'
+            + '<span>Mark as Favorite</span>'
+            + '</label>'
             + '</div>'
             + '</form>'
             + '</div>'
             + '<div class="modal-footer">'
-            + '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>'
-            + '<button type="button" class="btn btn-primary" id="editSaveBtn">Save Changes</button>'
+            + '<button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal">Cancel</button>'
+            + '<button type="button" class="mb-btn mb-btn-primary" id="editSaveBtn">Save Changes</button>'
             + '</div>'
             + '</div>'
             + '</div>'
@@ -676,11 +683,11 @@
         var selectedFilesList = document.getElementById('selectedFilesList');
 
         if (selectedFiles.length === 0) {
-            if (selectedFilesList) selectedFilesList.style.display = 'none';
+            if (selectedFilesList) selectedFilesList.classList.add('aud-hidden');
             return;
         }
 
-        if (selectedFilesList) selectedFilesList.style.display = 'block';
+        if (selectedFilesList) selectedFilesList.classList.remove('aud-hidden');
 
         var html = '';
         for (var i = 0; i < selectedFiles.length; i++) {
@@ -688,7 +695,7 @@
             html += '<div class="d-flex justify-content-between align-items-center py-1">'
                 + '<span><i class="bi bi-music-note"></i> '
                 + escapeHtml(file.name) + ' (' + formatFileSize(file.size) + ')</span>'
-                + '<button class="btn btn-sm btn-outline-danger remove-file-btn" data-index="' + i + '">'
+                + '<button class="mb-btn mb-btn-sm mb-btn-danger mb-btn-icon remove-file-btn" data-index="' + i + '">'
                 + '<i class="bi bi-x"></i></button>'
                 + '</div>';
         }
@@ -807,14 +814,14 @@
 
     function showUploadProgress() {
         var el = document.querySelector('.upload-progress');
-        if (el) el.style.display = 'block';
+        if (el) el.classList.remove('aud-hidden');
         var btn = document.getElementById('uploadBtn');
         if (btn) btn.disabled = true;
     }
 
     function hideUploadProgress() {
         var el = document.querySelector('.upload-progress');
-        if (el) el.style.display = 'none';
+        if (el) el.classList.add('aud-hidden');
         var btn = document.getElementById('uploadBtn');
         if (btn) btn.disabled = false;
     }
@@ -826,7 +833,7 @@
         if (fileInput) fileInput.value = '';
         selectedFiles = [];
         var selectedFilesList = document.getElementById('selectedFilesList');
-        if (selectedFilesList) selectedFilesList.style.display = 'none';
+        if (selectedFilesList) selectedFilesList.classList.add('aud-hidden');
         var uploadBtn = document.getElementById('uploadBtn');
         if (uploadBtn) uploadBtn.disabled = true;
         hideUploadProgress();

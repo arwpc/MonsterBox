@@ -1,3 +1,9 @@
+<%
+// Video Library — manage Goblin video assets and deploy them to display devices.
+// Page chrome lives in /css/mb-video-library.css (wired via the `styles` local
+// in routes/videoLibrary.js); everything else comes from components.css.
+// Grid/list rendering happens in public/js/video-library.js.
+%>
             <header class="mb-page-header">
                 <h1 class="mb-page-header-title">
                     <i class="bi bi-film"></i> Video Library
@@ -6,177 +12,168 @@
             </header>
 
             <!-- Toolbar -->
-            <div class="row mb-2">
-                <div class="col">
-                    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
-                        <div>
-                            <div class="btn-group me-2 mb-view-toggle" role="group" aria-label="View toggle">
-                                <button class="btn btn-primary btn-sm" id="viewGrid" onclick="videoLibrary.setView('grid')" data-bs-toggle="tooltip" data-bs-placement="top" title="Switch to card grid view">
-                                    <i class="bi bi-grid-3x3-gap"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm" id="viewList" onclick="videoLibrary.setView('list')" data-bs-toggle="tooltip" data-bs-placement="top" title="Switch to list view">
-                                    <i class="bi bi-list-ul"></i>
-                                </button>
-                            </div>
-                            <div class="btn-group me-2" role="group">
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" title="Upload new video files">
-                                    <i class="bi bi-cloud-upload"></i> Upload Videos
-                                </button>
-                                <button class="btn btn-outline-secondary" id="bulkSelectBtn"
-                                    onclick="videoLibrary.toggleBulkSelect()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Select multiple videos for bulk actions">
-                                    <i class="bi bi-check-square"></i> Bulk Select
-                                </button>
-                                <button class="btn btn-outline-info" data-bs-toggle="modal"
-                                    data-bs-target="#goblinDeployModal"
-                                    title="Deploy videos to Goblin display devices">
-                                    <i class="bi bi-broadcast"></i> Deploy to Goblins
-                                </button>
-                            </div>
-                            <div class="bulk-actions mt-2" id="bulkActions" style="display: none;">
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-success"
-                                        onclick="videoLibrary.bulkFavorite(true)"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Mark selected videos as favorites">
-                                        <i class="bi bi-heart"></i> Favorite
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-warning"
-                                        onclick="videoLibrary.bulkFavorite(false)"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Remove favorite status from selected videos">
-                                        <i class="bi bi-heart"></i> Unfavorite
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-info"
-                                        onclick="videoLibrary.bulkChangeCategory()"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Change category for selected videos">
-                                        <i class="bi bi-tags"></i> Change Category
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="videoLibrary.bulkDelete()"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Delete all selected videos">
-                                        <i class="bi bi-trash"></i> Delete Selected
-                                    </button>
-                                </div>
-                                <small class="text-muted ms-2">
-                                    <span id="selectedCount">0</span> selected
-                                </small>
-                            </div>
-                        </div>
-                    </div>
+            <div class="mb-row mb-3 justify-content-end">
+                <div class="mb-btn-group mb-view-toggle" role="group" aria-label="View toggle">
+                    <button class="mb-btn mb-btn-sm mb-btn-primary mb-btn-icon" id="viewGrid" onclick="videoLibrary.setView('grid')" data-bs-toggle="tooltip" data-bs-placement="top" title="Switch to card grid view" aria-label="Card grid view">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                    </button>
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon" id="viewList" onclick="videoLibrary.setView('list')" data-bs-toggle="tooltip" data-bs-placement="top" title="Switch to list view" aria-label="List view">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                </div>
+                <div class="mb-btn-group" role="group">
+                    <button class="mb-btn mb-btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" title="Upload new video files">
+                        <i class="bi bi-cloud-upload"></i> Upload Videos
+                    </button>
+                    <button class="mb-btn mb-btn-secondary" id="bulkSelectBtn"
+                        onclick="videoLibrary.toggleBulkSelect()"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Select multiple videos for bulk actions">
+                        <i class="bi bi-check-square"></i> Bulk Select
+                    </button>
+                    <button class="mb-btn mb-btn-secondary" data-bs-toggle="modal"
+                        data-bs-target="#goblinDeployModal"
+                        title="Deploy videos to Goblin display devices">
+                        <i class="bi bi-broadcast"></i> Deploy to Goblins
+                    </button>
                 </div>
             </div>
 
+            <div class="mb-row mb-3 justify-content-end align-items-center vid-hidden" id="bulkActions">
+                <div class="mb-btn-group" role="group">
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary"
+                        onclick="videoLibrary.bulkFavorite(true)"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Mark selected videos as favorites">
+                        <i class="bi bi-heart"></i> Favorite
+                    </button>
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary"
+                        onclick="videoLibrary.bulkFavorite(false)"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Remove favorite status from selected videos">
+                        <i class="bi bi-heartbreak"></i> Unfavorite
+                    </button>
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary"
+                        onclick="videoLibrary.bulkChangeCategory()"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Change category for selected videos">
+                        <i class="bi bi-tags"></i> Change Category
+                    </button>
+                    <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="videoLibrary.bulkDelete()"
+                        data-bs-toggle="tooltip" data-bs-placement="top" title="Delete all selected videos">
+                        <i class="bi bi-trash"></i> Delete Selected
+                    </button>
+                </div>
+                <small class="mb-text-muted">
+                    <span id="selectedCount">0</span> selected
+                </small>
+            </div>
+
             <!-- Stats Row -->
-            <div class="row mb-2">
-                <div class="col-md-3">
-                    <div class="card bg-primary">
-                        <div class="card-body text-center">
-                            <i class="bi bi-camera-video fs-1"></i>
-                            <h3 class="mt-2 mb-0" id="totalFiles">0</h3>
-                            <small>Total Videos</small>
+            <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                    <div class="mb-card vid-stat vid-stat-count">
+                        <i class="bi bi-camera-video vid-stat-icon"></i>
+                        <div>
+                            <p class="vid-stat-value" id="totalFiles">0</p>
+                            <span class="vid-stat-label">Total Videos</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success">
-                        <div class="card-body text-center">
-                            <i class="bi bi-hdd fs-1"></i>
-                            <h3 class="mt-2 mb-0" id="totalSize">0 MB</h3>
-                            <small>Total Size</small>
+                <div class="col-6 col-md-3">
+                    <div class="mb-card vid-stat vid-stat-size">
+                        <i class="bi bi-hdd vid-stat-icon"></i>
+                        <div>
+                            <p class="vid-stat-value" id="totalSize">0 MB</p>
+                            <span class="vid-stat-label">Total Size</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-info">
-                        <div class="card-body text-center">
-                            <i class="bi bi-tags fs-1"></i>
-                            <h3 class="mt-2 mb-0" id="totalCategories">0</h3>
-                            <small>Categories</small>
+                <div class="col-6 col-md-3">
+                    <div class="mb-card vid-stat vid-stat-cats">
+                        <i class="bi bi-tags vid-stat-icon"></i>
+                        <div>
+                            <p class="vid-stat-value" id="totalCategories">0</p>
+                            <span class="vid-stat-label">Categories</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning">
-                        <div class="card-body text-center">
-                            <i class="bi bi-cpu fs-1"></i>
-                            <h3 class="mt-2 mb-0" id="totalGoblins">0</h3>
-                            <small>Online Goblins</small>
+                <div class="col-6 col-md-3">
+                    <div class="mb-card vid-stat vid-stat-goblins">
+                        <i class="bi bi-cpu vid-stat-icon"></i>
+                        <div>
+                            <p class="vid-stat-value" id="totalGoblins">0</p>
+                            <span class="vid-stat-label">Online Goblins</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Main Content Area -->
-            <div class="row">
+            <div class="row g-3">
                 <!-- Video Player (Center) -->
                 <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
+                    <section class="mb-panel">
+                        <div class="mb-panel-header">
+                            <h2 class="mb-panel-title">
                                 <i class="bi bi-play-circle"></i> Video Preview
-                            </h5>
-                            <div id="videoPlayerControls" style="display: none;">
-                                <button class="btn btn-sm btn-outline-primary"
+                            </h2>
+                            <div id="videoPlayerControls" class="vid-player-controls vid-hidden">
+                                <button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon"
                                     onclick="videoLibrary.toggleFullscreen()"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle fullscreen video preview">
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle fullscreen video preview" aria-label="Toggle fullscreen">
                                     <i class="bi bi-fullscreen"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success"
+                                <button class="mb-btn mb-btn-sm mb-btn-primary"
                                     onclick="videoLibrary.deployCurrentVideo()"
                                     data-bs-toggle="tooltip" data-bs-placement="top" title="Deploy current video to Goblin devices">
                                     <i class="bi bi-broadcast"></i> Deploy
                                 </button>
                             </div>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="main-video-player" id="mainVideoPlayer">
-                                <div class="player-placeholder">
-                                    <i class="bi bi-camera-video" style="font-size: 4rem;"></i>
-                                    <h4 class="mt-3">Select a video to preview</h4>
-                                    <p class="text-muted">Click any video from the library to start playing</p>
-                                </div>
+                        <div class="main-video-player" id="mainVideoPlayer">
+                            <div class="player-placeholder">
+                                <i class="bi bi-camera-video vid-empty-icon"></i>
+                                <h3 class="mb-heading-3 mt-3">Select a video to preview</h3>
+                                <p class="mb-text-muted">Click any video from the library to start playing</p>
                             </div>
                         </div>
-                        <div class="card-footer" id="videoPlayerInfo" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <h6 class="mb-1" id="currentVideoTitle">Video Title</h6>
-                                    <small class="text-muted" id="currentVideoInfo">Format • Duration • Size</small>
+                        <div class="mb-panel-footer vid-hidden" id="videoPlayerInfo">
+                            <div class="mb-row-between">
+                                <div>
+                                    <h3 class="mb-heading-3" id="currentVideoTitle">Video Title</h3>
+                                    <small class="mb-text-muted" id="currentVideoInfo">Format • Duration • Size</small>
                                 </div>
-                                <div class="col-md-4 text-end">
-                                    <div id="currentVideoTags"></div>
-                                </div>
+                                <div id="currentVideoTags"></div>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
 
                 <!-- Video Library Grid -->
                 <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <section class="mb-panel">
+                        <div class="mb-panel-header">
+                            <h2 class="mb-panel-title">
                                 <i class="bi bi-collection-play"></i> Video Library
-                            </h5>
+                            </h2>
                         </div>
-                        <div class="card-body p-2">
+                        <div class="mb-panel-body">
                             <!-- Search and Filters -->
-                            <div class="mb-3">
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">
+                            <div class="mb-stack-sm mb-3">
+                                <div class="mb-input-group">
+                                    <span class="mb-input-addon">
                                         <i class="bi bi-search"></i>
                                     </span>
-                                    <input type="text" class="form-control form-control-sm" id="searchInput"
-                                        placeholder="Search videos..."
+                                    <input type="text" class="mb-input" id="searchInput"
+                                        placeholder="Search videos..." aria-label="Search videos"
                                         data-bs-toggle="tooltip" data-bs-placement="top" title="Search videos by name or tag">
                                 </div>
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <select class="form-select form-select-sm" id="categoryFilter"
+                                        <select class="mb-select" id="categoryFilter" aria-label="Filter videos by category"
                                             data-bs-toggle="tooltip" data-bs-placement="top" title="Filter videos by category">
                                             <option value="all">All Categories</option>
                                         </select>
                                     </div>
                                     <div class="col-6">
-                                        <select class="form-select form-select-sm" id="sortBy"
+                                        <select class="mb-select" id="sortBy" aria-label="Sort video list order"
                                             data-bs-toggle="tooltip" data-bs-placement="top" title="Sort video list order">
                                             <option value="uploadedAt">Newest</option>
                                             <option value="title">Title A-Z</option>
@@ -194,17 +191,17 @@
                                 </div>
 
                                 <!-- Video List View -->
-                                <div id="videoListContainer" style="display: none;">
-                                    <table class="table table-hover table-sm mb-list-table mb-0" id="videoListTable">
+                                <div id="videoListContainer" class="mb-table-scroll vid-hidden">
+                                    <table class="mb-table mb-list-table" id="videoListTable">
                                         <thead>
                                             <tr>
-                                                <th style="width:28px;" class="bulk-col-header"></th>
-                                                <th style="width:28px;" data-sort="favorite"><i class="bi bi-heart"></i></th>
+                                                <th class="bulk-col-header vid-col-bulk"><span class="visually-hidden">Select</span></th>
+                                                <th class="vid-col-fav" data-sort="favorite"><i class="bi bi-heart"></i><span class="visually-hidden">Favorite</span></th>
                                                 <th data-sort="title">Title <span class="sort-icon"></span></th>
-                                                <th data-sort="format" style="width:45px;">Fmt <span class="sort-icon"></span></th>
-                                                <th data-sort="duration" style="width:55px;">Dur <span class="sort-icon"></span></th>
-                                                <th data-sort="fileSize" style="width:55px;">Size <span class="sort-icon"></span></th>
-                                                <th style="width:60px;">Actions</th>
+                                                <th data-sort="format" class="vid-col-fmt">Fmt <span class="sort-icon"></span></th>
+                                                <th data-sort="duration" class="vid-col-dur">Dur <span class="sort-icon"></span></th>
+                                                <th data-sort="fileSize" class="vid-col-size">Size <span class="sort-icon"></span></th>
+                                                <th class="vid-col-actions">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="videoListBody">
@@ -213,10 +210,10 @@
                                 </div>
 
                                 <!-- Empty State -->
-                                <div id="emptyState" style="display: none;" class="text-center py-4">
-                                    <i class="bi bi-camera-video text-muted" style="font-size: 3rem;"></i>
-                                    <h6 class="text-muted mt-2">No Videos Found</h6>
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                <div id="emptyState" class="mb-empty vid-hidden">
+                                    <i class="bi bi-camera-video mb-empty-icon"></i>
+                                    <h3 class="mb-empty-title">No Videos Found</h3>
+                                    <button class="mb-btn mb-btn-sm mb-btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#uploadModal"
                                         title="Upload new video files">
                                         <i class="bi bi-cloud-upload"></i> Upload Videos
@@ -224,50 +221,45 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </div>
 
             <!-- Goblin Status Bar (if any online) -->
-            <div class="row mt-4" id="goblinStatusBar" style="display: none;">
-                <div class="col">
-                    <div class="card">
-                        <div class="card-body py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted">Active Goblins:</small>
-                                    <span id="goblinStatusList"></span>
-                                </div>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-success"
-                                        onclick="videoLibrary.showGoblinManager()"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Configure and manage Goblin display devices">
-                                        <i class="bi bi-gear"></i> Manage Goblins
-                                    </button>
-                                </div>
-                            </div>
+            <div class="mt-4 vid-hidden" id="goblinStatusBar">
+                <div class="mb-panel">
+                    <div class="mb-panel-body mb-row-between">
+                        <div>
+                            <small class="mb-text-muted">Active Goblins:</small>
+                            <span id="goblinStatusList"></span>
                         </div>
+                        <button class="mb-btn mb-btn-sm mb-btn-secondary"
+                            onclick="videoLibrary.showGoblinManager()"
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="Configure and manage Goblin display devices">
+                            <i class="bi bi-gear"></i> Manage Goblins
+                        </button>
                     </div>
                 </div>
             </div>
+
         <!-- Upload Modal -->
         <div class="modal fade" id="uploadModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">
+                        <h2 class="modal-title mb-heading-3">
                             <i class="bi bi-cloud-upload"></i> Upload Video Files
-                        </h5>
+                        </h2>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Drag and Drop Zone -->
                         <div class="mb-drop-zone mb-4" id="dragDropZone">
-                            <i class="bi bi-camera-video fs-1 text-muted"></i>
-                            <h4 class="mt-3">Drag & Drop Video Files Here</h4>
-                            <p class="text-muted">Supports MP4, WebM, AVI, MOV files up to 500MB</p>
-                            <input type="file" id="videoFileInput" multiple accept="video/*" style="display: none;">
-                            <button type="button" class="btn btn-outline-primary"
+                            <i class="bi bi-camera-video vid-empty-icon mb-text-muted"></i>
+                            <h3 class="mb-heading-3 mt-3">Drag &amp; Drop Video Files Here</h3>
+                            <p class="mb-text-muted">Supports MP4, WebM, AVI, MOV files up to 500MB</p>
+                            <input type="file" id="videoFileInput" multiple accept="video/*" class="vid-hidden">
+                            <button type="button" class="mb-btn mb-btn-secondary"
                                 onclick="document.getElementById('videoFileInput').click()"
                                 data-bs-toggle="tooltip" data-bs-placement="top" title="Browse local files for upload">
                                 <i class="bi bi-folder2-open"></i> Browse Files
@@ -278,49 +270,56 @@
                         <form id="uploadForm">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Category</label>
-                                    <select class="form-select" name="category" id="uploadCategory" title="Select a category">
-                                        <option value="general">General</option>
-                                        <option value="halloween">Halloween</option>
-                                        <option value="christmas">Christmas</option>
-                                        <option value="animations">Animations</option>
-                                        <option value="backgrounds">Backgrounds</option>
-                                        <option value="effects">Effects</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadCategory">Category</label>
+                                        <select class="mb-select" name="category" id="uploadCategory" title="Select a category">
+                                            <option value="general">General</option>
+                                            <option value="halloween">Halloween</option>
+                                            <option value="christmas">Christmas</option>
+                                            <option value="animations">Animations</option>
+                                            <option value="backgrounds">Backgrounds</option>
+                                            <option value="effects">Effects</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Tags (comma separated)</label>
-                                    <input type="text" class="form-control" name="tags" title="Comma-separated tags"
-                                        placeholder="spooky, halloween, animation">
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadTags">Tags (comma separated)</label>
+                                        <input type="text" class="mb-input" id="uploadTags" name="tags" title="Comma-separated tags"
+                                            placeholder="spooky, halloween, animation">
+                                    </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Description</label>
-                                    <textarea class="form-control" name="description" rows="2" title="Optional description"
-                                        placeholder="Optional description for the video files"></textarea>
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadDescription">Description</label>
+                                        <textarea class="mb-textarea" id="uploadDescription" name="description" rows="2" title="Optional description"
+                                            placeholder="Optional description for the video files"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </form>
 
                         <!-- Upload Progress -->
                         <div class="upload-progress mt-3">
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            <div class="mb-meter">
+                                <div class="mb-meter-fill progress-bar" role="progressbar"
+                                    aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                             </div>
                             <div class="mt-2">
-                                <small class="text-muted" id="uploadStatus">Preparing upload...</small>
+                                <small class="mb-text-muted" id="uploadStatus">Preparing upload...</small>
                             </div>
                         </div>
 
                         <!-- Selected Files List -->
-                        <div id="selectedFilesList" class="mt-3" style="display: none;">
-                            <h6>Selected Files:</h6>
+                        <div id="selectedFilesList" class="mt-3 vid-hidden">
+                            <h3 class="mb-heading-3">Selected Files:</h3>
                             <div id="filesList"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="uploadBtn" disabled
+                        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
+                        <button type="button" class="mb-btn mb-btn-primary" id="uploadBtn" disabled
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Start uploading selected video files">
                             <i class="bi bi-cloud-upload"></i> Upload Videos
                         </button>
@@ -334,40 +333,40 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">
+                        <h2 class="modal-title mb-heading-3">
                             <i class="bi bi-broadcast"></i> Deploy to Goblins
-                        </h5>
+                        </h2>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
+                        <div class="row g-3">
                             <!-- Available Videos -->
                             <div class="col-md-6">
-                                <h6>Select Videos to Deploy:</h6>
-                                <div class="border rounded p-2" style="max-height: 300px; overflow-y: auto;"
-                                    id="deployVideoList">
+                                <h3 class="mb-heading-3">Select Videos to Deploy:</h3>
+                                <div class="vid-pick-list" id="deployVideoList">
                                     <!-- Video selection list -->
                                 </div>
                             </div>
                             <!-- Available Goblins -->
                             <div class="col-md-6">
-                                <h6>Select Target Goblins:</h6>
-                                <div class="border rounded p-2" style="max-height: 300px; overflow-y: auto;"
-                                    id="deployGoblinList">
+                                <h3 class="mb-heading-3">Select Target Goblins:</h3>
+                                <div class="vid-pick-list" id="deployGoblinList">
                                     <!-- Goblin selection list -->
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Deployment Progress -->
-                        <div class="rounded p-2 mt-3" style="background: rgba(var(--bs-primary-rgb), 0.1); border: 1px solid var(--bs-primary);" id="deploymentProgress" style="display: none;">
-                            <h6>Deployment Progress:</h6>
+                        <!-- Deployment Progress. Previously carried two inline style
+                             attributes; the browser keeps the first and drops the rest, so
+                             the display:none never applied and this was always on screen. -->
+                        <div class="vid-deploy-progress mt-3 vid-hidden" id="deploymentProgress">
+                            <h3 class="mb-heading-3">Deployment Progress:</h3>
                             <div id="deploymentStatus"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
-                        <button type="button" class="btn btn-success" id="deployBtn"
+                        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Cancel and close">Cancel</button>
+                        <button type="button" class="mb-btn mb-btn-primary" id="deployBtn"
                             onclick="videoLibrary.executeDeployment()"
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Deploy selected videos to chosen Goblins">
                             <i class="bi bi-broadcast"></i> Deploy Selected
@@ -377,7 +376,28 @@
             </div>
         </div>
 
-        <script src="/js/video-library.js"></script>
+        <!-- Confirmation dialog. Replaces the native browser confirmation, which
+             cannot be styled and shows the target only as raw text. -->
+        <div class="mb-modal-backdrop vid-hidden" id="vidConfirmBackdrop"></div>
+        <div class="mb-modal vid-hidden" id="vidConfirm" role="dialog" aria-modal="true" aria-labelledby="vidConfirmTitle">
+            <div class="mb-modal-dialog">
+                <div class="mb-modal-header">
+                    <h2 class="mb-modal-title" id="vidConfirmTitle">Confirm</h2>
+                </div>
+                <div class="mb-modal-body">
+                    <p id="vidConfirmBody"></p>
+                    <p class="mb-field-hint" id="vidConfirmTargetWrap">Target: <span id="vidConfirmTarget" class="mb-mono"></span></p>
+                </div>
+                <div class="mb-modal-footer">
+                    <button type="button" class="mb-btn mb-btn-secondary" id="vidConfirmCancel">Cancel</button>
+                    <button type="button" class="mb-btn mb-btn-danger" id="vidConfirmOk">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-toast-region" role="status" aria-live="polite"></div>
+
+        <script src="/js/video-library.js?v=<%= appVersion %>"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -390,4 +410,35 @@
                     new bootstrap.Tooltip(modalBtns[j]);
                 }
             });
+
+            // ---- Design-system confirm, used by video-library.js -----------------
+            (function () {
+                const backdrop = document.getElementById('vidConfirmBackdrop');
+                const dialog = document.getElementById('vidConfirm');
+                let resolver = null;
+
+                function close(answer) {
+                    backdrop.classList.add('vid-hidden');
+                    dialog.classList.add('vid-hidden');
+                    if (resolver) { const r = resolver; resolver = null; r(answer); }
+                }
+
+                document.getElementById('vidConfirmOk').addEventListener('click', () => close(true));
+                document.getElementById('vidConfirmCancel').addEventListener('click', () => close(false));
+                backdrop.addEventListener('click', () => close(false));
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && resolver) close(false); });
+
+                // Names the file that is about to be destroyed.
+                window.mbConfirm = function (opts) {
+                    document.getElementById('vidConfirmTitle').textContent = opts.title || 'Confirm';
+                    document.getElementById('vidConfirmBody').textContent = opts.body || '';
+                    document.getElementById('vidConfirmTarget').textContent = opts.target || '';
+                    document.getElementById('vidConfirmTargetWrap').classList.toggle('vid-hidden', !opts.target);
+                    document.getElementById('vidConfirmOk').textContent = opts.confirmLabel || 'Confirm';
+                    backdrop.classList.remove('vid-hidden');
+                    dialog.classList.remove('vid-hidden');
+                    document.getElementById('vidConfirmOk').focus();
+                    return new Promise((resolve) => { resolver = resolve; });
+                };
+            })();
         </script>

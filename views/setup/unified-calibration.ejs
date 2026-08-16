@@ -1,790 +1,12 @@
 <% /** * Unified Calibration UI (Positions v1.5) * MonsterBox - Single-page calibration for all part types */ %>
 
-  <style>
-    .calibration-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .cal-header {
-      padding: 10px 0;
-      margin-bottom: 10px;
-    }
-
-    .cal-controls {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .part-selector {
-      flex: 1;
-      min-width: 250px;
-    }
-
-    .part-selector select {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 2px solid var(--bs-border-color);
-    }
-
-    .emergency-stop {
-      background: var(--bs-danger);
-      color: var(--bs-white);
-      border: none;
-      padding: 15px 30px;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 4px;
-      cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s;
-    }
-
-    .emergency-stop:hover {
-      background: var(--bs-danger);
-      filter: brightness(0.85);
-      transform: scale(1.05);
-    }
-
-    .emergency-stop:active {
-      transform: scale(0.95);
-    }
-
-    .speed-cap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .speed-cap input[type="range"] {
-      width: 150px;
-    }
-
-    .speed-value {
-      font-weight: bold;
-      min-width: 50px;
-    }
-
-    .cal-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 768px) {
-      .cal-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .cal-panel {
-      background: var(--bs-body-bg);
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--bs-border-color);
-    }
-
-    .cal-panel h2 {
-      margin: 0 0 15px 0;
-      font-size: 20px;
-      color: var(--bs-body-color);
-      border-bottom: 2px solid var(--mb-primary);
-      padding-bottom: 10px;
-    }
-
-    .jog-pad {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .jog-buttons {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .jog-btn {
-      padding: 15px 25px;
-      font-size: 18px;
-      font-weight: bold;
-      border: 2px solid var(--mb-primary);
-      background: var(--bs-body-bg);
-      color: var(--mb-primary);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .jog-btn:hover {
-      background: var(--mb-primary);
-      color: var(--bs-white);
-    }
-
-    .jog-btn.stop {
-      background: var(--bs-warning);
-      border-color: var(--bs-warning);
-      color: var(--bs-dark);
-    }
-
-    .jog-btn.stop:hover {
-      background: var(--bs-warning);
-      filter: brightness(1.1);
-    }
-
-    .scale-selector {
-      display: flex;
-      gap: 10px;
-    }
-
-    .scale-btn {
-      padding: 8px 15px;
-      border: 2px solid var(--bs-border-color);
-      background: var(--bs-body-bg);
-      color: var(--bs-body-color);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .scale-btn.active {
-      background: var(--mb-primary);
-      color: var(--bs-white);
-      border-color: var(--mb-primary);
-    }
-
-    .bounds-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .bounds-display {
-      display: flex;
-      justify-content: space-between;
-      padding: 15px;
-      background: var(--bs-tertiary-bg);
-      border-radius: 4px;
-      font-family: monospace;
-    }
-
-    .bounds-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .cal-action-btn {
-      flex: 1;
-      padding: 12px;
-      background: var(--bs-success);
-      color: var(--bs-white);
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .cal-action-btn:hover {
-      background: var(--bs-success);
-      filter: brightness(0.85);
-    }
-
-    .presets-list {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .preset-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid var(--bs-border-color);
-      border-radius: 4px;
-      margin-bottom: 10px;
-      background: var(--bs-tertiary-bg);
-    }
-
-    .preset-info {
-      flex: 1;
-    }
-
-    .preset-name {
-      font-weight: bold;
-      color: var(--bs-body-color);
-    }
-
-    .preset-value {
-      font-size: 12px;
-      color: var(--bs-secondary-color);
-      font-family: monospace;
-    }
-
-    .preset-actions {
-      display: flex;
-      gap: 5px;
-    }
-
-    .btn-small {
-      padding: 5px 10px;
-      font-size: 14px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-go {
-      background: var(--bs-primary);
-      color: var(--bs-white);
-    }
-
-    .btn-go:hover {
-      background: var(--bs-primary);
-      filter: brightness(0.85);
-    }
-
-    .btn-delete {
-      background: var(--bs-danger);
-      color: var(--bs-white);
-    }
-
-    .btn-delete:hover {
-      background: var(--bs-danger);
-      filter: brightness(0.85);
-    }
-
-    .add-preset {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .add-preset input {
-      flex: 1;
-      padding: 10px;
-      border: 2px solid var(--bs-border-color);
-      border-radius: 4px;
-      background: var(--bs-body-bg);
-      color: var(--bs-body-color);
-    }
-
-    .learn-panel {
-      background: rgba(var(--bs-warning-rgb), 0.15);
-      padding: 15px;
-      border-radius: 4px;
-      border: 2px solid var(--bs-warning);
-    }
-
-    .learn-panel h3 {
-      margin: 0 0 10px 0;
-      color: var(--bs-warning);
-    }
-
-    .probe-inputs {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin: 15px 0;
-    }
-
-    .probe-row {
-      display: grid;
-      grid-template-columns: 80px 1fr 1fr 80px;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .probe-row input {
-      padding: 8px;
-      border: 2px solid var(--bs-border-color);
-      border-radius: 4px;
-      background: var(--bs-body-bg);
-      color: var(--bs-body-color);
-    }
-
-    .status-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--bs-dark);
-      color: var(--bs-light);
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .status-info {
-      display: flex;
-      gap: 20px;
-    }
-
-    .status-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .status-label {
-      font-size: 12px;
-      color: var(--bs-secondary-color);
-    }
-
-    .status-value {
-      font-size: 16px;
-      font-weight: bold;
-      font-family: monospace;
-    }
-
-    /* Alerts use Bootstrap's built-in .alert classes */
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* ==================== PCA9685 Board Visual ==================== */
-    .pca-board-section {
-      margin-bottom: 24px;
-    }
-
-    .pca-board-wrapper {
-      display: flex;
-      gap: 24px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .pca-board {
-      position: relative;
-      width: 520px;
-      min-height: 340px;
-      background: #1a5276;
-      border-radius: 6px;
-      border: 2px solid #0e3d5c;
-      padding: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
-      font-family: 'Courier New', monospace;
-      flex-shrink: 0;
-    }
-
-    .pca-board-title {
-      color: #fff;
-      font-size: 11px;
-      font-weight: bold;
-      letter-spacing: 1.5px;
-      text-align: center;
-      margin-bottom: 4px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    .pca-board-subtitle {
-      color: rgba(255,255,255,0.5);
-      font-size: 9px;
-      text-align: center;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
-    }
-
-    /* I2C header strip (left side) */
-    .pca-i2c-header {
-      position: absolute;
-      left: 8px;
-      top: 70px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .pca-i2c-pin {
-      width: 20px;
-      height: 10px;
-      background: #c0a030;
-      border-radius: 1px;
-      position: relative;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    .pca-i2c-label {
-      position: absolute;
-      left: 24px;
-      top: -1px;
-      font-size: 7px;
-      color: rgba(255,255,255,0.6);
-      white-space: nowrap;
-    }
-
-    /* Chip (center) */
-    .pca-chip {
-      position: absolute;
-      left: 50%;
-      top: 80px;
-      transform: translateX(-50%);
-      width: 56px;
-      height: 40px;
-      background: #1a1a1a;
-      border-radius: 2px;
-      border: 1px solid #444;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-    }
-
-    .pca-chip-text {
-      color: #aaa;
-      font-size: 6px;
-      text-align: center;
-      line-height: 1.3;
-    }
-
-    /* Capacitor */
-    .pca-cap {
-      position: absolute;
-      right: 40px;
-      top: 78px;
-      width: 20px;
-      height: 28px;
-      background: linear-gradient(to bottom, #222, #333, #222);
-      border-radius: 3px 3px 0 0;
-      border: 1px solid #555;
-      box-shadow: 0 2px 3px rgba(0,0,0,0.3);
-    }
-
-    .pca-cap-stripe {
-      position: absolute;
-      top: 2px;
-      left: 0;
-      right: 0;
-      height: 6px;
-      background: #666;
-      border-bottom: 1px solid #444;
-    }
-
-    /* Screw terminal */
-    .pca-screw-terminal {
-      position: absolute;
-      right: 8px;
-      top: 70px;
-      width: 22px;
-      height: 20px;
-      background: #2a8c2a;
-      border-radius: 2px;
-      border: 1px solid #1a6c1a;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-
-    .pca-screw-terminal::after {
-      content: 'V+';
-      position: absolute;
-      bottom: -12px;
-      left: 0;
-      font-size: 7px;
-      color: rgba(255,255,255,0.5);
-    }
-
-    /* Address jumpers */
-    .pca-addr-jumpers {
-      position: absolute;
-      right: 8px;
-      top: 130px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .pca-addr-pad {
-      width: 14px;
-      height: 6px;
-      background: #c0a030;
-      border-radius: 1px;
-    }
-
-    .pca-addr-label {
-      color: rgba(255,255,255,0.4);
-      font-size: 6px;
-      text-align: right;
-      margin-right: 18px;
-      margin-top: -1px;
-    }
-
-    /* LED indicator */
-    .pca-led {
-      position: absolute;
-      left: 40px;
-      top: 95px;
-      width: 6px;
-      height: 6px;
-      background: #00cc00;
-      border-radius: 50%;
-      box-shadow: 0 0 6px #00cc00;
-    }
-
-    /* Servo channel ports - the main interactive area */
-    .pca-channels-area {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
-    }
-
-    .pca-channels-row {
-      display: flex;
-      gap: 2px;
-      justify-content: center;
-      margin-bottom: 4px;
-    }
-
-    .pca-channel {
-      width: 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.15s;
-    }
-
-    .pca-channel:hover {
-      transform: scale(1.15);
-      z-index: 10;
-    }
-
-    .pca-channel-label {
-      font-size: 8px;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 2px;
-      font-weight: bold;
-    }
-
-    .pca-pin-group {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      align-items: center;
-    }
-
-    .pca-pin {
-      width: 6px;
-      height: 10px;
-      border-radius: 1px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    .pca-pin-sig { background: #e8a830; } /* Signal - yellow/orange */
-    .pca-pin-vcc { background: #cc3333; } /* V+ - red */
-    .pca-pin-gnd { background: #333; }     /* GND - black */
-
-    /* Hover tooltip */
-    .pca-channel-tooltip {
-      display: none;
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.9);
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      white-space: nowrap;
-      z-index: 100;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      min-width: 100px;
-      text-align: center;
-    }
-
-    .pca-channel-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: rgba(0,0,0,0.9);
-    }
-
-    .pca-channel:hover .pca-channel-tooltip {
-      display: block;
-    }
-
-    /* Channel assignment status indicators */
-    .pca-channel.assigned .pca-pin-sig {
-      background: #00cc66;
-      box-shadow: 0 0 4px rgba(0,204,102,0.5);
-    }
-
-    .pca-channel.selected-channel {
-      transform: scale(1.2);
-    }
-
-    .pca-channel.selected-channel .pca-pin-sig {
-      background: #3399ff;
-      box-shadow: 0 0 8px rgba(51,153,255,0.7);
-    }
-
-    .pca-channel.conflict .pca-pin-sig {
-      background: #ff4444;
-      box-shadow: 0 0 6px rgba(255,68,68,0.6);
-    }
-
-    /* Channel assignment panel (right side of board) */
-    .pca-assignment-panel {
-      flex: 1;
-      min-width: 300px;
-    }
-
-    .pca-assignment-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .pca-assignment-table th {
-      text-align: left;
-      padding: 8px 10px;
-      border-bottom: 2px solid var(--bs-border-color);
-      color: var(--bs-body-color);
-      font-weight: 600;
-    }
-
-    .pca-assignment-table td {
-      padding: 6px 10px;
-      border-bottom: 1px solid var(--bs-border-color);
-      vertical-align: middle;
-    }
-
-    .pca-assignment-table tr:hover {
-      background: rgba(var(--bs-primary-rgb), 0.05);
-    }
-
-    .pca-assignment-table .ch-num {
-      font-family: monospace;
-      font-weight: bold;
-      width: 40px;
-      text-align: center;
-    }
-
-    .pca-assignment-table .ch-empty {
-      color: var(--bs-secondary-color);
-      font-style: italic;
-    }
-
-    .pca-ch-select {
-      padding: 4px 8px;
-      font-size: 12px;
-      border-radius: 4px;
-      border: 1px solid var(--bs-border-color);
-      background: var(--bs-body-bg);
-      color: var(--bs-body-color);
-      width: 100%;
-    }
-
-    .pca-test-btn {
-      padding: 3px 10px;
-      font-size: 11px;
-      border: 1px solid var(--bs-primary);
-      background: transparent;
-      color: var(--bs-primary);
-      border-radius: 3px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-
-    .pca-test-btn:hover {
-      background: var(--bs-primary);
-      color: #fff;
-    }
-
-    .pca-test-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .pca-test-btn.testing {
-      background: var(--bs-warning);
-      border-color: var(--bs-warning);
-      color: #000;
-    }
-
-    .pca-test-btn.test-ok {
-      background: var(--bs-success);
-      border-color: var(--bs-success);
-      color: #fff;
-    }
-
-    .pca-test-btn.test-fail {
-      background: var(--bs-danger);
-      border-color: var(--bs-danger);
-      color: #fff;
-    }
-
-    .pca-legend {
-      display: flex;
-      gap: 16px;
-      margin-top: 10px;
-      font-size: 11px;
-      color: var(--bs-secondary-color);
-      flex-wrap: wrap;
-    }
-
-    .pca-legend-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .pca-legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-    }
-
-    .pca-legend-dot.sig { background: #e8a830; }
-    .pca-legend-dot.assigned { background: #00cc66; }
-    .pca-legend-dot.selected { background: #3399ff; }
-    .pca-legend-dot.conflict { background: #ff4444; }
-
-    .position-display {
-      text-align: center;
-      padding: 20px;
-      background: var(--bs-secondary-bg);
-      border-radius: 8px;
-      margin: 15px 0;
-    }
-
-    .position-value {
-      font-size: 48px;
-      font-weight: bold;
-      color: var(--mb-primary);
-      font-family: monospace;
-    }
-
-    .position-label {
-      font-size: 14px;
-      color: var(--bs-secondary-color);
-      margin-top: 5px;
-    }
-  </style>
 
   <div class="calibration-container">
     <!-- Header -->
     <div class="cal-header">
       <div class="cal-controls">
         <div class="part-selector">
-          <select id="partSelect" class="form-control" title="Select a part to calibrate">
+          <select id="partSelect" class="mb-select" title="Select a part to calibrate">
             <option value="">Select a part...</option>
             <% if (parts && parts.length> 0) { %>
               <% parts.forEach(part=> { %>
@@ -802,7 +24,7 @@
 
         <div class="speed-cap">
           <label>Speed Cap:</label>
-          <input type="range" id="speedCap" min="0" max="100" value="50" title="Set global speed cap" />
+          <input type="range" class="mb-range" id="speedCap" min="0" max="100" value="50" title="Set global speed cap" />
           <span class="speed-value" id="speedValue">50%</span>
         </div>
       </div>
@@ -937,13 +159,13 @@
             <div class="position-value" id="positionValue">-</div>
             <div class="position-label">Current Position (normalized)</div>
             <div class="mt-1">
-              <span id="calConfidenceBadge" class="badge bg-secondary" style="display: none;">Unknown</span>
+              <span id="calConfidenceBadge" class="mb-badge hidden">Unknown</span>
             </div>
           </div>
 
           <!-- Home Button (open-loop parts only) -->
-          <div id="calHomeSection" class="text-center mb-2" style="display: none;">
-            <button class="btn btn-warning btn-sm" id="homeBtn" disabled title="Home part to retract endstop">
+          <div id="calHomeSection" class="text-center mb-2 hidden">
+            <button class="mb-btn mb-btn-secondary mb-btn-sm" id="homeBtn" disabled title="Home part to retract endstop">
               <i class="bi bi-house-door"></i> Home (Retract to Endstop)
             </button>
           </div>
@@ -964,7 +186,7 @@
         </div>
 
         <!-- Bounds Panel -->
-        <div class="cal-panel" style="margin-top: 20px;">
+        <div class="cal-panel cal-panel-gap">
           <h2>Calibration Bounds</h2>
 
           <div class="bounds-display">
@@ -983,7 +205,7 @@
         </div>
 
         <!-- Learn Move Panel (for open-loop only) -->
-        <div class="cal-panel hidden" id="learnPanel" style="margin-top: 20px;">
+        <div class="cal-panel cal-panel-gap hidden" id="learnPanel">
           <h2>Learn Movement (Open-Loop)</h2>
 
           <div class="learn-panel">
@@ -1055,6 +277,23 @@
     <div class="status-item">
       <span class="status-label">System Status</span>
       <span class="status-value" id="statusSystem">Ready</span>
+    </div>
+  </div>
+
+  <!-- Named confirmation for destructive calibration actions. -->
+  <div class="mb-modal hidden" id="calConfirmModal" role="dialog" aria-modal="true" aria-labelledby="calConfirmTitle">
+    <div class="mb-modal-backdrop" id="calConfirmBackdrop"></div>
+    <div class="mb-modal-dialog">
+      <div class="mb-modal-header">
+        <h2 class="mb-modal-title" id="calConfirmTitle">Delete preset</h2>
+      </div>
+      <div class="mb-modal-body">
+        <p class="mb-0" id="calConfirmBody">This cannot be undone.</p>
+      </div>
+      <div class="mb-modal-footer">
+        <button type="button" class="mb-btn mb-btn-secondary" id="calConfirmCancel" title="Cancel">Cancel</button>
+        <button type="button" class="mb-btn mb-btn-danger" id="calConfirmOk" title="Confirm delete">Delete</button>
+      </div>
     </div>
   </div>
 
@@ -1156,7 +395,7 @@
       const isOpenLoop = partType === 'linear_actuator' || partType === 'continuous_servo';
       const homeSection = document.getElementById('calHomeSection');
       const homeBtn = document.getElementById('homeBtn');
-      if (homeSection) homeSection.style.display = isOpenLoop ? 'block' : 'none';
+      if (homeSection) homeSection.classList.toggle('hidden', !isOpenLoop);
       if (homeBtn) homeBtn.disabled = !partId;
 
       // Fetch current position and confidence on part select
@@ -1436,7 +675,10 @@
     }
 
     async function deletePreset(name) {
-      if (!confirm(`Delete preset "${name}"?`)) return;
+      // Name what is about to be destroyed. A native browser dialog cannot be styled,
+      // is unusable on a phone, and reads identically for every preset.
+      const ok = await confirmDestructive('Delete preset', `Delete preset "${name}"? This cannot be undone.`);
+      if (!ok) return;
 
       currentProfile.presets = currentProfile.presets.filter(p => p.name !== name);
 
@@ -1464,19 +706,19 @@
       if (!badge) return;
       // Only show when home section is visible (open-loop parts)
       const homeSection = document.getElementById('calHomeSection');
-      if (!homeSection || homeSection.style.display === 'none') {
-        badge.style.display = 'none';
+      if (!homeSection || homeSection.classList.contains('hidden')) {
+        badge.classList.add('hidden');
         return;
       }
-      badge.style.display = 'inline-block';
+      badge.classList.remove('hidden');
       if (confidence === 'homed') {
-        badge.className = 'badge bg-success';
+        badge.className = 'mb-badge mb-badge-success';
         badge.textContent = 'Homed';
       } else if (confidence === 'tracked' && positionKnown !== false) {
-        badge.className = 'badge bg-warning text-dark';
+        badge.className = 'mb-badge mb-badge-warning';
         badge.textContent = 'Tracked';
       } else {
-        badge.className = 'badge bg-danger';
+        badge.className = 'mb-badge mb-badge-danger';
         badge.textContent = 'Unknown - Home Required';
       }
     }
@@ -1544,11 +786,52 @@
     function showAlert(message, type = 'info') {
       const alertArea = document.getElementById('alertArea');
       const alert = document.createElement('div');
-      alert.className = `alert alert-${type}`;
+      alert.className = `mb-alert mb-alert-${type}`;
       alert.textContent = message;
       alertArea.innerHTML = '';
       alertArea.appendChild(alert);
       setTimeout(() => alert.remove(), 5000);
+    }
+
+    /**
+     * Styled, named confirmation for a destructive action. Resolves true/false.
+     * Falls back to the browser dialog only if the markup is missing, so the
+     * failure mode is "still asks" rather than "deletes silently".
+     */
+    function confirmDestructive(title, body) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('calConfirmModal');
+        const okBtn = document.getElementById('calConfirmOk');
+        const noBtn = document.getElementById('calConfirmCancel');
+        const backdrop = document.getElementById('calConfirmBackdrop');
+        const titleEl = document.getElementById('calConfirmTitle');
+        const bodyEl = document.getElementById('calConfirmBody');
+
+        if (!modal || !okBtn || !noBtn) { resolve(window.confirm(body)); return; }
+
+        titleEl.textContent = title;
+        bodyEl.textContent = body;
+
+        const close = (result) => {
+          modal.classList.add('hidden');
+          okBtn.removeEventListener('click', onOk);
+          noBtn.removeEventListener('click', onNo);
+          if (backdrop) backdrop.removeEventListener('click', onNo);
+          document.removeEventListener('keydown', onKey);
+          resolve(result);
+        };
+        const onOk = () => close(true);
+        const onNo = () => close(false);
+        const onKey = (evt) => { if (evt.key === 'Escape') close(false); };
+
+        okBtn.addEventListener('click', onOk);
+        noBtn.addEventListener('click', onNo);
+        if (backdrop) backdrop.addEventListener('click', onNo);
+        document.addEventListener('keydown', onKey);
+
+        modal.classList.remove('hidden');
+        okBtn.focus();
+      });
     }
 
     function escapeHtml(text) {
@@ -1669,9 +952,9 @@
           partOptions += '<option value="' + p.id + '"' + sel + '>' + escapeHtml(p.name) + ' (id:' + p.id + ')</option>';
         });
 
-        var conflictBadge = isConflict ? ' <span style="color:var(--bs-danger);font-weight:bold;" title="Multiple parts assigned to this channel!">CONFLICT</span>' : '';
+        var conflictBadge = isConflict ? ' <span class="pca-conflict-flag" title="Multiple parts assigned to this channel!">CONFLICT</span>' : '';
 
-        rows += '<tr' + (ch === selectedPcaChannel ? ' style="background:rgba(51,153,255,0.1);"' : '') + '>';
+        rows += '<tr' + (ch === selectedPcaChannel ? ' class="is-selected"' : '') + '>';
         rows += '<td class="ch-num">' + ch + '</td>';
         rows += '<td><select title="Assign a hardware part to this PCA9685 channel" class="pca-ch-select" data-channel="' + ch + '" onchange="assignPartToChannel(' + ch + ', this.value)">' + partOptions + '</select>' + conflictBadge + '</td>';
         rows += '<td><button title="Test this PCA9685 servo channel" class="pca-test-btn" id="pcaTestBtn' + ch + '" onclick="testPcaChannel(' + ch + ')"' + (!assigned ? ' disabled' : '') + '>Test</button></td>';

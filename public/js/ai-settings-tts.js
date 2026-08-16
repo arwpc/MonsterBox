@@ -87,6 +87,9 @@ TTSManager.prototype.loadCharacterVoiceConfig = function () {
 
                 self.updateRangeDisplays();
                 self.updateCurrentVoiceDisplay(cfg.voice_id);
+                // Setting .value in code fires no 'change', so the v3 rules
+                // have to be re-applied by hand once the real model is known.
+                self.updateV3Visibility();
             }
         })
         .catch(function (e) {
@@ -345,10 +348,29 @@ TTSManager.prototype.updateV3Visibility = function () {
     var note = document.getElementById('v3SettingsNote');
     var styleInput = document.getElementById('style');
     var boostInput = document.getElementById('speakerBoost');
+    var block = document.getElementById('legacyVoiceSettings');
     var isV3 = modelSelect && modelSelect.value === 'eleven_v3';
-    if (note) note.style.display = isV3 ? '' : 'none';
-    if (styleInput) styleInput.disabled = isV3;
-    if (boostInput) boostInput.disabled = isV3;
+
+    // Eleven v3 ignores Style and Speaker Boost. Footnoting that while leaving
+    // both controls live and switched on told the operator they were tuning
+    // something that the model never reads. Disable them, grey the block, and
+    // put the reason where the controls are.
+    if (note) {
+        if (isV3) note.classList.remove('ai-hidden');
+        else note.classList.add('ai-hidden');
+    }
+    if (block) {
+        if (isV3) block.classList.add('ai-inactive');
+        else block.classList.remove('ai-inactive');
+    }
+    if (styleInput) {
+        styleInput.disabled = isV3;
+        styleInput.setAttribute('aria-disabled', isV3 ? 'true' : 'false');
+    }
+    if (boostInput) {
+        boostInput.disabled = isV3;
+        boostInput.setAttribute('aria-disabled', isV3 ? 'true' : 'false');
+    }
 };
 
 TTSManager.prototype.saveConfiguration = function () {
@@ -444,7 +466,7 @@ TTSManager.prototype.testTTSConfiguration = function () {
     .finally(function () {
         if (testBtn) {
             testBtn.disabled = false;
-            testBtn.innerHTML = '<i class="bi bi-play-circle me-1"></i> Test TTS';
+            testBtn.innerHTML = '<i class="bi bi-plug"></i> Check API &amp; Voice';
         }
     });
 };
@@ -537,7 +559,7 @@ TTSManager.prototype.playAudioInBrowser = function (audioBlob) {
     audio.src = audioUrl;
 
     // Show the audio player and auto-play
-    audioPlayer.style.display = 'block';
+    audioPlayer.classList.remove('ai-hidden');
     audio.play().catch(function (error) {
         console.warn('Auto-play failed:', error);
     });
@@ -712,7 +734,7 @@ TTSManager.prototype.testSpeakerIntegration = function () {
         .finally(function () {
             if (testBtn) {
                 testBtn.disabled = false;
-                testBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Test TTS &rarr; Speaker';
+                testBtn.innerHTML = '<i class="bi bi-megaphone"></i> Play Out Loud on Character Speaker';
             }
         });
 };

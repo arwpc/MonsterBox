@@ -1,0 +1,274 @@
+/* ==========================================================================
+   Fleet Command Center — page styles
+   --------------------------------------------------------------------------
+   Page-specific rules only. Everything reusable lives in components.css; every
+   value here resolves to a --mb-* token so the three themes reach this page.
+
+   Loaded via `styles: ['/css/mb-orchestration.css']` from routes/orchestration.js.
+   ========================================================================== */
+
+/* ---- Sticky command bar ------------------------------------------------- */
+.fcc-bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--mb-z-sticky);
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  box-shadow: var(--mb-shadow-panel);
+  padding: var(--mb-space-3);
+  margin-bottom: var(--mb-space-4);
+}
+
+.fcc-bar .fcc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-2);
+  align-items: center;
+}
+
+.fcc-bar .fcc-row + .fcc-row {
+  margin-top: var(--mb-space-2);
+}
+
+/* A vertical hairline between groups of controls. Collapses on a phone, where
+   the rows wrap and a divider would land in the middle of nothing. */
+.fcc-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--mb-border-default);
+  margin: 0 var(--mb-space-1);
+}
+
+.fcc-say {
+  max-width: 480px;
+  flex: 1 1 260px;
+}
+
+.fcc-vol {
+  width: 130px;
+}
+
+.fcc-vol-val {
+  width: 3em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcc-estop {
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+}
+
+/* ---- Superpower master toggles ------------------------------------------
+   Three states, not two. `.on` = every targeted node accepted the change.
+   `.mixed` = some accepted and some did not, which is the state an operator
+   most needs to see: the fleet is not doing one thing. Previously `.mixed`
+   was defined and never applied, so 3-of-5 looked exactly like 5-of-5.
+   -------------------------------------------------------------------------- */
+/* Driven through .mb-btn's own --_bg/--_fg/--_border custom properties rather
+   than a raw `background`, so hover, active, focus and disabled keep working
+   exactly as every other button in the app. */
+.fcc-sp.on {
+  --_bg: var(--mb-success);
+  --_fg: var(--mb-fg-on-accent);
+  --_border: var(--mb-success);
+  --_hover-bg: var(--mb-success);
+  --_active-bg: var(--mb-success);
+}
+
+.fcc-sp.mixed {
+  --_bg: transparent;
+  --_fg: var(--mb-fg-primary);
+  --_border: var(--mb-warning);
+  --_hover-bg: transparent;
+  --_active-bg: transparent;
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--mb-warning) 55%, transparent) 0,
+    color-mix(in srgb, var(--mb-warning) 55%, transparent) 6px,
+    color-mix(in srgb, var(--mb-warning) 22%, transparent) 6px,
+    color-mix(in srgb, var(--mb-warning) 22%, transparent) 12px
+  );
+}
+
+/* ---- Node wall ---------------------------------------------------------- */
+.fcc-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.fcc-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  padding: var(--mb-space-2) var(--mb-space-3);
+  background: var(--mb-bg-1);
+  border-bottom: 1px solid var(--mb-border-subtle);
+}
+
+.fcc-card-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--mb-weight-bold);
+}
+
+.fcc-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+  padding: var(--mb-space-3);
+}
+
+.fcc-cam-wrap {
+  position: relative;
+  background: var(--mb-bg-0);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.fcc-cam-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Page-scoped visibility helpers. Class-based rather than inline style="", so a
+   theme can still reach the element, and named per-page to avoid colliding with
+   the shared utility namespace in components.css. */
+.fcc-hidden { display: none !important; }
+.fcc-invisible { visibility: hidden; }
+
+.fcc-cam-off {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mb-fg-muted);
+  font-size: var(--mb-text-sm);
+  text-align: center;
+  padding: var(--mb-space-2);
+}
+
+.fcc-health {
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-secondary);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Offline nodes ------------------------------------------------------
+   An offline node's controls used to render fully live: you could type into
+   "Say…" and hit play on a machine that was powered off, and the request just
+   failed somewhere the operator never looked. Offline cards now dim, disable
+   every control, and say why in plain words.
+   -------------------------------------------------------------------------- */
+.fcc-ghost {
+  opacity: 0.72;
+}
+
+.fcc-ghost .fcc-cam-wrap {
+  cursor: not-allowed;
+}
+
+.fcc-offline-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mb-space-2);
+  font-size: var(--mb-text-xs);
+  padding: var(--mb-space-2);
+  color: var(--mb-fg-secondary);
+}
+
+/* ---- Discovery provenance chips ----------------------------------------- */
+.fcc-chip {
+  font-size: var(--mb-text-xs);
+  font-family: var(--mb-font-mono);
+  padding: 1px var(--mb-space-2);
+  border-radius: var(--mb-radius-sm);
+  border: 1px solid var(--mb-border-default);
+  color: var(--mb-fg-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--mb-tracking-wide);
+  white-space: nowrap;
+}
+.fcc-chip.config     { color: var(--mb-fg-secondary); }
+.fcc-chip.discovered { color: var(--mb-success); border-color: var(--mb-success); }
+.fcc-chip.manual     { color: var(--mb-info);    border-color: var(--mb-info); }
+.fcc-chip.untrusted  { color: var(--mb-danger);  border-color: var(--mb-danger); }
+
+/* ---- Command log -------------------------------------------------------- */
+.fcc-log {
+  height: 190px;
+  overflow-y: auto;
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  padding: var(--mb-space-2);
+}
+.fcc-log .err   { color: var(--mb-danger); }
+.fcc-log .warn  { color: var(--mb-warning); }
+.fcc-log .ok    { color: var(--mb-success); }
+.fcc-log .muted { color: var(--mb-fg-muted); }
+
+/* A per-node failure line, indented under the fleet action that produced it,
+   so a partial broadcast reads as a list of named machines and reasons rather
+   than a single "3/5 ok" the operator has to interpret. */
+.fcc-log .detail {
+  padding-left: var(--mb-space-5);
+  color: var(--mb-fg-secondary);
+}
+
+#fccCamModalImg {
+  width: 100%;
+  height: auto;
+  background: var(--mb-bg-0);
+  display: block;
+}
+
+/* ---- Pin-a-node form ---------------------------------------------------- */
+.fcc-pin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr);
+  gap: var(--mb-space-2);
+}
+
+.fcc-pin-grid > .fcc-pin-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  /* Six superpowers squeezed into one 390px row truncate their own labels.
+     Let the group wrap into readable rows instead. */
+  .fcc-bar .mb-btn-group {
+    flex-wrap: wrap;
+  }
+
+  .fcc-bar .mb-btn-group .mb-btn {
+    flex: 1 1 30%;
+  }
+}
+
+@media (max-width: 480px) {
+  .fcc-pin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fcc-vol {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .fcc-sep {
+    display: none;
+  }
+}

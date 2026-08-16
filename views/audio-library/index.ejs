@@ -1,65 +1,71 @@
+<%
+// Audio Library — browse, audition and manage the shared audio library.
+// Page chrome lives in /css/mb-audio-library.css (wired via the `styles` local
+// in routes/audioLibrary.js); everything else comes from components.css.
+// Row rendering happens in public/js/audio-library.js (ES5).
+%>
             <!-- Page header -->
             <header class="mb-page-header">
                 <h1 class="mb-page-header-title">
                     <i class="bi bi-music-note-list"></i> Audio Library
-                    <span class="mb-text-secondary" style="display:flex; gap:var(--mb-space-1);">
-                        <span class="badge bg-primary" id="totalFiles">0 files</span>
-                        <span class="badge bg-secondary" id="totalSize">0 B</span>
-                        <span class="badge bg-info" id="totalCategories">0 categories</span>
+                    <span class="mb-text-secondary aud-counts">
+                        <span class="mb-badge mb-badge-primary" id="totalFiles">0 files</span>
+                        <span class="mb-badge" id="totalSize">0 B</span>
+                        <span class="mb-badge mb-badge-info" id="totalCategories">0 categories</span>
                     </span>
                 </h1>
                 <div class="mb-page-header-actions">
-                    <div class="d-inline-flex align-items-center" style="gap: var(--mb-space-1);">
-                        <label for="speakerSelect" class="mb-text-muted small" style="margin:0;"><i class="bi bi-speaker"></i></label>
-                        <select id="speakerSelect" class="form-select form-select-sm" style="min-width: 180px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Select audio output speaker"></select>
+                    <div class="aud-speaker">
+                        <label for="speakerSelect" class="mb-text-muted" aria-label="Audio output speaker"><i class="bi bi-speaker"></i></label>
+                        <select id="speakerSelect" class="mb-select aud-speaker-select" data-bs-toggle="tooltip" data-bs-placement="top" title="Select audio output speaker"></select>
                     </div>
-                    <button class="btn btn-outline-danger btn-sm" id="stopAllBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback">
+                    <button class="mb-btn mb-btn-sm mb-btn-danger" id="stopAllBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback">
                         <i class="bi bi-stop-circle"></i> Stop All
                     </button>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal" data-bs-tooltip="tooltip" data-bs-placement="top" title="Upload audio files to the library">
+                    <button class="mb-btn mb-btn-sm mb-btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" data-bs-tooltip="tooltip" data-bs-placement="top" title="Upload audio files to the library">
                         <i class="bi bi-cloud-upload"></i> Upload
                     </button>
                 </div>
             </header>
 
             <!-- Now Playing bar (hidden by default) -->
-            <div id="nowPlaying" class="alert alert-info py-1 px-3 d-none mb-2 d-flex align-items-center">
-                <i class="bi bi-volume-up me-2"></i> Now Playing: <strong class="ms-1" id="nowPlayingTitle">-</strong>
-                <button class="btn btn-sm btn-outline-danger ms-auto" id="nowPlayingStop" title="Stop playback">Stop</button>
+            <div id="nowPlaying" class="mb-alert mb-alert-info aud-now-playing d-none">
+                <i class="bi bi-volume-up"></i> Now Playing: <strong id="nowPlayingTitle">-</strong>
+                <button class="mb-btn mb-btn-sm mb-btn-danger aud-now-stop" id="nowPlayingStop" title="Stop playback">Stop</button>
             </div>
 
             <!-- Search/Filter: single compact row -->
-            <div class="d-flex gap-2 mb-2 flex-wrap align-items-center">
-                <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search files..." style="max-width:300px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Search audio files by name">
-                <select class="form-select form-select-sm" id="categoryFilter" style="max-width:150px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter by category">
+            <div class="mb-row-sm mb-3 align-items-center">
+                <input type="text" class="mb-input aud-search" id="searchInput" placeholder="Search files..." aria-label="Search audio files" data-bs-toggle="tooltip" data-bs-placement="top" title="Search audio files by name">
+                <select class="mb-select aud-filter" id="categoryFilter" aria-label="Filter by category" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter by category">
                     <option value="all">All Categories</option>
                 </select>
-                <select class="form-select form-select-sm" id="sortBy" style="max-width:150px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Sort audio files">
+                <select class="mb-select aud-filter" id="sortBy" aria-label="Sort audio files" data-bs-toggle="tooltip" data-bs-placement="top" title="Sort audio files">
                     <option value="title">Title A-Z</option>
                     <option value="uploadedAt">Newest First</option>
                     <option value="duration">Duration</option>
                     <option value="fileSize">File Size</option>
                     <option value="playCount">Most Played</option>
                 </select>
-                <div class="form-check form-switch d-flex align-items-center ms-1">
-                    <input class="form-check-input" type="checkbox" id="favoritesOnly" data-bs-toggle="tooltip" data-bs-placement="top" title="Show favorites only">
-                    <label class="form-check-label ms-1 small" for="favoritesOnly">Favs</label>
-                </div>
+                <label class="mb-check" for="favoritesOnly">
+                    <input type="checkbox" id="favoritesOnly" data-bs-toggle="tooltip" data-bs-placement="top" title="Show favorites only">
+                    <span>Favs</span>
+                </label>
             </div>
 
             <!-- Audio Files Table -->
-            <div class="table-responsive">
-                <table class="table table-hover table-sm align-middle" id="audioTable">
-                    <thead class="table-dark">
+            <div class="aud-table-wrap">
+                <table class="mb-table aud-table" id="audioTable">
+                    <thead>
                         <tr>
-                            <th style="width:40px;"></th>
-                            <th style="width:30px;"></th>
+                            <th class="aud-col-play"><span class="visually-hidden">Play</span></th>
+                            <th class="aud-col-fav"><span class="visually-hidden">Favorite</span></th>
                             <th>Title</th>
-                            <th style="width:110px;">Category</th>
-                            <th style="width:60px;">Time</th>
-                            <th style="width:50px;">Fmt</th>
-                            <th style="width:70px;">Size</th>
-                            <th style="width:150px;">Actions</th>
+                            <th class="aud-col-cat">Category</th>
+                            <th class="aud-col-time">Time</th>
+                            <th class="aud-col-fmt">Fmt</th>
+                            <th class="aud-col-size">Size</th>
+                            <th class="aud-col-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="audioTableBody">
@@ -68,11 +74,11 @@
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" style="display:none;" class="text-center py-5">
-                <i class="bi bi-music-note-list text-muted" style="font-size:3rem;"></i>
-                <h5 class="text-muted mt-2">No Audio Files</h5>
-                <p class="text-muted">Upload some audio files to get started.</p>
-                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal" title="Upload audio files">
+            <div id="emptyState" class="mb-empty aud-hidden">
+                <i class="bi bi-music-note-list mb-empty-icon"></i>
+                <h2 class="mb-empty-title">No Audio Files</h2>
+                <p class="mb-empty-body">Upload some audio files to get started.</p>
+                <button class="mb-btn mb-btn-sm mb-btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal" title="Upload audio files">
                     <i class="bi bi-cloud-upload"></i> Upload Audio
                 </button>
             </div>
@@ -82,19 +88,19 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">
+                        <h2 class="modal-title mb-heading-3">
                             <i class="bi bi-cloud-upload"></i> Upload Audio Files
-                        </h5>
+                        </h2>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <!-- Drag and Drop Zone -->
                         <div class="mb-drop-zone mb-4" id="dragDropZone">
-                            <i class="bi bi-cloud-upload fs-1 text-muted"></i>
-                            <h4 class="mt-3">Drag & Drop Audio Files Here</h4>
-                            <p class="text-muted">Or click to browse files</p>
-                            <input type="file" id="audioFileInput" multiple accept="audio/*" style="display: none;">
-                            <button type="button" class="btn btn-outline-primary"
+                            <i class="bi bi-cloud-upload mb-empty-icon"></i>
+                            <h3 class="mb-heading-3 mt-3">Drag &amp; Drop Audio Files Here</h3>
+                            <p class="mb-text-muted">Or click to browse files</p>
+                            <input type="file" id="audioFileInput" multiple accept="audio/*" class="aud-hidden">
+                            <button type="button" class="mb-btn mb-btn-secondary"
                                 onclick="document.getElementById('audioFileInput').click()"
                                 data-bs-toggle="tooltip" data-bs-placement="top" title="Browse local files to upload">
                                 <i class="bi bi-folder2-open"></i> Browse Files
@@ -105,43 +111,50 @@
                         <form id="uploadForm">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Category</label>
-                                    <select class="form-select" name="category" id="uploadCategory" title="Select a category">
-                                        <option value="other">Other</option>
-                                    </select>
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadCategory">Category</label>
+                                        <select class="mb-select" name="category" id="uploadCategory" title="Select a category">
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Tags (comma separated)</label>
-                                    <input type="text" class="form-control" name="tags" title="Comma-separated tags"
-                                        placeholder="spooky, halloween, monster">
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadTags">Tags (comma separated)</label>
+                                        <input type="text" class="mb-input" id="uploadTags" name="tags" title="Comma-separated tags"
+                                            placeholder="spooky, halloween, monster">
+                                    </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Description</label>
-                                    <textarea class="form-control" name="description" rows="2" title="Optional description"
-                                        placeholder="Optional description for the audio files"></textarea>
+                                    <div class="mb-field">
+                                        <label class="mb-field-label" for="uploadDescription">Description</label>
+                                        <textarea class="mb-textarea" id="uploadDescription" name="description" rows="2" title="Optional description"
+                                            placeholder="Optional description for the audio files"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </form>
 
                         <!-- Upload Progress -->
-                        <div class="upload-progress mt-3" style="display:none;">
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        <div class="upload-progress mt-3 aud-hidden">
+                            <div class="mb-meter">
+                                <div class="mb-meter-fill progress-bar" role="progressbar"
+                                    aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                             </div>
                             <div class="mt-2">
-                                <small class="text-muted" id="uploadStatus">Preparing upload...</small>
+                                <small class="mb-text-muted" id="uploadStatus">Preparing upload...</small>
                             </div>
                         </div>
 
                         <!-- Selected Files List -->
-                        <div id="selectedFilesList" class="mt-3" style="display: none;">
-                            <h6>Selected Files:</h6>
+                        <div id="selectedFilesList" class="mt-3 aud-hidden">
+                            <h3 class="mb-heading-3">Selected Files:</h3>
                             <div id="filesList"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel upload">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="uploadBtn" disabled title="Upload selected files">
+                        <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Cancel upload">Cancel</button>
+                        <button type="button" class="mb-btn mb-btn-primary" id="uploadBtn" disabled title="Upload selected files">
                             <i class="bi bi-cloud-upload"></i> Upload Files
                         </button>
                     </div>
@@ -154,18 +167,16 @@
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="playerTitle">
+                        <h2 class="modal-title mb-heading-3" id="playerTitle">
                             <i class="bi bi-play-circle"></i> Audio Player
-                        </h5>
+                        </h2>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div id="audioPlayerContainer">
-                            <div class="text-center py-4">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <p class="mt-2">Loading audio player...</p>
+                            <div class="mb-empty">
+                                <span class="mb-spinner mb-spinner-lg"></span>
+                                <p class="mb-empty-body">Loading audio player...</p>
                             </div>
                         </div>
                     </div>
@@ -173,7 +184,28 @@
             </div>
         </div>
 
-        <script src="/js/audio-library.js"></script>
+        <!-- Confirmation dialog. Replaces the native browser confirmation, which
+             cannot be styled and cannot show the track it is about to destroy. -->
+        <div class="mb-modal-backdrop aud-hidden" id="audConfirmBackdrop"></div>
+        <div class="mb-modal aud-hidden" id="audConfirm" role="dialog" aria-modal="true" aria-labelledby="audConfirmTitle">
+            <div class="mb-modal-dialog">
+                <div class="mb-modal-header">
+                    <h2 class="mb-modal-title" id="audConfirmTitle">Confirm</h2>
+                </div>
+                <div class="mb-modal-body">
+                    <p id="audConfirmBody"></p>
+                    <p class="mb-field-hint" id="audConfirmTargetWrap">Target: <span id="audConfirmTarget" class="mb-mono"></span></p>
+                </div>
+                <div class="mb-modal-footer">
+                    <button type="button" class="mb-btn mb-btn-secondary" id="audConfirmCancel">Cancel</button>
+                    <button type="button" class="mb-btn mb-btn-danger" id="audConfirmOk">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-toast-region" role="status" aria-live="polite"></div>
+
+        <script src="/js/audio-library.js?v=<%= appVersion %>"></script>
         <script>
             // Global stop function for compatibility
             function stopAllAudio() {
@@ -181,4 +213,35 @@
                     window.audioLibrary.stopAll();
                 }
             }
+
+            // ---- Design-system confirm, used by audio-library.js -------------
+            (function () {
+                const backdrop = document.getElementById('audConfirmBackdrop');
+                const dialog = document.getElementById('audConfirm');
+                let resolver = null;
+
+                function close(answer) {
+                    backdrop.classList.add('aud-hidden');
+                    dialog.classList.add('aud-hidden');
+                    if (resolver) { const r = resolver; resolver = null; r(answer); }
+                }
+
+                document.getElementById('audConfirmOk').addEventListener('click', () => close(true));
+                document.getElementById('audConfirmCancel').addEventListener('click', () => close(false));
+                backdrop.addEventListener('click', () => close(false));
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && resolver) close(false); });
+
+                // Names the track about to be deleted.
+                window.mbConfirm = function (opts) {
+                    document.getElementById('audConfirmTitle').textContent = opts.title || 'Confirm';
+                    document.getElementById('audConfirmBody').textContent = opts.body || '';
+                    document.getElementById('audConfirmTarget').textContent = opts.target || '';
+                    document.getElementById('audConfirmTargetWrap').classList.toggle('aud-hidden', !opts.target);
+                    document.getElementById('audConfirmOk').textContent = opts.confirmLabel || 'Confirm';
+                    backdrop.classList.remove('aud-hidden');
+                    dialog.classList.remove('aud-hidden');
+                    document.getElementById('audConfirmOk').focus();
+                    return new Promise((resolve) => { resolver = resolve; });
+                };
+            })();
         </script>

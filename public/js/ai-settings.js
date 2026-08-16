@@ -212,8 +212,7 @@ AISettingsManager.prototype.testConnection = function (statusElement) {
     var self = this;
 
     if (statusElement) {
-        statusElement.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status">' +
-            '<span class="visually-hidden">Loading...</span></div>' +
+        statusElement.innerHTML = '<span class="mb-spinner" role="status"></span>' +
             '<span>Testing connection...</span>';
     }
 
@@ -443,7 +442,7 @@ AISettingsManager.prototype.bindEvents = function () {
                 }).catch(function (e) {
                     chatBrowserMic.checked = false;
                     var errMsg = e.message || String(e);
-                    if (statusEl) statusEl.innerHTML = '<span class="text-danger">' + errMsg + '</span>';
+                    if (statusEl) statusEl.innerHTML = '<span class="mb-text-danger">' + errMsg + '</span>';
                     self.appendChatMessage('System', 'Browser mic failed: ' + errMsg);
                     console.error('BrowserMicCapture error:', e);
                 });
@@ -794,7 +793,7 @@ AISettingsManager.prototype.appendChatMessage = function (sender, text) {
     }
 
     // Clear placeholder
-    var placeholder = chatLog.querySelector('.text-muted.text-center');
+    var placeholder = chatLog.querySelector('.mb-text-muted.text-center');
     if (placeholder) placeholder.remove();
 
     var time = new Date().toLocaleTimeString();
@@ -804,7 +803,7 @@ AISettingsManager.prototype.appendChatMessage = function (sender, text) {
     var senderClass = sender === 'You' || sender === 'You (mic)' ? 'text-info' :
         sender === 'AI' ? 'text-success' : 'text-warning';
 
-    msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
+    msgDiv.innerHTML = '<small class="mb-text-muted">[' + time + ']</small> ' +
         '<strong class="' + senderClass + '">' + sender + ':</strong> ' +
         '<span>' + this.escapeHtml(text) + '</span>';
 
@@ -824,13 +823,13 @@ AISettingsManager.prototype.updatePartialTranscript = function (text) {
         }
     } else {
         // Create new partial element
-        var placeholder = chatLog.querySelector('.text-muted.text-center');
+        var placeholder = chatLog.querySelector('.mb-text-muted.text-center');
         if (placeholder) placeholder.remove();
 
         var time = new Date().toLocaleTimeString();
         var msgDiv = document.createElement('div');
         msgDiv.className = 'mb-1';
-        msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
+        msgDiv.innerHTML = '<small class="mb-text-muted">[' + time + ']</small> ' +
             '<strong class="text-info">You (mic):</strong> ' +
             '<span class="partial-text" style="opacity:0.7"></span>';
         var span = msgDiv.querySelector('.partial-text');
@@ -855,11 +854,11 @@ AISettingsManager.prototype.updateVUMeter = function (level) {
         meter.setAttribute('aria-valuenow', level);
         // Color coding: green < 40, yellow 40-70, red > 70
         if (level > 70) {
-            meter.className = 'progress-bar bg-danger';
+            meter.className = 'mb-meter-fill';
         } else if (level > 40) {
-            meter.className = 'progress-bar bg-warning';
+            meter.className = 'mb-meter-fill';
         } else {
-            meter.className = 'progress-bar bg-success';
+            meter.className = 'mb-meter-fill';
         }
     }
     if (label) {
@@ -873,7 +872,7 @@ AISettingsManager.prototype.updateVUMeter = function (level) {
         if (meter) {
             meter.style.width = '0%';
             meter.setAttribute('aria-valuenow', 0);
-            meter.className = 'progress-bar bg-success';
+            meter.className = 'mb-meter-fill';
         }
         if (label) label.textContent = '0%';
     }, 800);
@@ -885,7 +884,7 @@ AISettingsManager.prototype.updateChatStatus = function (active) {
 
     if (indicator) {
         indicator.textContent = active ? 'Connected' : 'Ready';
-        indicator.className = 'badge ' + (active ? 'bg-success' : 'bg-secondary');
+        indicator.className = 'mb-badge' + (active ? ' mb-badge-success' : '');
     }
     if (statusEl) {
         statusEl.innerHTML = active ? '<i class="bi bi-circle-fill text-success"></i>' : '<i class="bi bi-circle"></i>';

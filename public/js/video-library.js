@@ -168,18 +168,18 @@ class VideoLibrary {
 
         if (!this.videoFiles.length) {
             grid.innerHTML = '';
-            emptyState.style.display = 'block';
+            emptyState.classList.remove('vid-hidden');
             return;
         }
 
-        emptyState.style.display = 'none';
+        emptyState.classList.add('vid-hidden');
 
         grid.innerHTML = this.videoFiles.map(video => `
             <div class="col-12 mb-2">
                 <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
                     ${this.bulkSelectMode ? `
                         <div class="position-absolute top-0 start-0 p-2" style="z-index: 20;">
-                            <input type="checkbox" class="form-check-input video-select-checkbox" 
+                            <input type="checkbox" class="video-select-checkbox" 
                                    data-video-id="${video.id}" onclick="event.stopPropagation(); videoLibrary.toggleVideoSelection('${video.id}')" 
                                    ${this.selectedVideoIds.has(video.id) ? 'checked' : ''}>
                         </div>
@@ -197,7 +197,7 @@ class VideoLibrary {
                         <div class="mb-media-overlay"></div>
                         
                         <div class="mb-media-controls">
-                            <button class="btn btn-primary btn-lg rounded-circle">
+                            <button class="mb-btn mb-btn-primary btn-lg rounded-circle">
                                 <i class="bi bi-play-fill"></i>
                             </button>
                         </div>
@@ -225,7 +225,7 @@ class VideoLibrary {
                         ` : ''}
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">${this.timeAgo(video.uploadedAt)}</small>
-                            <button class="btn btn-sm btn-outline-success" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
+                            <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
                                 <i class="bi bi-broadcast"></i>
                             </button>
                         </div>
@@ -273,8 +273,8 @@ class VideoLibrary {
                 tagsContainer.innerHTML = '';
             }
 
-            playerControls.style.display = 'block';
-            playerInfo.style.display = 'block';
+            playerControls.classList.remove('vid-hidden');
+            playerInfo.classList.remove('vid-hidden');
 
             // Update play count
             this.incrementPlayCount(videoId);
@@ -293,14 +293,14 @@ class VideoLibrary {
         
         document.getElementById('mainVideoPlayer').innerHTML = `
             <div class="player-placeholder">
-                <i class="bi bi-camera-video" style="font-size: 4rem;"></i>
-                <h4 class="mt-3">Select a video to preview</h4>
-                <p class="text-muted">Click any video from the library to start playing</p>
+                <i class="bi bi-camera-video vid-empty-icon"></i>
+                <h3 class="mb-heading-3 mt-3">Select a video to preview</h3>
+                <p class="mb-text-muted">Click any video from the library to start playing</p>
             </div>
         `;
         
-        document.getElementById('videoPlayerControls').style.display = 'none';
-        document.getElementById('videoPlayerInfo').style.display = 'none';
+        document.getElementById('videoPlayerControls').classList.add('vid-hidden');
+        document.getElementById('videoPlayerInfo').classList.add('vid-hidden');
         
         this.currentVideo = null;
     }
@@ -376,7 +376,7 @@ class VideoLibrary {
         const container = document.getElementById('selectedFilesList');
         const list = document.getElementById('filesList');
 
-        container.style.display = 'block';
+        container.classList.remove('vid-hidden');
 
         list.innerHTML = this.selectedFiles.map(file => `
             <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
@@ -384,7 +384,7 @@ class VideoLibrary {
                     <strong>${file.name}</strong>
                     <small class="text-muted d-block">${this.formatFileSize(file.size)} • ${file.type}</small>
                 </div>
-                <button class="btn btn-sm btn-outline-danger" onclick="videoLibrary.removeSelectedFile('${file.name}')">
+                <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="videoLibrary.removeSelectedFile('${file.name}')">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -395,7 +395,7 @@ class VideoLibrary {
         this.selectedFiles = this.selectedFiles.filter(f => f.name !== filename);
         
         if (this.selectedFiles.length === 0) {
-            document.getElementById('selectedFilesList').style.display = 'none';
+            document.getElementById('selectedFilesList').classList.add('vid-hidden');
             document.getElementById('uploadBtn').disabled = true;
         } else {
             this.displaySelectedFiles();
@@ -412,7 +412,7 @@ class VideoLibrary {
 
         // Disable upload button and show progress
         uploadBtn.disabled = true;
-        progressContainer.style.display = 'block';
+        progressContainer.classList.remove('vid-hidden');
 
         const formData = new FormData();
         
@@ -477,8 +477,8 @@ class VideoLibrary {
     resetUploadForm() {
         this.selectedFiles = [];
         document.getElementById('uploadForm').reset();
-        document.getElementById('selectedFilesList').style.display = 'none';
-        document.querySelector('.upload-progress').style.display = 'none';
+        document.getElementById('selectedFilesList').classList.add('vid-hidden');
+        document.querySelector('.upload-progress').classList.add('vid-hidden');
         document.getElementById('uploadBtn').disabled = true;
         document.getElementById('videoFileInput').value = '';
     }
@@ -586,13 +586,13 @@ class VideoLibrary {
         // Populate video list
         const videoList = document.getElementById('deployVideoList');
         videoList.innerHTML = this.videoFiles.map(video => `
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="${video.id}" id="deployVideo${video.id}">
-                <label class="form-check-label small" for="deployVideo${video.id}">
+            <label class="mb-check vid-pick-row" for="deployVideo${video.id}">
+                <input type="checkbox" value="${video.id}" id="deployVideo${video.id}">
+                <span>
                     <strong>${video.title}</strong>
-                    <br><small class="text-muted">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}</small>
-                </label>
-            </div>
+                    <br><small class="mb-text-muted">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}</small>
+                </span>
+            </label>
         `).join('');
 
         // Populate Goblin list
@@ -600,16 +600,16 @@ class VideoLibrary {
         const availableGoblins = this.goblins.filter(g => g.status === 'online');
         
         goblinList.innerHTML = availableGoblins.map(goblin => `
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}" 
+            <label class="mb-check vid-pick-row" for="deployGoblin${goblin.id}">
+                <input type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}"
                        ${goblin.locked ? 'disabled' : ''}>
-                <label class="form-check-label small" for="deployGoblin${goblin.id}">
+                <span>
                     <strong>${goblin.name}</strong>
                     <span class="mb-status-badge ${goblin.status}">${goblin.status}</span>
-                    ${goblin.locked ? '<br><small class="text-warning">Locked</small>' : ''}
-                    <br><small class="text-muted">${goblin.endpoint}</small>
-                </label>
-            </div>
+                    ${goblin.locked ? '<br><small class="mb-text-warning">Locked</small>' : ''}
+                    <br><small class="mb-text-muted">${goblin.endpoint}</small>
+                </span>
+            </label>
         `).join('');
     }
 
@@ -627,7 +627,7 @@ class VideoLibrary {
         const statusContainer = document.getElementById('deploymentStatus');
 
         deployBtn.disabled = true;
-        progressContainer.style.display = 'block';
+        progressContainer.classList.remove('vid-hidden');
         statusContainer.innerHTML = '';
 
         try {
@@ -689,15 +689,15 @@ class VideoLibrary {
         var btnList = document.getElementById('viewList');
 
         if (this.currentView === 'list') {
-            gridEl.style.display = 'none';
-            listEl.style.display = 'block';
-            btnGrid.className = 'btn btn-outline-secondary btn-sm';
-            btnList.className = 'btn btn-primary btn-sm';
+            gridEl.classList.add('vid-hidden');
+            listEl.classList.remove('vid-hidden');
+            btnGrid.className = 'mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon';
+            btnList.className = 'mb-btn mb-btn-sm mb-btn-primary mb-btn-icon';
         } else {
-            gridEl.style.display = '';
-            listEl.style.display = 'none';
-            btnGrid.className = 'btn btn-primary btn-sm';
-            btnList.className = 'btn btn-outline-secondary btn-sm';
+            gridEl.classList.remove('vid-hidden');
+            listEl.classList.add('vid-hidden');
+            btnGrid.className = 'mb-btn mb-btn-sm mb-btn-primary mb-btn-icon';
+            btnList.className = 'mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon';
         }
     }
 
@@ -716,16 +716,16 @@ class VideoLibrary {
 
         if (!this.videoFiles.length) {
             tbody.innerHTML = '';
-            emptyState.style.display = 'block';
+            emptyState.classList.remove('vid-hidden');
             if (this.currentView === 'list') {
-                listContainer.style.display = 'none';
+                listContainer.classList.add('vid-hidden');
             }
             return;
         }
 
-        emptyState.style.display = 'none';
+        emptyState.classList.add('vid-hidden');
         if (this.currentView === 'list') {
-            listContainer.style.display = 'block';
+            listContainer.classList.remove('vid-hidden');
         }
 
         var self = this;
@@ -735,7 +735,7 @@ class VideoLibrary {
         tbody.innerHTML = this.videoFiles.map(function(video) {
             var checkboxCell = '';
             if (bulkMode) {
-                checkboxCell = '<input type="checkbox" class="form-check-input video-select-checkbox" data-video-id="' + video.id + '"' +
+                checkboxCell = '<input type="checkbox" class="video-select-checkbox" data-video-id="' + video.id + '"' +
                     (selectedIds.has(video.id) ? ' checked' : '') + '>';
             }
 
@@ -750,10 +750,10 @@ class VideoLibrary {
                 '<td>' + self.formatFileSize(video.fileSize || 0) + '</td>' +
                 '<td>' +
                     '<div class="btn-group btn-group-sm">' +
-                        '<button class="btn btn-outline-success btn-sm deploy-btn" data-video-id="' + video.id + '" title="Deploy">' +
+                        '<button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon deploy-btn" data-video-id="' + video.id + '" title="Deploy">' +
                             '<i class="bi bi-broadcast"></i>' +
                         '</button>' +
-                        '<button class="btn btn-outline-danger btn-sm delete-btn" data-video-id="' + video.id + '" title="Delete">' +
+                        '<button class="mb-btn mb-btn-sm mb-btn-ghost mb-btn-icon delete-btn" data-video-id="' + video.id + '" title="Delete">' +
                             '<i class="bi bi-trash"></i>' +
                         '</button>' +
                     '</div>' +
@@ -799,7 +799,15 @@ class VideoLibrary {
                 e.stopPropagation();
                 var videoId = btn.dataset.videoId;
                 var video = self.videoFiles.find(function(v) { return v.id === videoId; });
-                if (video && confirm('Delete "' + video.title + '"? This cannot be undone.')) {
+                if (!video) return;
+                // Styled dialog that names the file, instead of a native browser popup.
+                window.mbConfirm({
+                    title: 'Delete this video?',
+                    body: 'The file is removed from the library. This cannot be undone.',
+                    target: video.title,
+                    confirmLabel: 'Delete'
+                }).then(function (ok) {
+                    if (!ok) return;
                     fetch('/video-library/api/video/' + videoId, { method: 'DELETE' })
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
@@ -811,7 +819,7 @@ class VideoLibrary {
                             }
                         })
                         .catch(function() { self.showError('Failed to delete video'); });
-                }
+                });
             });
         });
 
@@ -918,10 +926,10 @@ class VideoLibrary {
 
         if (this.bulkSelectMode) {
             bulkBtn.classList.add('active');
-            bulkActions.style.display = 'block';
+            bulkActions.classList.remove('vid-hidden');
         } else {
             bulkBtn.classList.remove('active');
-            bulkActions.style.display = 'none';
+            bulkActions.classList.add('vid-hidden');
             this.selectedVideoIds.clear();
         }
 
@@ -960,12 +968,12 @@ class VideoLibrary {
         const statusList = document.getElementById('goblinStatusList');
 
         if (onlineGoblins.length > 0) {
-            statusBar.style.display = 'block';
+            statusBar.classList.remove('vid-hidden');
             statusList.innerHTML = onlineGoblins.map(goblin => `
                 <span class="mb-status-badge ${goblin.status} me-2">${goblin.name}</span>
             `).join('');
         } else {
-            statusBar.style.display = 'none';
+            statusBar.classList.add('vid-hidden');
         }
     }
 

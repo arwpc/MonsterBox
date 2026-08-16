@@ -1,53 +1,31 @@
-<style>
-  .jaw-page { max-height: calc(100vh - 56px); overflow: hidden; }
-  .audio-meter { background: var(--bs-dark, #2d2d2d); height: 28px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid var(--bs-border-color, #444); }
-  .audio-meter-fill { height: 100%; border-radius: 3px; transition: width 0.05s linear; background: linear-gradient(90deg, var(--mb-success) 0%, var(--mb-warning) 60%, var(--mb-danger) 90%); }
-  .jaw-meter { background: var(--bs-dark, #2d2d2d); height: 28px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid var(--bs-border-color, #444); }
-  .jaw-meter-fill { height: 100%; border-radius: 3px; transition: width 0.05s linear; background: linear-gradient(90deg, var(--mb-info) 0%, var(--bs-primary, #0d6efd) 70%, var(--mb-primary) 100%); }
-  .meter-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--bs-secondary-color, #adb5bd); }
-  .live-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--mb-secondary); }
-  .live-dot.active { background: var(--mb-danger); animation: livePulse 0.8s ease-in-out infinite; }
-  @keyframes livePulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(var(--bs-danger-rgb),.6); } 50% { opacity: .7; box-shadow: 0 0 6px 3px rgba(var(--bs-danger-rgb),.35); } }
-  .meter-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.5em; text-align: right; }
-  .meter-value.amp { color: var(--mb-warning); }
-  .meter-value.jaw { color: var(--mb-info); }
-  .servo-status-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-  .jaw-section { background: rgba(13,13,13,0.6); border-left: 3px solid var(--bs-primary, #0d6efd); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px; }
-  .quick-adj-btn { width: 32px; height: 32px; padding: 0; font-size: 0.8rem; }
-  .tts-panel, .servo-test-panel { background: rgba(13,13,13,0.6); border: 1px solid var(--bs-border-color, #444); border-radius: 6px; padding: 0.75rem; }
-  .compact-label { font-size: 0.85rem; margin-bottom: 0.25rem; }
-  .form-range { height: 1.2rem; }
-</style>
-
 <div class="jaw-page">
   <% if (typeof error !== 'undefined' && error) { %>
-  <div class="alert alert-warning alert-dismissible py-2 mb-2" role="alert">
+  <div class="mb-alert mb-alert-warning mb-2" role="alert">
     <i class="bi bi-exclamation-triangle"></i> <%= error %>
-    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" title="Dismiss this alert"></button>
   </div>
   <% } %>
 
   <!-- Config Selector Bar -->
-  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-    <div class="input-group input-group-sm" style="max-width:280px;">
-      <label class="input-group-text" for="configSelector"><i class="bi bi-collection"></i></label>
-      <select class="form-select form-select-sm" id="configSelector" title="Select a saved jaw config">
+  <div class="mb-row-sm align-items-center mb-2">
+    <div class="mb-input-group jaw-config-picker">
+      <span class="mb-input-addon"><i class="bi bi-collection"></i></span>
+      <select class="mb-select" id="configSelector" title="Select a saved jaw config">
         <option value="">Loading...</option>
       </select>
     </div>
-    <div class="btn-group btn-group-sm">
-      <button type="button" class="btn btn-outline-success" id="saveAsNewBtn" title="Save current settings as a new config">
+    <div class="mb-row-sm">
+      <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="saveAsNewBtn" title="Save current settings as a new config">
         <i class="bi bi-plus-lg"></i> Save As New
       </button>
-      <button type="button" class="btn btn-outline-info" id="renameConfigBtn" title="Rename current config">
+      <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="renameConfigBtn" title="Rename current config">
         <i class="bi bi-pencil"></i> Rename
       </button>
-      <button type="button" class="btn btn-outline-danger" id="deleteConfigBtn" title="Delete current config">
+      <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="deleteConfigBtn" title="Delete current config">
         <i class="bi bi-trash"></i> Delete
       </button>
     </div>
     <div class="ms-auto">
-      <button type="button" class="btn btn-primary btn-sm" id="saveConfigBtn" title="Save jaw configuration">
+      <button type="button" class="mb-btn mb-btn-primary mb-btn-sm" id="saveConfigBtn" title="Save jaw configuration">
         <i class="bi bi-save"></i> Save Config
       </button>
     </div>
@@ -59,18 +37,19 @@
     <div class="col-lg-5">
       <!-- Enable Toggle -->
       <div class="jaw-section">
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch" id="jawEnabled" title="Enable jaw animation">
-          <label class="form-check-label" for="jawEnabled"><strong>Enable Jaw Animation</strong></label>
-        </div>
+        <label class="mb-switch mb-2" title="Enable jaw animation">
+          <input type="checkbox" id="jawEnabled" title="Enable jaw animation">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <strong>Enable Jaw Animation</strong>
+        </label>
 
         <!-- Servo Selection -->
-        <div class="mb-2">
-          <label for="jawServoSelect" class="compact-label"><i class="bi bi-robot"></i> Jaw Servo</label>
-          <select class="form-select form-select-sm" id="jawServoSelect" title="Select the jaw servo">
+        <div class="jaw-field">
+          <label for="jawServoSelect" class="mb-field-label"><i class="bi bi-robot"></i> Jaw Servo</label>
+          <select class="mb-select" id="jawServoSelect" title="Select the jaw servo">
             <option value="">Select a servo...</option>
           </select>
-          <small class="text-muted">
+          <small class="mb-field-hint">
             <span id="servoStatusIndicator"></span>
             <span id="servoStatusText">Select a servo to see its status</span>
           </small>
@@ -79,112 +58,110 @@
 
       <!-- Tuning -->
       <div class="jaw-section">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-sliders"></i> Tuning</h6>
+        <h6 class="jaw-section-title"><i class="bi bi-sliders"></i> Tuning</h6>
 
-        <div class="mb-2" title="Amplifies quiet audio so the jaw moves more. Higher values make the jaw react to softer sounds. Default 1.0 = no amplification. Try 2.0-3.0 for quiet voices.">
-          <label for="sensitivityRange" class="compact-label">
-            Sensitivity <span class="badge bg-secondary ms-1" id="sensitivityValue">1.0</span>
+        <div class="jaw-field" title="Amplifies quiet audio so the jaw moves more. Higher values make the jaw react to softer sounds. Default 1.0 = no amplification. Try 2.0-3.0 for quiet voices.">
+          <label for="sensitivityRange" class="mb-field-label">
+            Sensitivity <span class="mb-badge" id="sensitivityValue">1.0</span>
           </label>
-          <input type="range" class="form-range" id="sensitivityRange" min="0.1" max="5.0" step="0.1" value="1.0" title="Adjust jaw sensitivity">
+          <input type="range" class="mb-range" id="sensitivityRange" min="0.1" max="5.0" step="0.1" value="1.0" title="Adjust jaw sensitivity">
         </div>
 
-        <div class="mb-2" title="Controls how much the jaw movement is smoothed between frames. Lower = more responsive but jittery. Higher = smoother but slower to react. For speech, 0.5-0.7 is typical.">
-          <label for="smoothingRange" class="compact-label">
-            Smoothing <span class="badge bg-secondary ms-1" id="smoothingValue">0.6</span>
+        <div class="jaw-field" title="Controls how much the jaw movement is smoothed between frames. Lower = more responsive but jittery. Higher = smoother but slower to react. For speech, 0.5-0.7 is typical.">
+          <label for="smoothingRange" class="mb-field-label">
+            Smoothing <span class="mb-badge" id="smoothingValue">0.6</span>
           </label>
-          <input type="range" class="form-range" id="smoothingRange" min="0.1" max="0.9" step="0.1" value="0.6" title="Adjust jaw smoothing">
+          <input type="range" class="mb-range" id="smoothingRange" min="0.1" max="0.9" step="0.1" value="0.6" title="Adjust jaw smoothing">
         </div>
 
-        <div class="mb-2" title="Audio below this level is treated as silence (jaw stays closed). Increase to ignore background noise. Decrease if the jaw doesn't move during quiet speech.">
-          <label for="volumeThresholdRange" class="compact-label">
-            Vol Threshold <span class="badge bg-secondary ms-1" id="volumeThresholdValue">0.02</span>
+        <div class="jaw-field" title="Audio below this level is treated as silence (jaw stays closed). Increase to ignore background noise. Decrease if the jaw doesn't move during quiet speech.">
+          <label for="volumeThresholdRange" class="mb-field-label">
+            Vol Threshold <span class="mb-badge" id="volumeThresholdValue">0.02</span>
           </label>
-          <input type="range" class="form-range" id="volumeThresholdRange" min="0.01" max="0.1" step="0.01" value="0.02" title="Adjust volume threshold">
+          <input type="range" class="mb-range" id="volumeThresholdRange" min="0.01" max="0.1" step="0.01" value="0.02" title="Adjust volume threshold">
         </div>
 
-        <div class="row g-2 mb-2">
-          <div class="col-6">
-            <label for="attackTime" class="compact-label" title="How fast the jaw opens when audio gets louder. Lower = snappier jaw open. Higher = slower, more gradual opening. 30-80ms for speech, 100-200ms for music.">Attack (ms)</label>
-            <input type="number" class="form-control form-control-sm" id="attackTime" min="10" max="500" value="50" title="Speed of jaw opening (lower = faster)">
+        <div class="jaw-grid-2 mb-2">
+          <div class="jaw-field">
+            <label for="attackTime" class="mb-field-label" title="How fast the jaw opens when audio gets louder. Lower = snappier jaw open. Higher = slower, more gradual opening. 30-80ms for speech, 100-200ms for music.">Attack (ms)</label>
+            <input type="number" class="mb-input" id="attackTime" min="10" max="500" value="50" title="Speed of jaw opening (lower = faster)">
           </div>
-          <div class="col-6">
-            <label for="releaseTime" class="compact-label" title="How fast the jaw closes when audio gets quieter. Lower = snappy close. Higher = slower, smoother close. 100-200ms for speech, 200-400ms for music.">Release (ms)</label>
-            <input type="number" class="form-control form-control-sm" id="releaseTime" min="10" max="1000" value="150" title="Speed of jaw closing (lower = faster)">
+          <div class="jaw-field">
+            <label for="releaseTime" class="mb-field-label" title="How fast the jaw closes when audio gets quieter. Lower = snappy close. Higher = slower, smoother close. 100-200ms for speech, 200-400ms for music.">Release (ms)</label>
+            <input type="number" class="mb-input" id="releaseTime" min="10" max="1000" value="150" title="Speed of jaw closing (lower = faster)">
           </div>
         </div>
 
-        <hr class="my-2 border-secondary">
+        <hr class="jaw-rule">
 
         <!-- Preset Buttons -->
-        <div class="mb-2" title="Quick presets that set optimal filter/quantization values. Speech: bandpass ON, 10 positions. Music: bandpass OFF, 15 positions. Custom: manual control.">
-          <label class="compact-label">Preset</label>
-          <div class="btn-group btn-group-sm w-100" role="group">
-            <input type="radio" class="btn-check" name="jawPreset" id="presetSpeech" value="speech" checked title="Select speech preset">
-            <label class="btn btn-outline-info" for="presetSpeech" title="Optimized for TTS/voice: bandpass filter ON, 10 jaw positions">Speech</label>
-            <input type="radio" class="btn-check" name="jawPreset" id="presetMusic" value="music" title="Select music preset">
-            <label class="btn btn-outline-info" for="presetMusic" title="Optimized for music: bandpass OFF (full spectrum), 15 jaw positions">Music</label>
-            <input type="radio" class="btn-check" name="jawPreset" id="presetCustom" value="custom" title="Select custom preset">
-            <label class="btn btn-outline-info" for="presetCustom" title="Manual control of all filter settings">Custom</label>
+        <div class="jaw-field" title="Quick presets that set optimal filter/quantization values. Speech: bandpass ON, 10 positions. Music: bandpass OFF, 15 positions. Custom: manual control.">
+          <label class="mb-field-label">Preset</label>
+          <div class="jaw-seg" role="group" aria-label="Jaw tuning preset">
+            <input type="radio" class="jaw-seg-input" name="jawPreset" id="presetSpeech" value="speech" checked title="Select speech preset">
+            <label class="jaw-seg-label" for="presetSpeech" title="Optimized for TTS/voice: bandpass filter ON, 10 jaw positions">Speech</label>
+            <input type="radio" class="jaw-seg-input" name="jawPreset" id="presetMusic" value="music" title="Select music preset">
+            <label class="jaw-seg-label" for="presetMusic" title="Optimized for music: bandpass OFF (full spectrum), 15 jaw positions">Music</label>
+            <input type="radio" class="jaw-seg-input" name="jawPreset" id="presetCustom" value="custom" title="Select custom preset">
+            <label class="jaw-seg-label" for="presetCustom" title="Manual control of all filter settings">Custom</label>
           </div>
         </div>
 
         <!-- Speech Filter Toggle -->
-        <div class="form-check form-switch mb-2" title="Filters audio to 500-2500Hz range (human speech formants). Reduces jaw movement from non-speech sounds like bass, music, or background noise. Keep ON for TTS, turn OFF for music lip-sync.">
-          <input class="form-check-input" type="checkbox" role="switch" id="bandpassFilter" checked title="Toggle speech bandpass filter">
-          <label class="form-check-label compact-label" for="bandpassFilter">
-            Speech Filter <small class="text-muted">(500-2500Hz bandpass)</small>
-          </label>
-        </div>
+        <label class="mb-switch mb-2" title="Filters audio to 500-2500Hz range (human speech formants). Reduces jaw movement from non-speech sounds like bass, music, or background noise. Keep ON for TTS, turn OFF for music lip-sync.">
+          <input type="checkbox" id="bandpassFilter" checked title="Toggle speech bandpass filter">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Speech Filter <small class="mb-text-muted">(500-2500Hz bandpass)</small></span>
+        </label>
 
         <!-- AGC Toggle -->
-        <div class="form-check form-switch mb-2" title="Automatic Gain Control normalizes audio volume so quiet and loud audio both produce full jaw range. Recommended ON for consistent jaw movement regardless of TTS volume.">
-          <input class="form-check-input" type="checkbox" role="switch" id="agcEnabled" checked title="Toggle automatic gain control">
-          <label class="form-check-label compact-label" for="agcEnabled">
-            Auto Gain Control
-          </label>
-        </div>
+        <label class="mb-switch mb-2" title="Automatic Gain Control normalizes audio volume so quiet and loud audio both produce full jaw range. Recommended ON for consistent jaw movement regardless of TTS volume.">
+          <input type="checkbox" id="agcEnabled" checked title="Toggle automatic gain control">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Auto Gain Control</span>
+        </label>
 
         <!-- Quantization Slider -->
-        <div class="mb-2" title="Number of discrete jaw positions between min and max angle. Fewer = chunkier, puppet-like movement (5-8). More = smoother, natural movement (12-20). Reduces servo chatter.">
-          <label for="quantizationRange" class="compact-label">
-            Jaw Positions <span class="badge bg-secondary ms-1" id="quantizationValue">10</span>
+        <div class="jaw-field" title="Number of discrete jaw positions between min and max angle. Fewer = chunkier, puppet-like movement (5-8). More = smoother, natural movement (12-20). Reduces servo chatter.">
+          <label for="quantizationRange" class="mb-field-label">
+            Jaw Positions <span class="mb-badge" id="quantizationValue">10</span>
           </label>
-          <input type="range" class="form-range" id="quantizationRange" min="5" max="20" step="1" value="10" title="Adjust number of jaw positions">
+          <input type="range" class="mb-range" id="quantizationRange" min="5" max="20" step="1" value="10" title="Adjust number of jaw positions">
         </div>
 
-        <hr class="my-2 border-secondary">
+        <hr class="jaw-rule">
 
         <!-- Audio Sync Offset -->
-        <div class="mb-2" title="Compensates for audio device latency. If jaw moves before you hear audio, slide right (positive). If audio plays before jaw moves, slide left (negative). Adjust in 25ms increments and test with Play TTS.">
-          <label for="audioLeadTimeRange" class="compact-label">
-            Audio Sync Offset <span class="badge bg-secondary ms-1" id="audioLeadTimeValue">0ms</span>
+        <div class="jaw-field" title="Compensates for audio device latency. If jaw moves before you hear audio, slide right (positive). If audio plays before jaw moves, slide left (negative). Adjust in 25ms increments and test with Play TTS.">
+          <label for="audioLeadTimeRange" class="mb-field-label">
+            Audio Sync Offset <span class="mb-badge" id="audioLeadTimeValue">0ms</span>
           </label>
-          <input type="range" class="form-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0" title="Adjust audio sync offset">
+          <input type="range" class="mb-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0" title="Adjust audio sync offset">
           <div class="d-flex justify-content-between">
-            <small class="text-muted">Jaw leads &larr;</small>
-            <small class="text-muted">&rarr; Audio leads</small>
+            <small class="mb-field-hint">Jaw leads &larr;</small>
+            <small class="mb-field-hint">&rarr; Audio leads</small>
           </div>
         </div>
       </div>
 
       <!-- Calibration Quick-Adjust -->
       <div class="jaw-section">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;" title="Fine-tune the servo angle range without leaving this page. Min = jaw closed, Max = jaw fully open."><i class="bi bi-rulers"></i> Calibration Quick-Adjust</h6>
-        <div class="row g-2">
-          <div class="col-6">
-            <label class="compact-label" title="Jaw closed position (degrees). The servo goes here during silence.">Min Angle</label>
-            <div class="input-group input-group-sm">
-              <button class="btn btn-outline-secondary quick-adj-btn" type="button" id="minAngleDown" title="Decrease min angle by 1 degree">&minus;</button>
-              <input type="number" class="form-control form-control-sm text-center" id="minAngleValue" readonly title="Current closed-jaw servo angle">
-              <button class="btn btn-outline-secondary quick-adj-btn" type="button" id="minAngleUp" title="Increase min angle by 1 degree">+</button>
+        <h6 class="jaw-section-title" title="Fine-tune the servo angle range without leaving this page. Min = jaw closed, Max = jaw fully open."><i class="bi bi-rulers"></i> Calibration Quick-Adjust</h6>
+        <div class="jaw-grid-2">
+          <div class="jaw-field">
+            <label class="mb-field-label" for="minAngleValue" title="Jaw closed position (degrees). The servo goes here during silence.">Min Angle</label>
+            <div class="mb-input-group">
+              <button class="mb-btn mb-btn-secondary mb-btn-sm quick-adj-btn" type="button" id="minAngleDown" title="Decrease min angle by 1 degree">&minus;</button>
+              <input type="number" class="mb-input mb-input-mono text-center" id="minAngleValue" readonly title="Current closed-jaw servo angle">
+              <button class="mb-btn mb-btn-secondary mb-btn-sm quick-adj-btn" type="button" id="minAngleUp" title="Increase min angle by 1 degree">+</button>
             </div>
           </div>
-          <div class="col-6">
-            <label class="compact-label" title="Jaw fully open position (degrees). The servo goes here at maximum audio level.">Max Angle</label>
-            <div class="input-group input-group-sm">
-              <button class="btn btn-outline-secondary quick-adj-btn" type="button" id="maxAngleDown" title="Decrease max angle by 1 degree">&minus;</button>
-              <input type="number" class="form-control form-control-sm text-center" id="maxAngleValue" readonly title="Current open-jaw servo angle">
-              <button class="btn btn-outline-secondary quick-adj-btn" type="button" id="maxAngleUp" title="Increase max angle by 1 degree">+</button>
+          <div class="jaw-field">
+            <label class="mb-field-label" for="maxAngleValue" title="Jaw fully open position (degrees). The servo goes here at maximum audio level.">Max Angle</label>
+            <div class="mb-input-group">
+              <button class="mb-btn mb-btn-secondary mb-btn-sm quick-adj-btn" type="button" id="maxAngleDown" title="Decrease max angle by 1 degree">&minus;</button>
+              <input type="number" class="mb-input mb-input-mono text-center" id="maxAngleValue" readonly title="Current open-jaw servo angle">
+              <button class="mb-btn mb-btn-secondary mb-btn-sm quick-adj-btn" type="button" id="maxAngleUp" title="Increase max angle by 1 degree">+</button>
             </div>
           </div>
         </div>
@@ -194,24 +171,24 @@
     <!-- RIGHT COLUMN: TTS Test & Monitoring -->
     <div class="col-lg-7">
       <!-- TTS Test Panel -->
-      <div class="tts-panel mb-2">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-megaphone"></i> TTS Test Panel</h6>
+      <div class="jaw-panel mb-2">
+        <h6 class="jaw-section-title"><i class="bi bi-megaphone"></i> TTS Test Panel</h6>
 
-        <div class="mb-2">
+        <div class="jaw-field">
           <div class="d-flex justify-content-between align-items-center mb-1">
-            <label for="ttsTestText" class="compact-label mb-0">Test Text</label>
-            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1" id="saveTestTextBtn" title="Save as default test text" style="font-size:0.75rem;">
+            <label for="ttsTestText" class="mb-field-label">Test Text</label>
+            <button type="button" class="mb-btn mb-btn-ghost mb-btn-sm" id="saveTestTextBtn" title="Save as default test text">
               <i class="bi bi-save"></i> Save
             </button>
           </div>
-          <textarea class="form-control form-control-sm" id="ttsTestText" rows="2" title="Enter TTS test text">The quick brown fox jumped over the lazy dog</textarea>
+          <textarea class="mb-textarea" id="ttsTestText" rows="2" title="Enter TTS test text">The quick brown fox jumped over the lazy dog</textarea>
         </div>
 
         <div class="d-flex gap-2 mb-2">
-          <button type="button" class="btn btn-success btn-sm flex-grow-1" id="playTtsBtn" title="Play TTS and animate jaw">
+          <button type="button" class="mb-btn mb-btn-primary mb-btn-sm flex-grow-1" id="playTtsBtn" title="Speak this text on the character's own speaker and drive the jaw servo from the audio">
             <i class="bi bi-play-fill"></i> Play TTS &amp; Jaw
           </button>
-          <button type="button" class="btn btn-danger btn-sm" id="stopBtn" title="Stop TTS playback">
+          <button type="button" class="mb-btn mb-btn-danger mb-btn-sm" id="stopBtn" title="Stop TTS playback">
             <i class="bi bi-stop-fill"></i> Stop
           </button>
         </div>
@@ -220,13 +197,13 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
           <div class="d-flex align-items-center gap-2">
             <span class="live-dot" id="liveDot"></span>
-            <span class="badge status-badge" id="ttsStatus">
-              <span class="bg-secondary px-2 py-1 rounded">Idle</span>
+            <span id="ttsStatus">
+              <span class="mb-badge">Idle</span>
             </span>
           </div>
           <div>
-            <small class="text-muted">Smoothed:</small>
-            <span class="fw-bold text-info" id="smoothedAmplitude">0.000</span>
+            <small class="mb-text-muted">Smoothed:</small>
+            <span class="mb-mono mb-text-info" id="smoothedAmplitude">0.000</span>
           </div>
         </div>
 
@@ -236,7 +213,7 @@
             <span class="meter-label"><i class="bi bi-soundwave"></i> Audio Level</span>
             <span class="meter-value amp" id="currentAmplitude">0.000</span>
           </div>
-          <div class="audio-meter"><div class="audio-meter-fill" id="audioMeterFill" style="width: 0%;"></div></div>
+          <div class="mb-meter jaw-meter-tall"><div class="mb-meter-fill" id="audioMeterFill"></div></div>
         </div>
 
         <!-- Jaw Angle Meter -->
@@ -245,27 +222,27 @@
             <span class="meter-label"><i class="bi bi-arrows-angle-expand"></i> Jaw Angle</span>
             <span class="meter-value jaw" id="targetAngle">0&deg;</span>
           </div>
-          <div class="jaw-meter"><div class="jaw-meter-fill" id="jawMeterFill" style="width: 0%;"></div></div>
+          <div class="mb-meter jaw-meter-tall"><div class="mb-meter-fill jaw-meter-fill-angle" id="jawMeterFill"></div></div>
           <div class="d-flex justify-content-between mt-1">
-            <small class="text-muted" id="jawMeterMin">0&deg;</small>
-            <small class="text-muted" id="jawMeterMax">180&deg;</small>
+            <small class="mb-text-muted" id="jawMeterMin">0&deg;</small>
+            <small class="mb-text-muted" id="jawMeterMax">180&deg;</small>
           </div>
         </div>
       </div>
 
       <!-- Jaw Timeline Visualization -->
-      <div class="tts-panel mb-2" id="timelinePanel" style="display:none;">
-        <h6 class="text-info mb-2" style="font-size:0.9rem;"><i class="bi bi-bar-chart"></i> Jaw Timeline</h6>
-        <canvas id="jawTimelineCanvas" width="600" height="100" style="width:100%;height:100px;background:#1a1a1a;border-radius:4px;"></canvas>
+      <div class="jaw-panel mb-2 jaw-hidden" id="timelinePanel">
+        <h6 class="jaw-section-title"><i class="bi bi-bar-chart"></i> Jaw Timeline</h6>
+        <canvas id="jawTimelineCanvas" class="jaw-timeline-canvas" width="600" height="100"></canvas>
       </div>
 
       <!-- Servo Test -->
-      <div class="servo-test-panel">
+      <div class="jaw-panel">
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-outline-warning btn-sm flex-grow-1" id="testJawBtn" title="Test jaw mechanical sweep">
+          <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm flex-grow-1" id="testJawBtn" title="Test jaw mechanical sweep">
             <i class="bi bi-arrow-left-right"></i> Test Mechanical Sweep
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm" id="emergencyStopBtn" title="Emergency stop jaw servo">
+          <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="emergencyStopBtn" title="Emergency stop jaw servo">
             <i class="bi bi-exclamation-triangle"></i> E-Stop
           </button>
         </div>
@@ -273,10 +250,28 @@
     </div>
   </div>
   <% } else { %>
-  <div class="alert alert-info py-2" role="alert">
+  <div class="mb-alert mb-alert-info" role="alert">
     <i class="bi bi-info-circle"></i> No character selected. Please select a character from the navigation menu.
   </div>
   <% } %>
+</div>
+
+<!-- Confirm dialog for destructive config actions. Named, so the operator can
+     see WHAT is about to be deleted — a native browser dialog cannot show that. -->
+<div class="mb-modal jaw-hidden" id="jawConfirmModal" role="dialog" aria-modal="true" aria-labelledby="jawConfirmTitle">
+  <div class="mb-modal-backdrop" id="jawConfirmBackdrop"></div>
+  <div class="mb-modal-dialog">
+    <div class="mb-modal-header">
+      <h2 class="mb-modal-title" id="jawConfirmTitle">Delete config</h2>
+    </div>
+    <div class="mb-modal-body">
+      <p class="mb-0" id="jawConfirmBody">This cannot be undone.</p>
+    </div>
+    <div class="mb-modal-footer">
+      <button type="button" class="mb-btn mb-btn-secondary" id="jawConfirmCancel" title="Cancel">Cancel</button>
+      <button type="button" class="mb-btn mb-btn-danger" id="jawConfirmOk" title="Confirm delete">Delete</button>
+    </div>
+  </div>
 </div>
 
 <script src="/js/jaw-animation.js?v=<%= Date.now() %>"></script>

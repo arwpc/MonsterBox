@@ -1,0 +1,883 @@
+/* ==========================================================================
+   Unified Calibration — page-specific rules
+   --------------------------------------------------------------------------
+   Loaded via the `styles` local from routes/setup/calibration.js.
+
+   Was a ~780-line <style> block inside the view, full of raw hex and Bootstrap
+   `--bs-*` variables, so none of the three MonsterBox themes could reach it.
+   Every colour that carries MEANING is now a --mb-* token.
+
+   The one deliberate exception is the PCA9685 board drawing further down: it
+   is a picture of a specific physical object sitting in the animatronic, and
+   a blue PCB with gold pins and a red V+ rail stays that way under every
+   theme — recolouring it would make it a worse diagram, not a better one.
+   Those colours are named local variables so they are at least declared once.
+   ========================================================================== */
+
+.calibration-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--mb-space-5);
+}
+
+.cal-header {
+  padding: var(--mb-space-3) 0;
+  margin-bottom: var(--mb-space-3);
+}
+
+.cal-controls {
+  display: flex;
+  gap: var(--mb-space-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.part-selector {
+  flex: 1;
+  min-width: 250px;
+}
+
+/* The panic control on this page. Sized and coloured to be unmistakable —
+   it is the one thing an operator reaches for without looking. */
+.emergency-stop {
+  background: var(--mb-danger);
+  color: #fff;
+  border: 1px solid var(--mb-danger);
+  padding: var(--mb-space-3) var(--mb-space-6);
+  min-height: 48px;
+  font-size: var(--mb-text-lg);
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+  border-radius: var(--mb-radius-md);
+  cursor: pointer;
+  box-shadow: var(--mb-glow-blood);
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              transform var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.emergency-stop:hover {
+  background: var(--mb-accent-blood-dim);
+  transform: scale(1.05);
+}
+
+.emergency-stop:active { transform: scale(0.95); }
+.emergency-stop:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+.emergency-stop:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.speed-cap {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+}
+
+.speed-cap input[type="range"] {
+  width: 150px;
+}
+
+.speed-value {
+  font-family: var(--mb-font-mono);
+  font-weight: var(--mb-weight-bold);
+  min-width: 50px;
+}
+
+/* ==========================================================================
+   Panels & layout
+   ========================================================================== */
+.cal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mb-space-5);
+  margin-top: var(--mb-space-5);
+}
+
+.cal-panel {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg);
+  box-shadow: var(--mb-shadow-panel);
+  padding: var(--mb-space-5);
+}
+
+.cal-panel h2 {
+  margin: 0 0 var(--mb-space-4);
+  font-family: var(--mb-font-display);
+  font-size: var(--mb-text-xl);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+  border-bottom: 2px solid var(--mb-primary);
+  padding-bottom: var(--mb-space-3);
+}
+
+.cal-panel-gap { margin-top: var(--mb-space-5); }
+
+/* ==========================================================================
+   Jog pad
+   ========================================================================== */
+.jog-pad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-4);
+  align-items: center;
+}
+
+.jog-buttons {
+  display: flex;
+  gap: var(--mb-space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.jog-btn {
+  padding: var(--mb-space-4) var(--mb-space-6);
+  min-height: 48px;
+  font-family: var(--mb-font-ui);
+  font-size: var(--mb-text-lg);
+  font-weight: var(--mb-weight-bold);
+  border: 2px solid var(--mb-primary);
+  background: var(--mb-bg-2);
+  color: var(--mb-primary);
+  border-radius: var(--mb-radius-md);
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              color var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.jog-btn:hover {
+  background: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+}
+
+.jog-btn:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+
+.jog-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.jog-btn.stop {
+  background: var(--mb-warning);
+  border-color: var(--mb-warning);
+  color: var(--mb-fg-on-accent);
+}
+
+.jog-btn.stop:hover { background: var(--mb-accent-amber-dim); }
+
+.scale-selector {
+  display: flex;
+  gap: var(--mb-space-3);
+  flex-wrap: wrap;
+}
+
+.scale-btn {
+  padding: var(--mb-space-2) var(--mb-space-4);
+  min-height: 40px;
+  border: 2px solid var(--mb-border-default);
+  background: var(--mb-bg-2);
+  color: var(--mb-fg-primary);
+  border-radius: var(--mb-radius-md);
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              border-color var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.scale-btn:hover { background: var(--mb-bg-hover); }
+.scale-btn:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+
+.scale-btn.active {
+  background: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+  border-color: var(--mb-primary);
+}
+
+/* ==========================================================================
+   Bounds & presets
+   ========================================================================== */
+.bounds-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-4);
+}
+
+.bounds-display {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-4);
+  background: var(--mb-bg-2);
+  border-radius: var(--mb-radius-md);
+  font-family: var(--mb-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.bounds-actions {
+  display: flex;
+  gap: var(--mb-space-3);
+  flex-wrap: wrap;
+}
+
+.cal-action-btn {
+  flex: 1 1 auto;
+  padding: var(--mb-space-3);
+  min-height: 44px;
+  background: var(--mb-success);
+  color: var(--mb-fg-on-accent);
+  border: 1px solid var(--mb-success);
+  border-radius: var(--mb-radius-md);
+  font-size: var(--mb-text-base);
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.cal-action-btn:hover { background: var(--mb-primary-dim); }
+.cal-action-btn:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+.cal-action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.presets-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.preset-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--mb-space-3);
+  padding: var(--mb-space-3);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  margin-bottom: var(--mb-space-3);
+  background: var(--mb-bg-2);
+}
+
+.preset-info { flex: 1; min-width: 0; }
+
+.preset-name {
+  font-weight: var(--mb-weight-bold);
+  color: var(--mb-fg-primary);
+}
+
+.preset-value {
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-secondary);
+  font-family: var(--mb-font-mono);
+}
+
+.preset-actions {
+  display: flex;
+  gap: var(--mb-space-1);
+  flex: 0 0 auto;
+}
+
+.btn-small {
+  padding: var(--mb-space-1) var(--mb-space-3);
+  min-height: 32px;
+  font-size: var(--mb-text-sm);
+  border: 1px solid transparent;
+  border-radius: var(--mb-radius-sm);
+  cursor: pointer;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.btn-small:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+
+.btn-go {
+  background: var(--mb-primary);
+  border-color: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+}
+
+.btn-go:hover { background: var(--mb-primary-dim); }
+
+.btn-delete {
+  background: var(--mb-danger);
+  border-color: var(--mb-danger);
+  color: var(--mb-fg-primary);
+}
+
+.btn-delete:hover { background: var(--mb-accent-blood-dim); }
+
+.add-preset {
+  display: flex;
+  gap: var(--mb-space-3);
+  margin-top: var(--mb-space-4);
+  flex-wrap: wrap;
+}
+
+.add-preset input {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: var(--mb-space-2) var(--mb-space-3);
+  min-height: 40px;
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  background: var(--mb-bg-1);
+  color: var(--mb-fg-primary);
+}
+
+/* ==========================================================================
+   Learn / probe panel
+   ========================================================================== */
+.learn-panel {
+  background: color-mix(in srgb, var(--mb-warning) 15%, transparent);
+  padding: var(--mb-space-4);
+  border-radius: var(--mb-radius-md);
+  border: 2px solid var(--mb-warning);
+}
+
+.learn-panel h3 {
+  margin: 0 0 var(--mb-space-3);
+  color: var(--mb-warning);
+  font-size: var(--mb-text-lg);
+}
+
+.probe-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-3);
+  margin: var(--mb-space-4) 0;
+}
+
+.probe-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr 80px;
+  gap: var(--mb-space-3);
+  align-items: center;
+}
+
+.probe-row input {
+  min-width: 0;
+  padding: var(--mb-space-2);
+  min-height: 40px;
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  background: var(--mb-bg-1);
+  color: var(--mb-fg-primary);
+}
+
+/* ==========================================================================
+   Status bar
+   --------------------------------------------------------------------------
+   Sits above the global control bar rather than underneath it — pinned to
+   bottom:0 it was covered by the fixed transport bar on every screen size,
+   which hid the live position readout exactly while a part was moving.
+   ========================================================================== */
+.status-bar {
+  position: fixed;
+  bottom: calc(var(--mb-control-bar-height, 64px) + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  background: var(--mb-bg-2);
+  color: var(--mb-fg-primary);
+  border-top: 1px solid var(--mb-border-default);
+  padding: var(--mb-space-3) var(--mb-space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--mb-space-3);
+  flex-wrap: wrap;
+  z-index: var(--mb-z-sticky);
+}
+
+.status-info {
+  display: flex;
+  gap: var(--mb-space-5);
+  flex-wrap: wrap;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-label {
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-secondary);
+}
+
+.status-value {
+  font-size: var(--mb-text-base);
+  font-weight: var(--mb-weight-bold);
+  font-family: var(--mb-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toggled by page JS. Keeps `!important` — several handlers set an inline
+   display and this must always win over them. */
+.hidden { display: none !important; }
+
+/* ==========================================================================
+   PCA9685 Board Visual
+   --------------------------------------------------------------------------
+   A drawing of the actual Adafruit PCA9685 breakout wired into the character,
+   so the operator can map a servo to the channel their fingers can find. The
+   board's own colours are photographic and stay fixed across themes; anything
+   that reports STATE (assigned / selected / conflict) uses a token.
+   ========================================================================== */
+.pca-board-section {
+  margin-bottom: var(--mb-space-6);
+  --pca-pcb: #1a5276;         /* the breakout's blue solder mask */
+  --pca-pcb-edge: #0e3d5c;
+  --pca-silk: rgba(255, 255, 255, 0.7);
+  --pca-silk-dim: rgba(255, 255, 255, 0.45);
+  --pca-gold: #c0a030;        /* HASL/ENIG plated header pads */
+  --pca-ic: #1a1a1a;          /* the PCA9685 package */
+  --pca-ic-edge: #444;
+  --pca-cap-body: #2b2b2b;
+  --pca-terminal: #2a8c2a;    /* green screw terminal */
+  --pca-terminal-edge: #1a6c1a;
+  --pca-power-led: #00cc00;
+  --pca-wire-sig: #e8a830;    /* the standard servo pigtail colours */
+  --pca-wire-vcc: #cc3333;
+  --pca-wire-gnd: #333;
+}
+
+.pca-board-wrapper {
+  display: flex;
+  gap: var(--mb-space-6);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.pca-board {
+  position: relative;
+  width: 520px;
+  min-height: 340px;
+  background: var(--pca-pcb);
+  border-radius: var(--mb-radius-sm);
+  border: 2px solid var(--pca-pcb-edge);
+  padding: var(--mb-space-4);
+  box-shadow: var(--mb-shadow-panel);
+  font-family: var(--mb-font-mono);
+  flex-shrink: 0;
+}
+
+.pca-board-title {
+  color: var(--pca-silk);
+  font-size: 11px;
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: 1.5px;
+  text-align: center;
+  margin-bottom: var(--mb-space-1);
+}
+
+.pca-board-subtitle {
+  color: var(--pca-silk-dim);
+  font-size: 9px;
+  text-align: center;
+  margin-bottom: var(--mb-space-3);
+  letter-spacing: 1px;
+}
+
+/* I2C header strip (left side) */
+.pca-i2c-header {
+  position: absolute;
+  left: 8px;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pca-i2c-pin {
+  width: 20px;
+  height: 10px;
+  background: var(--pca-gold);
+  border-radius: 1px;
+  position: relative;
+}
+
+.pca-i2c-label {
+  position: absolute;
+  left: 24px;
+  top: -1px;
+  font-size: 7px;
+  color: var(--pca-silk-dim);
+  white-space: nowrap;
+}
+
+/* Chip (center) */
+.pca-chip {
+  position: absolute;
+  left: 50%;
+  top: 80px;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 40px;
+  background: var(--pca-ic);
+  border-radius: 2px;
+  border: 1px solid var(--pca-ic-edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pca-chip-text {
+  color: var(--pca-silk-dim);
+  font-size: 6px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Capacitor */
+.pca-cap {
+  position: absolute;
+  right: 40px;
+  top: 78px;
+  width: 20px;
+  height: 28px;
+  background: var(--pca-cap-body);
+  border-radius: 3px 3px 0 0;
+  border: 1px solid var(--pca-ic-edge);
+}
+
+.pca-cap-stripe {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--pca-silk-dim);
+  border-bottom: 1px solid var(--pca-ic-edge);
+}
+
+/* Screw terminal */
+.pca-screw-terminal {
+  position: absolute;
+  right: 8px;
+  top: 70px;
+  width: 22px;
+  height: 20px;
+  background: var(--pca-terminal);
+  border-radius: 2px;
+  border: 1px solid var(--pca-terminal-edge);
+}
+
+.pca-screw-terminal::after {
+  content: 'V+';
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  font-size: 7px;
+  color: var(--pca-silk-dim);
+}
+
+/* Address jumpers */
+.pca-addr-jumpers {
+  position: absolute;
+  right: 8px;
+  top: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pca-addr-pad {
+  width: 14px;
+  height: 6px;
+  background: var(--pca-gold);
+  border-radius: 1px;
+}
+
+.pca-addr-label {
+  color: var(--pca-silk-dim);
+  font-size: 6px;
+  text-align: right;
+  margin-right: 18px;
+  margin-top: -1px;
+}
+
+/* LED indicator */
+.pca-led {
+  position: absolute;
+  left: 40px;
+  top: 95px;
+  width: 6px;
+  height: 6px;
+  background: var(--pca-power-led);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--pca-power-led);
+}
+
+/* Servo channel ports - the main interactive area */
+.pca-channels-area {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+}
+
+.pca-channels-row {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  margin-bottom: var(--mb-space-1);
+}
+
+.pca-channel {
+  width: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.pca-channel:hover {
+  transform: scale(1.15);
+  z-index: 10;
+}
+
+.pca-channel-label {
+  font-size: 8px;
+  color: var(--pca-silk);
+  margin-bottom: 2px;
+  font-weight: var(--mb-weight-bold);
+}
+
+.pca-pin-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: center;
+}
+
+.pca-pin {
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+}
+
+.pca-pin-sig { background: var(--pca-wire-sig); }  /* Signal — yellow/orange */
+.pca-pin-vcc { background: var(--pca-wire-vcc); }  /* V+ — red */
+.pca-pin-gnd { background: var(--pca-wire-gnd); }  /* GND — black */
+
+/* Hover tooltip */
+.pca-channel-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mb-bg-3);
+  color: var(--mb-fg-primary);
+  border: 1px solid var(--mb-border-default);
+  padding: var(--mb-space-1) var(--mb-space-2);
+  border-radius: var(--mb-radius-sm);
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: var(--mb-z-tooltip);
+  pointer-events: none;
+  box-shadow: var(--mb-shadow-panel);
+  min-width: 100px;
+  text-align: center;
+}
+
+.pca-channel-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--mb-bg-3);
+}
+
+.pca-channel:hover .pca-channel-tooltip { display: block; }
+
+/* Channel STATE — these report the app's model, so they are tokens. */
+.pca-channel.assigned .pca-pin-sig {
+  background: var(--mb-success);
+  box-shadow: var(--mb-glow-poison);
+}
+
+.pca-channel.selected-channel { transform: scale(1.2); }
+
+.pca-channel.selected-channel .pca-pin-sig {
+  background: var(--mb-info);
+  box-shadow: var(--mb-glow-cyan);
+}
+
+.pca-channel.conflict .pca-pin-sig {
+  background: var(--mb-danger);
+  box-shadow: var(--mb-glow-blood);
+}
+
+/* Channel assignment panel (right side of board) */
+.pca-assignment-panel {
+  flex: 1;
+  min-width: 300px;
+}
+
+.pca-assignment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--mb-text-sm);
+}
+
+.pca-assignment-table th {
+  text-align: left;
+  padding: var(--mb-space-2) var(--mb-space-3);
+  border-bottom: 2px solid var(--mb-border-default);
+  color: var(--mb-fg-secondary);
+  font-weight: var(--mb-weight-medium);
+}
+
+.pca-assignment-table td {
+  padding: var(--mb-space-2) var(--mb-space-3);
+  border-bottom: 1px solid var(--mb-border-subtle);
+  vertical-align: middle;
+}
+
+.pca-assignment-table tr:hover { background: var(--mb-bg-2); }
+
+.pca-assignment-table tr.is-selected { background: var(--mb-bg-hover); }
+
+.pca-assignment-table .ch-num {
+  font-family: var(--mb-font-mono);
+  font-weight: var(--mb-weight-bold);
+  width: 40px;
+  text-align: center;
+}
+
+.pca-assignment-table .ch-empty {
+  color: var(--mb-fg-muted);
+  font-style: italic;
+}
+
+.pca-conflict-flag {
+  color: var(--mb-danger);
+  font-weight: var(--mb-weight-bold);
+}
+
+.pca-ch-select {
+  padding: var(--mb-space-1) var(--mb-space-2);
+  font-size: var(--mb-text-xs);
+  border-radius: var(--mb-radius-sm);
+  border: 1px solid var(--mb-border-default);
+  background: var(--mb-bg-1);
+  color: var(--mb-fg-primary);
+  width: 100%;
+}
+
+.pca-test-btn {
+  padding: 3px var(--mb-space-3);
+  font-size: 11px;
+  border: 1px solid var(--mb-primary);
+  background: transparent;
+  color: var(--mb-primary);
+  border-radius: var(--mb-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.pca-test-btn:hover {
+  background: var(--mb-primary);
+  color: var(--mb-fg-on-accent);
+}
+
+.pca-test-btn:focus-visible { outline: none; box-shadow: var(--mb-focus-ring); }
+.pca-test-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pca-test-btn.testing {
+  background: var(--mb-warning);
+  border-color: var(--mb-warning);
+  color: var(--mb-fg-on-accent);
+}
+
+.pca-test-btn.test-ok {
+  background: var(--mb-success);
+  border-color: var(--mb-success);
+  color: var(--mb-fg-on-accent);
+}
+
+.pca-test-btn.test-fail {
+  background: var(--mb-danger);
+  border-color: var(--mb-danger);
+  color: var(--mb-fg-primary);
+}
+
+.pca-legend {
+  display: flex;
+  gap: var(--mb-space-4);
+  margin-top: var(--mb-space-3);
+  font-size: 11px;
+  color: var(--mb-fg-secondary);
+  flex-wrap: wrap;
+}
+
+.pca-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+}
+
+.pca-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.pca-legend-dot.sig      { background: var(--pca-wire-sig); }
+.pca-legend-dot.assigned { background: var(--mb-success); }
+.pca-legend-dot.selected { background: var(--mb-info); }
+.pca-legend-dot.conflict { background: var(--mb-danger); }
+
+/* ==========================================================================
+   Position readout
+   ========================================================================== */
+.position-display {
+  text-align: center;
+  padding: var(--mb-space-5);
+  background: var(--mb-bg-2);
+  border-radius: var(--mb-radius-md);
+  margin: var(--mb-space-4) 0;
+}
+
+.position-value {
+  font-size: var(--mb-text-3xl);
+  font-weight: var(--mb-weight-bold);
+  color: var(--mb-primary);
+  font-family: var(--mb-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.position-label {
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-secondary);
+  margin-top: var(--mb-space-1);
+}
+
+/* ==========================================================================
+   Responsive
+   --------------------------------------------------------------------------
+   At 390px the two-column grid, the 520px board and the four-column probe row
+   all force sideways scroll. Each collapses instead.
+   ========================================================================== */
+@media (max-width: 768px) {
+  .calibration-container { padding: var(--mb-space-3); }
+
+  .cal-grid { grid-template-columns: 1fr; }
+
+  .cal-panel { padding: var(--mb-space-4); }
+
+  .probe-row { grid-template-columns: 1fr 1fr; }
+
+  .status-bar {
+    padding: var(--mb-space-2) var(--mb-space-3);
+    gap: var(--mb-space-2);
+  }
+
+  .status-info { gap: var(--mb-space-3); }
+
+  /* The board is a fixed-geometry drawing: let it scroll inside its own
+     container rather than widening the page. */
+  .pca-board-wrapper {
+    gap: var(--mb-space-4);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pca-assignment-panel { min-width: 0; width: 100%; }
+
+  .pca-assignment-table { display: block; overflow-x: auto; }
+}

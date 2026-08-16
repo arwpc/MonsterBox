@@ -1,0 +1,258 @@
+/* ==========================================================================
+   Jaw Animation — page-specific rules
+   --------------------------------------------------------------------------
+   Loaded via the `styles` local from routes/setup/jaw-animation.js.
+
+   Everything here is either a layout dimension or a component the design
+   system does not carry (the segmented preset control, the live meters).
+   Colour ALWAYS comes from a --mb-* token so all three themes reach it.
+
+   Nothing in this file may duplicate components.css — if a rule wants to be
+   a button, a panel or a field, use .mb-btn / .mb-panel / .mb-field instead.
+   ========================================================================== */
+
+/* The page was written to fill exactly one viewport with no page scroll. That
+   is right on a desktop and wrong on a phone, where the left column alone is
+   taller than the screen — clipping it hid the tuning controls entirely.
+   Keep the no-scroll desktop layout, let a phone scroll. */
+@media (min-width: 1024px) {
+  .jaw-page {
+    max-height: calc(100vh - var(--mb-space-9));
+    overflow: hidden;
+  }
+}
+
+/* Hidden-by-default without `!important`, so JS that sets an explicit
+   `style.display` (the timeline panel does) can still reveal the element. */
+.jaw-hidden { display: none; }
+
+.jaw-config-picker {
+  flex: 1 1 220px;
+  flex-wrap: nowrap;   /* the addon icon must stay beside the select, not above it */
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .jaw-config-picker { max-width: 280px; }
+}
+
+/* --- Sections ----------------------------------------------------------- */
+.jaw-section {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-left: 3px solid var(--mb-info);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-3);
+  margin-bottom: var(--mb-space-2);
+}
+
+.jaw-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  margin: 0 0 var(--mb-space-2);
+  font-size: var(--mb-text-sm);
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+  text-transform: uppercase;
+  color: var(--mb-info);
+}
+
+.jaw-panel {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-3);
+}
+
+.jaw-rule {
+  border: 0;
+  border-top: 1px solid var(--mb-border-subtle);
+  margin: var(--mb-space-3) 0;
+}
+
+/* Denser than the default .mb-field — this page deliberately packs a lot of
+   tuning into one screen, and that density is the point of it. */
+.jaw-field {
+  margin-bottom: var(--mb-space-2);
+}
+
+.jaw-field > .mb-field-label {
+  display: block;
+  margin-bottom: var(--mb-space-1);
+}
+
+.jaw-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mb-space-2);
+}
+
+/* .mb-switch is inline-flex so two adjacent toggles share a line. In a stacked
+   settings column each one is its own row. */
+.jaw-section > .mb-switch {
+  display: flex;
+  width: 100%;
+}
+
+/* --- Segmented control (preset radios) ----------------------------------
+   A radio group that reads as one control. Replaces Bootstrap's
+   .btn-check + .btn pairing so the selected state is a token, not a
+   Bootstrap variable. */
+.jaw-seg {
+  display: flex;
+  width: 100%;
+  gap: 1px;
+  padding: 1px;
+  background: var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+}
+
+.jaw-seg-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.jaw-seg-label {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: var(--mb-space-1) var(--mb-space-2);
+  background: var(--mb-bg-2);
+  color: var(--mb-fg-secondary);
+  font-size: var(--mb-text-sm);
+  font-weight: var(--mb-weight-medium);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--mb-dur-fast) var(--mb-ease-out),
+              color var(--mb-dur-fast) var(--mb-ease-out);
+}
+
+.jaw-seg-label:first-of-type {
+  border-top-left-radius: calc(var(--mb-radius-md) - 1px);
+  border-bottom-left-radius: calc(var(--mb-radius-md) - 1px);
+}
+
+.jaw-seg-label:last-of-type {
+  border-top-right-radius: calc(var(--mb-radius-md) - 1px);
+  border-bottom-right-radius: calc(var(--mb-radius-md) - 1px);
+}
+
+.jaw-seg-input:checked + .jaw-seg-label {
+  background: var(--mb-info);
+  color: var(--mb-fg-on-accent);
+}
+
+.jaw-seg-input:focus-visible + .jaw-seg-label {
+  box-shadow: var(--mb-focus-ring);
+}
+
+@media (pointer: coarse) {
+  .jaw-seg-label { min-height: 40px; }
+}
+
+/* --- Live meters ---------------------------------------------------------
+   Taller than .mb-meter-lg on purpose: these are read at arm's length while
+   the jaw is actually moving, and they are the whole reason this page works. */
+.jaw-meter-tall {
+  height: 28px;
+  background: var(--mb-bg-3);
+  border: 1px solid var(--mb-border-default);
+}
+
+/* Both fills start empty; the width is driven by JS from live audio. */
+#audioMeterFill,
+#jawMeterFill {
+  width: 0;
+}
+
+/* The audio fill keeps the shared success → warning → danger ramp from
+   .mb-meter-fill. The jaw-angle fill must NOT: a wide-open jaw is not an
+   error state, so it reads cool → primary instead. */
+.jaw-meter-fill-angle {
+  background: linear-gradient(90deg, var(--mb-info) 0%, var(--mb-primary) 100%);
+}
+
+.meter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+  font-size: var(--mb-text-xs);
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+}
+
+.meter-value {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-lg);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5em;
+  text-align: right;
+}
+
+.meter-value.amp { color: var(--mb-warning); }
+.meter-value.jaw { color: var(--mb-info); }
+
+/* --- Live indicator ------------------------------------------------------
+   JS toggles `.active` on #liveDot; keep the class contract, take the colour
+   from tokens. */
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--mb-fg-muted);
+}
+
+.live-dot.active {
+  background: var(--mb-danger);
+  box-shadow: var(--mb-glow-blood);
+  animation: mb-pulse 0.8s ease-in-out infinite;
+}
+
+/* JS injects <span class="servo-status-indicator status-connected"> — the
+   colour comes from .status-connected / .status-disconnected in
+   monsterbox4.css, which are already token-backed. */
+.servo-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: var(--mb-space-1);
+  vertical-align: middle;
+}
+
+/* --- Quick-adjust stepper ------------------------------------------------ */
+.quick-adj-btn {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+}
+
+.jaw-timeline-canvas {
+  width: 100%;
+  height: 100px;
+  background: var(--mb-bg-0);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-sm);
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .jaw-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Long tuning labels must wrap rather than push the page sideways. */
+  .jaw-section,
+  .jaw-panel {
+    min-width: 0;
+  }
+}

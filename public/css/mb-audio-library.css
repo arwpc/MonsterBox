@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Audio Library — page styles
+   --------------------------------------------------------------------------
+   Page-specific rules only; shared components come from components.css and
+   every value resolves to a --mb-* token so the three themes reach this page.
+
+   Loaded via `styles: ['/css/mb-audio-library.css']` from routes/audioLibrary.js.
+   ========================================================================== */
+
+/* Page-scoped visibility helper — a class rather than inline style="", so the
+   theme system can still reach the element. */
+.aud-hidden { display: none !important; }
+
+/* ---- Header ------------------------------------------------------------- */
+.aud-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-1);
+}
+
+.aud-speaker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+}
+
+.aud-speaker-select {
+  min-width: 180px;
+}
+
+/* ---- Filter row --------------------------------------------------------- */
+.aud-search { max-width: 300px; flex: 1 1 200px; }
+.aud-filter { max-width: 170px; flex: 1 1 140px; }
+
+/* ---- Table --------------------------------------------------------------
+   This library routinely holds a hundred-plus tracks. `mb-table-stack` would
+   turn each into an eight-line card — thirty thousand pixels of scroll for a
+   list you skim. mb-responsive.css sanctions the other option for exactly this
+   case: keep the table dense and let it scroll inside its own container, so the
+   page itself never scrolls sideways.
+   -------------------------------------------------------------------------- */
+.aud-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.aud-table { min-width: 640px; }
+.aud-table td { padding: var(--mb-space-2) var(--mb-space-3); }
+
+.aud-col-play { width: 44px; }
+.aud-col-fav { width: 32px; }
+.aud-col-cat { width: 110px; }
+.aud-col-time { width: 62px; }
+.aud-col-fmt { width: 52px; }
+.aud-col-size { width: 88px; }
+.aud-col-actions { width: 156px; }
+
+/* A hundred-plus solid red slabs is not "this is dangerous", it is wallpaper.
+   Row-level destructive actions carry the danger colour on the glyph and earn
+   the full fill only on hover, so the one you are pointing at is the loud one. */
+.aud-table .delete-btn { color: var(--mb-danger); }
+.aud-table .delete-btn:hover {
+  background: var(--mb-danger);
+  color: #fff;
+}
+
+/* The favourite toggle is an <i> acting as a button; give it the affordance
+   without an inline style attribute. */
+.aud-table .fav-btn { cursor: pointer; }
+
+/* The row currently playing. Bootstrap's .table-active does not know about the
+   token palette. */
+.aud-table tbody tr.is-playing {
+  background: color-mix(in srgb, var(--mb-primary) 14%, transparent);
+}
+
+/* ---- Now Playing bar ---------------------------------------------------- */
+.aud-now-playing {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  margin-bottom: var(--mb-space-3);
+}
+
+.aud-now-playing .aud-now-stop { margin-left: auto; }
+
+@media (max-width: 480px) {
+  /* One control per line. Two-up left the "Favs" toggle pressed against the
+     right edge with its label half off-screen. */
+  .aud-search,
+  .aud-filter,
+  .aud-speaker-select {
+    max-width: none;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .aud-speaker { width: 100%; }
+}

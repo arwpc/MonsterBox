@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Goblin Management — page styles
+   --------------------------------------------------------------------------
+   Page-specific rules only; everything reusable comes from components.css and
+   every value resolves to a --mb-* token so the three themes reach this page.
+
+   Loaded via `styles: ['/css/mb-goblin-management.css']` from
+   routes/goblinManagement.js.
+   ========================================================================== */
+
+/* Page-scoped visibility helper — a class so themes can reach the element and
+   the markup stays free of inline style="". */
+.gob-hidden { display: none !important; }
+
+/* ---- Stat tiles ---------------------------------------------------------
+   These were four saturated Bootstrap fills (bg-primary/success/danger/warning)
+   that shouted louder than anything actionable on the page and ignored the
+   theme entirely. Now they are quiet surfaces with a single token-coloured
+   accent rail, so the numbers read and the buttons stay the loudest thing.
+   -------------------------------------------------------------------------- */
+.gob-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-4);
+  height: 100%;
+  border-left: 3px solid var(--mb-border-default);
+}
+
+.gob-stat-icon {
+  font-size: var(--mb-text-2xl);
+  line-height: 1;
+  color: var(--mb-fg-secondary);
+}
+
+.gob-stat-value {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-2xl);
+  line-height: 1.1;
+  margin: 0;
+  color: var(--mb-fg-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gob-stat-label {
+  font-size: var(--mb-text-xs);
+  letter-spacing: var(--mb-tracking-wider);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+}
+
+.gob-stat-total   { border-left-color: var(--mb-primary); }
+.gob-stat-total   .gob-stat-icon { color: var(--mb-primary); }
+.gob-stat-online  { border-left-color: var(--mb-success); }
+.gob-stat-online  .gob-stat-icon { color: var(--mb-success); }
+.gob-stat-locked  { border-left-color: var(--mb-warning); }
+.gob-stat-locked  .gob-stat-icon { color: var(--mb-warning); }
+.gob-stat-offline { border-left-color: var(--mb-fg-muted); }
+.gob-stat-offline .gob-stat-icon { color: var(--mb-fg-muted); }
+
+/* ---- Side rail ---------------------------------------------------------- */
+.gob-rail {
+  position: sticky;
+  top: var(--mb-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-3);
+}
+
+@media (max-width: 992px) {
+  .gob-rail { position: static; }
+}
+
+.gob-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mb-space-3);
+  font-size: var(--mb-text-sm);
+}
+
+.gob-kv + .gob-kv { margin-top: var(--mb-space-1); }
+.gob-kv dt { color: var(--mb-fg-secondary); font-weight: var(--mb-weight-regular); margin: 0; }
+.gob-kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* ---- Facehugger deployment progress ------------------------------------- */
+.gob-progress-panel {
+  border: 1px solid var(--mb-success);
+  border-radius: var(--mb-radius-md);
+  background: var(--mb-bg-1);
+  padding: var(--mb-space-4);
+}
+
+.gob-progress-title {
+  color: var(--mb-success);
+  font-size: var(--mb-text-base);
+  margin: 0 0 var(--mb-space-3);
+}
+
+.gob-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--mb-space-2);
+}
+
+/* The status-filter select sits inside a panel header next to a checkbox and
+   must not stretch to the full header width. */
+.gob-filter-select {
+  width: auto;
+  min-width: 10rem;
+}
+
+.gob-queue-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.gob-video-scroll {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* The queue manager needs the width; a 560px dialog cannot show two columns. */
+.gob-modal-wide {
+  max-width: min(95vw, 1200px);
+}

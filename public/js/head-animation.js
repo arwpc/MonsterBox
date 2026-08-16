@@ -405,11 +405,11 @@
     stopOpenCV();
     showToast('Emergency stop activated', 'warning');
     if (el.emergencyStopBtn) {
-      el.emergencyStopBtn.classList.add('btn-danger');
-      el.emergencyStopBtn.classList.remove('btn-outline-danger');
+      el.emergencyStopBtn.classList.add('mb-btn-danger');
+      el.emergencyStopBtn.classList.remove('mb-btn-secondary');
       setTimeout(function() {
-        el.emergencyStopBtn.classList.remove('btn-danger');
-        el.emergencyStopBtn.classList.add('btn-outline-danger');
+        el.emergencyStopBtn.classList.remove('mb-btn-danger');
+        el.emergencyStopBtn.classList.add('mb-btn-secondary');
       }, 2000);
     }
   }
@@ -440,9 +440,11 @@
         var maxA = selectedServoData.maxAngle;
         var midA = Math.round((minA + maxA) / 2);
         var rangeA = maxA - minA;
-        el.servoBoundsInfo.innerHTML = '<i class="bi bi-info-circle"></i> Calibrated: ' +
-          minA + '\u00B0 \u2013 ' + maxA + '\u00B0 (center ' + midA + '\u00B0, range ' + rangeA + '\u00B0)';
-        el.servoBoundsInfo.style.display = 'block';
+        el.servoBoundsInfo.innerHTML =
+          '<span class="servo-status-indicator status-connected"></span>' +
+          '<span>Calibrated \u2014 ' + minA + '\u00B0 to ' + maxA + '\u00B0' +
+          ' (center ' + midA + '\u00B0, range ' + rangeA + '\u00B0)</span>';
+        el.servoBoundsInfo.style.display = 'flex';
 
         if (el.centerDeg && el.rangeDeg) {
           var curCenter = parseInt(el.centerDeg.value, 10);
@@ -455,8 +457,10 @@
           }
         }
       } else if (selectedServoData) {
-        el.servoBoundsInfo.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Not calibrated';
-        el.servoBoundsInfo.style.display = 'block';
+        el.servoBoundsInfo.innerHTML =
+          '<span class="servo-status-indicator status-disconnected"></span>' +
+          '<span>Not calibrated \u2014 calibrate in Setup \u2192 Calibration</span>';
+        el.servoBoundsInfo.style.display = 'flex';
       } else {
         el.servoBoundsInfo.style.display = 'none';
       }
@@ -540,7 +544,7 @@
     if (el.headTrackingStatus) {
       if (isHeadTrackingOn && isOpenCVActive) {
         el.headTrackingStatus.textContent = 'Active';
-        el.headTrackingStatus.className = 'fw-bold text-warning';
+        el.headTrackingStatus.className = 'fw-bold mb-text-warning';
       } else {
         el.headTrackingStatus.textContent = 'Off';
         el.headTrackingStatus.className = 'fw-bold';
@@ -569,7 +573,7 @@
       el.webcamStream.style.display = 'none';
       if (el.webcamPlaceholder) {
         el.webcamPlaceholder.style.display = 'flex';
-        el.webcamPlaceholder.innerHTML = '<div class="text-center text-warning">' +
+        el.webcamPlaceholder.innerHTML = '<div class="text-center mb-text-warning">' +
           '<i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>' +
           '<p class="mb-0 mt-1">Webcam stream unavailable. Check mjpg-streamer.</p>' +
           '<button class="btn btn-outline-warning btn-sm mt-2" onclick="document.getElementById(\'webcamSelect\').dispatchEvent(new Event(\'change\'))">Retry</button>' +
@@ -589,7 +593,7 @@
     }
     if (el.webcamPlaceholder) {
       el.webcamPlaceholder.style.display = 'flex';
-      el.webcamPlaceholder.innerHTML = '<div class="text-center"><i class="bi bi-webcam" style="font-size:2rem;"></i><p class="mb-0 mt-1">Select a webcam to preview</p></div>';
+      el.webcamPlaceholder.innerHTML = '<div class="text-center"><i class="bi bi-webcam webcam-placeholder-icon"></i><p class="mb-0 mt-1">Select a webcam to preview</p></div>';
     }
     clearOverlay();
   }
@@ -972,10 +976,10 @@
     // Add custom presets
     customs.forEach(function(p) {
       var wrapper = document.createElement('span');
-      wrapper.className = 'custom-preset-btn btn-group btn-group-sm';
+      wrapper.className = 'custom-preset-btn mb-btn-group';
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-outline-secondary btn-sm';
+      btn.className = 'mb-btn mb-btn-secondary mb-btn-sm';
       btn.textContent = p.name;
       btn.addEventListener('click', function() {
         applyPresetParams(p.params);
@@ -983,7 +987,7 @@
       });
       var del = document.createElement('button');
       del.type = 'button';
-      del.className = 'btn btn-outline-danger btn-sm';
+      del.className = 'mb-btn mb-btn-danger mb-btn-sm';
       del.innerHTML = '<i class="bi bi-x"></i>';
       del.addEventListener('click', function() {
         deleteCustomPreset(p.id);

@@ -89,7 +89,7 @@ STTManager.prototype.displayFilterPresets = function (presets) {
     var html = '';
     presets.forEach(function (preset) {
         html += '<div class="col-md-4 col-lg-3">' +
-            '<button type="button" class="btn btn-outline-primary btn-sm w-100" ' +
+            '<button type="button" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-block" ' +
             'data-preset-id="' + preset.id + '" ' +
             'title="' + preset.description + '">' +
             '<i class="bi bi-' + preset.icon + ' me-1"></i>' +
@@ -540,7 +540,7 @@ STTManager.prototype.bindEvents = function () {
         vadThresholdEl.addEventListener('input', function () {
             var val = parseFloat(vadThresholdEl.value);
             if (vadThresholdValue) vadThresholdValue.textContent = val.toFixed(2);
-            if (vadThresholdLabel) { var p = Math.round(val * 100); vadThresholdLabel.textContent = p + '%'; vadThresholdLabel.style.display = ''; }
+            if (vadThresholdLabel) { var p = Math.round(val * 100); vadThresholdLabel.textContent = p + '%'; vadThresholdLabel.classList.remove('ai-hidden'); }
             self.savePartialConfig({ vadThreshold: val });
         });
     }
@@ -1010,7 +1010,7 @@ STTManager.prototype.stopVUMeter = function () {
     this._vuActive = false;
     var meterEl = document.getElementById('micVUMeter');
     var labelEl = document.getElementById('micVULabel');
-    if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'progress-bar bg-success'; }
+    if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'mb-meter-fill'; }
     if (labelEl) { labelEl.textContent = '0%'; }
 };
 
@@ -1116,15 +1116,15 @@ STTManager.prototype.connectWebSocket = function () {
                     if (meterEl) {
                         meterEl.style.width = pct + '%';
                         meterEl.setAttribute('aria-valuenow', String(pct));
-                        if (pct > 70) { meterEl.className = 'progress-bar bg-danger'; }
-                        else if (pct > 40) { meterEl.className = 'progress-bar bg-warning'; }
-                        else { meterEl.className = 'progress-bar bg-success'; }
+                        if (pct > 70) { meterEl.className = 'mb-meter-fill'; }
+                        else if (pct > 40) { meterEl.className = 'mb-meter-fill'; }
+                        else { meterEl.className = 'mb-meter-fill'; }
                     }
                     if (labelEl) { labelEl.textContent = pct + '%'; }
                     // Auto-decay after 800ms of silence
                     if (self._vuDecayTimer) clearTimeout(self._vuDecayTimer);
                     self._vuDecayTimer = setTimeout(function () {
-                        if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'progress-bar bg-success'; }
+                        if (meterEl) { meterEl.style.width = '0%'; meterEl.setAttribute('aria-valuenow', '0'); meterEl.className = 'mb-meter-fill'; }
                         if (labelEl) { labelEl.textContent = '0%'; }
                     }, 800);
                     return;
@@ -1383,7 +1383,7 @@ STTManager.prototype.startListenIn_Bridge = function () {
     var toggleText = document.getElementById('stt-listenin-text');
     var btn = document.getElementById('btn-stt-listenin');
 
-    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'badge bg-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'mb-badge mb-badge-warning'; }
     if (toggleText) toggleText.textContent = 'Connecting...';
     if (btn) btn.disabled = true;
 
@@ -1400,9 +1400,9 @@ STTManager.prototype.startListenIn_Bridge = function () {
         try {
             var msg = JSON.parse(event.data);
             if (msg.type === 'started') {
-                if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'badge bg-success'; }
+                if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'mb-badge mb-badge-success'; }
                 if (toggleText) toggleText.textContent = 'Stop Listening';
-                if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+                if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-danger mb-btn-sm'; }
             } else if (msg.type === 'audio') {
                 self._playListenInChunk(msg.audio);
             } else if (msg.type === 'error') {
@@ -1484,9 +1484,9 @@ STTManager.prototype.stopListenIn = function () {
     var btn = document.getElementById('btn-stt-listenin');
     var vuBar = document.getElementById('stt-listenin-vu');
     var vuLabel = document.getElementById('stt-listenin-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge'; }
     if (toggleText) toggleText.textContent = 'Start Listening';
-    if (btn) { btn.disabled = false; btn.className = 'btn btn-info btn-sm'; }
+    if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     if (vuBar) vuBar.style.width = '0%';
     if (vuLabel) vuLabel.textContent = '0%';
 };
@@ -1514,7 +1514,7 @@ STTManager.prototype.startTalkThrough_Bridge = function () {
         return;
     }
 
-    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'badge bg-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'mb-badge mb-badge-warning'; }
     if (toggleText) toggleText.textContent = 'Requesting...';
     if (btn) btn.disabled = true;
 
@@ -1579,15 +1579,15 @@ STTManager.prototype.startTalkThrough_Bridge = function () {
         self._talkThroughProc.connect(self._talkThroughCtx.destination);
         self._talkThroughActive = true;
 
-        if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'badge bg-success'; }
+        if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'mb-badge mb-badge-success'; }
         if (toggleText) toggleText.textContent = 'Stop Talking';
-        if (btn) { btn.disabled = false; btn.className = 'btn btn-outline-danger btn-sm'; }
+        if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-danger mb-btn-sm'; }
     }).catch(function (err) {
         console.error('Talk Through start error:', err);
         self.showAlert('Microphone error: ' + (err.message || err), 'danger');
-        if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'badge bg-danger'; }
+        if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'mb-badge mb-badge-danger'; }
         if (toggleText) toggleText.textContent = 'Start Talking';
-        if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+        if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     });
 };
 
@@ -1619,9 +1619,9 @@ STTManager.prototype.stopTalkThrough = function () {
     var btn = document.getElementById('btn-stt-talkthrough');
     var vuBar = document.getElementById('stt-talkthrough-vu');
     var vuLabel = document.getElementById('stt-talkthrough-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'badge bg-secondary'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge'; }
     if (toggleText) toggleText.textContent = 'Start Talking';
-    if (btn) { btn.disabled = false; btn.className = 'btn btn-warning btn-sm'; }
+    if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     if (vuBar) vuBar.style.width = '0%';
     if (vuLabel) vuLabel.textContent = '0%';
 };

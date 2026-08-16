@@ -1,0 +1,187 @@
+/* ==========================================================================
+   Head Animation — page-specific rules
+   --------------------------------------------------------------------------
+   Loaded via the `styles` local from routes/setup/head-animation.js.
+
+   Deliberately mirrors jaw-animation.css: these two pages are the same job
+   (pick a servo, tune it, watch it react live) and looking like siblings is
+   part of them being learnable. Colour comes from --mb-* tokens only.
+   ========================================================================== */
+
+@media (min-width: 1024px) {
+  .head-page {
+    max-height: calc(100vh - var(--mb-space-9));
+    overflow: hidden;
+  }
+
+  /* The left column carries far more tuning than fits a screen; it scrolls
+     independently so the webcam preview stays pinned in view beside it. */
+  .head-scroll {
+    max-height: calc(100vh - var(--mb-space-9));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: var(--mb-space-1);
+  }
+}
+
+/* Hidden by default WITHOUT `!important` so JS setting an explicit
+   style.display can still reveal the element. */
+.head-hidden { display: none; }
+
+/* --- Sections ------------------------------------------------------------
+   The left border is the section's subject: green = what the camera sees,
+   amber = what the servo does. That mapping is the page's only navigation. */
+.head-section {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-left: 3px solid var(--mb-primary);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-3);
+  margin-bottom: var(--mb-space-2);
+}
+
+.head-section.opencv-section { border-left-color: var(--mb-success); }
+.head-section.servo-section  { border-left-color: var(--mb-warning); }
+
+.head-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  margin: 0 0 var(--mb-space-2);
+  font-size: var(--mb-text-sm);
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+  text-transform: uppercase;
+}
+
+.head-section-title-ocv   { color: var(--mb-success); }
+.head-section-title-servo { color: var(--mb-warning); }
+
+.head-panel {
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-3);
+}
+
+.head-field { margin-bottom: var(--mb-space-2); }
+
+.head-field > .mb-field-label {
+  display: block;
+  margin-bottom: var(--mb-space-1);
+}
+
+.head-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mb-space-2);
+}
+
+/* Same reason as the jaw page: each toggle owns its row in a settings column. */
+.head-section > .mb-switch {
+  display: flex;
+  width: 100%;
+}
+
+/* --- Webcam preview ------------------------------------------------------ */
+.webcam-container {
+  position: relative;
+  background: var(--mb-bg-0);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+  overflow: hidden;
+  min-height: 240px;
+}
+
+.webcam-stream {
+  width: 100%;
+  display: block;
+}
+
+.tracking-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.webcam-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  color: var(--mb-fg-muted);
+  text-align: center;
+}
+
+.webcam-placeholder-icon {
+  font-size: var(--mb-text-3xl);
+}
+
+/* --- Live status --------------------------------------------------------
+   JS swaps `.status-dot active|inactive|detecting`; keep that contract. */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: var(--mb-space-1);
+  vertical-align: middle;
+  background: var(--mb-fg-muted);
+}
+
+.status-dot.active {
+  background: var(--mb-success);
+  box-shadow: var(--mb-glow-poison);
+  animation: mb-pulse 1s ease-in-out infinite;
+}
+
+.status-dot.inactive { background: var(--mb-fg-muted); }
+
+.status-dot.detecting {
+  background: var(--mb-warning);
+  animation: mb-pulse 0.5s ease-in-out infinite;
+}
+
+.fps-badge {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5em;
+  justify-content: center;
+}
+
+/* The servo-bounds readout. This used to be an empty, permanently hidden div,
+   so the head page silently claimed nothing about calibration while the jaw
+   page stated it plainly. Same treatment as jaw-animation now: a coloured dot
+   plus the actual degrees. */
+.servo-bounds-info {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-1);
+  margin-top: var(--mb-space-1);
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-secondary);
+}
+
+.servo-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.toggle-disabled-hint {
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-muted);
+  margin-left: var(--mb-space-2);
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .head-grid-2 { grid-template-columns: 1fr; }
+
+  .head-section,
+  .head-panel { min-width: 0; }
+}

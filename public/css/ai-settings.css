@@ -1,0 +1,196 @@
+/* ==========================================================================
+   AI Settings (overview · TTS · STT) — page-specific rules
+   --------------------------------------------------------------------------
+   Loaded via the `styles` local from routes/aiSettingsRoutes.js.
+   One stylesheet for all three pages on purpose: they are one area of the
+   product and should not drift apart. Colour comes from --mb-* tokens only.
+   ========================================================================== */
+
+/* Hidden by default WITHOUT `!important`, so JS that sets an explicit
+   style.display can still reveal the element. */
+.ai-hidden { display: none; }
+
+/* --- Sticky rail ---------------------------------------------------------
+   The preview / live-transcript column follows the operator down a long form.
+   Sticky only where there is room for it to be useful. */
+@media (min-width: 992px) {
+  .ai-sticky {
+    position: sticky;
+    top: var(--mb-space-7);
+  }
+}
+
+/* --- Sub-sections inside a panel ----------------------------------------- */
+.ai-subhead {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  margin: 0 0 var(--mb-space-3);
+  font-size: var(--mb-text-sm);
+  font-weight: var(--mb-weight-bold);
+  letter-spacing: var(--mb-tracking-wide);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+}
+
+.ai-rule {
+  border: 0;
+  border-top: 1px solid var(--mb-border-subtle);
+  margin: var(--mb-space-6) 0;
+}
+
+/* Range fields carry their live value in the label, so the label and the
+   input must stay adjacent siblings — ai-settings-tts.js reads
+   input.previousElementSibling to rewrite it. */
+.ai-field {
+  margin-bottom: var(--mb-space-4);
+}
+
+.ai-field > .mb-field-label {
+  display: block;
+  margin-bottom: var(--mb-space-1);
+}
+
+.ai-range-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--mb-space-1);
+}
+
+/* --- Model-specific inert controls ---------------------------------------
+   Eleven v3 ignores Style and Speaker Boost entirely. Leaving them live and
+   switched on is a lie the UI tells about what the model will do, so when v3
+   is selected the whole block goes inert and says why. */
+.ai-inactive {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.ai-inactive .mb-field-label,
+.ai-inactive .mb-switch {
+  cursor: not-allowed;
+}
+
+/* Visually inert, still clickable. The STT stop button must survive a stuck
+   session, so it must never carry the `disabled` attribute — only this look. */
+.ai-btn-inert {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Test-action cards ---------------------------------------------------
+   Three different "test" buttons on the TTS page used to be
+   indistinguishable. Each now states WHERE the sound comes out. */
+.ai-destination {
+  display: block;
+  margin-top: var(--mb-space-1);
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-muted);
+}
+
+/* --- Meters --------------------------------------------------------------
+   Element ids here are driven by JS that sets `style.width` and swaps the
+   fill class, so the fills only need a resting state. */
+#micVUMeter,
+#chatVUMeter,
+#stt-listenin-vu,
+#stt-talkthrough-vu {
+  width: 0;
+}
+
+.ai-meter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+}
+
+.ai-meter-row > small {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.ai-meter-row > .mb-meter {
+  flex: 1 1 auto;
+}
+
+.ai-meter-label {
+  min-width: 44px;
+  justify-content: center;
+}
+
+/* --- Live transcript / chat log ------------------------------------------ */
+.ai-log {
+  height: 300px;
+  overflow-y: auto;
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+}
+
+.ai-transcript {
+  height: 150px;
+  overflow-y: auto;
+  padding: var(--mb-space-2) var(--mb-space-3);
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+  background: var(--mb-bg-0);
+  color: var(--mb-fg-primary);
+  border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-md);
+}
+
+.ai-strip {
+  padding: var(--mb-space-2) var(--mb-space-4);
+  border-top: 1px solid var(--mb-border-subtle);
+  background: var(--mb-bg-2);
+}
+
+.ai-voice-library {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.ai-speaker-select {
+  width: auto;
+  max-width: 160px;
+  font-size: var(--mb-text-sm);
+}
+
+/* --- Overview stat tiles -------------------------------------------------- */
+.ai-stat {
+  text-align: center;
+  padding: var(--mb-space-2) 0;
+}
+
+.ai-stat-value {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-2xl);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-stat-label {
+  display: block;
+  margin-top: var(--mb-space-1);
+  font-size: var(--mb-text-xs);
+  color: var(--mb-fg-muted);
+}
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 768px) {
+  .ai-log { height: 220px; }
+
+  .ai-speaker-select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Long model ids and device names must wrap, never widen the page. */
+  .ai-transcript,
+  .ai-log {
+    overflow-wrap: anywhere;
+  }
+}

@@ -5,50 +5,42 @@
             <span class="mb-text-secondary">· ElevenLabs voice, speech, and agent</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/ai-settings/stt" class="btn btn-outline-secondary btn-sm" title="Go to speech-to-text settings">
+            <a href="/ai-settings/stt" class="mb-btn mb-btn-secondary mb-btn-sm" title="Go to speech-to-text settings">
                 <i class="bi bi-mic"></i> STT
             </a>
-            <a href="/ai-settings/tts" class="btn btn-outline-secondary btn-sm" title="Go to text-to-speech settings">
+            <a href="/ai-settings/tts" class="mb-btn mb-btn-secondary mb-btn-sm" title="Go to text-to-speech settings">
                 <i class="bi bi-megaphone"></i> TTS
             </a>
-            <button class="btn btn-primary" id="testConnection" data-bs-toggle="tooltip" data-bs-placement="top" title="Test ElevenLabs API connection">
+            <button class="mb-btn mb-btn-primary mb-btn-sm" id="testConnection" data-bs-toggle="tooltip" data-bs-placement="top" title="Test ElevenLabs API connection">
                 <i class="bi bi-plug"></i> Test Connection
             </button>
         </div>
     </header>
 
     <!-- Configuration Status -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card panel-collapsible" data-panel-id="config-status">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle"></i> ElevenLabs Configuration Status
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">API Key Status</label>
-                                <div id="apiKeyStatus" class="d-flex align-items-center">
-                                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <span>Checking configuration...</span>
-                                </div>
-                            </div>
+    <div class="mb-panel panel-collapsible mb-4" data-panel-id="config-status">
+        <div class="mb-panel-header">
+            <h2 class="mb-panel-title">
+                <i class="bi bi-info-circle"></i> ElevenLabs Configuration Status
+            </h2>
+        </div>
+        <div class="mb-panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="ai-field">
+                        <span class="mb-field-label">API Key Status</span>
+                        <div id="apiKeyStatus" class="mb-row-sm align-items-center">
+                            <span class="mb-spinner"></span>
+                            <span>Checking configuration...</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Connection Status</label>
-                                <div id="connectionStatus" class="d-flex align-items-center">
-                                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <span>Testing connection...</span>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="ai-field">
+                        <span class="mb-field-label">Connection Status</span>
+                        <div id="connectionStatus" class="mb-row-sm align-items-center">
+                            <span class="mb-spinner"></span>
+                            <span>Testing connection...</span>
                         </div>
                     </div>
                 </div>
@@ -59,12 +51,12 @@
     <!-- AI Settings Dashboard -->
     <div class="row g-4">
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-mic display-4 text-primary mb-3"></i>
-                    <h5 class="card-title">Speech-to-Text</h5>
-                    <p class="card-text">Configure STT models and audio processing for voice input.</p>
-                    <a href="/ai-settings/stt" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure speech-to-text models and audio input">
+            <div class="mb-card mb-card-interactive h-100">
+                <div class="mb-tile">
+                    <i class="bi bi-mic mb-tile-icon mb-tile-icon-primary"></i>
+                    <h3 class="mb-tile-title mb-text-lg">Speech-to-Text</h3>
+                    <p class="mb-tile-desc mb-text-sm mb-text-secondary">Configure STT models and audio processing for voice input.</p>
+                    <a href="/ai-settings/stt" class="mb-btn mb-btn-primary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure speech-to-text models and audio input">
                         <i class="bi bi-arrow-right"></i> Configure STT
                     </a>
                 </div>
@@ -72,12 +64,12 @@
         </div>
 
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-volume-up display-4 text-warning mb-3"></i>
-                    <h5 class="card-title">Text-to-Speech</h5>
-                    <p class="card-text">Configure voices and TTS settings for audio output.</p>
-                    <a href="/ai-settings/tts" class="btn btn-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure voices and text-to-speech output settings">
+            <div class="mb-card mb-card-interactive h-100">
+                <div class="mb-tile">
+                    <i class="bi bi-volume-up mb-tile-icon mb-tile-icon-warning"></i>
+                    <h3 class="mb-tile-title mb-text-lg">Text-to-Speech</h3>
+                    <p class="mb-tile-desc mb-text-sm mb-text-secondary">Configure voices and TTS settings for audio output.</p>
+                    <a href="/ai-settings/tts" class="mb-btn mb-btn-secondary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Configure voices and text-to-speech output settings">
                         <i class="bi bi-arrow-right"></i> Configure TTS
                     </a>
                 </div>
@@ -85,12 +77,12 @@
         </div>
 
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-chat-dots display-4 text-success mb-3"></i>
-                    <h5 class="card-title">Chat</h5>
-                    <p class="card-text">Talk to your character's AI agent in real time.</p>
-                    <span class="badge bg-success" id="chatActiveIndicator">Ready</span>
+            <div class="mb-card h-100">
+                <div class="mb-tile">
+                    <i class="bi bi-chat-dots mb-tile-icon mb-tile-icon-success"></i>
+                    <h3 class="mb-tile-title mb-text-lg">Chat</h3>
+                    <p class="mb-tile-desc mb-text-sm mb-text-secondary">Talk to your character's AI agent in real time.</p>
+                    <span class="mb-badge mb-badge-success" id="chatActiveIndicator">Ready</span>
                 </div>
             </div>
         </div>
@@ -100,61 +92,64 @@
     <div class="row g-4 mt-2">
         <div class="col-lg-8">
             <!-- Inline Chat Panel -->
-            <div class="card border-success panel-collapsible" data-panel-id="chat-panel">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
+            <div class="mb-panel mb-panel-accent panel-collapsible" data-panel-id="chat-panel">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-chat-dots"></i> Chat —
                         <span id="chatCharacterName">Loading...</span>
-                    </h5>
-                    <div class="d-flex align-items-center gap-2">
-                        <select id="chatSpeakerSelect" class="form-select form-select-sm" style="width: auto; max-width: 160px; font-size: 0.8rem;" data-bs-toggle="tooltip" data-bs-placement="top" title="Select output speaker device">
+                    </h2>
+                    <div class="mb-row-sm align-items-center">
+                        <select id="chatSpeakerSelect" class="mb-select ai-speaker-select" data-bs-toggle="tooltip" data-bs-placement="top" title="Select output speaker device">
                             <option value="">Audio: Auto</option>
                         </select>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="aiAutonomousToggle" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle real-time AI voice chat via ElevenLabs">
-                            <label class="form-check-label small" for="aiAutonomousToggle">AI On</label>
-                        </div>
+                        <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Toggle real-time AI voice chat via ElevenLabs">
+                            <input type="checkbox" id="aiAutonomousToggle">
+                            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                            <span class="mb-text-sm">AI On</span>
+                        </label>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="mb-panel-body p-0">
                     <!-- Chat Log -->
-                    <div id="chatLog" class="p-3 font-monospace"
-                        style="height: 300px; overflow-y: auto; font-size: 0.9rem; background: var(--bs-tertiary-bg);">
-                        <div class="text-muted text-center">Chat will appear here...</div>
+                    <div id="chatLog" class="ai-log p-3">
+                        <div class="mb-text-muted text-center">Chat will appear here...</div>
                     </div>
                     <!-- VU Meter -->
-                    <div class="px-3 py-2 border-top" style="background: var(--bs-tertiary-bg);">
-                        <div class="d-flex align-items-center">
-                            <small class="text-muted me-2"><i class="bi bi-activity"></i> Mic:</small>
-                            <div class="progress flex-grow-1" style="height: 12px;">
-                                <div id="chatVUMeter" class="progress-bar bg-success" role="progressbar"
-                                    style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="ai-strip">
+                        <div class="ai-meter-row">
+                            <small class="mb-text-muted"><i class="bi bi-activity"></i> Mic:</small>
+                            <div class="mb-meter">
+                                <div id="chatVUMeter" class="mb-meter-fill" role="progressbar"
+                                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            <span id="chatVULabel" class="ms-2 badge bg-secondary" style="font-size: 0.7rem;">0%</span>
+                            <span id="chatVULabel" class="mb-badge ai-meter-label">0%</span>
                         </div>
                     </div>
                     <!-- Audio Controls -->
-                    <div class="px-3 py-2 border-top d-flex flex-wrap align-items-center gap-3" style="background: var(--bs-tertiary-bg);">
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatMuteSpeaker" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute the character speaker output">
-                            <label class="form-check-label small" for="chatMuteSpeaker"><i class="bi bi-volume-mute"></i> Mute Speaker</label>
-                        </div>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatBrowserSpeaker" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI responses through browser speaker">
-                            <label class="form-check-label small" for="chatBrowserSpeaker"><i class="bi bi-broadcast"></i> Browser Speaker</label>
-                        </div>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="chatBrowserMic" data-bs-toggle="tooltip" data-bs-placement="top" title="Use browser microphone for voice input">
-                            <label class="form-check-label small" for="chatBrowserMic"><i class="bi bi-mic"></i> Browser Mic</label>
-                        </div>
-                        <small id="chatAudioStatus" class="text-info"></small>
+                    <div class="ai-strip mb-row align-items-center">
+                        <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute the character speaker output">
+                            <input type="checkbox" id="chatMuteSpeaker">
+                            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                            <span class="mb-text-sm"><i class="bi bi-volume-mute"></i> Mute Speaker</span>
+                        </label>
+                        <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI responses through browser speaker">
+                            <input type="checkbox" id="chatBrowserSpeaker">
+                            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                            <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Speaker</span>
+                        </label>
+                        <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Use browser microphone for voice input">
+                            <input type="checkbox" id="chatBrowserMic">
+                            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                            <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
+                        </label>
+                        <small id="chatAudioStatus" class="mb-text-info"></small>
                     </div>
                     <!-- Chat Input -->
-                    <div class="p-3 border-top">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="chatInput" placeholder="Type a message..."
+                    <div class="ai-strip">
+                        <div class="mb-input-group">
+                            <input type="text" class="mb-input" id="chatInput" placeholder="Type a message..."
                                 autocomplete="off" data-bs-toggle="tooltip" data-bs-placement="top" title="Type a message to send to the AI character">
-                            <button class="btn btn-success" type="button" id="chatSendBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Send message to the AI character">
+                            <button class="mb-btn mb-btn-primary" type="button" id="chatSendBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Send message to the AI character">
                                 <i class="bi bi-send"></i> Send
                             </button>
                         </div>
@@ -165,38 +160,38 @@
 
         <div class="col-lg-4 sortable-column" data-column-id="ai-sidebar">
             <!-- Quick Stats -->
-            <div class="card mb-3" data-panel-id="quick-stats">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <div class="mb-panel mb-3" data-panel-id="quick-stats">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-graph-up"></i> AI Integration Status
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <div class="row">
+                <div class="mb-panel-body">
+                    <div class="row g-3">
                         <div class="col-6">
-                            <div class="text-center">
-                                <div class="display-6 text-success" id="chatActiveStatus">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-text-success" id="chatActiveStatus">
                                     <i class="bi bi-circle"></i>
                                 </div>
-                                <small class="text-muted">Chat Active</small>
+                                <small class="ai-stat-label">Chat Active</small>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="text-center">
-                                <div class="display-6 text-success" id="voiceCount">-</div>
-                                <small class="text-muted">Available Voices</small>
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-text-success" id="voiceCount">-</div>
+                                <small class="ai-stat-label">Available Voices</small>
                             </div>
                         </div>
-                        <div class="col-6 mt-3">
-                            <div class="text-center">
-                                <div class="display-6 text-warning" id="characterCount">-</div>
-                                <small class="text-muted">Characters</small>
+                        <div class="col-6">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-text-warning" id="characterCount">-</div>
+                                <small class="ai-stat-label">Characters</small>
                             </div>
                         </div>
-                        <div class="col-6 mt-3">
-                            <div class="text-center">
-                                <div class="display-6 text-info" id="assignmentCount">-</div>
-                                <small class="text-muted">Assignments</small>
+                        <div class="col-6">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-text-info" id="assignmentCount">-</div>
+                                <small class="ai-stat-label">Assignments</small>
                             </div>
                         </div>
                     </div>
@@ -204,18 +199,18 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="card" data-panel-id="quick-actions">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <div class="mb-panel" data-panel-id="quick-actions">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-tools"></i> Quick Actions
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-success" id="testConversation" data-bs-toggle="tooltip" data-bs-placement="top" title="Start a test conversation with the AI agent">
+                <div class="mb-panel-body">
+                    <div class="mb-stack">
+                        <button class="mb-btn mb-btn-secondary mb-btn-block" id="testConversation" data-bs-toggle="tooltip" data-bs-placement="top" title="Start a test conversation with the AI agent">
                             <i class="bi bi-chat-dots"></i> Test Conversation
                         </button>
-                        <button class="btn btn-outline-info" id="viewLogs" data-bs-toggle="tooltip" data-bs-placement="top" title="View AI conversation and error logs">
+                        <button class="mb-btn mb-btn-secondary mb-btn-block" id="viewLogs" data-bs-toggle="tooltip" data-bs-placement="top" title="View AI conversation and error logs">
                             <i class="bi bi-journal-text"></i> View AI Logs
                         </button>
                     </div>

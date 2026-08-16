@@ -1,178 +1,171 @@
 <%
 // Fleet Command Center (v8.5.0) — a single pane to monitor and run the entire
-// network of animatronics. Self-contained: inline styles + one ES6 controller.
-// Backend: /api/orchestration/* (fleet-health, nodes, superpower, emergency-stop,
-// volume, per-node say/ask/audio/auto-ai/webcam-stream). See routes/api/orchestrationRoutes.js.
+// network of animatronics. Chrome lives in /css/mb-orchestration.css (wired via
+// the `styles` local in routes/orchestration.js); shared components come from
+// components.css. Backend: /api/orchestration/* (fleet-health, nodes, superpower,
+// emergency-stop, volume, per-node say/ask/audio/auto-ai/webcam-stream).
+// See routes/api/orchestrationRoutes.js.
 %>
-<style>
-  /* ---- Fleet Command Center chrome ---- */
-  .fcc-bar { position: sticky; top: 0; z-index: 1020; background: var(--bs-body-bg);
-    border-bottom: 1px solid var(--bs-border-color); padding: .5rem .25rem; margin: -0.5rem -0.5rem .75rem; }
-  .fcc-bar .fcc-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-  .fcc-pill { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600;
-    padding: .3rem .7rem; border-radius: 999px; border: 1px solid var(--bs-border-color); }
-  .fcc-dot { width: .6rem; height: .6rem; border-radius: 50%; display: inline-block; background: #888; }
-  .fcc-dot.online { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
-  .fcc-dot.offline { background: #6c757d; }
-  .fcc-dot.warn { background: #f1c40f; }
-  .fcc-sep { width: 1px; align-self: stretch; background: var(--bs-border-color); margin: 0 .25rem; }
-  /* Superpower master toggles */
-  .fcc-sp.on { background: #2ecc71; border-color: #2ecc71; color: #06280f; }
-  .fcc-sp.mixed { background: repeating-linear-gradient(45deg, rgba(241,196,15,.85), rgba(241,196,15,.85) 6px, rgba(241,196,15,.55) 6px, rgba(241,196,15,.55) 12px); border-color: #f1c40f; color: #2b2200; }
-  .fcc-estop { font-weight: 800; letter-spacing: .04em; }
-  /* Node wall */
-  .fcc-card { height: 100%; display: flex; flex-direction: column; }
-  .fcc-cam-wrap { position: relative; background: #000; aspect-ratio: 16 / 9; overflow: hidden; cursor: zoom-in; }
-  .fcc-cam-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .fcc-cam-off { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    color: #6c757d; font-size: .8rem; text-align: center; padding: .5rem; }
-  .fcc-chip { font-size: .68rem; padding: .1rem .4rem; border-radius: .35rem; border: 1px solid var(--bs-border-color); }
-  .fcc-chip.config { color: #adb5bd; }
-  .fcc-chip.discovered { color: #2ecc71; border-color: #2ecc71; }
-  .fcc-chip.manual { color: #4da3ff; border-color: #4da3ff; }
-  .fcc-chip.untrusted { color: #ff6b6b; border-color: #ff6b6b; }
-  .fcc-health { font-size: .72rem; color: var(--bs-secondary-color); font-variant-numeric: tabular-nums; }
-  .fcc-ghost { opacity: .6; }
-  .fcc-log { height: 190px; overflow-y: auto; background: #0b0d10; color: #c7f0d8; font-family: var(--bs-font-monospace);
-    font-size: .74rem; padding: .5rem; border-radius: .4rem; }
-  .fcc-log .err { color: #ff8080; }
-  .fcc-log .warn { color: #ffd166; }
-  .fcc-log .ok { color: #7CFC9E; }
-  .fcc-log .muted { color: #7a8a99; }
-  #fccCamModal img { width: 100%; height: auto; background: #000; }
-  .fcc-vol { width: 130px; }
-</style>
 
-<div class="mb-1 d-flex align-items-center justify-content-between flex-wrap gap-2">
-  <h4 class="mb-0"><i class="bi bi-diagram-3"></i> Fleet Command Center</h4>
-  <span class="text-secondary small">Monitor &amp; run the entire MonsterNet from one place</span>
-</div>
+<header class="mb-page-header">
+  <h1 class="mb-page-header-title">
+    <i class="bi bi-diagram-3"></i> Fleet Command Center
+    <span class="mb-text-secondary">· monitor &amp; run the entire MonsterNet from one place</span>
+  </h1>
+</header>
 
 <!-- ============ STICKY COMMAND BAR ============ -->
 <div class="fcc-bar">
   <div class="fcc-row">
     <!-- Fleet health rollup -->
-    <span class="fcc-pill" id="fleetPill" title="Nodes currently online / total in the fleet">
-      <span class="fcc-dot" id="fleetDot"></span>
+    <span class="mb-badge" id="fleetPill" title="Nodes currently online / total in the fleet">
+      <span class="mb-dot mb-dot-idle" id="fleetDot"></span>
       <span id="fleetCount">— / —</span>
     </span>
 
     <span class="fcc-sep"></span>
 
     <!-- Fleet superpower masters -->
-    <div class="btn-group btn-group-sm" role="group" aria-label="Fleet superpowers">
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="lurk" title="Toggle Lurk mode on every animatronic">Lurk</button>
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="jaw" title="Toggle jaw animation fleet-wide">Jaw</button>
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="head" title="Toggle head tracking fleet-wide">Head</button>
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="motion" title="Toggle PIR motion sensor fleet-wide">Motion</button>
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="idle" title="Toggle idle movement loop fleet-wide">Idle</button>
-      <button class="btn btn-outline-secondary fcc-sp" data-sp="mute" title="Mute / unmute all speakers">Mute</button>
+    <div class="mb-btn-group" role="group" aria-label="Fleet superpowers">
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="lurk" title="Toggle Lurk mode on every animatronic">Lurk</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="jaw" title="Toggle jaw animation fleet-wide">Jaw</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="head" title="Toggle head tracking fleet-wide">Head</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="motion" title="Toggle PIR motion sensor fleet-wide">Motion</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="idle" title="Toggle idle movement loop fleet-wide">Idle</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="mute" title="Mute / unmute all speakers">Mute</button>
     </div>
 
     <span class="fcc-sep"></span>
 
     <!-- Master volume -->
-    <span class="d-inline-flex align-items-center gap-1" title="Set master speaker volume on every node">
+    <span class="mb-row-sm" title="Set master speaker volume on every node">
       <i class="bi bi-volume-up"></i>
-      <input type="range" class="form-range fcc-vol" id="masterVol" min="0" max="100" value="80">
-      <span class="small text-secondary" id="masterVolVal" style="width:2.4em">80%</span>
+      <input type="range" class="mb-range fcc-vol" id="masterVol" min="0" max="100" value="80"
+        aria-label="Master fleet volume">
+      <span class="mb-text-sm mb-text-secondary fcc-vol-val" id="masterVolVal">80%</span>
     </span>
 
     <span class="fcc-sep"></span>
 
     <!-- Show transport -->
-    <button class="btn btn-sm btn-success" id="startLoops" title="Start each node's default scene queue loop">
+    <button class="mb-btn mb-btn-sm mb-btn-primary" id="startLoops" title="Start each node's default scene queue loop">
       <i class="bi bi-play-fill"></i> Start Loops</button>
-    <button class="btn btn-sm btn-outline-warning" id="stopLoops" title="Stop all scene queue loops across the fleet">
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="stopLoops" title="Stop all scene queue loops across the fleet">
       <i class="bi bi-stop-fill"></i> Stop Loops</button>
 
     <!-- Panic -->
-    <button class="btn btn-sm btn-danger fcc-estop ms-auto" id="estop"
+    <button class="mb-btn mb-btn-sm mb-btn-danger fcc-estop ms-auto" id="estop"
       title="Immediately halt every animatronic: stop queues, stop audio, disable random poses, mute">
       <i class="bi bi-exclamation-octagon-fill"></i> EMERGENCY STOP</button>
   </div>
 
-  <div class="fcc-row mt-2">
+  <div class="fcc-row">
     <!-- Say to all -->
-    <div class="input-group input-group-sm" style="max-width: 480px;">
-      <input type="text" class="form-control" id="sayAllText" placeholder="Say to targeted nodes…"
-        title="Broadcast this text as speech">
-      <button class="btn btn-outline-info" id="sayAllBtn" title="Speak on the targeted nodes (all if none selected)">
+    <div class="mb-input-group fcc-say">
+      <input type="text" class="mb-input" id="sayAllText" placeholder="Say to targeted nodes…"
+        title="Broadcast this text as speech" aria-label="Text to speak on the targeted nodes">
+      <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Speak on the targeted nodes (all if none selected)">
         <i class="bi bi-megaphone"></i> Say</button>
     </div>
 
     <span class="fcc-sep"></span>
 
     <!-- Target scope -->
-    <span class="small text-secondary" title="Global actions apply to selected nodes; none selected = all online">
-      Target: <span id="targetSummary" class="fw-semibold">All</span></span>
-    <button class="btn btn-sm btn-outline-secondary" id="clearTargets" title="Clear node selection (target all)">Clear</button>
+    <span class="mb-text-sm mb-text-secondary" title="Global actions apply to selected nodes; none selected = all online">
+      Target: <span id="targetSummary" class="mb-text-primary">All</span></span>
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="clearTargets" title="Clear node selection (target all)">Clear</button>
 
     <span class="fcc-sep"></span>
 
-    <button class="btn btn-sm btn-outline-secondary" id="refreshBtn" title="Refresh fleet health now">
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="refreshBtn" title="Refresh fleet health now">
       <i class="bi bi-arrow-clockwise"></i> Refresh</button>
-    <button class="btn btn-sm btn-outline-secondary" id="restartSvc" title="Restart the MonsterBox service on targeted nodes">
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="restartSvc" title="Restart the MonsterBox service on targeted nodes">
       <i class="bi bi-arrow-repeat"></i> Restart Services</button>
-    <button class="btn btn-sm btn-outline-danger" id="rebootAll" title="Reboot targeted animatronics (SSH)">
+    <button class="mb-btn mb-btn-sm mb-btn-danger" id="rebootAll" title="Reboot targeted animatronics (SSH)">
       <i class="bi bi-power"></i> Reboot</button>
   </div>
 </div>
 
 <!-- ============ NODE WALL ============ -->
 <div class="row g-3" id="nodeWall">
-  <div class="col-12 text-center text-secondary py-5" id="wallLoading">
-    <div class="spinner-border spinner-border-sm"></div> Loading fleet…
+  <div class="col-12" id="wallLoading">
+    <div class="mb-empty">
+      <span class="mb-spinner mb-spinner-lg"></span>
+      <p class="mb-empty-body">Loading fleet…</p>
+    </div>
   </div>
 </div>
 
 <!-- ============ GOBLINS ============ -->
 <div class="mt-4">
-  <h6 class="text-secondary"><i class="bi bi-tv"></i> Goblins (video displays)</h6>
-  <div class="row g-2" id="goblinRow"><div class="col-12 text-secondary small">Loading…</div></div>
+  <h2 class="mb-heading-3 mb-text-secondary"><i class="bi bi-tv"></i> Goblins (video displays)</h2>
+  <div class="row g-2" id="goblinRow"><div class="col-12 mb-text-sm mb-text-secondary">Loading…</div></div>
 </div>
 
 <!-- ============ BOTTOM RAIL: LOG + DISCOVERY ============ -->
 <div class="row g-3 mt-3">
   <div class="col-lg-8">
-    <div class="card">
-      <div class="card-header py-1 d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-terminal"></i> Command Log</span>
-        <button class="btn btn-sm btn-outline-secondary" id="clearLog" title="Clear the command log">Clear</button>
+    <section class="mb-panel">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title"><i class="bi bi-terminal"></i> Command Log</h2>
+        <button class="mb-btn mb-btn-sm mb-btn-ghost" id="clearLog" title="Clear the command log">Clear</button>
       </div>
-      <div class="fcc-log" id="commandLog"></div>
-    </div>
+      <div class="fcc-log" id="commandLog" role="log" aria-live="polite"></div>
+    </section>
   </div>
   <div class="col-lg-4">
-    <div class="card">
-      <div class="card-header py-1"><i class="bi bi-broadcast"></i> Discovery</div>
-      <div class="card-body py-2">
-        <div class="small mb-2" id="discoveryState">mDNS: <span class="text-secondary">checking…</span></div>
-        <div class="small text-secondary mb-2" id="sourceBreakdown"></div>
-        <form id="pinForm" class="row g-1" title="Pin a node by IP for networks that block mDNS multicast">
-          <div class="col-3"><input class="form-control form-control-sm" id="pinId" placeholder="id" title="Node id"></div>
-          <div class="col-5"><input class="form-control form-control-sm" id="pinIp" placeholder="IP address" title="Node IP"></div>
-          <div class="col-4"><input class="form-control form-control-sm" id="pinName" placeholder="name" title="Display name"></div>
-          <div class="col-12 d-grid mt-1">
-            <button class="btn btn-sm btn-outline-primary" type="submit" title="Persist this pinned node (survives restarts)">
-              <i class="bi bi-pin-map"></i> Pin node</button>
-          </div>
+    <section class="mb-panel">
+      <div class="mb-panel-header">
+        <h2 class="mb-panel-title"><i class="bi bi-broadcast"></i> Discovery</h2>
+      </div>
+      <div class="mb-panel-body">
+        <div class="mb-text-sm" id="discoveryState">mDNS: <span class="mb-text-secondary">checking…</span></div>
+        <div class="mb-text-sm mb-text-secondary" id="sourceBreakdown"></div>
+        <form id="pinForm" class="fcc-pin-grid mt-3" title="Pin a node by IP for networks that block mDNS multicast">
+          <input class="mb-input" id="pinId" placeholder="id" title="Node id" aria-label="Node id">
+          <input class="mb-input" id="pinIp" placeholder="IP address" title="Node IP" aria-label="Node IP address">
+          <input class="mb-input" id="pinName" placeholder="name" title="Display name" aria-label="Node display name">
+          <button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-block fcc-pin-full" type="submit"
+            title="Persist this pinned node (survives restarts)">
+            <i class="bi bi-pin-map"></i> Pin node</button>
         </form>
       </div>
-    </div>
+    </section>
   </div>
 </div>
 
-<!-- Webcam expand modal -->
+<!-- Webcam expand modal (Bootstrap-driven; dialog chrome uses design-system tokens) -->
 <div class="modal fade" id="fccCamModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header py-2"><h6 class="modal-title" id="fccCamTitle">Webcam</h6>
+      <div class="modal-header py-2"><h2 class="modal-title mb-heading-3" id="fccCamTitle">Webcam</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body p-0"><img id="fccCamModalImg" alt="Live webcam"></div>
     </div>
   </div>
 </div>
+
+<!-- Confirmation dialog. Replaces three native browser confirmations, which
+     could not be styled, were unusable on a phone, and — worst here — never
+     named the machines the command was about to reach. -->
+<div class="mb-modal-backdrop" id="fccConfirmBackdrop" hidden></div>
+<div class="mb-modal" id="fccConfirm" role="dialog" aria-modal="true" aria-labelledby="fccConfirmTitle" hidden>
+  <div class="mb-modal-dialog">
+    <div class="mb-modal-header">
+      <h2 class="mb-modal-title" id="fccConfirmTitle">Confirm</h2>
+    </div>
+    <div class="mb-modal-body">
+      <p id="fccConfirmBody" class="mb-text-base"></p>
+      <p class="mb-field-hint">Targets: <span id="fccConfirmTargets" class="mb-mono"></span></p>
+    </div>
+    <div class="mb-modal-footer">
+      <button type="button" class="mb-btn mb-btn-secondary" id="fccConfirmCancel">Cancel</button>
+      <button type="button" class="mb-btn mb-btn-danger" id="fccConfirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="mb-toast-region" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -186,10 +179,60 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+  // Toast, lifted from public/js/mb-control-bar.js so this page speaks the same
+  // language as the rest of the app instead of blocking on a native dialog.
+  function announce(message, severity) {
+    let region = document.querySelector('.mb-toast-region');
+    if (!region) {
+      region = document.createElement('div');
+      region.className = 'mb-toast-region';
+      region.setAttribute('role', 'status');
+      region.setAttribute('aria-live', 'polite');
+      document.body.appendChild(region);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'mb-toast mb-toast-' + (severity || 'warning');
+    toast.textContent = message;
+    region.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4000);
+  }
+
+  // Styled replacement for the native browser confirmation. Names the machines the
+  // command will reach — "REBOOT?" with no list is a question nobody can answer safely.
+  let confirmResolve = null;
+  function askConfirm(title, body, targets) {
+    $('#fccConfirmTitle').textContent = title;
+    $('#fccConfirmBody').textContent = body;
+    $('#fccConfirmTargets').textContent = targets;
+    $('#fccConfirmBackdrop').hidden = false;
+    $('#fccConfirm').hidden = false;
+    $('#fccConfirmOk').focus();
+    return new Promise(resolve => { confirmResolve = resolve; });
+  }
+  function closeConfirm(answer) {
+    $('#fccConfirmBackdrop').hidden = true;
+    $('#fccConfirm').hidden = true;
+    if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(answer); }
+  }
+  $('#fccConfirmOk').addEventListener('click', () => closeConfirm(true));
+  $('#fccConfirmCancel').addEventListener('click', () => closeConfirm(false));
+  $('#fccConfirmBackdrop').addEventListener('click', () => closeConfirm(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && confirmResolve) closeConfirm(false); });
+
   function log(msg, type) {
     const line = el('div', type || 'muted', '<span class="muted">' + new Date().toLocaleTimeString() + '</span> ' + esc(msg));
     const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
     while (box.children.length > 300) box.removeChild(box.firstChild);
+  }
+  // Per-node failures already travel in results[] and were being thrown away, so
+  // "2/5 ok" never said which three failed or why. Print them, named.
+  function logNodeFailures(r) {
+    if (!r || !Array.isArray(r.results)) return;
+    r.results.filter(x => x && x.success === false).forEach(x => {
+      const who = x.animatronic || x.goblin || x.id || 'node';
+      const line = el('div', 'err detail', '↳ ' + esc(who) + ': ' + esc(x.error || 'failed'));
+      const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
+    });
   }
   function summarize(r) {
     if (!r) return '';
@@ -216,68 +259,91 @@
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
     col.id = cardId(node.id);
-    const card = el('div', 'card fcc-card');
+    const card = el('div', 'mb-card fcc-card');
 
     // header
-    const head = el('div', 'card-header py-1 d-flex align-items-center gap-2');
+    const head = el('div', 'fcc-card-head');
     head.innerHTML =
-      '<span class="fcc-dot ' + (node.online ? 'online' : 'offline') + '" data-role="dot"></span>' +
-      '<strong class="me-auto text-truncate" title="' + esc(node.name) + '">' + esc(node.name) + '</strong>' +
+      '<span class="mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle') + '" data-role="dot" title="' +
+        (node.online ? 'Online' : 'Offline') + '"></span>' +
+      '<span class="fcc-card-name" title="' + esc(node.name) + '">' + esc(node.name) + '</span>' +
       '<span class="fcc-chip ' + (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '" data-role="chip" title="Discovery source / trust">' +
         (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '</span>' +
-      '<input type="checkbox" class="form-check-input" data-role="target" title="Target this node for global actions">';
+      '<label class="mb-check" title="Target this node for global actions">' +
+        '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>';
     card.appendChild(head);
 
     // webcam
     const cam = el('div', 'fcc-cam-wrap');
     const img = el('img'); img.alt = esc(node.name) + ' webcam'; img.loading = 'lazy';
-    const off = el('div', 'fcc-cam-off', 'Webcam unavailable');
-    off.style.display = 'none';
+    const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
     if (node.online) { img.src = API + '/animatronic/' + node.id + '/webcam-stream'; }
-    else { off.textContent = 'Node offline'; off.style.display = 'flex'; img.style.visibility = 'hidden'; }
-    img.onerror = function () { off.textContent = 'Webcam unavailable'; off.style.display = 'flex'; img.style.visibility = 'hidden'; };
-    img.onload = function () { off.style.display = 'none'; img.style.visibility = 'visible'; };
+    else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
+    img.onerror = function () { off.textContent = 'Webcam unavailable'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); };
+    img.onload = function () { off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible'); };
     cam.appendChild(img); cam.appendChild(off);
     cam.onclick = function () { openCam(node); };
     card.appendChild(cam);
 
     // body
-    const body = el('div', 'card-body p-2 d-flex flex-column gap-2');
+    const body = el('div', 'fcc-card-body');
 
     const health = el('div', 'fcc-health', '');
     health.setAttribute('data-role', 'health');
     body.appendChild(health);
 
+    // Why this card is inert. Rendered for every node, shown only when offline.
+    const note = el('div', 'mb-alert mb-alert-warning fcc-offline-note fcc-hidden',
+      '<i class="bi bi-plug"></i><span>Offline — controls are disabled. Nothing on this card can reach the machine until it answers.</span>');
+    note.setAttribute('data-role', 'offlineNote');
+    body.appendChild(note);
+
     // Say / Ask row
-    const sayGrp = el('div', 'input-group input-group-sm');
+    const sayGrp = el('div', 'mb-input-group');
     sayGrp.innerHTML =
-      '<input type="text" class="form-control" data-role="text" placeholder="Say or Ask…" title="Text to speak or ask the AI">' +
-      '<button class="btn btn-outline-info" data-role="say" title="Speak this text (TTS)"><i class="bi bi-megaphone"></i></button>' +
-      '<button class="btn btn-outline-primary" data-role="ask" title="Ask the AI agent and speak the reply"><i class="bi bi-robot"></i></button>';
+      '<input type="text" class="mb-input" data-role="text" placeholder="Say or Ask…" title="Text to speak or ask the AI" aria-label="Text to speak or ask">' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="say" title="Speak this text (TTS)"><i class="bi bi-megaphone"></i></button>' +
+      '<button class="mb-btn mb-btn-sm mb-btn-ai" data-role="ask" title="Ask the AI agent and speak the reply"><i class="bi bi-robot"></i></button>';
     body.appendChild(sayGrp);
 
     // Audio row
-    const audioGrp = el('div', 'input-group input-group-sm');
+    const audioGrp = el('div', 'mb-input-group');
     audioGrp.innerHTML =
-      '<select class="form-select" data-role="audioSel" title="Audio clip on this node"><option value="">— audio —</option></select>' +
-      '<button class="btn btn-outline-success" data-role="playAudio" title="Play selected audio"><i class="bi bi-play"></i></button>' +
-      '<button class="btn btn-outline-secondary" data-role="loopAudio" title="Loop selected audio"><i class="bi bi-repeat"></i></button>' +
-      '<button class="btn btn-outline-warning" data-role="stopAudio" title="Stop audio on this node"><i class="bi bi-stop"></i></button>';
+      '<select class="mb-select" data-role="audioSel" title="Audio clip on this node" aria-label="Audio clip"><option value="">— audio —</option></select>' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="playAudio" title="Play selected audio"><i class="bi bi-play"></i></button>' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="loopAudio" title="Loop selected audio"><i class="bi bi-repeat"></i></button>' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="stopAudio" title="Stop audio on this node"><i class="bi bi-stop"></i></button>';
     body.appendChild(audioGrp);
 
     // Auto-AI row
-    const autoGrp = el('div', 'input-group input-group-sm');
+    const autoGrp = el('div', 'mb-input-group');
     autoGrp.innerHTML =
-      '<span class="input-group-text" title="Auto-AI makes the node speak on an interval">Auto-AI</span>' +
-      '<input type="number" class="form-control" data-role="autoInterval" value="30" min="5" title="Interval in seconds">' +
-      '<button class="btn btn-outline-success" data-role="autoStart" title="Start Auto-AI"><i class="bi bi-play-circle"></i></button>' +
-      '<button class="btn btn-outline-warning" data-role="autoStop" title="Stop Auto-AI"><i class="bi bi-stop-circle"></i></button>';
+      '<span class="mb-input-addon" title="Auto-AI makes the node speak on an interval">Auto-AI</span>' +
+      '<input type="number" class="mb-input" data-role="autoInterval" value="30" min="5" title="Interval in seconds" aria-label="Auto-AI interval in seconds">' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="autoStart" title="Start Auto-AI"><i class="bi bi-play-circle"></i></button>' +
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="autoStop" title="Stop Auto-AI"><i class="bi bi-stop-circle"></i></button>';
     body.appendChild(autoGrp);
 
     card.appendChild(body);
     col.appendChild(card);
     wireCard(col, node);
     return col;
+  }
+
+  // Every control on a node card that talks to the machine. The target checkbox
+  // is deliberately excluded: selecting a dead node is how you scope a reboot.
+  const NODE_CONTROLS = ['text', 'say', 'ask', 'audioSel', 'playAudio', 'loopAudio',
+                         'stopAudio', 'autoInterval', 'autoStart', 'autoStop'];
+
+  function setCardEnabled(col, online) {
+    NODE_CONTROLS.forEach(role => {
+      const control = col.querySelector('[data-role="' + role + '"]');
+      if (control) control.disabled = !online;
+    });
+    const note = col.querySelector('[data-role="offlineNote"]');
+    if (note) note.classList.toggle('fcc-hidden', !!online);
+    const cam = col.querySelector('.fcc-cam-wrap');
+    if (cam) cam.setAttribute('aria-disabled', online ? 'false' : 'true');
   }
 
   function wireCard(col, node) {
@@ -295,13 +361,17 @@
     q('stopAudio').addEventListener('click', () => doNode(id, '/stop-audio', {}, node.name + ' audio stopped'));
     q('autoStart').addEventListener('click', () => doNode(id, '/auto-ai/start', { interval: parseInt(q('autoInterval').value, 10) || 30 }, node.name + ' Auto-AI on'));
     q('autoStop').addEventListener('click', () => doNode(id, '/auto-ai/stop', {}, node.name + ' Auto-AI off'));
+    setCardEnabled(col, node.online);
     // lazy-load audio list once the node is known online
     if (node.online) loadAudio(id, col);
   }
 
   function patchCard(col, node) {
     const dot = col.querySelector('[data-role="dot"]');
-    if (dot) dot.className = 'fcc-dot ' + (node.online ? 'online' : 'offline');
+    if (dot) {
+      dot.className = 'mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle');
+      dot.title = node.online ? 'Online' : 'Offline';
+    }
     const chip = col.querySelector('[data-role="chip"]');
     if (chip) { const c = node.trusted === false ? 'untrusted' : (node.source || 'config'); chip.className = 'fcc-chip ' + c; chip.textContent = c; }
     const h = col.querySelector('[data-role="health"]');
@@ -318,6 +388,7 @@
         h.textContent = (node.error ? node.error : 'offline') + ' (' + (node.ip || '?') + ')';
       }
     }
+    setCardEnabled(col, node.online);
     // If a node just came online and its webcam img has no src, start it.
     const img = col.querySelector('.fcc-cam-wrap img');
     if (img && node.online && !img.getAttribute('src')) { img.src = API + '/animatronic/' + node.id + '/webcam-stream'; }
@@ -401,22 +472,22 @@
   function showWallError(msg) {
     const wall = $('#nodeWall');
     if (wall.querySelector('.fcc-card')) return; // keep existing cards
-    wall.innerHTML = '<div class="col-12"><div class="alert alert-danger d-flex justify-content-between align-items-center">' +
+    wall.innerHTML = '<div class="col-12"><div class="mb-alert mb-alert-danger mb-row-between">' +
       '<span>Could not load fleet: ' + esc(msg) + '</span>' +
-      '<button class="btn btn-sm btn-outline-light" onclick="location.reload()">Retry</button></div></div>';
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="location.reload()">Retry</button></div></div>';
   }
   function renderFleetPill(health) {
     const online = health.online || 0, total = health.total || 0;
     $('#fleetCount').textContent = online + ' / ' + total + ' online';
     const dot = $('#fleetDot');
-    dot.className = 'fcc-dot ' + (online === 0 ? 'offline' : (online < total ? 'warn' : 'online'));
+    dot.className = 'mb-dot ' + (online === 0 ? 'mb-dot-idle' : (online < total ? 'mb-dot-warning' : 'mb-dot-live'));
   }
   function renderDiscovery(info) {
     state.avahi = info.avahiAvailable;
     const ds = $('#discoveryState');
-    if (info.avahiAvailable === true) ds.innerHTML = 'mDNS: <span class="text-success">available</span>';
-    else if (info.avahiAvailable === false) ds.innerHTML = 'mDNS: <span class="text-warning">unavailable</span> — using config + pins';
-    else ds.innerHTML = 'mDNS: <span class="text-secondary">unknown</span>';
+    if (info.avahiAvailable === true) ds.innerHTML = 'mDNS: <span class="mb-text-success">available</span>';
+    else if (info.avahiAvailable === false) ds.innerHTML = 'mDNS: <span class="mb-text-warning">unavailable</span> — using config + pins';
+    else ds.innerHTML = 'mDNS: <span class="mb-text-secondary">unknown</span>';
     const counts = { config: 0, discovered: 0, manual: 0 };
     (info.nodes || []).forEach(n => { counts[n.source] = (counts[n.source] || 0) + 1; });
     $('#sourceBreakdown').textContent = counts.config + ' config · ' + counts.discovered + ' discovered · ' + counts.manual + ' pinned';
@@ -429,35 +500,52 @@
       const res = await fetch('/goblin-management/api/goblins');
       const data = await res.json();
       const goblins = (data && (data.goblins || data)) || [];
-      if (!goblins.length) { row.innerHTML = '<div class="col-12 text-secondary small">No goblins registered.</div>'; return; }
+      if (!goblins.length) { row.innerHTML = '<div class="col-12 mb-text-sm mb-text-secondary">No goblins registered.</div>'; return; }
       row.innerHTML = '';
       goblins.forEach(g => {
         const id = g.id || g.goblinId; // fixed: goblin objects expose `id`, not `goblinId`
         const online = g.online || g.status === 'online';
         const col = el('div', 'col-sm-6 col-lg-3');
-        col.innerHTML = '<div class="card"><div class="card-body py-2 d-flex align-items-center gap-2">' +
-          '<span class="fcc-dot ' + (online ? 'online' : 'offline') + '"></span>' +
-          '<span class="me-auto text-truncate" title="' + esc(g.name || id) + '">' + esc(g.name || id) + '</span>' +
-          '<a class="btn btn-sm btn-outline-secondary" href="/goblin-management?goblin=' + encodeURIComponent(id) + '" title="Open in Goblin Management">Manage</a>' +
-          '</div></div>';
+        col.innerHTML = '<div class="mb-card mb-row-sm align-items-center">' +
+          '<span class="mb-dot ' + (online ? 'mb-dot-live' : 'mb-dot-idle') + '" title="' + (online ? 'Online' : 'Offline') + '"></span>' +
+          '<span class="fcc-card-name" title="' + esc(g.name || id) + '">' + esc(g.name || id) + '</span>' +
+          '<a class="mb-btn mb-btn-sm mb-btn-secondary" href="/goblin-management?goblin=' + encodeURIComponent(id) + '" title="Open in Goblin Management">Manage</a>' +
+          '</div>';
         row.appendChild(col);
       });
-    } catch (e) { row.innerHTML = '<div class="col-12 text-danger small">Goblin list failed: ' + esc(e.message) + '</div>'; }
+    } catch (e) { row.innerHTML = '<div class="col-12 mb-text-sm mb-text-danger">Goblin list failed: ' + esc(e.message) + '</div>'; }
   }
 
   // ---------- global actions ----------
   async function fleetAction(desc, path, opts) {
-    try { const r = await api(path, opts); log(desc + ' → ' + summarize(r), r && r.success === false ? 'warn' : 'ok'); return r; }
-    catch (e) { log(desc + ' failed: ' + e.message, 'err'); }
+    try {
+      const r = await api(path, opts);
+      const partial = r && typeof r.successful === 'number' && r.successful > 0 && r.failed > 0;
+      log(desc + ' → ' + summarize(r), (r && r.success === false) || partial ? 'warn' : 'ok');
+      logNodeFailures(r);
+      if (partial) announce(desc + ': only ' + r.successful + ' of ' + r.total + ' nodes accepted it — see the command log.', 'warning');
+      return r;
+    }
+    catch (e) { log(desc + ' failed: ' + e.message, 'err'); announce(desc + ' failed: ' + e.message, 'danger'); }
   }
 
   document.querySelectorAll('.fcc-sp').forEach(btn => {
     btn.addEventListener('click', async () => {
       const sp = btn.getAttribute('data-sp');
       const next = !btn.classList.contains('on');
+      btn.setAttribute('data-busy', 'true');
       const r = await fleetAction((next ? 'Enable ' : 'Disable ') + sp, '/superpower/' + sp,
         { method: 'POST', body: JSON.stringify({ enabled: next, ids: targetIds() }) });
-      if (r) { btn.classList.toggle('on', next); btn.classList.remove('mixed'); }
+      btn.removeAttribute('data-busy');
+      if (!r) return;
+      // Three states. A toggle that reached some of the fleet is neither on nor
+      // off, and the operator has to be able to see that at a glance.
+      const partial = typeof r.successful === 'number' && r.successful > 0 && r.failed > 0;
+      btn.classList.toggle('mixed', partial);
+      btn.classList.toggle('on', !partial && next && r.successful > 0);
+      btn.title = partial
+        ? sp + ': ' + r.successful + ' of ' + r.total + ' nodes accepted this — the fleet is not in one state'
+        : btn.title.split('\n')[0];
     });
   });
 
@@ -470,9 +558,18 @@
 
   $('#startLoops').addEventListener('click', () => fleetAction('Start queue loops', '/start-all-queue-loops', { method: 'POST' }));
   $('#stopLoops').addEventListener('click', () => fleetAction('Stop queue loops', '/stop-all-queue-loops', { method: 'POST', body: JSON.stringify({ ids: targetIds() }) }));
-  $('#restartSvc').addEventListener('click', () => { if (confirm('Restart the MonsterBox service on ' + targetLabel() + '?')) fleetAction('Restart services', '/restart-services', { method: 'POST' }); });
-  $('#rebootAll').addEventListener('click', () => { if (confirm('REBOOT ' + targetLabel() + '? Animatronics will go offline for ~30s.')) fleetAction('Reboot', '/reboot/animatronics', { method: 'POST', body: JSON.stringify({ ids: targetIds() ? targetIds().map(Number) : undefined }) }); });
-  $('#estop').addEventListener('click', () => { if (confirm('EMERGENCY STOP ' + targetLabel() + '? Halts queues, audio, poses and mutes.')) fleetAction('EMERGENCY STOP', '/emergency-stop', { method: 'POST', body: JSON.stringify({ ids: targetIds() }) }); });
+  $('#restartSvc').addEventListener('click', async () => {
+    if (await askConfirm('Restart MonsterBox service?', 'Each targeted animatronic restarts its service and drops offline for a few seconds.', targetLabel()))
+      fleetAction('Restart services', '/restart-services', { method: 'POST' });
+  });
+  $('#rebootAll').addEventListener('click', async () => {
+    if (await askConfirm('Reboot animatronics?', 'These machines will power-cycle their OS and be offline for roughly 30 seconds.', targetLabel()))
+      fleetAction('Reboot', '/reboot/animatronics', { method: 'POST', body: JSON.stringify({ ids: targetIds() ? targetIds().map(Number) : undefined }) });
+  });
+  $('#estop').addEventListener('click', async () => {
+    if (await askConfirm('EMERGENCY STOP', 'Halts scene queues, stops audio, disables random poses and mutes every targeted node immediately.', targetLabel()))
+      fleetAction('EMERGENCY STOP', '/emergency-stop', { method: 'POST', body: JSON.stringify({ ids: targetIds() }) });
+  });
 
   const volEl = $('#masterVol'); let volTimer = null;
   volEl.addEventListener('input', () => { $('#masterVolVal').textContent = volEl.value + '%'; });
@@ -492,9 +589,9 @@
   $('#pinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = $('#pinId').value.trim(), ip = $('#pinIp').value.trim(), name = $('#pinName').value.trim();
-    if (!id || !ip) { log('Pin needs at least id and IP', 'warn'); return; }
+    if (!id || !ip) { log('Pin needs at least id and IP', 'warn'); announce('Pin needs at least an id and an IP address.', 'warning'); return; }
     try { await api('/nodes/manual', { method: 'POST', body: JSON.stringify({ id, ip, name }) }); log('Pinned node ' + name + ' (' + ip + ')', 'ok'); $('#pinForm').reset(); refresh(); }
-    catch (err) { log('Pin failed: ' + err.message, 'err'); }
+    catch (err) { log('Pin failed: ' + err.message, 'err'); announce('Pin failed: ' + err.message, 'danger'); }
   });
 
   // ---------- boot ----------

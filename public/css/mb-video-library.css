@@ -1,0 +1,127 @@
+/* ==========================================================================
+   Video Library — page styles
+   --------------------------------------------------------------------------
+   Page-specific rules only; shared components come from components.css and
+   every value resolves to a --mb-* token so the three themes reach this page.
+
+   Loaded via `styles: ['/css/mb-video-library.css']` from routes/videoLibrary.js.
+   ========================================================================== */
+
+/* Page-scoped visibility helper — a class rather than inline style="", so the
+   theme system can still reach the element. */
+.vid-hidden { display: none !important; }
+
+/* ---- Stat tiles ---------------------------------------------------------
+   Four saturated Bootstrap fills (bg-primary/success/info/warning) used to
+   dominate the page and ignore the theme. Quiet surface, one token accent
+   rail, numbers in the mono face so they line up.
+   -------------------------------------------------------------------------- */
+.vid-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-4);
+  height: 100%;
+  border-left: 3px solid var(--mb-border-default);
+}
+
+.vid-stat-icon {
+  font-size: var(--mb-text-2xl);
+  line-height: 1;
+  color: var(--mb-fg-secondary);
+}
+
+.vid-stat-value {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-2xl);
+  line-height: 1.1;
+  margin: 0;
+  color: var(--mb-fg-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vid-stat-label {
+  font-size: var(--mb-text-xs);
+  letter-spacing: var(--mb-tracking-wider);
+  text-transform: uppercase;
+  color: var(--mb-fg-secondary);
+}
+
+.vid-stat-count { border-left-color: var(--mb-primary); }
+.vid-stat-count .vid-stat-icon { color: var(--mb-primary); }
+.vid-stat-size { border-left-color: var(--mb-info); }
+.vid-stat-size .vid-stat-icon { color: var(--mb-info); }
+.vid-stat-cats { border-left-color: var(--mb-ai); }
+.vid-stat-cats .vid-stat-icon { color: var(--mb-ai); }
+.vid-stat-goblins { border-left-color: var(--mb-warning); }
+.vid-stat-goblins .vid-stat-icon { color: var(--mb-warning); }
+
+/* ---- Column widths for the list view -----------------------------------
+   Widths belong in CSS, not in a `style` attribute on every <th>.
+   -------------------------------------------------------------------------- */
+.vid-col-bulk,
+.vid-col-fav { width: 28px; }
+.vid-col-fmt { width: 45px; }
+.vid-col-dur,
+.vid-col-size { width: 55px; }
+.vid-col-actions { width: 60px; }
+
+/* ---- Deploy modal panes ------------------------------------------------- */
+.vid-pick-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  padding: var(--mb-space-2);
+  background: var(--mb-bg-1);
+}
+
+/* Was `class="rounded p-2" style="background: rgba(var(--bs-primary-rgb),.1)"`
+   with a SECOND style="display:none" on the same element — a duplicate
+   attribute the browser silently drops, so this progress panel was always
+   visible even before a deployment started. Class-based now, and genuinely
+   hidden until deployment begins. */
+.vid-deploy-progress {
+  border: 1px solid var(--mb-primary);
+  border-radius: var(--mb-radius-md);
+  background: color-mix(in srgb, var(--mb-primary) 10%, transparent);
+  padding: var(--mb-space-3);
+}
+
+.vid-player-controls {
+  display: flex;
+  gap: var(--mb-space-2);
+}
+
+.vid-empty-icon {
+  font-size: var(--mb-text-3xl);
+}
+
+/* Row-level destructive action: danger on the glyph, full fill only on hover,
+   so a long list is not a wall of red. */
+.mb-list-table .delete-btn { color: var(--mb-danger); }
+.mb-list-table .delete-btn:hover {
+  background: var(--mb-danger);
+  color: #fff;
+}
+
+/* Rows in the deploy pickers: a full-width, tappable label wrapping the
+   checkbox, so the whole row is the target rather than a 13px box. */
+.vid-pick-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mb-space-2);
+  width: 100%;
+  padding: var(--mb-space-2);
+  border-radius: var(--mb-radius-sm);
+}
+
+.vid-pick-row:hover { background: var(--mb-bg-hover); }
+.vid-pick-row input[type="checkbox"] { margin-top: 2px; flex: 0 0 auto; }
+
+/* Checkboxes rendered into grid/list rows by video-library.js. */
+.video-select-checkbox {
+  accent-color: var(--mb-primary);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}

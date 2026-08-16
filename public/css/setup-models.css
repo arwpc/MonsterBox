@@ -1,0 +1,91 @@
+/* ==========================================================================
+   /setup/models — page-specific rules
+   --------------------------------------------------------------------------
+   Shared vocabulary (buttons, inputs, panels, tables, badges, toasts, modals)
+   comes from components.css and is not restated. Only what is genuinely
+   specific to the Models page lives here, and every value is token-backed so
+   all three themes reach it.
+
+   Loaded via `styles: ['/css/setup-models.css']` from routes/setup/models.js.
+   ========================================================================== */
+
+.mdl-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--mb-space-3);
+}
+
+/* --- Editor ------------------------------------------------------------ */
+.mdl-editor-actions {
+  display: flex;
+  gap: var(--mb-space-2);
+}
+
+.mdl-editor-actions .mb-btn { flex: 1 1 0; }
+
+.mdl-json {
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-sm);
+}
+
+/* --- Models list ------------------------------------------------------- */
+/* The bulk-delete button starts hidden. The handler sets style.display
+   directly (both to show and to hide), which outranks this rule either way —
+   this only prevents the button flashing into view before the first render. */
+.mdl-hidden { display: none; }
+
+.mdl-table-body { padding: 0; }
+
+.mdl-col-check   { width: 34px; }
+.mdl-col-actions { width: 84px; }
+
+.model-row { cursor: pointer; }
+
+.mdl-row-active,
+.mdl-row-active:hover {
+  background: color-mix(in srgb, var(--mb-primary) 14%, transparent);
+}
+
+/* Several settings badges sit in one cell; they need to breathe and wrap. */
+.mdl-setting-badge {
+  margin: 0 var(--mb-space-1) var(--mb-space-1) 0;
+}
+
+/* --- Apply model to parts ---------------------------------------------- */
+/* A multi-select is a list box, not a dropdown: drop .mb-select's arrow and
+   let its own height stand. */
+.mdl-parts-select {
+  height: auto;
+  padding-right: var(--mb-space-3);
+  background-image: none;
+}
+
+/* --- Confirmation modal internals -------------------------------------- */
+.mdl-confirm-message { margin: 0; }
+
+.mdl-confirm-target {
+  margin: var(--mb-space-3) 0;
+  font-family: var(--mb-font-mono);
+  font-size: var(--mb-text-lg);
+  font-weight: var(--mb-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.mdl-confirm-details {
+  margin: var(--mb-space-2) 0 0;
+  padding-left: var(--mb-space-5);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+/* --- Small screens ------------------------------------------------------ */
+@media (max-width: 768px) {
+  /* The stacked table hides its head, so the two width hints stop meaning
+     anything and the checkbox cell must not keep a 34px cap. */
+  .mdl-col-check,
+  .mdl-col-actions { width: auto; }
+
+  .mdl-table-body { padding: var(--mb-space-3); }
+
+  .mdl-editor-actions { flex-direction: column; }
+}

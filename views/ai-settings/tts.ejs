@@ -5,44 +5,45 @@
             <span class="mb-text-secondary">· voice assignment and tuning</span>
         </h1>
         <div class="mb-page-header-actions">
-            <a href="/ai-settings" class="btn btn-outline-secondary btn-sm" title="Back to AI Settings">
+            <a href="/ai-settings" class="mb-btn mb-btn-secondary mb-btn-sm" title="Back to AI Settings">
                 <i class="bi bi-arrow-left"></i> AI Settings
             </a>
-            <button class="btn btn-primary btn-sm" id="testTTS" title="Test text-to-speech">
-                <i class="bi bi-play-circle"></i> Test TTS
+            <!-- This one plays nothing anywhere: it only proves the API key and the
+                 assigned voice work. Named for what it checks, not for "test". -->
+            <button class="mb-btn mb-btn-secondary mb-btn-sm" id="testTTS"
+                title="Check the ElevenLabs API and the assigned voice respond. Generates a short clip on the server and plays no audio.">
+                <i class="bi bi-plug"></i> Check API &amp; Voice
             </button>
         </div>
     </header>
 
     <!-- Character Voice Assignment Banner -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center mb-0" id="ttsCharacterBanner">
-                <i class="bi bi-person-badge me-2"></i>
-                <strong>Assigning voice to: </strong>
-                <span id="ttsCharacterName" class="ms-1">Loading...</span>
-                <span class="ms-2 text-muted">|</span>
-                <span class="ms-2"><i class="bi bi-volume-up"></i> Current voice: <strong id="ttsCurrentVoiceName">Loading...</strong></span>
-            </div>
+    <div class="mb-alert mb-alert-info mb-3" id="ttsCharacterBanner">
+        <div class="mb-row-sm align-items-center">
+            <span><i class="bi bi-person-badge"></i> <strong>Assigning voice to:</strong>
+                <span id="ttsCharacterName">Loading...</span></span>
+            <span class="mb-text-muted mb-hide-sm">|</span>
+            <span><i class="bi bi-volume-up"></i> Current voice:
+                <strong id="ttsCurrentVoiceName">Loading...</strong></span>
         </div>
     </div>
 
     <div class="row g-4">
         <!-- Left Column: Voice Selection + Settings -->
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-gear"></i> Voice Assignment & Configuration
-                    </h5>
+            <div class="mb-panel">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
+                        <i class="bi bi-gear"></i> Voice Assignment &amp; Configuration
+                    </h2>
                 </div>
-                <div class="card-body">
+                <div class="mb-panel-body">
                     <form id="ttsConfigForm">
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="ttsModel" class="form-label">TTS Model</label>
-                                    <select class="form-select" id="ttsModel" name="model" title="Select the text-to-speech model">
+                                <div class="ai-field">
+                                    <label for="ttsModel" class="mb-field-label">TTS Model</label>
+                                    <select class="mb-select" id="ttsModel" name="model" title="Select the text-to-speech model">
                                         <option value="eleven_v3">Eleven v3 (Most Expressive)</option>
                                         <option value="eleven_flash_v2_5">Eleven Flash v2.5 (Fastest)</option>
                                         <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
@@ -50,72 +51,81 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="defaultVoice" class="form-label"><i class="bi bi-person-badge me-1"></i>Character Voice</label>
-                                    <select class="form-select" id="defaultVoice" name="voice_id" title="Voice for text-to-speech output">
+                                <div class="ai-field">
+                                    <label for="defaultVoice" class="mb-field-label"><i class="bi bi-person-badge"></i> Character Voice</label>
+                                    <select class="mb-select" id="defaultVoice" name="voice_id" title="Voice for text-to-speech output">
                                         <option value="">Loading voices...</option>
                                     </select>
-                                    <small class="text-muted">This voice will be used for all TTS output for this character</small>
+                                    <small class="mb-field-hint">This voice will be used for all TTS output for this character</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Voice Settings -->
-                        <h6 class="mt-4 mb-3">Voice Settings</h6>
+                        <h3 class="ai-subhead">Voice Settings</h3>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="stability" class="form-label">Stability</label>
-                                    <input type="range" class="form-range" id="stability" name="stability" min="0"
+                                <div class="ai-field">
+                                    <label for="stability" class="mb-field-label">Stability</label>
+                                    <input type="range" class="mb-range" id="stability" name="stability" min="0"
                                         max="1" step="0.1" value="0.5" title="Voice stability setting">
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-muted">Variable</small>
-                                        <small class="text-muted">Stable</small>
+                                    <div class="ai-range-ends">
+                                        <small class="mb-field-hint">Variable</small>
+                                        <small class="mb-field-hint">Stable</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="similarityBoost" class="form-label">Similarity Boost</label>
-                                    <input type="range" class="form-range" id="similarityBoost" name="similarity_boost" title="Voice similarity boost setting"
+                                <div class="ai-field">
+                                    <label for="similarityBoost" class="mb-field-label">Similarity Boost</label>
+                                    <input type="range" class="mb-range" id="similarityBoost" name="similarity_boost" title="Voice similarity boost setting"
                                         min="0" max="1" step="0.1" value="0.5">
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-muted">Low</small>
-                                        <small class="text-muted">High</small>
+                                    <div class="ai-range-ends">
+                                        <small class="mb-field-hint">Low</small>
+                                        <small class="mb-field-hint">High</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Style and Speaker Boost are ignored by Eleven v3. When v3 is
+                             selected, ai-settings-tts.js adds .ai-inactive here and disables
+                             both controls, so the UI stops implying they will do something. -->
                         <div class="row" id="legacyVoiceSettings">
-                            <div class="col-12 mb-2">
-                                <small class="text-muted" id="v3SettingsNote" style="display:none;">
-                                    <i class="bi bi-info-circle"></i> Style and Speaker Boost are not used by Eleven v3 — it uses audio tags and punctuation for expressiveness instead.
-                                </small>
+                            <div class="col-12">
+                                <div class="mb-alert mb-alert-warning ai-hidden" id="v3SettingsNote">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Disabled for Eleven v3.</strong>
+                                    v3 takes its expressiveness from audio tags and punctuation in the
+                                    text, and ignores Style and Speaker Boost entirely. Switch to
+                                    Flash v2.5 or Multilingual v2 to use them.
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="style" class="form-label">Style</label>
-                                    <input type="range" class="form-range" id="style" name="style" min="0" max="1"
+                                <div class="ai-field">
+                                    <label for="style" class="mb-field-label">Style</label>
+                                    <input type="range" class="mb-range" id="style" name="style" min="0" max="1"
                                         step="0.1" value="0.0" title="Voice style expressiveness">
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-muted">Natural</small>
-                                        <small class="text-muted">Expressive</small>
+                                    <div class="ai-range-ends">
+                                        <small class="mb-field-hint">Natural</small>
+                                        <small class="mb-field-hint">Expressive</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3 form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="speakerBoost" title="Use speaker boost"
-                                        name="use_speaker_boost" checked>
-                                    <label class="form-check-label" for="speakerBoost">
-                                        Use Speaker Boost
+                                <div class="ai-field">
+                                    <label class="mb-switch">
+                                        <input type="checkbox" id="speakerBoost" title="Use speaker boost"
+                                            name="use_speaker_boost" checked>
+                                        <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                        <span>Use Speaker Boost</span>
                                     </label>
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-success" title="Save TTS configuration">
+                            <button type="submit" class="mb-btn mb-btn-primary" title="Save TTS configuration">
                                 <i class="bi bi-check-circle"></i> Save Configuration
                             </button>
                         </div>
@@ -124,38 +134,44 @@
             </div>
 
             <!-- Speaker Integration -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <div class="mb-panel mt-4">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-link-45deg"></i> Speaker Integration
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="speakerPart" class="form-label">Select Speaker Part</label>
-                        <select class="form-select" id="speakerPart" title="Select the speaker hardware part">
+                <div class="mb-panel-body">
+                    <div class="ai-field">
+                        <label for="speakerPart" class="mb-field-label">Select Speaker Part</label>
+                        <select class="mb-select" id="speakerPart" title="Select the speaker hardware part">
                             <option value="">Loading speaker parts...</option>
                         </select>
                     </div>
                     <div class="d-grid">
-                        <button type="button" class="btn btn-info" id="testSpeakerIntegration" title="Test text-to-speech through speaker">
-                            <i class="bi bi-arrow-repeat"></i> Test TTS &rarr; Speaker
+                        <!-- The only button on this page that makes the animatronic
+                             itself make a noise. Say so. -->
+                        <button type="button" class="mb-btn mb-btn-primary" id="testSpeakerIntegration"
+                            title="Speak a test line out loud on the animatronic's own speaker in the room">
+                            <i class="bi bi-megaphone"></i> Play Out Loud on Character Speaker
                         </button>
                     </div>
+                    <small class="ai-destination">
+                        <i class="bi bi-volume-up"></i> Sound comes out of the animatronic in the room — not this browser.
+                    </small>
                 </div>
             </div>
 
             <!-- Voice Cloning -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
+            <div class="mb-panel mt-4">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
                         <i class="bi bi-person-plus"></i> Voice Cloning
-                    </h5>
+                    </h2>
                 </div>
-                <div class="card-body">
-                    <p class="small text-muted">Clone custom voices from audio samples</p>
+                <div class="mb-panel-body">
+                    <p class="mb-text-secondary mb-text-sm">Clone custom voices from audio samples</p>
                     <div class="d-grid">
-                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
+                        <button type="button" class="mb-btn mb-btn-ai" data-bs-toggle="modal"
                             data-bs-target="#voiceCloningModal" title="Open voice cloning dialog">
                             <i class="bi bi-plus-circle"></i> Clone Voice
                         </button>
@@ -166,33 +182,37 @@
 
         <!-- Right Column: Sticky Voice Preview + Voice Library -->
         <div class="col-lg-4">
-            <!-- Voice Preview (sticky) -->
-            <div style="position: sticky; top: 70px;">
-                <div class="card border-warning mb-3">
-                    <div class="card-header bg-warning text-dark">
-                        <h6 class="card-title mb-0">
-                            <i class="bi bi-play-circle"></i> Voice Preview
-                        </h6>
+            <div class="ai-sticky">
+                <div class="mb-panel mb-panel-accent-warning mb-3">
+                    <div class="mb-panel-header">
+                        <h2 class="mb-panel-title">
+                            <i class="bi bi-headphones"></i> Browser Preview
+                        </h2>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="testText" class="form-label">Test Text</label>
-                            <textarea class="form-control" id="testText" rows="3" title="Text to convert to speech"
+                    <div class="mb-panel-body">
+                        <div class="ai-field">
+                            <label for="testText" class="mb-field-label">Test Text</label>
+                            <textarea class="mb-textarea" id="testText" rows="3" title="Text to convert to speech"
                                 placeholder="Enter text to convert to speech...">Hello! This is a test of the ElevenLabs text-to-speech system. How does this voice sound?</textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="testVoice" class="form-label">Preview Voice</label>
-                            <select class="form-select" id="testVoice" title="Voice to preview">
+                        <div class="ai-field">
+                            <label for="testVoice" class="mb-field-label">Preview Voice</label>
+                            <select class="mb-select" id="testVoice" title="Voice to preview">
                                 <option value="">Use character voice</option>
                             </select>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-primary" id="generateSpeech" title="Generate speech preview">
-                                <i class="bi bi-play-circle"></i> Generate Speech
+                            <!-- Plays in THIS browser via the audio element below. -->
+                            <button type="button" class="mb-btn mb-btn-secondary" id="generateSpeech"
+                                title="Generate the clip and play it here in your browser. The animatronic stays silent.">
+                                <i class="bi bi-play-circle"></i> Preview in This Browser
                             </button>
                         </div>
+                        <small class="ai-destination">
+                            <i class="bi bi-laptop"></i> Sound comes out of the device you are reading this on.
+                        </small>
                         <!-- Audio Player -->
-                        <div id="audioPlayer" class="mt-3" style="display: none;">
+                        <div id="audioPlayer" class="mt-3 ai-hidden">
                             <audio controls class="w-100">
                                 Your browser does not support the audio element.
                             </audio>
@@ -201,19 +221,17 @@
                 </div>
 
                 <!-- Voice Library -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
+                <div class="mb-panel">
+                    <div class="mb-panel-header">
+                        <h2 class="mb-panel-title">
                             <i class="bi bi-collection"></i> Voice Library
-                        </h5>
+                        </h2>
                     </div>
-                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="mb-panel-body ai-voice-library">
                         <div id="voiceLibrary">
-                            <div class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                <p class="mt-2">Loading voices...</p>
+                            <div class="mb-empty">
+                                <span class="mb-spinner"></span>
+                                <p class="mb-empty-body">Loading voices...</p>
                             </div>
                         </div>
                     </div>
@@ -222,7 +240,9 @@
         </div>
     </div>
 
-    <!-- Voice Cloning Modal -->
+    <!-- Voice Cloning Modal — kept on Bootstrap's modal plumbing because
+         ai-settings-tts.js closes it through bootstrap.Modal.getInstance().
+         Its controls are design-system components. -->
     <div class="modal fade" id="voiceCloningModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -234,27 +254,25 @@
                 </div>
                 <div class="modal-body">
                     <form id="voiceCloningForm">
-                        <div class="mb-3">
-                            <label for="voiceName" class="form-label">Voice Name</label>
-                            <input type="text" class="form-control" id="voiceName" name="name" required title="Name for the cloned voice">
+                        <div class="ai-field">
+                            <label for="voiceName" class="mb-field-label">Voice Name</label>
+                            <input type="text" class="mb-input" id="voiceName" name="name" required title="Name for the cloned voice">
                         </div>
-                        <div class="mb-3">
-                            <label for="voiceDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="voiceDescription" name="description" rows="2" title="Description of the cloned voice"></textarea>
+                        <div class="ai-field">
+                            <label for="voiceDescription" class="mb-field-label">Description</label>
+                            <textarea class="mb-textarea" id="voiceDescription" name="description" rows="2" title="Description of the cloned voice"></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="audioSamples" class="form-label">Audio Samples</label>
-                            <input type="file" class="form-control" id="audioSamples" name="files" multiple
+                        <div class="ai-field">
+                            <label for="audioSamples" class="mb-field-label">Audio Samples</label>
+                            <input type="file" class="mb-input" id="audioSamples" name="files" multiple
                                 accept="audio/*" title="Upload audio samples to clone">
-                            <div class="form-text">Upload 3-5 audio samples (WAV, MP3) of the voice you want to
-                                clone
-                            </div>
+                            <small class="mb-field-hint">Upload 3-5 audio samples (WAV, MP3) of the voice you want to clone</small>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancel voice cloning">Cancel</button>
-                    <button type="button" class="btn btn-warning" id="cloneVoice" title="Clone voice from samples">
+                    <button type="button" class="mb-btn mb-btn-secondary" data-bs-dismiss="modal" title="Cancel voice cloning">Cancel</button>
+                    <button type="button" class="mb-btn mb-btn-ai" id="cloneVoice" title="Clone voice from samples">
                         <i class="bi bi-upload"></i> Clone Voice
                     </button>
                 </div>
