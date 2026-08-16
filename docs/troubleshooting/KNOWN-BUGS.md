@@ -13,6 +13,18 @@
 
 Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitigated, long-term fix pending · ⚪ constraint / gotcha (not a defect)
 
+> **v9.0.0 release verification — 2026-08-16 00:43, on the Orlok node, real hardware.**
+> Service healthy on v9.0.0 · quarantine holds on both parts 3 and 4 through the calibration
+> API *and* the parts API (HTTP 409 with the reason) · a 175° head request clamps to 120 and
+> reports `clamped: true` · panic completes 4/4 local actions in 28 ms · the USB mic captured
+> 32044 bytes · mjpg-streamer served a 49 KB frame · all 10 pages HTTP 200 · browser suite
+> 147 passed / 1 skipped / 0 failed · gate green.
+>
+> The clearest single proof is pose 1: it returns `success: false, partialFailure: true,
+> executedParts: 2`, with the head and lamp moved and part 4 refused **carrying its full
+> explanation**. Before v9.0.0 that same pose returned `success: true`, because one working
+> part masked a dead one.
+
 > **Operator: start here.** Part 4 (Elbow) is now **confirmed physically dead** by the
 > operator and is software-quarantined, so the open question has moved from *"is it broken?"*
 > to **"what is the ch4/ch5 rail actually doing?"** — measure it before trusting anything on
