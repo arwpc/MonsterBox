@@ -28,7 +28,18 @@ describe('Orchestration API (Fleet Command Center)', () => {
       for (const anim of res.body.animatronics) {
         expect(anim).to.have.property('id');
         expect(anim).to.have.property('name').that.is.a('string');
-        expect(anim).to.have.property('ip').that.is.a('string');
+        // A node that has never been on the network carries ip: null on purpose —
+        // any address there would be a guess, and a guessed LAN address is worse
+        // than none (it dials a stranger's device and blocks for seconds, where
+        // null fails immediately and excludes the node from control fan-out).
+        // The contract is that ip is present and is a string OR null, never
+        // undefined, and that such a node reports itself offline.
+        expect(anim).to.have.property('ip');
+        if (anim.ip === null) {
+          expect(anim.online, `${anim.name} has no address so it cannot be online`).to.equal(false);
+        } else {
+          expect(anim.ip, `${anim.name}.ip`).to.be.a('string');
+        }
         expect(anim).to.have.property('port').that.is.a('number');
         expect(anim).to.have.property('online').that.is.a('boolean');
       }

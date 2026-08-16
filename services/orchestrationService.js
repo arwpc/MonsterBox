@@ -25,6 +25,13 @@ const execAsync = promisify(exec);
 // discovery (untrusted), and several control paths interpolate the host into a
 // shell string for SSH — validate before any such use to close command injection.
 const HOST_RE = /^[A-Za-z0-9.\-]{1,253}$/;
+// Matches the convention used across the app and in routes/api/orchestrationRoutes.js.
+function isTestMode() {
+    return process.env.MB_TEST_MODE === '1'
+        || process.env.MB_TEST_MODE === 'true'
+        || process.env.NODE_ENV === 'test';
+}
+
 function isValidHost(host) {
     return typeof host === 'string' && HOST_RE.test(host);
 }
@@ -98,6 +105,26 @@ class OrchestrationService {
      */
     async httpNode(node, { method = 'get', path: apiPath, body, timeout = 8000 } = {}) {
         if (!isValidHost(node.ip)) throw new Error(`Invalid host: ${node.ip}`);
+
+        // Every inter-node call goes through here, which makes it the one place a
+        // test can be stopped from reaching the real yard.
+        //
+        // This is not hypothetical. A browser test with a stale route interceptor
+        // fired a genuine POST /api/panic{fleet:true} twice during a suite run and
+        // disarmed jaw animation, motion sensing and head tracking on two live
+        // animatronics — discovered only because someone diffed the nodes
+        // afterwards. Guarding individual routes had already been tried and missed
+        // /api/panic entirely; guarding the egress point cannot be forgotten.
+        //
+        // Reads are left alone: a test that asks a node how it is doing is
+        // harmless, and blocking those would only push tests toward mocking the
+        // very code we want exercised. Writes are refused.
+        if (isTestMode() && String(method).toLowerCase() !== 'get') {
+            const label = `${String(method).toUpperCase()} ${apiPath}`;
+            console.warn(`[Orchestration] TEST MODE — refusing to send "${label}" to ${node.name || node.ip}. Real animatronics are never mutated from a test run.`);
+            return { success: true, testMode: true, refused: label, node: node.name || node.ip };
+        }
+
         const url = `https://${node.ip}:${node.port || 3000}${apiPath}`;
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), Math.max(1000, timeout));

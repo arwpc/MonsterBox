@@ -43,9 +43,9 @@ async function findSpeakerDeviceForCharacter(characterId) {
 /**
  * Resolve a preset name to an angle for servos
  */
-async function resolvePresetToAngle(partId, presetName) {
+async function resolvePresetToAngle(partId, presetName, characterId) {
   const store = getCalibrationStore();
-  const profile = await store.get(partId);
+  const profile = await store.get(partId, characterId);
   
   if (!profile) {
     console.warn(`No calibration profile for part ${partId}, using default angle`);
@@ -94,9 +94,9 @@ async function resolvePresetToAngle(partId, presetName) {
 /**
  * Resolve a preset name to motor parameters (speed, duration)
  */
-async function resolvePresetToMotorParams(partId, presetName) {
+async function resolvePresetToMotorParams(partId, presetName, characterId) {
   const store = getCalibrationStore();
-  const profile = await store.get(partId);
+  const profile = await store.get(partId, characterId);
   
   if (!profile || !profile.motion || profile.motion.type !== 'time-at-speed') {
     console.warn(`No valid motion model for motor part ${partId}, using defaults`);
@@ -130,9 +130,9 @@ async function resolvePresetToMotorParams(partId, presetName) {
 /**
  * Resolve a preset name to linear actuator parameters (speed, duration)
  */
-async function resolvePresetToActuatorParams(partId, presetName) {
+async function resolvePresetToActuatorParams(partId, presetName, characterId) {
   // Linear actuators use the same motion model as motors
-  return resolvePresetToMotorParams(partId, presetName);
+  return resolvePresetToMotorParams(partId, presetName, characterId);
 }
 
 async function resolveAudioFile(audioId) {
@@ -398,7 +398,7 @@ async function executeServoStep(step, characterId, emit) {
 
   // If using preset, resolve the preset to an angle
   if (usePreset && presetName) {
-    targetAngle = await resolvePresetToAngle(partId, presetName);
+    targetAngle = await resolvePresetToAngle(partId, presetName, characterId);
   }
 
   if (targetAngle == null) throw new Error('servo.step requires angle or valid preset');
@@ -419,7 +419,7 @@ async function executeMotorStep(step, characterId, emit) {
 
   // If using preset, resolve the preset to movement parameters
   if (usePreset && presetName) {
-    const presetParams = await resolvePresetToMotorParams(partId, presetName);
+    const presetParams = await resolvePresetToMotorParams(partId, presetName, characterId);
     effectiveSpeed = presetParams.speed || speed;
     effectiveDuration = presetParams.duration || duration;
   }
@@ -427,7 +427,11 @@ async function executeMotorStep(step, characterId, emit) {
   // Enforce calibration bounds for motors (same open-loop problem as linear actuators)
   try {
     const store = getCalibrationStore();
-    const profile = await store.get(parseInt(partId, 10));
+    // Pass the character explicitly. Part IDs are only unique WITHIN a character,
+    // so an unscoped lookup silently falls back to whichever character this node
+    // happens to have selected — which clamped one character's motor from 2000ms
+    // to 0ms using another character's calibration.
+    const profile = await store.get(parseInt(partId, 10), characterId);
     if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
       const posState = actuatorPositionStore.load(parseInt(partId, 10));
       const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
@@ -482,7 +486,7 @@ async function executeLinearActuatorStep(step, characterId, emit) {
 
   // If using preset, resolve the preset to movement parameters
   if (usePreset && presetName) {
-    const presetParams = await resolvePresetToActuatorParams(partId, presetName);
+    const presetParams = await resolvePresetToActuatorParams(partId, presetName, characterId);
     effectiveSpeed = presetParams.speed || speed;
     effectiveDuration = presetParams.duration || duration;
   }
@@ -490,7 +494,11 @@ async function executeLinearActuatorStep(step, characterId, emit) {
   // Enforce calibration bounds: clamp duration so actuator cannot exceed min/max range
   try {
     const store = getCalibrationStore();
-    const profile = await store.get(parseInt(partId, 10));
+    // Pass the character explicitly. Part IDs are only unique WITHIN a character,
+    // so an unscoped lookup silently falls back to whichever character this node
+    // happens to have selected — which clamped one character's motor from 2000ms
+    // to 0ms using another character's calibration.
+    const profile = await store.get(parseInt(partId, 10), characterId);
     if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
       const posState = actuatorPositionStore.load(parseInt(partId, 10));
       const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
