@@ -22,6 +22,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrub, extractNames, isClean } from './scrub.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const API = 'https://api.elevenlabs.io';
@@ -42,44 +43,14 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-// PRIVACY: first names ONLY — single tokens, never surname pairs, and every
-// summary passes through scrub() below. No contact details, no numbers, no
-// addresses ever reach the registry.
-// Character names load dynamically from the registry (character-independent);
-// the static tail is non-character canon vocabulary (places, titles, lore figures).
-const characterNames = JSON.parse(readFileSync(join(HERE, '../../data/characters.json'), 'utf8'))
-  .flatMap(c => String(c.name).split(/\s+/));
-const CANON = new Set([...characterNames,
-  'Warner','Castle','Thomas','Vlad','Michelle','Aaron','Heather','Emily','Isaac','Calvin',
-  'Ben','Iowa','Rubin','Sir','Count','Lady','Lord','Master','Queen','Princess','Herr','Knock']);
-
-function scrub(text) {
-  let s = text
-    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '')                               // emails
-    .replace(/\+?\d[\d\s().-]{6,}\d/g, '')                                 // phone-like number runs
-    .replace(/\b\d{1,5}\s+[A-Z][a-z]+\s+(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Court|Ct|Boulevard|Blvd|Way|Circle|Cir)\b\.?/g, '') // street addresses
-    .replace(/\b\d{4,}\b/g, '');                                            // long digit runs (zips, years OK to lose)
-  // Collapse "First Last" pairs to the first name unless both words are castle canon
-  s = s.replace(/\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/g, (m, a, b) =>
-    (CANON.has(a) || CANON.has(b)) ? m : a);
-  return s.replace(/\s{2,}/g, ' ').trim();
-}
-
-// Pull FIRST names guests actually gave: "my name is X", "i'm X", "call me X"
-function extractNames(userText) {
-  const names = new Set();
-  const re = /\b(?:my name is|my name's|i am|i'm|call me|it's|this is)\s+([A-Z][a-z]{2,15})\b/gi;
-  let m;
-  while ((m = re.exec(userText)) !== null) {
-    const w = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
-    if (!['The', 'Not', 'Just', 'Here', 'Gonna', 'Really', 'Sure', 'Okay'].includes(w)) names.add(w);
-  }
-  return [...names];
-}
+// PRIVACY: first names ONLY. The scrubber and the name extractor live in
+// scrub.mjs with their own adversarial test suite (scrub-test.mjs) — run it
+// before trusting a harvest:  node scripts/night-memory/scrub-test.mjs
 
 const since = Math.floor(Date.now() / 1000) - HOURS * 3600;
 const sections = [];
 let totalConvs = 0;
+let dropped = 0;
 
 for (const agent of agents) {
   const list = await api(`/v1/convai/conversations?agent_id=${agent.agentId}&page_size=100&call_start_after_unix=${since}`);
@@ -94,7 +65,12 @@ for (const agent of agents) {
       const names = extractNames(userText);
       const summary = scrub((d.analysis?.transcript_summary || '').replace(/\s+/g, ' ').trim());
       if (names.length || summary) {
-        lines.push(`- ${names.length ? `Guests: ${names.join(', ')}. ` : ''}${summary.slice(0, 300)}`);
+        const line = `- ${names.length ? `Guests: ${names.join(', ')}. ` : ''}${summary.slice(0, 300)}`;
+        // Last line of defence: a line that still carries a digit, an @ or a URL
+        // is dropped whole. Forgetting one visit is cheap; publishing a phone
+        // number about somebody's child is not.
+        if (isClean(line)) lines.push(line);
+        else dropped++;
       }
     } catch { /* one bad conversation never kills the harvest */ }
   }
@@ -119,7 +95,8 @@ This document is replaced nightly; it reflects real conversations.
 ${sections.join('\n\n') || '(No qualifying conversations in this window.)'}
 `;
 
-console.log(`Harvested ${totalConvs} conversations into registry (${doc.length} chars)`);
+console.log(`Harvested ${totalConvs} conversations into registry (${doc.length} chars)` +
+  (dropped ? `; ${dropped} line(s) dropped by the privacy guard` : ''));
 if (DRY) { console.log('\n' + doc); process.exit(0); }
 
 // Upload new registry document
