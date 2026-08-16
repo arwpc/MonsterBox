@@ -49,6 +49,7 @@ import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
 import scenesApiRoutes from './routes/scenes/api.js';
 import scenesRoutes from './routes/scenes/index.js';
+import { pageRouter as scheduleWebRoutes, apiRouter as scheduleApiRoutes } from './routes/scheduleRoutes.js';
 import configApiRoutes from './routes/api/configRoutes.js';
 import { getHostnameCharacterId, updateSelectedCharacter } from './services/configService.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
@@ -408,6 +409,7 @@ app.use('/conversation', conversationRoutes);
 app.use('/orchestration', orchestrationWebRoutes);
 app.use('/scenes/api', scenesApiRoutes);
 app.use('/scenes', scenesRoutes);
+app.use('/schedule', scheduleWebRoutes);
 app.use('/first-run', firstRunRoutes);
 
 app.use('/poses', posesRoutes);
@@ -416,6 +418,9 @@ app.use('/ai-settings', aiSettingsRoutes);
 // Audio loop API routes
 app.use('/api/audio-loop', audioLoopApiRoutes);
 app.use('/api/parts', partsApiRoutes);
+// Scheduled Events. Mounted before the generic '/api' routers below so the
+// specific prefix wins, matching the '/api/parts' ordering requirement.
+app.use('/api/schedule', scheduleApiRoutes);
 // Alias for the character list/CRUD that otherwise only exists under
 // /setup/characters/api/characters. Mounted BEFORE the bare '/api' routers so it
 // wins on '/api/characters' and '/api/characters/:id'; '/api/characters/:id/images'

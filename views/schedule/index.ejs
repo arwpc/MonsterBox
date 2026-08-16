@@ -1,0 +1,268 @@
+<%
+// Scheduled Events (/schedule)
+//
+// WHY THIS PAGE EXISTS: the Halloween schedule was installed from
+// scripts/yard-theater/crontab.example and every entry is dated 31 October.
+// It looked correct, it WAS correct, and it did nothing for 76 days — and
+// nothing anywhere made that visible. So "next run", in plain language, is the
+// loudest thing on this page. Everything else is secondary.
+//
+// Storage is the real system crontab inside a sentinel-delimited managed block
+// (services/schedule/crontabFile.js). Lines outside that block are never
+// touched. Backend: routes/scheduleRoutes.js -> /api/schedule/*.
+// Behaviour lives in /js/schedule.js (ES5).
+%>
+
+<style>
+  .sch-next {
+    font-family: var(--mb-font-mono, monospace);
+    font-size: var(--mb-text-base);
+    line-height: 1.35;
+  }
+  .sch-next-when { display: block; font-weight: 600; }
+  .sch-next-rel  { display: block; }
+  .sch-cron {
+    font-family: var(--mb-font-mono, monospace);
+    font-size: var(--mb-text-sm);
+    white-space: nowrap;
+  }
+  .sch-cmd {
+    font-family: var(--mb-font-mono, monospace);
+    font-size: var(--mb-text-xs);
+    word-break: break-all;
+    display: block;
+    margin-top: var(--mb-space-1);
+  }
+  .sch-row-off { opacity: 0.55; }
+  .sch-actions { display: flex; gap: var(--mb-space-1); flex-wrap: wrap; justify-content: flex-end; }
+  .sch-col-next { min-width: 15rem; }
+  .sch-nodes { display: flex; gap: var(--mb-space-1); flex-wrap: wrap; }
+  .sch-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--mb-space-4);
+  }
+  .sch-hidden { display: none !important; }
+  .sch-preview {
+    border: 1px solid var(--mb-border-subtle);
+    border-radius: var(--mb-radius-md);
+    padding: var(--mb-space-3);
+    background: var(--mb-bg-1);
+  }
+  .sch-daybtns { display: flex; gap: var(--mb-space-1); flex-wrap: wrap; }
+</style>
+
+<div class="mb-cluster-system">
+
+  <header class="mb-page-header">
+    <h1 class="mb-page-header-title">
+      <i class="bi bi-calendar-event"></i> Scheduled Events
+      <span class="mb-text-secondary">· what fires, and when it actually fires</span>
+    </h1>
+  </header>
+
+  <!-- The headline answer: when does ANYTHING happen next. -->
+  <div class="mb-alert mb-alert-info mb-stack-sm" id="schSummary" role="status" aria-live="polite">
+    <span id="schSummaryText">Reading the crontab…</span>
+  </div>
+
+  <!-- Offline-node warning. The Dusk Ceremony casts one speech per node, so a
+       node that is down means dialogue silently dropped on the night. -->
+  <div class="mb-alert mb-alert-warning sch-hidden" id="schFleetWarning" role="status">
+    <strong><i class="bi bi-exclamation-triangle"></i> Some target animatronics are offline.</strong>
+    <span id="schFleetWarningText"></span>
+  </div>
+
+  <div class="mb-alert mb-alert-danger sch-hidden" id="schError" role="alert"></div>
+
+  <section class="mb-panel mb-stack">
+    <div class="mb-panel-header">
+      <h2 class="mb-panel-title"><i class="bi bi-list-check"></i> Events</h2>
+      <div class="mb-row-sm">
+        <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary" id="schRefresh"
+          data-bs-toggle="tooltip" title="Re-read the crontab and recompute every next-run time">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button type="button" class="mb-btn mb-btn-sm mb-btn-primary" id="schNew"
+          data-bs-toggle="tooltip" title="Create a new scheduled event">
+          <i class="bi bi-plus-lg"></i> New Event
+        </button>
+      </div>
+    </div>
+    <div class="mb-panel-body">
+      <table class="mb-table" id="schTable">
+        <thead>
+          <tr>
+            <th scope="col">On</th>
+            <th scope="col">Event</th>
+            <th scope="col">Schedule</th>
+            <th scope="col" class="sch-col-next">Next run</th>
+            <th scope="col">Targets</th>
+            <th scope="col"><span class="mb-text-secondary">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody id="schBody">
+          <tr><td colspan="6" class="mb-text-secondary">Loading…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="mb-empty sch-hidden" id="schEmpty">
+        <div class="mb-empty-icon"><i class="bi bi-calendar-x"></i></div>
+        <div class="mb-empty-title">Nothing is scheduled</div>
+        <div class="mb-empty-body">
+          MonsterBox manages its own block inside this node's crontab. Anything you
+          wrote outside that block is left exactly as it is.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EDITOR ============ -->
+  <section class="mb-panel sch-hidden" id="schEditor">
+    <div class="mb-panel-header">
+      <h2 class="mb-panel-title"><i class="bi bi-pencil-square"></i> <span id="schEditorTitle">New event</span></h2>
+      <button type="button" class="mb-btn mb-btn-sm mb-btn-ghost" id="schCancel">
+        <i class="bi bi-x-lg"></i> Cancel
+      </button>
+    </div>
+    <div class="mb-panel-body mb-stack">
+
+      <div class="sch-form-grid">
+        <div class="mb-field">
+          <label class="mb-field-label" for="schName">Name</label>
+          <input type="text" class="mb-input" id="schName" placeholder="The Dusk Ceremony" maxlength="70">
+          <span class="mb-field-hint">Shown here and written into the crontab as a comment.</span>
+        </div>
+        <div class="mb-field">
+          <label class="mb-field-label" for="schDescription">Note (optional)</label>
+          <input type="text" class="mb-input" id="schDescription" placeholder="Why this exists / what it does">
+          <span class="mb-field-hint">Kept as a comment above the entry, for whoever reads it over SSH.</span>
+        </div>
+      </div>
+
+      <!-- ---------- What it does ---------- -->
+      <fieldset class="mb-stack-sm">
+        <legend class="mb-eyebrow">What it does</legend>
+        <div class="mb-row-sm mb-row-wrap">
+          <label class="mb-chip"><input type="radio" name="schActionType" value="moment" checked> Yard-theater moment</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="scene"> Play a scene</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="raw"> Raw command</label>
+        </div>
+
+        <div class="mb-field" id="schMomentField">
+          <label class="mb-field-label" for="schMoment">Moment</label>
+          <select class="mb-select" id="schMoment"></select>
+          <span class="mb-field-hint" id="schMomentHint">&nbsp;</span>
+          <label class="mb-row-sm">
+            <input type="checkbox" id="schDryRun">
+            <span class="mb-text-sm">Rehearsal only (<span class="sch-cron">--dry-run</span>) — makes no sound and no calls</span>
+          </label>
+        </div>
+
+        <div class="mb-field sch-hidden" id="schSceneField">
+          <label class="mb-field-label" for="schScene">Scene <span class="mb-text-secondary" id="schSceneCharacter"></span></label>
+          <select class="mb-select" id="schScene"></select>
+          <span class="mb-field-hint">Plays through this node's own scene API, for the character selected in the nav bar.</span>
+        </div>
+
+        <div class="mb-field sch-hidden" id="schRawField">
+          <label class="mb-field-label" for="schRawCommand">Command</label>
+          <input type="text" class="mb-input sch-cron" id="schRawCommand"
+            placeholder="node scripts/night-memory/harvest.mjs --hours 12">
+          <span class="mb-field-hint">
+            Wrapped for you as <span class="sch-cron">cd &lt;repo&gt; &amp;&amp; ( … ) &gt;&gt; log 2&gt;&amp;1</span>.
+            The <span class="sch-cron">cd</span> is required — cron runs with cwd=$HOME and PATH=/usr/bin:/bin,
+            so without it node dies with MODULE_NOT_FOUND. The subshell matters too: without it the
+            redirect binds only to the last command of an <span class="sch-cron">&amp;&amp;</span> chain.
+          </span>
+        </div>
+      </fieldset>
+
+      <!-- ---------- When it fires ---------- -->
+      <fieldset class="mb-stack-sm">
+        <legend class="mb-eyebrow">When it fires</legend>
+        <div class="mb-row-sm mb-row-wrap">
+          <label class="mb-chip"><input type="radio" name="schMode" value="date" checked> On a date</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="daily"> Every day</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="weekly"> Days of the week</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="raw"> Raw cron</label>
+        </div>
+
+        <div class="sch-form-grid">
+          <div class="mb-field" id="schTimeField">
+            <label class="mb-field-label" for="schTime">Time (24h, this node's local clock)</label>
+            <input type="time" class="mb-input" id="schTime" value="18:30">
+          </div>
+          <div class="mb-field" id="schDateField">
+            <label class="mb-field-label" for="schDate">Date</label>
+            <input type="date" class="mb-input" id="schDate">
+            <span class="mb-field-hint">cron has no year field, so this recurs on the same date every year.</span>
+          </div>
+          <div class="mb-field sch-hidden" id="schDaysField">
+            <label class="mb-field-label">Days</label>
+            <div class="sch-daybtns" id="schDays"></div>
+          </div>
+          <div class="mb-field sch-hidden" id="schExpressionField">
+            <label class="mb-field-label" for="schExpression">Cron expression</label>
+            <input type="text" class="mb-input sch-cron" id="schExpression" placeholder="30 18 31 10 *">
+            <span class="mb-field-hint">minute hour day-of-month month day-of-week</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- ---------- Preview: never a black box ---------- -->
+      <div class="sch-preview mb-stack-sm" id="schPreview">
+        <div class="mb-eyebrow">This will be written as</div>
+        <div class="sch-cron" id="schPreviewLine">—</div>
+        <div class="mb-text-sm" id="schPreviewDescription">—</div>
+        <div class="mb-text-base"><strong>Next run:</strong> <span id="schPreviewNext">—</span></div>
+        <div class="mb-text-sm mb-text-warning sch-hidden" id="schPreviewWarning"></div>
+      </div>
+
+      <div class="mb-row-end mb-row-sm">
+        <label class="mb-row-sm">
+          <span class="mb-switch">
+            <input type="checkbox" id="schEnabled" checked>
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          </span>
+          <span class="mb-text-sm">Enabled</span>
+        </label>
+        <button type="button" class="mb-btn mb-btn-primary" id="schSave">
+          <i class="bi bi-save"></i> Save to crontab
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <p class="mb-text-sm mb-text-secondary">
+    <i class="bi bi-shield-check"></i>
+    MonsterBox only ever rewrites the lines between its own sentinel comments.
+    Every write is backed up to <span class="sch-cron">/tmp</span> first, and a write that
+    would lose any line you wrote yourself is refused rather than repaired.
+  </p>
+</div>
+
+<!-- ============ CONFIRM DIALOG ============ -->
+<!-- Deliberately explicit: these events move tens of kilograms of servo-driven
+     hardware and play loud audio outdoors, potentially near people. -->
+<div class="sch-hidden" id="schConfirmLayer">
+  <div class="mb-modal-backdrop" data-sch-cancel></div>
+  <div class="mb-modal" role="dialog" aria-modal="true" aria-labelledby="schConfirmTitle">
+    <div class="mb-modal-dialog">
+      <div class="mb-modal-header">
+        <h3 class="mb-modal-title" id="schConfirmTitle">Are you sure?</h3>
+      </div>
+      <div class="mb-modal-body mb-stack-sm">
+        <p id="schConfirmBody">—</p>
+        <div class="sch-cron" id="schConfirmCommand"></div>
+        <div class="mb-alert mb-alert-warning sch-hidden" id="schConfirmWarning"></div>
+      </div>
+      <div class="mb-modal-footer">
+        <button type="button" class="mb-btn mb-btn-secondary" data-sch-cancel>Cancel</button>
+        <button type="button" class="mb-btn mb-btn-danger" id="schConfirmGo">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mb-toast-region" id="schToasts" aria-live="polite"></div>
