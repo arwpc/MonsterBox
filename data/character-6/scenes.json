@@ -1,1 +1,98 @@
-[]
+[
+  {
+    "id": 1,
+    "characterId": 6,
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 60,
+        "duration": 1200,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "\u2026whereas the party of the first part is NOCTURNAL\u2026 [chuckles] strike that \u2014 he'll love it. Keep it in.",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 1500,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Moth. Eleven forty PM. Substantial. Entered. \u2026The registry grows FAT tonight.",
+        "concurrent": false
+      }
+    ],
+    "name": "Lurk: Scribbling Transactions"
+  },
+  {
+    "id": 2,
+    "characterId": 6,
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "\u2026and upon completion: one seat at the table. Perpetuity. Signed\u2026 [sighs] \u2026unsigned. Pending.",
+        "concurrent": false
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 70,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "PENDING is not NO.",
+        "concurrent": false
+      }
+    ],
+    "name": "Lurk: The Gifts"
+  },
+  {
+    "id": 3,
+    "characterId": 6,
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 80,
+        "duration": 1500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[chuckles] \u2026seventeen souls, he says. SEVENTEEN. I have fifteen. The audit is coming, pumpkin. The audit is COMING.",
+        "concurrent": false
+      }
+    ],
+    "name": "Lurk: Giggle and Shake"
+  },
+  {
+    "id": 4,
+    "characterId": 6,
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "\u2026dear master \u2014 per my last four hundred correspondences \u2014 I remain available. Punctual.",
+        "concurrent": false
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "\u2026And I shake, sometimes. So I know you are there.",
+        "concurrent": false
+      }
+    ],
+    "name": "Lurk: Correspondence"
+  }
+]

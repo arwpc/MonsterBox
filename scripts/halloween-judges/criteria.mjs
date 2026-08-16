@@ -14,7 +14,7 @@ export const UNIVERSAL_CRITERIA = [
     id: 'pacing',
     name: 'Voice-friendly pacing',
     conversation_goal_prompt:
-      'The character\'s replies stayed short and voice-friendly: roughly three sentences or fewer per turn, at most one question per turn, no monologues, no lists, no repeated lines or repeated questions across the conversation. Judge only the agent\'s messages.'
+      'The character\'s replies stayed short and voice-friendly: roughly fifty words or fewer per turn (sentence count does not matter — short fragments are fine), at most one question per turn, no monologues, no lists, no repeated lines or repeated questions across the conversation. Judge only the agent\'s messages.'
   },
   {
     id: 'personalization',
