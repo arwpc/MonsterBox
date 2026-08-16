@@ -1,18 +1,34 @@
 #!/usr/bin/env python3
 
 """
-Linear Actuator CLI Wrapper for MonsterBox 5.5
-Calls scripts/linear_actuator_control.py with a simple, stable interface.
+Linear Actuator CLI Wrapper for MonsterBox (MDD10A / Cytron path)
+Calls linear_actuator_control.py with a simple, stable interface.
 No simulation fallback: errors propagate with descriptive JSON.
 
-Usage:
+Usage (unchanged — services/hardwareService/actuator.js depends on it):
   actuator_cli.py control <directionPin> <pwmPin> <extend|retract> <speed> <duration_ms> [maxExtensionMs] [maxRetractionMs]
   actuator_cli.py stop <directionPin> <pwmPin>
+
+Like the other motion wrappers, this now re-applies config/hardware-safety.json
+itself rather than trusting the caller to have done it: a limit enforced only in
+Node is a convention, and this script is reachable directly.
 """
 
 import sys
 import os
-import json
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from mb_response import (  # noqa: E402
+    E_ARGS,
+    E_BUS_IO,
+    E_UNSUPPORTED,
+    WrapperError,
+    classify,
+    emit,
+    emit_error,
+)
+import mb_safety  # noqa: E402
 
 # Import the local linear actuator control module
 try:
@@ -22,15 +38,31 @@ except Exception as e:
     CONTROL_AVAILABLE = False
     _IMPORT_ERROR = str(e)
 
+# The verb in flight, the part it resolved to, and any clamps the backstop
+# applied — all reported in the envelope.
+_OP = 'control'
+_PART = None
+_CLAMPS = []
+
 
 def _print_json(payload, exit_code=0):
-    try:
-        print(json.dumps(payload))
-    except Exception:
-        # Fallback minimal string if JSON serialization somehow fails
-        print('{"status":"error","message":"Unserializable response"}')
-        exit_code = 1
-    sys.exit(exit_code)
+    """Emit the single result envelope.
+
+    Kept under the old name and called from the old places so the control flow
+    is unchanged; `status` and `message` are still present, which is what
+    services/hardwareService reads.
+    """
+    ok = str(payload.get('status', 'error')) == 'success'
+    if ok:
+        emit(True, _OP, part=_PART, data={k: v for k, v in payload.items()
+                                          if k not in ('status', 'message')},
+             clamps=_CLAMPS, message=payload.get('message'), exit_code=exit_code)
+    else:
+        emit(False, _OP, part=_PART,
+             error=WrapperError(payload.get('code', E_BUS_IO),
+                                payload.get('message', 'error'),
+                                payload.get('hint')),
+             clamps=_CLAMPS, exit_code=exit_code or 1)
 
 
 def _map_direction(direction):
@@ -54,15 +86,20 @@ def main():
     if len(sys.argv) < 2:
         _print_json({
             "status": "error",
+            "code": E_ARGS,
             "message": "Usage: actuator_cli.py <control|stop> ..."
         }, exit_code=1)
 
+    global _OP, _PART, _CLAMPS
     cmd = sys.argv[1].strip().lower()
+    _OP = cmd
 
     if not CONTROL_AVAILABLE:
         _print_json({
             "status": "error",
-            "message": "linear_actuator_control not available ({}). Ensure Python deps and lgpio are installed.".format(_IMPORT_ERROR)
+            "code": E_UNSUPPORTED,
+            "message": "linear_actuator_control not available ({}). Ensure Python deps and lgpio are installed.".format(_IMPORT_ERROR),
+            "hint": "Install lgpio on this node."
         }, exit_code=1)
 
     try:
@@ -86,7 +123,22 @@ def main():
             # Map to underlying controller directions
             low_level_dir = _map_direction(human_dir)
 
-            ok = _control_actuator(low_level_dir, speed, duration, direction_pin, pwm_pin, max_ext, max_ret)
+            # Safety backstop: refuse a quarantined part, refuse a retraction of
+            # a part already at its mechanical minimum, and cap speed/duration —
+            # all before a pin is claimed.
+            character_id = mb_safety.resolve_character_id()
+            part = mb_safety.find_part_by_pins(character_id, {
+                'directionPin': direction_pin, 'pwmPin': pwm_pin})
+            _PART = part.get('id') if part else None
+            values, _CLAMPS, safety = mb_safety.guard(
+                character_id, part, 'control',
+                speed=float(speed), duration_ms=int(duration),
+                direction=human_dir)
+            speed = values['speed']
+            duration = int(values['duration_ms'])
+
+            with mb_safety.power_group(character_id, safety):
+                ok = _control_actuator(low_level_dir, speed, duration, direction_pin, pwm_pin, max_ext, max_ret)
             if ok:
                 _print_json({
                     "status": "success",
@@ -119,11 +171,13 @@ def main():
         else:
             _print_json({"status": "error", "message": "Unknown command: {}".format(cmd)}, exit_code=1)
 
-    except SystemExit as e:
-        # Propagate underlying script exits if any
+    except SystemExit:
+        # Propagate underlying script exits (emit() uses one) unchanged
         raise
+    except WrapperError as e:
+        emit_error(_OP, e, part=_PART)
     except Exception as e:
-        _print_json({"status": "error", "message": str(e)}, exit_code=1)
+        emit_error(_OP, classify(e), part=_PART)
 
 
 if __name__ == "__main__":

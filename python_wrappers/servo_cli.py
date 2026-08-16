@@ -1,364 +1,633 @@
 #!/usr/bin/env python3
 
 """
-Servo CLI Wrapper for MonsterBox 5.5
-Thin wrapper around existing servo control functionality
+Servo CLI Wrapper for MonsterBox
+
+CLI contract (unchanged — services/hardwareService and the calibration adapters
+depend on the argv shape exactly as it is):
+  move_to <gpio_pin> <pulse_us> [duration_ms]
+  rotate_continuous <gpio_pin> <direction> <speed> <duration_ms>
+  move_to_pca <channel> <angle_deg> [i2c_address]
+  move_to_pca_multi <channel> <angle_deg> [i2c_address]
+  rotate_continuous_pca <channel> <direction> <speed> <duration_ms> [i2c_address]
+  batch_pca <ch:angle> [<ch:angle> ...] [i2c_address]
+  test <channel>
+  release <channel> [i2c_address]           (new) de-energize ONE channel
+  reconcile [i2c_address] [--release-unmapped]  (new) audit driven channels
+
+Two things changed underneath, and both are deliberate:
+
+1. SAFETY IS ENFORCED HERE TOO. config/hardware-safety.json used to be applied
+   only by Node, so a direct `servo_cli.py move_to_pca 4 170` walked straight
+   past a blockAllMotion quarantine. This wrapper now re-reads the same
+   committed config and refuses / clamps on its own. It can only narrow what
+   Node already decided.
+
+2. STDOUT IS THE RESULT CHANNEL — exactly one JSON envelope, printed once.
+   pca9685_control's log_message() is rebound to stderr for this process only,
+   so its progress logs no longer share stdout with the result.
+
+Note on release: shutdown deliberately leaves servos holding their position,
+because releasing everything drops the head under gravity. `release` is
+therefore explicit and per-channel, and `reconcile` reports by default and only
+releases channels with NO part mapped to them, and only when asked.
 """
 
-import sys
 import os
+import sys
 import time
-import json
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from mb_response import (  # noqa: E402
+    E_ARGS,
+    E_BUS_IO,
+    E_UNSUPPORTED,
+    WrapperError,
+    clamp_record,
+    classify,
+    emit,
+    emit_error,
+    log,
+    warn,
+)
+import mb_safety  # noqa: E402
 
 # Import PCA9685 control module from main codebase
 try:
+    import pca9685_control
     from pca9685_control import (
         pca9685_set_angle,
         pca9685_set_pulse_width,
         pca9685_continuous_rotation,
-        PCA9685_DEFAULT_ADDRESS
+        PCA9685_DEFAULT_ADDRESS,
     )
     PCA9685_AVAILABLE = True
-except Exception as e:
+
+    # stdout belongs to the single result envelope. pca9685_control logs its
+    # progress with log_message(), which prints to stdout; rebinding it here
+    # keeps those lines (still useful) on stderr without changing that module
+    # for the daemon or the sampler, which have their own stdout contracts.
+    pca9685_control.log_message = lambda payload: log(
+        payload.get('message', payload), payload.get('status', 'info'))
+except Exception as _import_error:  # pragma: no cover - depends on node deps
     PCA9685_AVAILABLE = False
-    print(f"Error importing pca9685_control: {e}", file=sys.stderr)
+    PCA9685_DEFAULT_ADDRESS = 0x40
+    warn(f'pca9685_control unavailable: {_import_error}')
 
 # GPIO control availability (for direct GPIO servos)
 try:
     import lgpio
     GPIO_AVAILABLE = True
-except Exception as e:
+except Exception as _lgpio_error:  # pragma: no cover - depends on node deps
     GPIO_AVAILABLE = False
-    print(f"Error importing lgpio: {e}", file=sys.stderr)
+    warn(f'lgpio unavailable: {_lgpio_error}')
 
-# Servo control availability flags (depend on lgpio for GPIO-based servo control)
 SERVO_CONTROL_AVAILABLE = GPIO_AVAILABLE
 SERVO_SERVICE_AVAILABLE = GPIO_AVAILABLE
 
-def simulate_servo_command(command, *args):
-    """Simulate servo command for testing without hardware"""
-    print(f"🎭 SIMULATION: Servo {command} with args: {args}")
-    time.sleep(0.1)  # Simulate execution time
-    return "success"
+# Resolved once per process; every command needs it to find its part.
+CHARACTER_ID = None
 
-def move_to(channel, pulse_us, duration_ms=1000):
-    """Move servo to specific pulse width (real hardware via lgpio)"""
+
+def _character():
+    global CHARACTER_ID
+    if CHARACTER_ID is None:
+        CHARACTER_ID = mb_safety.resolve_character_id()
+    return CHARACTER_ID
+
+
+def _require_pca():
+    if not PCA9685_AVAILABLE:
+        raise WrapperError(
+            E_UNSUPPORTED,
+            'PCA9685 control is not available on this node',
+            hint='Install python3-smbus / smbus2 and confirm I2C is enabled '
+                 '(`sudo raspi-config`, then `i2cdetect -y 1`).')
+
+
+def _require_gpio():
+    if not GPIO_AVAILABLE:
+        raise WrapperError(
+            E_UNSUPPORTED,
+            'lgpio is not available on this node',
+            hint='Install the lgpio python module to drive GPIO servos.')
+
+
+def _int_arg(value, name):
     try:
-        channel = int(channel)
-        pulse_us = int(pulse_us)
-        duration_ms = int(duration_ms)
+        return int(value)
+    except (TypeError, ValueError):
+        raise WrapperError(E_ARGS, f'{name} must be an integer, got {value!r}')
 
-        if not GPIO_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "lgpio not available for GPIO servo control"}))
-            return "error"
 
-        # Use lgpio for direct GPIO servo control.
-        # The handle is closed in finally so an mid-move error can't leak it —
-        # test_servo() calls move_to() four times in one process.
-        h = lgpio.gpiochip_open(0)
+def _float_arg(value, name):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise WrapperError(E_ARGS, f'{name} must be a number, got {value!r}')
+
+
+# ---------------------------------------------------------------------------
+# GPIO servos
+# ---------------------------------------------------------------------------
+
+def move_to(pin, pulse_us, duration_ms=1000):
+    """Hold a GPIO servo at a pulse width for a duration, then stop driving it."""
+    _require_gpio()
+    pin = _int_arg(pin, 'gpio_pin')
+    pulse_us = _int_arg(pulse_us, 'pulse_us')
+    duration_ms = _int_arg(duration_ms, 'duration_ms')
+
+    part = mb_safety.find_part_by_pins(_character(), {'pin': pin, 'gpioPin': pin})
+    values, clamps, safety = mb_safety.guard(
+        _character(), part, 'move_to', duration_ms=duration_ms)
+    duration_ms = int(values['duration_ms'] if values['duration_ms'] is not None else 0)
+
+    with mb_safety.power_group(_character(), safety):
+        handle = lgpio.gpiochip_open(0)
         try:
-            lgpio.gpio_claim_output(h, channel)
-
-            # Use lgpio's servo function
-            lgpio.tx_servo(h, channel, pulse_us, 50, 0, 0)
-
-            # Allow time for servo to move
+            lgpio.gpio_claim_output(handle, pin)
+            lgpio.tx_servo(handle, pin, pulse_us, 50, 0, 0)
             time.sleep(duration_ms / 1000.0)
-
-            # Stop servo
-            lgpio.tx_servo(h, channel, 0)
+            lgpio.tx_servo(handle, pin, 0)
         finally:
+            # Closed in finally so a mid-move error cannot leak the handle —
+            # test() calls this four times in one process.
             try:
-                lgpio.gpiochip_close(h)
+                lgpio.gpiochip_close(handle)
             except Exception:
                 pass
 
-        print(json.dumps({"status": "success", "message": f"GPIO servo on pin {channel} set to {pulse_us}µs"}))
-        return "success"
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'pin': pin, 'pulse_us': pulse_us, 'duration_ms': duration_ms},
+        'clamps': clamps,
+        'message': f'GPIO servo on pin {pin} set to {pulse_us}us',
+    }
 
-    except Exception as e:
-        print(f"Error in move_to: {e}", file=sys.stderr)
-        return "error"
 
-def rotate_continuous(channel, direction, speed, duration_ms):
-    """Rotate continuous servo (best-effort using lgpio pulses)."""
-    try:
-        channel = int(channel)
-        speed = int(speed)
-        duration_ms = int(duration_ms)
+def rotate_continuous(pin, direction, speed, duration_ms):
+    """Rotate a GPIO continuous servo, honouring the requested duration."""
+    _require_gpio()
+    pin = _int_arg(pin, 'gpio_pin')
+    speed = _int_arg(speed, 'speed')
+    duration_ms = _int_arg(duration_ms, 'duration_ms')
+    if direction not in ('cw', 'ccw', 'stop'):
+        raise WrapperError(E_ARGS, f'Invalid direction: {direction}',
+                           hint="Use 'cw', 'ccw' or 'stop'.")
 
-        if direction not in ['cw', 'ccw', 'stop']:
-            raise ValueError(f"Invalid direction: {direction}")
+    part = mb_safety.find_part_by_pins(_character(), {'pin': pin, 'gpioPin': pin})
+    values, clamps, safety = mb_safety.guard(
+        _character(), part, 'rotate_continuous',
+        speed=speed, duration_ms=duration_ms, direction=direction)
+    speed = int(values['speed'])
+    duration_ms = int(values['duration_ms'])
 
-        if not SERVO_CONTROL_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "servo_control not available (lgpio or deps missing)"}))
-            return "error"
+    if direction == 'stop':
+        pulse_us = 1500
+    elif direction == 'cw':
+        pulse_us = 1500 - (speed * 3)
+    else:
+        pulse_us = 1500 + (speed * 3)
+    pulse_us = max(500, min(2400, pulse_us))
 
-        # Convert direction/speed to pulse width around neutral (1500us)
-        if direction == 'stop':
-            pulse_us = 1500
-        elif direction == 'cw':
-            pulse_us = 1500 - (speed * 3)  # Clockwise
-        else:  # ccw
-            pulse_us = 1500 + (speed * 3)  # Counter-clockwise
+    # The old code silently truncated the hold to 5s (`min(duration/1000, 5.0)`)
+    # and reported success for the full request. Report the clamp instead of
+    # inventing one: honour what the safety layer allowed.
+    hold_s = max(0.0, duration_ms / 1000.0)
 
-        # Map direction/speed to pulse width and use lgpio servo control
-        pulse_clamped = max(500, min(2400, pulse_us))
-
-        h = lgpio.gpiochip_open(0)
+    with mb_safety.power_group(_character(), safety):
+        handle = lgpio.gpiochip_open(0)
         try:
-            lgpio.gpio_claim_output(h, channel)
-            lgpio.tx_servo(h, channel, pulse_clamped, 50, 0, 0)
-
-            # Hold for requested duration
-            time.sleep(min(duration_ms / 1000.0, 5.0))
-
-            # Stop servo — always attempted, even if the hold above raised
-            lgpio.tx_servo(h, channel, 0)
+            lgpio.gpio_claim_output(handle, pin)
+            lgpio.tx_servo(handle, pin, pulse_us, 50, 0, 0)
+            time.sleep(hold_s)
         finally:
+            # A continuous servo left energized keeps turning — stop first,
+            # then release the chip handle, both unconditionally.
             try:
-                lgpio.gpiochip_close(h)
+                lgpio.tx_servo(handle, pin, 0)
+            except Exception:
+                pass
+            try:
+                lgpio.gpiochip_close(handle)
             except Exception:
                 pass
 
-        print(json.dumps({"status": "success", "message": f"GPIO continuous servo on pin {channel} rotated {direction} at speed {speed}"}))
-        return "success"
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'pin': pin, 'direction': direction, 'speed': speed,
+                 'duration_ms': duration_ms, 'pulse_us': pulse_us},
+        'clamps': clamps,
+        'message': f'GPIO continuous servo on pin {pin} rotated {direction} at {speed}%',
+    }
 
-    except Exception as e:
-        print(f"Error in rotate_continuous: {e}", file=sys.stderr)
-        return "error"
 
-
-# ------- PCA9685 wrappers -------
+# ---------------------------------------------------------------------------
+# PCA9685 servos
+# ---------------------------------------------------------------------------
 
 def move_to_pca(channel, angle_deg, address=None):
-    """Move PCA9685 servo channel to angle (deg)."""
-    try:
-        if not PCA9685_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "PCA9685 control not available (smbus or deps missing)"}))
-            return "error"
-        if address is None:
-            address = PCA9685_DEFAULT_ADDRESS
-        pca9685_set_angle(int(channel), float(angle_deg), address, "standard")
-        return "success"
-    except Exception as e:
-        print(f"Error in move_to_pca: {e}", file=sys.stderr)
-        return "error"
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    angle_deg = _float_arg(angle_deg, 'angle_deg')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
 
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    values, clamps, safety = mb_safety.guard(
+        _character(), part, 'move_to_pca', angle=angle_deg)
+    angle_deg = float(values['angle'])
 
-def batch_pca(pairs, address=None):
-    """Move multiple PCA9685 servo channels to angles in a single call.
+    with mb_safety.power_group(_character(), safety):
+        pca9685_set_angle(channel, angle_deg, address, 'standard')
 
-    pairs: list of (channel, angle_deg) tuples
-    This avoids repeated Python startup overhead for multi-servo poses.
-    """
-    try:
-        if not PCA9685_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "PCA9685 control not available"}))
-            return "error"
-        if address is None:
-            address = PCA9685_DEFAULT_ADDRESS
-        results = []
-        for ch, angle in pairs:
-            try:
-                pca9685_set_angle(int(ch), float(angle), address, "standard")
-                results.append({"channel": int(ch), "angle": float(angle), "status": "success"})
-            except Exception as e:
-                results.append({"channel": int(ch), "angle": float(angle), "status": "error", "error": str(e)})
-        print(json.dumps({"status": "success", "results": results}))
-        return "success"
-    except Exception as e:
-        print(f"Error in batch_pca: {e}", file=sys.stderr)
-        return "error"
-
-
-def rotate_continuous_pca(channel, direction, speed, duration_ms, address=None):
-    """Rotate continuous servo via PCA9685 using direct PWM control.
-
-    For continuous rotation, maintains PWM during the specified duration.
-    For 'stop' command, sets neutral pulse and optionally turns off PWM.
-    """
-    try:
-        if not PCA9685_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "PCA9685 control not available (smbus or deps missing)"}))
-            return "error"
-        if direction not in ['cw', 'ccw', 'stop']:
-            raise ValueError(f"Invalid direction: {direction}")
-        if address is None:
-            address = PCA9685_DEFAULT_ADDRESS
-
-        ch = int(channel)
-        spd = max(0, min(100, int(speed)))
-        dur_s = max(0.0, int(duration_ms) / 1000.0)
-
-        # GoBilda 2000-series spec (Continuous): 900–2100µs active range, 1500µs neutral
-        # Direction: Clockwise with increasing PWM signal
-        neutral = 1500
-        min_active = 900   # CCW at full speed
-        max_active = 2100  # CW at full speed
-
-        if direction == 'stop':
-            pulse_us = neutral
-        elif direction == 'cw':
-            # CW: 1500µs (stop) to 2100µs (full speed CW)
-            pulse_us = int(round(neutral + (max_active - neutral) * (spd / 100.0)))
-        else:  # ccw
-            # CCW: 1500µs (stop) to 900µs (full speed CCW)
-            pulse_us = int(round(neutral - (neutral - min_active) * (spd / 100.0)))
-
-        # Clamp to GoBilda active range for continuous mode
-        pulse_us = max(min_active, min(max_active, pulse_us))
-
-        # Convert microseconds to 0..4095 off-count for 50Hz (20ms period)
-        def us_to_off(p):
-            return int(max(0, min(4095, (p / 20000.0) * 4096)))
-
-        # Use the new PCA9685 continuous rotation function
-        pca9685_continuous_rotation(ch, direction, spd, duration_ms, address)
-
-        return "success"
-    except Exception as e:
-        print(f"Error in rotate_continuous_pca: {e}", file=sys.stderr)
-        return "error"
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'angle_deg': angle_deg, 'address': int(address)},
+        'clamps': clamps,
+        'message': f'PCA9685 ch{channel} set to {angle_deg} degrees',
+    }
 
 
 def move_to_pca_multi(channel, angle_deg, address=None):
-    """Move PCA9685 servo to multi-turn angle (0-1800°) for GoBilda 2000-series positional mode.
+    """Multi-turn positional servo (GoBilda 2000-series): 500-2500us over 0-1800."""
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    angle_deg = _float_arg(angle_deg, 'angle_deg')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
 
-    Uses 500-2500µs pulse range for up to 5 turns (1800°) of rotation.
-    Maintains PWM briefly to allow movement, then optionally turns off.
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    # Multi-turn angles are 0-1800, not a servo travel window, so the configured
+    # angle window is not applied here — but a quarantine still refuses.
+    _values, clamps, safety = mb_safety.guard(_character(), part, 'move_to_pca_multi')
+
+    clamped = max(0.0, min(1800.0, angle_deg))
+    if clamped != angle_deg:
+        clamps.append(clamp_record('angleDeg', angle_deg, clamped,
+                                   'multi-turn range is 0-1800 degrees'))
+    pulse_us = int(round(500 + (clamped / 1800.0) * (2500 - 500)))
+
+    with mb_safety.power_group(_character(), safety):
+        pca9685_set_pulse_width(channel, pulse_us, address, 'feedback')
+
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'angle_deg': clamped, 'pulse_us': pulse_us,
+                 'address': int(address)},
+        'clamps': clamps,
+        'message': f'PCA9685 ch{channel} multi-turn to {clamped} degrees',
+    }
+
+
+def rotate_continuous_pca(channel, direction, speed, duration_ms, address=None):
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    speed = _int_arg(speed, 'speed')
+    duration_ms = _int_arg(duration_ms, 'duration_ms')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+    if direction not in ('cw', 'ccw', 'stop'):
+        raise WrapperError(E_ARGS, f'Invalid direction: {direction}',
+                           hint="Use 'cw', 'ccw' or 'stop'.")
+
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    # A stop is a de-energize, never a hazard — it must not be refused by a
+    # quarantine or a no-retract rule, or a runaway part could not be stopped.
+    if direction == 'stop':
+        clamps = []
+        safety = mb_safety.get_part_safety(_character(), part.get('id')) if part else {}
+        speed, duration_ms = 0, 0
+    else:
+        values, clamps, safety = mb_safety.guard(
+            _character(), part, 'rotate_continuous_pca',
+            speed=speed, duration_ms=duration_ms, direction=direction)
+        speed = int(values['speed'])
+        duration_ms = int(values['duration_ms'])
+
+    with mb_safety.power_group(_character(), safety):
+        if direction == 'stop' and safety.get('blockAllMotion'):
+            # Stopping a quarantined part must not first command it. The normal
+            # stop writes a 1500us neutral pulse before zeroing, which is still
+            # a pulse to (here) a dead servo on a rail whose fuse has blown.
+            # Go straight to no-pulse: strictly less energy, equally stopped.
+            _release_channel(channel, int(address))
+        else:
+            pca9685_continuous_rotation(channel, direction, max(0, min(100, speed)),
+                                        duration_ms, address)
+
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'direction': direction, 'speed': speed,
+                 'duration_ms': duration_ms, 'address': int(address)},
+        'clamps': clamps,
+        'message': f'PCA9685 ch{channel} continuous {direction} at {speed}%',
+    }
+
+
+def batch_pca(pairs, address=None):
+    """Drive several channels in one process (avoids per-move interpreter start).
+
+    Every channel is guarded individually: one blocked part refuses only its own
+    channel, the rest of the pose still moves.
     """
+    _require_pca()
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+
+    results = []
+    clamps = []
+    ok_any = False
+    for channel, angle in pairs:
+        part = mb_safety.find_part_by_channel(_character(), channel, address)
+        try:
+            values, ch_clamps, safety = mb_safety.guard(
+                _character(), part, 'batch_pca', angle=angle)
+        except WrapperError as exc:
+            results.append({'channel': channel, 'angle': angle, 'status': 'error',
+                            'code': exc.code, 'error': exc.message})
+            continue
+        clamps.extend(ch_clamps)
+        applied = float(values['angle'])
+        try:
+            with mb_safety.power_group(_character(), safety):
+                pca9685_set_angle(channel, applied, address, 'standard')
+            results.append({'channel': channel, 'angle': applied, 'status': 'success'})
+            ok_any = True
+        except Exception as exc:
+            classified = classify(exc)
+            results.append({'channel': channel, 'angle': applied, 'status': 'error',
+                            'code': classified.code, 'error': classified.message})
+
+    if not results:
+        raise WrapperError(E_ARGS, 'batch_pca requires at least one channel:angle pair')
+    if not ok_any:
+        raise WrapperError(
+            E_BUS_IO if PCA9685_AVAILABLE else E_UNSUPPORTED,
+            'every channel in the batch failed',
+            hint='; '.join(r.get('error', '') for r in results if r.get('error')),
+            data={'results': results})
+
+    return {
+        'part': None,
+        'data': {'results': results, 'address': int(address)},
+        'clamps': clamps,
+        'message': f'{sum(1 for r in results if r["status"] == "success")}/'
+                   f'{len(results)} channels moved',
+    }
+
+
+def release_pca(channel, address=None):
+    """De-energize ONE PCA9685 channel (off-count 0 = no pulse at all).
+
+    Explicit and per-channel on purpose. Nothing in MonsterBox releases a
+    channel implicitly, and nothing should: dropping every channel on shutdown
+    would let the head fall under gravity.
+    """
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    if not 0 <= channel <= 15:
+        raise WrapperError(E_ARGS, f'Channel must be 0-15, got {channel}')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    _released_via = _release_channel(channel, int(address))
+
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'address': int(address), 'released': True,
+                 'via': _released_via},
+        'clamps': [],
+        'message': f'PCA9685 ch{channel} released (no pulse)',
+    }
+
+
+def _release_channel(channel, address):
+    """Zero one channel, preferring the daemon so the bus keeps one owner."""
+    reply = pca9685_control.daemon_request(
+        {'cmd': 'release', 'channel': int(channel), 'address': int(address)})
+    if reply is not None and reply.get('status') == 'ok':
+        return 'daemon'
+    bus = pca9685_control.pca9685_get_bus(address)
+    pca9685_control.write_channel(bus, address, int(channel), 0, 0)
+    return 'direct'
+
+
+def reconcile(address=None, release_unmapped=False):
+    """Audit every PCA9685 channel against parts.json.
+
+    ch15 held a 1924us pulse for an entire session with no part mapped to it and
+    nothing ever noticed. This reports what each channel is being driven at and
+    which of those channels no part claims. It only releases those unmapped
+    channels, and only when explicitly asked — a mapped channel is left holding,
+    because that is what keeps the head up.
+    """
+    _require_pca()
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+    address = int(address)
+    character_id = _character()
+
+    mapped = {}
+    for part in mb_safety.load_parts(character_id):
+        if not isinstance(part, dict):
+            continue
+        cfg = part.get('config') or {}
+        if str(cfg.get('controllerType') or '').lower() != 'pca9685':
+            continue
+        channel = cfg.get('channel')
+        if channel is None:
+            continue
+        try:
+            mapped[int(channel)] = {'partId': part.get('id'), 'name': part.get('name')}
+        except (TypeError, ValueError):
+            continue
+
+    # Read-only: never disturb a channel just to find out what it is doing.
     try:
-        if not PCA9685_AVAILABLE:
-            print(json.dumps({"status": "error", "message": "PCA9685 control not available (smbus or deps missing)"}))
-            return "error"
-        if address is None:
-            address = PCA9685_DEFAULT_ADDRESS
+        bus = pca9685_control.open_bus(1)
+    except Exception as exc:
+        raise classify(exc)
 
-        # Convert multi-turn angle to pulse width and use the new control module
-        # GoBilda 2000-series spec (Positional): 500-2500µs for 0-1800° (5 turns)
-        angle = max(0.0, min(1800.0, float(angle_deg)))  # Clamp to 0-1800° range
-        min_pulse = 500
-        max_pulse = 2500
-        angle_range = 1800.0
-        pulse_us = int(round(min_pulse + (angle / angle_range) * (max_pulse - min_pulse)))
-
-        # Use the new PCA9685 pulse width function for multi-turn servos
-        pca9685_set_pulse_width(int(channel), pulse_us, address, "feedback")
-
-        return "success"
-    except Exception as e:
-        print(f"Error in move_to_pca_multi: {e}", file=sys.stderr)
-        return "error"
-
-
-def test_servo(channel):
-    """Test servo connectivity"""
+    channels = []
     try:
-        channel = int(channel)
+        for channel in range(16):
+            try:
+                _on, off = pca9685_control.read_channel(bus, address, channel)
+            except OSError as exc:
+                raise WrapperError(
+                    E_BUS_IO, f'cannot read PCA9685 0x{address:02x} ch{channel}: {exc}',
+                    hint='Check the I2C address and that the chip is powered '
+                         '(`i2cdetect -y 1`).')
+            entry = {
+                'channel': channel,
+                'off': off,
+                'pulse_us': round(pca9685_control.off_to_us(off), 1),
+                'driven': off > 0,
+                'partId': mapped.get(channel, {}).get('partId'),
+                'partName': mapped.get(channel, {}).get('name'),
+            }
+            channels.append(entry)
+    finally:
+        try:
+            bus.close()
+        except Exception:
+            pass
 
-        if not SERVO_SERVICE_AVAILABLE:
-            print(json.dumps({"status":"error","message":"Servo service unavailable"}))
-            return "error"
+    unmapped_driven = [c for c in channels if c['driven'] and c['partId'] is None]
+    released = []
+    if release_unmapped:
+        for entry in unmapped_driven:
+            try:
+                _release_channel(entry['channel'], address)
+                released.append(entry['channel'])
+                entry['released'] = True
+            except Exception as exc:
+                entry['released'] = False
+                entry['error'] = str(exc)
 
-        print(f"Testing servo on channel {channel}")
+    warnings = list(mb_safety.validate_power_groups(character_id))
+    for entry in unmapped_driven:
+        warnings.append(
+            f"ch{entry['channel']} is driven at {entry['pulse_us']}us but no part "
+            f"of character {character_id} is mapped to it")
+    for message in warnings:
+        warn(message)
 
-        # Simple test movement
-        move_to(channel, 1500, 500)  # Center position
+    return {
+        'part': None,
+        'data': {
+            'characterId': character_id,
+            'address': address,
+            'channels': channels,
+            'mappedChannels': sorted(mapped.keys()),
+            'unmappedDriven': [c['channel'] for c in unmapped_driven],
+            'released': released,
+            'warnings': warnings,
+        },
+        'clamps': [],
+        'message': f'{len(channels)} channels audited, '
+                   f'{len(unmapped_driven)} driven with no part mapped',
+    }
+
+
+def test_servo(pin):
+    """Sweep a GPIO servo through a short, bounded connectivity check."""
+    _require_gpio()
+    pin = _int_arg(pin, 'channel')
+    log(f'Testing GPIO servo on pin {pin}')
+    for pulse in (1500, 1200, 1800, 1500):
+        move_to(pin, pulse, 500)
         time.sleep(0.5)
-        move_to(channel, 1200, 500)  # One direction
-        time.sleep(0.5)
-        move_to(channel, 1800, 500)  # Other direction
-        time.sleep(0.5)
-        move_to(channel, 1500, 500)  # Back to center
+    return {
+        'part': None,
+        'data': {'pin': pin},
+        'clamps': [],
+        'message': f'GPIO servo on pin {pin} completed its test sweep',
+    }
 
-        return "success"
 
-    except Exception as e:
-        print(f"Error in test_servo: {e}", file=sys.stderr)
-        return "error"
+USAGE = """Usage: servo_cli.py <command> [args...]
+Commands:
+  move_to <gpio_pin> <pulse_us> [duration_ms]
+  rotate_continuous <gpio_pin> <direction> <speed> <duration_ms>
+  move_to_pca <channel> <angle_deg> [i2c_address]
+  move_to_pca_multi <channel> <angle_deg> [i2c_address]
+  rotate_continuous_pca <channel> <direction> <speed> <duration_ms> [i2c_address]
+  batch_pca <ch:angle> [<ch:angle> ...] [i2c_address]
+  release <channel> [i2c_address]
+  reconcile [i2c_address] [--release-unmapped]
+  test <channel>"""
+
+
+def _address_arg(args, index):
+    if len(args) > index:
+        try:
+            return int(args[index], 0)
+        except (TypeError, ValueError):
+            raise WrapperError(E_ARGS, f'invalid i2c address: {args[index]!r}')
+    return PCA9685_DEFAULT_ADDRESS
+
 
 def main():
-    """Main CLI entry point"""
     if len(sys.argv) < 2:
-        print("Usage: servo_cli.py <command> [args...]", file=sys.stderr)
-        print("Commands:", file=sys.stderr)
-        print("  move_to <gpio_pin> <pulse_us> [duration_ms]", file=sys.stderr)
-        print("  rotate_continuous <gpio_pin> <direction> <speed> <duration_ms>", file=sys.stderr)
-        print("  move_to_pca <channel> <angle_deg> [i2c_address]", file=sys.stderr)
-        print("  move_to_pca_multi <channel> <angle_deg> [i2c_address]", file=sys.stderr)
-        print("  rotate_continuous_pca <channel> <direction> <speed> <duration_ms> [i2c_address]", file=sys.stderr)
-        print("  test <channel>", file=sys.stderr)
-        sys.exit(1)
+        sys.stderr.write(USAGE + '\n')
+        emit(False, 'usage', error=WrapperError(E_ARGS, 'no command given',
+                                                hint=USAGE))
+        return
 
     command = sys.argv[1]
-    args = sys.argv[2:]
+    args = [a for a in sys.argv[2:] if not a.startswith('--')]
+    flags = {a for a in sys.argv[2:] if a.startswith('--')}
 
     try:
-        if command == "move_to":
+        if command == 'move_to':
             if len(args) < 2:
-                raise ValueError("move_to requires channel and pulse_us")
-            channel, pulse_us = args[0], args[1]
-            duration_ms = int(args[2]) if len(args) > 2 else 1000
-            result = move_to(channel, pulse_us, duration_ms)
+                raise WrapperError(E_ARGS, 'move_to requires <gpio_pin> <pulse_us>')
+            result = move_to(args[0], args[1], args[2] if len(args) > 2 else 1000)
 
-        elif command == "rotate_continuous":
+        elif command == 'rotate_continuous':
             if len(args) < 4:
-                raise ValueError("rotate_continuous requires channel, direction, speed, duration_ms")
-            channel, direction, speed, duration_ms = args[0], args[1], args[2], args[3]
-            result = rotate_continuous(channel, direction, speed, duration_ms)
+                raise WrapperError(
+                    E_ARGS,
+                    'rotate_continuous requires <gpio_pin> <direction> <speed> <duration_ms>')
+            result = rotate_continuous(args[0], args[1], args[2], args[3])
 
-        elif command == "move_to_pca":
+        elif command == 'move_to_pca':
             if len(args) < 2:
-                raise ValueError("move_to_pca requires channel and angle_deg")
-            channel, angle_deg = int(args[0]), float(args[1])
-            address = int(args[2], 0) if len(args) > 2 else PCA9685_DEFAULT_ADDRESS
-            result = move_to_pca(channel, angle_deg, address)
+                raise WrapperError(E_ARGS, 'move_to_pca requires <channel> <angle_deg>')
+            result = move_to_pca(args[0], args[1], _address_arg(args, 2))
 
-        elif command == "move_to_pca_multi":
+        elif command == 'move_to_pca_multi':
             if len(args) < 2:
-                raise ValueError("move_to_pca_multi requires channel and angle_deg")
-            channel, angle_deg = int(args[0]), float(args[1])
-            address = int(args[2], 0) if len(args) > 2 else PCA9685_DEFAULT_ADDRESS
-            result = move_to_pca_multi(channel, angle_deg, address)
+                raise WrapperError(E_ARGS, 'move_to_pca_multi requires <channel> <angle_deg>')
+            result = move_to_pca_multi(args[0], args[1], _address_arg(args, 2))
 
-        elif command == "rotate_continuous_pca":
+        elif command == 'rotate_continuous_pca':
             if len(args) < 4:
-                raise ValueError("rotate_continuous_pca requires channel, direction, speed, duration_ms")
-            channel, direction, speed, duration_ms = int(args[0]), args[1], int(args[2]), int(args[3])
-            address = int(args[4], 0) if len(args) > 4 else PCA9685_DEFAULT_ADDRESS
-            result = rotate_continuous_pca(channel, direction, speed, duration_ms, address)
+                raise WrapperError(
+                    E_ARGS,
+                    'rotate_continuous_pca requires <channel> <direction> <speed> <duration_ms>')
+            result = rotate_continuous_pca(args[0], args[1], args[2], args[3],
+                                           _address_arg(args, 4))
 
-        elif command == "batch_pca":
-            # Args: ch1:angle1 ch2:angle2 ... [address]
-            if len(args) < 1:
-                raise ValueError("batch_pca requires at least one channel:angle pair")
+        elif command == 'batch_pca':
+            if not args:
+                raise WrapperError(E_ARGS, 'batch_pca requires at least one channel:angle pair')
             pairs = []
             address = PCA9685_DEFAULT_ADDRESS
-            for a in args:
-                if ':' in a:
-                    ch, ang = a.split(':', 1)
-                    pairs.append((int(ch), float(ang)))
+            for token in args:
+                if ':' in token:
+                    channel, angle = token.split(':', 1)
+                    pairs.append((_int_arg(channel, 'channel'),
+                                  _float_arg(angle, 'angle_deg')))
                 else:
-                    # Last non-pair arg is address
-                    address = int(a, 0)
+                    address = int(token, 0)
             result = batch_pca(pairs, address)
 
-        elif command == "test":
-            if len(args) < 1:
-                raise ValueError("test requires channel")
-            channel = args[0]
-            result = test_servo(channel)
+        elif command == 'release':
+            if not args:
+                raise WrapperError(E_ARGS, 'release requires <channel>')
+            result = release_pca(args[0], _address_arg(args, 1))
+
+        elif command == 'reconcile':
+            result = reconcile(_address_arg(args, 0), '--release-unmapped' in flags)
+
+        elif command == 'test':
+            if not args:
+                raise WrapperError(E_ARGS, 'test requires <channel>')
+            result = test_servo(args[0])
 
         else:
-            raise ValueError(f"Unknown command: {command}")
+            raise WrapperError(E_UNSUPPORTED, f'Unknown command: {command}', hint=USAGE)
 
-        print(result)
-        sys.exit(0 if result == "success" else 1)
+    except WrapperError as exc:
+        emit_error(command, exc)
+        return
+    except Exception as exc:  # noqa: BLE001 - classified, never swallowed
+        emit_error(command, classify(exc))
+        return
 
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+    emit(True, command, part=result.get('part'), data=result.get('data'),
+         clamps=result.get('clamps'), message=result.get('message'))
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()

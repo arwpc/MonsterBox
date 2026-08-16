@@ -29,6 +29,10 @@ const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 /**
  * Did a Python wrapper report success?
  *
+ * The wrappers emit one envelope on stdout: {ok, op, part, data, error, timing_ms,
+ * clamps} plus the legacy `success`/`status`/`message` mirrors this function
+ * reads. Those mirrors are load-bearing — see python_wrappers/mb_response.py.
+ *
  * Prefers the parsed JSON envelope. The string fallback exists because some
  * wrappers still print a bare word, but it used to be a raw substring test —
  * so any output containing "success" anywhere passed, including the word
@@ -54,6 +58,23 @@ function parsePythonJSON(out) {
         try { return JSON.parse(lines[i]); } catch (e) { /* continue */ }
     }
     return null;
+}
+
+/**
+ * Clamps the Python wrapper applied on its own, as human-readable strings.
+ *
+ * config/hardware-safety.json is now enforced in BOTH layers: Node clamps first,
+ * and the wrapper re-applies the same committed config as an independent
+ * backstop (it can only narrow, never widen). A clamp that only the wrapper
+ * made would otherwise be invisible — which is how "ask for 8s, get 5s, never
+ * be told" happened.
+ */
+function extractWrapperClamps(result) {
+    if (!result || typeof result !== 'object') return [];
+    const parsed = parsePythonJSON(result.rawOutput);
+    if (!parsed || !Array.isArray(parsed.clamps)) return [];
+    return parsed.clamps.map(c =>
+        `${c.field} ${c.requested} → ${c.applied} (${c.reason}, enforced at the wrapper)`);
 }
 
 async function getDataDir() {
@@ -411,7 +432,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), '180'];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, null);
+                    const success = wrapperSucceeded(out, parsePythonJSON(out));
                     const key = `pca_ch${channel}`;
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = 'on';
                     return { success, partType: 'light', channel, state: 'on', rawOutput: out, message: success ? `PCA9685 ch${channel} light on` : 'Light on failed' };
@@ -441,7 +462,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), '0'];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, null);
+                    const success = wrapperSucceeded(out, parsePythonJSON(out));
                     const key = `pca_ch${channel}`;
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = 'off';
                     return { success, partType: 'light', channel, state: 'off', rawOutput: out, message: success ? `PCA9685 ch${channel} light off` : 'Light off failed' };
@@ -474,7 +495,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), angle];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, null);
+                    const success = wrapperSucceeded(out, parsePythonJSON(out));
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = newState;
                     return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out, message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
                 }
@@ -666,7 +687,7 @@ const HARDWARE_CONTROLLERS = {
                     console.log(`🧭 Python call => servo_cli.py ${args.join(' ')}`);
 
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
                     return {
                         success,
                         partType: 'servo',
@@ -681,7 +702,7 @@ const HARDWARE_CONTROLLERS = {
                     const result = await servoService.moveToAngle({ partId, angleDeg });
 
                     // Convert string result to structured response
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
 
                     return {
                         success: success,
@@ -718,7 +739,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speedInt), String(durInt)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
                     return {
                         success,
                         partType: 'servo',
@@ -737,7 +758,7 @@ const HARDWARE_CONTROLLERS = {
                     // regardless of the requested duration (which the response echoed).
                     const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed, duration });
 
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
 
                     return {
                         success: success,
@@ -768,7 +789,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['rotate_continuous_pca', String(channel), 'stop', '0', '100'];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
                     return {
                         success,
                         partType: 'servo',
@@ -781,7 +802,7 @@ const HARDWARE_CONTROLLERS = {
                 } else {
                     const result = await servoService.stop({ channel: pin });
 
-                    const success = wrapperSucceeded(result, null);
+                    const success = wrapperSucceeded(result, parsePythonJSON(result));
 
                     return {
                         success: success,
@@ -1786,6 +1807,14 @@ export async function controlPart(partId, action, params = {}, options = {}) {
         const result = await runInPowerGroup(characterId, safety, () => actionFunction.call(controller, actionParams));
         console.log(`🔧 Controller ${action} completed`);
 
+        // Fold in anything the wrapper narrowed on its own so the operator sees
+        // every clamp, not just the ones this layer made.
+        const wrapperClamps = extractWrapperClamps(result);
+        if (wrapperClamps.length > 0) {
+            console.warn(`🛡️  Wrapper safety limits applied to part ${partId} (${part.name}): ${wrapperClamps.join('; ')}`);
+            safetyAdjustments.push(...wrapperClamps);
+        }
+
         return {
             ...result,
             partId: partId,
@@ -2002,9 +2031,24 @@ export async function batchMoveServos(commands, options = {}) {
             try {
                 const args = pcaPairs.map(p => `${p.channel}:${p.angle}`);
                 const out = await runWrapper('servo_cli.py', ['batch_pca', ...args]);
-                const success = wrapperSucceeded(out, null);
+                const parsed = parsePythonJSON(out);
+                const success = wrapperSucceeded(out, parsed);
+                // The wrapper reports each channel separately, and its own safety
+                // backstop can refuse one channel while the rest of the pose moves.
+                // Reporting the batch's overall verdict for every part hid that.
+                const perChannel = new Map(
+                    (parsed && Array.isArray(parsed.data?.results) ? parsed.data.results : [])
+                        .map(r => [String(r.channel), r])
+                );
                 for (const p of pcaPairs) {
-                    results.push({ success, partId: p.partId, angleDeg: p.angle, batch: true });
+                    const r = perChannel.get(String(p.channel));
+                    results.push({
+                        success: r ? r.status === 'success' : success,
+                        partId: p.partId,
+                        angleDeg: r && r.angle != null ? r.angle : p.angle,
+                        batch: true,
+                        ...(r && r.status === 'error' ? { error: r.error } : {})
+                    });
                 }
             } catch (e) {
                 for (const p of pcaPairs) {
@@ -2033,7 +2077,7 @@ export async function batchMoveServos(commands, options = {}) {
                     return runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]);
                 }
             });
-            const success = out === 'daemon:ok' || wrapperSucceeded(out, null);
+            const success = out === 'daemon:ok' || wrapperSucceeded(out, parsePythonJSON(out));
             results.push({ success, partId: p.partId, angleDeg: p.angle, serialized: true });
         } catch (e) {
             results.push({ success: false, partId: p.partId, error: e.message, serialized: true });

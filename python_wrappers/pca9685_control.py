@@ -180,6 +180,28 @@ def write_channel(bus, i2c_address, channel, on, off):
             bus.write_byte_data(i2c_address, reg + offset, value)
 
 
+def read_channel(bus, i2c_address, channel):
+    """Read one channel's four PWM registers. Returns (on, off).
+
+    Read-only on purpose: startup reconciliation needs to see what a channel is
+    actually being driven at (ch15 sat at a 1924us pulse for a whole session with
+    no part mapped to it) without disturbing any channel to find out.
+    """
+    reg = PCA9685_LED0_ON_L + 4 * int(channel)
+    try:
+        data = bus.read_i2c_block_data(i2c_address, reg, 4)
+    except AttributeError:
+        data = [bus.read_byte_data(i2c_address, reg + offset) for offset in range(4)]
+    on = (data[0] | ((data[1] & 0x0F) << 8))
+    off = (data[2] | ((data[3] & 0x0F) << 8))
+    return on, off
+
+
+def off_to_us(off_count):
+    """PCA9685 off-count -> pulse width in microseconds (inverse of us_to_off)."""
+    return (float(off_count) / PWM_STEPS) * PERIOD_US
+
+
 def _cleanup_buses():
     """Close all cached I2C bus handles on process exit"""
     for addr, bus in _bus_cache.items():

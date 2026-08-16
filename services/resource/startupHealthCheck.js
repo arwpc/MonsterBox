@@ -99,6 +99,35 @@ async function runStartupHealthCheck() {
         results.checks.python = { status: 'critical', error: 'Python3 not found' };
     }
 
+    // 6. PCA9685 channel reconciliation — skip in test mode.
+    // Read-only: it reports which channels are being driven and which of those
+    // no part claims. A channel held at a pulse width with no part mapped to it
+    // (ch15 sat at 1924us for an entire session) is invisible otherwise. It does
+    // NOT release anything — servos are deliberately left holding position,
+    // because releasing them all would drop the head under gravity.
+    if (!isTestMode()) {
+        try {
+            const script = path.join(__dirname, '..', '..', 'python_wrappers', 'servo_cli.py');
+            const { stdout } = await execAsync(`python3 ${JSON.stringify(script)} reconcile`, { timeout: 6000 });
+            const envelope = JSON.parse(String(stdout).trim().split(/\r?\n/).filter(Boolean).pop() || '{}');
+            const data = envelope.data || {};
+            const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+            results.checks.servoChannels = {
+                status: warnings.length > 0 ? 'warning' : 'ok',
+                mappedChannels: data.mappedChannels || [],
+                unmappedDriven: data.unmappedDriven || [],
+                warnings
+            };
+            for (const warning of warnings) {
+                console.warn(`  ⚠ servoChannels: ${warning}`);
+            }
+        } catch (err) {
+            // No I2C, no PCA9685, or the wrapper refused — informational only,
+            // never a reason to hold up startup.
+            results.checks.servoChannels = { status: 'unknown', error: err.message.split('\n')[0] };
+        }
+    }
+
     // Determine overall status
     const statuses = Object.values(results.checks).map(c => c.status);
     const overallStatus = statuses.includes('critical') ? 'CRITICAL' :
