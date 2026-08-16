@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "_comment": [
+    "Orlok's gesture vocabulary (GESTURE-ENGINE-SPEC.md §7.1), authored against the",
+    "hardware that is ACTUALLY available on this node as of 2026-08-16, not the full",
+    "instrument the spec imagines:",
+    "  part 15  Head on a Swivel  — working, calibrated 60-120",
+    "  part 8   Hand of Azura     — working relay light",
+    "  part 5   Forearm Rotation  — allowed, 95-125, shares the 'arm-fused-rail'",
+    "  part 4   Elbow             — BLOCKED, servo physically failed",
+    "  part 3   Bow At The Waist  — BLOCKED, ambiguous BTS7960 wiring",
+    "So every recipe here is built on head + light, the two reliably working parts,",
+    "with the forearm added where a second servo earns its keep. The bow-dependent",
+    "gestures (courtly_bow, kiss_bow) are expressed as head bows: honest about the",
+    "hardware rather than commanding a blocked actuator and calling it a bow. When",
+    "the elbow and bow are repaired, deepen them here — do not add new parts to a",
+    "step window that already contains part 5 (same fused rail)."
+  ],
+  "gestures": [
+    {
+      "id": "turn_away_dismissive",
+      "label": "Turn away, dismissive",
+      "intent": "offense taken; contempt; ending a topic",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 66, "delayMs": 0, "durationMs": 900, "easing": "ease_out" },
+        { "partId": "8", "type": "light", "level": 15, "delayMs": 150 }
+      ],
+      "holdMs": 1200,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 1900, "easing": "ease_in_out" },
+      "cooldownMs": 6000,
+      "maxPerConversation": 3,
+      "kidSafe": true
+    },
+    {
+      "id": "menacing_lean",
+      "label": "Menacing lean",
+      "intent": "threats and [slow] warnings",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 80, "delayMs": 0, "durationMs": 1100, "easing": "ease_in_out" },
+        { "partId": "5", "type": "servo", "target": 118, "delayMs": 220, "durationMs": 1000, "easing": "ease_in_out" },
+        { "partId": "8", "type": "light", "level": 45, "delayMs": 300 }
+      ],
+      "holdMs": 1400,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2000, "easing": "ease_in_out" },
+      "cooldownMs": 8000,
+      "maxPerConversation": 3,
+      "kidSafe": false
+    },
+    {
+      "id": "slow_scan_down",
+      "label": "Slow scan",
+      "intent": "Mina, the depths, [whispers]",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 64, "delayMs": 0, "durationMs": 2200, "easing": "ease_in_out" },
+        { "partId": "8", "type": "light", "level": 10, "delayMs": 400 }
+      ],
+      "holdMs": 1600,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2400, "easing": "ease_in_out" },
+      "cooldownMs": 10000,
+      "maxPerConversation": 2,
+      "kidSafe": true
+    },
+    {
+      "id": "hand_glow",
+      "label": "Hand of Azura glows",
+      "intent": "granting magic, blessing a child, fortunes",
+      "steps": [
+        { "partId": "8", "type": "light", "level": 100, "delayMs": 0 },
+        { "partId": "5", "type": "servo", "target": 104, "delayMs": 200, "durationMs": 1200, "easing": "ease_out" },
+        { "partId": "15", "type": "servo", "target": 110, "delayMs": 320, "durationMs": 1100, "easing": "ease_in_out" }
+      ],
+      "holdMs": 2200,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2000, "easing": "ease_in_out" },
+      "cooldownMs": 5000,
+      "maxPerConversation": 6,
+      "kidSafe": true
+    },
+    {
+      "id": "courtly_bow",
+      "label": "Courtly bow (head)",
+      "intent": "receiving a known guest; deeper station, deeper bow",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 72, "delayMs": 0, "durationMs": 1400, "easing": "ease_in_out" },
+        { "partId": "8", "type": "light", "level": 35, "delayMs": 200 }
+      ],
+      "holdMs": 1100,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2100, "easing": "ease_in_out" },
+      "cooldownMs": 12000,
+      "maxPerConversation": 2,
+      "kidSafe": true
+    },
+    {
+      "id": "beckon_reach",
+      "label": "Beckon toward the road",
+      "intent": "BECKONING lines — calling a hesitant guest closer",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 106, "delayMs": 0, "durationMs": 1000, "easing": "ease_out" },
+        { "partId": "5", "type": "servo", "target": 100, "delayMs": 180, "durationMs": 1200, "easing": "ease_in_out" },
+        { "partId": "8", "type": "light", "level": 70, "delayMs": 260 }
+      ],
+      "holdMs": 1500,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2200, "easing": "ease_in_out" },
+      "cooldownMs": 9000,
+      "maxPerConversation": 4,
+      "kidSafe": true
+    },
+    {
+      "id": "recoil",
+      "label": "Recoil",
+      "intent": "being startled; holy names; talk of dawn",
+      "steps": [
+        { "partId": "15", "type": "servo", "target": 112, "delayMs": 0, "durationMs": 450, "easing": "ease_out" },
+        { "partId": "8", "type": "light", "level": 0, "delayMs": 80 }
+      ],
+      "holdMs": 700,
+      "return": { "mode": "pose", "pose": 1, "durationMs": 2300, "easing": "ease_in_out" },
+      "cooldownMs": 7000,
+      "maxPerConversation": 3,
+      "kidSafe": true
+    }
+  ]
+}

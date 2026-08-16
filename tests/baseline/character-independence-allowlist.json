@@ -492,6 +492,20 @@
       "line": 327,
       "snippet": "<div class=\"mb-modal-body\"><p class=\"mb-text-secondary\">This will permanently remove <strong>Orlok \u00b7 Rise from Crypt</strong>. Linked audio ",
       "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/night-memory/scrub-test.mjs",
+      "line": 25,
+      "snippet": "{ n: 'plain full name', in: 'The guest, Emily Rodriguez, asked Orlok for a fortune.', no: ['Rodriguez'], yes: ['Emily', 'Orlok'] },",
+      "reason": "PHI scrubber test fixture. Proving the scrubber removes a visitor's SURNAME while leaving first names and canon character names intact requires literal names in the fixture \u2014 parameterizing them would test nothing."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/night-memory/scrub-test.mjs",
+      "line": 72,
+      "snippet": "{ n: 'canon single names survive', in: 'Mina sang for Emily while Orlok watched from the coffin.', no: [], yes: ['Mina', 'Emily', 'Orlok'] },",
+      "reason": "PHI scrubber test fixture. This case exists specifically to prove canon character names are NOT scrubbed; the names are the assertion."
     }
   ]
 }

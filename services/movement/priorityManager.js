@@ -5,13 +5,22 @@
  * All state is in-memory (no persistence across restarts).
  */
 
-// Priority constants — higher number wins
+// Priority constants — higher number wins.
+//
+// The gesture engine's four motion layers slot in here (GESTURE-ENGINE-SPEC.md §3):
+// safety/e-stop > L3 semantic gesture > L2 state choreography > head tracking >
+// L1 ambient > idle. AMBIENT sits ABOVE idle rather than below it because it is
+// the "never a dead stop" floor during an active conversation — it should win
+// against the idle loop but yield to anything with intent behind it.
 export const PRIORITY = Object.freeze({
-    MICRO_MOVEMENT: 10,
-    IDLE:           30,
-    JAW:            70,
-    HEAD_TRACKING:  80,
-    SCENE:         100
+    MICRO_MOVEMENT:    10,
+    IDLE:              30,
+    AMBIENT:           40,  // L1 — conversation-scoped motion floor
+    JAW:               70,
+    HEAD_TRACKING:     80,
+    GESTURE_STATE:     85,  // L2 — conversation lifecycle choreography
+    GESTURE_SEMANTIC:  90,  // L3 — the agent asked for this gesture by name
+    SCENE:            100
 });
 
 /**

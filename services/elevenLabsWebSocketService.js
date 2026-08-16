@@ -21,6 +21,7 @@ import randomPoseService from './randomPoseService.js';
 import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
+import gestureEngineService from './gestureEngineService.js';
 
 // Absolute floor below which a frame is never treated as speech, whatever the
 // adaptive estimate says.
@@ -757,6 +758,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 case 'conversation_initiation_metadata':
                     console.log(`🎯 Conversation initiated for ${sessionId}`);
                     connection.conversationReady = true;
+                    // Fresh visitor, fresh gesture budget — cooldowns and
+                    // per-conversation caps are what stop a character repeating
+                    // the same move at everyone who walks up.
+                    if (connection.characterId != null) {
+                        gestureEngineService.startConversation(connection.characterId);
+                    }
                     // Detect output audio format from agent config (default: pcm_16000)
                     try {
                         const meta = message.conversation_initiation_metadata_event || {};
@@ -1045,6 +1052,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         connection.aiSpeaking = false;
                         connection.speechStartedAt = 0;
                         connection.accumulatedAudioMs = 0;
+                        if (connection.characterId != null) {
+                            gestureEngineService.endConversation(connection.characterId);
+                        }
                     }
                     this.sendToClient(sessionId, {
                         type: 'conversation_ended',
@@ -1075,6 +1085,33 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         reason: message.interruption_event?.reason || 'Unknown'
                     });
                     break;
+
+                case 'client_tool_call': {
+                    // The agent asked its body to do something. All logic lives in
+                    // the gesture service; this is routing only, so whatever shape
+                    // the tool protocol takes, the motion rules stay in one place.
+                    const call = message.client_tool_call || {};
+                    const result = gestureEngineService.handleAgentToolCall(
+                        connection?.characterId,
+                        call.tool_name,
+                        call.parameters || {},
+                        { kidMode: connection?.kidMode === true }
+                    );
+                    // Answer immediately and unconditionally. Motion is
+                    // fire-and-forget: making the agent wait on a servo is exactly
+                    // the freeze-while-talking failure the gesture spec exists to
+                    // prevent, and a gesture that fails must not stall the reply.
+                    if (call.tool_call_id && connection?.elevenLabsWs
+                        && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        connection.elevenLabsWs.send(JSON.stringify({
+                            type: 'client_tool_result',
+                            tool_call_id: call.tool_call_id,
+                            result: result.handled ? 'ok' : 'ignored',
+                            is_error: false
+                        }));
+                    }
+                    break;
+                }
 
                 default:
                     // Ignore unknown message types to keep console clean

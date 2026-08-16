@@ -62,6 +62,7 @@ import pipewireService from './services/pipewireService.js';
 import serverPlaybackService from './services/serverPlaybackService.js';
 import systemService from './services/systemService.js';
 import movementApiRoutes from './routes/api/movement.js';
+import gestureApiRoutes from './routes/api/gestures.js';
 import resourceApiRoutes, { setMemoryMonitor } from './routes/api/resource.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -481,6 +482,7 @@ app.use('/api/orchestration', orchestrationRoutes);
 app.use('/api/system', systemApiRoutes);
 app.use('/api/config', configApiRoutes);
 app.use('/api/movement', movementApiRoutes);
+app.use('/api/gestures', gestureApiRoutes);
 app.use('/api/resource', resourceApiRoutes);
 app.use('/api', sceneEditorApiRoutes);
 
