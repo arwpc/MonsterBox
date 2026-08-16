@@ -106,11 +106,6 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Part not found' });
         }
 
-        // The part was resolved against a specific character, so the hardware call
-        // must be too — part IDs are only unique within a character.
-        const ctx = await resolveCharacter(req);
-        const hw = { characterId: ctx && ctx.id };
-
         res.json({ success: true, part });
     } catch (error) {
         console.error('Error reading part:', error);
@@ -133,6 +128,11 @@ router.post('/:id/test', express.json(), async (req, res) => {
         if (!part) {
             return res.status(404).json({ error: 'Part not found' });
         }
+
+        // The part was resolved against a specific character, so the hardware call
+        // must be too — part IDs are only unique within a character.
+        const ctx = await resolveCharacter(req);
+        const hw = { characterId: ctx && ctx.id };
 
         const { action, params = {} } = req.body;
         const partType = part.type;

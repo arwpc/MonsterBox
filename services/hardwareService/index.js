@@ -1921,7 +1921,8 @@ export async function batchMoveServos(commands, options = {}) {
     // Fallback individual commands for non-PCA9685 servos
     for (const cmd of fallbackCmds) {
         try {
-            const r = await controlPart(String(cmd.partId), 'moveToAngle', { angleDeg: cmd.angleDeg });
+            // Carry the character here too — same class of bug as the batch path above.
+            const r = await controlPart(String(cmd.partId), 'moveToAngle', { angleDeg: cmd.angleDeg }, { characterId });
             results.push({ ...r, partId: cmd.partId });
         } catch (e) {
             results.push({ success: false, partId: cmd.partId, error: e.message });

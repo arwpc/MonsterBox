@@ -67,11 +67,19 @@ export async function executePose({ characterId, poseId, pose: providedPose, opt
         const elapsed = Date.now() - startTime;
         console.log(`🎭 Pose "${pose.name}" completed in ${elapsed}ms`);
 
+        // `some` reported success whenever ANY part moved, so a pose whose actuator
+        // failed outright still came back success:true as long as a servo worked —
+        // which is exactly how a broken actuator path stayed hidden. Report the truth
+        // and name the parts that failed, while keeping `success` meaningful for
+        // callers that only check the flag.
+        const failedParts = results.filter(r => !r.success);
         return {
-            success: results.some(r => r.success),
+            success: failedParts.length === 0,
+            partialFailure: failedParts.length > 0 && failedParts.length < results.length,
             poseId,
             poseName: pose.name,
             executedParts: results.filter(r => r.success).length,
+            failedParts: failedParts.map(r => ({ partId: r.partId, error: r.error })),
             results,
             executionTime: Date.now()
         };
@@ -125,10 +133,15 @@ async function executePosePart(part, options, characterId) {
             case 'linear-actuator': {
                 const { distance, speed = 50 } = target;
                 const direction = target.direction || (distance > 0 ? 'extend' : 'retract');
+                // 'control' is a MOTOR action — the linear-actuator controller exposes
+                // jog/extend/retract/stop, so every actuator pose failed with
+                // "Action 'control' not supported for part type: linear_actuator" and
+                // never moved. jog is the unified entry point and applies the part's
+                // invertDirection centrally. The scene executor already had this right.
                 // The pose editor writes `duration`; this engine originally read only
                 // `durationMs`, so any actuator pose authored in the UI silently ran for
                 // the 2000ms default — a long time on a 500ms-class part. Accept both.
-                const result = await controlPart(String(partId), 'control', {
+                const result = await controlPart(String(partId), 'jog', {
                     direction,
                     speed: Math.max(1, Math.min(100, speed)),
                     duration: target.durationMs ?? target.duration ?? 2000
