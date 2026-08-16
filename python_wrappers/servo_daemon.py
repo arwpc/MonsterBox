@@ -92,6 +92,10 @@ _last_off = {}             # (address, channel) -> last off-count written
 _shutdown_event = threading.Event()
 _stats = {'commands': 0, 'errors': 0, 'reinits': 0, 'started_at': time.time()}
 
+# Path we successfully bound, or None. Only set while this process is the owner,
+# so cleanup can remove the socket file without probing (and racing) for it.
+_bound_socket_path = None
+
 
 def _log(msg):
     """Daemon logging goes to stderr — stdout is the jaw protocol channel."""
@@ -367,6 +371,8 @@ def _try_bind(path):
         os.chmod(path, 0o660)
         server.listen(32)
         server.settimeout(0.5)
+        global _bound_socket_path
+        _bound_socket_path = path
         return server
     except OSError as exc:
         _log(f"cannot bind {path}: {exc}")
@@ -494,6 +500,20 @@ def main():
     _send_stdout({'status': 'shutdown'})
     with _bus_lock:
         _drop_bus()
+
+    # The socket server runs on a daemon thread, so the process can exit before
+    # that thread's own cleanup runs and leave the socket file behind. A stale
+    # socket is recoverable — the next daemon unlinks it — but until then every
+    # caller pays a refused connection before falling back. Remove it here, using
+    # the recorded ownership rather than a probe: probing races the listener
+    # thread, which may still be inside its half-second accept timeout.
+    if _bound_socket_path:
+        try:
+            os.unlink(_bound_socket_path)
+        except OSError as exc:
+            if exc.errno != errno.ENOENT:
+                _log(f"could not remove {_bound_socket_path}: {exc}")
+
     return 0
 
 
