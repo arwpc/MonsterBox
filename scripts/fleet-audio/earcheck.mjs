@@ -271,7 +271,16 @@ async function say(node, text) {
       { text },
       { timeout: 45000 }
     );
-    return { ok: r.data?.success !== false, status: r.status, body: JSON.stringify(r.data).slice(0, 300) };
+    // `data` is the PARSED response, kept whole. `body` is only ever for error
+    // display and is truncated — parsing the truncated copy silently lost the
+    // voice check on any node whose ALSA device name pushed voiceId past the
+    // cut, which is exactly the node the check most needed to cover.
+    return {
+      ok: r.data?.success !== false,
+      status: r.status,
+      data: r.data,
+      body: JSON.stringify(r.data).slice(0, 300)
+    };
   } catch (err) {
     return {
       ok: false,
@@ -337,11 +346,9 @@ async function checkNode(node) {
   // and intelligibly, in somebody else's voice — a check that only measures level
   // and word recall passes that with full marks. The node reports which voice it
   // actually used, so compare it against the canonical voice for this character.
-  try {
-    const said = JSON.parse(sayRes.body);
-    row.voiceUsed = said?.data?.voiceId || said?.voiceId || null;
-    row.voiceFallback = said?.data?.voiceFallback === true;
-  } catch (_) { row.voiceUsed = null; }
+  const said = sayRes.data;
+  row.voiceUsed = said?.data?.voiceId || said?.voiceId || null;
+  row.voiceFallback = said?.data?.voiceFallback === true;
   const canonical = CANONICAL_VOICES[node.characterId];
   if (canonical && row.voiceUsed) {
     row.voiceCorrect = row.voiceUsed === canonical;

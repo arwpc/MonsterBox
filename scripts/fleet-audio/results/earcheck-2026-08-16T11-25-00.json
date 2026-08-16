@@ -1,0 +1,136 @@
+{
+  "ranAt": "2026-08-16T11:25:00.750Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.90]",
+      "sinkVolume": 0.9,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -78.7,
+          "castP90Db": -77.7,
+          "castPeakDb": -62.4,
+          "riseDb": 1,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -45.5,
+          "castP90Db": -30.6,
+          "castPeakDb": -13.1,
+          "riseDb": 14.9,
+          "floorFlat": false,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+          "recall": 0.8
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -45.5,
+      "castDb": -30.6,
+      "riseDb": 14.9,
+      "recall": 0.8,
+      "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.65]",
+      "sinkVolume": 0.65,
+      "phrase": "You stand at my door uninvited. Mind your place, little one.",
+      "sayOk": true,
+      "voiceUsed": null,
+      "mics": [
+        {
+          "label": "USB Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -47.2,
+          "castP90Db": -33.1,
+          "castPeakDb": -14.8,
+          "riseDb": 14.1,
+          "floorFlat": false,
+          "transcript": "You stand at my door uninvited. Mind your place, little one",
+          "recall": 1
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -44.3,
+          "castP90Db": -43.7,
+          "castPeakDb": -31.3,
+          "riseDb": 0.6,
+          "floorFlat": true,
+          "transcript": "You stand in my way. It's my world, Grace.",
+          "recall": 0.27
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -47.2,
+      "castDb": -33.1,
+      "riseDb": 14.1,
+      "recall": 1,
+      "transcript": "You stand at my door uninvited. Mind your place, little one",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "64. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.65]",
+      "sinkVolume": 0.65,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -43,
+          "castP90Db": -18.1,
+          "castPeakDb": 0,
+          "riseDb": 24.9,
+          "floorFlat": true,
+          "transcript": "Stay! The watch of the castle holds this road, and the road behind you is dark",
+          "recall": 0.94
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79.2,
+          "castP90Db": -78.3,
+          "castPeakDb": -66.2,
+          "riseDb": 0.8,
+          "floorFlat": true,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -43,
+      "castDb": -18.1,
+      "riseDb": 24.9,
+      "recall": 0.94,
+      "transcript": "Stay! The watch of the castle holds this road, and the road behind you is dark",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}
