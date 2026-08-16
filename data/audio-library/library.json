@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "created": "2025-11-01T12:00:00.000Z",
-  "lastModified": "2026-04-13T19:40:44.078Z",
+  "lastModified": "2026-08-16T09:39:50.018Z",
   "totalFiles": 132,
   "totalSize": 290540797,
   "categories": [
@@ -766,11 +766,11 @@
       "genre": "Terror",
       "year": 2006,
       "uploadedAt": "2026-01-06T00:14:22.283Z",
-      "lastModified": "2026-04-13T19:40:44.078Z",
+      "lastModified": "2026-08-16T08:36:28.238Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 40,
-      "lastPlayed": "2026-04-13T19:40:35.845Z"
+      "playCount": 44,
+      "lastPlayed": "2026-08-16T08:45:57.599Z"
     },
     {
       "id": "206c8836-bc34-4ac9-a426-f773eaf943c8",
@@ -819,8 +819,8 @@
       "lastModified": "2026-02-16T02:45:45.459Z",
       "waveformGenerated": false,
       "favorite": false,
-      "playCount": 0,
-      "lastPlayed": null
+      "playCount": 1,
+      "lastPlayed": "2026-08-16T09:39:50.018Z"
     },
     {
       "id": "2211cbb9-a60f-4733-857c-02e92fa7c28e",
@@ -3317,6 +3317,34 @@
       "year": null,
       "uploadedAt": "2026-01-06T00:14:22.283Z",
       "lastModified": "2026-02-16T02:45:50.877Z",
+      "waveformGenerated": false,
+      "favorite": false,
+      "playCount": 0,
+      "lastPlayed": null
+    },
+    {
+      "id": "d6d85602-ddb0-5b06-9049-25c73e01f8db",
+      "title": "Thomas Whisper",
+      "description": "Yard Theater \u2014 the Thomas moment. Mina has waited for Thomas since 1462; this is the whisper the yard hears once, deep in the evening.",
+      "filename": "thomas-whisper.mp3",
+      "originalFilename": "thomas-whisper.mp3",
+      "format": "mp3",
+      "duration": 1.227755,
+      "fileSize": 20106,
+      "sampleRate": 44100,
+      "channels": 1,
+      "bitrate": 131009,
+      "tags": [
+        "yard-theater",
+        "halloween"
+      ],
+      "category": "other",
+      "artist": "",
+      "album": "",
+      "genre": null,
+      "year": null,
+      "uploadedAt": "",
+      "lastModified": "",
       "waveformGenerated": false,
       "favorite": false,
       "playCount": 0,
