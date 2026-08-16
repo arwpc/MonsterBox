@@ -28,7 +28,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const API = 'https://api.elevenlabs.io';
 const KEY = process.env.ELEVENLABS_API_KEY?.trim() ||
   readFileSync('/etc/monsterbox/elevenlabs.key', 'utf8').trim();
-const HOURS = parseInt(process.argv[process.argv.indexOf('--hours') + 1] || '26', 10) || 26;
+// `|| 26` on the parsed value would silently turn an explicit `--hours 0` into
+// a 26-hour sweep, so fall back only when the flag is absent or unparseable.
+const hoursIdx = process.argv.indexOf('--hours');
+const hoursArg = hoursIdx === -1 ? NaN : parseInt(process.argv[hoursIdx + 1], 10);
+const HOURS = Number.isFinite(hoursArg) && hoursArg >= 0 ? hoursArg : 26;
 const DRY = process.argv.includes('--dry-run');
 const REGISTRY_PREFIX = 'KB_Yard_Registry';
 
