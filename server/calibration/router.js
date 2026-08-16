@@ -68,7 +68,12 @@ function persistPosition(partId, currentP, extra = {}) {
 // is the source of truth, and stale cap.channel from a prior auto-create
 // would cause continuous-servo commands to drive the wrong PCA channel.
 async function getOrAutoCreateProfile(partId) {
-  let profile = await store.get(partId);
+  // getRaw, not get: this router is the WRITER (set-min/set-max/set-invert/learn
+  // read-modify-write the profile), and it is the page where an operator is shown
+  // the span they are about to replace. store.get() withholds a placeholder's
+  // bounds from consumers that would mistake them for a measurement; saving that
+  // view back would erase the span instead of narrowing it.
+  let profile = await store.getRaw(partId);
 
   if (profile) {
     // Reconcile cached channel/address against current parts.json (continuous-servo only —

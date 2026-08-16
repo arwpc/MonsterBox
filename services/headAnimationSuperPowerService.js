@@ -150,16 +150,21 @@ async function getAvailableServos(characterId) {
           if (profile.capability && profile.capability.kind) {
             servoKind = profile.capability.kind;
           }
-          if (profile.bounds) {
-            if (typeof profile.bounds.minAngle === 'number' && typeof profile.bounds.maxAngle === 'number') {
-              if (isPlaceholderProfile(profile)) {
-                placeholderBounds = { minAngle: profile.bounds.minAngle, maxAngle: profile.bounds.maxAngle };
-              } else {
-                minAngle = profile.bounds.minAngle;
-                maxAngle = profile.bounds.maxAngle;
-                calibrated = true;
-              }
-            }
+          // store.get() already withholds a placeholder's span from `bounds` and
+          // re-offers it as `placeholderBounds`, so reading `bounds` here can only
+          // ever yield a real measurement. The isPlaceholderProfile() check is kept
+          // as a belt-and-braces assertion for legacy records.
+          const measured = profile.bounds;
+          if (measured && !isPlaceholderProfile(profile)
+              && typeof measured.minAngle === 'number' && typeof measured.maxAngle === 'number') {
+            minAngle = measured.minAngle;
+            maxAngle = measured.maxAngle;
+            calibrated = true;
+          }
+          const guess = profile.placeholderBounds;
+          if (!calibrated && guess
+              && typeof guess.minAngle === 'number' && typeof guess.maxAngle === 'number') {
+            placeholderBounds = { minAngle: guess.minAngle, maxAngle: guess.maxAngle };
           }
         }
       } catch (_) { /* calibration read failed, fall through */ }

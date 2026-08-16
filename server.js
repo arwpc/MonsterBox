@@ -35,6 +35,7 @@ import firstRunRoutes from './routes/firstRun.js';
 import aiSettingsRoutes from './routes/aiSettingsRoutes.js';
 import audioLoopApiRoutes from './routes/api/audioLoopRoutes.js';
 import characterImagesApiRoutes from './routes/api/characterImagesRoutes.js';
+import charactersApiRoutes from './routes/api/charactersRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
 import partsApiRoutes from './routes/api/partsApi.js';
@@ -415,6 +416,11 @@ app.use('/ai-settings', aiSettingsRoutes);
 // Audio loop API routes
 app.use('/api/audio-loop', audioLoopApiRoutes);
 app.use('/api/parts', partsApiRoutes);
+// Alias for the character list/CRUD that otherwise only exists under
+// /setup/characters/api/characters. Mounted BEFORE the bare '/api' routers so it
+// wins on '/api/characters' and '/api/characters/:id'; '/api/characters/:id/images'
+// is a segment deeper and still falls through to characterImagesApiRoutes.
+app.use('/api/characters', charactersApiRoutes);
 
 // Direct API endpoint for stopping audio (needed by audio-library page)
 app.post('/api/audio/stop-all', async (req, res) => {
@@ -627,6 +633,21 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
+    // An unmatched API path used to render the HTML error page. A client that did
+    // not check content-type parsed that HTML as JSON and reported a syntax error
+    // somewhere in its own parsing code — a failure that points at the wrong file
+    // entirely. API paths get a JSON 404 that names the path that was missed.
+    const wantsJson = req.path.startsWith('/api/')
+        || req.path.includes('/api/')
+        || (req.get('accept') || '').includes('application/json');
+    if (wantsJson) {
+        return res.status(404).json({
+            success: false,
+            error: 'Not found',
+            message: `No API endpoint matches ${req.method} ${req.path}`,
+            path: req.path
+        });
+    }
     res.status(404);
     res.renderWithLayout('error', {
         title: 'Page Not Found',

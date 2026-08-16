@@ -480,7 +480,9 @@ async function getCalibrationForPart(part) {
       const fromMarkers = getCalibrationFromMarkers(part);
       if (fromMarkers.calibrated) return fromMarkers;
       // No markers either — fall back to the placeholder rather than 0/180 defaults.
-      const { minAngle, maxAngle } = profile.bounds || {};
+      // store.get() hands the placeholder span over under `placeholderBounds`
+      // precisely so this deliberate last resort has to name what it is using.
+      const { minAngle, maxAngle } = profile.placeholderBounds || {};
       if (typeof minAngle === 'number' && typeof maxAngle === 'number') {
         return { calibrated: true, minAngle, maxAngle };
       }
@@ -1882,7 +1884,10 @@ async function adjustPartCalibration(partId, marker, delta) {
     throw new Error('marker must be "Min" or "Max"');
   }
   const store = getCalibrationStore();
-  let profile = await store.get(partId);
+  // getRaw: this is a read-modify-write. store.get() hides a placeholder's span
+  // from movement consumers, and saving that view back would drop the other
+  // marker (nudging Min would erase Max).
+  let profile = await store.getRaw(partId);
   if (!profile) {
     profile = {
       partId: parseInt(partId, 10),

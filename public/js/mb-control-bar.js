@@ -99,11 +99,12 @@
     fetch('/api/system/volume', { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        if (!data || data.volume == null) return;
-        // GET /api/system/volume returns a 0.0-1.0 fraction; PUT takes 0-100.
-        // Normalise here so the slider is not pinned to zero at 65% volume.
-        var pct = data.volume <= 1 ? Math.round(data.volume * 100) : Math.round(data.volume);
-        slider.value = String(pct);
+        if (!data) return;
+        // Both ends of /api/system/volume speak integer percent now. volumePercent
+        // is the explicit alias; volume is the same number.
+        var pct = data.volumePercent != null ? data.volumePercent : data.volume;
+        if (pct == null) return;
+        slider.value = String(Math.round(pct));
       })
       .catch(function () { /* leave the default — not worth an error here */ });
 

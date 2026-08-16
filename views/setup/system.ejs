@@ -1066,7 +1066,8 @@
   function loadVolume() {
     apiGet('/api/system/volume', function (err, data) {
       if (err || !data || !data.success) return;
-      var vol = Math.round((data.volume || 0) * 100);
+      // /api/system/volume is integer percent on both GET and PUT.
+      var vol = Math.round((data.volumePercent != null ? data.volumePercent : data.volume) || 0);
       var slider = $('#systemVolumeSlider');
       var display = $('#systemVolumeDisplay');
       if (slider) slider.value = vol;
