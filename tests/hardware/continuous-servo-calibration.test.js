@@ -38,11 +38,21 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
     });
 
     after(async function() {
-        // Clean up test part
-        if (testPartId) {
-            await request(BASE_URL)
-                .delete(`/setup/parts/api/parts/${testPartId}`)
-                .expect(200);
+        // This suite creates a REAL part in the running node's parts.json. Cleanup
+        // used to assert a 200, so any failure threw out of the hook and left a
+        // phantom servo behind in live show data — indistinguishable from a real
+        // part, and pointing at a PCA9685 channel. Always attempt the delete, never
+        // let it throw, and say so loudly if it did not work.
+        if (!testPartId) return;
+        try {
+            const res = await request(BASE_URL).delete(`/setup/parts/api/parts/${testPartId}`);
+            if (res.status !== 200) {
+                console.error(`⚠️  Test part ${testPartId} was NOT removed (HTTP ${res.status}). ` +
+                              'Delete it by hand — it is a fake part in live character data.');
+            }
+        } catch (err) {
+            console.error(`⚠️  Test part ${testPartId} cleanup failed: ${err.message}. ` +
+                          'Delete it by hand — it is a fake part in live character data.');
         }
     });
 

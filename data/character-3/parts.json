@@ -4,11 +4,10 @@
     "name": "Right Arm of Orlok",
     "type": "linear_actuator",
     "pin": null,
-    "description": "Test updated via comprehensive tests",
+    "description": "MDD10A Control Board - Right arm linear actuator (GPIO 23 direction, 12 PWM)",
     "config": {
       "controlBoard": "MDD10A",
       "notes": "Standard MDD10A control: DIR=LOW forward, DIR=HIGH reverse",
-      "testFlag": true,
       "minPulse": 600
     },
     "created": "2025-10-05T18:10:45.178Z",
@@ -71,7 +70,7 @@
     "name": "Elbow",
     "type": "servo",
     "pin": null,
-    "description": "RDS51150SG 150kg 270° robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
+    "description": "RDS51150SG 150kg 270\u00b0 robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
