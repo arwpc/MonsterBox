@@ -3,12 +3,26 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-6">
-                <small>&copy; 2026 MonsterBox v<%= typeof appVersion !== 'undefined' ? appVersion : '6.0.0' %> - Single Node Animatronic Control</small>
+                <%
+                // Version comes from package.json and nowhere else. This carried a
+                // hardcoded '6.0.0' fallback that rendered on every page whenever
+                // appVersion was not passed — against the project's own
+                // single-source-of-truth rule, and three majors out of date.
+                %>
+                <small>&copy; 2026 MonsterBox v<%= typeof appVersion !== 'undefined' && appVersion ? appVersion : 'unknown' %></small>
             </div>
             <div class="col-md-6 text-end">
-                <small>
-                    <i class="bi bi-cpu"></i> Hardware:
-                    <span class="badge bg-success">Connected</span>
+                <%
+                // This used to be a hardcoded green "Hardware: Connected" badge — static
+                // markup, on every page, on a rig with three dead limbs. It could never
+                // turn red, so it was decoration wearing the costume of a status light.
+                // The control bar carries a real, live server probe; the honest thing
+                // for the footer is to say what this node IS, not to assert health it
+                // never checked.
+                %>
+                <small class="mb-text-muted">
+                    <i class="bi bi-cpu"></i>
+                    Animatronic control node<% if (typeof currentCharacter !== 'undefined' && currentCharacter) { %> · character <%= currentCharacter %><% } %>
                 </small>
             </div>
         </div>

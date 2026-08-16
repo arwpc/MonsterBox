@@ -115,7 +115,16 @@ export class OpenLoopLinearAdapter {
 
     console.log(`🔧 OpenLoopLinearAdapter: partId=${this.partId}, direction=${direction}, speed=${speedPct}%, driveMs=${driveMs}ms, settleMs=${this.settleMs}ms, deltaP=${deltaP.toFixed(3)}${isEndpoint ? ' (ENDPOINT OVERDRIVE)' : ''}`);
     try {
-      await hardwareService.controlPart(String(this.partId), 'jog', { direction, speed: speedPct, duration: driveMs });
+      const result = await hardwareService.controlPart(String(this.partId), 'jog', { direction, speed: speedPct, duration: driveMs });
+      // controlPart RETURNS a refusal rather than throwing, so ignoring the result
+      // meant a blocked move still advanced the position estimate: the system then
+      // believed a quarantined actuator sitting on its endstop was at mid-travel —
+      // exactly the state that makes noRetractBelowMin reasoning unsafe.
+      if (result && result.success === false) {
+        const err = new Error(result.error || 'Hardware refused the move');
+        err.blockedBySafetyLimit = !!result.blockedBySafetyLimit;
+        throw err;
+      }
       // Wait for mechanical settling after motor stops
       await new Promise(r => setTimeout(r, this.settleMs));
       this.currentP = clampedP;

@@ -1735,6 +1735,11 @@ export async function controlPart(partId, action, params = {}, options = {}) {
             console.warn(`🛡️  Safety limits applied to part ${partId} (${part.name}): ${limited.adjustments.join('; ')}`);
         }
         Object.assign(actionParams, limited.params);
+        // Return the adjustments too, not just log them. Callers were reporting the
+        // REQUESTED value back to the operator with clamped:false, so a servo that
+        // the safety layer moved to 60 was displayed as sitting at 45. A confident
+        // wrong number is worse than a blank field.
+        const safetyAdjustments = limited.adjustments;
 
         // System-wide servo invert: mirror angle within calibrated bounds
         // Uses (minAngle + maxAngle - angle) so the servo stays within its calibrated range.
@@ -1758,7 +1763,11 @@ export async function controlPart(partId, action, params = {}, options = {}) {
             ...result,
             partId: partId,
             partName: part.name,
-            action: action
+            action: action,
+            safetyAdjustments,
+            clamped: safetyAdjustments.length > 0,
+            // The value actually sent to the hardware, whatever was requested.
+            appliedParams: { angleDeg: actionParams.angleDeg, speed: actionParams.speed, duration: actionParams.duration }
         };
 
     } catch (error) {
