@@ -609,6 +609,10 @@ StartLimitBurst=5
 StandardOutput=append:/var/log/monsterbox.log
 StandardError=append:/var/log/monsterbox.err
 SyslogIdentifier=monsterbox
+# The Scheduled Events page (/schedule) reads and writes this user's real crontab.
+# /usr/bin/crontab is setgid 'crontab', and NoNewPrivileges=true deliberately blocks
+# setgid — so the group is granted directly here instead of weakening the hardening.
+SupplementaryGroups=crontab
 NoNewPrivileges=true
 PrivateTmp=true
 LimitNOFILE=4096
