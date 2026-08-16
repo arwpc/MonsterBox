@@ -21,6 +21,7 @@ const pkg = require('./package.json');
 // Route imports
 import setupAudioRoutes from './routes/setup/audio.js';
 import setupCalibrationRoutes from './routes/setup/calibration.js';
+import panicRoutes from './routes/api/panicRoutes.js';
 import setupCharactersRoutes from './routes/setup/characters.js';
 import setupModelsRoutes from './routes/setup/models.js';
 import setupPosesRoutes from './routes/setup/poses.js';
@@ -386,6 +387,9 @@ app.get('/__audio/tools', (req, res) => {
 // Mount Unified Calibration API v1.5
 app.use('/api/calibration', calibrationApiRouter);
 
+// One-request panic. Mounted early so it is reachable even if a later route
+// module fails to initialise — the stop control must be the last thing to break.
+app.use('/api/panic', panicRoutes);
 app.use('/setup/calibration', setupCalibrationRoutes);
 app.use('/setup/audio', setupAudioRoutes);
 app.use('/setup/models', setupModelsRoutes);

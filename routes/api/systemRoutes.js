@@ -171,7 +171,9 @@ router.get('/volume', async (req, res) => {
         const { stdout } = await execAsync('wpctl get-volume @DEFAULT_AUDIO_SINK@', { timeout: 5000 });
         const match = stdout.match(/Volume:\s+([\d.]+)/);
         const volume = match ? parseFloat(match[1]) : 0.9;
-        res.json({ success: true, volume });
+        // `volume` stays a 0.0-1.0 fraction for compatibility; `volumePercent` is the
+        // unambiguous field, and matches the scale PUT expects.
+        res.json({ success: true, volume, volumePercent: Math.round(volume * 100) });
     } catch (error) {
         console.error('Error getting volume:', error.message);
         res.json({ success: true, volume: 0.9 });
@@ -184,9 +186,23 @@ router.get('/volume', async (req, res) => {
  */
 router.put('/volume', express.json(), async (req, res) => {
     try {
-        const vol = parseInt(req.body && req.body.volume, 10);
-        if (isNaN(vol) || vol < 0 || vol > 100) {
-            return res.status(400).json({ success: false, error: 'volume must be 0-100' });
+        // NB the scale mismatch with GET, which returns a 0.0-1.0 fraction. A caller
+        // that round-trips naturally sends something like 0.95, and parseInt('0.95')
+        // is 0 — which passed this check and SILENTLY MUTED the character. A muted
+        // animatronic looks broken and gives no clue why, so a fractional value is
+        // now a loud 400 that names the scale rather than a silent zero.
+        const raw = req.body && req.body.volume;
+        const vol = Number(raw);
+        if (!Number.isFinite(vol) || vol < 0 || vol > 100) {
+            return res.status(400).json({ success: false, error: 'volume must be a number 0-100' });
+        }
+        if (!Number.isInteger(vol)) {
+            return res.status(400).json({
+                success: false,
+                error: `volume must be 0-100, not a 0.0-1.0 fraction (received ${raw}). `
+                     + `GET /api/system/volume returns a fraction; this endpoint takes percent. `
+                     + `Did you mean ${Math.round(vol * 100)}?`
+            });
         }
         if (process.env.MB_TEST_MODE === '1') {
             return res.json({ success: true, volume: vol / 100 });

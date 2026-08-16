@@ -22,9 +22,58 @@ import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 
-// RMS above which a mic frame counts as the guest actually speaking, for turn
-// latency accounting only — this does not gate what is sent to the agent.
+// Absolute floor below which a frame is never treated as speech, whatever the
+// adaptive estimate says.
 const VOICE_ACTIVITY_RMS = 0.02;
+
+// How much louder than the measured noise floor a frame must be to count as the
+// guest speaking. A fixed threshold does not work here: this node's USB audio
+// adapter has a constant preamp hiss around 0.027 RMS, ABOVE the old fixed 0.02,
+// so the gate could never close and Scribe kept transcribing the hiss as "...".
+// Measured on this node's USB audio adapter: floor ~0.027, speech 0.069-0.195 —
+// a 2x margin separates them cleanly while adapting to any quieter or noisier
+// install, which is why the threshold is derived rather than hardcoded.
+const VOICE_GATE_MARGIN = 2.0;
+
+// How long a frame's worth of voice keeps the gate open after the guest stops.
+// Long enough to bridge the pauses inside a sentence, short enough that room
+// tone and servo whine never accumulate into a "turn" the agent tries to answer.
+const MIC_GATE_HANGOVER_MS = 900;
+
+// Set MB_MIC_VOICE_GATE=0 to stream the raw microphone regardless.
+const MIC_VOICE_GATE_ENABLED = process.env.MB_MIC_VOICE_GATE !== '0';
+
+// Ceiling on waiting for a reply on a live session before the HTTP caller is
+// answered with whatever text arrived. Never let a silent agent hang a request.
+const ASK_REPLY_TIMEOUT_MS = 30000;
+
+// Quiet after the last audio chunk before a reply is considered complete.
+const ASK_SETTLE_MS = 1500;
+
+// 250ms of pcm_16000 at the noise floor. Injected text alone does not close a
+// turn — the turn model commits on an audio edge — so this frame is sent right
+// after a question to make the agent actually answer. Dithered rather than pure
+// zeroes because a perfectly silent buffer reads as a dead stream, not a quiet room.
+// 500ms of pcm_16000 silence. Injected text alone does not close a turn — the
+// turn model commits on an audio edge — so this is sent right after a text
+// question to make the agent actually answer (measured: no reply at all after
+// 70s without it).
+const TURN_COMMIT_FRAME_B64 = Buffer.alloc(8000 * 2).toString('base64');
+
+// Filler audio for the closed voice gate: TRUE digital silence, not dither.
+// Dither keeps the stream alive but ASR transcribes a constant low-level hiss as
+// "..." — which becomes a spurious guest turn, exactly the bug being fixed.
+// Zeroes give the turn model an unambiguous silence edge (so it commits the
+// guest's turn promptly) and give ASR nothing to hallucinate on.
+// Cached per length because the mic loop re-frames to one fixed size.
+const _floorFrameCache = new Map();
+function _floorFrameB64(byteLength) {
+    const cached = _floorFrameCache.get(byteLength);
+    if (cached) return cached;
+    const b64 = Buffer.alloc(byteLength).toString('base64');
+    if (_floorFrameCache.size < 8) _floorFrameCache.set(byteLength, b64);
+    return b64;
+}
 
 /**
  * Log the breakdown of one turn: how long each hop took between the guest
@@ -40,10 +89,13 @@ function logTurnLatency(connection, sessionId) {
     t._logged = true;
     const parts = [];
     const from = t.speechEndMs || t.transcriptAtMs;
+    parts.push(`src=${t.source || 'speech'}`);
     if (t.speechEndMs && t.transcriptAtMs) parts.push(`speech-end→transcript ${t.transcriptAtMs - t.speechEndMs}ms`);
-    if (t.transcriptAtMs && t.responseAtMs) parts.push(`transcript→LLM ${t.responseAtMs - t.transcriptAtMs}ms`);
-    if (t.responseAtMs && t.firstAudioAtMs) parts.push(`LLM→first-audio ${t.firstAudioAtMs - t.responseAtMs}ms`);
-    if (from) parts.push(`TOTAL ${t.firstAudioAtMs - from}ms`);
+    if (t.transcriptAtMs && t.responseAtMs) parts.push(`transcript→LLM-text ${t.responseAtMs - t.transcriptAtMs}ms`);
+    if (t.transcriptAtMs) parts.push(`transcript→first-audio ${t.firstAudioAtMs - t.transcriptAtMs}ms`);
+    if (t.responseAtMs) parts.push(`LLM-text→first-audio ${t.firstAudioAtMs - t.responseAtMs}ms`);
+    else parts.push(`LLM-text→first-audio n/a (audio led text)`);
+    if (from) parts.push(`TOTAL-to-first-sound ${t.firstAudioAtMs - from}ms`);
     console.log(`⏱️  [turn-latency] session=${sessionId} ${parts.join('  |  ')}`);
 }
 
@@ -609,6 +661,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 connection.elevenLabsWs = null;
                 connection.isActive = false;
                 connection.conversationReady = false;
+                // Settle any question still waiting on this socket, or its HTTP
+                // caller would block until the full ask timeout for no reason.
+                try { this._abortPendingAsk(sessionId, `socket closed (code=${code})`); } catch (_) { /* noop */ }
                 // Stop persistent audio stream so mpg123 flushes remaining data and exits cleanly
                 if (connection.characterId != null) {
                     try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
@@ -747,6 +802,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                         const c = this.activeConnections.get(sessionId);
 
+                        // Audio counts as reply activity for a question asked on this
+                        // session — a filler line or a reply that is still streaming
+                        // must keep the caller waiting rather than settling early.
+                        if (c && c._pendingAsk && audioData) {
+                            c._pendingAsk.sawAudio = true;
+                            this._settlePendingAsk(sessionId);
+                        }
+
                         // Track accumulated audio duration for accurate echo suppression
                         if (c && audioData) {
                             const audioBuffer = Buffer.from(audioData, 'base64');
@@ -765,7 +828,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // clock. Audio still draining from the previous reply would
                             // otherwise land microseconds after the transcript and
                             // report an absurd sub-100ms turn.
-                            if (c._turn && !c._turn.firstAudioAtMs && c._turn.responseAtMs
+                            // The gap check alone identifies the first chunk of a new
+                            // reply. Requiring responseAtMs as well silently dropped
+                            // the whole measurement whenever audio arrived before the
+                            // agent_response text event — which is the normal ordering
+                            // for a text-injected question, so that path was never
+                            // being timed at all.
+                            if (c._turn && !c._turn.firstAudioAtMs
                                 && (!c.lastAudioChunkAt || (nowMs - c.lastAudioChunkAt) > 1200)) {
                                 c._turn.firstAudioAtMs = nowMs;
                                 logTurnLatency(c, sessionId);
@@ -780,23 +849,43 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             c.lastAudioChunkAt = nowMs;
 
                             // Calculate chunk duration: PCM16LE mono = 2 bytes/sample
+                            let chunkMs;
                             if (fmt.startsWith('pcm_')) {
                                 const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
-                                c.accumulatedAudioMs += (audioBuffer.length / (sampleRate * 2)) * 1000;
+                                chunkMs = (audioBuffer.length / (sampleRate * 2)) * 1000;
                             } else {
                                 // MP3: estimate ~128kbps → duration_ms ≈ bytes * 8 / 128
-                                c.accumulatedAudioMs += (audioBuffer.length * 8 / 128);
+                                chunkMs = (audioBuffer.length * 8 / 128);
                             }
+                            c.accumulatedAudioMs += chunkMs;
 
-                            // Suppress mic for the full estimated playback duration + tail buffer.
+                            // Model when the speaker will actually FALL SILENT, not when
+                            // the bytes arrived. ElevenLabs streams a reply far faster
+                            // than real time — a 10s reply can land in 3s — so a deadline
+                            // of "first-chunk arrival + total duration" expired while the
+                            // speaker was still talking, and the tail of the character's
+                            // own reply went back into the agent as guest speech.
+                            //
+                            // Chunks play serially, so the queue drains at
+                            // max(now, previous end) + this chunk's duration.
+                            c.playbackEndsAtMs = Math.max(c.playbackEndsAtMs || 0, nowMs) + chunkMs;
+
+                            // Suppress until the speaker is quiet, plus a tail for room
+                            // reverb and the capture pipeline's own buffering.
                             // Never move the deadline EARLIER: a new utterance starting while
                             // the previous one is still draining out of the speaker must not
                             // shorten the window and let the tail of it back in as "user" speech.
                             const TAIL_BUFFER_MS = 2500; // extra room reverb tolerance
-                            c.suppressMicUntilMs = Math.max(
-                                c.suppressMicUntilMs || 0,
-                                c.speechStartedAt + c.accumulatedAudioMs + TAIL_BUFFER_MS
-                            );
+                            // Apply to EVERY session of this character, not just the
+                            // one that received the audio. There is one speaker and one
+                            // microphone per character, but there can be several sessions
+                            // (a browser client on the conversation page plus a headless
+                            // agent, or a one-shot ask socket). Suppressing only the
+                            // receiving session left the others' mic loops wide open
+                            // during playback, and they transcribed the character's own
+                            // reply back as guest speech ("Yes.", "...") — the spurious
+                            // follow-up turns seen in the logs.
+                            this._suppressMicUntil(c.characterId, c.playbackEndsAtMs + TAIL_BUFFER_MS);
                         }
 
                         // Play AI audio through server speakers if enabled
@@ -922,6 +1011,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         connection._turn.responseAtMs = Date.now();
                     }
 
+                    // Feed a question asked via askAgentQuestion() on this live session.
+                    if (connection._pendingAsk && responseText) {
+                        const p = connection._pendingAsk;
+                        p.responseText = p.responseText ? `${p.responseText} ${responseText}` : responseText;
+                        this._settlePendingAsk(sessionId);
+                    }
+
                     if (responseText) {
                         this.sendToClient(sessionId, {
                             type: 'agent_response',
@@ -970,6 +1066,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         connection.aiSpeaking = false;
                         connection.speechStartedAt = 0;
                         connection.accumulatedAudioMs = 0;
+                        // Playback was cut short, so the queued-audio clock is void.
+                        connection.playbackEndsAtMs = 0;
                         connection.suppressMicUntilMs = Date.now() + 500; // short tail for reverb
                     }
                     this.sendToClient(sessionId, {
@@ -987,6 +1085,49 @@ class ElevenLabsWebSocketService extends EventEmitter {
             console.error(`❌ Error handling ElevenLabs real-time message for ${sessionId}:`, error.message);
             console.error('Raw message:', data.toString());
         }
+    }
+
+    /**
+     * A reply is "done" once it has gone quiet for ASK_SETTLE_MS. The agent
+     * streams text and audio in fragments with no end-of-reply marker we can
+     * rely on, so each new fragment pushes the settle deadline out.
+     */
+    _settlePendingAsk(sessionId) {
+        const c = this.activeConnections.get(sessionId);
+        const p = c && c._pendingAsk;
+        if (!p) return;
+        clearTimeout(p.settleTimer);
+        p.settleTimer = setTimeout(() => {
+            const still = this.activeConnections.get(sessionId);
+            if (!still || still._pendingAsk !== p) return;
+            still._pendingAsk = null;
+            clearTimeout(p.hardTimer);
+            p.resolve({
+                success: true,
+                response: p.responseText || 'Response received',
+                viaSession: sessionId
+            });
+        }, ASK_SETTLE_MS);
+    }
+
+    /**
+     * Release any question waiting on this session. Called when the socket dies
+     * or the session is torn down, so an in-flight HTTP request settles instead
+     * of waiting out its full timeout.
+     */
+    _abortPendingAsk(sessionId, reason) {
+        const c = this.activeConnections.get(sessionId);
+        const p = c && c._pendingAsk;
+        if (!p) return;
+        c._pendingAsk = null;
+        clearTimeout(p.settleTimer);
+        clearTimeout(p.hardTimer);
+        p.resolve({
+            success: !!p.responseText,
+            response: p.responseText || '',
+            viaSession: sessionId,
+            aborted: reason || 'session ended'
+        });
     }
 
     /**
@@ -1049,6 +1190,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
             aiSpeaking: false,
             speechStartedAt: 0,
             accumulatedAudioMs: 0,
+            // Wall-clock time the queued reply audio is expected to finish playing.
+            playbackEndsAtMs: 0,
             audioBuffer: [],
             audioPlaying: false,
             realtimeSTTSession: null,
@@ -1161,6 +1304,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * timers and the activeConnections entry. Safe to call repeatedly.
      */
     async _teardownHeadlessSession(sessionId) {
+        // Settle any in-flight question first so its caller is not left hanging
+        // on a session we are about to delete.
+        try { this._abortPendingAsk(sessionId, 'agent disabled'); } catch (_) { /* noop */ }
         try { this._stopServerMicLoop(sessionId, true); } catch (_) { /* noop */ }
         try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
         try { await this.endConversation(sessionId); } catch (_) { /* noop */ }
@@ -1429,10 +1575,72 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     const now = Date.now();
                     const suppressed = connection.suppressMicUntilMs && (now < connection.suppressMicUntilMs);
 
-                    // 1) Stream to ElevenLabs ConvAI real-time agent (unless suppressed or parrot mode)
-                    if (!suppressed && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
-                        const b64 = raw.toString('base64');
-                        connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: b64 }));
+                    // Frame energy, computed BEFORE anything is forwarded so it can
+                    // gate the agent stream. (It used to be computed further down,
+                    // after the send, so it could only ever be used for reporting.)
+                    let frameRms = 0;
+                    try {
+                        let sumSq = 0;
+                        const n = Math.floor(raw.length / 2);
+                        for (let si = 0; si < n; si++) {
+                            const s = raw.readInt16LE(si * 2);
+                            sumSq += s * s;
+                        }
+                        frameRms = Math.min(1, Math.sqrt(sumSq / (n || 1)) / 32768);
+                    } catch (_) { frameRms = 0; }
+
+                    // Track the room's noise floor so the voice gate adapts to the
+                    // install instead of assuming a level. Latches onto any quieter
+                    // frame immediately and creeps upward slowly, so a single cough
+                    // cannot raise it but a genuinely noisier room is followed.
+                    // Never updated while suppressed — the character's own voice must
+                    // not be learned as "silence".
+                    if (!suppressed) {
+                        connection._noiseFloor = (connection._noiseFloor == null)
+                            ? frameRms
+                            : Math.min(frameRms, connection._noiseFloor * 1.0008 + 0.00002);
+                    }
+                    const voiceThreshold = Math.max(
+                        VOICE_ACTIVITY_RMS,
+                        (connection._noiseFloor || 0) * VOICE_GATE_MARGIN
+                    );
+
+                    if (!suppressed && frameRms > voiceThreshold) {
+                        connection._lastVoiceAtMs = now;
+                    }
+
+                    // Voice gate: forward to the agent only while the guest is
+                    // actually making sound, plus a short hangover to bridge the
+                    // pauses inside a sentence.
+                    //
+                    // Without this, an idle-but-enabled agent receives an unbroken
+                    // stream of room tone — and the idle micro-movement servos are
+                    // right next to the microphone. The agent's ASR hallucinates
+                    // short tokens on that ("Yes.", "..."), each of which becomes a
+                    // spurious guest turn the character then answers. Echo
+                    // suppression alone cannot catch these because they occur while
+                    // the character is silent, so no suppression window is armed.
+                    const voiceGateOpen = !!(connection._lastVoiceAtMs &&
+                        (now - connection._lastVoiceAtMs) < MIC_GATE_HANGOVER_MS);
+
+                    // 1) Stream to the ConvAI agent. The stream must never go absent:
+                    //    the turn-detection model runs on a continuous audio timeline,
+                    //    and simply not sending frames leaves it unable to decide the
+                    //    turn ended (measured: replies took 9-13s, or never came).
+                    //    So when the gate is closed we substitute synthetic room-floor
+                    //    audio instead of the real microphone. The agent keeps a
+                    //    continuous timeline, while room tone, servo whine and the
+                    //    character's own voice never reach its ASR to be hallucinated
+                    //    into spurious guest turns.
+                    if (!connection.parrotMode && connection.elevenLabsWs &&
+                        connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        const gated = MIC_VOICE_GATE_ENABLED ? !voiceGateOpen : false;
+                        const payload = (!suppressed && !gated)
+                            ? raw.toString('base64')
+                            : _floorFrameB64(raw.length);
+                        try {
+                            connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: payload }));
+                        } catch (_) { /* non-fatal */ }
                     }
 
                     // 2) Stream to Scribe v2 Realtime for live STT (unless suppressed)
@@ -1506,34 +1714,32 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         } catch (_) { /* noop */ }
                     }
 
-                    // 3) Compute RMS audio level from PCM16LE and send to client
-                    //    PCM16LE = signed 16-bit little-endian samples
-                    var rmsLevel = 0;
-                    try {
-                        var sumSq = 0;
-                        var sampleCount = Math.floor(raw.length / 2);
-                        for (var si = 0; si < sampleCount; si++) {
-                            var sample = raw.readInt16LE(si * 2);
-                            sumSq += sample * sample;
-                        }
-                        rmsLevel = Math.sqrt(sumSq / (sampleCount || 1)) / 32768;
-                        rmsLevel = Math.min(1, rmsLevel);
-                    } catch (_) { rmsLevel = 0; }
-
-                    // Timestamp the last frame that actually contained the guest's
-                    // voice. Everything downstream measures "how long after the guest
-                    // stopped talking did the character answer", and that clock has to
-                    // start at real speech — not at transcript arrival, which is
-                    // already several hundred ms late. Frames suppressed as our own
-                    // echo are deliberately excluded.
-                    if (!suppressed && rmsLevel > VOICE_ACTIVITY_RMS) {
-                        connection._lastVoiceAtMs = now;
-                    }
+                    // 3) Report the frame level to the browser VU meter. The RMS and
+                    //    the _lastVoiceAtMs timestamp are computed at the top of this
+                    //    handler, because the voice gate needs them before deciding
+                    //    whether to forward the frame.
+                    const rmsLevel = frameRms;
 
                     // Send audio level to browser every ~500ms (every other tick at 250ms)
                     if (!connection._vuLastTs || (now - connection._vuLastTs) >= 500) {
                         connection._vuLastTs = now;
                         try { this.sendToClient(sessionId, { type: 'audio_level', level: Math.round(rmsLevel * 100) }); } catch (_) { }
+                    }
+
+                    // 3b) Server-side breadcrumb for the mic path. Logged only on a
+                    //     suppression transition or when the guest is actually audible,
+                    //     and at most once a second, so it stays off the SD card during
+                    //     idle hours but is there when a turn goes missing.
+                    const loud = frameRms > voiceThreshold;
+                    if (suppressed !== connection._dbgWasSuppressed ||
+                        (loud && (!connection._dbgVoiceTs || (now - connection._dbgVoiceTs) >= 1000))) {
+                        if (loud) connection._dbgVoiceTs = now;
+                        connection._dbgWasSuppressed = suppressed;
+                        const sentReal = !suppressed && (!MIC_VOICE_GATE_ENABLED || voiceGateOpen);
+                        console.log(`🎤 [mic] session=${sessionId} rms=${frameRms.toFixed(3)} ` +
+                            `floor=${(connection._noiseFloor || 0).toFixed(3)} gate=${voiceThreshold.toFixed(3)} ` +
+                            `suppressed=${!!suppressed} forMs=${suppressed ? Math.round(connection.suppressMicUntilMs - now) : 0} ` +
+                            `sentReal=${sentReal}`);
                     }
 
                     // 4) Periodic client breadcrumb with device and bytes captured (once per second)
@@ -1734,13 +1940,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 }
 
                 // Extend mic suppression: estimate audio duration from PCM buffer
+                // Character-wide, not per-session: this loop belongs to a one-shot
+                // ask socket, but the audio comes out of the shared speaker and any
+                // other session's mic loop would otherwise hear and transcribe it.
                 const chunkFmt = c.audioOutputFormat || 'pcm_16000';
                 if (chunkFmt.startsWith('pcm_')) {
                     const sr = parseInt(chunkFmt.split('_')[1]) || 16000;
                     const durationMs = (audioBuffer.length / (sr * 2)) * 1000;
-                    c.suppressMicUntilMs = Math.max(c.suppressMicUntilMs, Date.now() + durationMs + 1500);
+                    this._suppressMicUntil(c.characterId, Date.now() + durationMs + 1500);
                 } else {
-                    c.suppressMicUntilMs = Math.max(c.suppressMicUntilMs, Date.now() + 3000);
+                    this._suppressMicUntil(c.characterId, Date.now() + 3000);
                 }
             }
         } catch (error) {
@@ -1759,13 +1968,25 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * @param {number} durationMs - Duration in milliseconds
      */
     suppressMicForCharacter(characterId, durationMs) {
-        const suppressUntil = Date.now() + durationMs;
+        this._suppressMicUntil(characterId, Date.now() + durationMs);
+    }
+
+    /**
+     * Hold the mic closed on every session belonging to a character until an
+     * absolute deadline. One character has one speaker and one microphone, so
+     * echo suppression has to be character-wide: a per-session deadline leaves
+     * any other session's mic loop streaming the character's own voice back to
+     * the agent as if the guest had spoken.
+     *
+     * The deadline only ever moves later, never earlier, so a new utterance
+     * starting while the previous one is still draining out of the speaker
+     * cannot shorten the window.
+     */
+    _suppressMicUntil(characterId, untilMs) {
+        if (!Number.isFinite(untilMs)) return;
         for (const [, connection] of this.activeConnections) {
-            if (connection.characterId === characterId || characterId == null) {
-                connection.suppressMicUntilMs = Math.max(
-                    connection.suppressMicUntilMs || 0,
-                    suppressUntil
-                );
+            if (characterId == null || Number(connection.characterId) === Number(characterId)) {
+                connection.suppressMicUntilMs = Math.max(connection.suppressMicUntilMs || 0, untilMs);
             }
         }
     }
@@ -1814,13 +2035,170 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
-     * Send a text question to an agent and play the response through character speaker
+     * Find a live agent session for a character that a question can be asked on.
+     * Prefers the headless session (the /conversation/api/ai-on toggle); falls back
+     * to any active session — e.g. a browser client on the conversation page — that
+     * already has an initiated agent socket.
+     *
+     * Returns a sessionId or null. Ephemeral ask-sockets are never returned: they
+     * are one-shot and are torn down as soon as their own question resolves.
+     */
+    _findLiveAgentSession(characterId) {
+        if (characterId == null) return null;
+        const usable = (sid) => {
+            const c = this.activeConnections.get(sid);
+            return !!(c && c.isActive && c.conversationReady && !c.ephemeralAsk &&
+                c.elevenLabsWs && c.elevenLabsWs.readyState === WebSocket.OPEN);
+        };
+
+        const headlessId = this.headlessSessions.get(String(characterId));
+        if (headlessId && usable(headlessId)) return headlessId;
+
+        for (const [sid, c] of this.activeConnections.entries()) {
+            if (Number(c.characterId) === Number(characterId) && usable(sid)) return sid;
+        }
+        return null;
+    }
+
+    /**
+     * Ask a question on an already-open agent session and await the reply.
+     *
+     * Why this exists: opening a socket per question cost a signed-URL fetch, a TLS
+     * handshake, a conversation_initiation round trip AND the agent's entire spoken
+     * first_message (~4-5s of greeting the guest has to sit through) before the
+     * answer even started — and it threw away all conversation memory every turn.
+     *
+     * Questions are serialised per connection through _askChain so two concurrent
+     * callers cannot interleave their replies onto each other's promise.
+     *
+     * @returns {Promise<{success:boolean, response:string, viaSession:string}>}
+     * @throws {Error} with .beforeSend === true only if nothing was sent, so the
+     *         caller may safely fall back without the agent hearing the question twice.
+     */
+    async _askOnLiveSession(sessionId, text) {
+        const connection = this.activeConnections.get(sessionId);
+        if (!connection) {
+            const e = new Error('Session disappeared'); e.beforeSend = true; throw e;
+        }
+
+        const prior = connection._askChain || Promise.resolve();
+        let release;
+        connection._askChain = new Promise(r => { release = r; });
+        try { await prior; } catch (_) { /* a previous question failing must not poison the queue */ }
+
+        try {
+            // Re-check after waiting our turn: the socket may have died in the queue.
+            const c = this.activeConnections.get(sessionId);
+            if (!c || !c.isActive || !c.conversationReady ||
+                !c.elevenLabsWs || c.elevenLabsWs.readyState !== WebSocket.OPEN) {
+                const e = new Error('Agent socket not open'); e.beforeSend = true; throw e;
+            }
+
+            const pending = {
+                text,
+                responseText: '',
+                sawAudio: false,
+                resolve: null,
+                settleTimer: null,
+                hardTimer: null
+            };
+            const done = new Promise(res => { pending.resolve = res; });
+            c._pendingAsk = pending;
+
+            // Start the turn clock so the same latency table covers this path.
+            // No guest speech is involved in a text question, so there is no
+            // speech-end to measure from. Leaving _lastVoiceAtMs in here reported
+            // whatever the mic last heard — usually the tail of the PREVIOUS reply —
+            // as this turn's speech-end, inventing several seconds of latency that
+            // never happened.
+            c._turn = {
+                speechEndMs: null,
+                transcriptAtMs: Date.now(),
+                responseAtMs: null,
+                firstAudioAtMs: null,
+                source: 'ask-ai',
+                text
+            };
+
+            try {
+                c.elevenLabsWs.send(JSON.stringify({ type: 'user_message', text }));
+            } catch (err) {
+                c._pendingAsk = null;
+                const e = new Error(`Send failed: ${err.message}`); e.beforeSend = true; throw e;
+            }
+
+            // The turn-detection model commits a turn on an audio edge, not on the
+            // text frame. With the server mic loop running one arrives on its own;
+            // when the mic is suppressed or idle, nothing would ever close the turn
+            // and the agent stays silent forever (measured: no reply after 70s).
+            // A short frame of room-floor audio gives it the edge it needs.
+            setTimeout(() => {
+                try {
+                    const still = this.activeConnections.get(sessionId);
+                    if (still && still._pendingAsk === pending &&
+                        still.elevenLabsWs && still.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        still.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: TURN_COMMIT_FRAME_B64 }));
+                    }
+                } catch (_) { /* non-fatal */ }
+            }, 150);
+
+            // Hard ceiling so an HTTP caller can never hang on a silent agent.
+            pending.hardTimer = setTimeout(() => {
+                const still = this.activeConnections.get(sessionId);
+                if (still && still._pendingAsk === pending) still._pendingAsk = null;
+                pending.resolve({
+                    success: true,
+                    response: pending.responseText || 'Response received',
+                    viaSession: sessionId,
+                    timedOut: true
+                });
+            }, ASK_REPLY_TIMEOUT_MS);
+
+            const result = await done;
+            clearTimeout(pending.hardTimer);
+            clearTimeout(pending.settleTimer);
+            return result;
+        } finally {
+            release();
+        }
+    }
+
+    /**
+     * Send a text question to an agent and play the response through character speaker.
+     *
+     * Uses the character's live agent session when one exists (fast: no handshake,
+     * no repeated greeting, conversation memory preserved across turns) and only
+     * opens a throwaway socket when nothing is running.
+     *
      * @param {string} agentId - ElevenLabs agent ID
      * @param {string} text - Question text
      * @param {number} characterId - Character ID for audio playback
      * @returns {Promise<{success: boolean, response: string}>}
      */
     async askAgentQuestion(agentId, text, characterId) {
+        const liveSession = this._findLiveAgentSession(characterId);
+        if (liveSession) {
+            try {
+                const r = await this._askOnLiveSession(liveSession, text);
+                console.log(`⚡ Answered on live session ${liveSession} (no new socket)`);
+                return r;
+            } catch (e) {
+                if (!e || !e.beforeSend) {
+                    // The agent already has the question; asking again on a new socket
+                    // would make the character answer twice.
+                    throw e;
+                }
+                console.warn(`⚠️ Live session ${liveSession} unusable (${e.message}) — opening a one-shot socket`);
+            }
+        }
+        return this._askAgentQuestionEphemeral(agentId, text, characterId);
+    }
+
+    /**
+     * Fallback path: open a dedicated socket for one question. Only used when the
+     * character has no live agent session.
+     */
+    async _askAgentQuestionEphemeral(agentId, text, characterId) {
         return new Promise(async (resolve, reject) => {
             let sessionId = null;
             let responseText = '';
@@ -1841,7 +2219,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     micSource: 'server',
                     audioBuffer: [],
                     audioPlaying: false,
-                    suppressMicUntilMs: 0
+                    suppressMicUntilMs: 0,
+                    // Marks this as a one-shot socket so _findLiveAgentSession
+                    // never routes a later question onto a connection that is
+                    // about to be torn down.
+                    ephemeralAsk: true
                 };
 
                 this.activeConnections.set(sessionId, connection);
